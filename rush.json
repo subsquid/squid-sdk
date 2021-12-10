@@ -459,6 +459,11 @@
       "packageName": "@subsquid/util",
       "projectFolder": "util",
       "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "projectFolder": "substrate-metadata",
+      "reviewCategory": "production"
     }
   ]
 }

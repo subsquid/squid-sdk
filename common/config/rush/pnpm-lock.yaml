@@ -2,6 +2,7 @@ lockfileVersion: 5.3
 
 specifiers:
   '@rush-temp/scale-codec': file:./projects/scale-codec.tgz
+  '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
   '@rush-temp/util': file:./projects/util.tgz
   '@types/inflected': ^1.1.29
@@ -19,6 +20,7 @@ specifiers:
 
 dependencies:
   '@rush-temp/scale-codec': file:projects/scale-codec.tgz
+  '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz
   '@rush-temp/util': file:projects/util.tgz
   '@types/inflected': 1.1.29
@@ -1128,11 +1130,23 @@ packages:
     dev: false
 
   file:projects/scale-codec.tgz:
-    resolution: {integrity: sha512-4UhzkRtmGhziOcO03o7/9HKEVUhE5L3+ME7Bfwsyg36m1tZ5AlinGTKCd6mlHrUOnNDYAAvjLB1S2v/SlL60pQ==, tarball: file:projects/scale-codec.tgz}
+    resolution: {integrity: sha512-R1MJvOV4XwlC3XSauZNLZ7TujDEg2Wso6sd2sLIVUpw9urI8jaXr4C+qqJcFZ41VLk/fco/AjY9FXShpfb3p2g==, tarball: file:projects/scale-codec.tgz}
     name: '@rush-temp/scale-codec'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.12
+      typescript: 4.5.3
+    dev: false
+
+  file:projects/substrate-metadata.tgz:
+    resolution: {integrity: sha512-glLRkU8VvSbOzBQ4mpg6VsrxGesDc+T5MIego+8bwwJKg2E1YH3fFFGHylqYuouo7wGA4LSLgz0TRXPq0qZ5DA==, tarball: file:projects/substrate-metadata.tgz}
+    name: '@rush-temp/substrate-metadata'
+    version: 0.0.0
+    dependencies:
+      '@types/mocha': 9.0.0
+      '@types/node': 16.11.12
+      expect: 27.4.2
+      mocha: 9.1.3
       typescript: 4.5.3
     dev: false
 
