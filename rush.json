@@ -450,11 +450,15 @@
        "projectFolder": "substrate-processor",
        "reviewCategory": "production"
      },
-    //
-    // {
-    //   "packageName": "my-toolchain",
-    //   "projectFolder": "tools/my-toolchain",
-    //   "reviewCategory": "tools"
-    // }
+     {
+       "packageName": "@subsquid/scale-codec",
+       "projectFolder": "scale-codec",
+       "reviewCategory": "production"
+     },
+    {
+      "packageName": "@subsquid/util",
+      "projectFolder": "util",
+      "reviewCategory": "production"
+    }
   ]
 }

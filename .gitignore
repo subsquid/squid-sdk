@@ -1,6 +1,7 @@
 # Dependency directories
 node_modules/
 
+# Tooling logs
 *.log
 
 # Rush temporary files
@@ -9,5 +10,8 @@ common/temp/
 common/autoinstallers/*/.npmrc
 **/.rush/temp/
 
-
+# IDE
 .idea
+
+# Built js libs
+*/lib
