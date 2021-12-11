@@ -31,6 +31,7 @@ specifiers:
   '@types/shortid': ^0.0.29
   bn.js: ^4.12.0
   camelcase: ^6.2.1
+  chalk: ^4.1.2
   cli-select: ^1.1.2
   cli-ux: ^5.6.3
   commander: ^8.1.0
@@ -90,6 +91,7 @@ dependencies:
   '@types/shortid': 0.0.29
   bn.js: 4.12.0
   camelcase: 6.2.1
+  chalk: 4.1.2
   cli-select: 1.1.2
   cli-ux: 5.6.6
   commander: 8.3.0
@@ -1501,11 +1503,6 @@ packages:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
-    dev: false
-
-  /chalk/5.0.0:
-    resolution: {integrity: sha512-/duVOqst+luxCQRKEo4bNxinsOQtMP80ZYm7mMqzuh5PociNL0PvmHFvREJ9ueYL2TxlHjBcmLCdmocx9Vg+IQ==}
-    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dev: false
 
   /chokidar/3.5.2:
@@ -4862,7 +4859,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-OsttQ6YAcOlCUWaJzvVI/OPD4tuekCDVcU+KBOil5K7DXZlpj0NzH8fjgoQUK3iWXvbMN20S1y6g8jd+cYa2DQ==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-w9gvLJ9DEoScGpVzOtZQtk/azCi4r/0jz0QqvlkI8rn3Kmr9o+v4MWuzJJQa6Tos1TYFbhO7zBYaVGVk/2BiUA==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -4878,7 +4875,7 @@ packages:
       '@types/set-interval-async': 1.0.0
       '@types/shortid': 0.0.29
       bn.js: 4.12.0
-      chalk: 5.0.0
+      chalk: 4.1.2
       commander: 8.3.0
       debug: 4.3.3
       delay: 5.0.0
