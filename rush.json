@@ -464,6 +464,11 @@
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/cli",
+      "projectFolder": "cli",
+      "reviewCategory": "production"
     }
   ]
 }

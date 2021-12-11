@@ -1,0 +1,82 @@
+version: "3.4"
+
+services:
+  db:
+    image: postgres:12
+    restart: always
+    volumes:
+      - /var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  indexer:
+    image: subsquid/hydra-indexer:4
+    restart: unless-stopped
+    environment:
+      - INDEXER_WORKERS=5
+      - DB_NAME=indexer
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_PORT=5432
+      - REDIS_URI=redis://redis:6379/0
+      - BLOCK_HEIGHT=0 # starting block height
+      - WS_PROVIDER_ENDPOINT_URI=${CHAIN_NODE}
+
+    # # If your chain uses custom types you need to provide those
+    # # as detailed here - https://polkadot.js.org/docs/api/start/types.extend
+    # #
+    # # Json files below are passed verbatim to ApiPromise.create() from @polkadot/api.
+    # # Use any combination of those
+    #
+    #   - TYPES_JSON=types.json
+    #   - TYPES_ALIAS=typesAlias.json
+    #   - SPEC_TYPES=typesSpec.json
+    #   - CHAIN_TYPES=typesChain.json
+    #   - BUNDLE_TYPES=typesBundle.json
+    #
+    # volumes:
+    #   - ../types.json:/hydra/packages/hydra-indexer/types.json
+    #   - ../typesAlias.json:/hydra/packages/hydra-indexer/typesAlias.json
+    #   - ../typesSpec.json:/hydra/packages/hydra-indexer/typesSpec.json
+    #   - ../typesChain.json:/hydra/packages/hydra-indexer/typesChain.json
+    #   - ../typesBundle.json:/hydra/packages/hydra-indexer/typesBundle.json
+
+    depends_on:
+      - db
+      - redis
+    command: >
+      sh -c "yarn db:bootstrap && yarn start:prod"
+
+  indexer-gateway:
+    image: subsquid/hydra-indexer-gateway:4
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - db
+      - indexer-status-service
+      - indexer
+    ports:
+      - "{{indexerPort}}:8080"
+    environment:
+      - DEV_MODE=true
+      - DB_NAME=indexer
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_PORT=5432
+      - HYDRA_INDEXER_STATUS_SERVICE=http://indexer-status-service:8081/status
+
+  indexer-status-service:
+    image: subsquid/hydra-indexer-status-service:4
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URI: redis://redis:6379/0
+      PORT: 8081
+
+  redis:
+    image: redis:6.0-alpine
+    restart: always
