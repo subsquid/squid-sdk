@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "6.7.1",
+  "pnpmVersion": "6.23.6",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -445,19 +445,19 @@
     //    */
     //   // "versionPolicyName": ""
     // },
-     {
-       "packageName": "@subsquid/substrate-processor",
-       "projectFolder": "substrate-processor",
-       "reviewCategory": "production"
-     },
-     {
-       "packageName": "@subsquid/scale-codec",
-       "projectFolder": "scale-codec",
-       "reviewCategory": "production"
-     },
     {
-      "packageName": "@subsquid/util",
-      "projectFolder": "util",
+      "packageName": "@subsquid/cli",
+      "projectFolder": "cli",
+      "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/scale-codec",
+      "projectFolder": "scale-codec",
+      "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/substrate-archive",
+      "projectFolder": "substrate-archive",
       "reviewCategory": "production"
     },
     {
@@ -466,8 +466,13 @@
       "reviewCategory": "production"
     },
     {
-      "packageName": "@subsquid/cli",
-      "projectFolder": "cli",
+      "packageName": "@subsquid/substrate-processor",
+      "projectFolder": "substrate-processor",
+      "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/util",
+      "projectFolder": "util",
       "reviewCategory": "production"
     }
   ]
