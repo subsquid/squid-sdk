@@ -9,15 +9,20 @@ import {Range} from "./util/range"
 
 
 export class SubstrateProcessor {
-    private indexer?: string = process.env.INDEXER_URL
+    private archive?: string
+    private ormModel?: string
     private hooks: Hooks = {pre: [], post: [], event: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
 
     constructor(private name: string) {}
 
-    setIndexer(url: string): void {
-        this.indexer = url
+    setOrmModel(jsFile: string | undefined): void {
+        this.ormModel = jsFile
+    }
+
+    setDataSource(archiveUrl: string): void {
+        this.archive = archiveUrl
     }
 
     setBlockRange(range: Range): void {
@@ -84,7 +89,7 @@ export class SubstrateProcessor {
     }
 
     private async _run(): Promise<void> {
-        let db = await Db.connect()
+        let db = await Db.connect({model: this.ormModel})
 
         let {height: heightAtStart} = await db.init(this.name)
         let blockRange = this.blockRange
@@ -98,7 +103,7 @@ export class SubstrateProcessor {
         }
 
         let ingest = new Ingest({
-            indexer: assertNotNull(this.indexer, 'use .setIndexer() to specify indexer url'),
+            archive: assertNotNull(this.archive, 'use .setDataSource() to specify archive url'),
             range: blockRange,
             batchSize: this.batchSize,
             hooks: this.hooks

@@ -1,20 +1,7 @@
+import {createOrmConfig, OrmOptions} from "@subsquid/typeorm-config"
 import assert from "assert"
-import fs from "fs"
-import path from "path"
-import {Connection, ConnectionOptions, createConnection} from "typeorm"
+import {Connection, createConnection} from "typeorm"
 import {Store} from "./interfaces/handlerContext"
-
-
-function loadOrmConfig(): ConnectionOptions {
-    let loc = 'lib/generated/ormconfig.js'
-    if (fs.existsSync(loc)) {
-        return require(path.resolve(loc))
-    } else {
-        throw new Error(
-            `Failed to locate ormconfig at ${loc}. Did you forget to run codegen or compile the code?`
-        )
-    }
-}
 
 
 export interface ProcessingStatus {
@@ -23,8 +10,8 @@ export interface ProcessingStatus {
 
 
 export class Db {
-    static async connect(cfg?: ConnectionOptions): Promise<Db> {
-        cfg = cfg || loadOrmConfig()
+    static async connect(options?: OrmOptions): Promise<Db> {
+        let cfg = createOrmConfig(options)
         let con = await createConnection(cfg)
         return new Db(con)
     }

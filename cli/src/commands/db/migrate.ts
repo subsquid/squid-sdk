@@ -1,13 +1,29 @@
+import {Command} from '@oclif/command'
+import {createOrmConfig} from "@subsquid/typeorm-config"
 import * as dotenv from 'dotenv'
-import { Command } from '@oclif/command'
-import { ormexec } from '../../db'
+import {ConnectionOptions, createConnection} from "typeorm"
+
 
 export default class Migrate extends Command {
-  static description = 'Apply database migrations'
+    static description = 'Apply database migrations'
 
-  async run(): Promise<void> {
-    dotenv.config()
-    const ok = await ormexec(['migration:run'])
-    process.exit(ok ? 0 : 1)
-  }
+    async run(): Promise<void> {
+        dotenv.config()
+
+        let cfg: ConnectionOptions = {
+            ...createOrmConfig(),
+            subscribers: [],
+            synchronize: false,
+            migrationsRun: false,
+            dropSchema: false,
+            logging: ["query", "error", "schema"],
+        }
+
+        let connection = await createConnection(cfg)
+        try {
+            await connection.runMigrations({transaction: 'all'})
+        } finally {
+            await connection.close().catch(err => null)
+        }
+    }
 }

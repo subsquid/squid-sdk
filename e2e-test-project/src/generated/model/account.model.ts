@@ -1,0 +1,32 @@
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import * as marshal from "../marshal"
+import {Status, fromJsonStatus} from "./status"
+import {Transfer} from "./transfer.model"
+
+@Entity_()
+export class Account {
+  constructor(props?: Partial<Account>) {
+    Object.assign(this, props)
+  }
+
+  /**
+   * Account address
+   */
+  @PrimaryColumn_()
+  id!: string
+
+  @Column_("text", {nullable: false})
+  hex!: string
+
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+  balance!: bigint
+
+  @Column_("jsonb", {transformer: {to: obj => obj.toJSON(), from: obj => fromJsonStatus(obj)}, nullable: false})
+  status!: Status
+
+  @OneToMany_(() => Transfer, e => e.toAccount)
+  incomingTx!: Transfer[]
+
+  @OneToMany_(() => Transfer, e => e.fromAccount)
+  outgoingTx!: Transfer[]
+}

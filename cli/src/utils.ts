@@ -2,7 +2,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 
 export function resource(name: string): string {
-  return path.resolve(__dirname, '../../resource', name)
+  return path.resolve(__dirname, '../resource', name)
 }
 
 export function readResource(name: string): string {

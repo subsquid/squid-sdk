@@ -97,6 +97,8 @@ export class OutDir {
 
     add(name: string, srcFile: string | string[]): void {
         let src = Array.isArray(srcFile) ? path.join(...srcFile) : srcFile
+        let dst = this.path(name)
+        fs.mkdirSync(path.dirname(dst), { recursive: true })
         fs.copyFileSync(src, this.path(name))
     }
 

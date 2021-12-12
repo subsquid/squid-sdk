@@ -20,7 +20,7 @@ export interface DataBatch extends Omit<Batch, 'range'> {
 
 
 export interface IngestOptions {
-    indexer: string
+    archive: string
     indexerPollIntervalMS?: number
     range: Range
     batchSize: number
@@ -31,7 +31,7 @@ export interface IngestOptions {
 export class Ingest {
     private out = new Channel<DataBatch | null>(2)
     private _abort = new AbortHandle()
-    private indexerHeight = -1
+    private archiveHeight = -1
     private readonly limit: number
 
     constructor(private options: IngestOptions) {
@@ -62,13 +62,13 @@ export class Ingest {
         while (nextBatch) {
             this._abort.assertNotAborted()
             let batch = nextBatch
-            let indexerHeight = await this.waitIndexerForHeight(batch.range.from)
-            let blocks = await this.batchFetch(batch, indexerHeight)
+            let archiveHeight = await this.waitForHeight(batch.range.from)
+            let blocks = await this.batchFetch(batch, archiveHeight)
             if (blocks.length) {
                 assert(blocks.length <= this.limit)
                 assert(batch.range.from <= blocks[0].block.height)
                 assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].block.height)
-                assert(indexerHeight >= blocks[blocks.length - 1].block.height)
+                assert(archiveHeight >= blocks[blocks.length - 1].block.height)
             }
 
             if (blocks.length === this.limit) {
@@ -76,8 +76,8 @@ export class Ingest {
                 if (maxBlock < rangeEnd(batch.range)) {
                     batch.range = {from: maxBlock + 1, to: batch.range.to}
                 }
-            } else if (indexerHeight < rangeEnd(batch.range)) {
-                batch.range = {from: indexerHeight + 1, to: batch.range.to}
+            } else if (archiveHeight < rangeEnd(batch.range)) {
+                batch.range = {from: archiveHeight + 1, to: batch.range.to}
             } else {
                 nextBatch = batches.shift()
             }
@@ -91,9 +91,9 @@ export class Ingest {
         }
     }
 
-    private async batchFetch(batch: Batch, indexerHeight: number): Promise<BlockData[]> {
+    private async batchFetch(batch: Batch, archiveHeight: number): Promise<BlockData[]> {
         let from = batch.range.from
-        let to = Math.min(indexerHeight, rangeEnd(batch.range))
+        let to = Math.min(archiveHeight, rangeEnd(batch.range))
         assert(from <= to)
 
         let events = Object.keys(batch.events)
@@ -162,7 +162,7 @@ export class Ingest {
         })
 
         let gql = q.toString()
-        let {substrate_block: fetchedBlocks} = await this.indexerRequest<any>(gql)
+        let {substrate_block: fetchedBlocks} = await this.archiveRequest<any>(gql)
 
         let blocks = new Array<BlockData>(fetchedBlocks.length)
         for (let i = 0; i < fetchedBlocks.length; i++) {
@@ -182,20 +182,20 @@ export class Ingest {
         return blocks
     }
 
-    private async waitIndexerForHeight(minimumHeight: number): Promise<number> {
-        while (this.indexerHeight < minimumHeight) {
-            this.indexerHeight = Math.max(this.indexerHeight, await this.fetchIndexerHeight())
-            if (this.indexerHeight >= minimumHeight) {
-                return this.indexerHeight
+    private async waitForHeight(minimumHeight: number): Promise<number> {
+        while (this.archiveHeight < minimumHeight) {
+            this.archiveHeight = Math.max(this.archiveHeight, await this.fetchArchiveHeight())
+            if (this.archiveHeight >= minimumHeight) {
+                return this.archiveHeight
             } else {
                 await wait(this.options.indexerPollIntervalMS || 5000, this._abort)
             }
         }
-        return this.indexerHeight
+        return this.archiveHeight
     }
 
-    private fetchIndexerHeight(): Promise<number> {
-        return this.indexerRequest(`
+    private fetchArchiveHeight(): Promise<number> {
+        return this.archiveRequest(`
             query {
                 indexerStatus {
                     head
@@ -204,8 +204,8 @@ export class Ingest {
         `).then((res: any) => res.indexerStatus.head)
     }
 
-    private async indexerRequest<T>(query: string): Promise<T> {
-        let response = await fetch(this.options.indexer, {
+    private async archiveRequest<T>(query: string): Promise<T> {
+        let response = await fetch(this.options.archive, {
             method: 'POST',
             body: JSON.stringify({query}),
             headers: {
