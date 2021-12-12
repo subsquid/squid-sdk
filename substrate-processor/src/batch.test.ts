@@ -37,7 +37,10 @@ const aBlockHook = aOptionalRange.map(range => {
 })
 
 
-const aEventHook = fc.tuple(aOptionalRange, fc.nat().map(n => n.toString())).map(([range, event]) => {
+const aEventName = fc.nat({max: 100}).map(n => 'e' + n)
+
+
+const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => {
     return {
         range,
         event,
