@@ -1,7 +1,7 @@
-import {assertNotNull, getCamelCase, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, toCamelCase, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import {Field, Primitive, Ti, Type, TypeKind, Variant} from "../types"
-import {normalizeByteSequences} from "../util"
+import {normalizeTypes} from "../util"
 import * as texp from "./typeExp"
 import {OldEnumDefinition, OldSetDefinition, OldStructDefinition, OldTypeExp, OldTypes} from "./types"
 
@@ -14,7 +14,7 @@ export class OldTypeRegistry {
     }
 
     getTypes(): Type[] {
-        return normalizeByteSequences(this.types)
+        return normalizeTypes(this.types)
     }
 
     create(typeName: string, fn: () => Type): Ti {
@@ -28,7 +28,7 @@ export class OldTypeRegistry {
     use(typeExp: OldTypeExp | texp.Type, pallet?: string): Ti {
         let type = typeof typeExp == 'string' ? texp.parse(typeExp) : typeExp
         if (pallet != null && type.kind == 'named') {
-            let section = getCamelCase(pallet)
+            let section = toCamelCase(pallet)
             let alias = this.oldTypes.typesAlias?.[section]?.[type.name]
             if (alias) {
                 type = {kind: 'named', name: alias, params: []}

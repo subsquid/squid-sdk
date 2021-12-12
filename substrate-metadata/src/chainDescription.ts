@@ -4,7 +4,7 @@ import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from ".
 import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Ti, Type, TypeKind, Variant} from "./types"
-import {getTypeByPath, normalizeByteSequences} from "./util"
+import {getTypeByPath, normalizeTypes} from "./util"
 
 
 export interface ChainDescription {
@@ -94,7 +94,7 @@ function fromV14(metadata: MetadataV14): ChainDescription {
         }
     })
 
-    types = normalizeByteSequences(types)
+    types = normalizeTypes(types)
 
     let eventRecord = getTypeByPath(types, ['frame_system', 'EventRecord'])
     let eventRecordList = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)

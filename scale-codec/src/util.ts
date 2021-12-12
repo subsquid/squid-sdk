@@ -1,3 +1,4 @@
+import assert from "assert"
 import {Primitive, Ti, Type, TypeKind, Variant} from "./types"
 
 
@@ -47,4 +48,15 @@ export function normalizeTypes(types: Type[]): Type[] {
                 return type
         }
     })
+}
+
+
+export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
+    assert(val != null, msg)
+    return val
+}
+
+
+export function unexpectedCase(val?: unknown): Error {
+    return new Error(val ? `Unexpected case: ${val}` : `Unexpected case`)
 }

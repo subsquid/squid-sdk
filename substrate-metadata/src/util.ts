@@ -1,8 +1,9 @@
+import {toCamelCase} from "@subsquid/util"
 import crypto from "crypto"
-import {Ti, TypeKind, TypeRegistry} from "./types"
+import {Ti, Type, TypeKind} from "./types"
 
 
-export function normalizeByteSequences(types: TypeRegistry): TypeRegistry {
+export function normalizeTypes(types: Type[]): Type[] {
     function isU8(ti: Ti): boolean {
         let type = types[ti]
         return type.kind == TypeKind.Primitive && type.primitive == 'U8'
@@ -22,6 +23,16 @@ export function normalizeByteSequences(types: TypeRegistry): TypeRegistry {
                 } else {
                     return type
                 }
+            case TypeKind.Composite: {
+                let fields = type.fields.map(f => {
+                    if (f.name) {
+                        return {...f, name: toCamelCase(f.name)}
+                    } else {
+                        return f
+                    }
+                })
+                return  {...type, fields}
+            }
             default:
                 return type
         }
@@ -29,7 +40,7 @@ export function normalizeByteSequences(types: TypeRegistry): TypeRegistry {
 }
 
 
-export function getTypeByPath(types: TypeRegistry, path: string[]): Ti {
+export function getTypeByPath(types: Type[], path: string[]): Ti {
     let idx = types.findIndex(type => {
         if (type.path?.length != path.length) return false
         for (let i = 0; i < path.length; i++) {

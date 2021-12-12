@@ -1,19 +1,19 @@
 import assert from "assert"
-import {getCamelCase, assertNotNull, unexpectedCase} from "@subsquid/util"
 import {Src} from "./src"
-import type {
+import {
     ArrayType,
     BytesArrayType,
     Field,
     OptionType,
+    Primitive,
     SequenceType,
     Ti,
     TupleType,
     Type,
+    TypeKind,
     VariantType
 } from "./types"
-import {Primitive, TypeKind} from "./types"
-import {normalizeTypes} from "./util"
+import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
 
 
 export class Codec {
@@ -106,7 +106,7 @@ export class Codec {
         let result: any = {}
         for (let i = 0; i < def.fields.length; i++) {
             let f = def.fields[i]
-            let key = getCamelCase(assertNotNull(f.name))
+            let key = assertNotNull(f.name)
             result[key] = this.decode(f.type, src)
         }
         return result
