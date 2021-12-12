@@ -1,5 +1,5 @@
+import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
-import {assertNotNull} from "./util"
 
 
 export class Channel<T> {

@@ -1,12 +1,11 @@
+import {def, Output} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Batch, createBatches} from "./batch"
 import {Hooks} from "./interfaces/hooks"
 import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
 import {AbortHandle, Channel, wait} from "./util/async"
-import {Output} from "./util/out"
 import {Range, rangeEnd} from "./util/range"
-import {def} from "./util/util"
 
 
 export interface BlockData {

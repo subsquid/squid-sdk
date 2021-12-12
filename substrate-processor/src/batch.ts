@@ -1,9 +1,9 @@
+import {assertNotNull} from "@subsquid/util"
 import {BlockHandler, EventHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
-import {assertNotNull} from "./util/util"
 
 
 export interface Batch {

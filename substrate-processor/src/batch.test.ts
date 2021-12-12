@@ -1,9 +1,9 @@
+import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import * as fc from "fast-check"
 import {createBatches} from "./batch"
 import {QualifiedName} from "./interfaces/substrate"
 import {Range, rangeEnd, rangeIntersection} from "./util/range"
-import {assertNotNull} from "./util/util"
 
 
 const aClosedRange = fc.tuple(fc.nat(), fc.nat()).map(([a, b]) => {

@@ -1,7 +1,7 @@
 import assert from "assert"
 import fs from "fs"
 import path from "path"
-import {Connection, ConnectionOptions, createConnection, EntityManager} from "typeorm"
+import {Connection, ConnectionOptions, createConnection} from "typeorm"
 import {Store} from "./interfaces/handlerContext"
 
 

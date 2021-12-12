@@ -1,3 +1,4 @@
+import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import {Db} from "./db"
 import {DataBatch, Ingest} from "./ingest"
@@ -5,7 +6,6 @@ import {BlockHandler, BlockHandlerContext, EventHandler} from "./interfaces/hand
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Range} from "./util/range"
-import {assertNotNull} from "./util/util"
 
 
 export class SubstrateProcessor {

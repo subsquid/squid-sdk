@@ -7,7 +7,7 @@ export interface Range {
      */
     from: number
     /**
-     * End of segment (inclusive). Defaults to Infinity
+     * End of segment (inclusive). Defaults to infinity.
      */
     to?: number
 }
