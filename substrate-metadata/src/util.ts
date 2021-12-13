@@ -1,6 +1,6 @@
 import {toCamelCase} from "@subsquid/util"
 import crypto from "crypto"
-import {Ti, Type, TypeKind} from "./types"
+import {Field, Ti, Type, TypeKind} from "./types"
 
 
 export function normalizeTypes(types: Type[]): Type[] {
@@ -23,18 +23,34 @@ export function normalizeTypes(types: Type[]): Type[] {
                 } else {
                     return type
                 }
-            case TypeKind.Composite: {
-                let fields = type.fields.map(f => {
-                    if (f.name) {
-                        return {...f, name: toCamelCase(f.name)}
-                    } else {
-                        return f
-                    }
-                })
-                return  {...type, fields}
-            }
+            case TypeKind.Composite:
+                return  {
+                    ...type,
+                    fields: camelCaseFields(type.fields)
+                }
+            case TypeKind.Variant:
+                return {
+                    ...type,
+                    variants: type.variants.map(v => {
+                        return {
+                            ...v,
+                            fields: camelCaseFields(v.fields)
+                        }
+                    })
+                }
             default:
                 return type
+        }
+    })
+}
+
+
+function camelCaseFields(fields: Field[]): Field[] {
+    return fields.map(f => {
+        if (f.name) {
+            return {...f, name: toCamelCase(f.name)}
+        } else {
+            return f
         }
     })
 }

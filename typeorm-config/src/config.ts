@@ -62,6 +62,6 @@ function resolveModel(model?: string): string {
     model = model || 'lib/generated/model.js'
     if (fs.existsSync(model)) return path.resolve(model)
     throw new Error(
-        `Failed to locate model lib at ${model}. Did you forget to run codegen or compile the code?`
+        `Failed to locate model at ${model}. Did you forget to run codegen or compile the code?`
     )
 }
