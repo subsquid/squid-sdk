@@ -1,4 +1,4 @@
-import {createOrmConfig, OrmOptions} from "@subsquid/typeorm-config"
+import {createOrmConfig} from "@subsquid/typeorm-config"
 import assert from "assert"
 import {Connection, createConnection} from "typeorm"
 import {Store} from "./interfaces/handlerContext"
@@ -10,8 +10,8 @@ export interface ProcessingStatus {
 
 
 export class Db {
-    static async connect(options?: OrmOptions): Promise<Db> {
-        let cfg = createOrmConfig(options)
+    static async connect(): Promise<Db> {
+        let cfg = createOrmConfig()
         let con = await createConnection(cfg)
         return new Db(con)
     }

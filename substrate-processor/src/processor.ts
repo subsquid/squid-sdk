@@ -10,16 +10,11 @@ import {Range} from "./util/range"
 
 export class SubstrateProcessor {
     private archive?: string
-    private ormModel?: string
     private hooks: Hooks = {pre: [], post: [], event: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
 
     constructor(private name: string) {}
-
-    setOrmModel(jsFile: string | undefined): void {
-        this.ormModel = jsFile
-    }
 
     setDataSource(archiveUrl: string): void {
         this.archive = archiveUrl
@@ -89,7 +84,7 @@ export class SubstrateProcessor {
     }
 
     private async _run(): Promise<void> {
-        let db = await Db.connect({model: this.ormModel})
+        let db = await Db.connect()
 
         let {height: heightAtStart} = await db.init(this.name)
         let blockRange = this.blockRange

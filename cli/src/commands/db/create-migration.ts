@@ -15,16 +15,12 @@ export default class CreateMigration extends Command {
     static args = [{name: 'name'}]
 
     async run(): Promise<void> {
-        let {args} = this.parse(CreateMigration)
-        if (!args.name) {
-            args.name = await cli.prompt('Enter migration name', {
-                required: true,
-            })
-        }
-
-        let name: string = args.name
-
         dotenv.config()
+
+        let {args} = this.parse(CreateMigration)
+        let name: string = args.name ? args.name : await cli.prompt('Enter migration name', {
+            required: true,
+        })
 
         let cfg: ConnectionOptions = {
             ...createOrmConfig(),
