@@ -1,0 +1,43 @@
+{
+  "name": "@subsquid/openreader",
+  "version": "0.2.1",
+  "description": "GraphQL server for squid",
+  "keywords": [
+    "graphql",
+    "opencrud"
+  ],
+  "license": "MIT",
+  "bin": {
+    "openreader": "./bin/main.js"
+  },
+  "files": [
+    "dist",
+    "!dist/test"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc"
+  },
+  "dependencies": {
+    "@graphql-tools/merge": "^8",
+    "@graphql-tools/utils": "^8",
+    "@subsquid/graphiql-console": "^0.2.0",
+    "@subsquid/util": "^0.0.0",
+    "apollo-server-core": "^3.3.0",
+    "apollo-server-express": "^3.3.0",
+    "express": "^4.17.1",
+    "graphql": "^15.5.2",
+    "graphql-parse-resolve-info": "^4.12.0",
+    "pg": "^8.7.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/mocha": "^9.0.0",
+    "@types/node-fetch": "^2.5.12",
+    "@types/pg": "^8.6.1",
+    "dotenv": "^10.0.0",
+    "expect": "^27.2.1",
+    "mocha": "^9.1.1",
+    "node-fetch": "^2.6.3",
+    "typescript": "~4.5.3"
+  }
+}

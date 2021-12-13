@@ -1,0 +1,6 @@
+type HistoricalBalance @entity {
+    id: ID!
+    account: Account!
+    balance: BigInt!
+    timestamp: DateTime!
+}

@@ -451,6 +451,11 @@
       "reviewCategory": "production"
     },
     {
+      "packageName": "@subsquid/openreader",
+      "projectFolder": "openreader",
+      "reviewCategory": "production"
+    },
+    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "reviewCategory": "production"

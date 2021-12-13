@@ -1,0 +1,6 @@
+type Account @entity {
+    id: ID!
+    wallet: String!
+    balance: BigInt!
+    historicalBalances: [HistoricalBalance!] @derivedFrom(field: "account")
+}
