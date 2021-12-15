@@ -1,23 +1,15 @@
-import {mergeResolvers} from "@graphql-tools/merge"
-import type {IResolvers} from "@graphql-tools/utils"
-import {ApolloServerPluginDrainHttpServer, Context, ContextFunction} from "apollo-server-core"
-import type {PluginDefinition} from "apollo-server-core/src/types"
-import {ApolloServer, ExpressContext} from "apollo-server-express"
+import {ApolloServerPluginDrainHttpServer} from "apollo-server-core"
+import {ApolloServer} from "apollo-server-express"
 import assert from "assert"
 import express from "express"
 import fs from "fs"
-import type {DocumentNode} from "graphql"
 import http from "http"
 import path from "path"
 import type {Pool} from "pg"
+import {PoolTransaction} from "./db"
 import {buildServerSchema} from "./gql/opencrud"
 import type {Model} from "./model"
 import {buildResolvers} from "./resolver"
-import {Transaction} from "./db"
-
-
-export type ResolversMap = IResolvers
-export {PluginDefinition}
 
 
 export interface ListeningServer {
@@ -31,45 +23,20 @@ export interface ServerOptions {
     db: Pool
     port: number | string
     graphiqlConsole?: boolean
-    customTypeDefs?: [DocumentNode]
-    customResolvers?: ResolversMap
-    customContext?: (ctx: ExpressContext) => Promise<Record<string, any>>
-    customPlugins?: PluginDefinition[]
-    applyCustomMiddlewares?: (app: express.Application) => void
 }
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let resolvers = buildResolvers(options.model)
-    if (options.customResolvers) {
-        resolvers = mergeResolvers([resolvers, options.customResolvers])
-    }
-
-    let typeDefs = [
-        buildServerSchema(options.model),
-        ...(options.customTypeDefs || [])
-    ]
-
-    let db = options.db
-    let context: Context | ContextFunction
-    if (options.customContext) {
-        let customContext = options.customContext
-        context = async (ctx) => {
-            return {
-                openReaderTransaction: new Transaction(db),
-                ...(await customContext(ctx))
-            }
-        }
-    } else {
-        context = () => ({openReaderTransaction: new Transaction(db)})
-    }
-
+    let {model, db} = options
+    let resolvers = buildResolvers(model)
+    let typeDefs = buildServerSchema(model)
     let app = express()
     let server = http.createServer(app)
+
     let apollo = new ApolloServer({
         typeDefs,
         resolvers,
-        context,
+        context: () => ({openReaderTransaction: new PoolTransaction(db)}),
         plugins: [
             {
                 async requestDidStart() {
@@ -80,19 +47,21 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                     }
                 }
             },
-            ...(options.customPlugins || []),
             ApolloServerPluginDrainHttpServer({httpServer: server})
         ]
     })
 
-    await apollo.start()
-
-    options.applyCustomMiddlewares?.(app)
     if (options.graphiqlConsole !== false) {
         setupGraphiqlConsole(app)
     }
-    apollo.applyMiddleware({app})
 
+    await apollo.start()
+    apollo.applyMiddleware({app})
+    return listen(apollo, server, options.port)
+}
+
+
+export function listen(apollo: ApolloServer, server: http.Server, port: number | string): Promise<ListeningServer> {
     return new Promise((resolve, reject) => {
         function onerror(err: Error) {
             cleanup()
@@ -116,7 +85,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
 
         server.on('error', onerror)
         server.on('listening', onlistening)
-        server.listen(options.port)
+        server.listen(port)
     })
 }
 

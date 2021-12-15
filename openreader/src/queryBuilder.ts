@@ -1,6 +1,7 @@
 import {toSnakeCase} from "@subsquid/util"
 import assert from "assert"
 import type {ClientBase, QueryArrayResult} from "pg"
+import {Database} from "./db"
 import type {Entity, JsonObject, Model} from "./model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "./model.tools"
 import {OpenCrudOrderByValue, OrderBy, parseOrderBy} from "./orderBy"
@@ -24,7 +25,7 @@ export class QueryBuilder {
 
     constructor(
         private model: Model,
-        private db: ClientBase
+        private db: Database
     ) {}
 
     private param(value: any): string {
@@ -450,24 +451,24 @@ export class QueryBuilder {
 
     async executeSelect(entityName: string, args: ListArgs, fields$: RequestedFields): Promise<any[]> {
         let sql = this.select(entityName, args, fields$)
-        let result = await this.query(sql)
-        return this.toResult(result.rows, fields$)
+        let rows = await this.query(sql)
+        return this.toResult(rows, fields$)
     }
 
     async executeSelectCount(entityName: string, where?: any): Promise<number> {
         let sql = `SELECT count(*) ${this.select(entityName, {where})}`
-        let result = await this.query(sql)
-        return toInt(result.rows[0][0])
+        let rows = await this.query(sql)
+        return toInt(rows[0][0])
     }
 
     async executeListCount(entityName: string, args: ListArgs): Promise<number> {
         let sql = `SELECT count(*) FROM (SELECT true ${this.select(entityName, args)}) AS ${this.aliases.add('list')}`
-        let result = await this.query(sql)
-        return toInt(result.rows[0][0])
+        let rows = await this.query(sql)
+        return toInt(rows[0][0])
     }
 
-    private query(sql: string): Promise<QueryArrayResult> {
-        return this.db.query({text: sql, rowMode: 'array'}, this.params)
+    private query(sql: string): Promise<any[][]> {
+        return this.db.query(sql, this.params)
     }
 
     fulltextSearchSelect(queryName: string, args: any, $fields: FtsRequestedFields): string {
@@ -532,8 +533,8 @@ export class QueryBuilder {
 
     async executeFulltextSearch(queryName: string, args: any, $fields: FtsRequestedFields): Promise<FtsItem[]> {
         let sql = this.fulltextSearchSelect(queryName, args, $fields)
-        let result = await this.query(sql)
-        return this.toFulltextSearchResult(result.rows, $fields)
+        let rows = await this.query(sql)
+        return this.toFulltextSearchResult(rows, $fields)
     }
 }
 

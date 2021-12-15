@@ -1,2 +1,2 @@
 
-require('./lib/main')()
+require('./dist/main')()

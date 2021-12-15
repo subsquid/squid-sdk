@@ -19,7 +19,6 @@
  * and corresponding js type.
  */
 
-import {IResolvers} from "@graphql-tools/utils"
 import {GraphQLScalarType} from "graphql"
 
 
@@ -181,8 +180,8 @@ function invalidFormat(type: string, value: string): Error {
 export const scalars_list = ['ID'].concat(Object.keys(scalars))
 
 
-export function getScalarResolvers(): IResolvers {
-    let resolvers: IResolvers = {}
+export function getScalarResolvers(): Record<string, GraphQLScalarType> {
+    let resolvers: Record<string, GraphQLScalarType> = {}
     for (let type in scalars) {
         resolvers[type] = scalars[type].gql
     }

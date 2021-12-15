@@ -3,7 +3,7 @@ import {toCamelCase} from "@subsquid/util"
 import {UserInputError} from "apollo-server-core"
 import assert from "assert"
 import type {GraphQLResolveInfo} from "graphql"
-import {ClientBase} from "pg"
+import type {Database, Transaction} from "./db"
 import type {Entity, JsonObject, Model} from "./model"
 import {QueryBuilder} from "./queryBuilder"
 import {
@@ -16,7 +16,6 @@ import {
 } from "./relayConnection"
 import {connectionRequestedFields, ftsRequestedFields, requestedFields} from "./requestedFields"
 import {getScalarResolvers} from "./scalars"
-import {Transaction} from "./db"
 import {ensureArray, toQueryListField, unsupportedCase} from "./util"
 
 
@@ -25,7 +24,7 @@ export interface ResolverContext {
 }
 
 
-export function buildResolvers(model: Model): IResolvers {
+export function buildResolvers(model: Model): IResolvers<unknown, ResolverContext> {
     let Query: Record<string, IFieldResolver<unknown, ResolverContext>> = {}
     let resolvers: IResolvers = {Query, ...getScalarResolvers()}
 
@@ -134,7 +133,7 @@ async function resolveEntityConnection(
     entityName: string,
     args: ConnectionArgs,
     info: GraphQLResolveInfo,
-    db: ClientBase
+    db: Database
 ): Promise<ConnectionResponse> {
     let response: ConnectionResponse = {}
 

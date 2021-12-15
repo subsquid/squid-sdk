@@ -1,0 +1,17 @@
+{
+  "name": "gql-test-client",
+  "version": "0.0.0",
+  "main": "lib/client.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.6",
+    "expect": "^27.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.12",
+    "@types/node-fetch": "^2.5.12",
+    "typescript": "~4.5.3"
+  }
+}

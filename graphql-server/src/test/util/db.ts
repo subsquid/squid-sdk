@@ -1,9 +1,5 @@
-import {Client} from "gql-test-client"
-import {parse} from "graphql"
-import {Client as PgClient, ClientBase, Pool} from "pg"
-import {createPoolConfig} from "../../db"
-import {buildModel, buildSchema} from "../../gql/schema"
-import {ListeningServer, serve} from "../../server"
+import {createPoolConfig} from "@subsquid/openreader/dist/db"
+import {Client as PgClient, ClientBase} from "pg"
 
 
 export const db_config = createPoolConfig()
@@ -42,22 +38,4 @@ export function useDatabase(sql: string[]): void {
         await databaseDelete()
         await databaseInit(sql)
     })
-}
-
-
-export function useServer(schema: string): Client {
-    let client = new Client('not defined')
-    let db = new Pool(db_config)
-    let info: ListeningServer | undefined
-    before(async () => {
-        info = await serve({
-            db,
-            model: buildModel(buildSchema(parse(schema))),
-            port: 0
-        })
-        client.endpoint = `http://localhost:${info.port}/graphql`
-    })
-    after(() => info?.stop())
-    after(() => db.end())
-    return client
 }

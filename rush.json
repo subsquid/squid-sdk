@@ -451,6 +451,11 @@
       "reviewCategory": "production"
     },
     {
+      "packageName": "@subsquid/graphql-server",
+      "projectFolder": "graphql-server",
+      "reviewCategory": "production"
+    },
+    {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "reviewCategory": "production"
@@ -488,6 +493,11 @@
     {
       "packageName": "e2e-test-project",
       "projectFolder": "e2e-test-project",
+      "reviewCategory": "test"
+    },
+    {
+      "packageName": "gql-test-client",
+      "projectFolder": "test/gql-client",
       "reviewCategory": "test"
     }
   ]

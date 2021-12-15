@@ -1,6 +1,6 @@
-import * as fs from "fs"
 import * as path from "path"
-import {ConnectionOptions as OrmConfig} from "typeorm"
+import * as process from "process"
+import type {ConnectionOptions as OrmConfig} from "typeorm"
 import {SnakeNamingStrategy} from "./namingStrategy"
 
 
@@ -25,26 +25,14 @@ export function createConnectionOptions(): ConnectionOptions {
 
 
 export interface OrmOptions {
-    /**
-     * CommonJS module with typeorm entity classes
-     *
-     * @default lib/generated/model.js
-     */
-    model?: string
-    /**
-     * A directory with migrations.
-     *
-     * Every direct child .js file is treated as a migration.
-     *
-     * @default db/migrations
-     */
-    migrationsDir?: string
+    projectDir?: string
 }
 
 
 export function createOrmConfig(options?: OrmOptions): OrmConfig {
-    let model = resolveModel(options?.model)
-    let migrationsDir = path.resolve(options?.migrationsDir || 'db/migrations')
+    let dir = path.resolve(options?.projectDir || process.cwd())
+    let model = resolveModel(path.join(dir, 'lib/model'))
+    let migrationsDir = path.join(dir, 'db/migrations')
     return {
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
@@ -59,9 +47,12 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
 
 
 function resolveModel(model?: string): string {
-    model = model || 'lib/generated/model.js'
-    if (fs.existsSync(model)) return path.resolve(model)
-    throw new Error(
-        `Failed to locate model at ${model}. Did you forget to run codegen or compile the code?`
-    )
+    model = path.resolve(model || 'lib/model')
+    try {
+        return require.resolve(model)
+    } catch(e: any) {
+        throw new Error(
+            `Failed to resolve model ${model}. Did you forget to run codegen or compile the code?`
+        )
+    }
 }
