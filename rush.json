@@ -492,7 +492,7 @@
     },
     {
       "packageName": "e2e-test-project",
-      "projectFolder": "e2e-test-project",
+      "projectFolder": "test/e2e-project",
       "reviewCategory": "test"
     },
     {
