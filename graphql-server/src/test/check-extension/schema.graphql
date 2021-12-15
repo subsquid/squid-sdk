@@ -1,0 +1,4 @@
+type Account @entity {
+  id: ID!
+  balance: Int
+}

@@ -9,7 +9,7 @@
     "squid-graphql-server": "bin/run.js"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc && cp src/test/resolvers-extension/schema.graphql lib/test/resolvers-extension"
+    "build": "make build"
   },
   "dependencies": {
     "@graphql-tools/merge": "^8",

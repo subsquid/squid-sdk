@@ -15,7 +15,7 @@ export class Client {
             }
         })
         if (!response.ok) {
-            throw new Error(`Got http ${response.status}, body: ${await response.text()}`)
+            throw new HttpError(response.status, await response.text())
         }
         expect(response.headers.get('content-type')).toMatch('application/json')
         let result = await response.json()
@@ -25,5 +25,18 @@ export class Client {
     async test(query: string, expectedData: any): Promise<void> {
         let response = await this.query(query)
         expect(response).toEqual({data: expectedData})
+    }
+
+    async errorTest(query: string, errorData: any): Promise<void> {
+        let response = await this.query(query).catch(err => err)
+        expect(response).toBeInstanceOf(HttpError)
+        expect(JSON.parse(response.body)).toEqual(errorData)
+    }
+}
+
+
+export class HttpError extends Error {
+    constructor(public readonly status: number, public readonly body: string) {
+        super(`Got http ${status}, body: ${body} `)
     }
 }
