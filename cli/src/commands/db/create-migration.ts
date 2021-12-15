@@ -1,4 +1,4 @@
-import {Command} from '@oclif/command'
+import {Command} from '@oclif/core'
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull, OutDir} from "@subsquid/util"
 import cli from 'cli-ux'
@@ -17,7 +17,7 @@ export default class CreateMigration extends Command {
     async run(): Promise<void> {
         dotenv.config()
 
-        let {args} = this.parse(CreateMigration)
+        let {args} = await this.parse(CreateMigration)
         let name: string = args.name ? args.name : await cli.prompt('Enter migration name', {
             required: true,
         })

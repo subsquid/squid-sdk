@@ -1,5 +1,5 @@
 
 codegen:
-	@npx squid codegen
+	@npx sqd codegen
 
 .PHONY: codegen

@@ -1,4 +1,4 @@
-import { Command, flags } from '@oclif/command'
+import { Command, Flags } from '@oclif/core'
 import { loadModel } from '@subsquid/openreader/dist/tools'
 import * as dotenv from 'dotenv'
 import * as fs from 'fs'
@@ -7,11 +7,12 @@ import { codegen, CodegenOptions } from '../codegen'
 import { generateFtsMigrations } from '../fts'
 import { OutDir } from '@subsquid/util'
 
+
 export default class Codegen extends Command {
   static description = 'Analyze graphql schema and generate model/server files'
 
   static flags = {
-    schema: flags.string({
+    schema: Flags.string({
       char: 's',
       description: 'Schema path, can be file or directory',
       default: './schema.graphql',
@@ -20,7 +21,7 @@ export default class Codegen extends Command {
 
   async run(): Promise<void> {
     dotenv.config()
-    const { flags } = this.parse(Codegen)
+    const { flags } = await this.parse(Codegen)
     const model = loadModel(path.normalize(flags.schema))
     const pkg = readPackageJson()
     const options: CodegenOptions = {

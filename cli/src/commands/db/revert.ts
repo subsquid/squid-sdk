@@ -1,6 +1,6 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import * as dotenv from 'dotenv'
-import { Command } from '@oclif/command'
+import { Command } from '@oclif/core'
 import {ConnectionOptions, createConnection} from "typeorm"
 
 

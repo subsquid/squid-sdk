@@ -15,22 +15,26 @@
   ],
   "oclif": {
     "commands": "./lib/commands",
-    "bin": "squid",
-    "scope": "@subsquid",
+    "bin": "sqd",
     "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/errors"
-    ]
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "db": {
+        "description": "Database management commands"
+      }
+    }
   },
   "homepage": "https://www.subsquid.io/",
   "scripts": {
-    "build": "rm -rf lib && tsc && oclif-dev manifest"
+    "build": "rm -rf lib && tsc",
+    "prepack": "oclif manifest",
+    "postpack": "rm -f oclif.manifest.json"
   },
   "dependencies": {
-    "@oclif/command": "^1.8.12",
-    "@oclif/config": "^1.18.2",
-    "@oclif/errors": "^1.3.5",
-    "@oclif/plugin-help": "^2",
+    "@oclif/core": "^1.0.10",
+    "@oclif/plugin-help": "^5.1.10",
     "@octokit/auth-oauth-device": "^3.1.2",
     "@subsquid/openreader": "^0.2.1",
     "@subsquid/typeorm-config": "0.0.0",
@@ -39,6 +43,7 @@
     "cli-select": "^1.1.2",
     "cli-ux": "^5.6.3",
     "dotenv": "^10.0.0",
+    "oclif": "^2.0.1",
     "node-fetch": "^2.6.1",
     "pg": "^8.7.1",
     "pgtools": "^0.3.2",
@@ -47,7 +52,6 @@
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@oclif/dev-cli": "^1.26.9",
     "@subsquid/substrate-processor": "^0.0.0",
     "@types/node": "^16.11.12",
     "@types/node-fetch": "^2.5.12",

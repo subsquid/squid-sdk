@@ -25,10 +25,14 @@
     "pg": "^8.7.1"
   },
   "peerDependencies": {
+    "class-validator": "^0.13.2",
     "type-graphql": "^1.2.0-rc.1",
     "typeorm": "^0.2.41"
   },
   "peerDependenciesMeta": {
+    "class-validator": {
+      "optional": true
+    },
     "type-graphql": {
       "optional": true
     },

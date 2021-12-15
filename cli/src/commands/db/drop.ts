@@ -1,4 +1,4 @@
-import {Command} from '@oclif/command'
+import {Command} from '@oclif/core'
 import {createConnectionOptions} from "@subsquid/typeorm-config"
 import * as dotenv from 'dotenv'
 // @ts-ignore
