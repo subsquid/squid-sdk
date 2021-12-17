@@ -1,0 +1,20 @@
+{
+  "name": "@subsquid/substrate-archive-status-service",
+  "private": "true",
+  "version": "0.0.0",
+  "description": "Substrate archive status service",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node lib/app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "ioredis": "^4.27.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^16.11.14",
+    "@types/ioredis": "^4.26.7"
+  }
+}

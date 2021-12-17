@@ -1,0 +1,51 @@
+table:
+  name: substrate_extrinsic
+  schema: public
+configuration:
+  custom_column_names:
+    block_hash: blockHash
+    block_id: blockId
+    block_number: blockNumber
+    index_in_block: indexInBlock
+    is_signed: isSigned
+    version_info: versionInfo
+  custom_root_fields: {}
+array_relationships:
+  - name: substrate_events
+    using:
+      foreign_key_constraint_on:
+        column: extrinsic_id
+        table:
+          schema: public
+          name: substrate_event
+select_permissions:
+- permission:
+    allow_aggregations: true
+    columns:
+    - created_at
+    - created_by_id
+    - updated_at
+    - updated_by_id
+    - deleted_at
+    - deleted_by_id
+    - version
+    - id
+    - tip
+    - block_number
+    - block_hash
+    - version_info
+    - meta
+    - method
+    - index_in_block
+    - section
+    - name
+    - args
+    - signer
+    - signature
+    - nonce
+    - era
+    - hash
+    - is_signed
+    - block_id
+    filter: {}
+  role: user

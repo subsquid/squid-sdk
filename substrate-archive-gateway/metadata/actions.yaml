@@ -1,0 +1,13 @@
+actions:
+- name: indexerStatus
+  definition:
+    kind: ""
+    handler: '{{HYDRA_INDEXER_STATUS_SERVICE}}'
+  permissions:
+  - role: user
+custom_types:
+  enums: []
+  input_objects: []
+  objects:
+  - name: IndexerStatus
+  scalars: []

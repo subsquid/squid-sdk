@@ -15,6 +15,7 @@ specifiers:
   '@rush-temp/openreader': file:./projects/openreader.tgz
   '@rush-temp/scale-codec': file:./projects/scale-codec.tgz
   '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
+  '@rush-temp/substrate-archive-status-service': file:./projects/substrate-archive-status-service.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
@@ -28,7 +29,6 @@ specifiers:
   '@types/ioredis': ^4.26.7
   '@types/lodash': ^4.14.172
   '@types/mocha': ^9.0.0
-  '@types/node': ^16.11.12
   '@types/node-fetch': ^2.5.12
   '@types/pg': ^8.6.1
   '@types/shortid': ^0.0.29
@@ -82,6 +82,7 @@ dependencies:
   '@rush-temp/openreader': file:projects/openreader.tgz
   '@rush-temp/scale-codec': file:projects/scale-codec.tgz
   '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz_pg@8.7.1
+  '@rush-temp/substrate-archive-status-service': file:projects/substrate-archive-status-service.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1
@@ -95,7 +96,6 @@ dependencies:
   '@types/ioredis': 4.28.3
   '@types/lodash': 4.14.178
   '@types/mocha': 9.0.0
-  '@types/node': 16.11.12
   '@types/node-fetch': 2.5.12
   '@types/pg': 8.6.1
   '@types/shortid': 0.0.29
@@ -283,7 +283,7 @@ packages:
     dependencies:
       '@types/istanbul-lib-coverage': 2.0.3
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 16.11.12
+      '@types/node': 16.11.14
       '@types/yargs': 16.0.4
       chalk: 4.1.2
     dev: false
@@ -1118,6 +1118,10 @@ packages:
 
   /@types/node/16.11.12:
     resolution: {integrity: sha512-+2Iggwg7PxoO5Kyhvsq9VarmPbIelXP070HMImEpbtGCoyWNINQj4wzjbQCXzdHTRXnqufutJb5KAURZANNBAw==}
+    dev: false
+
+  /@types/node/16.11.14:
+    resolution: {integrity: sha512-mK6BKLpL0bG6v2CxHbm0ed6RcZrAtTHBTd/ZpnlVPVa3HkumsqLE4BC4u6TQ8D7pnrRbOU0am6epuALs+Ncnzw==}
     dev: false
 
   /@types/normalize-package-data/2.4.1:
@@ -6965,7 +6969,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_ioredis@4.28.2:
-    resolution: {integrity: sha512-n1tzUPW5mM66Pq4vrDrVJBQmPcBb4frpiqBKX4vBGox8xjNf1Dj3KPOaQ7WjqnzKDiKfBV5WQzrOOTliAdQ5dQ==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-SzlNwN+0Mn3ztJTTq1disHEL4p33cwkvkd/iECw6hotHNrLHdcSOeijpz2dnTAGrq7UtO5j0u+tACP/eX4V8Ew==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7017,7 +7021,7 @@ packages:
       '@graphql-tools/utils': 8.5.4_graphql@15.8.0
       '@types/express': 4.17.13
       '@types/mocha': 9.0.0
-      '@types/node': 16.11.12
+      '@types/node': 16.11.14
       '@types/pg': 8.6.1
       apollo-server-core: 3.5.0_graphql@15.8.0
       apollo-server-express: 3.5.0_express@4.17.1+graphql@15.8.0
@@ -7087,6 +7091,20 @@ packages:
       typescript: 4.5.3
     dev: false
 
+  file:projects/substrate-archive-status-service.tgz:
+    resolution: {integrity: sha512-GSdFM+uas/UGKmAU0vkdW6XKAZ9HGxS8uEB8y1srzybqs2YbU27KUdwu6pXDbTemclslJW5Ltfh23e1OG1tYbw==, tarball: file:projects/substrate-archive-status-service.tgz}
+    name: '@rush-temp/substrate-archive-status-service'
+    version: 0.0.0
+    dependencies:
+      '@types/express': 4.17.13
+      '@types/ioredis': 4.28.3
+      '@types/node': 16.11.14
+      express: 4.17.1
+      ioredis: 4.28.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   file:projects/substrate-archive.tgz_pg@8.7.1:
     resolution: {integrity: sha512-w9gvLJ9DEoScGpVzOtZQtk/azCi4r/0jz0QqvlkI8rn3Kmr9o+v4MWuzJJQa6Tos1TYFbhO7zBYaVGVk/2BiUA==, tarball: file:projects/substrate-archive.tgz}
     id: file:projects/substrate-archive.tgz
@@ -7142,7 +7160,7 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/mocha': 9.0.0
-      '@types/node': 16.11.12
+      '@types/node': 16.11.14
       expect: 27.4.2
       mocha: 9.1.3
       typescript: 4.5.3
@@ -7155,7 +7173,7 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/mocha': 9.0.0
-      '@types/node': 16.11.12
+      '@types/node': 16.11.14
       '@types/node-fetch': 2.5.12
       expect: 27.4.2
       fast-check: 2.20.0
@@ -7216,7 +7234,7 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/inflected': 1.1.29
-      '@types/node': 16.11.12
+      '@types/node': 16.11.14
       camelcase: 6.2.1
       inflected: 2.1.0
       typescript: 4.5.3

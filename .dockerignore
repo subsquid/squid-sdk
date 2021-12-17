@@ -1,0 +1,17 @@
+**/node_modules/
+
+# Build artifacts
+/*/lib/
+/test/*/lib
+/openreader/dist/
+
+# Rush temporary files
+/common/deploy/
+/common/temp/
+/common/autoinstallers/*/.npmrc
+**/.rush/temp/
+
+# IDE and tools
+.git
+.idea
+*.log

@@ -1,0 +1,3 @@
+- "!include public_substrate_block.yaml"
+- "!include public_substrate_event.yaml"
+- "!include public_substrate_extrinsic.yaml"

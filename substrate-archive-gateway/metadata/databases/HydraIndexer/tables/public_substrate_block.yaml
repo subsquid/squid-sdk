@@ -1,0 +1,52 @@
+table:
+  name: substrate_block
+  schema: public
+configuration:
+  custom_column_names:
+    extrinsics_root: extrinsicsRoot
+    last_runtime_upgrade: lastRuntimeUpgrade
+    parent_hash: parentHash
+    runtime_version: runtimeVersion
+    state_root: stateRoot
+    validator_id: validatorId
+  custom_root_fields: {}
+array_relationships:
+- name: substrate_events
+  using:
+    foreign_key_constraint_on:
+      column: block_id
+      table:
+        name: substrate_event
+        schema: public
+- name: substrate_extrinsics
+  using:
+    foreign_key_constraint_on:
+      column: block_id
+      table:
+        name: substrate_extrinsic
+        schema: public
+select_permissions:
+- permission:
+    allow_aggregations: true
+    columns:
+    - timestamp
+    - created_by_id
+    - deleted_by_id
+    - extrinsics_root
+    - hash
+    - id
+    - parent_hash
+    - state_root
+    - updated_by_id
+    - height
+    - version
+    - events
+    - extrinsics
+    - validator_id
+    - last_runtime_upgrade
+    - runtime_version
+    - created_at
+    - deleted_at
+    - updated_at
+    filter: {}
+  role: user

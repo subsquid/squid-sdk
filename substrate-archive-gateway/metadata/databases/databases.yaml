@@ -1,0 +1,9 @@
+- name: HydraIndexer
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: HYDRA_INDEXER_DB
+      isolation_level: read-committed
+      use_prepared_statements: false
+  tables: "!include HydraIndexer/tables/tables.yaml"

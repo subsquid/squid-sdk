@@ -1,0 +1,13 @@
+type Query {
+  indexerStatus : IndexerStatus
+}
+
+type IndexerStatus {
+  hydraVersion : String!
+  head : Int!
+  lastComplete : Int!
+  maxComplete : Int!
+  chainHeight : Int!
+  inSync : Boolean!
+}
+

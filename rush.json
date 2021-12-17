@@ -471,6 +471,11 @@
       "reviewCategory": "production"
     },
     {
+      "packageName": "@subsquid/substrate-archive-status-service",
+      "projectFolder": "substrate-archive-status-service",
+      "reviewCategory": "production"
+    },
+    {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "reviewCategory": "production"
