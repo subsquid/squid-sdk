@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
-import {Network} from "./network"
+import {Network} from "./_network"
 import {ComplexEntity} from "./complexEntity.model"
 
 @Entity_()

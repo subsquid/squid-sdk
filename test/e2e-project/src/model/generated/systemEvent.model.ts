@@ -1,6 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import * as marshal from "../marshal"
-import {EventParam} from "./eventParam"
+import * as marshal from "./marshal"
+import {EventParam} from "./_eventParam"
 
 @Entity_()
 export class SystemEvent {

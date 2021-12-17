@@ -1,6 +1,6 @@
-import {MiddleClass} from "./middleClass"
-import {HappyPoor} from "./happyPoor"
-import {Miserable} from "./miserable"
+import {MiddleClass} from "./_middleClass"
+import {HappyPoor} from "./_happyPoor"
+import {Miserable} from "./_miserable"
 
 export type Status = MiddleClass | HappyPoor | Miserable
 

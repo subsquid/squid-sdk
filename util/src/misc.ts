@@ -1,4 +1,7 @@
 import assert from "assert"
+import fs from "fs"
+import * as path from "path"
+import * as process from "process"
 
 
 export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
@@ -38,4 +41,18 @@ export function def(proto: any, prop: string, d: PropertyDescriptor): PropertyDe
 
 export function unexpectedCase(val?: unknown): Error {
     return new Error(val ? `Unexpected case: ${val}` : `Unexpected case`)
+}
+
+
+export function resolveGraphqlSchema(projectDir?: string): string {
+    let dir = projectDir || process.cwd()
+    let loc = path.resolve(dir, 'schema.graphql')
+    if (fs.existsSync(loc)) return loc
+    loc = path.resolve(dir, 'schema')
+    let stat = fs.statSync(loc, {throwIfNoEntry: false})
+    if (stat?.isDirectory()) {
+        let hasGraphql = fs.readdirSync(loc).some(item => item.endsWith('.graphql') || item.endsWith('.gql'))
+        if (hasGraphql) return loc
+    }
+    throw new Error(`Failed to locate schema.graphql at ${dir}`)
 }

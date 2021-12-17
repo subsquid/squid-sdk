@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
-import {HookType} from "./hookType"
+import {HookType} from "./_hookType"
 import {BlockTimestamp} from "./blockTimestamp.model"
 
 /**

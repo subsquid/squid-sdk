@@ -1,6 +1,6 @@
 import assert from "assert"
-import * as marshal from "../marshal"
-import {AdditionalData} from "./additionalData"
+import * as marshal from "./marshal"
+import {AdditionalData} from "./_additionalData"
 
 export class EventParam {
   private _name!: string | undefined | null

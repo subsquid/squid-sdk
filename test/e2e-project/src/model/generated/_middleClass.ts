@@ -1,6 +1,6 @@
 import assert from "assert"
-import * as marshal from "../marshal"
-import {Poor, fromJsonPoor} from "./poor"
+import * as marshal from "./marshal"
+import {Poor, fromJsonPoor} from "./_poor"
 
 export class MiddleClass {
   public readonly isTypeOf = 'MiddleClass'

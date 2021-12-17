@@ -4,30 +4,9 @@ import assert from 'assert'
 import {resource} from "./utils"
 
 
-export interface CodegenOptions {
-    model: Model
-    outDir: OutDir
-    withServer?: boolean
-    withServerExtension?: boolean
-}
-
-
-export function codegen(options: CodegenOptions): void {
-    const {model, outDir: dir} = options
-    dir.del()
-    dir.add('ormconfig.ts', resource('codegen/ormconfig.ts'))
-    if (options.withServer) {
-        dir.add('server.ts', resource('codegen/server.ts'))
-        if (options.withServerExtension) {
-            dir.add('type-graphql.ts', resource('codegen/type-graphql.ts'))
-        }
-    }
-    generateOrmModels(model, dir)
-}
-
-function generateOrmModels(model: Model, dir: OutDir): void {
+export function generateOrmModels(model: Model, dir: OutDir): void {
     const variants = collectVariants(model)
-    const index = dir.file('model.ts')
+    const index = dir.file('index.ts')
 
     for (const name in model) {
         const item = model[name]
@@ -51,8 +30,8 @@ function generateOrmModels(model: Model, dir: OutDir): void {
     dir.add('marshal.ts', resource('codegen/marshal.ts'))
 
     function generateEntity(name: string, entity: Entity): void {
-        index.line(`export * from "./model/${toCamelCase(name)}.model"`)
-        const out = dir.file(`model/${toCamelCase(name)}.model.ts`)
+        index.line(`export * from "./${toCamelCase(name)}.model"`)
+        const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry()
         imports.useTypeorm('Entity', 'Column', 'PrimaryColumn')
         out.lazy(() => imports.render(model))
@@ -196,8 +175,8 @@ function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateObject(name: string, object: JsonObject): void {
-        index.line(`export * from "./model/${toCamelCase(name)}"`)
-        const out = dir.file(`model/${toCamelCase(name)}.ts`)
+        index.line(`export * from "./_${toCamelCase(name)}"`)
+        const out = dir.file(`_${toCamelCase(name)}.ts`)
         const imports = new ImportRegistry()
         imports.useMarshal()
         imports.useAssert()
@@ -350,8 +329,8 @@ function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateUnion(name: string, union: Union): void {
-        index.line(`export * from "./model/${toCamelCase(name)}"`)
-        const out = dir.file(`model/${toCamelCase(name)}.ts`)
+        index.line(`export * from "./_${toCamelCase(name)}"`)
+        const out = dir.file(`_${toCamelCase(name)}.ts`)
         const imports = new ImportRegistry()
         out.lazy(() => imports.render(model))
         union.variants.forEach((v) => imports.useModel(v))
@@ -372,8 +351,8 @@ function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateEnum(name: string, e: Enum): void {
-        index.line(`export * from "./model/${toCamelCase(name)}"`)
-        const out = dir.file(`model/${toCamelCase(name)}.ts`)
+        index.line(`export * from "./_${toCamelCase(name)}"`)
+        const out = dir.file(`_${toCamelCase(name)}.ts`)
         out.block(`export enum ${name}`, () => {
             for (const val in e.values) {
                 out.line(`${val} = "${val}",`)
@@ -382,6 +361,7 @@ function generateOrmModels(model: Model, dir: OutDir): void {
         out.write()
     }
 }
+
 
 function getPropJsType(owner: 'entity' | 'object', prop: Prop): string {
     let type: string
@@ -424,6 +404,7 @@ function getPropJsType(owner: 'entity' | 'object', prop: Prop): string {
     return type
 }
 
+
 function getScalarJsType(typeName: string): string {
     switch(typeName) {
         case 'ID':
@@ -445,11 +426,13 @@ function getScalarJsType(typeName: string): string {
     }
 }
 
+
 function getEnumMaxLength(model: Model, enumName: string): number {
     const e = model[enumName]
     assert(e.kind === 'enum')
     return Object.keys(e.values).reduce((max, v) => Math.max(max, v.length), 0)
 }
+
 
 function collectVariants(model: Model): Set<string> {
     const variants = new Set<string>()
@@ -462,12 +445,14 @@ function collectVariants(model: Model): Set<string> {
     return variants
 }
 
+
 function printComment(obj: { description?: string }, out: Output) {
     if (obj.description) {
         const lines = obj.description.split('\n')
         out.blockComment(lines)
     }
 }
+
 
 class ImportRegistry {
     private typeorm = new Set<string>()
@@ -503,7 +488,7 @@ class ImportRegistry {
             imports.push(`import {${importList.join(', ')}} from "typeorm"`)
         }
         if (this.marshal) {
-            imports.push(`import * as marshal from "../marshal"`)
+            imports.push(`import * as marshal from "./marshal"`)
         }
         for (const name of this.model) {
             switch(model[name].kind) {
@@ -518,7 +503,7 @@ class ImportRegistry {
                         names.push('fromJson' + name)
                     }
                     imports.push(
-                        `import {${names.join(', ')}} from "./${toCamelCase(name)}"`
+                        `import {${names.join(', ')}} from "./_${toCamelCase(name)}"`
                     )
                 }
             }

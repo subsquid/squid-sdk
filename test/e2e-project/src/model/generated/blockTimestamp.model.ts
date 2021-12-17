@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import * as marshal from "../marshal"
+import * as marshal from "./marshal"
 
 /**
  *  Tracks block timestamps 

@@ -1,6 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import * as marshal from "../marshal"
-import {Status, fromJsonStatus} from "./status"
+import * as marshal from "./marshal"
+import {Status, fromJsonStatus} from "./_status"
 import {Transfer} from "./transfer.model"
 
 @Entity_()

@@ -6,7 +6,7 @@
     "rootDir": "src",
     "allowJs": true,
     "strict": true,
-    "declaration": true,
+    "declaration": false,
     "sourceMap": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,

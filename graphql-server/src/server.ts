@@ -5,12 +5,11 @@ import {Model} from "@subsquid/openreader/dist/model"
 import {buildResolvers, ResolverContext} from "@subsquid/openreader/dist/resolver"
 import {listen, ListeningServer, setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
 import {loadModel} from "@subsquid/openreader/dist/tools"
-import {assertNotNull, def} from "@subsquid/util"
+import {assertNotNull, def, resolveGraphqlSchema} from "@subsquid/util"
 import {ApolloServerPluginDrainHttpServer, PluginDefinition} from "apollo-server-core"
 import {ApolloServer, ApolloServerExpressConfig} from "apollo-server-express"
 import assert from "assert"
 import express from "express"
-import * as fs from "fs"
 import * as http from "http"
 import * as path from "path"
 import {Pool} from "pg"
@@ -192,18 +191,7 @@ export class Server {
 
     @def
     model(): Model {
-        return loadModel(this.resolveSchema())
-    }
-
-    resolveSchema(): string {
-        let loc = this.path('schema.graphql')
-        if (fs.existsSync(loc)) return loc
-        loc = this.path('schema')
-        let stat = fs.statSync(loc, {throwIfNoEntry: false})
-        if (stat?.isDirectory()) {
-            let hasGraphql = fs.readdirSync(loc).some(item => item.endsWith('.graphql') || item.endsWith('.gql'))
-            if (hasGraphql) return loc
-        }
-        throw new Error(`Failed to locate schema.graphql at ${this.dir}`)
+        let file = resolveGraphqlSchema(this.dir)
+        return loadModel(file)
     }
 }

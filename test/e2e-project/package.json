@@ -6,9 +6,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/openreader": "^0.2.1",
-    "@subsquid/substrate-processor": "0.0.0",
-    "@subsquid/util": "0.0.0",
+    "@subsquid/graphql-server": "^0.0.0",
+    "@subsquid/substrate-processor": "^0.0.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.1",
     "typeorm": "^0.2.41"
@@ -16,7 +15,6 @@
   "devDependencies": {
     "@subsquid/cli": "0.0.0",
     "@types/node": "^16.11.12",
-    "@types/pg": "^8.6.1",
     "typescript": "~4.5.3"
   }
 }

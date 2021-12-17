@@ -1,9 +1,11 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import {Network} from "./network"
+import * as marshal from "./marshal"
+import {Network} from "./_network"
+import {Status, fromJsonStatus} from "./_status"
 
 @Entity_()
-export class EventA {
-  constructor(props?: Partial<EventA>) {
+export class EventB {
+  constructor(props?: Partial<EventB>) {
     Object.assign(this, props)
   }
 
@@ -23,5 +25,8 @@ export class EventA {
   indexInBlock!: number
 
   @Column_("text", {nullable: false})
-  field1!: string
+  field2!: string
+
+  @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.map((val: any) => val.toJSON()), from: obj => obj == null ? undefined : marshal.fromList(obj, val => fromJsonStatus(val))}, nullable: true})
+  statusList!: (Status)[] | undefined | null
 }

@@ -1,5 +1,5 @@
-import {HappyPoor} from "./happyPoor"
-import {Miserable} from "./miserable"
+import {HappyPoor} from "./_happyPoor"
+import {Miserable} from "./_miserable"
 
 export type Poor = HappyPoor | Miserable
 
