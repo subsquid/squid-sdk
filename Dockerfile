@@ -48,7 +48,6 @@ ADD test/e2e-project/db test/e2e-project/db
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
 ADD test/e2e-project/tsconfig.json test/e2e-project/
-ADD test/e2e-project/Makefile test/e2e-project/
 ADD test/gql-client/src test/gql-client/src
 ADD test/gql-client/tsconfig.json test/gql-client/
 ADD typeorm-config/src typeorm-config/src

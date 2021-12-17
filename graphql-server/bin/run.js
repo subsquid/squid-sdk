@@ -1,1 +1,2 @@
-require('./lib/main').main()
+require('dotenv').config()
+require('../lib/main').main()
