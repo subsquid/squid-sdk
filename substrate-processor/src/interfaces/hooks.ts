@@ -1,5 +1,5 @@
 import {Range} from "../util/range"
-import {BlockHandler, EventHandler} from "./handlerContext"
+import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
 import {QualifiedName} from "./substrate"
 
 
@@ -11,8 +11,16 @@ export interface BlockHook {
 
 export interface EventHook {
     event: QualifiedName
-    range?: Range
     handler: EventHandler
+    range?: Range
+}
+
+
+export interface ExtrinsicHook {
+    event: QualifiedName
+    extrinsic: QualifiedName
+    handler: ExtrinsicHandler
+    range?: Range
 }
 
 
@@ -20,4 +28,5 @@ export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
     event: EventHook[]
+    extrinsic: ExtrinsicHook[]
 }

@@ -33,8 +33,8 @@ export class Db {
                 `SELECT height FROM ${schema}.status WHERE id = 0`
             )
             if (status.length == 0) {
-                await em.query(`INSERT INTO ${schema}.status (id, height) VALUES (0, 0)`)
-                return {height: 0}
+                await em.query(`INSERT INTO ${schema}.status (id, height) VALUES (0, -1)`)
+                return {height: -1}
             } else {
                 return status[0]
             }

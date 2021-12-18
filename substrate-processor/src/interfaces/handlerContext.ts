@@ -22,6 +22,16 @@ export interface EventHandler {
 }
 
 
+export interface ExtrinsicHandlerContext extends EventHandlerContext {
+    extrinsic: SubstrateExtrinsic
+}
+
+
+export interface ExtrinsicHandler {
+    (ctx: ExtrinsicHandlerContext): Promise<void>
+}
+
+
 export interface BlockHandlerContext {
     store: Store
     block: SubstrateBlock

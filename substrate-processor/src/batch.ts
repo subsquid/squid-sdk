@@ -1,5 +1,5 @@
 import {assertNotNull} from "@subsquid/util"
-import {BlockHandler, EventHandler} from "./interfaces/handlerContext"
+import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
@@ -11,6 +11,10 @@ export interface Batch {
     pre: BlockHandler[]
     post: BlockHandler[]
     events: Record<QualifiedName, EventHandler[]>
+    /**
+     * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
+     */
+    extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
 }
 
 
@@ -32,7 +36,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
             range,
             pre: [hook.handler],
             post: [],
-            events: {}
+            events: {},
+            extrinsics: {}
         })
     })
 
@@ -43,7 +48,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
             range,
             pre: [],
             post: [hook.handler],
-            events: {}
+            events: {},
+            extrinsics: {}
         })
     })
 
@@ -56,6 +62,21 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
             post: [],
             events: {
                 [hook.event]: [hook.handler]
+            },
+            extrinsics: {}
+        })
+    })
+
+    hooks.extrinsic.forEach(hook => {
+        let range = getRange(hook)
+        if (!range) return
+        batches.push({
+            range,
+            pre: [],
+            post: [],
+            events: {},
+            extrinsics: {
+                [hook.event]: {[hook.extrinsic]: [hook.handler]}
             }
         })
     })
@@ -103,28 +124,27 @@ function mergeBatchHandlers(a: Batch, b: Batch, range: Range): Batch {
         range,
         pre: a.pre.concat(b.pre),
         post: a.post.concat(b.post),
-        events: mergeHandlers(a.events, b.events)
+        events: mergeMaps(a.events, b.events, (ha, hb) => ha.concat(hb)),
+        extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
+            return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
+        })
     }
 }
 
 
-function mergeHandlers<T>(a: Record<string, T[]>, b: Record<string, T[]>): Record<string, T[]> {
-    let result: Record<string, T[]> = {}
-
-    function add(col: Record<string, T[]>, key: string): void {
-        let list = result[key]
-        if (list == null) {
-            result[key] = col[key].slice()
+function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a: T, b: T) => T): Record<string, T> {
+    let result: Record<string, T> = {}
+    for (let key in a) {
+        if (b[key] == null) {
+            result[key] = a[key]
         } else {
-            list.push(...col[key])
+            result[key] = mergeItems(a[key], b[key])
         }
     }
-
-    for (let key in a) {
-        add(a, key)
-    }
     for (let key in b) {
-        add(b, key)
+        if (result[key] == null) {
+            result[key] = b[key]
+        }
     }
     return result
 }

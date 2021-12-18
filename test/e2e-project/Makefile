@@ -1,5 +1,4 @@
-process:
-	@npx sqd db:migrate
+process: migrate
 	@node -r dotenv/config lib/process.js
 
 serve:
@@ -11,6 +10,9 @@ codegen:
 migration:
 	@npx sqd db:create-migration Initial
 
+migrate:
+	@npx sqd db:migrate
+
 HASURA := $(shell if [ "$$(uname -m)" == "arm64" ]; then echo "fedormelexin/graphql-engine-arm64:v2.0.10.cli-migrations-v3"; else echo "hasura/graphql-engine:v2.0.10.cli-migrations-v3"; fi)
 
 up:
@@ -20,4 +22,4 @@ up:
 down:
 	@docker-compose down
 
-.PHONY: process serve codegen migration up down
+.PHONY: process serve codegen migration migrate up down

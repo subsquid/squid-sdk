@@ -55,7 +55,8 @@ const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => 
 const aHooks = fc.record({
     pre: fc.array(aBlockHook),
     post: fc.array(aBlockHook),
-    event: fc.array(aEventHook)
+    event: fc.array(aEventHook),
+    extrinsic: fc.constant([])
 })
 
 
@@ -200,6 +201,7 @@ export interface AHooks {
     pre: ABlockHook[]
     post: ABlockHook[]
     event: AEventHook[]
+    extrinsic: any[]
 }
 
 
@@ -208,4 +210,5 @@ interface ABatch {
     pre: ABlockHandler[],
     post: ABlockHandler[],
     events: Record<string, AEventHandler[]>
+    extrinsics: {}
 }

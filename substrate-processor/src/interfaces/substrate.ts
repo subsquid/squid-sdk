@@ -78,42 +78,34 @@ export interface SubstrateEvent {
      * Event id, in the form <blockNumber>-<index>
      */
     id: string
-
     /**
      * Event name, in the form section.method
      */
     name: QualifiedName
-
     /**
      * Event method (as defined in the runtime metadata)
      */
     method: string
-
     /**
      * Event section
      */
     section?: string
-
     /**
      * Array of raw JSON object with event parameters
      */
     params: EventParam[]
-
     /**
      * Ordinal index in the event array of the current block
      */
     indexInBlock: number
-
     /**
      * Block height it appeared in
      */
     blockNumber: number
-
     /**
-     * If it was emitted in the ApplyExtrinsic phase, the undeflying extrinsic information
+     * If it was emitted in the ApplyExtrinsic phase, the underlying extrinsic information
      */
     extrinsic?: SubstrateExtrinsic
-
     /**
      * Timestamp of the block, as set by call timestamp.now()
      */
@@ -129,52 +121,46 @@ export interface SubstrateExtrinsic {
      * extrinsic id
      */
     id: string
-
+    /**
+     * extrinsic name (`${section}.${method}`)
+     */
+    name: QualifiedName
     /**
      * extrinsic method
      */
     method: string
-
     /**
      * extrinsic section
      */
     section: string
-
     /**
      * extrinsic version information
      */
     versionInfo?: string
-
     /**
      * Raw JSON with extrinsic era
      */
     era?: unknown
-
     /**
      * Hex string representing the extrinsic signer
      */
     signer: string
-
     /**
      * Hex string with the signature
      */
     signature?: string
-
     /**
      * An array of raw JSON with extrinsic arguments
      */
     args: ExtrinsicArg[]
-
     /**
      * Hex string of the extrinsic hash
      */
     hash?: string
-
     /**
      * Extrinsic tip
      */
     tip: bigint
-
     /**
      * Ordinal index in the event array of the current block
      */

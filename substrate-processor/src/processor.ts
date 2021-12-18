@@ -2,15 +2,31 @@ import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import {Db} from "./db"
 import {DataBatch, Ingest} from "./ingest"
-import {BlockHandler, BlockHandlerContext, EventHandler} from "./interfaces/handlerContext"
+import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Range} from "./util/range"
 
 
+export interface BlockHookOptions {
+    range?: Range
+}
+
+
+export interface EventHandlerOptions {
+    range?: Range
+}
+
+
+export interface ExtrinsicHandlerOptions {
+    range?: Range
+    triggerEvents?: QualifiedName[]
+}
+
+
 export class SubstrateProcessor {
     private archive?: string
-    private hooks: Hooks = {pre: [], post: [], event: []}
+    private hooks: Hooks = {pre: [], post: [], event: [], extrinsic: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
 
@@ -30,48 +46,71 @@ export class SubstrateProcessor {
     }
 
     addPreHook(fn: BlockHandler): void
-    addPreHook(range: Range, fn: BlockHandler): void
-    addPreHook(fnOrRange: BlockHandler | Range, fn?: BlockHandler): void {
+    addPreHook(options: BlockHookOptions, fn: BlockHandler): void
+    addPreHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
         let handler: BlockHandler
-        let range: Range | undefined
-        if (typeof fnOrRange == 'function') {
-            handler = fnOrRange
+        let options: BlockHookOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
-            range = fnOrRange
+            options = fnOrOptions
         }
-        this.hooks.pre.push({handler, range})
+        this.hooks.pre.push({handler, ...options})
     }
 
     addPostHook(fn: BlockHandler): void
-    addPostHook(range: Range, fn: BlockHandler): void
-    addPostHook(fnOrRange: BlockHandler | Range, fn?: BlockHandler): void {
+    addPostHook(options: BlockHookOptions, fn: BlockHandler): void
+    addPostHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
         let handler: BlockHandler
-        let range: Range | undefined
-        if (typeof fnOrRange == 'function') {
-            handler = fnOrRange
+        let options: BlockHookOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
-            range = fnOrRange
+            options = fnOrOptions
         }
-        this.hooks.post.push({handler, range})
+        this.hooks.post.push({handler, ...options})
     }
 
     addEventHandler(eventName: QualifiedName, fn: EventHandler): void
-    addEventHandler(eventName: QualifiedName, blockRange: Range, fn: EventHandler): void
-    addEventHandler(eventName: QualifiedName, blockRangeOrHandler: Range | EventHandler, fn?: EventHandler): void {
-        if (typeof blockRangeOrHandler === 'function') {
-            this.hooks.event.push({
-                event: eventName,
-                handler: blockRangeOrHandler
-            })
+    addEventHandler(eventName: QualifiedName, options: EventHandlerOptions, fn: EventHandler): void
+    addEventHandler(eventName: QualifiedName, fnOrOptions: EventHandlerOptions | EventHandler, fn?: EventHandler): void {
+        let handler: EventHandler
+        let options: EventHandlerOptions = {}
+        if (typeof fnOrOptions === 'function') {
+            handler = fnOrOptions
         } else {
-            this.hooks.event.push({
-                event: eventName,
-                range: blockRangeOrHandler,
-                handler: assertNotNull(fn)
-            })
+            handler = assertNotNull(fn)
+            options = fnOrOptions
         }
+        this.hooks.event.push({
+            event: eventName,
+            handler,
+            ...options
+        })
+    }
+
+    addExtrinsicHandler(extrinsicName: QualifiedName, fn: ExtrinsicHandler): void
+    addExtrinsicHandler(extrinsicName: QualifiedName, options: ExtrinsicHandlerOptions, fn: ExtrinsicHandler): void
+    addExtrinsicHandler(extrinsicName: QualifiedName, fnOrOptions: ExtrinsicHandler | ExtrinsicHandlerOptions, fn?: ExtrinsicHandler): void {
+        let handler: ExtrinsicHandler
+        let options: ExtrinsicHandlerOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        let triggers = options.triggerEvents || ['system.ExtrinsicSuccess']
+        new Set(triggers).forEach(event => {
+            this.hooks.extrinsic.push({
+                event,
+                handler,
+                extrinsic: extrinsicName,
+                range: options.range
+            })
+        })
     }
 
     run(): void {
@@ -120,7 +159,7 @@ export class SubstrateProcessor {
         let batch: DataBatch | null
         let startHeight = 0
         while (batch = await ingest.nextBatch()) {
-            let {pre, post, events, blocks} = batch
+            let {pre, post, events, extrinsics, blocks} = batch
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]
                 await db.transact(this.name, block.block.height, async store => {
@@ -133,9 +172,15 @@ export class SubstrateProcessor {
                     }
                     for (let j = 0; j < block.events.length; j++) {
                         let event = block.events[j]
-                        let handlers = events[event.name] || []
-                        for (let k = 0; k < handlers.length; k++) {
-                            await handlers[k]({...ctx, event})
+                        let extrinsic = event.extrinsic
+                        let eventHandlers = events[event.name] || []
+                        for (let k = 0; k < eventHandlers.length; k++) {
+                            await eventHandlers[k]({...ctx, event, extrinsic})
+                        }
+                        if (extrinsic == null) continue
+                        let callHandlers = extrinsics[event.name]?.[extrinsic.name] || []
+                        for (let k = 0; k < callHandlers.length; k++) {
+                            await callHandlers[k]({...ctx, event, extrinsic})
                         }
                     }
                     for (let j = 0; j < post.length; j++) {

@@ -5,6 +5,7 @@ import {Batch, createBatches} from "./batch"
 import {Hooks} from "./interfaces/hooks"
 import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
 import {AbortHandle, Channel, wait} from "./util/async"
+import {unique} from "./util/misc"
 import {Range, rangeEnd} from "./util/range"
 
 
@@ -86,7 +87,8 @@ export class Ingest {
                 blocks,
                 pre: batch.pre,
                 post: batch.post,
-                events: batch.events
+                events: batch.events,
+                extrinsics: batch.extrinsics
             }))
         }
     }
@@ -101,28 +103,46 @@ export class Ingest {
 
         // filters
         let height = `height: {_gte: ${from}, _lte: ${to}}`
-
-        let where: string
+        let blockWhere: string
         if (notAllBlocksRequired) {
-            let blockEvents = events.map(name => `events: {_contains: [{name: "${name}"}]}`)
-            if (blockEvents.length > 1) {
-                where = `{_and: [{${height}}, {_or: [${blockEvents.map(f => `{${f}}`).join(', ')}]}]}`
+            let or: string[] = []
+            events.forEach(name => {
+                or.push(`events: {_contains: [{name: "${name}"}]}`)
+            })
+            let extrinsics = unique(Object.entries(batch.extrinsics).flatMap(e => Object.keys(e[1])))
+            extrinsics.forEach(name => {
+                or.push(`extrinsics: {_contains: [{name: "${name}"}]}`)
+            })
+            if (or.length > 1) {
+                blockWhere = `{_and: [{${height}}, {_or: [${or.map(f => `{${f}}`).join(', ')}]}]}`
             } else {
-                assert(blockEvents.length == 1)
-                where = `{${height} ${blockEvents[0]}}`
+                assert(or.length == 1)
+                blockWhere = `{${height} ${or[0]}}`
             }
         } else {
-            where = `{${height}}`
+            blockWhere = `{${height}}`
         }
 
         let eventWhere = ''
-        if (events.length > 0) {
-            eventWhere = `where: {name: {_in: [${events.map(name => `"${name}"`)}]}}`
+        {
+            let or: string[] = []
+            if (events.length > 0) {
+                or.push(`name: {_in: [${events.map(event => `"${event}"`).join(', ')}]}`)
+            }
+            for (let event in batch.extrinsics) {
+                let extrinsics = Object.keys(batch.extrinsics[event])
+                or.push(`name: {_eq: "${event}"}, extrinsic: {name: {_in: [${extrinsics.map(name => `"${name}"`).join(', ')}]}}`)
+            }
+            if (or.length == 1) {
+                eventWhere = ` where: {${or[0]}}`
+            } else if (or.length > 1) {
+                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}]}`
+            }
         }
 
         let q = new Output()
         q.block(`query`, () => {
-            q.block(`substrate_block(limit: ${this.limit} order_by: {height: asc} where: ${where})`, () => {
+            q.block(`substrate_block(limit: ${this.limit} order_by: {height: asc} where: ${blockWhere})`, () => {
                 q.line('id')
                 q.line('hash')
                 q.line('height')
@@ -135,7 +155,7 @@ export class Ingest {
                 q.line('events')
                 q.line('extrinsics')
                 q.line()
-                q.block(`substrate_events(order_by: {indexInBlock: asc} ${eventWhere})`, () => {
+                q.block(`substrate_events(order_by: {indexInBlock: asc}${eventWhere})`, () => {
                     q.line('id')
                     q.line('name')
                     q.line('method')
