@@ -2,7 +2,6 @@ import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import * as fc from "fast-check"
 import {createBatches} from "./batch"
-import {QualifiedName} from "./interfaces/substrate"
 import {Range, rangeEnd, rangeIntersection} from "./util/range"
 
 
@@ -37,7 +36,7 @@ const aBlockHook = aOptionalRange.map(range => {
 })
 
 
-const aEventName = fc.nat({max: 100}).map(n => 'e' + n)
+const aEventName = fc.nat({max: 50}).map(n => 'e' + n)
 
 
 const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => {
@@ -52,11 +51,28 @@ const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => 
 })
 
 
-const aHooks = fc.record({
+const aCallName = fc.nat({max: 50}).map(n => 'c' + n)
+
+
+const aExtrinsicHook = fc.tuple(aOptionalRange, aCallName, aEventName).map(([range, extrinsic, event]) => {
+    return {
+        range,
+        extrinsic,
+        event,
+        handler: {
+            range: range == null ? {from: 0} : range,
+            event,
+            extrinsic
+        }
+    }
+})
+
+
+const aHooks = fc.record<AHooks>({
     pre: fc.array(aBlockHook),
     post: fc.array(aBlockHook),
     event: fc.array(aEventHook),
-    extrinsic: fc.constant([])
+    extrinsic: fc.array(aExtrinsicHook)
 })
 
 
@@ -105,7 +121,12 @@ describe('batching', function () {
                 let eventHandlersOk = Object.entries(b.events).every(([e, handlers]) => {
                     return handlers.every(h => containsRange(h.range, b.range))
                 })
-                return prePostHooksOk && eventHandlersOk
+                let extrinsicHandlersOk = Object.entries(b.extrinsics).every(e => {
+                    return Object.entries(e[1]).every(([_, handlers]) => {
+                        return handlers.every(h => containsRange(h.range, b.range))
+                    })
+                })
+                return prePostHooksOk && eventHandlersOk && extrinsicHandlersOk
             })
         })
     })
@@ -120,11 +141,23 @@ describe('batching', function () {
         })
     })
 
+    it('each extrinsic handler is never called for wrong extrinsic', function () {
+        assertBatch(batches => {
+            return batches.every(b => {
+                return Object.entries(b.extrinsics).every(([event, extrinsics]) => {
+                    return Object.entries(extrinsics).every(([extrinsic, handlers]) => {
+                        return handlers.every(h => h.event === event && h.extrinsic === extrinsic)
+                    })
+                })
+            })
+        })
+    })
+
     it('the entire range of each handler is covered', function () {
         fc.assert(fc.property(aHooksWithRange, ([hooks, blockRange]) => {
             let handlers = new Map<{range: Range}, Range | undefined>()
 
-            function add(hook: AEventHook | ABlockHook): void {
+            function add(hook: AEventHook | ABlockHook | AExtrinsicHook): void {
                 let range = hook.handler.range
                 if (blockRange) {
                     let i = rangeIntersection(blockRange, range)
@@ -140,10 +173,11 @@ describe('batching', function () {
             hooks.pre.forEach(add)
             hooks.post.forEach(add)
             hooks.event.forEach(add)
+            hooks.extrinsic.forEach(add)
 
             let batches = makeBatches(hooks, blockRange)
             batches.forEach(b => {
-                function call(h: AEventHandler | ABlockHandler): void {
+                function call(h: AEventHandler | ABlockHandler | AExtrinsicHandler): void {
                     let range = assertNotNull(handlers.get(h))
                     assert(b.range.from == range.from)
                     if (b.range.to != null && b.range.to < rangeEnd(range)) {
@@ -157,6 +191,11 @@ describe('batching', function () {
                 b.post.forEach(call)
                 Object.entries(b.events).forEach(([event, hs]) => {
                     hs.forEach(call)
+                })
+                Object.entries(b.extrinsics).forEach(([event, extrinsics]) => {
+                    Object.entries(extrinsics).forEach(([ex, hs]) => {
+                        hs.forEach(call)
+                    })
                 })
             })
 
@@ -184,16 +223,31 @@ interface AEventHandler {
 }
 
 
-export interface ABlockHook {
-    range?: Range
-    handler: ABlockHandler
+interface AExtrinsicHandler {
+    range: Range
+    event: string
+    extrinsic: string
 }
 
 
-export interface AEventHook {
-    event: QualifiedName
+export interface ABlockHook {
+    handler: ABlockHandler
     range?: Range
+}
+
+
+interface AEventHook {
     handler: AEventHandler
+    event: string
+    range?: Range
+}
+
+
+interface AExtrinsicHook {
+    handler: AExtrinsicHandler
+    event: string
+    extrinsic: string
+    range?: Range
 }
 
 
@@ -201,7 +255,7 @@ export interface AHooks {
     pre: ABlockHook[]
     post: ABlockHook[]
     event: AEventHook[]
-    extrinsic: any[]
+    extrinsic: AExtrinsicHook[]
 }
 
 
@@ -210,5 +264,5 @@ interface ABatch {
     pre: ABlockHandler[],
     post: ABlockHandler[],
     events: Record<string, AEventHandler[]>
-    extrinsics: {}
+    extrinsics: Record<string, Record<string, AExtrinsicHandler[]>>
 }

@@ -4,22 +4,22 @@ import {QualifiedName} from "./substrate"
 
 
 export interface BlockHook {
-    range?: Range
     handler: BlockHandler
+    range?: Range
 }
 
 
 export interface EventHook {
-    event: QualifiedName
     handler: EventHandler
+    event: QualifiedName
     range?: Range
 }
 
 
 export interface ExtrinsicHook {
+    handler: ExtrinsicHandler
     event: QualifiedName
     extrinsic: QualifiedName
-    handler: ExtrinsicHandler
     range?: Range
 }
 
