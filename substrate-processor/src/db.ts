@@ -55,6 +55,10 @@ export class Db {
             await em.query(`UPDATE ${schema}.status SET height = $1`, [blockNumber])
         })
     }
+
+    stop(): Promise<void> {
+        return this.con.close()
+    }
 }
 
 

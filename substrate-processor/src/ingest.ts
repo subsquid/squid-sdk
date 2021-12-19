@@ -1,9 +1,10 @@
-import {def, Output} from "@subsquid/util"
+import {Output} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Batch, createBatches} from "./batch"
 import {Hooks} from "./interfaces/hooks"
 import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
+import {Prometheus} from "./prometheus"
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {Range, rangeEnd} from "./util/range"
@@ -25,7 +26,8 @@ export interface IngestOptions {
     indexerPollIntervalMS?: number
     range: Range
     batchSize: number
-    hooks: Hooks
+    hooks: Hooks,
+    prometheus?: Prometheus
 }
 
 
@@ -34,24 +36,28 @@ export class Ingest {
     private _abort = new AbortHandle()
     private archiveHeight = -1
     private readonly limit: number
+    private readonly ingestion: Promise<void | Error>
 
     constructor(private options: IngestOptions) {
         this.limit = this.options.batchSize
         assert(this.limit > 0)
+        this.ingestion = this.run()
     }
 
     nextBatch(): Promise<DataBatch | null> {
         return this.out.take()
     }
 
-    abort(): void {
+    stop(): Promise<Error | void> {
         this._abort.abort()
+        return this.ingestion
     }
 
-    @def
-    async run(): Promise<void> {
+    private async run(): Promise<void | Error> {
         try {
             await this.loop()
+        } catch(err: any) {
+            return err
         } finally {
             this.out.close(null)
         }
@@ -214,14 +220,17 @@ export class Ingest {
         return this.archiveHeight
     }
 
-    private fetchArchiveHeight(): Promise<number> {
-        return this.archiveRequest(`
+    private async fetchArchiveHeight(): Promise<number> {
+        let res: any = await this.archiveRequest(`
             query {
                 indexerStatus {
                     head
                 }
             }
-        `).then((res: any) => res.indexerStatus.head)
+        `)
+        let height: number = res.indexerStatus.head
+        this.options.prometheus?.setChainHeight(height)
+        return height
     }
 
     private async archiveRequest<T>(query: string): Promise<T> {

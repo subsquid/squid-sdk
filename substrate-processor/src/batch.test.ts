@@ -36,7 +36,7 @@ const aBlockHook = aOptionalRange.map(range => {
 })
 
 
-const aEventName = fc.nat({max: 50}).map(n => 'e' + n)
+const aEventName = fc.nat({max: 10}).map(n => 'e' + n)
 
 
 const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => {
@@ -51,7 +51,7 @@ const aEventHook = fc.tuple(aOptionalRange, aEventName).map(([range, event]) => 
 })
 
 
-const aCallName = fc.nat({max: 50}).map(n => 'c' + n)
+const aCallName = fc.nat({max: 10}).map(n => 'c' + n)
 
 
 const aExtrinsicHook = fc.tuple(aOptionalRange, aCallName, aEventName).map(([range, extrinsic, event]) => {
@@ -131,7 +131,7 @@ describe('batching', function () {
         })
     })
 
-    it('each event handler is never called for wrong event', function () {
+    it('event handler is never called for wrong event', function () {
         assertBatch(batches => {
             return batches.every(b => {
                 return Object.entries(b.events).every(([e, handlers]) => {
@@ -141,7 +141,7 @@ describe('batching', function () {
         })
     })
 
-    it('each extrinsic handler is never called for wrong extrinsic', function () {
+    it('extrinsic handler is never called for wrong extrinsic', function () {
         assertBatch(batches => {
             return batches.every(b => {
                 return Object.entries(b.extrinsics).every(([event, extrinsics]) => {
@@ -201,7 +201,7 @@ describe('batching', function () {
 
             return Array.from(handlers.values()).every(r => r == null)
         }), {
-            numRuns: 5000
+            numRuns: 2000
         })
     })
 })

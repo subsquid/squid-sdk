@@ -5,7 +5,9 @@ import {DataBatch, Ingest} from "./ingest"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
+import {Prometheus} from "./prometheus"
 import {Range} from "./util/range"
+import {ServiceManager} from "./util/sm"
 
 
 export interface BlockHookOptions {
@@ -29,6 +31,7 @@ export class SubstrateProcessor {
     private hooks: Hooks = {pre: [], post: [], event: [], extrinsic: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
+    private prometheusPort?: number | string
 
     constructor(private name: string) {}
 
@@ -43,6 +46,14 @@ export class SubstrateProcessor {
     setBatchSize(size: number): void {
         assert(size > 0)
         this.batchSize = size
+    }
+
+    setPrometheusPort(port: number | string) {
+        this.prometheusPort = port
+    }
+
+    private getPrometheusPort(): number | string {
+        return this.prometheusPort || process.env.SUBSTRATE_PROCESSOR_PROMETHEUS_PORT || 0
     }
 
     addPreHook(fn: BlockHandler): void
@@ -114,16 +125,11 @@ export class SubstrateProcessor {
     }
 
     run(): void {
-        this._run().then(() => {
-            process.exit()
-        }, err => {
-            console.log(err)
-            process.exit(1)
-        })
+        ServiceManager.run(sm => this._run(sm))
     }
 
-    private async _run(): Promise<void> {
-        let db = await Db.connect()
+    private async _run(sm: ServiceManager): Promise<void> {
+        let db = sm.add(await Db.connect())
 
         let {height: heightAtStart} = await db.init(this.name)
         let blockRange = this.blockRange
@@ -136,29 +142,26 @@ export class SubstrateProcessor {
             }
         }
 
-        let ingest = new Ingest({
+        let prometheus = new Prometheus()
+        let prometheusServer = sm.add(await prometheus.serve(this.getPrometheusPort()))
+        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
+
+        let ingest = sm.add(new Ingest({
             archive: assertNotNull(this.archive, 'use .setDataSource() to specify archive url'),
             range: blockRange,
             batchSize: this.batchSize,
-            hooks: this.hooks
-        })
+            hooks: this.hooks,
+            prometheus
+        }))
 
-        let ingestion = ingest.run().catch((err: Error) => err)
-
-        await this.process(ingest, db)
-
-        let ingestionResult = await ingestion
-        if (ingestionResult instanceof Error) {
-            throw ingestionResult
-        }
+        await this.process(ingest, db, prometheus)
     }
 
-    private async process(ingest: Ingest, db: Db): Promise<void> {
-        let beg = Date.now()
-        let processed = 0
+    private async process(ingest: Ingest, db: Db, prom: Prometheus): Promise<void> {
         let batch: DataBatch | null
-        let startHeight = 0
+        let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
+            let beg = Date.now()
             let {pre, post, events, extrinsics, blocks} = batch
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]
@@ -187,19 +190,15 @@ export class SubstrateProcessor {
                         await post[j](ctx)
                     }
                 })
+                lastBlock = block.block.height
+                prom.setLastProcessedBlock(lastBlock)
             }
-            processed += batch.blocks.length
             let end = Date.now()
-            console.log(`Speed: ${Math.round(processed * 1000/ (end - beg))} blocks/sec`)
-
-            if (batch.blocks.length > 0) {
-                let height = batch.blocks[batch.blocks.length - 1].block.height
-                if (startHeight > 0) {
-                    console.log(`Progress: ${Math.round((height - startHeight) * 1000/ (end - beg))} blocks/sec`)
-                } else {
-                    startHeight = height
-                }
-            }
+            let duration = end - beg
+            let speed = duration > 0 ? Math.round(blocks.length * 1000 / duration) : 0
+            console.log(
+                `Last block: ${lastBlock}. Processed batch of ${blocks.length} blocks in ${duration}ms${speed > 0 ? ` (${speed} blocks/sec)` : ''}`
+            )
         }
     }
 }
