@@ -55,7 +55,7 @@ export class Server {
         try {
             setupGraphiqlConsole(app)
             apollo.applyMiddleware({app})
-            return await listen(apollo, this.httpServer(), process.env.GRAPHQL_SERVER_PORT || 3000)
+            return await listen(apollo, this.httpServer(), process.env.GQL_PORT || 4000)
         } catch(e: any) {
             await apollo.stop().catch(err => {
                 e = new Error(e.stack + '\n\n' + err.stack)

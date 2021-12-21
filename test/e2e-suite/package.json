@@ -1,0 +1,22 @@
+{
+  "name": "e2e-test-suite",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/util": "^0.0.0",
+    "dotenv": "^10.0.0",
+    "gql-test-client": "^0.0.0",
+    "node-fetch": "^2.6.6",
+    "mocha": "^9.1.3",
+    "expect": "^27.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.12",
+    "@types/node-fetch": "^2.5.12",
+    "@types/mocha": "^9.0.0",
+    "typescript": "~4.5.3"
+  }
+}

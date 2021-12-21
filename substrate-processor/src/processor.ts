@@ -53,7 +53,7 @@ export class SubstrateProcessor {
     }
 
     private getPrometheusPort(): number | string {
-        return this.prometheusPort || process.env.SUBSTRATE_PROCESSOR_PROMETHEUS_PORT || 0
+        return this.prometheusPort || process.env.PROCESSOR_PROMETHEUS_PORT || 0
     }
 
     addPreHook(fn: BlockHandler): void

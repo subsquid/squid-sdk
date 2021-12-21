@@ -19,7 +19,9 @@
    */
   "deploymentProjectNames": [
     "@subsquid/substrate-archive",
-    "@subsquid/substrate-archive-status-service"
+    "@subsquid/substrate-archive-status-service",
+    "e2e-test-project",
+    "e2e-test-suite"
   ],
 
   /**

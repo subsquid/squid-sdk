@@ -22,6 +22,7 @@ ADD substrate-archive-status-service/package.json substrate-archive-status-servi
 ADD substrate-metadata/package.json substrate-metadata/
 ADD substrate-processor/package.json substrate-processor/
 ADD test/e2e-project/package.json test/e2e-project/
+ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
@@ -48,6 +49,8 @@ ADD test/e2e-project/db test/e2e-project/db
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
 ADD test/e2e-project/tsconfig.json test/e2e-project/
+ADD test/e2e-suite/src test/e2e-suite/src
+ADD test/e2e-suite/tsconfig.json test/e2e-suite/
 ADD test/gql-client/src test/gql-client/src
 ADD test/gql-client/tsconfig.json test/gql-client/
 ADD typeorm-config/src typeorm-config/src
@@ -55,6 +58,7 @@ ADD typeorm-config/tsconfig.json typeorm-config/
 ADD util/src util/src
 ADD util/tsconfig.json util/
 RUN node common/scripts/install-run-rush.js build
+RUN cd cli && npx oclif manifest
 
 
 FROM builder AS substrate-archive-builder
@@ -73,6 +77,26 @@ WORKDIR /squid/substrate-archive-status-service
 CMD ["node", "./lib/app.js"]
 
 
+FROM builder AS test-project-builder
+RUN node common/scripts/install-run-rush.js deploy --project e2e-test-project
+FROM node AS test-project
+RUN apk add make curl
+COPY --from=test-project-builder /squid/common/deploy /squid
+WORKDIR /squid/test/e2e-project
+ADD test/e2e-project/entrypoint.sh .
+ADD test/e2e-project/Makefile .
+ENTRYPOINT ["/squid/test/e2e-project/entrypoint.sh"]
+
+
+FROM builder AS test-suite-builder
+RUN node common/scripts/install-run-rush.js deploy --project e2e-test-suite
+FROM node AS test-suite
+COPY --from=test-suite-builder /squid/common/deploy /squid
+WORKDIR /squid/test/e2e-suite
+ADD test/e2e-suite/entrypoint.sh .
+ENTRYPOINT ["/squid/test/e2e-suite/entrypoint.sh"]
+
+
 FROM hasura-with-migrations AS substrate-archive-gateway
 RUN apt-get -y update \
     && apt-get install -y curl ca-certificates gnupg lsb-release \
@@ -80,7 +104,7 @@ RUN apt-get -y update \
     && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get -y update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client-12 \
-    && apt-get purge -y curl lsb-release gnupg \
+    && apt-get purge -y curl ca-certificates lsb-release gnupg \
     && apt-get -y autoremove \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/* \

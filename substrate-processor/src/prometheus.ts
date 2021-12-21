@@ -30,6 +30,8 @@ export class Prometheus {
 
     constructor() {
         collectDefaultMetrics({register: this.registry})
+        this.setLastProcessedBlock(-1)
+        this.setChainHeight(-1)
     }
 
     setLastProcessedBlock(height: number): void {

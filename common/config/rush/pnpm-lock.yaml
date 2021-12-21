@@ -10,6 +10,7 @@ specifiers:
   '@polkadot/types': ^6
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
+  '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/openreader': file:./projects/openreader.tgz
@@ -80,6 +81,7 @@ dependencies:
   '@polkadot/types': 6.11.1
   '@rush-temp/cli': file:projects/cli.tgz_ioredis@4.28.2
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_ioredis@4.28.2
+  '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz_ioredis@4.28.2
   '@rush-temp/openreader': file:projects/openreader.tgz
@@ -7031,6 +7033,21 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/e2e-test-suite.tgz:
+    resolution: {integrity: sha512-ZH3cmk1gI5vSAXmwy4akxWTek0ALGjw1WdG7Jk8ApuCkDFfkNooZIc8VOKz93ul+P1sS73jM8Y1eonL4E2KrHA==, tarball: file:projects/e2e-test-suite.tgz}
+    name: '@rush-temp/e2e-test-suite'
+    version: 0.0.0
+    dependencies:
+      '@types/mocha': 9.0.0
+      '@types/node': 16.11.14
+      '@types/node-fetch': 2.5.12
+      dotenv: 10.0.0
+      expect: 27.4.2
+      mocha: 9.1.3
+      node-fetch: 2.6.6
+      typescript: 4.5.3
     dev: false
 
   file:projects/gql-test-client.tgz:

@@ -4,8 +4,11 @@ process: migrate
 serve:
 	@npx squid-graphql-server
 
+start:
+	@./entrypoint.sh
+
 codegen:
-	@npx sqd codegen
+	@./node_modules/.bin/sqd codegen
 
 migration:
 	@npx sqd db:create-migration Initial
@@ -22,4 +25,4 @@ up:
 down:
 	@docker-compose down
 
-.PHONY: process serve codegen migration migrate up down
+.PHONY: process serve start codegen migration migrate up down

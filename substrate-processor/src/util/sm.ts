@@ -1,3 +1,4 @@
+import {def} from "@subsquid/util"
 import {AbortError} from "./async"
 
 
@@ -16,6 +17,7 @@ export class ServiceManager {
         return s
     }
 
+    @def
     private async stop(): Promise<boolean> {
         this.stopped = true
         let ok = true
@@ -34,10 +36,11 @@ export class ServiceManager {
         return ok
     }
 
-    shutdown(err?: Error) {
+    private shutdown(err?: Error) {
         if (err) console.error(err)
         this.stop().then(ok => {
-            process.exit(ok && !err ? 0 : 1)
+            ok = ok && !err
+            process.exit(ok ? 0 : 1)
         })
     }
 
