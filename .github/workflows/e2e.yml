@@ -1,0 +1,13 @@
+name: e2e tests
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  test:
+    name: run e2e tests
+    if: "!contains(github.event.head_commit.message, 'test skip')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: run
+        working-directory: test/e2e-suite
+        run: ./run.sh
