@@ -58,6 +58,8 @@ services:
   node-template:
     image: paritytech/substrate-playground-template-node-template:sha-7212614
     command: ["./target/release/node-template", "--dev", "--tmp", "--ws-external"]
+    ports:
+      - "${CHAIN_PORT}:9944"
 
   redis:
     image: redis:6.0-alpine

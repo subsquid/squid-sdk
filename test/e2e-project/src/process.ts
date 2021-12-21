@@ -48,18 +48,18 @@ processor.addEventHandler('balances.Transfer', async ctx => {
 
     let transfer = new Transfer({
         id: ctx.event.id,
-        from: decodeHex(from),
-        to: decodeHex(to),
+        from: Buffer.from(from, 'ascii'), // random bytes instead of real decoding
+        to: Buffer.from(to, 'ascii'),
         value,
         tip: ctx.extrinsic?.tip ?? 0n,
         extrinsicId: ctx.extrinsic?.id,
         insertedAt: new Date(ctx.block.timestamp),
         block: ctx.block.height,
+        timestamp: BigInt(ctx.block.timestamp),
         comment: `Transferred ${value} from ${from} to ${to}`
     })
 
     let fromAcc = await getOrCreate(Account, from, ctx.store)
-    fromAcc.hex = from
     fromAcc.balance = fromAcc.balance || 0n
     fromAcc.balance -= value
     fromAcc.balance -= transfer.tip
@@ -69,7 +69,6 @@ processor.addEventHandler('balances.Transfer', async ctx => {
     await ctx.store.save(fromAcc)
 
     let toAcc = await getOrCreate(Account, to, ctx.store)
-    toAcc.hex = to
     toAcc.balance = toAcc.balance || 0n
     toAcc.balance += value
     toAcc.status = new MiddleClass()

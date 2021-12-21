@@ -1,14 +1,14 @@
 import expect from 'expect'
 import {gql, waitForHeight} from './setup'
 
-describe('hooks', () => {
+describe('block hooks', () => {
     let hooks: {type: string; blockNumber: number}[] = []
 
     before(async () => {
         await waitForHeight(4)
         await gql.query(`
             query {
-                blockHooks {
+                blockHooks(orderBy: blockNumber_ASC) {
                     blockNumber
                     type
                 }

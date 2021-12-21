@@ -1,8 +1,8 @@
-module.exports = class Initial1639752889411 {
-  name = 'Initial1639752889411'
+module.exports = class Initial1640114788338 {
+  name = 'Initial1640114788338'
 
   async up(db) {
-    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "hex" text NOT NULL, "balance" numeric NOT NULL, "status" jsonb NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "balance" numeric NOT NULL, "status" jsonb NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
     await db.query(`CREATE TABLE "transfer" ("id" character varying NOT NULL, "from" bytea NOT NULL, "to" bytea NOT NULL, "value" numeric NOT NULL, "comment" text, "block" integer NOT NULL, "tip" numeric NOT NULL, "timestamp" numeric NOT NULL, "inserted_at" TIMESTAMP WITH TIME ZONE NOT NULL, "extrinsic_id" text, "from_account_id" character varying, "to_account_id" character varying, CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_e2f71240f767a903a4fe85ce25" ON "transfer" ("from_account_id") `)
     await db.query(`CREATE INDEX "IDX_e588c446185bd0c7e4861bb66b" ON "transfer" ("to_account_id") `)

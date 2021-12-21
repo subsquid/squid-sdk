@@ -1,3 +1,5 @@
+import {ApiPromise, WsProvider} from "@polkadot/api"
+import {createTestKeyring} from "@polkadot/keyring"
 import {assertNotNull} from "@subsquid/util"
 import {Client} from "gql-test-client"
 import fetch from "node-fetch"
@@ -34,6 +36,56 @@ export async function waitForHeight(height: number): Promise<void> {
             setTimeout(resolve, 100)
         })
     }
+}
+
+
+export function chain(): ApiPromise {
+    let api = new ApiPromise({
+        provider: new WsProvider(assertNotNull(process.env.CHAIN_ENDPOINT)),
+        typesSpec: {
+            'node-template': {
+                Address: 'AccountId',
+                LookupSource: 'AccountId',
+                AccountInfo: 'AccountInfoWithRefCount'
+            }
+        }
+    })
+    before(() => api.isReady)
+    after(() => api.disconnect())
+    return api
+}
+
+
+export async function transfer(api: ApiPromise, from: string, to: string, amount: number): Promise<number> {
+    let keyring = createTestKeyring()
+    let sender = keyring.getPair(from)
+
+    let blockHash: any = await new Promise((resolve, reject) => {
+        let unsub = () => {
+            /* dummy */
+        }
+        api.tx.balances
+            .transfer(to, amount)
+            .signAndSend(sender, (result) => {
+                console.log(`Status of transfer: ${result.status.type}`)
+                if (result.isFinalized) {
+                    unsub()
+                    resolve(result.status.asFinalized)
+                    return
+                }
+                if (result.isError) {
+                    unsub()
+                    reject(
+                        result.dispatchError ||
+                        result.internalError ||
+                        new Error('Failed to perform transfer')
+                    )
+                }
+            }).then(u => (unsub = u), reject)
+    })
+
+    let header = await api.rpc.chain.getHeader(blockHash)
+    return header.number.toNumber()
 }
 
 

@@ -57,7 +57,7 @@ export async function loadInitialData(store: Store): Promise<void> {
         let e = new SystemEvent({id: 'se-1'})
         let params = new EventParam()
         let additionalData = new AdditionalData()
-        additionalData.data = Buffer.from(`0x000`)
+        additionalData.data = Buffer.from('aabb', 'hex')
         params.name = 'account'
         params.type = 'string'
         params.value = '0x000'

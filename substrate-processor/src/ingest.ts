@@ -196,7 +196,7 @@ export class Ingest {
             let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
             block.timestamp = Number.parseInt(timestamp)
             for (let j = 0; j < events.length; j++) {
-                j > 0 && assert(fetchedBlocks[j-1].indexInBlock < fetchedBlocks[j].indexInBlock)
+                j > 0 && assert(events[j-1].indexInBlock < events[j].indexInBlock)
                 let event = events[j]
                 event.blockTimestamp = block.timestamp
                 if (event?.extrinsic?.tip != null) {

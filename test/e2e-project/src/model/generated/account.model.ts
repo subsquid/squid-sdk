@@ -15,9 +15,6 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: false})
-  hex!: string
-
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
   balance!: bigint
 
