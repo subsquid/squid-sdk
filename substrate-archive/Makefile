@@ -1,4 +1,7 @@
-migrate: up
+run: migrate
+	@node lib/run.js index
+
+migrate:
 	@node lib/run.js migrate
 
 up:
@@ -7,4 +10,4 @@ up:
 down:
 	@docker-compose down
 
-.PHONY: migrate up down reset
+.PHONY: run migrate up down reset
