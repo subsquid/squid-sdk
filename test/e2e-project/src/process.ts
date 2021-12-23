@@ -1,8 +1,9 @@
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
+import assert from "assert"
 import * as process from "process"
 import {loadInitialData} from "./initialData"
 import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
-import {decodeHex, getOrCreate} from "./util"
+import {getOrCreate} from "./util"
 
 
 const processor = new SubstrateProcessor('test')
@@ -45,6 +46,9 @@ processor.addEventHandler('balances.Transfer', async ctx => {
     let from = ctx.event.params[0].value as string
     let to = ctx.event.params[1].value as string
     let value = BigInt(ctx.event.params[2].value as string)
+
+    assert(ctx.block.timestamp != null, 'block.timestamp must be set')
+    assert(ctx.block.timestamp === ctx.event.blockTimestamp, 'event.blockTimestamp must be set to block.timestamp')
 
     let transfer = new Transfer({
         id: ctx.event.id,

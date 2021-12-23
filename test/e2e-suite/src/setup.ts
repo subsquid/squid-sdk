@@ -67,7 +67,6 @@ export async function transfer(api: ApiPromise, from: string, to: string, amount
         api.tx.balances
             .transfer(to, amount)
             .signAndSend(sender, (result) => {
-                console.log(`Status of transfer: ${result.status.type}`)
                 if (result.isFinalized) {
                     unsub()
                     resolve(result.status.asFinalized)

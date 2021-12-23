@@ -1,3 +1,4 @@
+import expect from "expect"
 import {chain, gql, transfer, waitForHeight} from "./setup"
 
 
@@ -9,37 +10,106 @@ const txAmount2 = 1000
 
 describe('transfer tests', function () {
     const api = chain()
-    let blockHeight = -1
+    let firstTransfer = -1
+    let secondTransfer = -1
 
     before(async () => {
-        blockHeight = await transfer(api, ALICE, BOB, txAmount1)
-        blockHeight = await transfer(api, ALICE, BOB, txAmount2)
-        await waitForHeight(blockHeight)
+        firstTransfer = await transfer(api, ALICE, BOB, txAmount1)
+        secondTransfer = await transfer(api, ALICE, BOB, txAmount2)
+        await waitForHeight(secondTransfer)
     })
 
-    it('transfers are indexed', function () {
+    it('transfers are properly indexed', function () {
         return gql.test(`
             query {
-                transfers(where: { value_eq: ${txAmount2}, block_eq: ${blockHeight} }) {
+                first: transfers(where: { block_eq: ${firstTransfer} }) {
+                    from
+                    to
                     value
                     fromAccount { id }
                     toAccount { id }
                 }
+                second: transfers(where: { block_eq: ${secondTransfer} }) {
+                    value
+                }
             }
         `, {
-            transfers: [{
-                value: '1000',
+            first: [{
+                from: '0x'+Buffer.from(ALICE, 'ascii').toString('hex'),
+                to: '0x'+Buffer.from(BOB, 'ascii').toString('hex'),
+                value: '232323',
                 fromAccount: {
                     id: ALICE
                 },
                 toAccount: {
                     id: BOB
                 },
+            }],
+            second: [{
+                value: '1000'
             }]
         })
     })
 
     it('extrinsic.id is exposed and mapped', function () {
+        return gql.test(`
+            query {
+                transfers(limit: 1) {
+                    extrinsicId
+                }
+            }
+        `, {
+            transfers: [
+                {extrinsicId: expect.stringMatching(/\d/)}
+            ]
+        })
+    })
 
+    it('can find transfers by full-text search', function () {
+        return gql.test(`
+            query {
+                comments: commentSearch(text: "transfer" limit: 1) {
+                    highlight
+                    item {
+                        ... on Transfer {
+                            fromAccount {
+                                id
+                            }
+                        }
+                    }
+                }
+            }
+        `, {
+            comments: [{
+                highlight: expect.stringContaining('<b>Transfer'),
+                item: {
+                    fromAccount: {id: ALICE}
+                }
+            }]
+        })
+    })
+
+    it('json fields are properly mapped', function () {
+        return gql.test(`
+            query {
+                alice: accountById(id: "${ALICE}") {
+                    status {
+                        __typename
+                        ... on Miserable {
+                            hates
+                            loves
+                        }
+                    }
+                }
+            }
+        `, {
+            alice: {
+                status: {
+                    __typename: 'Miserable',
+                    hates: 'ALICE',
+                    loves: ['money', 'crypto']
+                }
+            }
+        })
     })
 })

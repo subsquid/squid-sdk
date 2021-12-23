@@ -1,7 +1,7 @@
 import {gql, waitForHeight} from "./setup"
 
 
-describe('graphql', function () {
+describe('data', function () {
     before(() => waitForHeight(0))
 
     it('one-to-one lookups', function () {
