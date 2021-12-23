@@ -461,6 +461,11 @@
       "reviewCategory": "production"
     },
     {
+      "packageName": "@subsquid/rpc-client",
+      "projectFolder": "rpc-client",
+      "reviewCategory": "production"
+    },
+    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "reviewCategory": "production"
@@ -478,6 +483,11 @@
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
+      "reviewCategory": "production"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "projectFolder": "substrate-metadata-explorer",
       "reviewCategory": "production"
     },
     {
