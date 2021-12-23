@@ -23,7 +23,7 @@ rush install
 rush build 
 
 # run end-to-end test suite (independent from the commands above)
-./test/e2e-suite/run.sh
+cd ./test/e2e-suite && ./run.sh
 ```
 
 This is a standard rush repo. All information from https://rushjs.io/pages/developer/new_developer/
