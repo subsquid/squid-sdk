@@ -92,6 +92,7 @@ export interface Field {
 export interface VariantType {
     kind: TypeKind.Variant
     variants: (Variant | undefined)[]
+    variantsByName?: Record<string, Variant>
 }
 
 
