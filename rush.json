@@ -496,6 +496,11 @@
       "reviewCategory": "production"
     },
     {
+      "packageName": "@subsquid/substrate-typegen",
+      "projectFolder": "substrate-typegen",
+      "reviewCategory": "production"
+    },
+    {
       "packageName": "@subsquid/typeorm-config",
       "projectFolder": "typeorm-config",
       "reviewCategory": "production"
@@ -504,6 +509,11 @@
       "packageName": "@subsquid/util",
       "projectFolder": "util",
       "reviewCategory": "production"
+    },
+    {
+      "packageName": "balances",
+      "projectFolder": "test/balances",
+      "reviewCategory": "test"
     },
     {
       "packageName": "e2e-test-project",

@@ -1,4 +1,4 @@
-import {unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import {Ti, TypeKind, TypeRegistry} from "./types"
 import {sha256} from "./util"
@@ -119,7 +119,8 @@ export class TypeHasher {
         this.index += 1
         this.nodes[ti] = node
         this.stack.push(ti)
-        let hash = node.hash = sha256(this.makeHash(ti, node))
+        let hashObj = this.makeHash(ti, node)
+        let hash = node.hash = typeof hashObj == 'string' ? hashObj : sha256(hashObj)
         if (node.index == node.lowIndex) {
             let n
             do {
@@ -135,7 +136,7 @@ export class TypeHasher {
         return hash
     }
 
-    private makeHash(ti: Ti, parent: HashNode): object {
+    private makeHash(ti: Ti, parent: HashNode): object | string {
         let type = this.types[ti]
         switch(type.kind) {
             case TypeKind.Primitive:
@@ -164,17 +165,21 @@ export class TypeHasher {
                     bytesArray: type.len
                 }
             case TypeKind.Tuple:
-                return {
-                    tuple: type.tuple.map(t => this.hash(t, parent))
+                return this.hashTuple(type.tuple, parent)
+            case TypeKind.Composite:
+                if (type.fields[0]?.name == null) {
+                    return this.hashTuple(type.fields.map(f => {
+                        assert(f.name == null)
+                        return f.type
+                    }), parent)
+                } else {
+                    let desc: any = {}
+                    type.fields.forEach(f => {
+                        let name = assertNotNull(f.name)
+                        desc[name] = this.hash(f.type, parent)
+                    })
+                    return {composite: desc}
                 }
-            case TypeKind.Composite: {
-                let desc: any = {}
-                type.fields.forEach((f, idx) => {
-                    let name = f.name || idx
-                    desc[name] = this.hash(f.type, parent)
-                })
-                return {composite: desc}
-            }
             case TypeKind.Variant: {
                 let desc: any = {}
                 type.variants.forEach(v => {
@@ -196,6 +201,16 @@ export class TypeHasher {
                 return {doNotConstruct: true}
             default:
                 throw unexpectedCase()
+        }
+    }
+
+    private hashTuple(items: Ti[], parent: HashNode): object | string {
+        if (items.length == 1) {
+            return this.hash(items[0], parent)
+        } else {
+            return {
+                tuple: items.map(it => this.hash(it, parent))
+            }
         }
     }
 }

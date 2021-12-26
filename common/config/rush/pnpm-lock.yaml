@@ -8,6 +8,7 @@ specifiers:
   '@octokit/auth-oauth-device': ^3.1.2
   '@polkadot/keyring': ^8.2.2
   '@polkadot/types': ^6
+  '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
@@ -21,6 +22,7 @@ specifiers:
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
+  '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
   '@rush-temp/util': file:./projects/util.tgz
   '@subsquid/graphiql-console': ^0.2.0
@@ -37,6 +39,7 @@ specifiers:
   '@types/shortid': ^0.0.29
   '@types/stoppable': ^1.1.1
   '@types/websocket': ^1.0.4
+  ajv: ^8.8.2
   apollo-server-core: ^3.3.0
   apollo-server-express: ^3.3.0
   bn.js: ^4.12.0
@@ -82,6 +85,7 @@ dependencies:
   '@octokit/auth-oauth-device': 3.1.2
   '@polkadot/keyring': 8.2.2
   '@polkadot/types': 6.11.1
+  '@rush-temp/balances': file:projects/balances.tgz_ioredis@4.28.2
   '@rush-temp/cli': file:projects/cli.tgz_ioredis@4.28.2
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_ioredis@4.28.2
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz
@@ -95,6 +99,7 @@ dependencies:
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1
+  '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1
   '@rush-temp/util': file:projects/util.tgz
   '@subsquid/graphiql-console': 0.2.0
@@ -111,6 +116,7 @@ dependencies:
   '@types/shortid': 0.0.29
   '@types/stoppable': 1.1.1
   '@types/websocket': 1.0.4
+  ajv: 8.8.2
   apollo-server-core: 3.5.0
   apollo-server-express: 3.5.0_express@4.17.1
   bn.js: 4.12.0
@@ -1577,6 +1583,15 @@ packages:
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
+    dev: false
+
+  /ajv/8.8.2:
+    resolution: {integrity: sha512-x9VuX+R/jcFj1DHo/fCp99esgGDWiHENrKxaCENuCxpoMCmAt/COCGVDwA7kleEpEzJjDnvh3yGoOuLu0Dtllw==}
+    dependencies:
+      fast-deep-equal: 3.1.3
+      json-schema-traverse: 1.0.0
+      require-from-string: 2.0.2
+      uri-js: 4.4.1
     dev: false
 
   /alce/1.2.0:
@@ -3248,6 +3263,10 @@ packages:
       pure-rand: 5.0.0
     dev: false
 
+  /fast-deep-equal/3.1.3:
+    resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
+    dev: false
+
   /fast-glob/2.2.7:
     resolution: {integrity: sha512-g1KuQwHOZAmOZMuBtHdxDtju+T2RT8jgCC9aANsbpdiDDTSnjgfuVsIBNKbUeJI3oKMRExcfNDtJl4OhbffMsw==}
     engines: {node: '>=4.0.0'}
@@ -4432,6 +4451,10 @@ packages:
 
   /json-parse-even-better-errors/2.3.1:
     resolution: {integrity: sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==}
+    dev: false
+
+  /json-schema-traverse/1.0.0:
+    resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
     dev: false
 
   /json-stringify-safe/5.0.1:
@@ -5660,6 +5683,11 @@ packages:
       once: 1.4.0
     dev: false
 
+  /punycode/2.1.1:
+    resolution: {integrity: sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==}
+    engines: {node: '>=6'}
+    dev: false
+
   /pure-rand/5.0.0:
     resolution: {integrity: sha512-lD2/y78q+7HqBx2SaT6OT4UcwtvXNRfEpzYEzl0EQ+9gZq2Qi3fa0HDnYPeqQwhlHJFBUhT7AO3mLU3+8bynHA==}
     dev: false
@@ -5923,6 +5951,11 @@ packages:
 
   /require-directory/2.1.1:
     resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
+  /require-from-string/2.0.2:
+    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
     dev: false
 
@@ -6888,6 +6921,12 @@ packages:
     engines: {node: '>=4'}
     dev: false
 
+  /uri-js/4.4.1:
+    resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
+    dependencies:
+      punycode: 2.1.1
+    dev: false
+
   /urix/0.1.0:
     resolution: {integrity: sha1-2pN/emLiH+wf0Y1Js1wpNQZ6bHI=}
     deprecated: Please see https://github.com/lydell/urix#deprecated
@@ -7349,6 +7388,35 @@ packages:
     resolution: {integrity: sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==}
     dev: false
 
+  file:projects/balances.tgz_ioredis@4.28.2:
+    resolution: {integrity: sha512-9LEkVFbOWJBXJgQB5E8rjmk0RldqWPkfUA1myYtQlfQvkDzJe6hHV0+XbBeVs/bYeiwjto+JGOWvtMOtl0GhlQ==, tarball: file:projects/balances.tgz}
+    id: file:projects/balances.tgz
+    name: '@rush-temp/balances'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.14
+      dotenv: 10.0.0
+      pg: 8.7.1
+      typeorm: 0.2.41_ioredis@4.28.2+pg@8.7.1
+      typescript: 4.5.3
+    transitivePeerDependencies:
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - typeorm-aurora-data-api-driver
+    dev: false
+
   file:projects/cli.tgz_ioredis@4.28.2:
     resolution: {integrity: sha512-m0PJQHe7tALdOUdf9jWc/Y/pWubVO8MjEzQoyBW28+OIcjhCo6zUKtZYA/NtsL9ipMOm3Mh8jDaIZBJ91zv4HA==, tarball: file:projects/cli.tgz}
     id: file:projects/cli.tgz
@@ -7612,7 +7680,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-S4uadlXBY2Z0mIvhQtT6oXmXZ3w+LLoYraeKZNjX2yOs0PajuGIEboEOK5V0MdB8pA691WBZZJFxeNaXzOl0GA==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-AbkPWjGAG92vAeWUzE+xayo+ftFJhf+DAj/b8Du9SKG5nLXV1InV+RJnRdJrF5bMvTP9yrh9qIwm8vJ9Bxj79g==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -7679,6 +7747,17 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/substrate-typegen.tgz:
+    resolution: {integrity: sha512-VbEilc5zZ5DVe3yfGzC66myVKdQXJ1DCT8+26k4Ymy32LCEiGfjYZuesnIJw1W1f8Z+kfiZ4iKhTyKhh5H2kSA==, tarball: file:projects/substrate-typegen.tgz}
+    name: '@rush-temp/substrate-typegen'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.14
+      ajv: 8.8.2
+      commander: 8.3.0
+      typescript: 4.5.3
     dev: false
 
   file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1:

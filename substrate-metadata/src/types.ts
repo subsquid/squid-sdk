@@ -60,3 +60,6 @@ export type Type =
 
 
 export type TypeRegistry = Type[]
+
+
+export type QualifiedName = string

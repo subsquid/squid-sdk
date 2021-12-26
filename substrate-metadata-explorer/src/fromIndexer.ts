@@ -1,5 +1,5 @@
 import type {RpcClient} from "@subsquid/rpc-client"
-import {assertNotNull} from "@subsquid/util"
+import assert from "assert"
 import fetch from "node-fetch"
 import {Explorer, Version} from "./explorer"
 import {checkChainHeight, fetchVersionMetadata, fetchVersionsFromChain} from "./fromChain"
@@ -71,4 +71,10 @@ async function indexerRequest<T=any>(indexerUrl: string, query: string): Promise
     }
     let result = await response.json()
     return result.data as T
+}
+
+
+function assertNotNull<T>(val?: T | null, msg?: string): T {
+    assert(val != null, msg)
+    return val
 }

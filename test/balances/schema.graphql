@@ -1,0 +1,14 @@
+type Account @entity {
+  "Account address"
+  id: ID!
+  wallet: String!
+  balance: BigInt!
+  historicalBalances: [HistoricalBalance!] @derivedFrom(field: "account")
+}
+
+type HistoricalBalance @entity {
+  id: ID!
+  account: Account!
+  balance: BigInt!
+  timestamp: BigInt!
+}

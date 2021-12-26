@@ -29,7 +29,11 @@ export function print(type: Type): string {
         case 'array':
             return `[${print(type.item)}; ${type.len}]`
         case 'tuple':
-            return `(${type.params.map(t => print(t)).join(', ')})`
+            if (type.params.length == 1) {
+                return print(type.params[0])
+            } else {
+                return `(${type.params.map(t => print(t)).join(', ')})`
+            }
         case 'named': {
             if (type.params.length == 0) {
                 return type.name
@@ -148,7 +152,7 @@ class TypeExpParser {
             if (nameTok == null) return null
             name = nameTok
         }
-        if (this.tok('::')) {
+        while (this.tok('::')) {
             item = this.assertName()
         }
         if (name == 'InherentOfflineReport' && name == trait && item == 'Inherent') {

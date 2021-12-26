@@ -88,6 +88,7 @@ describe('Type expressions', function () {
     test('<T::InherentOfflineReport as InherentOfflineReport>::Inherent', 'InherentOfflineReport')
     test('<T::Balance as HasCompact>', 'Compact<Balance>')
     test('<T as Trait<I>>::Proposal', 'Proposal')
+    test('rstd::marker::PhantomData<(AccountId, Event)>', 'PhantomData<(AccountId, Event)>')
 })
 
 

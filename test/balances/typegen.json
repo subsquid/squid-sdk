@@ -1,0 +1,8 @@
+{
+  "outDir": "src/types",
+  "chainVersions": "chainVersions.json",
+  "typesBundle": "kusama",
+  "events": [
+    "balances.Transfer"
+  ]
+}
