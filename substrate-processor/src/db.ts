@@ -56,7 +56,7 @@ export class Db {
         })
     }
 
-    stop(): Promise<void> {
+    close(): Promise<void> {
         return this.con.close()
     }
 }

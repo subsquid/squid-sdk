@@ -7,7 +7,7 @@ import stoppable from "stoppable"
 
 export interface ListeningServer {
     port: number
-    stop(): Promise<void>
+    close(): Promise<void>
 }
 
 
@@ -91,7 +91,7 @@ export class Prometheus {
             }
         }))
 
-        function stop(): Promise<void> {
+        function close(): Promise<void> {
             return new Promise((resolve, reject) => {
                 server.stop((err, gracefully) => {
                     if (gracefully) {
@@ -112,7 +112,7 @@ export class Prometheus {
                     assert(address != null && typeof address == 'object')
                     resolve({
                         port: address.port,
-                        stop
+                        close
                     })
                 }
             })

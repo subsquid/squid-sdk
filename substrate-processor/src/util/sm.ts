@@ -3,7 +3,7 @@ import {AbortError} from "./async"
 
 
 export interface Service {
-    stop(): Promise<Error | void>
+    close(): void | Promise<void | Error>
 }
 
 
@@ -17,14 +17,15 @@ export class ServiceManager {
         return s
     }
 
-    @def
     private async stop(): Promise<boolean> {
-        this.stopped = true
         let ok = true
         for (let i = this.services.length - 1; i >= 0; i--) {
             let err: Error | void
             try {
-                err = await this.services[i].stop()
+                let closeResult = this.services[i].close()
+                if (closeResult) {
+                    err = await closeResult
+                }
             } catch(e: any) {
                 err = e
             }
@@ -38,6 +39,8 @@ export class ServiceManager {
 
     private shutdown(err?: Error) {
         if (err) console.error(err)
+        if (this.stopped) return
+        this.stopped = true
         this.stop().then(ok => {
             ok = ok && !err
             process.exit(ok ? 0 : 1)

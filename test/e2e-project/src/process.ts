@@ -9,10 +9,16 @@ import {getOrCreate} from "./util"
 const processor = new SubstrateProcessor('test')
 
 
-if (process.env.ARCHIVE_ENDPOINT) {
-    processor.setDataSource(process.env.ARCHIVE_ENDPOINT)
+processor.setTypesBundle('./typedefs.json')
+
+
+if (process.env.ARCHIVE_ENDPOINT && process.env.CHAIN_ENDPOINT) {
+    processor.setDataSource({
+        archive: process.env.ARCHIVE_ENDPOINT,
+        chain: process.env.CHAIN_ENDPOINT
+    })
 } else {
-    throw new Error('ARCHIVE_ENDPOINT is not set')
+    throw new Error('ARCHIVE_ENDPOINT and CHAIN_ENDPOINT must be set')
 }
 
 

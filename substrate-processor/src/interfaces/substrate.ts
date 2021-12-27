@@ -1,3 +1,10 @@
+import type {SpecVersion} from "@subsquid/substrate-metadata"
+
+
+export interface SubstrateRuntimeVersion {
+    specVersion: SpecVersion
+}
+
 
 export interface SubstrateBlock {
     /**
@@ -38,7 +45,7 @@ export interface SubstrateBlock {
     /**
      * Substrate runtime version
      */
-    runtimeVersion: unknown
+    runtimeVersion: SubstrateRuntimeVersion
 
     /**
      * Raw JSON with last runtime upgrade information

@@ -48,7 +48,7 @@ export class Ingest {
         return this.out.take()
     }
 
-    stop(): Promise<Error | void> {
+    close(): Promise<Error | void> {
         this._abort.abort()
         return this.ingestion
     }

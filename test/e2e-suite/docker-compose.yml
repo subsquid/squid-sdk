@@ -62,6 +62,7 @@ services:
       - db
     environment:
       ARCHIVE_ENDPOINT: http://substrate-archive-gateway:8080/v1/graphql
+      CHAIN_ENDPOINT: ws://node-template:9944
       DB_HOST: db
       GQL_PORT: 4000
       PROCESSOR_PROMETHEUS_PORT: 3000

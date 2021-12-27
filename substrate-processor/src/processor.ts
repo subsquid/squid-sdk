@@ -1,5 +1,8 @@
+import {RpcClient} from "@subsquid/rpc-client"
+import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
+import {ChainManager} from "./chain"
 import {Db} from "./db"
 import {DataBatch, Ingest} from "./ingest"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
@@ -26,17 +29,38 @@ export interface ExtrinsicHandlerOptions {
 }
 
 
+export interface DataSource {
+    /**
+     * Archive endpoint URL
+     */
+    archive: string
+    /**
+     * Chain node RPC websocket URL
+     */
+    chain: string
+}
+
+
 export class SubstrateProcessor {
-    private archive?: string
     private hooks: Hooks = {pre: [], post: [], event: [], extrinsic: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
+    private src?: DataSource
+    private typesBundle?: OldTypesBundle
 
     constructor(private name: string) {}
 
-    setDataSource(archiveUrl: string): void {
-        this.archive = archiveUrl
+    setDataSource(src: DataSource): void {
+        this.src = src
+    }
+
+    setTypesBundle(bundle: string | OldTypesBundle): void {
+        if (typeof bundle == 'string') {
+            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
+        } else {
+            this.typesBundle = bundle
+        }
     }
 
     setBlockRange(range: Range): void {
@@ -147,17 +171,26 @@ export class SubstrateProcessor {
         console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
         let ingest = sm.add(new Ingest({
-            archive: assertNotNull(this.archive, 'use .setDataSource() to specify archive url'),
+            archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
             range: blockRange,
             batchSize: this.batchSize,
             hooks: this.hooks,
             prometheus
         }))
 
-        await this.process(ingest, db, prometheus)
+        let client = sm.add(new RpcClient(
+            assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
+        ))
+
+        await this.process(
+            ingest,
+            new ChainManager(client, this.typesBundle),
+            db,
+            prometheus
+        )
     }
 
-    private async process(ingest: Ingest, db: Db, prom: Prometheus): Promise<void> {
+    private async process(ingest: Ingest, chainManager: ChainManager, db: Db, prom: Prometheus): Promise<void> {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
@@ -165,8 +198,10 @@ export class SubstrateProcessor {
             let {pre, post, events, extrinsics, blocks} = batch
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]
+                let chain = await chainManager.getChainForBlock(block.block)
                 await db.transact(this.name, block.block.height, async store => {
                     let ctx: BlockHandlerContext = {
+                        _chain: chain,
                         store,
                         ...block
                     }

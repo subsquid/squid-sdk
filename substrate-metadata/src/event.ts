@@ -17,14 +17,14 @@ const EVENTS_CACHE = new WeakMap<ChainDescription, Record<QualifiedName, EventDe
 export function getEvents(d: ChainDescription): Record<QualifiedName, EventDefinition> {
     let events = EVENTS_CACHE.get(d)
     if (events == null) {
-        events = extractEvents(d)
+        events = describeEvents(d)
         EVENTS_CACHE.set(d, events)
     }
     return events
 }
 
 
-function extractEvents(d: ChainDescription): Record<QualifiedName, EventDefinition> {
+function describeEvents(d: ChainDescription): Record<QualifiedName, EventDefinition> {
     let events: Record<string, EventDefinition> = {}
     let pallets = d.types[d.event]
     assert(pallets.kind == TypeKind.Variant)
