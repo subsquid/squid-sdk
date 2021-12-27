@@ -23,6 +23,9 @@
     "topics": {
       "db": {
         "description": "Database management commands"
+      },
+      "squid": {
+        "description": "Squid management commands (SaaS)" 
       }
     }
   },
