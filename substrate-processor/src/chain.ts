@@ -13,7 +13,7 @@ import {getEvent, getEventHash} from "@subsquid/substrate-metadata/lib/event"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
-import type {SubstrateEvent, SubstrateRuntimeVersion} from "./interfaces/substrate"
+import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
 
 
 /**
@@ -83,7 +83,7 @@ export class Chain {
         return getEventHash(this.description, eventName)
     }
 
-    decodeEvent(event: SubstrateEvent): any {
+    decodeEvent(event: {name: string, params: {value: unknown}[]}): any {
         let def = getEvent(this.description, event.name)
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeTuple(def.fields, event.params)

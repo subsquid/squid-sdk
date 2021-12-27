@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {decodeEvent, EventContext, getEventHash, Result} from './support'
+import {EventContext, Result} from './support'
 import * as v9130 from './v9130'
 
 export class BalancesTransferEvent {
@@ -20,7 +20,7 @@ export class BalancesTransferEvent {
    */
   get asV1020(): [Uint8Array, Uint8Array, bigint, bigint] {
     assert(this.isV1020)
-    return decodeEvent(this.ctx)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
   }
 
   /**
@@ -36,14 +36,14 @@ export class BalancesTransferEvent {
    */
   get asV1050(): [Uint8Array, Uint8Array, bigint] {
     assert(this.isV1050)
-    return decodeEvent(this.ctx)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
   }
 
   /**
    * Transfer succeeded.
    */
   get isLatest(): boolean {
-    return this.ctx.block.height > 10403784 && getEventHash(this.ctx.chainDescription, 'balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
+    return this.ctx.block.height > 10403784 && this.ctx._chain.getEventHash('balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
   }
 
   /**
@@ -51,6 +51,6 @@ export class BalancesTransferEvent {
    */
   get asLatest(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
     assert(this.isLatest)
-    return decodeEvent(this.ctx)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
   }
 }

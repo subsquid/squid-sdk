@@ -1,5 +1,5 @@
 process: migrate
-	@node -r dotenv/config lib/process.js
+	@node -r dotenv/config lib/processor.js
 
 
 serve:
@@ -30,7 +30,7 @@ explore:
 
 
 up:
-	@docker-compose up
+	@docker-compose up -d
 
 
 down:

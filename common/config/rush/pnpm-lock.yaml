@@ -42,6 +42,7 @@ specifiers:
   ajv: ^8.8.2
   apollo-server-core: ^3.3.0
   apollo-server-express: ^3.3.0
+  base-x: ^3.0.9
   bn.js: ^4.12.0
   camelcase: ^6.2.1
   chalk: ^4.1.2
@@ -119,6 +120,7 @@ dependencies:
   ajv: 8.8.2
   apollo-server-core: 3.5.0
   apollo-server-express: 3.5.0_express@4.17.1
+  base-x: 3.0.9
   bn.js: 4.12.0
   camelcase: 6.2.1
   chalk: 4.1.2
@@ -2016,6 +2018,12 @@ packages:
 
   /balanced-match/1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+    dev: false
+
+  /base-x/3.0.9:
+    resolution: {integrity: sha512-H7JU6iBHTal1gp56aKoaa//YUxEaAOUiydvrV/pILqIHXTtqxSkATOnDA2u+jZ/61sD+L/412+7kzXRtWukhpQ==}
+    dependencies:
+      safe-buffer: 5.2.1
     dev: false
 
   /base/0.11.2:
@@ -7608,11 +7616,12 @@ packages:
     dev: false
 
   file:projects/scale-codec.tgz:
-    resolution: {integrity: sha512-4UhzkRtmGhziOcO03o7/9HKEVUhE5L3+ME7Bfwsyg36m1tZ5AlinGTKCd6mlHrUOnNDYAAvjLB1S2v/SlL60pQ==, tarball: file:projects/scale-codec.tgz}
+    resolution: {integrity: sha512-YdQeR9uGHFZR6vIz5ql7WVdhBpX/+mAeAc+I1fBLcX8jythA8TqA08gNHqkgN5XiqQXhDUpgZIwXhKRKyPzIcw==, tarball: file:projects/scale-codec.tgz}
     name: '@rush-temp/scale-codec'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.14
+      base-x: 3.0.9
       typescript: 4.5.3
     dev: false
 
@@ -7713,7 +7722,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1:
-    resolution: {integrity: sha512-xMRUtVM5MZ0COYKPXBfveGkeZuRggz8TOxwLV+9dJyXIiUEhPO4+4oDAFHTZRKwoogon2jhu84jnm2SbBuxEvA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-gfFRZawlu3hWZNJdVpadElWrrNMCQHzmGK6cUN0MQGaeBOZwu43P6RUEM34WtHgOLLPCuSizpGmXEjoHYlK3XA==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0

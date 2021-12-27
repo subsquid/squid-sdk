@@ -1,9 +1,3 @@
-import type {ChainDescription} from "@subsquid/substrate-metadata"
-import {getEventHash} from "@subsquid/substrate-metadata/lib/event"
-
-
-export {getEventHash}
-
 
 export type Result<T, E> = {
     __kind: 'Ok'
@@ -14,17 +8,19 @@ export type Result<T, E> = {
 }
 
 
-export interface EventContext {
-    chainDescription: ChainDescription
-    block: {
-        height: number
-    }
-    event: {
-        name: string
-    }
+interface Event {
+    name: string
+    params: {value: unknown}[]
 }
 
 
-export function decodeEvent(ctx: EventContext): any {
-    throw new Error('Not implemented')
+export interface EventContext {
+    _chain: {
+        getEventHash(eventName: string): string
+        decodeEvent(event: Event): any
+    }
+    block: {
+        height: number
+    }
+    event: Event
 }

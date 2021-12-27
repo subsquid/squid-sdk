@@ -74,7 +74,7 @@ export class Typegen {
         let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {decodeEvent, EventContext, getEventHash, Result} from './support'`)
+        out.line(`import {EventContext, Result} from './support'`)
         out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
         names.forEach(name => {
             let versions = events.get(name)!
@@ -104,7 +104,7 @@ export class Typegen {
                         out.block(`get isLatest(): boolean`, () => {
                             let hash = getEventHash(version.chainVersion, name)
                             let conditions = [
-                                `getEventHash(this.ctx.chainDescription, '${name}') === '${hash}'`
+                                `this.ctx._chain.getEventHash('${name}') === '${hash}'`
                             ]
                             let begHeight = version.chainVersion.blockNumber
                             if (begHeight > 0) {
@@ -116,7 +116,7 @@ export class Typegen {
                         out.blockComment(version.def.docs)
                         out.block(`get asLatest(): ${typeExp}`, () => {
                             out.line(`assert(this.isLatest)`)
-                            out.line(`return decodeEvent(this.ctx)`)
+                            out.line(`return this.ctx._chain.decodeEvent(this.ctx.event)`)
                         })
                     } else {
                         out.blockComment(version.def.docs)
@@ -134,7 +134,7 @@ export class Typegen {
                         out.blockComment(version.def.docs)
                         out.block(`get asV${v}(): ${typeExp}`, () => {
                             out.line(`assert(this.isV${v})`)
-                            out.line(`return decodeEvent(this.ctx)`)
+                            out.line(`return this.ctx._chain.decodeEvent(this.ctx.event)`)
                         })
                     }
                 })

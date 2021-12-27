@@ -32,7 +32,7 @@ export interface IngestOptions {
 
 
 export class Ingest {
-    private out = new Channel<DataBatch | null>(2)
+    private out = new Channel<DataBatch | null>(3)
     private _abort = new AbortHandle()
     private archiveHeight = -1
     private readonly limit: number

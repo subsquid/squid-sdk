@@ -1,6 +1,6 @@
 import assert from "assert"
 import {ArrayType, Field, Primitive, SequenceType, Ti, TupleType, Type, TypeKind, VariantType} from "./types"
-import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
+import {assertNotNull, base58, normalizeTypes, unexpectedCase} from "./util"
 
 
 export class JsonCodec {
@@ -35,7 +35,7 @@ export class JsonCodec {
             case TypeKind.Bytes:
                 return decodeHex(value)
             case TypeKind.BytesArray:
-                return this.decodeBytesArray(def.len, value)
+                return decodeBinaryArray(def.len, value)
             case TypeKind.DoNotConstruct:
                 throw new Error('DoNotConstruct type reached')
             default:
@@ -143,12 +143,6 @@ export class JsonCodec {
         return value
     }
 
-    private decodeBytesArray(len: number, value: unknown): Uint8Array {
-        let bytes = decodeHex(value)
-        assert(bytes.length == len)
-        return bytes
-    }
-
     private decodeCompact(type: Ti, value: unknown): number | BigInt {
         // TODO: more validation
         if (typeof value == 'string') {
@@ -195,6 +189,54 @@ function decodePrimitive(type: Primitive, value: unknown): string | boolean | nu
 function decodeHex(value: unknown): Buffer {
     assert(typeof value == 'string')
     assert(/^0x([a-fA-F0-9]{2})+$/.test(value))
-    return Buffer.from(value, 'hex')
+    return Buffer.from(value.slice(2), 'hex')
 }
 
+
+function decodeBinaryArray(len: number, value: unknown): Buffer {
+    assert(typeof value == 'string')
+    if (/^0x([a-fA-F0-9]{2})+$/.test(value)) {
+        assert(value.length - 2 == len * 2)
+        return Buffer.from(value.slice(2), 'hex')
+    } else {
+        return decodeAddress(len, value)
+    }
+}
+
+
+function decodeAddress(len: number, value: string): Buffer {
+    // TODO: hash checks
+    let buf = base58.decode(value)
+    switch(buf.length) {
+        case 3:
+            assert(len == 1)
+            return buf.subarray(1, 2)
+        case 4:
+            assert(len == 2)
+            return buf.subarray(1, 3)
+        case 5:
+            assert(len == 2)
+            return buf.subarray(1, 3)
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+            assert(len == 4)
+            return buf.subarray(1, 5)
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 16:
+        case 17:
+            assert(len == 8)
+            return buf.subarray(1, 9)
+        case 35:
+            assert(len == 32)
+            return buf.subarray(1, 33)
+        default:
+            throw new Error('Unrecognized address format')
+    }
+}

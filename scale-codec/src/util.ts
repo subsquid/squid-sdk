@@ -1,5 +1,6 @@
 import assert from "assert"
 import {Primitive, Ti, Type, TypeKind, Variant} from "./types"
+import baseX from "base-x"
 
 
 export function normalizeTypes(types: Type[]): Type[] {
@@ -63,3 +64,8 @@ export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
 export function unexpectedCase(val?: unknown): Error {
     return new Error(val ? `Unexpected case: ${val}` : `Unexpected case`)
 }
+
+
+export const base58 = baseX(
+    '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+)

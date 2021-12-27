@@ -19,7 +19,7 @@ export interface EventHandlerContext {
      * Not yet public description of chain metadata
      * @internal
      */
-    _chain?: Chain
+    _chain: Chain
 }
 
 
@@ -46,7 +46,7 @@ export interface BlockHandlerContext {
      * Not yet public description of chain metadata
      * @internal
      */
-    _chain?: Chain
+    _chain: Chain
 }
 
 
