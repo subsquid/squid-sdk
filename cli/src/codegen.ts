@@ -1,7 +1,7 @@
 import type {Entity, Enum, JsonObject, Model, Prop, Union} from '@subsquid/openreader/dist/model'
 import {OutDir, Output, toCamelCase, unexpectedCase} from '@subsquid/util'
 import assert from 'assert'
-import {resource} from "./utils"
+import * as path from "path"
 
 
 export function generateOrmModels(model: Model, dir: OutDir): void {
@@ -27,7 +27,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     index.write()
-    dir.add('marshal.ts', resource('codegen/marshal.ts'))
+    dir.add('marshal.ts', path.resolve(__dirname, '../src/marshal.ts'))
 
     function generateEntity(name: string, entity: Entity): void {
         index.line(`export * from "./${toCamelCase(name)}.model"`)
@@ -420,7 +420,7 @@ function getScalarJsType(typeName: string): string {
         case 'BigInt':
             return 'bigint'
         case 'Bytes':
-            return 'Buffer'
+            return 'Uint8Array'
         default:
             throw unexpectedCase(typeName)
     }

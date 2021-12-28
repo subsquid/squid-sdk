@@ -1,9 +1,13 @@
+import {decodeAddress} from "@polkadot/keyring"
+import {toHex} from "@subsquid/util"
 import expect from "expect"
 import {chain, gql, transfer, waitForHeight} from "./setup"
 
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
+const ALICE_ADDR = toHex(decodeAddress(ALICE))
+const BOB_ADDR = toHex(decodeAddress(BOB))
 const txAmount1 = 232323
 const txAmount2 = 1000
 
@@ -35,14 +39,14 @@ describe('transfer tests', function () {
             }
         `, {
             first: [{
-                from: '0x'+Buffer.from(ALICE, 'ascii').toString('hex'),
-                to: '0x'+Buffer.from(BOB, 'ascii').toString('hex'),
+                from: ALICE_ADDR,
+                to: BOB_ADDR,
                 value: '232323',
                 fromAccount: {
-                    id: ALICE
+                    id: ALICE_ADDR
                 },
                 toAccount: {
-                    id: BOB
+                    id: BOB_ADDR
                 },
             }],
             second: [{
@@ -83,7 +87,7 @@ describe('transfer tests', function () {
             comments: [{
                 highlight: expect.stringContaining('<b>Transfer'),
                 item: {
-                    fromAccount: {id: ALICE}
+                    fromAccount: {id: ALICE_ADDR}
                 }
             }]
         })
@@ -92,7 +96,7 @@ describe('transfer tests', function () {
     it('json fields are properly mapped', function () {
         return gql.test(`
             query {
-                alice: accountById(id: "${ALICE}") {
+                alice: accountById(id: "${ALICE_ADDR}") {
                     status {
                         __typename
                         ... on Miserable {

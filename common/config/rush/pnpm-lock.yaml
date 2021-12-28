@@ -52,6 +52,7 @@ specifiers:
   debug: ^4.3.2
   delay: ~5.0.0
   dotenv: ^10.0.0
+  dotenv-cli: ^4.1.1
   envalid: ^7.2.1
   express: ^4.17.1
   fast-check: ^2.20.0
@@ -130,6 +131,7 @@ dependencies:
   debug: 4.3.3
   delay: 5.0.0
   dotenv: 10.0.0
+  dotenv-cli: 4.1.1
   envalid: 7.2.2
   express: 4.17.1
   fast-check: 2.20.0
@@ -2953,6 +2955,20 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       path-type: 4.0.0
+    dev: false
+
+  /dotenv-cli/4.1.1:
+    resolution: {integrity: sha512-XvKv1pa+UBrsr3CtLGBsR6NdsoS7znqaHUf4Knj0eZO+gOI/hjj9KgWDP+KjpfEbj6wAba1UpbhaP9VezNkWhg==}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+      dotenv: 8.6.0
+      dotenv-expand: 5.1.0
+      minimist: 1.2.5
+    dev: false
+
+  /dotenv-expand/5.1.0:
+    resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
     dev: false
 
   /dotenv/10.0.0:
@@ -7472,7 +7488,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_ioredis@4.28.2:
-    resolution: {integrity: sha512-SzlNwN+0Mn3ztJTTq1disHEL4p33cwkvkd/iECw6hotHNrLHdcSOeijpz2dnTAGrq7UtO5j0u+tACP/eX4V8Ew==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-LAzHlPjtHH9His7tY0nT+qTPs7GxLGEXYf/g8OoWoh8WD1qvxcz1Kim4RtpcWpiLrdlsw5lcvh4nzqg0G1497g==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7481,6 +7497,7 @@ packages:
       '@types/node': 16.11.14
       '@types/pg': 8.6.1
       dotenv: 10.0.0
+      dotenv-cli: 4.1.1
       pg: 8.7.1
       typeorm: 0.2.41_ioredis@4.28.2+pg@8.7.1
       typescript: 4.5.3

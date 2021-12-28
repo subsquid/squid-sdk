@@ -15,10 +15,10 @@ export class Transfer {
   id!: string
 
   @Column_("bytea", {nullable: false})
-  from!: Buffer
+  from!: Uint8Array
 
   @Column_("bytea", {nullable: false})
-  to!: Buffer
+  to!: Uint8Array
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})

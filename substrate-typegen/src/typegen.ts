@@ -8,7 +8,7 @@ import {
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {def, OutDir} from "@subsquid/util"
+import {def, OutDir, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {Interfaces} from "./ifs"
 
@@ -71,8 +71,9 @@ export class Typegen {
         names.forEach(name => {
             let versions = items.get(name)!
             let {def: {pallet, name: unqualifiedName}} = versions[0]
+            let className = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}`)) + fix
             out.line()
-            out.block(`export class ${pallet}${unqualifiedName}${fix}`, () => {
+            out.block(`export class ${className}`, () => {
                 out.block(`constructor(private ctx: ${fix}Context)`, () => {
                     out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
                 })
@@ -235,4 +236,9 @@ export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
         }
     }
     return grouping
+}
+
+
+export function upperCaseFirst(s: string): string {
+    return s[0].toUpperCase() + s.slice(1)
 }

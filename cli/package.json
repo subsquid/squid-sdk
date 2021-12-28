@@ -10,7 +10,7 @@
     "/bin",
     "/lib",
     "!/lib/test",
-    "/resource",
+    "/src/marshal.ts",
     "/oclif.manifest.json"
   ],
   "oclif": {

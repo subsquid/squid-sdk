@@ -1,8 +1,10 @@
-import {SubstrateProcessor} from "@subsquid/substrate-processor"
+import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import assert from "assert"
 import * as process from "process"
 import {loadInitialData} from "./initialData"
 import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
+import {TimestampSetCall} from "./types/calls"
+import {BalancesTransferEvent} from "./types/events"
 import {getOrCreate} from "./util"
 
 
@@ -49,17 +51,15 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 
 
 processor.addEventHandler('balances.Transfer', async ctx => {
-    let from = ctx.event.params[0].value as string
-    let to = ctx.event.params[1].value as string
-    let value = BigInt(ctx.event.params[2].value as string)
+    let [from, to, value] = new BalancesTransferEvent(ctx).asLatest
 
     assert(ctx.block.timestamp != null, 'block.timestamp must be set')
     assert(ctx.block.timestamp === ctx.event.blockTimestamp, 'event.blockTimestamp must be set to block.timestamp')
 
     let transfer = new Transfer({
         id: ctx.event.id,
-        from: Buffer.from(from, 'ascii'), // random bytes instead of real decoding
-        to: Buffer.from(to, 'ascii'),
+        from,
+        to,
         value,
         tip: ctx.extrinsic?.tip ?? 0n,
         extrinsicId: ctx.extrinsic?.id,
@@ -69,7 +69,7 @@ processor.addEventHandler('balances.Transfer', async ctx => {
         comment: `Transferred ${value} from ${from} to ${to}`
     })
 
-    let fromAcc = await getOrCreate(Account, from, ctx.store)
+    let fromAcc = await getOrCreate(Account, toHex(from), ctx.store)
     fromAcc.balance = fromAcc.balance || 0n
     fromAcc.balance -= value
     fromAcc.balance -= transfer.tip
@@ -78,7 +78,7 @@ processor.addEventHandler('balances.Transfer', async ctx => {
     fromAcc.status.loves = ['money', 'crypto']
     await ctx.store.save(fromAcc)
 
-    let toAcc = await getOrCreate(Account, to, ctx.store)
+    let toAcc = await getOrCreate(Account, toHex(to), ctx.store)
     toAcc.balance = toAcc.balance || 0n
     toAcc.balance += value
     toAcc.status = new MiddleClass()
@@ -94,7 +94,7 @@ processor.addEventHandler('balances.Transfer', async ctx => {
 
 
 processor.addExtrinsicHandler('timestamp.set', async ctx => {
-    let timestamp = Number(ctx.extrinsic.args[0].value as string)
+    let timestamp = new TimestampSetCall(ctx).asLatest.now
     if (ctx.block.timestamp !== timestamp) {
         throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
     }

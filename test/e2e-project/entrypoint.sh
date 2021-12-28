@@ -24,16 +24,24 @@ wait_until() {
 }
 
 
-rm -rf db src/model/generated
-make codegen || exit 1
-npm run build || exit 1
-make migration || exit 1
-make migrate || exit 1
-
 if [ -n "$ARCHIVE_ENDPOINT" ]; then
   echo "Waiting for gateway"
   wait_until "gateway_ready"
 fi
+
+
+rm -rf db src/types src/model/generated
+make codegen || exit 1
+
+npx squid-substrate-metadata-explorer \
+		--chain "$CHAIN_ENDPOINT" \
+		--out chainVersions.json || exit 1
+
+make typegen || exit 1
+npm run build || exit 1
+make migration || exit 1
+make migrate || exit 1
+
 
 terminate() {
     trap '' INT TERM

@@ -2,7 +2,7 @@ import assert from "assert"
 import * as marshal from "./marshal"
 
 export class AdditionalData {
-  private _data!: Buffer | undefined | null
+  private _data!: Uint8Array | undefined | null
 
   constructor(props?: Partial<Omit<AdditionalData, 'toJSON'>>, json?: any) {
     Object.assign(this, props)
@@ -11,11 +11,11 @@ export class AdditionalData {
     }
   }
 
-  get data(): Buffer | undefined | null {
+  get data(): Uint8Array | undefined | null {
     return this._data
   }
 
-  set data(value: Buffer | undefined | null) {
+  set data(value: Uint8Array | undefined | null) {
     this._data = value
   }
 

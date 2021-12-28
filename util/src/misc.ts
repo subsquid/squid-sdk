@@ -56,3 +56,12 @@ export function resolveGraphqlSchema(projectDir?: string): string {
     }
     throw new Error(`Failed to locate schema.graphql at ${dir}`)
 }
+
+
+export function toHex(data: Uint8Array): string {
+    if (Buffer.isBuffer(data)) {
+        return '0x' + data.toString('hex')
+    } else {
+        return '0x' + Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('hex')
+    }
+}

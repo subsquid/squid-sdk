@@ -1,0 +1,11 @@
+{
+  "outDir": "src/types",
+  "chainVersions": "chainVersions.json",
+  "typesBundle": "./typedefs.json",
+  "events": [
+    "balances.Transfer"
+  ],
+  "calls": [
+    "timestamp.set"
+  ]
+}

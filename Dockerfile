@@ -33,7 +33,6 @@ ADD test/gql-client/package.json test/gql-client/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
 RUN node common/scripts/install-run-rush.js install
-ADD cli/resource cli/resource
 ADD cli/src cli/src
 ADD cli/tsconfig.json cli/
 ADD graphql-server/src graphql-server/src
@@ -63,6 +62,7 @@ ADD test/e2e-project/db test/e2e-project/db
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
 ADD test/e2e-project/typedefs.json test/e2e-project/
+ADD test/e2e-project/typegen.json test/e2e-project/
 ADD test/e2e-project/tsconfig.json test/e2e-project/
 ADD test/e2e-suite/src test/e2e-suite/src
 ADD test/e2e-suite/tsconfig.json test/e2e-suite/
