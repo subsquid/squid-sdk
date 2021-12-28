@@ -24,3 +24,21 @@ export interface EventContext {
     }
     event: Event
 }
+
+
+interface Call {
+    name: string
+    args: {value: unknown}[]
+}
+
+
+export interface CallContext {
+    _chain: {
+        getCallHash(name: string): string
+        decodeCall(call: Call): any
+    }
+    block: {
+        height: number
+    }
+    extrinsic: Call
+}

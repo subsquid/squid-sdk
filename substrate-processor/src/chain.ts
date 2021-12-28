@@ -9,7 +9,7 @@ import {
     QualifiedName,
     SpecVersion
 } from "@subsquid/substrate-metadata"
-import {getEvent, getEventHash} from "@subsquid/substrate-metadata/lib/event"
+import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
@@ -72,26 +72,41 @@ export class ChainManager {
 
 export class Chain {
     private jsonCodec: JsonCodec
+    private events: eac.Registry
+    private calls: eac.Registry
 
-    constructor(
-        public readonly description: ChainDescription
-    ) {
+    constructor(public readonly description: ChainDescription) {
         this.jsonCodec = new JsonCodec(description.types)
+        this.events = new eac.Registry(description.types, description.event)
+        this.calls = new eac.Registry(description.types, description.call)
     }
 
     getEventHash(eventName: QualifiedName): string {
-        return getEventHash(this.description, eventName)
+        return this.events.getHash(eventName)
+    }
+
+    getCallHash(callName: QualifiedName): string {
+        return this.calls.getHash(callName)
     }
 
     decodeEvent(event: {name: string, params: {value: unknown}[]}): any {
-        let def = getEvent(this.description, event.name)
+        let def = this.events.get(event.name)
+        return this.decode(def, event.params)
+    }
+
+    decodeCall(call: {name: string, args: {value: unknown}[]}): any {
+        let def = this.calls.get(call.name)
+        return this.decode(def, call.args)
+    }
+
+    private decode(def: eac.Definition, args: {value: unknown}[]): any {
         if (def.fields.length == 0) return undefined
-        if (def.fields[0].name == null) return this.decodeTuple(def.fields, event.params)
+        if (def.fields[0].name == null) return this.decodeTuple(def.fields, args)
         let result: any = {}
         for (let i = 0; i < def.fields.length; i++) {
             let f = def.fields[i]
             let name = assertNotNull(f.name)
-            result[name] = this.jsonCodec.decode(f.type, event.params[i].value)
+            result[name] = this.jsonCodec.decode(f.type, args[i].value)
         }
         return result
     }

@@ -104,11 +104,21 @@ function fromV14(metadata: MetadataV14): ChainDescription {
 
     return {
         types,
-        call: -1,
+        call: getCallType(metadata),
         event: getEventTypeFromEventRecord(types, eventRecord),
         eventRecord,
         eventRecordList
     }
+}
+
+
+function getCallType(metadata: MetadataV14): Ti {
+    let types = metadata.lookup.types
+    let extrinsic = metadata.extrinsic.type
+    let params = types[extrinsic].type.params
+    let call = params[1]
+    assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
+    return assertNotNull(call.type)
 }
 
 

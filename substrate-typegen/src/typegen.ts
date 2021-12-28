@@ -1,12 +1,12 @@
 import {
-    ChainDescription,
     decodeMetadata,
     getChainDescriptionFromMetadata,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion
+    SpecVersion,
+    Type
 } from "@subsquid/substrate-metadata"
-import {EventDefinition, getEventHash, getEvents} from "@subsquid/substrate-metadata/lib/event"
+import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {def, OutDir} from "@subsquid/util"
 import assert from "assert"
@@ -18,19 +18,6 @@ export interface ChainVersion {
     blockNumber: number
     blockHash: string
     metadata: string
-}
-
-
-interface VersionDescription extends ChainDescription {
-    specVersion: SpecVersion
-    blockNumber: number
-}
-
-
-interface Event {
-    name: QualifiedName
-    def: EventDefinition
-    chainVersion: VersionDescription
 }
 
 
@@ -57,7 +44,8 @@ export class Typegen {
 
     generate(): void {
         this.dir.del()
-        this.generateEvents()
+        this.generateItems('events')
+        this.generateItems('calls')
         this.interfaces.forEach((ifs, specVersion) => {
             if (ifs.isEmpty()) return
             let file = this.dir.file(`v${specVersion}.ts`)
@@ -67,26 +55,30 @@ export class Typegen {
         this.dir.add('support.ts', [__dirname, '../src/support.ts'])
     }
 
-    generateEvents(): void {
-        let out = this.dir.file('events.ts')
-        let events = this.events()
-        let names = Array.from(events.keys()).sort()
+    private generateItems(kind: 'events' | 'calls'): void {
+        let items = this.collectItems(kind)
+        if (items.size == 0) return
+
+        let out = this.dir.file(`${kind}.ts`)
+        let fix = kind == 'events' ? 'Event' : 'Call'
+        let ctx = kind == 'events' ? 'event' : 'extrinsic'
+        let names = Array.from(items.keys()).sort()
         let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {EventContext, Result} from './support'`)
+        out.line(`import {${fix}Context, Result} from './support'`)
         out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
         names.forEach(name => {
-            let versions = events.get(name)!
+            let versions = items.get(name)!
             let {def: {pallet, name: unqualifiedName}} = versions[0]
             out.line()
-            out.block(`export class ${pallet}${unqualifiedName}Event`, () => {
-                out.block(`constructor(private ctx: EventContext)`, () => {
-                    out.line(`assert(this.ctx.event.name === '${name}')`)
+            out.block(`export class ${pallet}${unqualifiedName}${fix}`, () => {
+                out.block(`constructor(private ctx: ${fix}Context)`, () => {
+                    out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
                 })
                 versions.forEach((version, idx) => {
                     let isLatest = versions.length === idx + 1
-                    let v = version.chainVersion.specVersion
+                    let v = version.chain.specVersion
                     let ifs = this.getInterface(v)
                     let unqualifiedTypeExp: string
                     if (version.def.fields[0]?.name == null) {
@@ -102,11 +94,11 @@ export class Typegen {
                     if (isLatest) {
                         out.blockComment(version.def.docs)
                         out.block(`get isLatest(): boolean`, () => {
-                            let hash = getEventHash(version.chainVersion, name)
+                            let hash = version.chain[kind].getHash(name)
                             let conditions = [
-                                `this.ctx._chain.getEventHash('${name}') === '${hash}'`
+                                `this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`
                             ]
-                            let begHeight = version.chainVersion.blockNumber
+                            let begHeight = version.chain.blockNumber
                             if (begHeight > 0) {
                                 conditions.unshift(`this.ctx.block.height > ${begHeight}`)
                             }
@@ -116,13 +108,13 @@ export class Typegen {
                         out.blockComment(version.def.docs)
                         out.block(`get asLatest(): ${typeExp}`, () => {
                             out.line(`assert(this.isLatest)`)
-                            out.line(`return this.ctx._chain.decodeEvent(this.ctx.event)`)
+                            out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
                         })
                     } else {
                         out.blockComment(version.def.docs)
                         out.block(`get isV${v}(): boolean`, () => {
-                            let begHeight = version.chainVersion.blockNumber
-                            let endHeight = versions[idx + 1].chainVersion.blockNumber
+                            let begHeight = version.chain.blockNumber
+                            let endHeight = versions[idx + 1].chain.blockNumber
                             out.line(`let h = this.ctx.block.height`)
                             if (begHeight == 0) {
                                 out.line(`return h <= ${endHeight}`)
@@ -134,53 +126,56 @@ export class Typegen {
                         out.blockComment(version.def.docs)
                         out.block(`get asV${v}(): ${typeExp}`, () => {
                             out.line(`assert(this.isV${v})`)
-                            out.line(`return this.ctx._chain.decodeEvent(this.ctx.event)`)
+                            out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
                         })
                     }
                 })
             })
         })
+
         out.write()
     }
 
     /**
-     * A mapping between qualified event name and list of unique versions
+     * Create a mapping between qualified name and list of unique versions
      */
-    @def
-    events(): Map<QualifiedName, Event[]> {
-        if (!this.options.events?.length) return new Map()
-        let requested = new Set(this.options.events)
-        let list = this.chain().flatMap(chainVersion => {
-            let events = getEvents(chainVersion)
-            return Object.entries(events).map(([name, def]) => {
-                return {name, def, chainVersion}
+    private collectItems(kind: 'events' | 'calls'): Map<QualifiedName, Item[]> {
+        let requested = new Set(this.options[kind])
+        if (requested.size == 0) return new Map()
+
+        let list = this.chain().flatMap(chain => {
+            return Object.entries(chain[kind].definitions).map(([name, def]) => {
+                return {name, def, chain}
             })
         })
-        let m = groupBy(list, e => e.name)
+
+        let items = groupBy(list, i => i.name)
         requested.forEach(name => {
-            if (!m.has(name)) {
-                throw new Error(`Event ${name} is not defined in the chain`)
+            if (!items.has(name)) {
+                throw new Error(`${name} is not defined chain`)
             }
         })
-        m.forEach((versions, name) => {
+
+        items.forEach((versions, name) => {
             if (requested.has(name)) {
-                versions.sort((a, b) => a.chainVersion.blockNumber - b.chainVersion.blockNumber)
-                let unique: Event[] = []
+                versions.sort((a, b) => a.chain.blockNumber - b.chain.blockNumber)
+                let unique: Item[] = []
                 versions.forEach(v => {
                     let prev = unique.length ? unique[unique.length - 1] : undefined
-                    if (prev && getEventHash(v.chainVersion, name) == getEventHash(prev.chainVersion, name)) {
+                    if (prev && v.chain[kind].getHash(name) == prev.chain[kind].getHash(name)) {
                         // TODO: use the latest definition, but set specVersion and blockNumber of a previous one
                         // for hopefully better docs
                     } else {
                         unique.push(v)
                     }
                 })
-                m.set(name, unique)
+                items.set(name, unique)
             } else {
-                m.delete(name)
+                items.delete(name)
             }
         })
-        return m
+
+        return items
     }
 
     @def
@@ -192,7 +187,9 @@ export class Typegen {
             return {
                 specVersion: v.specVersion,
                 blockNumber: v.blockNumber,
-                ...d
+                types: d.types,
+                events: new eac.Registry(d.types, d.event),
+                calls: new eac.Registry(d.types, d.call)
             }
         }).sort((a, b) => a.blockNumber - b.blockNumber)
     }
@@ -206,6 +203,22 @@ export class Typegen {
         this.interfaces.set(specVersion, ifs)
         return ifs
     }
+}
+
+
+interface VersionDescription {
+    specVersion: SpecVersion
+    blockNumber: number
+    types: Type[]
+    events: eac.Registry
+    calls: eac.Registry
+}
+
+
+interface Item {
+    name: QualifiedName
+    def: eac.Definition
+    chain: VersionDescription
 }
 
 
