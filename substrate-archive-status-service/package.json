@@ -9,12 +9,12 @@
     "start": "node lib/app.js"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "ioredis": "^4.27.8"
+    "express": "^4.17.2",
+    "ioredis": "^4.28.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
-    "@types/node": "^16.11.14",
-    "@types/ioredis": "^4.26.7"
+    "@types/node": "^16.11.17",
+    "@types/ioredis": "^4.28.5"
   }
 }

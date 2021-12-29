@@ -2,7 +2,9 @@
   "name": "@subsquid/scale-codec",
   "version": "0.0.0",
   "main": "lib/index.js",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
@@ -10,7 +12,7 @@
     "base-x": "^3.0.9"
   },
   "devDependencies": {
-    "@types/node": "^16.11.12",
-    "typescript": "~4.5.3"
+    "@types/node": "^16.11.17",
+    "typescript": "~4.5.4"
   }
 }

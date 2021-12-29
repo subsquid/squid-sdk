@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "6.23.6",
+  "pnpmVersion": "6.24.4",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -290,7 +290,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-    // "url": "https://github.com/microsoft/rush-example",
+     "url": "https://github.com/subsquid/squid",
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -529,6 +529,10 @@
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
       "reviewCategory": "test"
+    },
+    {
+      "packageName": "dependencies",
+      "projectFolder": "tools/dependencies"
     }
   ]
 }
