@@ -6,16 +6,17 @@ import { request } from '../request';
 export async function update(
     squidName: string,
     versionName: string,
-    artifactUrl: string
+    artifactUrl: string,
+    hardReset: boolean
 ): Promise<{
     id: number;
     name: string;
-    version: { deploymentUrl: string };
+    deploymentUrl: string
 } | void> {
     const apiUrl = `${baseUrl}/client/squid/${squidName}/version/${versionName}/deployment`;
     const response = await request(apiUrl, {
         method: 'put',
-        body: JSON.stringify({ artifactUrl }),
+        body: JSON.stringify({ artifactUrl, hardReset }),
         headers: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',

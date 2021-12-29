@@ -29,6 +29,12 @@ export default class Update extends Command {
             description: 'source',
             required: false,
         }),
+        hardReset: Flags.boolean({
+            char: 'r',
+            description: 'perform a hard reset (db wipeout)',
+            required: false,
+            default: false
+        })
     };
 
     async run(): Promise<void> {
@@ -54,7 +60,8 @@ export default class Update extends Command {
         const result = await update(
             squidName,
             versionName,
-            deployUrl as string
+            deployUrl as string,
+            flags.hardReset
         );
         this.log(
             '◷ You can detach from the resulting build process by pressing Ctrl + C. This does not cancel the deploy.'
@@ -65,7 +72,7 @@ export default class Update extends Command {
         await pollDeployPipelines(
             squidName,
             versionName,
-            result?.version.deploymentUrl || '',
+            result?.deploymentUrl || '',
             this
         );
         this.log('✔️ Done!');
