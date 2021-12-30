@@ -448,67 +448,91 @@
     {
       "packageName": "@subsquid/cli",
       "projectFolder": "cli",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "rpc-client",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-archive",
       "projectFolder": "substrate-archive",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/substrate-archive-status-service",
       "projectFolder": "substrate-archive-status-service",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
       "projectFolder": "substrate-metadata-explorer",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/typeorm-config",
       "projectFolder": "typeorm-config",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/util",
       "projectFolder": "util",
-      "reviewCategory": "production"
+      "reviewCategory": "production",
+      "shouldPublish": true,
+      "versionPolicyName": "Individual"
     },
     {
       "packageName": "balances",

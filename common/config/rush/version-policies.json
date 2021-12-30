@@ -9,6 +9,10 @@
  * to a set of projects that are specified using the "versionPolicyName" field in rush.json.
  */
 [
+  {
+    "definitionName": "individualVersion",
+    "policyName": "Individual"
+  }
   // {
   //   /**
   //    * (Required) Indicates the kind of version policy being defined ("lockStepVersion" or "individualVersion").
@@ -64,7 +68,7 @@
   //   // "includeEmailInChangeFile": true
   // },
   //
-   {
+//   {
      /**
       * (Required) Indicates the kind of version policy being defined ("lockStepVersion" or "individualVersion").
       *
@@ -75,8 +79,8 @@
       * depend on how developers answer the "rush change" questions for each package that
       * is changed.
       */
-     "definitionName": "individualVersion",
-     "policyName": "Default",
+//     "definitionName": "individualVersion",
+//     "policyName": "Default",
 
 //     /**
 //      * (Optional) This can be used to enforce that all packages in the set must share a common
@@ -97,5 +101,5 @@
 //     "exemptFromRushChange": false,
 
      // "includeEmailInChangeFile": true
-   }
+//   }
 ]

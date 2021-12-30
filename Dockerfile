@@ -30,6 +30,7 @@ ADD test/balances/package.json test/balances/
 ADD test/e2e-project/package.json test/e2e-project/
 ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
+ADD tools/dependencies/package.json tools/dependencies/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
 RUN node common/scripts/install-run-rush.js install
@@ -58,7 +59,6 @@ ADD substrate-typegen/src substrate-typegen/src
 ADD substrate-typegen/tsconfig.json substrate-typegen/
 ADD test/balances/src test/balances/src
 ADD test/balances/tsconfig.json test/balances/
-ADD test/e2e-project/db test/e2e-project/db
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
 ADD test/e2e-project/typedefs.json test/e2e-project/
@@ -68,6 +68,8 @@ ADD test/e2e-suite/src test/e2e-suite/src
 ADD test/e2e-suite/tsconfig.json test/e2e-suite/
 ADD test/gql-client/src test/gql-client/src
 ADD test/gql-client/tsconfig.json test/gql-client/
+ADD tools/dependencies/src tools/dependencies/src
+ADD tools/dependencies/tsconfig.json tools/dependencies/
 ADD typeorm-config/src typeorm-config/src
 ADD typeorm-config/tsconfig.json typeorm-config/
 ADD util/src util/src

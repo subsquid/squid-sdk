@@ -16,6 +16,12 @@
       "commandKind": "global",
       "summary": "Unify external dependencies across project",
       "shellCommand": "node tools/dependencies/lib/main.js"
+    },
+    {
+      "name": "e2e",
+      "commandKind": "global",
+      "summary": "run e2e test suite",
+      "shellCommand": "cd test/e2e-suite && ./run.sh"
     }
   ],
 
