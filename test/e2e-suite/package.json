@@ -1,7 +1,6 @@
 {
   "name": "e2e-test-suite",
   "private": true,
-  "version": "0.0.0",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },

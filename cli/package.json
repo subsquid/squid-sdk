@@ -25,7 +25,7 @@
         "description": "Database management commands"
       },
       "squid": {
-        "description": "Squid management commands (SaaS)" 
+        "description": "Squid management commands (SaaS)"
       }
     }
   },
@@ -39,7 +39,7 @@
     "@oclif/plugin-help": "^5.1.10",
     "@octokit/auth-oauth-device": "^3.1.2",
     "@subsquid/openreader": "^0.2.1",
-    "@subsquid/typeorm-config": "0.0.0",
+    "@subsquid/typeorm-config": "^0.0.0",
     "@subsquid/util": "^0.0.0",
     "chalk": "^4.1.2",
     "cli-select": "^1.1.2",

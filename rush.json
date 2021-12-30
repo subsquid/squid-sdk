@@ -448,115 +448,103 @@
     {
       "packageName": "@subsquid/cli",
       "projectFolder": "cli",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "rpc-client",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-archive",
       "projectFolder": "substrate-archive",
-      "reviewCategory": "production",
       "shouldPublish": false
     },
     {
       "packageName": "@subsquid/substrate-archive-status-service",
       "projectFolder": "substrate-archive-status-service",
-      "reviewCategory": "production",
       "shouldPublish": false
     },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
       "projectFolder": "substrate-metadata-explorer",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/typeorm-config",
       "projectFolder": "typeorm-config",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "@subsquid/util",
       "projectFolder": "util",
-      "reviewCategory": "production",
       "shouldPublish": true,
       "versionPolicyName": "Individual"
     },
     {
       "packageName": "balances",
       "projectFolder": "test/balances",
-      "reviewCategory": "test"
+      "shouldPublish": false
     },
     {
       "packageName": "e2e-test-project",
       "projectFolder": "test/e2e-project",
-      "reviewCategory": "test"
+      "shouldPublish": false
     },
     {
       "packageName": "e2e-test-suite",
       "projectFolder": "test/e2e-suite",
-      "reviewCategory": "test"
+      "shouldPublish": false
     },
     {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
-      "reviewCategory": "test"
+      "shouldPublish": false
     },
     {
       "packageName": "dependencies",
-      "projectFolder": "tools/dependencies"
+      "projectFolder": "tools/dependencies",
+      "shouldPublish": false
     }
   ]
 }
