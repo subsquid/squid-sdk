@@ -14,6 +14,7 @@ type Deps = Record<string, string>
 interface Pkg {
     json: PkgJson
     loc: string
+    changed?: boolean
 }
 
 
@@ -29,19 +30,17 @@ interface Rush {
 
 
 export class Workspace {
-    private changed = false
-
     constructor(private dir: string) {}
 
     save(): void {
-        if (!this.changed) return
         this.packages().forEach(def => {
+            if (!def.changed) return
             this.write(
                 path.join(def.loc, 'package.json'),
                 def.json
             )
+            def.changed = false
         })
-        this.changed = false
     }
 
     async update(majorBumpSet?: Set<string>): Promise<void> {
@@ -54,7 +53,6 @@ export class Workspace {
             if (current != latest) {
                 console.log(`updated ${name}\t${current} -> ${latest}`)
                 versions[name] = prefix(versions[name]) + latest
-                this.changed = true
             }
         }
     }
@@ -69,7 +67,7 @@ export class Workspace {
                     if (latest && current != latest) {
                         deps[key] = latest
                         console.log(`changed ${name}\t${key}\t${current} -> ${latest}`)
-                        this.changed = true
+                        def.changed = true
                     }
                 }
             }

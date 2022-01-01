@@ -449,77 +449,79 @@
       "packageName": "@subsquid/cli",
       "projectFolder": "cli",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "rpc-client",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-archive",
       "projectFolder": "substrate-archive",
-      "shouldPublish": false
+      "shouldPublish": false,
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-archive-status-service",
       "projectFolder": "substrate-archive-status-service",
-      "shouldPublish": false
+      "shouldPublish": false,
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
       "projectFolder": "substrate-metadata-explorer",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/typeorm-config",
       "projectFolder": "typeorm-config",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "@subsquid/util",
       "projectFolder": "util",
       "shouldPublish": true,
-      "versionPolicyName": "Individual"
+      "versionPolicyName": "individual"
     },
     {
       "packageName": "balances",
@@ -542,8 +544,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "dependencies",
-      "projectFolder": "tools/dependencies",
+      "packageName": "workspace",
+      "projectFolder": "workspace",
       "shouldPublish": false
     }
   ]

@@ -11,7 +11,6 @@ specifiers:
   '@polkadot/types': 6.11.2-24
   '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
-  '@rush-temp/dependencies': file:./projects/dependencies.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
@@ -27,6 +26,7 @@ specifiers:
   '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
   '@rush-temp/util': file:./projects/util.tgz
+  '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
   '@types/bn.js': ^4.11.6
   '@types/debug': ^4.1.7
@@ -103,7 +103,6 @@ dependencies:
   '@polkadot/types': 6.11.2-24
   '@rush-temp/balances': file:projects/balances.tgz_ioredis@4.28.2
   '@rush-temp/cli': file:projects/cli.tgz_ioredis@4.28.2
-  '@rush-temp/dependencies': file:projects/dependencies.tgz
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_ioredis@4.28.2
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
@@ -119,6 +118,7 @@ dependencies:
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1
   '@rush-temp/util': file:projects/util.tgz
+  '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
   '@types/bn.js': 4.11.6
   '@types/debug': 4.1.7
@@ -7317,21 +7317,6 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
-  file:projects/dependencies.tgz:
-    resolution: {integrity: sha512-l5Rsi7U7nAMTt3kspRg0JrltwXr5YH5SzzAnlzYFIjJbMG4BDUY+j6cVeJH6Ie4Mi07m9NoV5g1wxVnHjhaN6Q==, tarball: file:projects/dependencies.tgz}
-    name: '@rush-temp/dependencies'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 16.11.17
-      '@types/semver': 7.3.9
-      commander: 8.3.0
-      jsonc-parser: 3.0.0
-      latest-version: 5.1.0
-      semver: 7.3.5
-      type-fest: 2.8.0
-      typescript: 4.5.4
-    dev: false
-
   file:projects/e2e-test-project.tgz_ioredis@4.28.2:
     resolution: {integrity: sha512-kE37rdTfkaVIKTdT6MwAL+mn+FQS+O/YG9LYR/SBBcAHqRrtnQp9W/A1ndD0LLHmPxJTVg5F0sb35N7HEp5Wxg==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
@@ -7666,5 +7651,20 @@ packages:
       '@types/node': 16.11.17
       camelcase: 6.2.1
       inflected: 2.1.0
+      typescript: 4.5.4
+    dev: false
+
+  file:projects/workspace.tgz:
+    resolution: {integrity: sha512-SD57q5ro89dV0WDa3m2qeCg1zm6mXiwdxjAD8bcEG+k4g/tW+UkLdFOreOsluA47YXSGC+l/Bg8gAaMhAfSopg==, tarball: file:projects/workspace.tgz}
+    name: '@rush-temp/workspace'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.17
+      '@types/semver': 7.3.9
+      commander: 8.3.0
+      jsonc-parser: 3.0.0
+      latest-version: 5.1.0
+      semver: 7.3.5
+      type-fest: 2.8.0
       typescript: 4.5.4
     dev: false

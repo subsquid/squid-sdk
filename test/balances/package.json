@@ -1,5 +1,6 @@
 {
   "name": "balances",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "build": "rm -rf lib && tsc"
