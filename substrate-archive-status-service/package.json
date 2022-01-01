@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "description": "Substrate archive status service",
   "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "scripts": {
     "build": "tsc",
     "start": "node lib/app.js"

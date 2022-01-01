@@ -1,6 +1,9 @@
 {
   "name": "@subsquid/rpc-client",
   "version": "0.0.0",
+  "description": "Lightweight JSON-RPC client library",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "files": [
     "lib"
   ],

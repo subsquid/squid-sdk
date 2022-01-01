@@ -3,6 +3,7 @@
   "description": "squid cli tool",
   "version": "0.0.0",
   "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "bin": {
     "sqd": "./bin/run.js"
   },

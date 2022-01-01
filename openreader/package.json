@@ -1,12 +1,13 @@
 {
   "name": "@subsquid/openreader",
   "version": "0.2.1",
-  "description": "GraphQL server for squid",
+  "description": "GraphQL server for squid framework",
   "keywords": [
     "graphql",
     "opencrud"
   ],
   "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "bin": {
     "openreader": "./bin/main.js"
   },

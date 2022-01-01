@@ -1,6 +1,9 @@
 {
   "name": "@subsquid/substrate-metadata",
   "version": "0.0.0",
+  "description": "Substrate metadata tools for squid framework",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "main": "lib/index.js",
   "files": [
     "lib"

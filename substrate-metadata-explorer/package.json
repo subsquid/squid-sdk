@@ -1,6 +1,9 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
   "version": "0.0.0",
+  "description": "Spec version explorer for substrate chains",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "main": "lib/index.js",
   "files": [
     "lib"

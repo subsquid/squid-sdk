@@ -1,6 +1,9 @@
 {
   "name": "@subsquid/substrate-typegen",
   "version": "0.0.0",
+  "description": "Generates TypeScript definitions for substrate events and calls",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "main": "lib/index.js",
   "files": [
     "lib",

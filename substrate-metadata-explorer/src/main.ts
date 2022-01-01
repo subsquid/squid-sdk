@@ -28,7 +28,7 @@ If the output file already exists, exploration will start from the last known bl
 The resulting file will be updated with new data.
 `.trim())
 
-    program.usage('substrate-metadata-explorer --chain <ws://> --out <file> [options]')
+    program.usage('squid-substrate-metadata-explorer --chain <ws://> --out <file> [options]')
     program.requiredOption('--chain <ws://>', 'chain rpc endpoint', urlOptionValidator(['ws:', 'wss:']))
     program.requiredOption('--out <file>', 'output file')
     program.option(

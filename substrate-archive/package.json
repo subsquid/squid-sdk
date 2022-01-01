@@ -1,12 +1,10 @@
 {
   "name": "@subsquid/substrate-archive",
   "private": "true",
-  "description": "Block archive builder for substrate based chains",
+  "description": "Data indexer for substrate chains",
   "version": "0.0.0",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
-  "bugs": "https://github.com/subsquid/squid/issues",
-  "homepage": "https://www.subsquid.io",
   "files": [
     "lib"
   ],

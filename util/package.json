@@ -1,6 +1,9 @@
 {
   "name": "@subsquid/util",
   "version": "0.0.0",
+  "description": "Squid framework utilities",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
   "main": "lib/index.js",
   "files": [
     "lib"
