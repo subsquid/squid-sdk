@@ -20,5 +20,8 @@ jobs:
         run: node common/scripts/install-run-rush.js change --verify --target-branch test-release
       - name: bump versions
         run: node common/scripts/install-run-rush.js version --bump --target-branch test-release
-      - name: merge release branch
-        run: git pull origin test-release && git push
+      - name: merge back release branch
+        run: |
+          git checkout "${GITHUB_REF##*/}"
+          git merge test-release
+          git push origin "${GITHUB_REF##*/}"
