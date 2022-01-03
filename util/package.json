@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Squid framework utilities",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
