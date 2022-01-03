@@ -10,6 +10,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: create local release branch
+        run: git fetch origin test-release:test-release
       - name: check change files
         run: node common/scripts/install-run-rush.js change --verify --target-branch test-release
       - name: bump versions
