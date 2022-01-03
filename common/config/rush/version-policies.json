@@ -15,7 +15,7 @@
   },
   {
     "definitionName": "individualVersion",
-    "policyNane": "docker-only"
+    "policyName": "docker-only"
   }
   // {
   //   /**
