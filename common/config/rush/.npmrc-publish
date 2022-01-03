@@ -20,4 +20,4 @@
 always-auth=true
 @subsquid:registry=https://registry.npmjs.org/
 registry=https://registry.npmjs.org/
-//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}
+//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN
