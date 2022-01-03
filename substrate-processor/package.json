@@ -4,6 +4,9 @@
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "lib"
   ],

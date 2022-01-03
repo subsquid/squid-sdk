@@ -4,6 +4,9 @@
   "description": "Substrate metadata tools for squid framework",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "lib/index.js",
   "files": [
     "lib"

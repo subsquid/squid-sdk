@@ -4,6 +4,9 @@
   "description": "TypeORM conventions of a squid project",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "lib"
   ],

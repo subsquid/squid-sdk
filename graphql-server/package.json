@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "GraphQL server for squid project",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "bin",
     "lib"

@@ -8,6 +8,9 @@
   ],
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "openreader": "./bin/main.js"
   },

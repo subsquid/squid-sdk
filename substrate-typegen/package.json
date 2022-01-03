@@ -4,6 +4,9 @@
   "description": "Generates TypeScript definitions for substrate events and calls",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "lib/index.js",
   "files": [
     "lib",
