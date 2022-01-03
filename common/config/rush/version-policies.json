@@ -11,7 +11,11 @@
 [
   {
     "definitionName": "individualVersion",
-    "policyName": "individual"
+    "policyName": "public"
+  },
+  {
+    "definitionName": "individualVersion",
+    "policyNane": "docker-only"
   }
   // {
   //   /**

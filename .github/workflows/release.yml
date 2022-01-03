@@ -35,6 +35,6 @@ jobs:
         run: node common/scripts/install-run-rush.js build
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --include-all --publish --tag $TAG
+        run: node common/scripts/install-run-rush.js publish --include-all --version-policy public --publish --tag $TAG
         env:
           TAG: ${{ github.event.inputs.tag }}
