@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "set `publishConfig.access` to `public`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}

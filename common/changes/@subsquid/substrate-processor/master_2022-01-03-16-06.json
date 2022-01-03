@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "set `publishConfig.access` to `public`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "set `publishConfig.access` to `public`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

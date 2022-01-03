@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "set `publishConfig.access` to `public`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

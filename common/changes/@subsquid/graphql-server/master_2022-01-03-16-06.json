@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "set `publishConfig.access` to `public`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
