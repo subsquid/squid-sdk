@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-archive-status-service",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/substrate-archive-status-service"
+}

@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "migrate to squid mono-repo",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "refactor internals for squid project",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
