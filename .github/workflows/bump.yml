@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: check change files
         run: node common/scripts/install-run-rush.js change --verify --target-branch test-release
       - name: bump versions
