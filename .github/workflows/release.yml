@@ -30,3 +30,4 @@ jobs:
         run: node common/scripts/install-run-rush.js publish --include-all --publish --tag $TAG
         env:
           TAG: ${{ github.event.inputs.tag }}
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
