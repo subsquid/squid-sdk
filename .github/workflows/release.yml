@@ -15,10 +15,18 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: release
+
 #      - name: e2e tests
 #        working-directory: test/e2e-suite
 #        run: ./run.sh
-      - name: Publish npm packages
+
+      - name: install dependencies
+        run: node common/scripts/install-run-rush.js install
+
+      - name: build project
+        run: node common/scripts/install-run-rush.js build
+
+      - name: publish npm packages
         run: node common/scripts/install-run-rush.js publish --include-all --publish --tag $TAG
         env:
           TAG: ${{ github.event.inputs.tag }}
