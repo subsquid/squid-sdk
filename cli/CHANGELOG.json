@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/cli",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/cli_v0.0.1",
+      "date": "Mon, 03 Jan 2022 12:24:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.2.1` to `^0.3.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

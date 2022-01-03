@@ -1,0 +1,11 @@
+{
+  "name": "@subsquid/substrate-archive-status-service",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/substrate-archive-status-service_v0.0.0",
+      "date": "Mon, 03 Jan 2022 12:24:26 GMT",
+      "comments": {}
+    }
+  ]
+}

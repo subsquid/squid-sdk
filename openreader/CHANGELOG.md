@@ -1,20 +1,15 @@
-## 0.2.1 (2021-11-23)
+# Change Log - @subsquid/openreader
 
-* fix: can't request a boolean property of a json object
+This log was last generated on Mon, 03 Jan 2022 12:24:26 GMT and should not be manually modified.
 
-## 0.2.0 (2021-10-24)
+## 0.3.0
+Mon, 03 Jan 2022 12:24:26 GMT
 
-* new: support for one-to-one lookups
-* new: `_doc` column is no longer required for FTS queries
-* internal: rename `list-relation` property kind to `list-lookup` 
-* internal: move gql doc merging from `buildSchema()` to `loadModel()`
+### Minor changes
 
-## 0.1.0 (2021-10-06)
+- refactor internals for squid project
 
-* fix DateTime serialization in subqueries ([03f71f1](https://github.com/subsquid/openreader/commit/03f71f1))
-* internal preparations for usage within hydra
+### Patches
 
-## 0.0.0
-
-* First release
+- migrate to squid mono-repo
 

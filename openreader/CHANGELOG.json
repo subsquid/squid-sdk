@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/openreader",
+  "entries": [
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/openreader_v0.3.0",
+      "date": "Mon, 03 Jan 2022 12:24:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "migrate to squid mono-repo"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "refactor internals for squid project"
+          }
+        ]
+      }
+    }
+  ]
+}
