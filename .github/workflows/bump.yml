@@ -1,0 +1,16 @@
+name: bump
+on:
+  workflow_dispatch:
+
+jobs:
+  bump:
+    name: increase version numbers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: check change files
+        run: node common/scripts/install-run-rush.js change --verify --target-branch test-release
+      - name: bump versions
+        run: node common/scripts/install-run-rush.js version --bump --target-branch test-release
+      - name: merge release branch
+        run: git pull test-release && git push
