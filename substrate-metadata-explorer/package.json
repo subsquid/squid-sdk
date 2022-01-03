@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Spec version explorer for substrate chains",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,7 +18,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.0.0",
+    "@subsquid/rpc-client": "^0.0.1",
     "commander": "^8.3.0",
     "node-fetch": "^2.6.6"
   },
