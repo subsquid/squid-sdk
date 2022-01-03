@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "GraphQL server for squid framework",
   "keywords": [
     "graphql",

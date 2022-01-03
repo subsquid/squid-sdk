@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/cli",
   "description": "squid cli tool",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
   "bin": {
@@ -39,7 +39,7 @@
     "@oclif/core": "^1.0.11",
     "@oclif/plugin-help": "^5.1.10",
     "@octokit/auth-oauth-device": "^3.1.2",
-    "@subsquid/openreader": "^0.2.1",
+    "@subsquid/openreader": "^0.3.0",
     "@subsquid/typeorm-config": "^0.0.0",
     "@subsquid/util": "^0.0.0",
     "chalk": "^4.1.2",
