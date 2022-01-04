@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "fix shebang in executable",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

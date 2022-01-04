@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "fix shebang in executable",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

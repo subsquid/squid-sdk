@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "fix shebang in executable",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
