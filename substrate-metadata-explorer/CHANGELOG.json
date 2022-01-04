@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/substrate-metadata-explorer_v0.0.2",
+      "date": "Tue, 04 Jan 2022 10:40:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix shebang in executable"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/substrate-metadata-explorer_v0.0.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",
