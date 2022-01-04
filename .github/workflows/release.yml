@@ -24,9 +24,9 @@ jobs:
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-#      - name: e2e tests
-#        working-directory: test/e2e-suite
-#        run: ./run.sh
+      - name: e2e tests
+        working-directory: test/e2e-suite
+        run: ./run.sh
 
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
