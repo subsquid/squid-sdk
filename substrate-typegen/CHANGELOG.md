@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Mon, 03 Jan 2022 16:07:32 GMT and should not be manually modified.
+This log was last generated on Tue, 04 Jan 2022 10:40:43 GMT and should not be manually modified.
+
+## 0.0.2
+Tue, 04 Jan 2022 10:40:43 GMT
+
+### Patches
+
+- fix shebang in executable
 
 ## 0.0.1
 Mon, 03 Jan 2022 16:07:32 GMT
