@@ -16,6 +16,11 @@ jobs:
         with:
           ref: release
 
+      - name: Configure git user
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+
       - name: Write npm credentials
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> common/config/rush/.npmrc
@@ -24,9 +29,9 @@ jobs:
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-      - name: e2e tests
-        working-directory: test/e2e-suite
-        run: ./run.sh
+#      - name: e2e tests
+#        working-directory: test/e2e-suite
+#        run: ./run.sh
 
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
