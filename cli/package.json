@@ -35,8 +35,7 @@
   },
   "homepage": "https://www.subsquid.io/",
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "prepack": "oclif manifest"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@oclif/core": "^1.0.11",

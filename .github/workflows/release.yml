@@ -32,7 +32,9 @@ jobs:
         run: node common/scripts/install-run-rush.js install
 
       - name: Build project
-        run: node common/scripts/install-run-rush.js build
+        run: |
+          node common/scripts/install-run-rush.js build
+          cd cli && npx oclif manifest
 
       - name: Publish npm packages
         run: node common/scripts/install-run-rush.js publish --include-all --version-policy public --target-branch release --publish --tag $TAG
