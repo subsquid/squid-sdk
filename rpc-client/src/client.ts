@@ -42,12 +42,12 @@ export class RpcClient {
             }
 
             this.ws.onerror = () => {
-                this.setError(new Error('Socket error'))
+                this.setError(new RpcConnectionError('Socket error'))
                 reject(this.error)
             }
 
             this.ws.onclose = () => {
-                let err = this.error || new Error('Connection was closed')
+                let err = this.error || new RpcConnectionError('Connection was closed')
                 this.setError(err)
                 reject(err)
             }
@@ -86,7 +86,7 @@ export class RpcClient {
         // TODO: more strictness, more validation
         let h = this.requests[res.id]
         if (h == null) {
-            throw new RpcProtocolError(undefined, `Got a response for unknown request ${res.id}`)
+            throw new RpcProtocolError(undefined, `Got response for unknown request ${res.id}`)
         }
         if (res.error) {
             h.reject(new RpcError(res.error))
@@ -198,6 +198,9 @@ export class RpcClient {
 }
 
 
+/**
+ * Server violated RPC protocol
+ */
 export class RpcProtocolError extends Error {
     constructor(public readonly code?: number, msg?: string) {
         super(msg)
@@ -205,6 +208,9 @@ export class RpcProtocolError extends Error {
 }
 
 
+/**
+ * Received error message from server
+ */
 export class RpcError extends Error {
     public readonly code: number
     public readonly data?: number | string
@@ -215,3 +221,9 @@ export class RpcError extends Error {
         this.data = info.data
     }
 }
+
+
+/**
+ * Problem with websocket connection
+ */
+export class RpcConnectionError extends Error {}
