@@ -242,7 +242,7 @@ export class SubstrateProcessor {
                 prom.setMappingSpeed(speed)
 
                 let roundedSpeed = Math.round(speed)
-                let duration = Number(end - beg) * Math.pow(10, 6)
+                let duration = Math.round(Number(end - beg) / Math.pow(10, 6))
                 console.log(
                     `Last block: ${lastBlock}. Processed batch of ${blocks.length} blocks in ${duration}ms${roundedSpeed > 0 ? ` (${roundedSpeed} blocks/sec)` : ''}`
                 )

@@ -79,10 +79,9 @@ export class Ingest {
 
     private async loop(): Promise<void> {
         this.fetchStart = process.hrtime.bigint()
-        let nextBatch = this.batches.shift()
-        while (nextBatch) {
+        while (this.batches.length) {
             this._abort.assertNotAborted()
-            let batch = nextBatch
+            let batch = this.batches[0]
             let archiveHeight = await this.waitForHeight(batch.range.from)
             let blocks = await this.batchFetch(batch, archiveHeight)
             if (blocks.length) {
@@ -102,7 +101,7 @@ export class Ingest {
                 batch.range = {from: to + 1, to: batch.range.to}
             } else {
                 to = assertNotNull(batch.range.to)
-                nextBatch = this.batches.shift()
+                this.batches.shift()
             }
 
             if (this.options.metrics && blocks.length > 0) {
