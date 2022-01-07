@@ -11,7 +11,7 @@ export const gql = new Client(assertNotNull(process.env.GQL_ENDPOINT))
 
 export async function getProcessorHeight(): Promise<number> {
     let endpoint = assertNotNull(process.env.PROCESSOR_PROMETHEUS_ENDPOINT)
-    let response = await fetch(new URL('/metrics/substrate_processor:last_processed_block', endpoint))
+    let response = await fetch(new URL('/metrics/sqd_processor_last_block', endpoint))
     let text = await response.text()
     if (!response.ok) {
         throw new Error(
@@ -22,11 +22,11 @@ export async function getProcessorHeight(): Promise<number> {
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
         let [metric, value] = line.split(/\s+/)
-        if (metric == 'substrate_processor:last_processed_block') {
+        if (metric == 'sqd_processor_last_block') {
             return Number.parseInt(value)
         }
     }
-    throw new Error('substrate_processor:last_processed_block metric not found')
+    throw new Error('sqd_processor_last_block metric not found')
 }
 
 

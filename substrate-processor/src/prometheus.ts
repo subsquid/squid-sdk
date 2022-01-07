@@ -3,6 +3,7 @@ import assert from "assert"
 import * as http from "http"
 import {collectDefaultMetrics, Gauge, Registry} from "prom-client"
 import stoppable from "stoppable"
+import type {IngestMetrics} from "./ingest"
 
 
 export interface ListeningServer {
@@ -11,21 +12,41 @@ export interface ListeningServer {
 }
 
 
-export class Prometheus {
+export class Prometheus implements IngestMetrics {
     private registry = new Registry()
 
-    private lastProcessedBlock = new Gauge({
-        name: 'substrate_processor:last_processed_block',
+    private lastBlock = new Gauge({
+        name: 'sqd_processor_last_block',
         help: 'Last processed block',
         registers: [this.registry],
         aggregator: 'max'
     })
 
     private chainHeight = new Gauge({
-        name: 'substrate_processor:chain_height',
-        help: 'Chain height as reported by the data source',
+        name: 'sqd_processor_chain_height',
+        help: 'Chain height of the data source',
         registers: [this.registry],
         aggregator: 'max'
+    })
+
+    private mappingSpeed = new Gauge({
+        name: 'sqd_processor_mapping_blocks_per_second',
+        help: 'Mapping performance',
+        registers: [this.registry],
+        aggregator: 'average'
+    })
+
+    private ingestSpeed = new Gauge({
+        name: 'sqd_processor_ingest_blocks_per_second',
+        help: 'Data fetching speed',
+        registers: [this.registry],
+        aggregator: 'average'
+    })
+
+    private syncETA = new Gauge({
+        name: 'sqd_processor_sync_eta_seconds',
+        help: 'Estimated time until all required blocks will be processed or until chain height will be reached',
+        registers: [this.registry]
     })
 
     constructor() {
@@ -35,11 +56,23 @@ export class Prometheus {
     }
 
     setLastProcessedBlock(height: number): void {
-        this.lastProcessedBlock.set(height)
+        this.lastBlock.set(height)
     }
 
     setChainHeight(height: number): void {
         this.chainHeight.set(height)
+    }
+
+    setMappingSpeed(blocksPerSecond: number): void {
+        this.mappingSpeed.set(blocksPerSecond)
+    }
+
+    setIngestSpeed(blocksPerSecond: number): void {
+        this.ingestSpeed.set(blocksPerSecond)
+    }
+
+    setSyncETA(seconds: number): void {
+        this.syncETA.set(seconds)
     }
 
     private async handleHttpRequest(

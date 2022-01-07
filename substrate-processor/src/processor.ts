@@ -153,8 +153,11 @@ export class SubstrateProcessor {
     }
 
     private async _run(sm: ServiceManager): Promise<void> {
-        let db = sm.add(await Db.connect())
+        let prometheus = new Prometheus()
+        let prometheusServer = sm.add(await prometheus.serve(this.getPrometheusPort()))
+        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
+        let db = sm.add(await Db.connect())
         let {height: heightAtStart} = await db.init(this.name)
         let blockRange = this.blockRange
         if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
@@ -165,17 +168,14 @@ export class SubstrateProcessor {
                 to: blockRange.to
             }
         }
-
-        let prometheus = new Prometheus()
-        let prometheusServer = sm.add(await prometheus.serve(this.getPrometheusPort()))
-        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
+        prometheus.setLastProcessedBlock(heightAtStart)
 
         let ingest = sm.add(new Ingest({
             archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
+            hooks: this.hooks,
             range: blockRange,
             batchSize: this.batchSize,
-            hooks: this.hooks,
-            prometheus
+            metrics: prometheus
         }))
 
         let client = sm.add(new ResilientRpc(
@@ -194,10 +194,11 @@ export class SubstrateProcessor {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
-            let beg = Date.now()
-            let {pre, post, events, extrinsics, blocks} = batch
+            let {pre, post, events, extrinsics, blocks, range} = batch
+            let beg = blocks.length > 0 ? process.hrtime.bigint() : 0n
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]
+                assert(lastBlock < block.block.height)
                 let chain = await chainManager.getChainForBlock(block.block)
                 await db.transact(this.name, block.block.height, async store => {
                     let ctx: BlockHandlerContext = {
@@ -228,12 +229,26 @@ export class SubstrateProcessor {
                 lastBlock = block.block.height
                 prom.setLastProcessedBlock(lastBlock)
             }
-            let end = Date.now()
-            let duration = end - beg
-            let speed = duration > 0 ? Math.round(blocks.length * 1000 / duration) : 0
-            console.log(
-                `Last block: ${lastBlock}. Processed batch of ${blocks.length} blocks in ${duration}ms${speed > 0 ? ` (${speed} blocks/sec)` : ''}`
-            )
+
+            if (lastBlock < range.to) {
+                lastBlock = range.to
+                await db.setHeight(this.name, lastBlock)
+                prom.setLastProcessedBlock(lastBlock)
+            }
+
+            if (blocks.length > 0) {
+                let end = process.hrtime.bigint()
+                let speed = blocks.length * Math.pow(10, 9) / Number(end - beg)
+                prom.setMappingSpeed(speed)
+
+                let roundedSpeed = Math.round(speed)
+                let duration = Number(end - beg) * Math.pow(10, 6)
+                console.log(
+                    `Last block: ${lastBlock}. Processed batch of ${blocks.length} blocks in ${duration}ms${roundedSpeed > 0 ? ` (${roundedSpeed} blocks/sec)` : ''}`
+                )
+            } else {
+                console.log(`Last block: ${lastBlock}`)
+            }
         }
     }
 }

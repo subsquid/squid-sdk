@@ -146,6 +146,7 @@ export class AbortHandle {
     guard<T>(promise: Promise<T>): Promise<T> {
         return new Promise((resolve, reject) => {
             if (this.abortError) {
+                promise.catch(() => null)
                 reject(this.abortError)
                 return
             }

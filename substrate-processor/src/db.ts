@@ -45,7 +45,7 @@ export class Db {
         let schema = `"${processor}_status"`
         return this.con.transaction('SERIALIZABLE', async em => {
             let status: ProcessingStatus[] = await em.query(
-                `SELECT height FROM ${schema}.status WHERE id = 0`
+                `SELECT height FROM ${schema}.status`
             )
             assert(status.length == 1)
             assert(status[0].height < blockNumber)
@@ -54,6 +54,12 @@ export class Db {
             await cb(store)
             await em.query(`UPDATE ${schema}.status SET height = $1`, [blockNumber])
         })
+    }
+
+    async setHeight(processor: string, blockNumber: number): Promise<void> {
+        let schema = `"${processor}_status"`
+        await this.con.query(`UPDATE ${schema}.status SET height = $1 WHERE height < $1`, [blockNumber])
+        // TODO: update assertion
     }
 
     close(): Promise<void> {

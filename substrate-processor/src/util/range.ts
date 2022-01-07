@@ -1,8 +1,6 @@
 /**
  * Closed range of numbers
  */
-import assert from "assert"
-
 export interface Range {
     /**
      * Start of segment (inclusive)

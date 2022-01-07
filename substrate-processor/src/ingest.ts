@@ -1,13 +1,13 @@
-import {Output} from "@subsquid/util"
+import {assertNotNull, Output} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
-import {Batch, createBatches} from "./batch"
+import {Batch, createBatches, getBlocksCount} from "./batch"
 import {Hooks} from "./interfaces/hooks"
 import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
 import {Prometheus} from "./prometheus"
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
-import {Range, rangeEnd} from "./util/range"
+import {rangeEnd, Range} from "./util/range"
 
 
 export interface BlockData {
@@ -16,18 +16,29 @@ export interface BlockData {
 }
 
 
-export interface DataBatch extends Omit<Batch, 'range'> {
+export interface DataBatch extends Batch {
+    /**
+     * This is roughly the range of scanned blocks
+     */
+    range: {from: number, to: number}
     blocks: BlockData[]
+}
+
+
+export interface IngestMetrics {
+    setChainHeight(height: number): void
+    setIngestSpeed(blocksPerSecond: number): void
+    setSyncETA(seconds: number): void
 }
 
 
 export interface IngestOptions {
     archive: string
-    indexerPollIntervalMS?: number
-    range: Range
-    batchSize: number
+    archivePollIntervalMS?: number
     hooks: Hooks,
-    prometheus?: Prometheus
+    range?: Range
+    batchSize: number
+    metrics?: IngestMetrics
 }
 
 
@@ -35,10 +46,13 @@ export class Ingest {
     private out = new Channel<DataBatch | null>(3)
     private _abort = new AbortHandle()
     private archiveHeight = -1
+    private fetchStart = 0n
     private readonly limit: number
+    private readonly batches: Batch[]
     private readonly ingestion: Promise<void | Error>
 
     constructor(private options: IngestOptions) {
+        this.batches = createBatches(options.hooks, options.range)
         this.limit = this.options.batchSize
         assert(this.limit > 0)
         this.ingestion = this.run()
@@ -64,8 +78,8 @@ export class Ingest {
     }
 
     private async loop(): Promise<void> {
-        let batches = createBatches(this.options.hooks, this.options.range)
-        let nextBatch = batches.shift()
+        this.fetchStart = process.hrtime.bigint()
+        let nextBatch = this.batches.shift()
         while (nextBatch) {
             this._abort.assertNotAborted()
             let batch = nextBatch
@@ -78,24 +92,42 @@ export class Ingest {
                 assert(archiveHeight >= blocks[blocks.length - 1].block.height)
             }
 
-            if (blocks.length === this.limit) {
-                let maxBlock = blocks[blocks.length-1].block.height
-                if (maxBlock < rangeEnd(batch.range)) {
-                    batch.range = {from: maxBlock + 1, to: batch.range.to}
-                }
+            let from = batch.range.from
+            let to: number
+            if (blocks.length === this.limit && blocks[blocks.length-1].block.height < rangeEnd(batch.range)) {
+                to = blocks[blocks.length-1].block.height
+                batch.range = {from: to + 1, to: batch.range.to}
             } else if (archiveHeight < rangeEnd(batch.range)) {
-                batch.range = {from: archiveHeight + 1, to: batch.range.to}
+                to = archiveHeight
+                batch.range = {from: to + 1, to: batch.range.to}
             } else {
-                nextBatch = batches.shift()
+                to = assertNotNull(batch.range.to)
+                nextBatch = this.batches.shift()
+            }
+
+            if (this.options.metrics && blocks.length > 0) {
+                let fetchEnd = process.hrtime.bigint()
+                let duration = Number(fetchEnd - this.fetchStart)
+                let speed =  blocks.length * Math.pow(10, 9) / duration
+                this.options.metrics.setIngestSpeed(speed)
             }
 
             await this._abort.guard(this.out.put({
                 blocks,
+                range: {from, to},
                 pre: batch.pre,
                 post: batch.post,
                 events: batch.events,
                 extrinsics: batch.extrinsics
             }))
+
+            if (this.options.metrics) {
+                let now = process.hrtime.bigint()
+                let duration = Number(now - this.fetchStart) / Math.pow(10, 9)
+                let eta = getBlocksCount(this.batches, this.archiveHeight) * duration / (to - from + 1)
+                this.options.metrics.setSyncETA(Math.round(eta))
+                this.fetchStart = now
+            }
         }
     }
 
@@ -148,6 +180,9 @@ export class Ingest {
 
         let q = new Output()
         q.block(`query`, () => {
+            q.block(`indexerStatus`, () => {
+                q.line('head')
+            })
             q.block(`substrate_block(limit: ${this.limit} order_by: {height: asc} where: ${blockWhere})`, () => {
                 q.line('id')
                 q.line('hash')
@@ -188,8 +223,11 @@ export class Ingest {
         })
 
         let gql = q.toString()
-        let {substrate_block: fetchedBlocks} = await this.archiveRequest<any>(gql)
+        let response = await this.archiveRequest<any>(gql)
 
+        this.setArchiveHeight(response)
+
+        let fetchedBlocks = response.substrate_block
         let blocks = new Array<BlockData>(fetchedBlocks.length)
         for (let i = 0; i < fetchedBlocks.length; i++) {
             i > 0 && assert(fetchedBlocks[i-1].height < fetchedBlocks[i].height)
@@ -210,11 +248,11 @@ export class Ingest {
 
     private async waitForHeight(minimumHeight: number): Promise<number> {
         while (this.archiveHeight < minimumHeight) {
-            this.archiveHeight = Math.max(this.archiveHeight, await this.fetchArchiveHeight())
+            await this.fetchArchiveHeight()
             if (this.archiveHeight >= minimumHeight) {
                 return this.archiveHeight
             } else {
-                await wait(this.options.indexerPollIntervalMS || 5000, this._abort)
+                await wait(this.options.archivePollIntervalMS || 5000, this._abort)
             }
         }
         return this.archiveHeight
@@ -228,9 +266,14 @@ export class Ingest {
                 }
             }
         `)
-        let height: number = res.indexerStatus.head
-        this.options.prometheus?.setChainHeight(height)
-        return height
+        this.setArchiveHeight(res)
+        return this.archiveHeight
+    }
+
+    private setArchiveHeight(res: {indexerStatus: {head: number}}): void {
+        let height = res.indexerStatus.head
+        this.archiveHeight = Math.max(this.archiveHeight, height)
+        this.options.metrics?.setChainHeight(this.archiveHeight)
     }
 
     private async archiveRequest<T>(query: string): Promise<T> {
