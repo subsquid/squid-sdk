@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Mon, 03 Jan 2022 16:07:32 GMT and should not be manually modified.
+This log was last generated on Sat, 08 Jan 2022 13:00:12 GMT and should not be manually modified.
+
+## 0.0.2
+Sat, 08 Jan 2022 13:00:12 GMT
+
+### Patches
+
+- throw `RpcConnectionError` for socket errors
 
 ## 0.0.1
 Mon, 03 Jan 2022 16:07:32 GMT

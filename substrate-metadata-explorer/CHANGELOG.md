@@ -1,6 +1,11 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Tue, 04 Jan 2022 10:40:43 GMT and should not be manually modified.
+This log was last generated on Sat, 08 Jan 2022 13:00:12 GMT and should not be manually modified.
+
+## 0.0.3
+Sat, 08 Jan 2022 13:00:12 GMT
+
+_Version update only_
 
 ## 0.0.2
 Tue, 04 Jan 2022 10:40:43 GMT

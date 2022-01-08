@@ -1,6 +1,23 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 03 Jan 2022 16:07:32 GMT and should not be manually modified.
+This log was last generated on Sat, 08 Jan 2022 13:00:12 GMT and should not be manually modified.
+
+## 0.1.0
+Sat, 08 Jan 2022 13:00:12 GMT
+
+### Minor changes
+
+- rename metric: `substrate_processor:last_processed_block` to `sqd_processor_last_block`
+- rename metric: `substrate_processor:chain_height` to `sqd_processor_chain_height`
+- add metric: `sqd_processor_mapping_blocks_per_second`
+- add metric: `sqd_processor_ingest_blocks_per_second`
+- add metric: `sqd_processor_sync_eta_seconds`
+- add metric: `sqd_processor_sync_ratio`
+
+### Patches
+
+- fix possibility of double ingestion
+- recover from chain connection losses
 
 ## 0.0.1
 Mon, 03 Jan 2022 16:07:32 GMT

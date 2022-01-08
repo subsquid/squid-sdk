@@ -2,6 +2,18 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/graphql-server_v0.1.0",
+      "date": "Sat, 08 Jan 2022 13:00:12 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for `GRAPHQL_SERVER_PORT` env var for compatibility"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/graphql-server_v0.0.3",
       "date": "Tue, 04 Jan 2022 10:40:43 GMT",

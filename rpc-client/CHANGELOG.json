@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/rpc-client_v0.0.2",
+      "date": "Sat, 08 Jan 2022 13:00:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "throw `RpcConnectionError` for socket errors"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/rpc-client_v0.0.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",
