@@ -44,6 +44,10 @@ export class Server {
         )
     }
 
+    private getPort(): number | string {
+        return process.env.GQL_PORT || process.env.GRAPHQL_SERVER_PORT || 4000
+    }
+
     @def
     async start(): Promise<ListeningServer> {
         let app = this.app()
@@ -55,7 +59,7 @@ export class Server {
         try {
             setupGraphiqlConsole(app)
             apollo.applyMiddleware({app})
-            return await listen(apollo, this.httpServer(), process.env.GQL_PORT || 4000)
+            return await listen(apollo, this.httpServer(), this.getPort())
         } catch(e: any) {
             await apollo.stop().catch(err => {
                 e = new Error(e.stack + '\n\n' + err.stack)
