@@ -13,6 +13,8 @@ export interface ListeningServer {
 
 
 export class Prometheus implements IngestMetrics {
+    private chainHeightValue = -1
+    private ingestSpeedValue = 0
     private registry = new Registry()
 
     private lastBlock = new Gauge({
@@ -49,6 +51,13 @@ export class Prometheus implements IngestMetrics {
         registers: [this.registry]
     })
 
+    private syncRatio = new Gauge({
+        name: 'sqd_processor_sync_ratio',
+        help: 'Percentage of processed blocks',
+        registers: [this.registry],
+        aggregator: 'max'
+    })
+
     constructor() {
         collectDefaultMetrics({register: this.registry})
         this.setLastProcessedBlock(-1)
@@ -60,7 +69,12 @@ export class Prometheus implements IngestMetrics {
     }
 
     setChainHeight(height: number): void {
+        this.chainHeightValue = height
         this.chainHeight.set(height)
+    }
+
+    getChainHeight(): number {
+        return this.chainHeightValue
     }
 
     setMappingSpeed(blocksPerSecond: number): void {
@@ -68,11 +82,20 @@ export class Prometheus implements IngestMetrics {
     }
 
     setIngestSpeed(blocksPerSecond: number): void {
+        this.ingestSpeedValue = blocksPerSecond
         this.ingestSpeed.set(blocksPerSecond)
+    }
+
+    getIngestSpeed(): number {
+        return this.ingestSpeedValue
     }
 
     setSyncETA(seconds: number): void {
         this.syncETA.set(seconds)
+    }
+
+    setSyncRatio(ratio: number): void {
+        this.syncRatio.set(ratio)
     }
 
     private async handleHttpRequest(

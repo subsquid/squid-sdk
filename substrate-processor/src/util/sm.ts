@@ -1,4 +1,3 @@
-import {def} from "@subsquid/util"
 import {AbortError} from "./async"
 
 

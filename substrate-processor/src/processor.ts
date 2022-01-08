@@ -1,6 +1,7 @@
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
+import {createBatches, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
 import {Db} from "./db"
 import {DataBatch, Ingest} from "./ingest"
@@ -8,6 +9,7 @@ import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from 
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Prometheus} from "./prometheus"
+import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
 import {ResilientRpc} from "./util/resilient-rpc-client"
 import {ServiceManager} from "./util/sm"
@@ -48,14 +50,17 @@ export class SubstrateProcessor {
     private prometheusPort?: number | string
     private src?: DataSource
     private typesBundle?: OldTypesBundle
+    private running = false
 
     constructor(private name: string) {}
 
     setDataSource(src: DataSource): void {
+        this.assertNotRunning()
         this.src = src
     }
 
     setTypesBundle(bundle: string | OldTypesBundle): void {
+        this.assertNotRunning()
         if (typeof bundle == 'string') {
             this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
@@ -64,25 +69,29 @@ export class SubstrateProcessor {
     }
 
     setBlockRange(range: Range): void {
+        this.assertNotRunning()
         this.blockRange = range
     }
 
     setBatchSize(size: number): void {
+        this.assertNotRunning()
         assert(size > 0)
         this.batchSize = size
     }
 
     setPrometheusPort(port: number | string) {
+        this.assertNotRunning()
         this.prometheusPort = port
     }
 
     private getPrometheusPort(): number | string {
-        return this.prometheusPort || process.env.PROCESSOR_PROMETHEUS_PORT || 0
+        return this.prometheusPort == null ? process.env.PROCESSOR_PROMETHEUS_PORT || 0 : this.prometheusPort
     }
 
     addPreHook(fn: BlockHandler): void
     addPreHook(options: BlockHookOptions, fn: BlockHandler): void
     addPreHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
+        this.assertNotRunning()
         let handler: BlockHandler
         let options: BlockHookOptions = {}
         if (typeof fnOrOptions == 'function') {
@@ -97,6 +106,7 @@ export class SubstrateProcessor {
     addPostHook(fn: BlockHandler): void
     addPostHook(options: BlockHookOptions, fn: BlockHandler): void
     addPostHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
+        this.assertNotRunning()
         let handler: BlockHandler
         let options: BlockHookOptions = {}
         if (typeof fnOrOptions == 'function') {
@@ -111,6 +121,7 @@ export class SubstrateProcessor {
     addEventHandler(eventName: QualifiedName, fn: EventHandler): void
     addEventHandler(eventName: QualifiedName, options: EventHandlerOptions, fn: EventHandler): void
     addEventHandler(eventName: QualifiedName, fnOrOptions: EventHandlerOptions | EventHandler, fn?: EventHandler): void {
+        this.assertNotRunning()
         let handler: EventHandler
         let options: EventHandlerOptions = {}
         if (typeof fnOrOptions === 'function') {
@@ -129,6 +140,7 @@ export class SubstrateProcessor {
     addExtrinsicHandler(extrinsicName: QualifiedName, fn: ExtrinsicHandler): void
     addExtrinsicHandler(extrinsicName: QualifiedName, options: ExtrinsicHandlerOptions, fn: ExtrinsicHandler): void
     addExtrinsicHandler(extrinsicName: QualifiedName, fnOrOptions: ExtrinsicHandler | ExtrinsicHandlerOptions, fn?: ExtrinsicHandler): void {
+        this.assertNotRunning()
         let handler: ExtrinsicHandler
         let options: ExtrinsicHandlerOptions = {}
         if (typeof fnOrOptions == 'function') {
@@ -148,7 +160,15 @@ export class SubstrateProcessor {
         })
     }
 
+    private assertNotRunning(): void {
+        if (this.running) {
+            throw new Error('Settings modifications are not allowed after start of processing')
+        }
+    }
+
     run(): void {
+        if (this.running) return
+        this.running = true
         ServiceManager.run(sm => this._run(sm))
     }
 
@@ -159,6 +179,9 @@ export class SubstrateProcessor {
 
         let db = sm.add(await Db.connect())
         let {height: heightAtStart} = await db.init(this.name)
+
+        prometheus.setLastProcessedBlock(heightAtStart)
+
         let blockRange = this.blockRange
         if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
             return
@@ -168,12 +191,12 @@ export class SubstrateProcessor {
                 to: blockRange.to
             }
         }
-        prometheus.setLastProcessedBlock(heightAtStart)
+
+        let batches = createBatches(this.hooks, blockRange)
 
         let ingest = sm.add(new Ingest({
             archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
-            hooks: this.hooks,
-            range: blockRange,
+            batches$: batches,
             batchSize: this.batchSize,
             metrics: prometheus
         }))
@@ -182,15 +205,29 @@ export class SubstrateProcessor {
             assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
         ))
 
+        let wholeRange = createBatches(this.hooks, this.blockRange)
+        let progress = new ProgressTracker(
+            getBlocksCount(wholeRange, heightAtStart),
+            wholeRange,
+            prometheus
+        )
+
         await this.process(
             ingest,
             new ChainManager(client, this.typesBundle),
             db,
-            prometheus
+            prometheus,
+            progress
         )
     }
 
-    private async process(ingest: Ingest, chainManager: ChainManager, db: Db, prom: Prometheus): Promise<void> {
+    private async process(
+        ingest: Ingest,
+        chainManager: ChainManager,
+        db: Db,
+        prom: Prometheus,
+        progress: ProgressTracker
+    ): Promise<void> {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
@@ -236,19 +273,71 @@ export class SubstrateProcessor {
                 prom.setLastProcessedBlock(lastBlock)
             }
 
-            if (blocks.length > 0) {
-                let end = process.hrtime.bigint()
-                let speed = blocks.length * Math.pow(10, 9) / Number(end - beg)
-                prom.setMappingSpeed(speed)
+            let end = process.hrtime.bigint()
+            progress.batch(end, batch)
 
+            let status: string[] = []
+            status.push(`Last block: ${lastBlock}`)
+            if (blocks.length > 0) {
+                let speed = blocks.length * Math.pow(10, 9) / Number(end - beg)
                 let roundedSpeed = Math.round(speed)
-                let duration = Math.round(Number(end - beg) / Math.pow(10, 6))
-                console.log(
-                    `Last block: ${lastBlock}. Processed batch of ${blocks.length} blocks in ${duration}ms${roundedSpeed > 0 ? ` (${roundedSpeed} blocks/sec)` : ''}`
-                )
-            } else {
-                console.log(`Last block: ${lastBlock}`)
+                status.push(`mapping: ${roundedSpeed} blocks/sec`)
+                prom.setMappingSpeed(speed)
             }
+            status.push(`ingest: ${Math.round(prom.getIngestSpeed())} blocks/sec`)
+            status.push(`eta: ${timeInterval(progress.getSyncEtaSeconds())}`)
+            status.push(`progress: ${Math.round(progress.getSyncRatio() * 100)}%`)
+            console.log(status.join(', '))
         }
+    }
+}
+
+
+class ProgressTracker {
+    private window: {time: bigint, count: number}[] = []
+    private ratio = 0
+    private eta = 0
+
+    constructor(
+        private count: number,
+        private wholeRange: {range: Range}[],
+        private prometheus: Prometheus
+    ) {
+        this.tick(process.hrtime.bigint(), 0)
+    }
+
+    private tick(time: bigint, inc: number): bigint {
+        this.count += inc
+        this.window.push({
+            time,
+            count: this.count
+        })
+        if (this.window.length > 5) {
+            this.window.shift()
+        }
+        return time
+    }
+
+    batch(time: bigint, batch: DataBatch): void {
+        this.tick(time, batch.range.to - batch.range.from + 1)
+
+        let total = getBlocksCount(this.wholeRange, this.prometheus.getChainHeight())
+        this.ratio = Math.round(10000 * this.count / total) / 10000
+        this.prometheus.setSyncRatio(this.ratio)
+
+        let beg = this.window[0]
+        let end = this.window[this.window.length - 1]
+        let duration = end.time - beg.time
+        let processed = end.count - beg.count
+        this.eta = Number(BigInt(total - this.count) * duration / (BigInt(processed) * 1000_000_000n))
+        this.prometheus.setSyncETA(this.eta)
+    }
+
+    getSyncRatio(): number {
+        return this.ratio
+    }
+
+    getSyncEtaSeconds(): number {
+        return this.eta
     }
 }

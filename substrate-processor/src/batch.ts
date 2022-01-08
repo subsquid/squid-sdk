@@ -150,7 +150,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 
-export function getBlocksCount(batches: Batch[], chainHeight: number): number {
+export function getBlocksCount(batches: {range: Range}[], chainHeight: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
         let range = batches[i].range

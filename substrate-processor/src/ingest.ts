@@ -1,13 +1,11 @@
 import {assertNotNull, Output} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
-import {Batch, createBatches, getBlocksCount} from "./batch"
-import {Hooks} from "./interfaces/hooks"
+import {Batch} from "./batch"
 import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
-import {Prometheus} from "./prometheus"
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
-import {rangeEnd, Range} from "./util/range"
+import {rangeEnd} from "./util/range"
 
 
 export interface BlockData {
@@ -28,15 +26,18 @@ export interface DataBatch extends Batch {
 export interface IngestMetrics {
     setChainHeight(height: number): void
     setIngestSpeed(blocksPerSecond: number): void
-    setSyncETA(seconds: number): void
 }
 
 
 export interface IngestOptions {
     archive: string
     archivePollIntervalMS?: number
-    hooks: Hooks,
-    range?: Range
+    /**
+     * Mutable array of batches to ingest.
+     *
+     * Ingest will shift elements and modify the range of a head branch.
+     */
+    batches$: Batch[]
     batchSize: number
     metrics?: IngestMetrics
 }
@@ -46,13 +47,12 @@ export class Ingest {
     private out = new Channel<DataBatch | null>(3)
     private _abort = new AbortHandle()
     private archiveHeight = -1
-    private fetchStart = 0n
-    private readonly limit: number
+    private readonly limit: number // maximum number of blocks in a single batch
     private readonly batches: Batch[]
     private readonly ingestion: Promise<void | Error>
 
     constructor(private options: IngestOptions) {
-        this.batches = createBatches(options.hooks, options.range)
+        this.batches = options.batches$
         this.limit = this.options.batchSize
         assert(this.limit > 0)
         this.ingestion = this.run()
@@ -78,11 +78,11 @@ export class Ingest {
     }
 
     private async loop(): Promise<void> {
-        this.fetchStart = process.hrtime.bigint()
         while (this.batches.length) {
             this._abort.assertNotAborted()
             let batch = this.batches[0]
             let archiveHeight = await this.waitForHeight(batch.range.from)
+            let fetchStart = process.hrtime.bigint()
             let blocks = await this.batchFetch(batch, archiveHeight)
             if (blocks.length) {
                 assert(blocks.length <= this.limit)
@@ -106,7 +106,7 @@ export class Ingest {
 
             if (this.options.metrics && blocks.length > 0) {
                 let fetchEnd = process.hrtime.bigint()
-                let duration = Number(fetchEnd - this.fetchStart)
+                let duration = Number(fetchEnd - fetchStart)
                 let speed =  blocks.length * Math.pow(10, 9) / duration
                 this.options.metrics.setIngestSpeed(speed)
             }
@@ -119,14 +119,6 @@ export class Ingest {
                 events: batch.events,
                 extrinsics: batch.extrinsics
             }))
-
-            if (this.options.metrics) {
-                let now = process.hrtime.bigint()
-                let duration = Number(now - this.fetchStart) / Math.pow(10, 9)
-                let eta = getBlocksCount(this.batches, this.archiveHeight) * duration / (to - from + 1)
-                this.options.metrics.setSyncETA(Math.round(eta))
-                this.fetchStart = now
-            }
         }
     }
 
@@ -292,4 +284,3 @@ export class Ingest {
         return result.data as T
     }
 }
-
