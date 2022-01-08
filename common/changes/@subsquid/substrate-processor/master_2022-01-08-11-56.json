@@ -1,0 +1,45 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "fix possibility of double ingestion",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "recover from chain connection losses",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "rename metric: `substrate_processor:last_processed_block` to `sqd_processor_last_block`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "rename metric: `substrate_processor:chain_height` to `sqd_processor_chain_height`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add metric: `sqd_processor_mapping_blocks_per_second`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add metric: `sqd_processor_ingest_blocks_per_second`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add metric: `sqd_processor_sync_eta_seconds`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add metric: `sqd_processor_sync_ratio`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

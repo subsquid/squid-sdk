@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "throw `RpcConnectionError` for socket errors",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}
