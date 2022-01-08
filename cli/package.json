@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/cli",
   "description": "squid cli tool",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -57,7 +57,7 @@
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@subsquid/substrate-processor": "^0.0.1",
+    "@subsquid/substrate-processor": "^0.1.0",
     "@types/node": "^16.11.17",
     "@types/node-fetch": "^2.5.12",
     "typescript": "~4.5.4"
