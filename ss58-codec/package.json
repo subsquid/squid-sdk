@@ -1,0 +1,26 @@
+{
+  "name": "@subsquid/ss58-codec",
+  "version": "0.0.0",
+  "description": "SS58 address format encoder/decoder",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "!lib/test.js"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "base-x": "^3.0.9",
+    "blake2b": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.17",
+    "typescript": "~4.5.4"
+  }
+}
