@@ -43,10 +43,10 @@ export function decode(s: string): Address {
     } else {
         throw invalidAddress(s)
     }
-    // computeHash(buf)
-    // if (HASH_BUF[0] != buf[buf.length - 2] || HASH_BUF[1] != buf[buf.length - 1]) {
-    //     throw invalidAddress(s)
-    // }
+    computeHash(buf)
+    if (HASH_BUF[0] != buf[buf.length - 2] || HASH_BUF[1] != buf[buf.length - 1]) {
+        throw invalidAddress(s)
+    }
     return {
         ident,
         bytes: buf.subarray(offset, buf.length - 2)
