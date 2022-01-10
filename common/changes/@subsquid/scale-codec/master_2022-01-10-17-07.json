@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "breaking: move `JsonCodec` into separate package",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}
