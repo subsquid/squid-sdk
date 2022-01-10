@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/substrate-typegen_v0.0.3",
+      "date": "Mon, 10 Jan 2022 17:09:28 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/substrate-typegen_v0.0.2",
       "date": "Tue, 04 Jan 2022 10:40:43 GMT",

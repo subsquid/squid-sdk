@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sat, 08 Jan 2022 13:00:12 GMT and should not be manually modified.
+This log was last generated on Mon, 10 Jan 2022 17:09:28 GMT and should not be manually modified.
+
+## 0.1.1
+Mon, 10 Jan 2022 17:09:28 GMT
+
+### Patches
+
+- use new `@subsquid/scale-codec-json` for archive data
 
 ## 0.1.0
 Sat, 08 Jan 2022 13:00:12 GMT

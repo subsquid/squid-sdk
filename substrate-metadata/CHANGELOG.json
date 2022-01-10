@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/substrate-metadata_v0.0.2",
+      "date": "Mon, 10 Jan 2022 17:09:28 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/substrate-metadata_v0.0.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",

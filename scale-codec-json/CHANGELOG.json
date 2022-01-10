@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/scale-codec-json",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/scale-codec-json_v0.0.1",
+      "date": "Mon, 10 Jan 2022 17:09:28 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

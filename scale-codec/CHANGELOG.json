@@ -2,6 +2,18 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/scale-codec_v0.1.0",
+      "date": "Mon, 10 Jan 2022 17:09:28 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "breaking: move `JsonCodec` into separate package"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/scale-codec_v0.0.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",
