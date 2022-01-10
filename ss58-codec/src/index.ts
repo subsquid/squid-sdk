@@ -10,7 +10,7 @@ const HASH_BUF = Buffer.alloc(64)
  */
 export interface Address {
     /**
-     * Address [type id](https://docs.substrate.io/v3/advanced/ss58/#address-type)
+     * Address [type](https://docs.substrate.io/v3/advanced/ss58/#address-type)
      */
     prefix: number
     /**
@@ -27,7 +27,7 @@ export interface Address {
  */
 export function decode(s: string): Address {
     let buf = base58.decodeUnsafe(s)
-    if (buf == null || buf.length < 4) throw invalidAddress(s)
+    if (buf == null || buf.length < 3) throw invalidAddress(s)
     let b0 = buf[0]
     let offset
     let prefix

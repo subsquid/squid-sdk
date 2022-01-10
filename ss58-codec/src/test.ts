@@ -32,5 +32,30 @@ de(2254, 'st6v8nztLTbiqY5Hw97L5FWCBmpzMsrAh5qXZ1tJs1epNvoFA')
 // basilisk
 de(10041, 'bXn5CfJB2qHvqnuMqTpXn6un9Fjch8mwkb9i3JUsGVD4ChLoe')
 
+
+function ed(prefix: number, bytes: Uint8Array): void {
+    let s = encode({prefix, bytes})
+    let a = decode(s)
+    assert.deepEqual(a, {prefix, bytes})
+}
+
+
+ed(0, new Uint8Array())
+ed(64, new Uint8Array([1, 2, 3]))
+ed(16383, new Uint8Array([2]))
+
+
+for (let i = 0; i < 100; i++) {
+    let prefix = getRandomInt(16384)
+    let len = getRandomInt(255)
+    ed(prefix, Buffer.alloc(len, len))
+}
+
+
+function getRandomInt(max: number) {
+    return Math.floor(Math.random() * max); //The maximum is exclusive
+}
+
+
 console.log('ok')
 
