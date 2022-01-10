@@ -10,9 +10,9 @@ const HASH_BUF = Buffer.alloc(64)
  */
 export interface Address {
     /**
-     * Address identifier
+     * Address [type id](https://docs.substrate.io/v3/advanced/ss58/#address-type)
      */
-    ident: number
+    prefix: number
     /**
      * Raw address bytes
      */
@@ -30,15 +30,15 @@ export function decode(s: string): Address {
     if (buf == null || buf.length < 4) throw invalidAddress(s)
     let b0 = buf[0]
     let offset
-    let ident
+    let prefix
     if (b0 < 64) {
-        ident = b0
+        prefix = b0
         offset = 1
     } else if (b0 < 128) {
         let b1 = buf[1]
         let lower = ((b0 << 2) | (b1 >> 6)) & 0b11111111
         let upper = b1 & 0b00111111
-        ident = lower | (upper << 8)
+        prefix = lower | (upper << 8)
         offset = 2
     } else {
         throw invalidAddress(s)
@@ -48,7 +48,7 @@ export function decode(s: string): Address {
         throw invalidAddress(s)
     }
     return {
-        ident,
+        prefix,
         bytes: buf.subarray(offset, buf.length - 2)
     }
 }
@@ -58,19 +58,19 @@ export function decode(s: string): Address {
  * Encode SS58 address into canonical string format
  */
 export function encode(address: Address): string {
-    let ident = address.ident
-    assert(Number.isInteger(ident) && ident >= 0 && ident < 16384, 'invalid address identifier')
+    let prefix = address.prefix
+    assert(Number.isInteger(prefix) && prefix >= 0 && prefix < 16384, 'invalid prefix')
     let len = address.bytes.length
     let buf
     let offset
-    if (ident < 64) {
+    if (prefix < 64) {
         buf = Buffer.allocUnsafe(3 + len)
-        buf[0] = ident
+        buf[0] = prefix
         offset = 1
     } else {
         buf = Buffer.allocUnsafe(4 + len)
-        buf[0] = ((ident & 0b1111_1100) >> 2) | 0b01000000
-        buf[1] = (ident >> 8) | ((ident & 0b11) << 6)
+        buf[0] = ((prefix & 0b1111_1100) >> 2) | 0b01000000
+        buf[1] = (prefix >> 8) | ((prefix & 0b11) << 6)
         offset = 2
     }
     buf.set(address.bytes, offset)

@@ -2,9 +2,9 @@ import assert from "assert"
 import {decode, encode} from "./index"
 
 
-function de(ident: number, s: string): void {
+function de(prefix: number, s: string): void {
     let a = decode(s)
-    assert.strictEqual(a.ident, ident)
+    assert.strictEqual(a.prefix, prefix)
     assert.strictEqual(encode(a), s)
 }
 
