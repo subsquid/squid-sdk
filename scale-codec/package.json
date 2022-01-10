@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/scale-codec",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Scale decoder",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
