@@ -18,6 +18,9 @@ ADD openreader/package.json openreader/
 ADD openreader/bin openreader/bin
 ADD rpc-client/package.json rpc-client/
 ADD scale-codec/package.json scale-codec/
+ADD scale-codec-json/package.json scale-codec-json/
+ADD ss58-codec/package.json ss58-codec/
+ADD ss58/package.json ss58/
 ADD substrate-archive/package.json substrate-archive/
 ADD substrate-archive-status-service/package.json substrate-archive-status-service/
 ADD substrate-metadata/package.json substrate-metadata/
@@ -45,6 +48,12 @@ ADD rpc-client/src rpc-client/src
 ADD rpc-client/tsconfig.json rpc-client/
 ADD scale-codec/src scale-codec/src
 ADD scale-codec/tsconfig.json scale-codec/
+ADD scale-codec-json/src scale-codec-json/src
+ADD scale-codec-json/tsconfig.json scale-codec-json/
+ADD ss58-codec/src ss58-codec/src
+ADD ss58-codec/tsconfig.json ss58-codec/
+ADD ss58/src ss58/src
+ADD ss58/tsconfig.json ss58/
 ADD substrate-archive/src substrate-archive/src
 ADD substrate-archive/tsconfig.json substrate-archive/
 ADD substrate-archive-status-service/src substrate-archive-status-service/src
