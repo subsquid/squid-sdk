@@ -1,6 +1,7 @@
+import * as ss58 from "@subsquid/ss58-codec"
 import assert from "assert"
 import {ArrayType, Field, Primitive, SequenceType, Ti, TupleType, Type, TypeKind, VariantType} from "./types"
-import {assertNotNull, base58, normalizeTypes, unexpectedCase} from "./util"
+import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
 
 
 export class JsonCodec {
@@ -193,50 +194,14 @@ function decodeHex(value: unknown): Buffer {
 }
 
 
-function decodeBinaryArray(len: number, value: unknown): Buffer {
+function decodeBinaryArray(len: number, value: unknown): Uint8Array {
     assert(typeof value == 'string')
     if (/^0x([a-fA-F0-9]{2})+$/.test(value)) {
         assert(value.length - 2 == len * 2)
         return Buffer.from(value.slice(2), 'hex')
     } else {
-        return decodeAddress(len, value)
-    }
-}
-
-
-function decodeAddress(len: number, value: string): Buffer {
-    // TODO: hash checks
-    let buf = base58.decode(value)
-    switch(buf.length) {
-        case 3:
-            assert(len == 1)
-            return buf.subarray(1, 2)
-        case 4:
-            assert(len == 2)
-            return buf.subarray(1, 3)
-        case 5:
-            assert(len == 2)
-            return buf.subarray(1, 3)
-        case 6:
-        case 7:
-        case 8:
-        case 9:
-            assert(len == 4)
-            return buf.subarray(1, 5)
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-        case 16:
-        case 17:
-            assert(len == 8)
-            return buf.subarray(1, 9)
-        case 35:
-            assert(len == 32)
-            return buf.subarray(1, 33)
-        default:
-            throw new Error('Unrecognized address format')
+        let bytes = ss58.decode(value).bytes
+        assert(bytes.length == len, 'unexpected address length')
+        return bytes
     }
 }
