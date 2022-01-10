@@ -18,6 +18,7 @@ specifiers:
   '@rush-temp/openreader': file:./projects/openreader.tgz
   '@rush-temp/rpc-client': file:./projects/rpc-client.tgz
   '@rush-temp/scale-codec': file:./projects/scale-codec.tgz
+  '@rush-temp/scale-codec-json': file:./projects/scale-codec-json.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
@@ -113,6 +114,7 @@ dependencies:
   '@rush-temp/openreader': file:projects/openreader.tgz
   '@rush-temp/rpc-client': file:projects/rpc-client.tgz
   '@rush-temp/scale-codec': file:projects/scale-codec.tgz
+  '@rush-temp/scale-codec-json': file:projects/scale-codec-json.tgz
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz_pg@8.7.1
@@ -7488,8 +7490,17 @@ packages:
       websocket: 1.0.34
     dev: false
 
+  file:projects/scale-codec-json.tgz:
+    resolution: {integrity: sha512-iO00dt8Lw+d1bh+HMlgepLxQDyRl0VbDk19mluihL9RAxZJbE2zXvSLkQrwF2PUbhUMn33qhPsjT1Cz3sx6XKg==, tarball: file:projects/scale-codec-json.tgz}
+    name: '@rush-temp/scale-codec-json'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.17
+      typescript: 4.5.4
+    dev: false
+
   file:projects/scale-codec.tgz:
-    resolution: {integrity: sha512-oAagAY8IapWJCoUwfcVu0KUoMDoLI6qW35MSoMFIzwvxaM+Yv1UdsNXiw146hbcHeLniuKXgztyC2ptY9Bot9g==, tarball: file:projects/scale-codec.tgz}
+    resolution: {integrity: sha512-AS+t5H2U43GUnBJZ9vQ1+v8s/fJIHLRvOkH8jQSWlvokBsccXENLwK35YzTa8+Y0spQ9ZcOQMiaug0P12r8w0w==, tarball: file:projects/scale-codec.tgz}
     name: '@rush-temp/scale-codec'
     version: 0.0.0
     dependencies:

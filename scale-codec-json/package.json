@@ -1,0 +1,25 @@
+{
+  "name": "@subsquid/scale-codec-json",
+  "version": "0.0.0",
+  "description": "JSON codec for squid scale types",
+  "license": "MIT",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/scale-codec": "^0.0.1",
+    "@subsquid/ss58-codec": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.17",
+    "typescript": "~4.5.4"
+  }
+}

@@ -1,10 +1,20 @@
+import {
+    ArrayType,
+    Field,
+    Primitive,
+    SequenceType,
+    Ti,
+    TupleType,
+    Type,
+    TypeKind,
+    VariantType
+} from "@subsquid/scale-codec"
+import {assertNotNull, normalizeTypes, unexpectedCase} from "@subsquid/scale-codec/lib/util"
 import * as ss58 from "@subsquid/ss58-codec"
 import assert from "assert"
-import {ArrayType, Field, Primitive, SequenceType, Ti, TupleType, Type, TypeKind, VariantType} from "./types"
-import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
 
 
-export class JsonCodec {
+export class Codec {
     private types: Type[]
 
     constructor(types: Type[]) {

@@ -1,4 +1,4 @@
-import {JsonCodec} from "@subsquid/scale-codec"
+import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
 import {
     ChainDescription,
     decodeMetadata,
