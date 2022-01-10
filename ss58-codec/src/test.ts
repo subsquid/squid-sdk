@@ -1,5 +1,12 @@
-import assert from "assert"
+import assert, {deepEqual} from "assert"
 import {decode, encode} from "./index"
+
+
+// ALICE
+assert.deepEqual(decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'), {
+    prefix: 42,
+    bytes: Buffer.from('d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d', 'hex')
+})
 
 
 function de(prefix: number, s: string): void {
