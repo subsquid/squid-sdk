@@ -6,8 +6,7 @@ import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
 
-export interface Batch {
-    range: Range
+export interface DataHandlers {
     pre: BlockHandler[]
     post: BlockHandler[]
     events: Record<QualifiedName, EventHandler[]>
@@ -15,6 +14,12 @@ export interface Batch {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
+}
+
+
+export interface Batch {
+    range: Range
+    handlers: DataHandlers
 }
 
 
@@ -34,10 +39,12 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
-            pre: [hook.handler],
-            post: [],
-            events: {},
-            extrinsics: {}
+            handlers: {
+                pre: [hook.handler],
+                post: [],
+                events: {},
+                extrinsics: {}
+            }
         })
     })
 
@@ -46,10 +53,12 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
-            pre: [],
-            post: [hook.handler],
-            events: {},
-            extrinsics: {}
+            handlers: {
+                pre: [],
+                post: [hook.handler],
+                events: {},
+                extrinsics: {}
+            }
         })
     })
 
@@ -58,12 +67,14 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
-            pre: [],
-            post: [],
-            events: {
-                [hook.event]: [hook.handler]
-            },
-            extrinsics: {}
+            handlers: {
+                pre: [],
+                post: [],
+                events: {
+                    [hook.event]: [hook.handler]
+                },
+                extrinsics: {}
+            }
         })
     })
 
@@ -72,11 +83,13 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
-            pre: [],
-            post: [],
-            events: {},
-            extrinsics: {
-                [hook.event]: {[hook.extrinsic]: [hook.handler]}
+            handlers: {
+                pre: [],
+                post: [],
+                events: {},
+                extrinsics: {
+                    [hook.event]: {[hook.extrinsic]: [hook.handler]}
+                }
             }
         })
     })
@@ -105,12 +118,15 @@ export function mergeBatches(batches: Batch[]): Batch[] {
         } else {
             heap.pop()
             rangeDifference(top.range, i).forEach(range => {
-                heap.push({...top, range})
+                heap.push({range, handlers: top.handlers})
             })
             rangeDifference(batch.range, i).forEach(range => {
-                heap.push({...batch!, range})
+                heap.push({range, handlers: batch!.handlers})
             })
-            heap.push(mergeBatchHandlers(top, batch, i))
+            heap.push({
+                range: i,
+                handlers: mergeDataHandlers(top.handlers, batch.handlers)
+            })
             top = assertNotNull(heap.pop())
         }
     }
@@ -119,9 +135,8 @@ export function mergeBatches(batches: Batch[]): Batch[] {
 }
 
 
-function mergeBatchHandlers(a: Batch, b: Batch, range: Range): Batch {
+function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
     return {
-        range,
         pre: a.pre.concat(b.pre),
         post: a.post.concat(b.post),
         events: mergeMaps(a.events, b.events, (ha, hb) => ha.concat(hb)),

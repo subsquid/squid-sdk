@@ -231,7 +231,7 @@ export class SubstrateProcessor {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
-            let {pre, post, events, extrinsics, blocks, range} = batch
+            let {handlers: {pre, post, events, extrinsics}, blocks, range} = batch
             let beg = blocks.length > 0 ? process.hrtime.bigint() : 0n
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]

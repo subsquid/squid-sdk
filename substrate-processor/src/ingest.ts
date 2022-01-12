@@ -114,10 +114,7 @@ export class Ingest {
             await this._abort.guard(this.out.put({
                 blocks,
                 range: {from, to},
-                pre: batch.pre,
-                post: batch.post,
-                events: batch.events,
-                extrinsics: batch.extrinsics
+                handlers: batch.handlers
             }))
         }
     }
@@ -127,8 +124,9 @@ export class Ingest {
         let to = Math.min(archiveHeight, rangeEnd(batch.range))
         assert(from <= to)
 
-        let events = Object.keys(batch.events)
-        let notAllBlocksRequired = batch.pre.length == 0 && batch.post.length == 0
+        let hs = batch.handlers
+        let events = Object.keys(hs.events)
+        let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
 
         // filters
         let height = `height: {_gte: ${from}, _lte: ${to}}`
@@ -138,7 +136,7 @@ export class Ingest {
             events.forEach(name => {
                 or.push(`events: {_contains: [{name: "${name}"}]}`)
             })
-            let extrinsics = unique(Object.entries(batch.extrinsics).flatMap(e => Object.keys(e[1])))
+            let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
             extrinsics.forEach(name => {
                 or.push(`extrinsics: {_contains: [{name: "${name}"}]}`)
             })
@@ -158,8 +156,8 @@ export class Ingest {
             if (events.length > 0) {
                 or.push(`name: {_in: [${events.map(event => `"${event}"`).join(', ')}]}`)
             }
-            for (let event in batch.extrinsics) {
-                let extrinsics = Object.keys(batch.extrinsics[event])
+            for (let event in hs.extrinsics) {
+                let extrinsics = Object.keys(hs.extrinsics[event])
                 or.push(`name: {_eq: "${event}"}, extrinsic: {name: {_in: [${extrinsics.map(name => `"${name}"`).join(', ')}]}}`)
             }
             if (or.length == 1) {

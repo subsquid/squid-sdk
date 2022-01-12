@@ -115,13 +115,14 @@ describe('batching', function () {
     it('each handler is never called outside of its range', function () {
         assertBatch(batches => {
             return batches.every(b => {
-                let prePostHooksOk = b.pre.concat(b.post).every(h => {
+                let hs = b.handlers
+                let prePostHooksOk = hs.pre.concat(hs.post).every(h => {
                     return containsRange(h.range, b.range)
                 })
-                let eventHandlersOk = Object.entries(b.events).every(([e, handlers]) => {
+                let eventHandlersOk = Object.entries(hs.events).every(([e, handlers]) => {
                     return handlers.every(h => containsRange(h.range, b.range))
                 })
-                let extrinsicHandlersOk = Object.entries(b.extrinsics).every(e => {
+                let extrinsicHandlersOk = Object.entries(hs.extrinsics).every(e => {
                     return Object.entries(e[1]).every(([_, handlers]) => {
                         return handlers.every(h => containsRange(h.range, b.range))
                     })
@@ -134,7 +135,7 @@ describe('batching', function () {
     it('event handler is never called for wrong event', function () {
         assertBatch(batches => {
             return batches.every(b => {
-                return Object.entries(b.events).every(([e, handlers]) => {
+                return Object.entries(b.handlers.events).every(([e, handlers]) => {
                     return handlers.every(h => h.event === e)
                 })
             })
@@ -144,7 +145,7 @@ describe('batching', function () {
     it('extrinsic handler is never called for wrong extrinsic', function () {
         assertBatch(batches => {
             return batches.every(b => {
-                return Object.entries(b.extrinsics).every(([event, extrinsics]) => {
+                return Object.entries(b.handlers.extrinsics).every(([event, extrinsics]) => {
                     return Object.entries(extrinsics).every(([extrinsic, handlers]) => {
                         return handlers.every(h => h.event === event && h.extrinsic === extrinsic)
                     })
@@ -187,12 +188,12 @@ describe('batching', function () {
                     }
                 }
 
-                b.pre.forEach(call)
-                b.post.forEach(call)
-                Object.entries(b.events).forEach(([event, hs]) => {
+                b.handlers.pre.forEach(call)
+                b.handlers.post.forEach(call)
+                Object.entries(b.handlers.events).forEach(([event, hs]) => {
                     hs.forEach(call)
                 })
-                Object.entries(b.extrinsics).forEach(([event, extrinsics]) => {
+                Object.entries(b.handlers.extrinsics).forEach(([event, extrinsics]) => {
                     Object.entries(extrinsics).forEach(([ex, hs]) => {
                         hs.forEach(call)
                     })
@@ -261,8 +262,10 @@ export interface AHooks {
 
 interface ABatch {
     range: Range,
-    pre: ABlockHandler[],
-    post: ABlockHandler[],
-    events: Record<string, AEventHandler[]>
-    extrinsics: Record<string, Record<string, AExtrinsicHandler[]>>
+    handlers: {
+        pre: ABlockHandler[],
+        post: ABlockHandler[],
+        events: Record<string, AEventHandler[]>
+        extrinsics: Record<string, Record<string, AExtrinsicHandler[]>>
+    }
 }
