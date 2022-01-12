@@ -182,7 +182,12 @@ export class Ingest {
                 q.line('extrinsicsRoot')
                 q.line('runtimeVersion')
                 q.line('lastRuntimeUpgrade')
-                q.line('events')
+                q.block('events: substrate_events(order_by: {indexInBlock: asc})', () => {
+                    q.line('id')
+                    q.line('name')
+                    q.line('extrinsicId')
+                    q.line('extrinsicName')
+                })
                 q.line('extrinsics')
                 q.line()
                 q.block(`substrate_events(order_by: {indexInBlock: asc}${eventWhere})`, () => {
