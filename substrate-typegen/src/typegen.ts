@@ -91,45 +91,19 @@ export class Typegen {
                     if (typeExp != unqualifiedTypeExp) {
                         importedInterfaces.add(v)
                     }
+                    let suffix = isLatest ? 'Latest' : 'V' + v
                     out.line()
-                    if (isLatest) {
-                        out.blockComment(version.def.docs)
-                        out.block(`get isLatest(): boolean`, () => {
-                            let hash = version.chain[kind].getHash(name)
-                            let conditions = [
-                                `this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`
-                            ]
-                            let begHeight = version.chain.blockNumber
-                            if (begHeight > 0) {
-                                conditions.unshift(`this.ctx.block.height > ${begHeight}`)
-                            }
-                            out.line(`return ${conditions.join(' && ')}`)
-                        })
-                        out.line()
-                        out.blockComment(version.def.docs)
-                        out.block(`get asLatest(): ${typeExp}`, () => {
-                            out.line(`assert(this.isLatest)`)
-                            out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
-                        })
-                    } else {
-                        out.blockComment(version.def.docs)
-                        out.block(`get isV${v}(): boolean`, () => {
-                            let begHeight = version.chain.blockNumber
-                            let endHeight = versions[idx + 1].chain.blockNumber
-                            out.line(`let h = this.ctx.block.height`)
-                            if (begHeight == 0) {
-                                out.line(`return h <= ${endHeight}`)
-                            } else {
-                                out.line(`return ${begHeight} < h && h <= ${endHeight}`)
-                            }
-                        })
-                        out.line()
-                        out.blockComment(version.def.docs)
-                        out.block(`get asV${v}(): ${typeExp}`, () => {
-                            out.line(`assert(this.isV${v})`)
-                            out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
-                        })
-                    }
+                    out.blockComment(version.def.docs)
+                    out.block(`get is${suffix}(): boolean`, () => {
+                        let hash = version.chain[kind].getHash(name)
+                        out.line(`return this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`)
+                    })
+                    out.line()
+                    out.blockComment(version.def.docs)
+                    out.block(`get as${suffix}(): ${typeExp}`, () => {
+                        out.line(`assert(this.is${suffix})`)
+                        out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
+                    })
                 })
             })
         })

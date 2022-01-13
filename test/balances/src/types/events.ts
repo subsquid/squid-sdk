@@ -11,8 +11,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded (from, to, value, fees).
    */
   get isV1020(): boolean {
-    let h = this.ctx.block.height
-    return h <= 1375086
+    return this.ctx._chain.getEventHash('balances.Transfer') === 'e1ceec345fa4674275d2608b64d810ecec8e9c26719985db4998568cfcafa72b'
   }
 
   /**
@@ -27,8 +26,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded (from, to, value).
    */
   get isV1050(): boolean {
-    let h = this.ctx.block.height
-    return 1375086 < h && h <= 10403784
+    return this.ctx._chain.getEventHash('balances.Transfer') === '2082574713e816229f596f97b58d3debbdea4b002607df469a619e037cc11120'
   }
 
   /**
@@ -43,7 +41,7 @@ export class BalancesTransferEvent {
    * Transfer succeeded.
    */
   get isLatest(): boolean {
-    return this.ctx.block.height > 10403784 && this.ctx._chain.getEventHash('balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
+    return this.ctx._chain.getEventHash('balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
   }
 
   /**
