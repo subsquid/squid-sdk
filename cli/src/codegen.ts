@@ -161,6 +161,8 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                 return 'text'
             case 'Int':
                 return 'integer'
+            case 'Float':
+                return 'numeric'
             case 'Boolean':
                 return 'bool'
             case 'DateTime':

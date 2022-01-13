@@ -115,4 +115,22 @@ describe('data', function () {
             }
         })
     })
+
+    it('scalars', function() {
+        return gql.test(`
+            query {
+                scalarRaws(orderBy: id_ASC) {
+                    float
+                    nested {
+                        float
+                    }
+                }
+            }
+        `, {
+            scalarRaws: [
+                {float: 0, nested: {float: 0}},
+                {float: 0.7, nested: {float: 0.8}}
+            ]
+        })
+    })
 })

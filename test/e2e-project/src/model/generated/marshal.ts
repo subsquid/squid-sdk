@@ -95,7 +95,11 @@ export const bytes: Marshal<Uint8Array, string> = {
         return Buffer.from(value.slice(2), 'hex')
     },
     toJSON(value: Uint8Array): string {
-        return '0x' + Buffer.from(value.buffer).toString('hex')
+        if (Buffer.isBuffer(value)) {
+            return '0x' + value.toString('hex')
+        } else {
+            return '0x' + Buffer.from(value.buffer, value.byteOffset, value.byteLength).toString('hex')
+        }
     },
 }
 

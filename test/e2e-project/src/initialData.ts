@@ -9,8 +9,8 @@ import {
     HappyPoor,
     Issue,
     IssueCancellation,
-    IssuePayment,
-    Network,
+    IssuePayment, NestedScalars,
+    Network, ScalarRaw,
     SystemEvent
 } from "./model"
 
@@ -83,6 +83,20 @@ export async function loadInitialData(store: Store): Promise<void> {
             id: '2',
             issue: issue2,
             block: 100
+        }))
+    }
+
+    {
+        await store.save(new ScalarRaw({
+            id: '1',
+            float: 0,
+            nested: new NestedScalars({float: 0})
+        }))
+
+        await store.save(new ScalarRaw({
+            id: '2',
+            float: 0.7,
+            nested: new NestedScalars({float: 0.8})
         }))
     }
 }
