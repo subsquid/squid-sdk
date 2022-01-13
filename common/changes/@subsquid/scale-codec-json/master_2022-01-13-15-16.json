@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec-json",
+      "comment": "Fix decoding errors for variant types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec-json"
+}

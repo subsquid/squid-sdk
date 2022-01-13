@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "Make exploration more resilient to network errors",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

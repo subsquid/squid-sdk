@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "internal: add ResilientRpcClient",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

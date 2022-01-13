@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Provide event.extrinsicId in the block header",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Fix decoding errors for variant types (when using typegen classes)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
