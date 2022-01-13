@@ -36,15 +36,12 @@ export function normalizeTypes(types: Type[]): Type[] {
                 }
                 let len = variants.reduce((len, v) => Math.max(len, v.index), 0) + 1
                 let placedVariants: (Variant | undefined)[] = new Array(len)
-                let variantsByName: Record<string, Variant> = {}
                 variants.forEach(v => {
                     placedVariants[v.index] = v
-                    variantsByName[v.name] = v
                 })
                 return {
                     kind: TypeKind.Variant,
-                    variants: placedVariants,
-                    variantsByName
+                    variants: placedVariants
                 }
             }
             default:

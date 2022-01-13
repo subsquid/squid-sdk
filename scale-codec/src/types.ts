@@ -92,7 +92,8 @@ export interface Field {
 export interface VariantType {
     kind: TypeKind.Variant
     variants: (Variant | undefined)[]
-    variantsByName?: Record<string, Variant>
+    variantsByJsonPropName?: Record<string, Variant>
+    variantNames?: Record<string, boolean>
 }
 
 

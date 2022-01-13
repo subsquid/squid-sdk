@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^0.1.0",
-    "@subsquid/ss58-codec": "^0.0.0"
+    "@subsquid/ss58-codec": "^0.0.0",
+    "@subsquid/util": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.17",

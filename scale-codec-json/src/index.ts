@@ -7,10 +7,12 @@ import {
     TupleType,
     Type,
     TypeKind,
+    Variant,
     VariantType
 } from "@subsquid/scale-codec"
 import {assertNotNull, normalizeTypes, unexpectedCase} from "@subsquid/scale-codec/lib/util"
 import * as ss58 from "@subsquid/ss58-codec"
+import {toCamelCase} from "@subsquid/util"
 import assert from "assert"
 
 
@@ -19,6 +21,7 @@ export class Codec {
 
     constructor(types: Type[]) {
         this.types = normalizeTypes(types)
+        indexVariantNames(this.types)
     }
 
     decode(type: Ti, value: unknown): any {
@@ -124,11 +127,18 @@ export class Codec {
     }
 
     private decodeVariant(def: VariantType, value: any): any {
+        if (typeof value == 'string') {
+            if (def.variantNames == null) {
+                throw new Error(`Variant type which has variants with arguments can't be encoded as string`)
+            }
+            if (def.variantNames[value]) return {__kind: value}
+            throw new Error(`Unknown variant: ${value}`)
+        }
         assert(typeof value == 'object' && value != null)
         let result: any | undefined = undefined
         for (let key in value) {
             if (result != null) throw new Error('Ambiguous variant')
-            let v = def.variantsByName![key]
+            let v = def.variantsByJsonPropName![key]
             if (v == null) throw new Error(`Unknown variant ${key}`)
             if (v.fields.length == 0) return {
                 __kind: key
@@ -214,4 +224,26 @@ function decodeBinaryArray(len: number, value: unknown): Uint8Array {
         assert(bytes.length == len, 'unexpected address length')
         return bytes
     }
+}
+
+
+function indexVariantNames(types: Type[]): void {
+    types.forEach(type => {
+        if (type.kind !== TypeKind.Variant) return
+        let variantsByJsonPropName: Record<string, Variant> = Object.create(null)
+        let names: Record<string, boolean> = Object.create(null)
+        let hasNoFields = true
+        type.variants.forEach(v => {
+            if (v == null) return
+            names[v.name] = true
+            variantsByJsonPropName[toCamelCase(v.name)] = v
+            if (v.fields.length > 0) {
+                hasNoFields = false
+            }
+        })
+        type.variantsByJsonPropName = variantsByJsonPropName
+        if (hasNoFields) {
+            type.variantNames = names
+        }
+    })
 }
