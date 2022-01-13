@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/substrate-metadata_v0.1.0",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add types bundle for polkadot"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/substrate-metadata_v0.0.2",
       "date": "Mon, 10 Jan 2022 17:09:28 GMT",

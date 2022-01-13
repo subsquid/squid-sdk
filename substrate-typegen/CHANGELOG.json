@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/substrate-typegen_v0.0.4",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Don't rely on block ranges for type compatibility checks"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.0.2` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/substrate-typegen_v0.0.3",
       "date": "Mon, 10 Jan 2022 17:09:28 GMT",

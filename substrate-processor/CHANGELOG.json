@@ -2,6 +2,34 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/substrate-processor_v0.2.0",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Provide event.extrinsicId in the block header"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Fix decoding errors for variant types (when using typegen classes)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^0.0.2` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec-json\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.0.2` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/substrate-processor_v0.1.1",
       "date": "Mon, 10 Jan 2022 17:09:28 GMT",

@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/substrate-metadata-explorer_v0.0.4",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Make exploration more resilient to network errors"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^0.0.2` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/substrate-metadata-explorer_v0.0.3",
       "date": "Sat, 08 Jan 2022 13:00:12 GMT",

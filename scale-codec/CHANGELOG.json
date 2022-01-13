@@ -2,6 +2,18 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/scale-codec_v0.2.0",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "adjust Variant type definition for json decoding"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/scale-codec_v0.1.0",
       "date": "Mon, 10 Jan 2022 17:09:28 GMT",

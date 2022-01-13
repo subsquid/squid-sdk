@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/rpc-client_v0.1.0",
+      "date": "Thu, 13 Jan 2022 16:05:36 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "internal: add ResilientRpcClient"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/rpc-client_v0.0.2",
       "date": "Sat, 08 Jan 2022 13:00:12 GMT",
