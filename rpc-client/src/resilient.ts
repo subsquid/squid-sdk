@@ -1,7 +1,7 @@
-import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
+import {RpcClient, RpcConnectionError} from "./client"
 
 
-export class ResilientRpc {
+export class ResilientRpcClient {
     private errors = 0
     private delays = [0, 0, 500, 2000] // 1 based array of delays
     private closed = false
@@ -50,5 +50,8 @@ export class ResilientRpc {
         this.closed = true
         this.client.then(client => client.close(err))
         this.client = Promise.reject(err || new Error('Closed'))
+        this.client.catch(err => {
+            // handle error, so that node doesn't warn you that something is unhandled
+        })
     }
 }

@@ -1,4 +1,4 @@
-import {RpcClient} from "@subsquid/rpc-client"
+import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {fromChain} from "./fromChain"
 import {fromIndexer} from "./fromIndexer"
 import type {ChainVersion, Log} from "./types"
@@ -16,7 +16,7 @@ export interface ExplorationOptions {
 
 
 export async function exploreChainVersions(options: ExplorationOptions): Promise<ChainVersion[]> {
-    let client = new RpcClient(options.chainEndpoint)
+    let client = new ResilientRpcClient(options.chainEndpoint)
     try {
         if (options.archiveEndpoint) {
             return await fromIndexer(client, options.archiveEndpoint, options.fromBlock, options.log)

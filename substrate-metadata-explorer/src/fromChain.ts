@@ -1,9 +1,9 @@
-import type {RpcClient} from "@subsquid/rpc-client"
-import {Version, Explorer} from "./explorer"
+import type {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {Explorer, Version} from "./explorer"
 import {ChainVersion, Log} from "./types"
 
 
-export async function fromChain(client: RpcClient, from: number = 0, log?: Log): Promise<ChainVersion[]> {
+export async function fromChain(client: ResilientRpcClient, from: number = 0, log?: Log): Promise<ChainVersion[]> {
     let headHash = await client.call('chain_getFinalizedHead')
     let height = await client.call('chain_getHeader', [headHash]).then((head: any) => {
         return Number.parseInt(head.number)
@@ -17,60 +17,27 @@ export async function fromChain(client: RpcClient, from: number = 0, log?: Log):
 }
 
 
-export async function fetchVersionsFromChain(client: RpcClient, heights: number[]): Promise<Version[]> {
-    let hashes = checkBatch(await client.batch(
-        heights.map(h => {
-            return ['chain_getBlockHash', [h]]
+export async function fetchVersionsFromChain(client: ResilientRpcClient, heights: number[]): Promise<Version[]> {
+    let versions: Version[] = []
+    for (let height of heights) {
+        let hash = await client.call('chain_getBlockHash', [height])
+        let rt = await client.call('chain_getRuntimeVersion', [hash])
+        versions.push({
+            blockNumber: height,
+            blockHash: hash,
+            specVersion: rt.specVersion
         })
-    ))
-
-    let runtimeVersions = checkBatch(await client.batch(
-        hashes.map(hash => {
-            return ['chain_getRuntimeVersion', [hash]]
-        })
-    ))
-
-    return runtimeVersions.map((v, idx) => {
-        return {
-            blockNumber: heights[idx],
-            blockHash: hashes[idx],
-            specVersion: v.specVersion
-        }
-    })
-}
-
-
-function checkBatch<T>(batchResponse: (T | Error)[]): T[] {
-    for (let i = 0; i < batchResponse.length; i++) {
-        let res = batchResponse[i]
-        if (res instanceof Error) {
-            throw res
-        }
     }
-    return batchResponse as T[]
+    return versions
 }
 
 
-export async function fetchVersionMetadata(client: RpcClient, versions: Version[], log?: Log): Promise<ChainVersion[]> {
+export async function fetchVersionMetadata(client: ResilientRpcClient, versions: Version[], log?: Log): Promise<ChainVersion[]> {
     let records: ChainVersion[] = []
-    while (versions.length) {
-        let batch = versions.slice(0, 10)
-        versions = versions.slice(10)
-        log?.(`fetching metadata for versions ${batch[0].specVersion}..${batch[batch.length - 1].specVersion}`)
-
-        let hashes: string[] = checkBatch(await client.batch(
-            batch.map(v => {
-                return ['chain_getBlockHash', [v.blockNumber]]
-            })
-        ))
-
-        for (let i = 0; i < hashes.length; i++) {
-            let metadata = await client.call('state_getMetadata', [hashes[i]])
-            records.push({
-                ...batch[i],
-                metadata
-            })
-        }
+    for (let v of versions) {
+        log?.(`fetching metadata for version ${v.specVersion}`)
+        let metadata = await client.call('state_getMetadata', [v.blockHash])
+        records.push({...v, metadata})
     }
     return records
 }

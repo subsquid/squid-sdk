@@ -1,4 +1,4 @@
-import type {RpcClient} from "@subsquid/rpc-client"
+import type {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Explorer, Version} from "./explorer"
@@ -7,7 +7,7 @@ import type {ChainVersion, Log} from "./types"
 
 
 export async function fromIndexer(
-    chainClient: RpcClient,
+    chainClient: ResilientRpcClient,
     indexerUrl: string,
     from: number = 0,
     log?: Log
@@ -31,7 +31,7 @@ export async function fromIndexer(
 }
 
 
-async function fetchVersionsFromIndexer(chainClient: RpcClient, indexerUrl: string, heights: number[]): Promise<Version[]> {
+async function fetchVersionsFromIndexer(chainClient: ResilientRpcClient, indexerUrl: string, heights: number[]): Promise<Version[]> {
     let response: {substrate_block: Version[]} = await indexerRequest(
         indexerUrl,
         `query {

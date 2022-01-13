@@ -1,3 +1,4 @@
+import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
@@ -11,7 +12,6 @@ import {QualifiedName} from "./interfaces/substrate"
 import {Prometheus} from "./prometheus"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
-import {ResilientRpc} from "./util/resilient-rpc-client"
 import {ServiceManager} from "./util/sm"
 
 
@@ -201,7 +201,7 @@ export class SubstrateProcessor {
             metrics: prometheus
         }))
 
-        let client = sm.add(new ResilientRpc(
+        let client = sm.add(new ResilientRpcClient(
             assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
         ))
 

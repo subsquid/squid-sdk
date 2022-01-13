@@ -1,3 +1,4 @@
+import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
 import {
     ChainDescription,
@@ -13,7 +14,6 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
-import {ResilientRpc} from "./util/resilient-rpc-client"
 
 
 /**
@@ -32,7 +32,7 @@ export class ChainManager {
     private versions = new Map<SpecVersion, {height: number, chain: Chain}>()
 
     constructor(
-        private client: ResilientRpc,
+        private client: ResilientRpcClient,
         private typesBundle: OldTypesBundle = {types: {}}) {
     }
 
