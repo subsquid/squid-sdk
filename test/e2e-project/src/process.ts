@@ -53,6 +53,10 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 processor.addEventHandler('balances.Transfer', async ctx => {
     let [from, to, value] = new BalancesTransferEvent(ctx).asLatest
 
+    let blockEvent = ctx.block.events.find(e => e.name === 'balances.Transfer')
+    assert(blockEvent != null, 'should find event among block events')
+    assert.strictEqual(blockEvent.extrinsic, 'balances.transfer')
+    assert.strictEqual(blockEvent.extrinsicId, ctx.extrinsic!.id)
     assert(ctx.block.timestamp != null, 'block.timestamp must be set')
     assert(ctx.block.timestamp === ctx.event.blockTimestamp, 'event.blockTimestamp must be set to block.timestamp')
 

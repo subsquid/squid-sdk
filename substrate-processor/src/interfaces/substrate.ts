@@ -71,6 +71,7 @@ export interface EventInfo {
     id: string
     name: QualifiedName
     extrinsic: QualifiedName
+    extrinsicId: string
 }
 
 

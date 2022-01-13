@@ -185,8 +185,8 @@ export class Ingest {
                 q.block('events: substrate_events(order_by: {indexInBlock: asc})', () => {
                     q.line('id')
                     q.line('name')
+                    q.line('extrinsic: extrinsicName')
                     q.line('extrinsicId')
-                    q.line('extrinsicName')
                 })
                 q.line('extrinsics')
                 q.line()
