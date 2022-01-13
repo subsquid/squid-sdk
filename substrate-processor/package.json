@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
@@ -15,9 +15,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.0.2",
-    "@subsquid/scale-codec-json": "^0.0.1",
-    "@subsquid/substrate-metadata": "^0.0.2",
+    "@subsquid/rpc-client": "^0.1.0",
+    "@subsquid/scale-codec-json": "^0.0.2",
+    "@subsquid/substrate-metadata": "^0.1.0",
     "@subsquid/typeorm-config": "^0.0.1",
     "@subsquid/util": "^0.0.1",
     "node-fetch": "^2.6.6",
