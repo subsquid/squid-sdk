@@ -6,6 +6,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
     switch(chain) {
         case 'kusama':
             return require('./old/definitions/kusama').bundle
+        case 'polkadot':
+            return require('./old/definitions/polkadot').bundle
         default:
             return undefined
     }

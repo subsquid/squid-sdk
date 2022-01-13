@@ -231,9 +231,7 @@ export const bundle: OldTypesBundle = {
         {
             // metadata v14
             minmax: [9106, null],
-            types: {
-                ...sharedTypes
-            }
+            types: {}
         }
     ]
 }
