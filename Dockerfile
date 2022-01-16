@@ -30,6 +30,7 @@ ADD substrate-processor/package.json substrate-processor/
 ADD substrate-typegen/package.json substrate-typegen/
 ADD substrate-typegen/bin substrate-typegen/bin
 ADD test/balances/package.json test/balances/
+ADD test/data/package.json test/data/
 ADD test/e2e-project/package.json test/e2e-project/
 ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
@@ -68,6 +69,8 @@ ADD substrate-typegen/src substrate-typegen/src
 ADD substrate-typegen/tsconfig.json substrate-typegen/
 ADD test/balances/src test/balances/src
 ADD test/balances/tsconfig.json test/balances/
+ADD test/data/src test/data/src
+ADD test/data/tsconfig.json test/data/
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
 ADD test/e2e-project/typedefs.json test/e2e-project/
