@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "dev deps: upgrade `expect`",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

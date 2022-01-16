@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "dev deps: upgrade `expect`",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
