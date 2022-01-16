@@ -547,6 +547,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "test-data",
+      "projectFolder": "test/data",
+      "shouldPublish": false
+    },
+    {
       "packageName": "e2e-test-project",
       "projectFolder": "test/e2e-project",
       "shouldPublish": false

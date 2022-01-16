@@ -1,7 +1,6 @@
 import {
     ArrayType,
     Field,
-    Primitive,
     SequenceType,
     Ti,
     TupleType,
@@ -11,9 +10,9 @@ import {
     VariantType
 } from "@subsquid/scale-codec"
 import {assertNotNull, normalizeTypes, unexpectedCase} from "@subsquid/scale-codec/lib/util"
-import * as ss58 from "@subsquid/ss58-codec"
 import {toCamelCase} from "@subsquid/util"
 import assert from "assert"
+import {decodeBinaryArray, decodeHex, decodePrimitive} from "./util"
 
 
 export class Codec {
@@ -70,7 +69,7 @@ export class Codec {
         let items = def.tuple
         switch(items.length) {
             case 0:
-                assert(value == null)
+                assert(value == null || Array.isArray(value) && value.length == 0)
                 return null
             case 1:
                 return this.decode(items[0], value)
@@ -141,14 +140,14 @@ export class Codec {
             let v = def.variantsByJsonPropName![key]
             if (v == null) throw new Error(`Unknown variant ${key}`)
             if (v.fields.length == 0) return {
-                __kind: key
+                __kind: v.name
             }
             if (v.fields[0].name == null) return {
-                __kind: key,
+                __kind: v.name,
                 value: this.decodeCompositeTuple(v.fields, value[key])
             }
             result = this.decodeObject(v.fields, value[key])
-            result.__kind = key
+            result.__kind = v.name
         }
         if (result == null) throw new Error('Empty variant object')
         return result
@@ -172,57 +171,6 @@ export class Codec {
             assert(Number.isSafeInteger(value))
             return value as number
         }
-    }
-}
-
-
-function decodePrimitive(type: Primitive, value: unknown): string | boolean | number | bigint {
-    // TODO: more validation
-    switch(type) {
-        case 'I8':
-        case 'U8':
-        case 'I16':
-        case 'U16':
-        case 'I32':
-        case 'U32':
-            assert(Number.isSafeInteger(value))
-            return value as number
-        case 'I64':
-        case 'U64':
-        case 'I128':
-        case 'U128':
-        case 'I256':
-        case 'U256':
-            assert(typeof value == 'string' || typeof value == 'number')
-            return BigInt(value)
-        case 'Bool':
-            assert(typeof value == 'boolean')
-            return value
-        case 'Str':
-            assert(typeof value == 'string')
-            return value
-        default:
-            throw unexpectedCase(type)
-    }
-}
-
-
-function decodeHex(value: unknown): Buffer {
-    assert(typeof value == 'string')
-    assert(/^0x([a-fA-F0-9]{2})+$/.test(value))
-    return Buffer.from(value.slice(2), 'hex')
-}
-
-
-function decodeBinaryArray(len: number, value: unknown): Uint8Array {
-    assert(typeof value == 'string')
-    if (/^0x([a-fA-F0-9]{2})+$/.test(value)) {
-        assert(value.length - 2 == len * 2)
-        return Buffer.from(value.slice(2), 'hex')
-    } else {
-        let bytes = ss58.decode(value).bytes
-        assert(bytes.length == len, 'unexpected address length')
-        return bytes
     }
 }
 
