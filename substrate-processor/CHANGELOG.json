@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/substrate-processor_v0.2.1",
+      "date": "Sun, 16 Jan 2022 18:13:02 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "dev deps: upgrade `expect`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec-json\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/substrate-processor_v0.2.0",
       "date": "Thu, 13 Jan 2022 16:05:36 GMT",

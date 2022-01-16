@@ -2,6 +2,18 @@
   "name": "@subsquid/scale-codec-json",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/scale-codec-json_v0.0.3",
+      "date": "Sun, 16 Jan 2022 18:13:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix number of decoding errors"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/scale-codec-json_v0.0.2",
       "date": "Thu, 13 Jan 2022 16:05:36 GMT",
