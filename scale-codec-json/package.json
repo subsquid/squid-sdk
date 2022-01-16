@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/scale-codec-json",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "JSON codec for squid scale types",
   "license": "MIT",
   "repository": "git@github.com:subsquid/squid.git",
