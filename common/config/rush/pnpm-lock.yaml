@@ -65,6 +65,7 @@ specifiers:
   dotenv: ^10.0.0
   dotenv-cli: ^4.1.1
   envalid: ^7.2.2
+  expect: ^27.4.6
   express: ^4.17.2
   fast-check: ^2.20.0
   figlet: ^1.5.2
@@ -162,6 +163,7 @@ dependencies:
   dotenv: 10.0.0
   dotenv-cli: 4.1.1
   envalid: 7.2.2
+  expect: 27.4.6
   express: 4.17.2
   fast-check: 2.20.0
   figlet: 1.5.2
@@ -7436,7 +7438,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-suite.tgz:
-    resolution: {integrity: sha512-SGQjKP/mMGuVgXEJkAdOOmvwTLnxL9mpve76sZlAJJCEnDd4EJNifqM1i0Rd9HA+O3Q7FnAPnNQRlPLEqIEAHA==, tarball: file:projects/e2e-test-suite.tgz}
+    resolution: {integrity: sha512-4YLSQmwbrvTN2wKXU193vyvXk8Bq/PAA4czevgs4AhKqq76cYmkSAXyj1AuZ41eAXSiM9DvhIYJC/atU9dtxew==, tarball: file:projects/e2e-test-suite.tgz}
     name: '@rush-temp/e2e-test-suite'
     version: 0.0.0
     dependencies:
@@ -7446,14 +7448,14 @@ packages:
       '@types/node': 16.11.17
       '@types/node-fetch': 2.5.12
       dotenv: 10.0.0
-      expect: 27.4.2
+      expect: 27.4.6
       mocha: 9.1.3
       node-fetch: 2.6.6
       typescript: 4.5.4
     dev: false
 
   file:projects/gql-test-client.tgz:
-    resolution: {integrity: sha512-dZts3Af6zzngZdLWN9Rj/XZr3RxdBWZ2Q3JS+lQo0ZnQszVcP+UXvfTvKDB9UB1B3RvEADuc0hFsUokM+GvlOg==, tarball: file:projects/gql-test-client.tgz}
+    resolution: {integrity: sha512-tdyTgrZxB5NhWa+bQ5QrX8knpt4d96pA7gnUNiIKj9+fSBC3lJ2dz6yKjMD2rNLUkw2jm/GvVa7fY9LdDpK5nQ==, tarball: file:projects/gql-test-client.tgz}
     name: '@rush-temp/gql-test-client'
     version: 0.0.0
     dependencies:
@@ -7465,7 +7467,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_ioredis@4.28.2:
-    resolution: {integrity: sha512-af7rDuiUVf7X059y4WtZnLFiWp4HOjCSu5B6jMdmptSJ6oVlRgq+3/wA1+GXGKBdqCDmw/qwbsWNkcwPmyVOWg==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-Ak5it6kKqJxz6PIGOlDdQPyyqTCc/kknlcjU91nzzmnMBuU8FUvgRrtQ/IdB4QDGwsht9wVhK7kouV44QGHqEA==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -7507,7 +7509,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz:
-    resolution: {integrity: sha512-cou5KW+nZJLMbQHh7WfMfQDFUcwtvsNxdiQ8sSeRLA7JQ07AFztbre51xhPnzBsZLLrpaebTYE2UiAxV6cKFpw==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-ZaZGEIWeP6LSj8zExdTbMNCXENt4Ob57eICV0DSGOG2ZW6YMYX3EoLNzPNyzq9YVVT627iO1rolW7Ru1tA6P3Q==, tarball: file:projects/openreader.tgz}
     name: '@rush-temp/openreader'
     version: 0.0.0
     dependencies:
@@ -7670,19 +7672,19 @@ packages:
     dev: false
 
   file:projects/substrate-metadata.tgz:
-    resolution: {integrity: sha512-xIGilatu0UWRiJonO2yNy98//mP+73t9sQnOLgFvPwfWgzanHRpNDh0ONuL3SiHCaFJcc3WGuDdu9qWii2pXXg==, tarball: file:projects/substrate-metadata.tgz}
+    resolution: {integrity: sha512-8AIHkg1JwkQoAuBwKKjXs/GK304Q6mnDgdM6RMY9KyF2kED0B1pAv+qSS+aaKaY81NKhowfc+vCqA1ZaQCRZmA==, tarball: file:projects/substrate-metadata.tgz}
     name: '@rush-temp/substrate-metadata'
     version: 0.0.0
     dependencies:
       '@types/mocha': 9.0.0
       '@types/node': 16.11.17
-      expect: 27.4.2
+      expect: 27.4.6
       mocha: 9.1.3
       typescript: 4.5.4
     dev: false
 
   file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1:
-    resolution: {integrity: sha512-UbF9b5uAfzsNYOlPxFPYkwge8IGWJEhrvpVlUn5HDhChbbcJ4lYMigpioGZphsft5QDeo9ioyn0JwjDDfNSEtA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-7i+APeqtXRPwXUSueGtlP5fXItrkOX39UHLMFwawJlCEN9gv2mZGJrnOnRRteXM6+6X/NIXN8JmgkLY7Rqc2qQ==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
