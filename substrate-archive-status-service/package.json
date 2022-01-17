@@ -3,7 +3,7 @@
   "private": "true",
   "version": "0.0.0",
   "description": "Substrate archive status service",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "scripts": {
     "build": "tsc",

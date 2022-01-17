@@ -6,7 +6,7 @@
     "graphql",
     "opencrud"
   ],
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

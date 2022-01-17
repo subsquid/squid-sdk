@@ -2,7 +2,7 @@
   "name": "@subsquid/substrate-typegen",
   "version": "0.0.4",
   "description": "Generates TypeScript definitions for substrate events and calls",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

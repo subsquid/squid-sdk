@@ -2,7 +2,7 @@
   "name": "@subsquid/ss58",
   "version": "0.0.0",
   "description": "SS58 registry and codec",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

@@ -2,7 +2,7 @@
   "name": "@subsquid/util",
   "version": "0.0.1",
   "description": "Squid framework utilities",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

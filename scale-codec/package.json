@@ -2,7 +2,7 @@
   "name": "@subsquid/scale-codec",
   "version": "0.2.0",
   "description": "Scale decoder",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

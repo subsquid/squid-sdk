@@ -2,7 +2,7 @@
   "name": "@subsquid/substrate-processor",
   "version": "0.2.1",
   "description": "Data fetcher and mappings executor for substrate chains",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"

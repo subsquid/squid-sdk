@@ -2,7 +2,7 @@
   "name": "@subsquid/substrate-metadata",
   "version": "0.1.0",
   "description": "Substrate metadata tools for squid framework",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
