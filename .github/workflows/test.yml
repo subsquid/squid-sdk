@@ -1,0 +1,21 @@
+name: run unit tests
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  test:
+    name: run e2e tests
+    if: "!contains(github.event.head_commit.message, 'test skip')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install dependencies
+        run: node common/scripts/install-run-rush.js install
+
+      - name: Build project
+        run: |
+          node common/scripts/install-run-rush.js build
+          cd cli && npx oclif manifest
+
+      - name: Run tests
+        run: node common/scripts/install-run-rush.js test
