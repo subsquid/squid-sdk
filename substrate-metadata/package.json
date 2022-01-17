@@ -12,7 +12,8 @@
     "lib"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
     "@subsquid/util": "^0.0.1",

@@ -28,6 +28,14 @@
       "commandKind": "global",
       "summary": "run e2e test suite",
       "shellCommand": "cd test/e2e-suite && ./run.sh"
+    },
+    {
+      "name": "test",
+      "commandKind": "bulk",
+      "summary": "Run unit tests",
+      "enableParallelism": false,
+      "ignoreMissingScript": true,
+      "allowWarningsInSuccessfulBuild": true
     }
   ],
 

@@ -2,7 +2,8 @@
   "name": "test-data",
   "version": "0.0.0",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "./test.sh"
   },
   "devDependencies": {
     "@polkadot/api": "6.11.2-24",

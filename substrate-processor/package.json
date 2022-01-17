@@ -12,7 +12,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
     "@subsquid/rpc-client": "^0.1.0",
