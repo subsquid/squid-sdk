@@ -78,6 +78,18 @@ export class SubstrateEventEntity
   })
   data!: unknown
 
+  @Column()
+  evmLogAddress?: string
+
+  @Column()
+  evmLogData?: string;
+
+  @Column("text", {array: true})
+  evmLogTopics?: string[];
+
+  @Column()
+  evmHash?: string;
+
   @ManyToOne(
     () => SubstrateExtrinsicEntity,
     (e: SubstrateExtrinsicEntity) => e.events

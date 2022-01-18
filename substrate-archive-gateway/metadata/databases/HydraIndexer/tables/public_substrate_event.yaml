@@ -13,6 +13,10 @@ configuration:
     extrinsic_index: extrinsicIndex
     extrinsic_name: extrinsicName
     index_in_block: indexInBlock
+    evm_log_address: evmLogAddress
+    evm_log_data: evmLogData
+    evm_log_topics: evmLogTopics
+    evm_hash: evmHash
   custom_root_fields: {}
 object_relationships:
 - name: extrinsic
@@ -44,6 +48,10 @@ select_permissions:
     - index_in_block
     - params
     - data
+    - evm_log_address
+    - evm_log_data
+    - evm_log_topics
+    - evm_hash
     - extrinsic_id
     - block_id
     filter: {}

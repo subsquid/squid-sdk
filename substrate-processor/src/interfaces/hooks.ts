@@ -15,6 +15,12 @@ export interface EventHook {
     range?: Range
 }
 
+export interface EvmLogHook {
+    handler: EventHandler
+    contractAddress: QualifiedName
+    range?: Range
+}
+
 
 export interface ExtrinsicHook {
     handler: ExtrinsicHandler
@@ -29,4 +35,5 @@ export interface Hooks {
     post: BlockHook[]
     event: EventHook[]
     extrinsic: ExtrinsicHook[]
+    evmLog: EvmLogHook[]
 }

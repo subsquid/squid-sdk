@@ -28,6 +28,14 @@ export interface EventHandler {
 }
 
 
+export interface EvmLogHandlerContext extends EventHandlerContext {
+
+}
+
+export interface EvmLogHandler {
+    (ctx: EvmLogHandlerContext): Promise<void>
+}
+
 export interface ExtrinsicHandlerContext extends EventHandlerContext {
     extrinsic: SubstrateExtrinsic
 }

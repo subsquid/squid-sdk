@@ -22,7 +22,7 @@ export default function config(name?: string): ConnectionOptions {
       SubstrateExtrinsicEntity,
       SubstrateBlockEntity,
     ],
-    migrations: [`${migrationsDir}/v3/*.js`, `${migrationsDir}/v4/*.js`],
+    migrations: [`${migrationsDir}/v3/*.js`, `${migrationsDir}/v4/*.js`, `${migrationsDir}/v5/*.js`],
     cli: {
       migrationsDir: 'src/migrations/v3',
     },

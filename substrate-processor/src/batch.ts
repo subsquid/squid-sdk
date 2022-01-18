@@ -1,5 +1,5 @@
 import {assertNotNull} from "@subsquid/util"
-import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
+import {BlockHandler, EventHandler, EvmLogHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
@@ -14,6 +14,7 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
+    evmLogs: Record<QualifiedName, EvmLogHandler[]>
 }
 
 
@@ -43,7 +44,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [hook.handler],
                 post: [],
                 events: {},
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -57,7 +59,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [hook.handler],
                 events: {},
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -73,7 +76,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {
                     [hook.event]: [hook.handler]
                 },
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -89,6 +93,24 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 extrinsics: {
                     [hook.event]: {[hook.extrinsic]: [hook.handler]}
+                },
+                evmLogs: {}
+            }
+        })
+    })
+
+    hooks.evmLog.forEach(hook => {
+        let range = getRange(hook)
+        if (!range) return
+        batches.push({
+            range,
+            handlers: {
+                pre: [],
+                post: [],
+                events: {},
+                extrinsics: {},
+                evmLogs: {
+                    [hook.contractAddress]: [hook.handler]
                 }
             }
         })
@@ -142,7 +164,8 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
         events: mergeMaps(a.events, b.events, (ha, hb) => ha.concat(hb)),
         extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
             return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
-        })
+        }),
+        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb))
     }
 }
 
