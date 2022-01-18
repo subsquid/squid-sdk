@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-typegen",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Generates TypeScript definitions for substrate events and calls",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,8 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-metadata": "^0.1.0",
-    "@subsquid/util": "^0.0.1",
+    "@subsquid/substrate-metadata": "^0.1.1",
+    "@subsquid/util": "^0.0.2",
     "ajv": "^8.8.2",
     "commander": "^8.3.0"
   },

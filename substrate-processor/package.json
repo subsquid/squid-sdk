@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,11 +16,11 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.0",
-    "@subsquid/scale-codec-json": "^0.0.3",
-    "@subsquid/substrate-metadata": "^0.1.0",
-    "@subsquid/typeorm-config": "^0.0.1",
-    "@subsquid/util": "^0.0.1",
+    "@subsquid/rpc-client": "^0.1.1",
+    "@subsquid/scale-codec-json": "^0.0.4",
+    "@subsquid/substrate-metadata": "^0.1.1",
+    "@subsquid/typeorm-config": "^0.0.2",
+    "@subsquid/util": "^0.0.2",
     "node-fetch": "^2.6.6",
     "prom-client": "^14.0.1",
     "stoppable": "^1.1.0"
