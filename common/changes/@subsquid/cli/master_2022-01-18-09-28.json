@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "change license to GPL3",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

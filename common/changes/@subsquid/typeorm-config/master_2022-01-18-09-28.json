@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "change license to GPL3",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}

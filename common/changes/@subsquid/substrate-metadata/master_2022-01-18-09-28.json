@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "change license to GPL3",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

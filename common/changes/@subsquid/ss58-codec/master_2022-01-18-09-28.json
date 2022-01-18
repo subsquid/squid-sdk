@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ss58-codec",
+      "comment": "change license to GPL3",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ss58-codec"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "change license to GPL3",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
