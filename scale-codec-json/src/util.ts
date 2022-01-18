@@ -1,6 +1,6 @@
 import {Primitive} from "@subsquid/scale-codec"
+import {unexpectedCase} from "@subsquid/scale-codec/lib/util"
 import * as ss58 from "@subsquid/ss58-codec"
-import {unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 
 

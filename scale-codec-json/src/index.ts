@@ -10,7 +10,6 @@ import {
     VariantType
 } from "@subsquid/scale-codec"
 import {assertNotNull, normalizeTypes, unexpectedCase} from "@subsquid/scale-codec/lib/util"
-import {toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {decodeBinaryArray, decodeHex, decodePrimitive} from "./util"
 
