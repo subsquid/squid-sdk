@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 16 Jan 2022 18:13:02 GMT and should not be manually modified.
+This log was last generated on Tue, 18 Jan 2022 09:31:27 GMT and should not be manually modified.
+
+## 0.2.2
+Tue, 18 Jan 2022 09:31:27 GMT
+
+### Patches
+
+- change license to GPL3
 
 ## 0.2.1
 Sun, 16 Jan 2022 18:13:02 GMT

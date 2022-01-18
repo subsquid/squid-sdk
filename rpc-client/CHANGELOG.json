@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/rpc-client_v0.1.1",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change license to GPL3"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/rpc-client_v0.1.0",
       "date": "Thu, 13 Jan 2022 16:05:36 GMT",

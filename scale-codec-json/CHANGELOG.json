@@ -2,6 +2,32 @@
   "name": "@subsquid/scale-codec-json",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/scale-codec-json_v0.0.4",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix an issue with decoding of variant types"
+          },
+          {
+            "comment": "change license to GPL3"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.2.0` to `^0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/ss58-codec\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/scale-codec-json_v0.0.3",
       "date": "Sun, 16 Jan 2022 18:13:02 GMT",

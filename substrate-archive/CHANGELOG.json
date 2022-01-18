@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-archive",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-archive_v0.0.1",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change license to GPL3"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-archive_v0.0.0",
       "date": "Mon, 03 Jan 2022 12:24:26 GMT",
