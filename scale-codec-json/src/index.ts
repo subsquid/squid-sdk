@@ -137,7 +137,7 @@ export class Codec {
         let result: any | undefined = undefined
         for (let key in value) {
             if (result != null) throw new Error('Ambiguous variant')
-            let v = def.variantsByJsonPropName![key]
+            let v = def.variantsByJsonPropName![key.toLowerCase()]
             if (v == null) throw new Error(`Unknown variant ${key}`)
             if (v.fields.length == 0) return {
                 __kind: v.name
@@ -184,11 +184,17 @@ function indexVariantNames(types: Type[]): void {
         type.variants.forEach(v => {
             if (v == null) return
             names[v.name] = true
-            variantsByJsonPropName[toCamelCase(v.name)] = v
+            variantsByJsonPropName[v.name.toLowerCase()] = v
             if (v.fields.length > 0) {
                 hasNoFields = false
             }
         })
+        if (Object.keys(variantsByJsonPropName).length != Object.keys(names).length) {
+            throw new Error(`
+Variant type with variants ${JSON.stringify(Object.keys(names))} can't be reliably decoded,
+because of a clash between lower cased variant names.
+            `.trim())
+        }
         type.variantsByJsonPropName = variantsByJsonPropName
         if (hasNoFields) {
             type.variantNames = names
