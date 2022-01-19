@@ -393,7 +393,7 @@ function assertTwoParams(type: texp.NamedType): [texp.Type, texp.Type] {
     if (typeof param1 == 'number') {
         throw new Error(`Invalid type ${texp.print(type)}: first type parameter should refer to a type, not to bit size`)
     }
-    let param2 = type.params[0]
+    let param2 = type.params[1]
     if (typeof param2 == 'number') {
         throw new Error(`Invalid type ${texp.print(type)}: second type parameter should refer to a type, not to bit size`)
     }
