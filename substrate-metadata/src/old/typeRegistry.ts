@@ -3,7 +3,14 @@ import assert from "assert"
 import {Field, Primitive, Ti, Type, TypeKind, Variant} from "../types"
 import {normalizeTypes} from "../util"
 import * as texp from "./typeExp"
-import {OldEnumDefinition, OldSetDefinition, OldStructDefinition, OldTypeExp, OldTypes} from "./types"
+import {
+    OldEnumDefinition,
+    OldSetDefinition,
+    OldStructDefinition,
+    OldTypeDefinition,
+    OldTypeExp,
+    OldTypes
+} from "./types"
 
 
 export class OldTypeRegistry {
@@ -47,84 +54,96 @@ export class OldTypeRegistry {
         switch(type.kind) {
             case "array":
                 return {
-                    kind: 'array',
+                    kind: "array",
                     item: this.normalizeType(type.item, pallet),
                     len: type.len
                 }
             case "tuple":
                 return {
-                    kind: 'tuple',
+                    kind: "tuple",
                     params: type.params.map(item => this.normalizeType(item, pallet))
                 }
             case "named":
-                switch(type.name) {
-                    case 'Null':
-                        return {
-                            kind: 'tuple',
-                            params: []
-                        }
-                    case 'UInt':
-                        return {
-                            kind: 'named',
-                            name: convertGenericIntegerToPrimitive('U', type),
-                            params: []
-                        }
-                    case 'Box':
-                        return this.normalizeType(assertOneParam(type), pallet)
-                    case 'Vec':
-                    case 'VecDeque':
-                    case 'WeakVec':
-                    case 'BoundedVec': {
-                        let param = this.normalizeType(assertOneParam(type), pallet)
-                        if (param.kind == 'named' &&  param.name == 'U8') {
-                            return {
-                                kind: 'named',
-                                name: 'Bytes',
-                                params: []
-                            }
-                        } else {
-                            return {
-                                kind: 'named',
-                                name: 'Vec',
-                                params: [param]
-                            }
-                        }
+                return this.normalizeNamedType(type, pallet)
+        }
+    }
+
+    private normalizeNamedType(type: texp.NamedType, pallet: string | undefined): texp.Type {
+        if (pallet != null) {
+            let section = toCamelCase(pallet)
+            let alias = this.oldTypes.typesAlias?.[section]?.[type.name]
+            if (alias) {
+                return {kind: 'named', name: alias, params: []}
+            }
+        }
+
+        if (this.oldTypes.types[type.name]) return {
+            kind: 'named',
+            name: type.name,
+            params: []
+        }
+
+        let primitive = asPrimitive(type.name)
+        if (primitive) {
+            assertNoParams(type)
+            return {
+                kind: 'named',
+                name: primitive,
+                params: []
+            }
+        }
+
+        switch(type.name) {
+            case 'Null':
+                return {
+                    kind: 'tuple',
+                    params: []
+                }
+            case 'UInt':
+                return {
+                    kind: 'named',
+                    name: convertGenericIntegerToPrimitive('U', type),
+                    params: []
+                }
+            case 'Box':
+                return this.normalizeType(assertOneParam(type), pallet)
+            case 'Vec':
+            case 'VecDeque':
+            case 'WeakVec':
+            case 'BoundedVec': {
+                let param = this.normalizeType(assertOneParam(type), pallet)
+                if (param.kind == 'named' && param.name == 'U8') {
+                    return {
+                        kind: 'named',
+                        name: 'Bytes',
+                        params: []
                     }
-                    case 'RawAddress':
-                        return this.normalizeType({
-                            kind: 'named',
-                            name: 'Address',
-                            params: []
-                        }, pallet)
-                    case 'PairOf': {
-                        let param = this.normalizeType(assertOneParam(type), pallet)
-                        return {
-                            kind: 'tuple',
-                            params: [param, param]
-                        }
+                } else {
+                    return {
+                        kind: 'named',
+                        name: 'Vec',
+                        params: [param]
                     }
-                    default:
-                        let primitive = asPrimitive(type.name)
-                        if (primitive) {
-                            assertNoParams(type)
-                            return {
-                                kind: 'named',
-                                name: primitive,
-                                params: []
-                            }
-                        }
-                        if (pallet != null) {
-                            let section = toCamelCase(pallet)
-                            let alias = this.oldTypes.typesAlias?.[section]?.[type.name]
-                            if (alias) {
-                                return {kind: 'named', name: alias, params: []}
-                            }
-                        }
-                        return {
-                            kind: 'named',
-                            name: type.name,
-                            params: type.params.map(p => typeof p == 'number' ? p : this.normalizeType(p, pallet))
-                        }
+                }
+            }
+            case 'RawAddress':
+                return this.normalizeType({
+                    kind: 'named',
+                    name: 'Address',
+                    params: []
+                }, pallet)
+            case 'PairOf': {
+                let param = this.normalizeType(assertOneParam(type), pallet)
+                return {
+                    kind: 'tuple',
+                    params: [param, param]
+                }
+            }
+            default:
+                return {
+                    kind: 'named',
+                    name: type.name,
+                    params: type.params.map(p => typeof p == 'number' ? p : this.normalizeType(p, pallet))
                 }
         }
     }
@@ -143,6 +162,9 @@ export class OldTypeRegistry {
     }
 
     private buildNamedType(type: texp.NamedType): Type {
+        let def = this.oldTypes.types[type.name]
+        if (def) return this.buildFromDefinition(type.name, def)
+
         let primitive = asPrimitive(type.name)
         if (primitive) {
             assertNoParams(type)
@@ -151,6 +173,7 @@ export class OldTypeRegistry {
                 primitive
             }
         }
+
         switch(type.name) {
             case 'DoNotConstruct':
                 return {
@@ -216,10 +239,11 @@ export class OldTypeRegistry {
                 }
             }
         }
-        let def = this.oldTypes.types[type.name]
-        if (def == null) {
-            throw new Error(`Type ${type.name} is not defined`)
-        }
+
+        throw new Error(`Type ${type.name} is not defined`)
+    }
+
+    private buildFromDefinition(typeName: string, def: OldTypeDefinition): Type {
         let result: Type
         if (typeof def == 'string') {
             return this.types[this.use(def)]
@@ -230,7 +254,7 @@ export class OldTypeRegistry {
         } else {
             result = this.buildStruct(def as OldStructDefinition)
         }
-        result.path = [type.name]
+        result.path = [typeName]
         return result
     }
 
