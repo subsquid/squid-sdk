@@ -126,6 +126,25 @@ export class OldTypeRegistry {
                     }
                 }
             }
+            case 'BTreeMap': {
+                let [key, val] = assertTwoParams(type)
+                return this.normalizeType({
+                    kind: 'named',
+                    name: 'Vec',
+                    params: [
+                        {
+                            kind: 'tuple',
+                            params: [key, val]
+                        }
+                    ]
+                }, pallet)
+            }
+            case 'BTreeSet':
+                return this.normalizeType({
+                    kind: 'named',
+                    name: 'Vec',
+                    params: [assertOneParam(type)]
+                }, pallet)
             case 'RawAddress':
                 return this.normalizeType({
                     kind: 'named',
