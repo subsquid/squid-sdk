@@ -12,7 +12,7 @@ export const types = {
       "Address20": "H160"
     }
   },
-  "GenericVote": "[u8; 8]",
+  "GenericVote": "u8",
   "StorageKey": "Bytes",
   "Data": {
     "_enum": {
