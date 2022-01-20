@@ -11,11 +11,11 @@
     "sqd": "./bin/run.js"
   },
   "files": [
-    "/bin",
-    "/lib",
-    "!/lib/test",
-    "/src/marshal.ts",
-    "/oclif.manifest.json"
+    "bin",
+    "lib",
+    "src",
+    "src/marshal.ts",
+    "oclif.manifest.json"
   ],
   "oclif": {
     "commands": "./lib/commands",

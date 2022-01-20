@@ -9,7 +9,8 @@
   },
   "files": [
     "bin",
-    "lib"
+    "lib",
+    "src"
   ],
   "bin": {
     "squid-graphql-server": "bin/run.js"

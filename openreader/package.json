@@ -15,8 +15,9 @@
     "openreader": "./bin/main.js"
   },
   "files": [
+    "bin",
     "dist",
-    "!dist/test"
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",

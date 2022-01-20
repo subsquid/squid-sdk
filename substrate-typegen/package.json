@@ -10,6 +10,7 @@
   "main": "lib/index.js",
   "files": [
     "lib",
+    "src",
     "src/support.ts"
   ],
   "bin": {

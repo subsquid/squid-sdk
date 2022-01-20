@@ -9,7 +9,8 @@
   },
   "main": "lib/index.js",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "bin": {
     "squid-substrate-metadata-explorer": "bin/run.js"
