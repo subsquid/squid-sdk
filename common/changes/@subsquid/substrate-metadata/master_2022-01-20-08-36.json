@@ -1,0 +1,20 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "fix handling of `Result` types in pre-V14 metadata",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "add support for `BTreeMap`, `BTreeSet`",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "include src files into npm package",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

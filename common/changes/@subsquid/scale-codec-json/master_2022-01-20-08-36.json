@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec-json",
+      "comment": "include src files into npm package",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec-json"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ss58",
+      "comment": "include src files into npm package",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ss58"
+}
