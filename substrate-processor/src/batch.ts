@@ -1,7 +1,7 @@
 import {assertNotNull} from "@subsquid/util"
 import {BlockHandler, EventHandler, EvmLogHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
-import {QualifiedName} from "./interfaces/substrate"
+import {ContractAddress, QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
@@ -14,7 +14,7 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
-    evmLogs: Record<QualifiedName, EvmLogHandler[]>
+    evmLogs: Record<ContractAddress, EvmLogHandler[]>
 }
 
 

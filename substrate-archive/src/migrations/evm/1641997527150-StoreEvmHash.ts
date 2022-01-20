@@ -31,11 +31,16 @@ export class StoreEvmHash1641997527150 implements MigrationInterface {
             
             
             CREATE TRIGGER evm_hash_insert_trigger_fnc
-                AFTER INSERT
+                AFTER INSERT OR UPDATE
                 ON "substrate_event"
                 FOR EACH ROW
+                WHEN (pg_trigger_depth() = 0)
             EXECUTE PROCEDURE evm_hash_insert_trigger_fnc();
         `)
+
+        await queryRunner.query(
+            `UPDATE substrate_event SET name=name;`
+        )
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

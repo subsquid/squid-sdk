@@ -15,24 +15,23 @@ import {Range} from "./util/range"
 import {ServiceManager} from "./util/sm"
 
 
-export interface BlockHookOptions extends RangeOptions {
+export interface BlockHookOptions {
     range?: Range
 }
 
 
-export interface EventHandlerOptions extends RangeOptions {
+export interface EventHandlerOptions {
+    range?: Range
 }
 
-export interface EvmLogHandlerOptions extends RangeOptions {
+export interface EvmLogHandlerOptions {
+    range?: Range
+    topics?: string[]
 }
 
-
-export interface ExtrinsicHandlerOptions extends RangeOptions {
+export interface ExtrinsicHandlerOptions {
+    range?: Range
     triggerEvents?: QualifiedName[]
-}
-
-interface RangeOptions {
-    range?: Range
 }
 
 

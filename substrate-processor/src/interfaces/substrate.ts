@@ -65,7 +65,7 @@ export interface SubstrateBlock {
 
 
 export type QualifiedName = string
-
+export type ContractAddress = string
 
 export interface EventInfo {
     id: string
@@ -117,26 +117,6 @@ export interface SubstrateEvent {
      * Timestamp of the block, as set by call timestamp.now()
      */
     blockTimestamp: number
-
-    /**
-     * If there is an evm.Log event the address will be stored in here
-     */
-    evmLogAddress?: string
-
-    /**
-     * If there is an evm.Log event the data will be stored in here
-     */
-    evmLogData?: string;
-
-    /**
-     * If there is an evm.Log event the topics will be stored in here
-     */
-    evmLogTopics?: string[];
-
-    /**
-     * When processing ethereum.Executed this column is updated with the corresponding hash
-     */
-    evmHash?: string
 
 }
 

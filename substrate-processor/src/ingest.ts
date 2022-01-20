@@ -7,10 +7,16 @@ import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
+interface EvmEvent extends SubstrateEvent {
+    evmLogAddress?: string
+    evmLogData?: string;
+    evmLogTopics?: string[];
+    evmHash?: string
+}
 
 export interface BlockData {
     block: SubstrateBlock
-    events: SubstrateEvent[]
+    events: SubstrateEvent[] & EvmEvent[]
 }
 
 
@@ -137,8 +143,14 @@ export class Ingest {
             events.forEach(name => {
                 or.push(`events: {_contains: [{name: "${name}"}]}`)
             })
-            if (evmLogs && evmLogs.length > 0) {
-                or.push(`substrate_events: {evmLogAddress: {_in: [${evmLogs.map(contractAddress => `"${contractAddress}"`).join(', ')}]}}`)
+            if (evmLogs?.length > 0) {
+                evmLogs.forEach(contractAddress => {
+                    let evmTopicsFilter = ''
+                    if (hs.evmLogs.topics?.length > 0) {
+                        evmTopicsFilter = `, evmLogTopics: {_contains: [${hs.evmLogs.topics.map(topic => `"${topic}"`).join(', ')}]}`
+                    }
+                    or.push(`substrate_events: {evmLogAddress: {_eq: "${contractAddress}"} ${evmTopicsFilter}}`)
+                })
             }
             let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
             extrinsics.forEach(name => {
@@ -207,10 +219,12 @@ export class Ingest {
                     q.line('indexInBlock')
                     q.line('blockNumber')
                     q.line('blockTimestamp')
-                    q.line('evmLogAddress')
-                    q.line('evmLogData')
-                    q.line('evmLogTopics')
-                    q.line('evmHash')
+                    if (evmLogs?.length > 0) {
+                        q.line('evmLogAddress')
+                        q.line('evmLogData')
+                        q.line('evmLogTopics')
+                        q.line('evmHash')
+                    }
                     q.block('extrinsic', () => {
                         q.line('id')
                         q.line('name')
