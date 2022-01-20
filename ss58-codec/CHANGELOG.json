@@ -2,6 +2,18 @@
   "name": "@subsquid/ss58-codec",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/ss58-codec_v0.0.2",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/ss58-codec_v0.0.1",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

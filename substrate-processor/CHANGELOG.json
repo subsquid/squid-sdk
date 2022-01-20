@@ -2,6 +2,35 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "0.2.3",
+      "tag": "@subsquid/substrate-processor_v0.2.3",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec-json\" from `^0.0.4` to `^0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.2` to `^0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.2",
       "tag": "@subsquid/substrate-processor_v0.2.2",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

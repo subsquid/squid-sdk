@@ -2,6 +2,32 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/substrate-metadata_v0.1.2",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of `Result` types in pre-V14 metadata"
+          },
+          {
+            "comment": "add support for `BTreeMap`, `BTreeSet`"
+          },
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.2` to `^0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.2.1` to `^0.2.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/substrate-metadata_v0.1.1",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

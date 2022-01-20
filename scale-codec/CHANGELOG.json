@@ -2,6 +2,23 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "0.2.2",
+      "tag": "@subsquid/scale-codec_v0.2.2",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ss58-codec\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/scale-codec_v0.2.1",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

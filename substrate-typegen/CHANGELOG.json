@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.0.6",
+      "tag": "@subsquid/substrate-typegen_v0.0.6",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/substrate-typegen_v0.0.5",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

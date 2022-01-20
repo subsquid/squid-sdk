@@ -1,6 +1,14 @@
 # Change Log - @subsquid/scale-codec-json
 
-This log was last generated on Tue, 18 Jan 2022 09:31:27 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+
+## 0.0.5
+Thu, 20 Jan 2022 08:42:53 GMT
+
+### Patches
+
+- remove unused dependency
+- include src files into npm package
 
 ## 0.0.4
 Tue, 18 Jan 2022 09:31:27 GMT
