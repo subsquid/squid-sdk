@@ -91,7 +91,12 @@ export class Chain {
             let progress = new ProgressReporter(this.blocks().length)
             for (let h of this.blocks()) {
                 let blockHash = await api.rpc.chain.getBlockHash(h)
-                let events = await api.query.system.events.at(blockHash)
+                let events
+                try {
+                    events = await api.query.system.events.at(blockHash)
+                } catch(e: any) {
+                    throw new Error(`Failed to fetch events for block ${h}:\n\n` + e.stack)
+                }
                 let normalizedEvents = events.map(e => {
                     // normalize event presentation, so
                     // that it follows rules for regular scale types
@@ -113,11 +118,12 @@ export class Chain {
 
     testEventsDecoding(): void {
         let squid = this.decodeEvents()
-        let polka = this.decodeEventsFromPolka()
-        assert(squid.length == polka.length)
-        for (let i = 0; i < squid.length; i++) {
-            expect(squid[i]).toEqual(polka[i])
-        }
+        let polka = new Map(this.decodeEventsFromPolka().map(e => [e.blockNumber, e]))
+        squid.forEach(se => {
+            let pe = polka.get(se.blockNumber)
+            if (pe == null) return
+            expect(se).toEqual(pe)
+        })
     }
 
     decodeEvents(): DecodedBlockEvents[] {
