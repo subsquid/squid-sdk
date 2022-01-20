@@ -6,11 +6,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/cli": "^0.0.5",
-    "@subsquid/graphql-server": "^0.1.1",
-    "@subsquid/substrate-metadata-explorer": "^0.0.5",
-    "@subsquid/substrate-processor": "^0.2.2",
-    "@subsquid/substrate-typegen": "^0.0.5",
+    "@subsquid/cli": "^0.0.6",
+    "@subsquid/graphql-server": "^0.1.2",
+    "@subsquid/substrate-metadata-explorer": "^0.0.6",
+    "@subsquid/substrate-processor": "^0.2.3",
+    "@subsquid/substrate-typegen": "^0.0.6",
     "@types/node": "^16.11.17",
     "dotenv": "^10.0.0",
     "dotenv-cli": "^4.1.1",

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "GraphQL server for squid framework",
   "keywords": [
     "graphql",
@@ -27,7 +27,7 @@
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
     "@subsquid/graphiql-console": "^0.2.0",
-    "@subsquid/util": "^0.0.2",
+    "@subsquid/util": "^0.0.3",
     "apollo-server-core": "^3.5.0",
     "apollo-server-express": "^3.5.0",
     "express": "^4.17.2",
