@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/substrate-metadata_v0.1.3",
+      "date": "Thu, 20 Jan 2022 12:30:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix definition of GenericVote type"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/substrate-metadata_v0.1.2",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",
