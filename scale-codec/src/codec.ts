@@ -3,6 +3,7 @@ import {Src} from "./src"
 import {
     ArrayType,
     BytesArrayType,
+    CompactType,
     Field,
     OptionType,
     Primitive,
@@ -39,7 +40,7 @@ export class Codec {
             case TypeKind.Primitive:
                 return decodePrimitive(def.primitive, src)
             case TypeKind.Compact:
-                return src.compact()
+                return this.decodeCompact(def, src)
             case TypeKind.BitSequence:
                 return decodeBitSequence(src)
             case TypeKind.Array:
@@ -64,6 +65,20 @@ export class Codec {
                 throw new Error('DoNotConstruct type reached')
             default:
                 throw unexpectedCase((def as Type).kind)
+        }
+    }
+
+    private decodeCompact(def: CompactType, src: Src): any {
+        let item = this.types[def.type]
+        switch(item.kind) {
+            case TypeKind.Tuple:
+                assert(item.tuple.length == 0, "only empty tuples can be compact")
+                return null
+            case TypeKind.Primitive:
+                // TODO: more assertions
+                return src.compact()
+            default:
+                throw unexpectedCase(item.kind)
         }
     }
 
