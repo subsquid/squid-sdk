@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/openreader_v0.4.0",
+      "date": "Tue, 25 Jan 2022 12:44:12 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "internal: add support for `@index` directives"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.3",
       "tag": "@subsquid/openreader_v0.3.3",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",

@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/substrate-typegen_v0.1.0",
+      "date": "Tue, 25 Jan 2022 12:44:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix code for extrinsics with underscore in the name"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "deprecate `.isLatest`, `.asLatest`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/substrate-typegen_v0.0.6",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",
