@@ -66,7 +66,7 @@ export class Typegen {
         let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {${fix}Context, Result} from './support'`)
+        out.line(`import {${fix}Context, Result, deprecateLatest} from './support'`)
         out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
         names.forEach(name => {
             let versions = items.get(name)!
@@ -96,19 +96,30 @@ export class Typegen {
                     if (typeExp != unqualifiedTypeExp) {
                         importedInterfaces.add(v)
                     }
-                    let suffix = isLatest ? 'Latest' : 'V' + v
                     out.line()
                     out.blockComment(version.def.docs)
-                    out.block(`get is${suffix}(): boolean`, () => {
+                    out.block(`get isV${v}(): boolean`, () => {
                         let hash = version.chain[kind].getHash(name)
                         out.line(`return this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`)
                     })
                     out.line()
                     out.blockComment(version.def.docs)
-                    out.block(`get as${suffix}(): ${typeExp}`, () => {
-                        out.line(`assert(this.is${suffix})`)
+                    out.block(`get asV${v}(): ${typeExp}`, () => {
+                        out.line(`assert(this.isV${v})`)
                         out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
                     })
+                    if (isLatest) {
+                        out.line()
+                        out.block(`get isLatest(): boolean`, () => {
+                            out.line(`deprecateLatest()`)
+                            out.line(`return this.isV${v}`)
+                        })
+                        out.line()
+                        out.block(`get asLatest(): ${typeExp}`, () => {
+                            out.line(`deprecateLatest()`)
+                            out.line(`return this.asV${v}`)
+                        })
+                    }
                 })
             })
         })

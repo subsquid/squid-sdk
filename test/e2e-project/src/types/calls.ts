@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {CallContext, Result} from './support'
+import {CallContext, Result, deprecateLatest} from './support'
 import * as v1 from './v1'
 
 export class BalancesSetBalanceCall {
@@ -27,7 +27,7 @@ export class BalancesSetBalanceCall {
    *  - DB Weight: 1 Read, 1 Write to `who`
    *  # </weight>
    */
-  get isLatest(): boolean {
+  get isV1(): boolean {
     return this.ctx._chain.getCallHash('balances.set_balance') === '99d45eea22d5909f0cca3c075a5bc2ebc4e35ab21cc987bd7c9e12eedc8ee727'
   }
 
@@ -51,9 +51,19 @@ export class BalancesSetBalanceCall {
    *  - DB Weight: 1 Read, 1 Write to `who`
    *  # </weight>
    */
-  get asLatest(): {who: v1.GenericMultiAddress, newFree: (number | bigint), newReserved: (number | bigint)} {
-    assert(this.isLatest)
+  get asV1(): {who: v1.GenericMultiAddress, newFree: (number | bigint), newReserved: (number | bigint)} {
+    assert(this.isV1)
     return this.ctx._chain.decodeCall(this.ctx.extrinsic)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): {who: v1.GenericMultiAddress, newFree: (number | bigint), newReserved: (number | bigint)} {
+    deprecateLatest()
+    return this.asV1
   }
 }
 
@@ -79,7 +89,7 @@ export class TimestampSetCall {
    *  - 1 event handler `on_timestamp_set` `O(T)`.
    *  # </weight>
    */
-  get isLatest(): boolean {
+  get isV1(): boolean {
     return this.ctx._chain.getCallHash('timestamp.set') === '3c832e2f9c65e106d08e422b5962c90f9f8bc4c4172cb0bf1927eb3c2b23f6ce'
   }
 
@@ -100,8 +110,18 @@ export class TimestampSetCall {
    *  - 1 event handler `on_timestamp_set` `O(T)`.
    *  # </weight>
    */
-  get asLatest(): {now: (number | bigint)} {
-    assert(this.isLatest)
+  get asV1(): {now: (number | bigint)} {
+    assert(this.isV1)
     return this.ctx._chain.decodeCall(this.ctx.extrinsic)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): {now: (number | bigint)} {
+    deprecateLatest()
+    return this.asV1
   }
 }
