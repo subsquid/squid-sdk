@@ -78,9 +78,6 @@ export class SubstrateEventEntity
   })
   data!: unknown
 
-  @Column()
-  evmHash?: string;
-
   @ManyToOne(
     () => SubstrateExtrinsicEntity,
     (e: SubstrateExtrinsicEntity) => e.events
