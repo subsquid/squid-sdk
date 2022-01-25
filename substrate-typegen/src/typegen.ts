@@ -75,7 +75,12 @@ export class Typegen {
             out.line()
             out.block(`export class ${className}`, () => {
                 out.block(`constructor(private ctx: ${fix}Context)`, () => {
-                    out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
+                    let camelCased = toCamelCase(pallet) + '.' + toCamelCase(unqualifiedName)
+                    if (camelCased == name || ctx == 'event') {
+                        out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
+                    } else {
+                        out.line(`assert(this.ctx.${ctx}.name === '${camelCased}' || this.ctx.${ctx}.name === '${name}')`)
+                    }
                 })
                 versions.forEach((version, idx) => {
                     let isLatest = versions.length === idx + 1
