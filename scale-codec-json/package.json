@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^0.2.2",
+    "@subsquid/scale-codec": "^0.2.3",
     "@subsquid/ss58-codec": "^0.0.2"
   },
   "devDependencies": {
