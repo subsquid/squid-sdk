@@ -2,6 +2,45 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.3.3",
+      "tag": "@subsquid/openreader_v0.3.3",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.2",
+      "tag": "@subsquid/openreader_v0.3.2",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "dev deps: upgrade `expect`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "change license to GPL3"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.1",
       "tag": "@subsquid/openreader_v0.3.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",

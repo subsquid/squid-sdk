@@ -7,7 +7,7 @@ function run-test() {
 }
 
 function test-all() {
-    for chain in polkadot kusama; do
+    for chain in polkadot kusama khala; do
       run-test "$chain" "$1"
     done
 }

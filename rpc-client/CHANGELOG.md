@@ -1,6 +1,20 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Thu, 13 Jan 2022 16:05:36 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+
+## 0.1.2
+Thu, 20 Jan 2022 08:42:53 GMT
+
+### Patches
+
+- include src files into npm package
+
+## 0.1.1
+Tue, 18 Jan 2022 09:31:27 GMT
+
+### Patches
+
+- change license to GPL3
 
 ## 0.1.0
 Thu, 13 Jan 2022 16:05:36 GMT

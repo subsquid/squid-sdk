@@ -1,6 +1,6 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {createBatches, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
@@ -158,7 +158,7 @@ export class SubstrateProcessor {
             this.hooks.extrinsic.push({
                 event,
                 handler,
-                extrinsic: extrinsicName,
+                extrinsic: extrinsicName.split('.').map(n => toCamelCase(n)).join('.'),
                 range: options.range
             })
         })

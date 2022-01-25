@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ss58",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "SS58 registry and codec",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -10,14 +10,14 @@
   "main": "lib/index.js",
   "files": [
     "lib",
-    "!lib/test.js"
+    "src"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc",
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "@subsquid/ss58-codec": "^0.0.0"
+    "@subsquid/ss58-codec": "^0.0.2"
   },
   "devDependencies": {
     "@types/node": "^16.11.17",

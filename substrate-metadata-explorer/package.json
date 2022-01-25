@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Spec version explorer for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -9,7 +9,8 @@
   },
   "main": "lib/index.js",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "bin": {
     "squid-substrate-metadata-explorer": "bin/run.js"
@@ -18,7 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.0",
+    "@subsquid/rpc-client": "^0.1.2",
     "commander": "^8.3.0",
     "node-fetch": "^2.6.6"
   },

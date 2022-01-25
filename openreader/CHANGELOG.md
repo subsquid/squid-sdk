@@ -1,6 +1,20 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Mon, 03 Jan 2022 16:07:32 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+
+## 0.3.3
+Thu, 20 Jan 2022 08:42:53 GMT
+
+### Patches
+
+- include src files into npm package
+
+## 0.3.2
+Tue, 18 Jan 2022 09:31:27 GMT
+
+### Patches
+
+- change license to GPL3
 
 ## 0.3.1
 Mon, 03 Jan 2022 16:07:32 GMT

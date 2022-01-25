@@ -127,7 +127,7 @@ export class Typegen {
         let items = groupBy(list, i => i.name)
         requested.forEach(name => {
             if (!items.has(name)) {
-                throw new Error(`${name} is not defined chain`)
+                throw new Error(`${name} is not defined by the chain metadata`)
             }
         })
 

@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/substrate-archive-status-service",
   "private": "true",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Substrate archive status service",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

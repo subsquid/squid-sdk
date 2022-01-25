@@ -1,4 +1,5 @@
 import {ApiPromise, WsProvider} from "@polkadot/api"
+import {l} from "@polkadot/api/util"
 import {GenericEventData} from "@polkadot/types"
 import {xxhashAsU8a} from "@polkadot/util-crypto"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
@@ -25,12 +26,12 @@ export class Chain {
 
     @def
     info(): {chain: string, archive: string} {
-       return require(`../${this.name}/info.json`)
+       return require(this.item('info.json'))
     }
 
     @def
     versions(): ChainVersion[] {
-        return require(`../${this.name}/versions.json`)
+        return require(this.item('versions.json'))
     }
 
     @def
@@ -59,12 +60,13 @@ export class Chain {
     }
 
     async saveEvents(): Promise<void> {
+        let out = this.item('events.jsonl')
+        let saved = this.getSavedBlocks(out)
         let client = new ResilientRpcClient(this.info().chain)
-        let out: number | undefined
         try {
-            out = fs.openSync(this.item('events.jsonl'), 'a')
             let progress = new ProgressReporter(this.blocks().length)
             for (let h of this.blocks()) {
+                if (saved.has(h)) continue
                 let blockHash = await client.call('chain_getBlockHash', [h])
                 let events = await client.call('state_getStorageAt', [this.eventStorageKey(), blockHash])
                 fs.appendFileSync(out, JSON.stringify({blockNumber: h, events}) + '\n')
@@ -72,9 +74,15 @@ export class Chain {
             }
             progress.report()
         } finally {
-            if (out != null) fs.closeSync(out)
             client.close()
         }
+    }
+
+    private getSavedBlocks(file: string): Set<number> {
+        let blocks = this.readJsonLines<{blockNumber: number}>(file)
+        return new Set(
+            blocks.map(b => b.blockNumber)
+        )
     }
 
     @def
@@ -87,11 +95,17 @@ export class Chain {
     saveEventsByPolka(): Promise<void> {
         return this.withPolka(async api => {
             let out = this.item('events-by-polka.jsonl')
-            fs.writeFileSync(out, '')
+            let saved = this.getSavedBlocks(out)
             let progress = new ProgressReporter(this.blocks().length)
             for (let h of this.blocks()) {
+                if (saved.has(h)) continue
                 let blockHash = await api.rpc.chain.getBlockHash(h)
-                let events = await api.query.system.events.at(blockHash)
+                let events
+                try {
+                    events = await api.query.system.events.at(blockHash)
+                } catch(e: any) {
+                    throw new Error(`Failed to fetch events for block ${h}:\n\n` + e.stack)
+                }
                 let normalizedEvents = events.map(e => {
                     // normalize event presentation, so
                     // that it follows rules for regular scale types
@@ -113,39 +127,30 @@ export class Chain {
 
     testEventsDecoding(): void {
         let squid = this.decodeEvents()
-        let polka = this.decodeEventsFromPolka()
-        assert(squid.length == polka.length)
-        for (let i = 0; i < squid.length; i++) {
-            expect(squid[i]).toEqual(polka[i])
-        }
+        let polka = new Map(this.decodeEventsFromPolka().map(e => [e.blockNumber, e]))
+        squid.forEach(se => {
+            let pe = polka.get(se.blockNumber)
+            if (pe == null) return
+            expect(se).toEqual(pe)
+        })
     }
 
     decodeEvents(): DecodedBlockEvents[] {
-        let out: DecodedBlockEvents[] = []
-        let lines = fs.readFileSync(this.item('events.jsonl'), 'utf-8').split('\n')
-        lines.forEach(line => {
-            line = line.trim()
-            if (!line) return
-            let rec: BlockEvents = JSON.parse(line)
-            let d = this.getVersion(rec.blockNumber)
-            let events = d.codec.decodeBinary(d.description.eventRecordList, rec.events)
-            out.push({blockNumber: rec.blockNumber, events})
+        let blocks: BlockEvents[] = this.readJsonLines('events.jsonl')
+        return blocks.map(b => {
+            let d = this.getVersion(b.blockNumber)
+            let events = d.codec.decodeBinary(d.description.eventRecordList, b.events)
+            return {blockNumber: b.blockNumber, events}
         })
-        return out
     }
 
     decodeEventsFromPolka(): DecodedBlockEvents[] {
-        let out: DecodedBlockEvents[] = []
-        let lines = fs.readFileSync(this.item('events-by-polka.jsonl'), 'utf-8').split('\n')
-        lines.forEach(line => {
-            line = line.trim()
-            if (!line) return
-            let rec: DecodedBlockEvents = JSON.parse(line)
-            let d = this.getVersion(rec.blockNumber)
-            let events = d.jsonCodec.decode(d.description.eventRecordList, rec.events)
-            out.push({blockNumber: rec.blockNumber, events})
+        let blocks: DecodedBlockEvents[] = this.readJsonLines('events-by-polka.jsonl')
+        return blocks.map(b => {
+            let d = this.getVersion(b.blockNumber)
+            let events = d.jsonCodec.decode(d.description.eventRecordList, b.events)
+            return {blockNumber: b.blockNumber, events}
         })
-        return out
     }
 
     getVersion(blockNumber: number): VersionDescription {
@@ -179,11 +184,25 @@ export class Chain {
         })
     }
 
-    async withPolka<T>(cb: (api: ApiPromise) => Promise<T>): Promise<T> {
-        let api = await ApiPromise.create({
-            provider: new WsProvider(this.info().chain)
+    private async withPolka<T>(cb: (api: ApiPromise) => Promise<T>): Promise<T> {
+        let bundle = this.name == 'polkadot' || this.name == 'kusama'
+            ? undefined
+            : getOldTypesBundle(this.name)
+
+        let api = new ApiPromise({
+            provider: new WsProvider(this.info().chain),
+            types: bundle?.types as any,
+            typesAlias: bundle?.typesAlias,
+            typesBundle: bundle && {
+                spec: {
+                    [this.name]: {
+                        types: bundle.versions as any
+                    }
+                }
+            }
         })
         try {
+            await api.isReadyOrError
             return await cb(api)
         } finally {
             await api.disconnect()
@@ -191,7 +210,19 @@ export class Chain {
     }
 
     private item(name: string): string {
-        return path.join(__dirname, '..', this.name, name)
+        return path.resolve(__dirname, '..', this.name, name)
+    }
+
+    private readJsonLines<T>(name: string): T[] {
+        let lines = fs.readFileSync(this.item(name), 'utf-8').split('\n')
+        let out: T[] = []
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim()
+            if (line) {
+                out.push(JSON.parse(line))
+            }
+        }
+        return out
     }
 }
 

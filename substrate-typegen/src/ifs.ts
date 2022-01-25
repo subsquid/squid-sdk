@@ -72,6 +72,10 @@ export class Interfaces {
 
     private makeCompact(type: CompactType): string {
         let item = this.types[type.type]
+        if (item.kind == TypeKind.Tuple) {
+            assert(item.tuple.length == 0, "only empty tuples can be compact")
+            return 'null'
+        }
         assert(item.kind == TypeKind.Primitive)
         switch(item.primitive) {
             case 'U8':

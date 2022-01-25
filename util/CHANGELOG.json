@@ -2,6 +2,30 @@
   "name": "@subsquid/util",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/util_v0.0.3",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.2",
+      "tag": "@subsquid/util_v0.0.2",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change license to GPL3"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util_v0.0.1",
       "date": "Mon, 03 Jan 2022 16:07:32 GMT",

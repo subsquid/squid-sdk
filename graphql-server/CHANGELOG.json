@@ -2,6 +2,57 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/graphql-server_v0.1.2",
+      "date": "Thu, 20 Jan 2022 08:42:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include src files into npm package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.3.2` to `^0.3.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.2` to `^0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "@subsquid/graphql-server_v0.1.1",
+      "date": "Tue, 18 Jan 2022 09:31:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "dev deps: upgrade `expect`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "change license to GPL3"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.3.1` to `^0.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/graphql-server_v0.1.0",
       "date": "Sat, 08 Jan 2022 13:00:12 GMT",
