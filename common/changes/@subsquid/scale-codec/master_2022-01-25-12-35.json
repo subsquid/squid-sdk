@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "fix: support empty tuples as compact types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

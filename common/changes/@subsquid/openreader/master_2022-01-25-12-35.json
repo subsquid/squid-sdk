@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "internal: add support for `@index` directives",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

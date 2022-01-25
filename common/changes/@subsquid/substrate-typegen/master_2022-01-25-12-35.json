@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "fix code for extrinsics with underscore in the name",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "deprecate `.isLatest`, `.asLatest`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
