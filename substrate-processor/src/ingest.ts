@@ -2,7 +2,7 @@ import {assertNotNull, Output} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Batch} from "./batch"
-import {SubstrateBlock, SubstrateEvent} from "./interfaces/substrate"
+import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
@@ -201,28 +201,20 @@ export class Ingest {
                     q.line('blockTimestamp')
                     q.block('extrinsic', () => {
                         q.line('id')
-                        q.line('name')
-                        q.line('method')
-                        q.line('section')
-                        q.line('versionInfo')
-                        q.line('era')
-                        q.line('signer')
-                        q.line('args')
-                        q.line('hash')
-                        q.line('tip')
-                        q.line('indexInBlock')
                     })
                 })
             })
         })
-
         let gql = q.toString()
         let response = await this.archiveRequest<any>(gql)
-
         this.setArchiveHeight(response)
+        return this.joinExtrinsicsAndDoPostProcessing(response.substrate_block)
+    }
 
-        let fetchedBlocks = response.substrate_block
+    private async joinExtrinsicsAndDoPostProcessing(fetchedBlocks: any[]): Promise<BlockData[]> {
+        let extrinsicIds = new Set<string>()
         let blocks = new Array<BlockData>(fetchedBlocks.length)
+
         for (let i = 0; i < fetchedBlocks.length; i++) {
             i > 0 && assert(fetchedBlocks[i-1].height < fetchedBlocks[i].height)
             let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
@@ -231,12 +223,53 @@ export class Ingest {
                 j > 0 && assert(events[j-1].indexInBlock < events[j].indexInBlock)
                 let event = events[j]
                 event.blockTimestamp = block.timestamp
-                if (event?.extrinsic?.tip != null) {
-                    event.extrinsic.tip = BigInt(event.extrinsic.tip)
+                if (event.extrinsic) {
+                    extrinsicIds.add(`"${event.extrinsic.id}"`)
                 }
             }
             blocks[i] = {block, events}
         }
+
+        if (extrinsicIds.size == 0) return blocks
+
+        let q = new Output()
+        q.block(`query`, () => {
+            q.block(`substrate_extrinsic(where: {id: {_in: [${Array.from(extrinsicIds).join(', ')}]}})`, () => {
+                q.line('id')
+                q.line('name')
+                q.line('method')
+                q.line('section')
+                q.line('versionInfo')
+                q.line('era')
+                q.line('signer')
+                q.line('args')
+                q.line('hash')
+                q.line('tip')
+                q.line('indexInBlock')
+            })
+        })
+        let gql = q.toString()
+        let {substrate_extrinsic}: {substrate_extrinsic: SubstrateExtrinsic[]} = await this.archiveRequest(gql)
+
+        let extrinsics = new Map<string, SubstrateExtrinsic>() // lying a bit about type here
+        for (let i = 0; i < substrate_extrinsic.length; i++) {
+            let ex = substrate_extrinsic[i]
+            if (ex.tip != null) {
+                ex.tip = BigInt(ex.tip)
+            }
+            extrinsics.set(ex.id, ex)
+        }
+
+        for (let i = 0; i < blocks.length; i++) {
+            let events = blocks[i].events
+            for (let j = 0; j < events.length; j++) {
+                let event = events[j]
+                if (event.extrinsic) {
+                    event.extrinsic = assertNotNull(extrinsics.get(event.extrinsic.id))
+                }
+            }
+        }
+
         return blocks
     }
 
@@ -281,9 +314,13 @@ export class Ingest {
             }
         })
         if (!response.ok) {
-            throw new Error(`Got http ${response.status}, body: ${await response.text()}`)
+            let body = await response.text()
+            throw new Error(`Got http ${response.status}${body ? `, body: ${body}` : ''}`)
         }
         let result = await response.json()
-        return result.data as T
+        if (result.errors?.length) {
+            throw new Error(`GraphQL error: ${result.errors[0].message}`)
+        }
+        return assertNotNull(result.data) as T
     }
 }
