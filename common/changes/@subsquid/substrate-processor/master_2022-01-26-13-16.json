@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "prevent quadratic sizes of fetched data",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "fix graphql error handling",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
