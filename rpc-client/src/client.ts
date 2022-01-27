@@ -130,7 +130,7 @@ export class RpcClient {
             if (this.error) return reject(this.error)
             let id = this.ids++
             let payload = JSON.stringify({
-                id,
+                id: String(id),
                 jsonrpc: '2.0',
                 method,
                 params
