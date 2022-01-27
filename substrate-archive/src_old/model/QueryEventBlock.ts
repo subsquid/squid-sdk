@@ -1,5 +1,5 @@
 // import { BlockNumber } from '@polkadot/types/interfaces';
-import { IQueryEvent, QueryEvent } from './'
+import { IQueryEvent, QueryEvent } from '.'
 
 import {
   EventRecord,

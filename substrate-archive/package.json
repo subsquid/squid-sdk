@@ -12,32 +12,5 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@polkadot/api": "6.11.2-24",
-    "@polkadot/types": "6.11.2-24",
-    "bn.js": "^4.12.0",
-    "chalk": "^4.1.2",
-    "commander": "^8.3.0",
-    "debug": "^4.3.3",
-    "delay": "~5.0.0",
-    "dotenv": "^10.0.0",
-    "envalid": "^7.2.2",
-    "figlet": "^1.5.2",
-    "ioredis": "^4.28.2",
-    "lodash": "^4.17.21",
-    "p-forever": "~2.1.0",
-    "p-props": "~4.0.0",
-    "p-retry": "~4.6.1",
-    "p-timeout": "~4.1.0",
-    "p-wait-for": "^3.2.0",
-    "shortid": "^2.2.16",
-    "typeorm": "^0.2.41"
-  },
-  "devDependencies": {
-    "@types/bn.js": "^4.11.6",
-    "@types/debug": "^4.1.7",
-    "@types/figlet": "^1.5.4",
-    "@types/ioredis": "^4.28.5",
-    "@types/lodash": "^4.14.178",
-    "@types/shortid": "^0.0.29"
   }
 }
