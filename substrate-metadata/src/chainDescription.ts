@@ -222,28 +222,34 @@ class FromOld {
             {name: "address", type: this.registry.use("Address")},
             {name: "signature", type: this.registry.use("ExtrinsicSignature")},
         ];
-        let signedExtensions = this.metadata.__kind == "V9" || this.metadata.__kind == "V10"
-            ? []
-            : this.metadata.value.extrinsic.signedExtensions
-        signedExtensions.forEach(extension => {
-            switch(extension) {
-                case "CheckMortality":
-                    fields.push({name: "mortality", type: this.registry.use("U16")})
-                    break
-                case "CheckEra":
-                    fields.push({name: "era", type: this.registry.use("U16")})
-                    break
-                case "CheckNonce":
-                    fields.push({name: "nonce", type: this.registry.use("Compact<Index>")})
-                    break
-                case "ChargeTransactionPayment":
-                    fields.push({name: "tip", type: this.registry.use("Compact<Balance>")})
-                    break
-                case "ChargeAssetTxPayment":
-                    fields.push({name: "asset", type: this.registry.use("Option<AssetId>")})
-                    break
-            }
-        })
+
+        if ("extrinsic" in this.metadata.value) {
+            this.metadata.value.extrinsic.signedExtensions.forEach(extension => {
+                switch(extension) {
+                    case "CheckMortality":
+                        fields.push({name: "mortality", type: this.registry.use("U16")})
+                        break
+                    case "CheckEra":
+                        fields.push({name: "era", type: this.registry.use("U16")})
+                        break
+                    case "CheckNonce":
+                        fields.push({name: "nonce", type: this.registry.use("Compact<Index>")})
+                        break
+                    case "ChargeTransactionPayment":
+                        fields.push({name: "tip", type: this.registry.use("Compact<Balance>")})
+                        break
+                    case "ChargeAssetTxPayment":
+                        fields.push({name: "asset", type: this.registry.use("Option<AssetId>")})
+                        break
+                }
+            })
+        } else {
+            fields.push(
+                {name: "era", type: this.registry.use("U16")},
+                {name: "nonce", type: this.registry.use("Compact<Index>")},
+                {name: "tip", type: this.registry.use("Compact<Balance>")},
+            )
+        }
         return this.registry.create("GenericSignature", () => {
             return {
                 kind: TypeKind.Composite,
