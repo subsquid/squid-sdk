@@ -13,8 +13,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "mocha lib/**/*.test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@subsquid/substrate-processor": "^0.2.3",
