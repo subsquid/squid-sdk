@@ -1,9 +1,10 @@
 import {assertNotNull} from "@subsquid/util"
-import {BlockHandler, EventHandler, EvmLogHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
+import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
-import {ContractAddress, QualifiedName} from "./interfaces/substrate"
+import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
+import {ContractAddress, EvmLogHandler} from "./interfaces/evm";
 
 
 export interface DataHandlers {

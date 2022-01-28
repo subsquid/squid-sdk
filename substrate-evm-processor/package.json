@@ -1,0 +1,34 @@
+{
+  "name": "@subsquid/substrate-evm-processor",
+  "version": "0.0.1",
+  "description": "Data fetcher and mappings executor for substrate chains with evm support",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
+  },
+  "dependencies": {
+    "@subsquid/substrate-processor": "^0.2.3",
+    "@subsquid/util": "^0.0.3"
+  },
+  "peerDependencies": {
+    "typeorm": "^0.2.41"
+  },
+  "devDependencies": {
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.17",
+    "expect": "^27.4.6",
+    "fast-check": "^2.20.0",
+    "mocha": "^9.1.3",
+    "typescript": "~4.5.4"
+  }
+}

@@ -27,21 +27,6 @@ export interface EventHandler {
     (ctx: EventHandlerContext): Promise<void>
 }
 
-export interface EvmLogHandlerContext extends EventHandlerContext {
-    event: EvmEvent
-}
-
-interface EvmEvent extends SubstrateEvent {
-    evmLogAddress?: string
-    evmLogData?: string;
-    evmLogTopics?: string[];
-    evmHash?: string
-}
-
-export interface EvmLogHandler {
-    (ctx: EvmLogHandlerContext): Promise<void>
-}
-
 export interface ExtrinsicHandlerContext extends EventHandlerContext {
     extrinsic: SubstrateExtrinsic
 }

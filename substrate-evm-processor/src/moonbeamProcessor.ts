@@ -1,9 +1,8 @@
-import {EvmLogHandlerOptions, SubstrateProcessor} from "./processor";
-import {ContractAddress} from "./interfaces/substrate";
-import {EvmLogHandler} from "./interfaces/handlerContext";
 import {assertNotNull} from "@subsquid/util";
+import {SubstrateProcessor} from "@subsquid/substrate-processor";
+import {ContractAddress, EvmLogHandler, EvmLogHandlerOptions} from "./index"
 
-export class MoonriverProcessor extends SubstrateProcessor {
+export class MoonbeamProcessor extends SubstrateProcessor {
 
     addEvmLogHandler(contractAddress: ContractAddress, fn: EvmLogHandler): void
     addEvmLogHandler(contractAddress: ContractAddress, options: EvmLogHandlerOptions, fn: EvmLogHandler): void

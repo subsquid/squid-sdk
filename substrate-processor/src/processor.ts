@@ -24,11 +24,6 @@ export interface EventHandlerOptions {
     range?: Range
 }
 
-export interface EvmLogHandlerOptions {
-    range?: Range
-    topics?: string[]
-}
-
 export interface ExtrinsicHandlerOptions {
     range?: Range
     triggerEvents?: QualifiedName[]
@@ -261,7 +256,19 @@ export class SubstrateProcessor {
                         if(event.evmLogAddress) {
                             let evmLogHandlers = evmLogs[event.evmLogAddress] || []
                             for (let k = 0; k < evmLogHandlers.length; k++) {
-                                await evmLogHandlers[k]({...ctx, event, extrinsic})
+                                await evmLogHandlers[k]({
+                                    topics: event.evmLogTopics,
+                                    data: event.evmLogData,
+                                    txHash: event.evmHash,
+                                    contractAddress: event.evmLogAddress,
+                                    substrate: {
+                                        _chain: chain,
+                                        event: event,
+                                        block: ctx.block,
+                                        extrinsic
+                                    },
+                                    store
+                                })
                             }
                         }
                         if (extrinsic == null) continue

@@ -65,7 +65,6 @@ export interface SubstrateBlock {
 
 
 export type QualifiedName = string
-export type ContractAddress = string
 
 export interface EventInfo {
     id: string

@@ -1,0 +1,11 @@
+{
+  "name": "@subsquid/substrate-evm-processor",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/substrate-evm-processor_v0.0.0",
+      "date": "Mon, 26 Jan 2022 12:24:26 GMT",
+      "comments": {}
+    }
+  ]
+}

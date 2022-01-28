@@ -1,6 +1,7 @@
 import {Range} from "../util/range"
 import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
-import {ContractAddress, QualifiedName} from "./substrate"
+import {QualifiedName} from "./substrate"
+import {EvmLogHook} from "./evm";
 
 
 export interface BlockHook {
@@ -12,13 +13,6 @@ export interface BlockHook {
 export interface EventHook {
     handler: EventHandler
     event: QualifiedName
-    range?: Range
-}
-
-export interface EvmLogHook {
-    handler: EventHandler
-    contractAddress: ContractAddress
-    topics?: string[]
     range?: Range
 }
 
