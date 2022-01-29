@@ -25,8 +25,8 @@ export interface TypegenOptions {
     outDir: string
     chainVersions: ChainVersion[]
     typesBundle?: OldTypesBundle
-    events?: string[]
-    calls?: string[]
+    events?: string[] | boolean
+    calls?: string[] | boolean
 }
 
 
@@ -131,8 +131,10 @@ export class Typegen {
      * Create a mapping between qualified name and list of unique versions
      */
     private collectItems(kind: 'events' | 'calls'): Map<QualifiedName, Item[]> {
-        let requested = new Set(this.options[kind])
-        if (requested.size == 0) return new Map()
+        let request = this.options[kind]
+        if (!request) return new Map()
+        let requested = Array.isArray(request) ? new Set(request) : undefined
+        if (requested?.size === 0) return new Map()
 
         let list = this.chain().flatMap(chain => {
             return Object.entries(chain[kind].definitions).map(([name, def]) => {
@@ -141,14 +143,14 @@ export class Typegen {
         })
 
         let items = groupBy(list, i => i.name)
-        requested.forEach(name => {
+        requested?.forEach(name => {
             if (!items.has(name)) {
                 throw new Error(`${name} is not defined by the chain metadata`)
             }
         })
 
         items.forEach((versions, name) => {
-            if (requested.has(name)) {
+            if (requested == null || requested.has(name)) {
                 versions.sort((a, b) => a.chain.blockNumber - b.chain.blockNumber)
                 let unique: Item[] = []
                 versions.forEach(v => {

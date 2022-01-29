@@ -1,0 +1,4 @@
+{
+  "chain": "wss://kusama-rpc.polkadot.io",
+  "archive": "https://kusama.indexer.gc.subsquid.io/v4/graphql"
+}
