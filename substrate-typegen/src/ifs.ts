@@ -71,13 +71,10 @@ export class Interfaces {
     }
 
     private makeCompact(type: CompactType): string {
-        let item = this.types[type.type]
-        if (item.kind == TypeKind.Tuple) {
-            assert(item.tuple.length == 0, "only empty tuples can be compact")
-            return 'null'
-        }
-        assert(item.kind == TypeKind.Primitive)
-        switch(item.primitive) {
+        let primitive = this.getCompactPrimitive(type.type)
+        switch(primitive) {
+            case null:
+                return 'null'
             case 'U8':
             case 'U16':
             case 'U32':
@@ -87,7 +84,36 @@ export class Interfaces {
             case 'U256':
                 return '(number | bigint)'
             default:
-                throw unexpectedCase(item.primitive)
+                throw unexpectedCase(primitive)
+        }
+    }
+
+    private getCompactPrimitive(ti: Ti): Primitive | null {
+        let type = this.types[ti]
+        switch(type.kind) {
+            case TypeKind.Primitive:
+                return type.primitive
+            case TypeKind.Tuple:
+                switch(type.tuple.length) {
+                    case 0:
+                        return null
+                    case 1:
+                        return this.getCompactPrimitive(type.tuple[0])
+                    default:
+                        throw new Error(`Tuples with more than 1 field can't be compact`)
+                }
+            case TypeKind.Composite:
+                switch(type.fields.length) {
+                    case 0:
+                        return null
+                    case 1:
+                        assert(type.fields[0].name == null, `Composite types with named fields can't be compact`)
+                        return this.getCompactPrimitive(type.fields[0].type)
+                    default:
+                        throw new Error(`Composite types with more than 1 field can't be compact`)
+                }
+            default:
+                throw unexpectedCase(type.kind)
         }
     }
 
@@ -134,6 +160,10 @@ export class Interfaces {
         this.queue.push(out => {
             out.line()
             out.blockComment(type.docs)
+            if (type.variants.length == 0) {
+                out.line(`export type ${name} = never`)
+                return
+            }
             out.line(`export type ${name} = ${type.variants.map(v => name + '_' + v.name).join(' | ')}`)
             type.variants.forEach(v => {
                 out.line()

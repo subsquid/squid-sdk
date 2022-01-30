@@ -1,7 +1,7 @@
 import {assertNotNull, toCamelCase, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import {Field, Primitive, Ti, Type, TypeKind, Variant} from "../types"
-import {normalizeTypes} from "../util"
+import {normalizeMetadataTypes} from "../util"
 import * as texp from "./typeExp"
 import {
     OldEnumDefinition,
@@ -21,7 +21,7 @@ export class OldTypeRegistry {
     }
 
     getTypes(): Type[] {
-        return normalizeTypes(this.types)
+        return normalizeMetadataTypes(this.types)
     }
 
     create(typeName: string, fn: () => Type): Ti {

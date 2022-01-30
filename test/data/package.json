@@ -1,5 +1,5 @@
 {
-  "name": "test-data",
+  "name": "data-test",
   "version": "0.0.0",
   "scripts": {
     "build": "rm -rf lib && tsc",

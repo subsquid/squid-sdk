@@ -12,6 +12,7 @@ specifiers:
   '@polkadot/util-crypto': ^8.1.2
   '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
+  '@rush-temp/data-test': file:./projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
@@ -28,8 +29,8 @@ specifiers:
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
   '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
-  '@rush-temp/test-data': file:./projects/test-data.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
+  '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util': file:./projects/util.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
@@ -43,7 +44,6 @@ specifiers:
   '@types/mocha': ^9.0.0
   '@types/node': ^16.11.17
   '@types/node-fetch': ^2.5.12
-  '@types/pg': ^8.6.3
   '@types/semver': ^7.3.9
   '@types/shortid': ^0.0.29
   '@types/stoppable': ^1.1.1
@@ -109,6 +109,7 @@ dependencies:
   '@polkadot/util-crypto': 8.2.2
   '@rush-temp/balances': file:projects/balances.tgz_ioredis@4.28.2
   '@rush-temp/cli': file:projects/cli.tgz_ioredis@4.28.2
+  '@rush-temp/data-test': file:projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_ioredis@4.28.2
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
@@ -125,8 +126,8 @@ dependencies:
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
-  '@rush-temp/test-data': file:projects/test-data.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1
+  '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
@@ -140,7 +141,6 @@ dependencies:
   '@types/mocha': 9.0.0
   '@types/node': 16.11.17
   '@types/node-fetch': 2.5.12
-  '@types/pg': 8.6.4
   '@types/semver': 7.3.9
   '@types/shortid': 0.0.29
   '@types/stoppable': 1.1.1
@@ -7416,6 +7416,26 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
+  file:projects/data-test.tgz:
+    resolution: {integrity: sha512-NKK4HeTt6rUZ573Rd1j30Q6gqGgiRPJUx3UL1aY1aJtE4tP2YUEixLXB//keaFbpEmZH0BZaZpKTmySBhigHGg==, tarball: file:projects/data-test.tgz}
+    name: '@rush-temp/data-test'
+    version: 0.0.0
+    dependencies:
+      '@polkadot/api': 6.11.2-24
+      '@polkadot/types': 6.11.2-24
+      '@polkadot/util-crypto': 8.2.2
+      '@types/node': 16.11.17
+      '@types/node-fetch': 2.5.12
+      '@types/pg': 8.6.4
+      expect: 27.4.6
+      node-fetch: 2.6.7
+      pg: 8.7.1
+      typescript: 4.5.4
+    transitivePeerDependencies:
+      - encoding
+      - pg-native
+    dev: false
+
   file:projects/e2e-test-project.tgz_ioredis@4.28.2:
     resolution: {integrity: sha512-y1oPjYD4kXVo2rKccp+ZGZ2LJON1E70m119kuWCUe2LZrpuWu1kKgDaMoCCD1R/qcLepIlyMfiwLvMGbfQ5KWA==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
@@ -7749,25 +7769,6 @@ packages:
       typescript: 4.5.4
     dev: false
 
-  file:projects/test-data.tgz:
-    resolution: {integrity: sha512-I0b8voELhVRjIX78nZOsAZiZNvS6xNmTcjGNWPOHqvrxcHndPcoezydoc/EFZ12XJQkOM+qLrrE/bz2kCCTfoA==, tarball: file:projects/test-data.tgz}
-    name: '@rush-temp/test-data'
-    version: 0.0.0
-    dependencies:
-      '@polkadot/api': 6.11.2-24
-      '@polkadot/types': 6.11.2-24
-      '@polkadot/util-crypto': 8.2.2
-      '@types/node': 16.11.17
-      '@types/node-fetch': 2.5.12
-      '@types/pg': 8.6.4
-      expect: 27.4.6
-      node-fetch: 2.6.7
-      pg: 8.7.1
-      typescript: 4.5.4
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1:
     resolution: {integrity: sha512-UntC1hRoTXnv/2gHa5Vh4UOfVhdOjEV/UkwDGY9BgKVPMjH+6MlT+ODuBHdW1SiOgnoH+jbvFm/Ur+9YAt1+cQ==, tarball: file:projects/typeorm-config.tgz}
     id: file:projects/typeorm-config.tgz
@@ -7794,6 +7795,15 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/types-test.tgz:
+    resolution: {integrity: sha512-zjMJuS+kYmmIvtV8IF3uSROd6KdzZq8QUci6wzLMeTDsd5sRIhmku0KG6w2GnmQT6aU/zAIc4jaaIJHnDFUWMg==, tarball: file:projects/types-test.tgz}
+    name: '@rush-temp/types-test'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.17
+      typescript: 4.5.4
     dev: false
 
   file:projects/util.tgz:

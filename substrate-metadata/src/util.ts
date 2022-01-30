@@ -3,7 +3,7 @@ import crypto from "crypto"
 import {Field, Ti, Type, TypeKind} from "./types"
 
 
-export function normalizeTypes(types: Type[]): Type[] {
+export function normalizeMetadataTypes(types: Type[]): Type[] {
     function isU8(ti: Ti): boolean {
         let type = types[ti]
         return type.kind == TypeKind.Primitive && type.primitive == 'U8'
