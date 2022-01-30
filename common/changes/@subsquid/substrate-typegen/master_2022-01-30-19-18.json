@@ -1,0 +1,25 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "correctly generate type for compact structs and tuples",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "breaking: assign better names to event and call types",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "breaking: normalize inline option types to `T | undefined`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "breaking: normalize inline result types to `Result<Ok, Err>`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
