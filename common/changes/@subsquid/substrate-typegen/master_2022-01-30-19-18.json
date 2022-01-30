@@ -19,6 +19,11 @@
       "packageName": "@subsquid/substrate-typegen",
       "comment": "breaking: normalize inline result types to `Result<Ok, Err>`",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "allow to generate all events or calls via `events: true` / `calls: true` option",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-typegen"
