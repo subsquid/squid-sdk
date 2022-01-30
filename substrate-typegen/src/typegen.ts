@@ -1,4 +1,5 @@
 import {
+    ChainDescription,
     decodeMetadata,
     getChainDescriptionFromMetadata,
     OldTypesBundle,
@@ -11,6 +12,7 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {def, OutDir, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {Interfaces} from "./ifs"
+import {groupBy, upperCaseFirst} from "./util"
 
 
 export interface ChainVersion {
@@ -182,7 +184,8 @@ export class Typegen {
                 blockNumber: v.blockNumber,
                 types: d.types,
                 events: new eac.Registry(d.types, d.event),
-                calls: new eac.Registry(d.types, d.call)
+                calls: new eac.Registry(d.types, d.call),
+                description: d
             }
         }).sort((a, b) => a.blockNumber - b.blockNumber)
     }
@@ -192,7 +195,7 @@ export class Typegen {
         if (ifs) return ifs
         let d = this.chain().find(v => v.specVersion == specVersion)
         assert(d != null)
-        ifs = new Interfaces(d.types)
+        ifs = new Interfaces(d.description)
         this.interfaces.set(specVersion, ifs)
         return ifs
     }
@@ -205,6 +208,7 @@ interface VersionDescription {
     types: Type[]
     events: eac.Registry
     calls: eac.Registry
+    description: ChainDescription
 }
 
 
@@ -212,25 +216,4 @@ interface Item {
     name: QualifiedName
     def: eac.Definition
     chain: VersionDescription
-}
-
-
-export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
-    let grouping = new Map<G, T[]>()
-    for (let i = 0; i < arr.length; i++) {
-        let item = arr[i]
-        let key = group(item)
-        let g = grouping.get(key)
-        if (g == null) {
-            grouping.set(key, [item])
-        } else {
-            g.push(item)
-        }
-    }
-    return grouping
-}
-
-
-export function upperCaseFirst(s: string): string {
-    return s[0].toUpperCase() + s.slice(1)
 }

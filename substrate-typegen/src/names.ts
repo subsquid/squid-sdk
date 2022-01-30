@@ -1,56 +1,41 @@
-import {getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
+import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
+import assert from "assert"
+import {asResultType} from "./util"
 
 /**
  * Assign names to types
  */
-export function assignNames(types: Type[]): Map<Ti, string> {
+export function assignNames(d: ChainDescription): Map<Ti, string> {
+    let types = d.types
     let assignment = new Map<number, string>()
+    let reserved = new Set<string>()
 
-    getNames(types).forEach((tis, name) => {
-        let hashes = new Map<string, Ti>()
+    reserved.add('Result')
 
-        for (let i = 0; i < 2; i++) {
-            tis.forEach(ti => {
-                let hash = getTypeHash(types, ti)
-                if (hashes.has(hash)) return
-                hashes.set(hash, ti)
-            })
+    function assign(ti: Ti, name: string): void {
+        assignment.set(ti, name)
+        reserved.add(name)
+    }
 
-            if (hashes.size == 1) {
-                tis.forEach(ti => assignment.set(ti, name))
-                return
-            }
-
-            tis = tis.filter(ti => needsName(types[ti]))
-            hashes.clear()
-        }
-
-        let assigned = new Map<string, string>()
-
-        tis.forEach(ti => {
-            let type = types[ti]
-            let hash = getTypeHash(types, ti)
-            let assignedName = assigned.get(hash)
-            if (assignedName == null) {
-                assignedName = `${name}_${ti}`
-                assigned.set(hash, assignedName)
-            }
-            assignment.set(ti, assignedName)
-        })
+    // assign good names for events and calls
+    assign(d.call, 'Call')
+    assign(d.event, 'Event')
+    forEachPallet(types, d.call, (pallet, ti) => {
+        assign(ti, pallet + 'Call')
+    })
+    forEachPallet(types, d.event, (pallet, ti) => {
+        assign(ti, pallet + 'Event')
     })
 
-    return assignment
-}
-
-
-/**
- * Compute a mapping between a name and actual types which want to have it
- */
-function getNames(types: Type[]): Map<string, Ti[]> {
+    // a mapping between a name and types which want to have it
     let names = new Map<string, Ti[]>()
 
     types.forEach((type, ti) => {
-        let name = getName(type)
+        if (assignment.has(ti)) return
+        let name = deriveName(type)
+        if (name && reserved.has(name)) {
+            name = undefined
+        }
         if (name == null && needsName(type)) {
             name = `Type_${ti}`
         }
@@ -64,15 +49,57 @@ function getNames(types: Type[]): Map<string, Ti[]> {
         }
     })
 
+    names.forEach((tis, name) => {
+        let hashes = new Map<string, Ti>()
 
-    return names
+        for (let i = 0; i < 2; i++) {
+            tis.forEach(ti => {
+                let hash = getTypeHash(types, ti)
+                if (hashes.has(hash)) return
+                hashes.set(hash, ti)
+            })
+
+            if (hashes.size == 1) {
+                tis.forEach(ti => assign(ti, name))
+                return
+            }
+
+            tis = tis.filter(ti => needsName(types[ti]))
+            hashes.clear()
+        }
+
+        let hashToName = new Map<string, string>()
+
+        tis.forEach(ti => {
+            let hash = getTypeHash(types, ti)
+            let assignedName = hashToName.get(hash)
+            if (assignedName == null) {
+                assignedName = `${name}_${ti}`
+                hashToName.set(hash, assignedName)
+            }
+            assign(ti, assignedName)
+        })
+    })
+
+    return assignment
+}
+
+
+function forEachPallet(types: Type[], ti: Ti, cb: (name: string, ti: Ti) => void): void {
+    let type = types[ti]
+    assert(type.kind == TypeKind.Variant)
+    type.variants.forEach(v => {
+        assert(v.fields.length == 1)
+        let vi = v.fields[0].type
+        cb(v.name, vi)
+    })
 }
 
 
 /**
  * Derive "the best" name from a path.
  */
-function getName(type: Type): string | undefined {
+function deriveName(type: Type): string | undefined {
     if (!type.path?.length) return undefined
     let version = type.path.find(name => /^v\d+$/i.test(name))
     let name = type.path[type.path.length - 1]
@@ -87,7 +114,7 @@ function getName(type: Type): string | undefined {
 export function needsName(type: Type): boolean {
     switch(type.kind) {
         case TypeKind.Variant:
-            return true
+            return !asResultType(type)
         case TypeKind.Composite:
             return type.fields.length > 0 && type.fields[0].name != null
         default:

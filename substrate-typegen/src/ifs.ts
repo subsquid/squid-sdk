@@ -1,20 +1,33 @@
+import {
+    ChainDescription,
+    CompactType,
+    CompositeType,
+    Field,
+    Primitive,
+    Ti,
+    Type,
+    TypeKind,
+    VariantType
+} from "@subsquid/substrate-metadata"
+import {assertNotNull, Output, toCamelCase, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
-import {CompactType, CompositeType, Field, Primitive, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
-import {toCamelCase, Output, assertNotNull, unexpectedCase} from "@subsquid/util"
 import {assignNames, needsName} from "./names"
+import {asResultType, toNativePrimitive} from "./util"
 
 
 export class Interfaces {
+    private types: Type[]
     private nameAssignment: Map<Ti, string>
     private assignedNames: Set<string>
     private generated: (string | undefined)[]
     private generatedNames = new Set<string>()
     private queue: ((out: Output) => void)[] = []
 
-    constructor(private types: Type[]) {
-        this.nameAssignment = assignNames(types)
+    constructor(description: ChainDescription) {
+        this.types = description.types
+        this.nameAssignment = assignNames(description)
         this.assignedNames = new Set(this.nameAssignment.values())
-        this.generated = new Array(types.length)
+        this.generated = new Array(this.types.length)
     }
 
     use(ti: Ti): string {
@@ -59,8 +72,14 @@ export class Interfaces {
                 return this.makeTuple(type.tuple)
             case TypeKind.Composite:
                 return this.useComposite(type, ti)
-            case TypeKind.Variant:
-                return this.useVariant(type, ti)
+            case TypeKind.Variant: {
+                let result = asResultType(type)
+                if (result) {
+                    return `Result<${this.use(result.ok)}, ${this.use(result.err)}>`
+                } else {
+                    return this.useVariant(type, ti)
+                }
+            }
             case TypeKind.Option:
                 return `(${this.use(type.type)} | undefined)`
             case TypeKind.DoNotConstruct:
@@ -192,6 +211,7 @@ export class Interfaces {
     }
 
     generate(out: Output): void {
+        out.line(`import type {Result} from './support'`)
         for (let i = 0; i < this.queue.length; i++) {
             this.queue[i](out)
         }
@@ -207,31 +227,5 @@ export class Interfaces {
             typeExp = typeExp.replace(new RegExp(`\\b${name}\\b`, 'g'), ns + '.' + name)
         })
         return typeExp
-    }
-}
-
-
-function toNativePrimitive(primitive: Primitive): string {
-    switch(primitive) {
-        case 'I8':
-        case 'U8':
-        case 'I16':
-        case 'U16':
-        case 'I32':
-        case 'U32':
-            return 'number'
-        case 'I64':
-        case 'U64':
-        case 'I128':
-        case 'U128':
-        case 'I256':
-        case 'U256':
-            return 'bigint'
-        case 'Bool':
-            return 'boolean'
-        case 'Str':
-            return 'string'
-        default:
-            throw unexpectedCase(primitive)
     }
 }
