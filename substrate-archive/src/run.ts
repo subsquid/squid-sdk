@@ -59,7 +59,7 @@ function capitalize(value: string) {
 }
 
 function getExtrinsicName(extrinsic: Extrinsic) {
-    let section = extrinsic.call.__kind.toLowerCase()
+    let section = extrinsic.call.__kind.toLowerCase() // TODO: switch to camelCase
     let method = extrinsic.call.value.__kind.split('_').reduce((memo: string, value: string, index: number) => {
         memo += index === 0 ? value : capitalize(value)
         return memo
@@ -99,7 +99,7 @@ function getBlockTimestamp(extrinsics: Extrinsic[]): number {
 async function main() {
     // let client = new RpcClient("wss://kusama-rpc.polkadot.io")
     let client = new RpcClient("wss://rpc.polkadot.io")
-    let blockHeight = 1;
+    let blockHeight = 1463;
     // let blockHeight = 3876;
     // let blockHeight = 10000123;
     // let blockNumber = 10000119; // decode error
@@ -134,7 +134,6 @@ async function main() {
             } else {
                 let rawMetadata = await client.call<RawMetadata>("state_getMetadata", [blockHash])
                 let metadata = decodeMetadata(rawMetadata)
-                console.log('call metadata')
                 let oldTypes = getTypesFromBundle(typesBundle, runtimeVersion.specVersion)
                 description = getChainDescriptionFromMetadata(metadata, oldTypes)
             }

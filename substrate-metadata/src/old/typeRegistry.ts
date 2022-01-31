@@ -14,7 +14,7 @@ import {
 
 
 export class OldTypeRegistry {
-    private types: Type[] = []
+    types: Type[] = []
     private lookup = new Map<OldTypeExp, Ti>()
 
     constructor(private oldTypes: OldTypes) {

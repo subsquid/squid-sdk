@@ -201,12 +201,17 @@ class FromOld {
         return this.registry.create('GenericCall', () => {
             let variants: Variant[] = []
             this.forEachPallet_Call((palletName, index, calls) => {
+                console.log('palletName', palletName)
+                let fields = [
+                    {type: this.makeCallEnum(palletName, calls)}
+                ]
+                if (palletName == 'Utility') {
+                    console.log(fields)
+                }
                 variants.push({
                     name: palletName,
                     index,
-                    fields: [
-                        {type: this.makeCallEnum(palletName, calls)}
-                    ]
+                    fields
                 })
             })
             return {

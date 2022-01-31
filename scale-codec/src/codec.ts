@@ -18,7 +18,7 @@ import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
 
 
 export class Codec {
-    private types: Type[]
+    types: Type[]
 
     constructor(types: Type[]) {
         this.types = normalizeTypes(types)
