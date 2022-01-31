@@ -12,8 +12,8 @@ interface Config {
     outDir: string
     chainVersions: string
     typesBundle?: string
-    events?: QualifiedName[]
-    calls?: QualifiedName[]
+    events?: QualifiedName[] | boolean
+    calls?: QualifiedName[] | boolean
 }
 
 

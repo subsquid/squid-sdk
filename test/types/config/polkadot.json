@@ -1,0 +1,7 @@
+{
+  "outDir": "../src/polkadot",
+  "chainVersions": "../../data/chain/polkadot/versions.json",
+  "typesBundle": "polkadot",
+  "events": true,
+  "calls": true
+}

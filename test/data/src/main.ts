@@ -10,6 +10,10 @@ async function main(): Promise<void> {
             return chain.saveEventsByPolka()
         case 'test-events-decoding':
             return chain.testEventsDecoding()
+        case 'select-test-blocks':
+            return chain.selectTestBlocks()
+        case 'select-test-blocks-from-db':
+            return chain.selectTestBlocksFromDb()
     }
 }
 

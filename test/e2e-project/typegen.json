@@ -6,6 +6,7 @@
     "balances.Transfer"
   ],
   "calls": [
-    "timestamp.set"
+    "timestamp.set",
+    "balances.set_balance"
   ]
 }

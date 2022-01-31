@@ -1,6 +1,6 @@
-import type {Entity, Enum, JsonObject, Model, Prop, Union} from '@subsquid/openreader/dist/model'
-import {OutDir, Output, toCamelCase, unexpectedCase} from '@subsquid/util'
-import assert from 'assert'
+import type {Entity, Enum, JsonObject, Model, Prop, Union} from "@subsquid/openreader/dist/model"
+import {OutDir, Output, toCamelCase, unexpectedCase} from "@subsquid/util"
+import assert from "assert"
 import * as path from "path"
 
 
@@ -37,6 +37,10 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         out.lazy(() => imports.render(model))
         out.line()
         printComment(entity, out)
+        entity.indexes?.forEach(index => {
+            if (index.fields.length < 2) return
+            out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
+        })
         out.line('@Entity_()')
         out.block(`export class ${name}`, () => {
             out.block(`constructor(props?: Partial<${name}>)`, () => {
@@ -51,20 +55,24 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                     case 'scalar':
                         if (key === 'id') {
                             out.line('@PrimaryColumn_()')
-                        } else if (prop.type.name === 'BigInt') {
-                            imports.useMarshal()
-                            out.line(
-                                `@Column_("numeric", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                            )
                         } else {
-                            out.line(
-                                `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                    prop.nullable
-                                }})`
-                            )
+                            addIndexAnnotation(entity, key, imports, out)
+                            if (prop.type.name === 'BigInt') {
+                                imports.useMarshal()
+                                out.line(
+                                    `@Column_("numeric", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
+                                )
+                            } else {
+                                out.line(
+                                    `@Column_("${getDbType(prop.type.name)}", {nullable: ${
+                                        prop.nullable
+                                    }})`
+                                )
+                            }
                         }
                         break
                     case 'enum':
+                        addIndexAnnotation(entity, key, imports, out)
                         out.line(
                             `@Column_("varchar", {length: ${getEnumMaxLength(
                                 model,
@@ -73,7 +81,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         )
                         break
                     case 'fk':
-                        if (prop.unique) {
+                        if (getFieldIndex(entity, key)?.unique) {
                             imports.useTypeorm('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
@@ -82,7 +90,9 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             out.line(`@JoinColumn_()`)
                         } else {
                             imports.useTypeorm('ManyToOne', 'Index')
-                            out.line('@Index_()')
+                            if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
+                                out.line(`@Index_()`)
+                            }
                             out.line(
                                 `@ManyToOne_(() => ${prop.type.foreignEntity}, {nullable: ${prop.nullable}})`
                             )
@@ -445,6 +455,28 @@ function collectVariants(model: Model): Set<string> {
         }
     }
     return variants
+}
+
+
+function addIndexAnnotation(entity: Entity, field: string, imports: ImportRegistry, out: Output): void {
+    let index = getFieldIndex(entity, field)
+    if (index == null) return
+    imports.useTypeorm('Index')
+    if (index.unique) {
+        out.line(`@Index_({unique: true})`)
+    } else {
+        out.line(`@Index_()`)
+    }
+}
+
+
+function getFieldIndex(entity: Entity, field: string): {unique?: boolean} | undefined {
+    if (entity.properties[field]?.unique) return {unique: true}
+    let candidates = entity.indexes?.filter(index => index.fields[0]?.name == field) || []
+    if (candidates.length == 0) return undefined
+    if (candidates.find(index => index.fields.length == 1 && index.unique)) return {unique: true}
+    if (candidates.some(index => index.fields.length > 1)) return undefined
+    return candidates[0]
 }
 
 

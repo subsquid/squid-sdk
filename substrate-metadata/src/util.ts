@@ -3,7 +3,7 @@ import crypto from "crypto"
 import {Field, Ti, Type, TypeKind} from "./types"
 
 
-export function normalizeTypes(types: Type[]): Type[] {
+export function normalizeMetadataTypes(types: Type[]): Type[] {
     function isU8(ti: Ti): boolean {
         let type = types[ti]
         return type.kind == TypeKind.Primitive && type.primitive == 'U8'
@@ -29,19 +29,43 @@ export function normalizeTypes(types: Type[]): Type[] {
                     fields: camelCaseFields(type.fields)
                 }
             case TypeKind.Variant:
-                return {
-                    ...type,
-                    variants: type.variants.map(v => {
-                        return {
-                            ...v,
-                            fields: camelCaseFields(v.fields)
-                        }
-                    })
+                if (isOptionType(type)) {
+                    return {
+                        kind: TypeKind.Option,
+                        type: type.variants[1].fields[0].type,
+                        docs: type.docs,
+                        path: type.path
+                    }
+                } else {
+                    return {
+                        ...type,
+                        variants: type.variants.map(v => {
+                            return {
+                                ...v,
+                                fields: camelCaseFields(v.fields)
+                            }
+                        })
+                    }
                 }
             default:
                 return type
         }
     })
+}
+
+
+function isOptionType(type: Type): boolean {
+    if (type.kind !== TypeKind.Variant) return false
+    if (type.variants.length != 2) return false
+    let v0 = type.variants[0]
+    let v1 = type.variants[1]
+    return v0.name == 'None' &&
+        v0.fields.length == 0 &&
+        v0.index == 0 &&
+        v1.name == 'Some' &&
+        v1.index == 1 &&
+        v1.fields.length == 1 &&
+        v1.fields[0].name == null
 }
 
 

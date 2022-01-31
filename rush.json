@@ -553,7 +553,7 @@
       "shouldPublish": false
     },
     {
-      "packageName": "test-data",
+      "packageName": "data-test",
       "projectFolder": "test/data",
       "shouldPublish": false
     },
@@ -570,6 +570,11 @@
     {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "types-test",
+      "projectFolder": "test/types",
       "shouldPublish": false
     },
     {

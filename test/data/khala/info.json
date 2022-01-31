@@ -1,4 +1,0 @@
-{
-  "chain": "wss://khala.api.onfinality.io/public-ws",
-  "archive": "https://khala.indexer.gc.subsquid.io/v4/graphql"
-}

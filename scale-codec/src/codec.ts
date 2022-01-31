@@ -69,16 +69,38 @@ export class Codec {
     }
 
     private decodeCompact(def: CompactType, src: Src): any {
-        let item = this.types[def.type]
-        switch(item.kind) {
-            case TypeKind.Tuple:
-                assert(item.tuple.length == 0, "only empty tuples can be compact")
-                return null
+        let primitive = this.getCompactPrimitive(def.type)
+        if (primitive == null) return null
+        assert(primitive[0] == 'U', 'only unsigned integers can be compact')
+        return src.compact() // TODO: more assertions
+    }
+
+    private getCompactPrimitive(ti: Ti): Primitive | null {
+        let type = this.types[ti]
+        switch(type.kind) {
             case TypeKind.Primitive:
-                // TODO: more assertions
-                return src.compact()
+                return type.primitive
+            case TypeKind.Tuple:
+                switch(type.tuple.length) {
+                    case 0:
+                        return null
+                    case 1:
+                        return this.getCompactPrimitive(type.tuple[0])
+                    default:
+                        assert(false, `tuple of size ${type.tuple.length} can't be compact`)
+                }
+            case TypeKind.Composite:
+                switch(type.fields.length) {
+                    case 0:
+                        return null
+                    case 1:
+                        assert(type.fields[0].name == null, `named composite types can't be compact`)
+                        return this.getCompactPrimitive(type.fields[0].type)
+                    default:
+                        assert(false, `composite of size ${type.fields.length} can't be compact`)
+                }
             default:
-                throw unexpectedCase(item.kind)
+                throw unexpectedCase(type.kind)
         }
     }
 

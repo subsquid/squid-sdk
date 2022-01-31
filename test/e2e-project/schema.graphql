@@ -1,6 +1,6 @@
 " All transfers "
-type Transfer @entity {
-  from: Bytes!
+type Transfer @entity @index(fields: ["block", "extrinsicId"]) {
+  from: Bytes! @index
   to: Bytes!
   fromAccount: Account
   toAccount: Account

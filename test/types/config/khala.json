@@ -1,0 +1,7 @@
+{
+  "outDir": "../src/khala",
+  "chainVersions": "../../data/chain/khala/versions.json",
+  "typesBundle": "khala",
+  "events": true,
+  "calls": true
+}

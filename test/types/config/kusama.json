@@ -1,0 +1,7 @@
+{
+  "outDir": "../src/kusama",
+  "chainVersions": "../../data/chain/polkadot/versions.json",
+  "typesBundle": "kusama",
+  "events": true,
+  "calls": true
+}

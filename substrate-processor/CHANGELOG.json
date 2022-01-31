@@ -2,6 +2,33 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "0.2.5",
+      "tag": "@subsquid/substrate-processor_v0.2.5",
+      "date": "Wed, 26 Jan 2022 13:21:07 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "prevent quadratic sizes of fetched data"
+          },
+          {
+            "comment": "fix graphql error handling"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.4",
+      "tag": "@subsquid/substrate-processor_v0.2.4",
+      "date": "Tue, 25 Jan 2022 12:44:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix fetching of extrinsics with underscore in the name"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.3",
       "tag": "@subsquid/substrate-processor_v0.2.3",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",

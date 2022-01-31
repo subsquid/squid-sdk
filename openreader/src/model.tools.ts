@@ -39,6 +39,7 @@ export function validateModel(model: Model) {
     validateNames(model)
     validateUnionTypes(model)
     validateLookups(model)
+    validateIndexes(model)
 }
 
 
@@ -128,6 +129,33 @@ export function validateLookups(model: Model): void {
                 }
                 break
         }
+    }
+}
+
+
+export function validateIndexes(model: Model): void {
+    for (let name in model) {
+        const item = model[name]
+        if (item.kind != 'entity') continue
+        item.indexes?.forEach(index => {
+            if (index.fields.length == 0) throw new Error(`Entity ${name} has an index without fields`)
+            index.fields.forEach(f => {
+                let prop = item.properties[f.name]
+                if (prop == null) throw new Error(
+                    `Entity ${name} doesn't have a property ${f.name}, but is a part of index`
+                )
+                switch(prop.type.kind) {
+                    case "scalar":
+                    case "enum":
+                    case "fk":
+                        break
+                    default:
+                        throw new Error(
+                            `Property ${name}.${f.name} can't be a part of index`
+                        )
+                }
+            })
+        })
     }
 }
 

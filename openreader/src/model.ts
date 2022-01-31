@@ -8,6 +8,7 @@ export interface Entity extends TypeMeta {
     kind: 'entity'
     properties: Record<Name, Prop>
     interfaces?: Name[]
+    indexes?: Index[]
 }
 
 
@@ -122,4 +123,15 @@ export interface FTS_Query {
 export interface FTS_Source {
     entity: Name
     fields: Name[]
+}
+
+
+export interface Index {
+    fields: IndexField[]
+    unique?: boolean
+}
+
+
+export interface IndexField {
+    name: string
 }
