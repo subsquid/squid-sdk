@@ -20,6 +20,7 @@ export interface DataHandlers {
 
 
 export interface Batch {
+    topics?: string[]
     range: Range
     handlers: DataHandlers
 }
@@ -105,6 +106,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
+            topics: hook.topics,
             handlers: {
                 pre: [],
                 post: [],

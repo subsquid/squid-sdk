@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@subsquid/substrate-processor": "^0.2.5",
-    "@subsquid/util": "^0.0.3"
+    "@subsquid/util": "^0.0.3",
+    "ethers": "^5.5.2"
   },
   "peerDependencies": {
     "typeorm": "^0.2.41"

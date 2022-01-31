@@ -133,6 +133,7 @@ export class Ingest {
         let hs = batch.handlers
         let events = Object.keys(hs.events)
         let evmLogs = Object.keys(hs.evmLogs)
+        const topics = batch.topics || [];
         let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
 
         // filters
@@ -146,8 +147,8 @@ export class Ingest {
             if (evmLogs?.length > 0) {
                 evmLogs.forEach(contractAddress => {
                     let evmTopicsFilter = ''
-                    if (hs.evmLogs.topics?.length > 0) {
-                        evmTopicsFilter = `, evmLogTopics: {_contains: [${hs.evmLogs.topics.map(topic => `"${topic}"`).join(', ')}]}`
+                    if (topics.length > 0) {
+                        evmTopicsFilter = `, evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
                     }
                     or.push(`substrate_events: {evmLogAddress: {_eq: "${contractAddress}"} ${evmTopicsFilter}}`)
                 })
@@ -180,11 +181,19 @@ export class Ingest {
                 or.push(`evmLogAddress: {_in: [${evmLogs.map(contractAddress => `"${contractAddress}"`).join(', ')}]}`)
             }
 
-            if (or.length == 1) {
-                eventWhere = ` where: {${or[0]}}`
-            } else if (or.length > 1) {
-                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}]}`
+            let topicsClause;
+            if (topics.length > 0) {
+                topicsClause = `evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
             }
+
+            if (or.length == 1) {
+                eventWhere = ` where: {${or[0]} ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (or.length > 1) {
+                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}] ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (topicsClause) {
+                eventWhere = ` where: {${topicsClause}}`
+            }
+
         }
 
         let q = new Output()

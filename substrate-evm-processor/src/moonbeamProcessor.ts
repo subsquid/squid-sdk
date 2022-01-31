@@ -1,8 +1,19 @@
 import {assertNotNull} from "@subsquid/util";
 import {SubstrateProcessor} from "@subsquid/substrate-processor";
-import {ContractAddress, EvmLogHandler, EvmLogHandlerOptions} from "./index"
+import {Fragment, Interface} from "ethers/lib/utils";
+import {ContractAddress, EvmLogHandler, EvmLogHandlerOptions, EvmLogHandlerContext} from "./index"
+import {eventParser} from "./helpers/contract_events";
+import {JsonFragment} from "./interfaces/abi";
 
 export class MoonbeamProcessor extends SubstrateProcessor {
+
+    private readonly abi: Interface;
+
+    constructor(name: string, abi: string | ReadonlyArray<Fragment | JsonFragment | string>) {
+        super(name);
+        assertNotNull(abi);
+        this.abi = new Interface(abi);
+    }
 
     addEvmLogHandler(contractAddress: ContractAddress, fn: EvmLogHandler): void
     addEvmLogHandler(contractAddress: ContractAddress, options: EvmLogHandlerOptions, fn: EvmLogHandler): void
@@ -18,7 +29,12 @@ export class MoonbeamProcessor extends SubstrateProcessor {
         }
         this.hooks.evmLog.push({
             contractAddress,
-            handler,
+            handler: (ctx: EvmLogHandlerContext) => {
+                if (ctx.data) {
+                    ctx.parsedLogs = eventParser(this.abi, ctx.data, ctx.topics || []);
+                }
+                return handler(ctx);
+            },
             ...options
         })
     }

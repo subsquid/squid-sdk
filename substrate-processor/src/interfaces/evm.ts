@@ -3,6 +3,15 @@ import {Store} from "./handlerContext";
 import {Range} from "../util/range";
 import {Chain} from "../chain";
 
+
+export interface ParsedEvmLogs {
+    name: string;
+    args?: any;
+    topics: string;
+    fragment: any;
+    signature: string;
+}
+
 export interface EvmLogHandlerContext {
     topics?: string[]
     data?: string
@@ -10,6 +19,7 @@ export interface EvmLogHandlerContext {
     contractAddress?: string
     substrate: {_chain: Chain, event: SubstrateEvent, block: SubstrateBlock, extrinsic?: SubstrateExtrinsic}
     store: Store
+    parsedLogs?: ParsedEvmLogs
 }
 
 export interface EvmLogHandler {
