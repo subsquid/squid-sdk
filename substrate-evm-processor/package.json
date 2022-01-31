@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-processor": "^0.2.3",
+    "@subsquid/substrate-processor": "^0.2.5",
     "@subsquid/util": "^0.0.3"
   },
   "peerDependencies": {
