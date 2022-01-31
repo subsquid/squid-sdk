@@ -1,3 +1,4 @@
+import {assertNotNull, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import {
     buildASTSchema,
@@ -17,7 +18,7 @@ import {
     parse,
     validateSchema
 } from "graphql"
-import {Model, Prop, PropType} from "../model"
+import {Index, Model, Prop, PropType} from "../model"
 import {validateModel} from "../model.tools"
 import {scalars_list} from "../scalars"
 
@@ -26,6 +27,7 @@ const baseSchema = buildASTSchema(parse(`
     directive @entity on OBJECT
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
+    directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
     directive @fulltext(query: String!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
@@ -57,7 +59,7 @@ export function buildModel(schema: GraphQLSchema): Model {
 }
 
 
-function isEntityType(type: GraphQLNamedType): boolean {
+function isEntityType(type: unknown): boolean {
     return type instanceof GraphQLObjectType && !!type.astNode?.directives?.some(d => d.name.value == 'entity')
 }
 
@@ -71,12 +73,21 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
 
     let properties: Record<string, Prop> = {}
     let interfaces: string[] = []
+    let indexes: Index[] = type instanceof GraphQLObjectType ? checkEntityIndexes(type) : []
     let description = type.description || undefined
 
-    if (kind != 'interface') {
-        model[type.name] = {kind, properties, interfaces, description}
-    } else {
-        model[type.name] = {kind, properties, description}
+    switch(kind) {
+        case 'entity':
+            model[type.name] = {kind, properties, description, interfaces, indexes}
+            break
+        case 'object':
+            model[type.name] = {kind, properties, description, interfaces}
+            break
+        case 'interface':
+            model[type.name] = {kind, properties, description}
+            break
+        default:
+            throw unexpectedCase(kind)
     }
 
     let fields = type.getFields()
@@ -98,18 +109,29 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
 
     for (let key in fields) {
         let f: GraphQLField<any, any> = fields[key]
+
+        handleFulltextDirective(model, type, f)
+
+        let propName = `${type.name}.${f.name}`
         let fieldType = f.type
         let nullable = true
         let description = f.description || undefined
-        let propName = `${type.name}.${f.name}`
-        let unique = f.astNode?.directives?.some(d => d.name.value == 'unique')
-        handleFulltextDirective(model, type, f)
+        let derivedFrom = checkDerivedFrom(type, f)
+        let index = checkFieldIndex(type, f)
+        let unique = index?.unique || false
+
+        if (index) {
+            indexes.push(index)
+        }
+
         if (fieldType instanceof GraphQLNonNull) {
             nullable = false
             fieldType = fieldType.ofType
         }
+
         let list = unwrapList(fieldType)
         fieldType = list.item
+
         if (fieldType instanceof GraphQLScalarType) {
             properties[key] = {
                 type: wrapWithList(list.nulls, {
@@ -141,13 +163,6 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
             }
         } else if (fieldType instanceof GraphQLObjectType) {
             if (isEntityType(fieldType)) {
-                let derivedFrom = f.astNode?.directives?.filter(d => d.name.value == 'derivedFrom').map(d => {
-                    let valueNode = d.arguments?.[0].value
-                    assert(valueNode != null)
-                    assert(valueNode.kind == 'StringValue')
-                    return valueNode.value
-                })[0]
-
                 switch(list.nulls.length) {
                     case 0:
                         if (derivedFrom) {
@@ -158,7 +173,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                                 type: {
                                     kind: 'lookup',
                                     entity: fieldType.name,
-                                    field: derivedFrom
+                                    field: derivedFrom.field
                                 },
                                 nullable,
                                 description
@@ -186,7 +201,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                             type: {
                                 kind: 'list-lookup',
                                 entity: fieldType.name,
-                                field: derivedFrom
+                                field: derivedFrom.field
                             },
                             nullable: false,
                             description
@@ -288,11 +303,22 @@ function handleFulltextDirective(model: Model, object: GraphQLNamedType, f: Grap
 
 
 function isStringField(f: GraphQLField<any, any>): boolean {
+    return asScalarField(f)?.name == 'String'
+}
+
+
+function asScalarField(f: GraphQLField<any, any>): GraphQLScalarType | undefined {
+    let type = asNonNull(f)
+    return type instanceof GraphQLScalarType ? type : undefined
+}
+
+
+function asNonNull(f: GraphQLField<any, any>): GraphQLOutputType {
     let type = f.type
     if (type instanceof GraphQLNonNull) {
         type = type.ofType
     }
-    return type instanceof GraphQLScalarType && type.name == 'String'
+    return type
 }
 
 
@@ -326,6 +352,106 @@ function wrapWithList(nulls: boolean[], dataType: PropType): PropType {
             nullable: nulls[0]
         }
     }
+}
+
+
+function checkFieldIndex(type: GraphQLNamedType, f: GraphQLField<any, any>): Index | undefined {
+    let unique = false
+    let index = false
+
+    f.astNode?.directives?.forEach(d => {
+        if (d.name.value == 'unique') {
+            assertCanBeIndexed(type, f)
+            index = true
+            unique = true
+        } else if (d.name.value == 'index') {
+            assertCanBeIndexed(type, f)
+            let fieldsArg = d.arguments?.find(arg => arg.name.value == 'fields')
+            if (fieldsArg) throw new SchemaError(
+                `@index(fields: ...) where applied to ${type.name}.${f.name}, but fields argument is not allowed when @index is applied to a field`
+            )
+            let uniqueArg = d.arguments?.find(arg => arg.name.value == 'unique')
+            if (uniqueArg) {
+                assert(uniqueArg.value.kind == 'BooleanValue')
+                unique = uniqueArg.value.value
+            }
+            index = true
+        }
+    })
+
+    if (!index) return undefined
+
+    return {
+        fields: [{name: f.name}],
+        unique
+    }
+}
+
+
+function assertCanBeIndexed(type: GraphQLNamedType, f: GraphQLField<any, any>): void {
+    if (!isEntityType(type)) throw new SchemaError(
+        `${type.name}.${f.name} can't be indexed, because ${type.name} is not an entity`
+    )
+    if (!canBeIndexed(f)) throw new SchemaError(
+        `${type.name}.${f.name} can't be indexed, it is not a scalar, enum or foreign key`
+    )
+}
+
+
+function canBeIndexed(f: GraphQLField<any, any>): boolean {
+    let type = asNonNull(f)
+    if (type instanceof GraphQLScalarType || type instanceof GraphQLEnumType) return true
+    return isEntityType(type) && !f.astNode?.directives?.some(d => d.name.value == 'derivedFrom')
+}
+
+
+function checkEntityIndexes(type: GraphQLObjectType): Index[] {
+    let indexes: Index[] = []
+    type.astNode?.directives?.forEach(d => {
+        if (d.name.value != 'index') return
+        if (!isEntityType(type)) throw new SchemaError(
+            `@index was applied to ${type.name}, but only entities can have indexes`
+        )
+        let fieldsArg = d.arguments?.find(arg => arg.name.value == 'fields')
+        if (fieldsArg == null) throw new SchemaError(
+            `@index was applied to ${type.name}, but no fields were specified`
+        )
+        assert(fieldsArg.value.kind == 'ListValue')
+        if (fieldsArg.value.values.length == 0) throw new SchemaError(
+            `@index was applied to ${type.name}, but no fields were specified`
+        )
+        let fields = fieldsArg.value.values.map(arg => {
+            assert(arg.kind == 'StringValue')
+            let name = arg.value
+            let f = type.getFields()[name]
+            if (f == null) throw new SchemaError(
+                `Entity ${type.name} doesn't have a field '${name}', but it is a part of @index`
+            )
+            assertCanBeIndexed(type, f)
+            return {name}
+        })
+        indexes.push({
+            fields,
+            unique: !!d.arguments?.find(arg => arg.name.value == 'unique')?.value
+        })
+    })
+    return indexes
+}
+
+
+function checkDerivedFrom(type: GraphQLNamedType, f: GraphQLField<any, any>): {field: string} | undefined {
+    let directives = f.astNode?.directives?.filter(d => d.name.value == 'derivedFrom') || []
+    if (directives.length == 0) return undefined
+    if (!isEntityType(type)) throw new SchemaError(
+        `@derivedFrom where applied to ${type.name}.${f.name}, but only entities can have lookup fields`
+    )
+    if (directives.length > 1) throw new SchemaError(
+        `Multiple @derivedFrom where applied to ${type.name}.${f.name}`
+    )
+    let d = directives[0]
+    let fieldArg = assertNotNull(d.arguments?.find(arg => arg.name.value == 'field'))
+    assert(fieldArg.value.kind == 'StringValue')
+    return {field: fieldArg.value.value}
 }
 
 

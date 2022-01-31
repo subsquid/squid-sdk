@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+This log was last generated on Tue, 25 Jan 2022 12:44:12 GMT and should not be manually modified.
+
+## 0.2.3
+Tue, 25 Jan 2022 12:44:12 GMT
+
+### Patches
+
+- fix: support empty tuples as compact types
 
 ## 0.2.2
 Thu, 20 Jan 2022 08:42:53 GMT

@@ -1,10 +1,11 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 
 /**
  *  All transfers 
  */
+@Index_(["block", "extrinsicId"], {unique: false})
 @Entity_()
 export class Transfer {
   constructor(props?: Partial<Transfer>) {
@@ -14,6 +15,7 @@ export class Transfer {
   @PrimaryColumn_()
   id!: string
 
+  @Index_()
   @Column_("bytea", {nullable: false})
   from!: Uint8Array
 

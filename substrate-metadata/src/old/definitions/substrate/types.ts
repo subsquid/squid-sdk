@@ -1036,9 +1036,9 @@ export const types = {
   },
   "VoteThreshold": {
     "_enum": [
-      "Super Majority Approve",
-      "Super Majority Against",
-      "Simple Majority"
+      "SuperMajorityApprove",
+      "SuperMajorityAgainst",
+      "SimpleMajority"
     ]
   },
   "CreatedBlock": {

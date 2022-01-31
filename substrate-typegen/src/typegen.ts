@@ -1,4 +1,5 @@
 import {
+    ChainDescription,
     decodeMetadata,
     getChainDescriptionFromMetadata,
     OldTypesBundle,
@@ -11,6 +12,7 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {def, OutDir, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {Interfaces} from "./ifs"
+import {groupBy, upperCaseFirst} from "./util"
 
 
 export interface ChainVersion {
@@ -25,8 +27,8 @@ export interface TypegenOptions {
     outDir: string
     chainVersions: ChainVersion[]
     typesBundle?: OldTypesBundle
-    events?: string[]
-    calls?: string[]
+    events?: string[] | boolean
+    calls?: string[] | boolean
 }
 
 
@@ -66,7 +68,7 @@ export class Typegen {
         let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {${fix}Context, Result} from './support'`)
+        out.line(`import {${fix}Context, Result, deprecateLatest} from './support'`)
         out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
         names.forEach(name => {
             let versions = items.get(name)!
@@ -75,7 +77,12 @@ export class Typegen {
             out.line()
             out.block(`export class ${className}`, () => {
                 out.block(`constructor(private ctx: ${fix}Context)`, () => {
-                    out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
+                    let camelCased = toCamelCase(pallet) + '.' + toCamelCase(unqualifiedName)
+                    if (camelCased == name || ctx == 'event') {
+                        out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
+                    } else {
+                        out.line(`assert(this.ctx.${ctx}.name === '${camelCased}' || this.ctx.${ctx}.name === '${name}')`)
+                    }
                 })
                 versions.forEach((version, idx) => {
                     let isLatest = versions.length === idx + 1
@@ -91,19 +98,30 @@ export class Typegen {
                     if (typeExp != unqualifiedTypeExp) {
                         importedInterfaces.add(v)
                     }
-                    let suffix = isLatest ? 'Latest' : 'V' + v
                     out.line()
                     out.blockComment(version.def.docs)
-                    out.block(`get is${suffix}(): boolean`, () => {
+                    out.block(`get isV${v}(): boolean`, () => {
                         let hash = version.chain[kind].getHash(name)
                         out.line(`return this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`)
                     })
                     out.line()
                     out.blockComment(version.def.docs)
-                    out.block(`get as${suffix}(): ${typeExp}`, () => {
-                        out.line(`assert(this.is${suffix})`)
+                    out.block(`get asV${v}(): ${typeExp}`, () => {
+                        out.line(`assert(this.isV${v})`)
                         out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
                     })
+                    if (isLatest) {
+                        out.line()
+                        out.block(`get isLatest(): boolean`, () => {
+                            out.line(`deprecateLatest()`)
+                            out.line(`return this.isV${v}`)
+                        })
+                        out.line()
+                        out.block(`get asLatest(): ${typeExp}`, () => {
+                            out.line(`deprecateLatest()`)
+                            out.line(`return this.asV${v}`)
+                        })
+                    }
                 })
             })
         })
@@ -115,8 +133,10 @@ export class Typegen {
      * Create a mapping between qualified name and list of unique versions
      */
     private collectItems(kind: 'events' | 'calls'): Map<QualifiedName, Item[]> {
-        let requested = new Set(this.options[kind])
-        if (requested.size == 0) return new Map()
+        let request = this.options[kind]
+        if (!request) return new Map()
+        let requested = Array.isArray(request) ? new Set(request) : undefined
+        if (requested?.size === 0) return new Map()
 
         let list = this.chain().flatMap(chain => {
             return Object.entries(chain[kind].definitions).map(([name, def]) => {
@@ -125,14 +145,14 @@ export class Typegen {
         })
 
         let items = groupBy(list, i => i.name)
-        requested.forEach(name => {
+        requested?.forEach(name => {
             if (!items.has(name)) {
                 throw new Error(`${name} is not defined by the chain metadata`)
             }
         })
 
         items.forEach((versions, name) => {
-            if (requested.has(name)) {
+            if (requested == null || requested.has(name)) {
                 versions.sort((a, b) => a.chain.blockNumber - b.chain.blockNumber)
                 let unique: Item[] = []
                 versions.forEach(v => {
@@ -164,7 +184,8 @@ export class Typegen {
                 blockNumber: v.blockNumber,
                 types: d.types,
                 events: new eac.Registry(d.types, d.event),
-                calls: new eac.Registry(d.types, d.call)
+                calls: new eac.Registry(d.types, d.call),
+                description: d
             }
         }).sort((a, b) => a.blockNumber - b.blockNumber)
     }
@@ -174,7 +195,7 @@ export class Typegen {
         if (ifs) return ifs
         let d = this.chain().find(v => v.specVersion == specVersion)
         assert(d != null)
-        ifs = new Interfaces(d.types)
+        ifs = new Interfaces(d.description)
         this.interfaces.set(specVersion, ifs)
         return ifs
     }
@@ -187,6 +208,7 @@ interface VersionDescription {
     types: Type[]
     events: eac.Registry
     calls: eac.Registry
+    description: ChainDescription
 }
 
 
@@ -194,25 +216,4 @@ interface Item {
     name: QualifiedName
     def: eac.Definition
     chain: VersionDescription
-}
-
-
-export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
-    let grouping = new Map<G, T[]>()
-    for (let i = 0; i < arr.length; i++) {
-        let item = arr[i]
-        let key = group(item)
-        let g = grouping.get(key)
-        if (g == null) {
-            grouping.set(key, [item])
-        } else {
-            g.push(item)
-        }
-    }
-    return grouping
-}
-
-
-export function upperCaseFirst(s: string): string {
-    return s[0].toUpperCase() + s.slice(1)
 }

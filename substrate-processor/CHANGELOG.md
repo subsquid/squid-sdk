@@ -1,6 +1,21 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+This log was last generated on Wed, 26 Jan 2022 13:21:07 GMT and should not be manually modified.
+
+## 0.2.5
+Wed, 26 Jan 2022 13:21:07 GMT
+
+### Patches
+
+- prevent quadratic sizes of fetched data
+- fix graphql error handling
+
+## 0.2.4
+Tue, 25 Jan 2022 12:44:12 GMT
+
+### Patches
+
+- fix fetching of extrinsics with underscore in the name
 
 ## 0.2.3
 Thu, 20 Jan 2022 08:42:53 GMT

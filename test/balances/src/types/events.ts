@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {EventContext, Result} from './support'
+import {EventContext, Result, deprecateLatest} from './support'
 import * as v9130 from './v9130'
 
 export class BalancesTransferEvent {
@@ -40,15 +40,25 @@ export class BalancesTransferEvent {
   /**
    * Transfer succeeded.
    */
-  get isLatest(): boolean {
+  get isV9130(): boolean {
     return this.ctx._chain.getEventHash('balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
   }
 
   /**
    * Transfer succeeded.
    */
-  get asLatest(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
-    assert(this.isLatest)
+  get asV9130(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
+    assert(this.isV9130)
     return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV9130
+  }
+
+  get asLatest(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
+    deprecateLatest()
+    return this.asV9130
   }
 }
