@@ -1,31 +1,20 @@
 import assert from "assert"
+import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
 import {Src} from "./src"
-import {
-    ArrayType,
-    BytesArrayType,
-    CompactType,
-    Field,
-    OptionType,
-    Primitive,
-    SequenceType,
-    Ti,
-    TupleType,
-    Type,
-    TypeKind,
-    VariantType
-} from "./types"
-import {assertNotNull, normalizeTypes, unexpectedCase} from "./util"
+import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
+import {throwUnexpectedCase} from "./util"
 
 
 export class Codec {
-    private types: Type[]
+    private types: CodecType[]
 
     constructor(types: Type[]) {
-        this.types = normalizeTypes(types)
+        this.types = toCodecTypes(types)
     }
 
     decodeBinary(type: Ti, data: string | Uint8Array): any {
         if (typeof data == 'string') {
+            assert(/^0x([a-fA-F0-9]{2})+$/.test(data))
             data = Buffer.from(data.slice(2), 'hex')
         }
         let src = new Src(data)
@@ -40,7 +29,7 @@ export class Codec {
             case TypeKind.Primitive:
                 return decodePrimitive(def.primitive, src)
             case TypeKind.Compact:
-                return this.decodeCompact(def, src)
+                return src.compact()
             case TypeKind.BitSequence:
                 return decodeBitSequence(src)
             case TypeKind.Array:
@@ -49,8 +38,8 @@ export class Codec {
                 return this.decodeSequence(def, src)
             case TypeKind.Tuple:
                 return this.decodeTuple(def, src)
-            case TypeKind.Composite:
-                return this.decodeComposite(def, src)
+            case TypeKind.Struct:
+                return this.decodeStruct(def, src)
             case TypeKind.Variant:
                 return this.decodeVariant(def, src)
             case TypeKind.Option:
@@ -60,47 +49,11 @@ export class Codec {
             case TypeKind.Bytes:
                 return decodeBytes(src)
             case TypeKind.BytesArray:
-                return decodeBytesArray(def, src)
+                return src.bytes(def.len)
             case TypeKind.DoNotConstruct:
-                throw new Error('DoNotConstruct type reached')
+                throwUnexpectedCase('DoNotConstruct type reached')
             default:
-                throw unexpectedCase((def as Type).kind)
-        }
-    }
-
-    private decodeCompact(def: CompactType, src: Src): any {
-        let primitive = this.getCompactPrimitive(def.type)
-        if (primitive == null) return null
-        assert(primitive[0] == 'U', 'only unsigned integers can be compact')
-        return src.compact() // TODO: more assertions
-    }
-
-    private getCompactPrimitive(ti: Ti): Primitive | null {
-        let type = this.types[ti]
-        switch(type.kind) {
-            case TypeKind.Primitive:
-                return type.primitive
-            case TypeKind.Tuple:
-                switch(type.tuple.length) {
-                    case 0:
-                        return null
-                    case 1:
-                        return this.getCompactPrimitive(type.tuple[0])
-                    default:
-                        assert(false, `tuple of size ${type.tuple.length} can't be compact`)
-                }
-            case TypeKind.Composite:
-                switch(type.fields.length) {
-                    case 0:
-                        return null
-                    case 1:
-                        assert(type.fields[0].name == null, `named composite types can't be compact`)
-                        return this.getCompactPrimitive(type.fields[0].type)
-                    default:
-                        assert(false, `composite of size ${type.fields.length} can't be compact`)
-                }
-            default:
-                throw unexpectedCase(type.kind)
+                throwUnexpectedCase((def as Type).kind)
         }
     }
 
@@ -123,71 +76,50 @@ export class Codec {
     }
 
     private decodeTuple(def: TupleType, src: Src): any[] | null {
-        switch(def.tuple.length) {
-            case 0:
-                return null
-            case 1:
-                return this.decode(def.tuple[0], src)
-            default:
-                let result: any[] = new Array(def.tuple.length)
-                for (let i = 0; i < def.tuple.length; i++) {
-                    result[i] = this.decode(def.tuple[i], src)
-                }
-                return result
-        }
-    }
-
-    private decodeComposite(def: {fields: Field[]}, src: Src): any {
-        if (def.fields.length == 0) return null
-        if (def.fields[0].name == null) return this.decodeCompositeTuple(def.fields, src)
-        let result: any = {}
-        for (let i = 0; i < def.fields.length; i++) {
-            let f = def.fields[i]
-            let key = assertNotNull(f.name)
-            result[key] = this.decode(f.type, src)
+        if (def.tuple.length == 0) return null
+        let result: any[] = new Array(def.tuple.length)
+        for (let i = 0; i < def.tuple.length; i++) {
+            result[i] = this.decode(def.tuple[i], src)
         }
         return result
     }
 
-    private decodeCompositeTuple(fields: Field[], src: Src): any {
-        switch(fields.length) {
-            case 0:
-                return null
-            case 1:
-                assert(fields[0].name == null)
-                return this.decode(fields[0].type, src)
-            default: {
-                let result: any = new Array(fields.length)
-                for (let i = 0; i < fields.length; i++) {
-                    let f = fields[i]
-                    assert(f.name == null)
-                    result[i] = this.decode(f.type, src)
-                }
-                return result
-            }
+    private decodeStruct(def: CodecStructType, src: Src): any {
+        let result: any = {}
+        for (let i = 0; i < def.fields.length; i++) {
+            let f = def.fields[i]
+            result[f.name] = this.decode(f.type, src)
         }
+        return result
     }
 
-    private decodeVariant(def: VariantType, src: Src) {
+    private decodeVariant(def: CodecVariantType, src: Src) {
         let idx = src.u8()
         let variant = def.variants[idx]
-        if (variant == null) {
-            throw new Error('Unexpected variant index')
-        }
-        if (variant.fields.length == 0) {
-            return {
-                __kind: variant.name
+        if (variant == null) throwUnexpectedCase(`unknown variant index: ${idx}`)
+        switch(variant.kind) {
+            case 'empty':
+                return {
+                    __kind: variant.name
+                }
+            case 'tuple':
+                return {
+                    __kind: variant.name,
+                    value: this.decodeTuple(variant.def, src)
+                }
+            case 'value':
+                return {
+                    __kind: variant.name,
+                    value: this.decode(variant.type, src)
+                }
+            case 'struct': {
+                let value = this.decodeStruct(variant.def, src)
+                value.__kind = variant.name
+                return value
             }
+            default:
+                throwUnexpectedCase()
         }
-        if (variant.fields[0].name == null) {
-            return {
-                __kind: variant.name,
-                value: this.decodeCompositeTuple(variant.fields, src)
-            }
-        }
-        let value = this.decodeComposite(variant, src)
-        value.__kind = variant.name
-        return value
     }
 
     private decodeOption(def: OptionType, src: Src) {
@@ -198,7 +130,7 @@ export class Codec {
             case 1:
                 return this.decode(def.type, src)
             default:
-                throw unexpectedCase(byte.toString())
+                throwUnexpectedCase(byte.toString())
         }
     }
 }
@@ -216,11 +148,6 @@ function decodeBitSequence(src: Src): Uint8Array {
 }
 
 
-function decodeBytesArray(def: BytesArrayType, src: Src): Uint8Array {
-    return src.bytes(def.len)
-}
-
-
 function decodeBooleanOption(src: Src): boolean | null {
     let byte = src.u8()
     switch(byte) {
@@ -231,7 +158,7 @@ function decodeBooleanOption(src: Src): boolean | null {
         case 2:
             return false
         default:
-            throw unexpectedCase(byte.toString())
+            throwUnexpectedCase(byte.toString())
     }
 }
 
@@ -267,6 +194,6 @@ function decodePrimitive(type: Primitive, src: Src): any {
         case 'Str':
             return src.str()
         default:
-            throw unexpectedCase(type)
+            throwUnexpectedCase(type)
     }
 }

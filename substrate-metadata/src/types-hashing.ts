@@ -156,14 +156,6 @@ export class TypeHasher {
                 return {
                     bitSequence: true
                 }
-            case TypeKind.Bytes:
-                return {
-                    bytes: true
-                }
-            case TypeKind.BytesArray:
-                return {
-                    bytesArray: type.len
-                }
             case TypeKind.Tuple:
                 return this.hashTuple(type.tuple, parent)
             case TypeKind.Composite:
@@ -173,12 +165,12 @@ export class TypeHasher {
                         return f.type
                     }), parent)
                 } else {
-                    let desc: any = {}
+                    let struct: any = {}
                     type.fields.forEach(f => {
                         let name = assertNotNull(f.name)
-                        desc[name] = this.hash(f.type, parent)
+                        struct[name] = this.hash(f.type, parent)
                     })
-                    return {composite: desc}
+                    return {struct}
                 }
             case TypeKind.Variant: {
                 let desc: any = {}

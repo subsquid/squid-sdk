@@ -1,5 +1,5 @@
 import {Primitive} from "@subsquid/scale-codec"
-import {unexpectedCase} from "@subsquid/scale-codec/lib/util"
+import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import * as ss58 from "@subsquid/ss58-codec"
 import assert from "assert"
 
@@ -38,7 +38,7 @@ export function decodePrimitive(type: Primitive, value: unknown): string | boole
             assert(typeof value == "string")
             return value
         default:
-            throw unexpectedCase(type)
+            throwUnexpectedCase(type)
     }
 }
 
@@ -96,16 +96,21 @@ function toInt(len: number, val: unknown): number {
 }
 
 
+export function isHex(value: unknown): value is string {
+    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})+$/.test(value)
+}
+
+
 export function decodeHex(value: unknown): Buffer {
     assert(typeof value == "string")
-    assert(/^0x([a-fA-F0-9]{2})+$/.test(value))
+    assert(isHex(value))
     return Buffer.from(value.slice(2), "hex")
 }
 
 
 export function decodeBinaryArray(len: number, value: unknown): Uint8Array {
     assert(typeof value == "string")
-    if (/^0x([a-fA-F0-9]{2})+$/.test(value)) {
+    if (isHex(value)) {
         assert(value.length - 2 == len * 2)
         return Buffer.from(value.slice(2), "hex")
     } else {

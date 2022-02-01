@@ -107,23 +107,22 @@ export class OldTypeRegistry {
                 }
             case 'Box':
                 return this.normalizeType(assertOneParam(type), pallet)
+            case 'Bytes':
+                assertNoParams(type)
+                return {
+                    kind: 'named',
+                    name: 'Vec',
+                    params: [{kind: 'named', name: 'U8', params: []}]
+                }
             case 'Vec':
             case 'VecDeque':
             case 'WeakVec':
             case 'BoundedVec': {
                 let param = this.normalizeType(assertOneParam(type), pallet)
-                if (param.kind == 'named' && param.name == 'U8') {
-                    return {
-                        kind: 'named',
-                        name: 'Bytes',
-                        params: []
-                    }
-                } else {
-                    return {
-                        kind: 'named',
-                        name: 'Vec',
-                        params: [param]
-                    }
+                return {
+                    kind: 'named',
+                    name: 'Vec',
+                    params: [param]
                 }
             }
             case 'BTreeMap': {
@@ -211,12 +210,6 @@ export class OldTypeRegistry {
                     bitStoreType: this.use('U8'),
                     bitOrderType: -1
                 }
-            case 'Bytes': {
-                assertNoParams(type)
-                return {
-                    kind: TypeKind.Bytes
-                }
-            }
             case 'Option': {
                 let param = this.use(assertOneParam(type))
                 return {

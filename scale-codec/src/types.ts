@@ -23,19 +23,23 @@ export enum TypeKind {
     Composite,
     Variant,
     Option,
+    DoNotConstruct,
     /**
-     * Option<bool>
+     * @internal
      */
     BooleanOption,
     /**
-     * Vec<u8>
+     * @internal
      */
     Bytes,
     /**
-     * [u8; 10]
+     * @internal
      */
     BytesArray,
-    DoNotConstruct
+    /**
+     * @internal
+     */
+    Struct
 }
 
 
@@ -91,9 +95,7 @@ export interface Field {
 
 export interface VariantType {
     kind: TypeKind.Variant
-    variants: (Variant | undefined)[]
-    variantsByJsonPropName?: Record<string, Variant>
-    variantNames?: Record<string, boolean>
+    variants: Variant[]
 }
 
 
@@ -107,22 +109,6 @@ export interface Variant {
 export interface OptionType {
     kind: TypeKind.Option
     type: Ti
-}
-
-
-export interface BooleanOptionType {
-    kind: TypeKind.BooleanOption
-}
-
-
-export interface BytesType {
-    kind: TypeKind.Bytes
-}
-
-
-export interface BytesArrayType {
-    kind: TypeKind.BytesArray
-    len: number
 }
 
 
@@ -141,10 +127,4 @@ export type Type =
     CompositeType |
     VariantType |
     OptionType |
-    BooleanOptionType |
-    BytesType |
-    BytesArrayType |
     DoNotConstructType
-
-
-export type Registry = Type[]
