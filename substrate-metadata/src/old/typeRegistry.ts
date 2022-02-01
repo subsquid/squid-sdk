@@ -267,17 +267,11 @@ export class OldTypeRegistry {
                     ]
                 }
             }
-            case 'Compact': {
-                let param = this.use(assertOneParam(type))
-                let paramDef = this.types[param]
-                if (paramDef.kind != TypeKind.Primitive || paramDef.primitive[0] != 'U') {
-                    throw new Error(`Invalid type ${texp.print(type)}: only primitive unsigned numbers can be compact`)
-                }
+            case 'Compact':
                 return {
                     kind: TypeKind.Compact,
-                    type: param
+                    type: this.use(assertOneParam(type))
                 }
-            }
         }
 
         throw new Error(`Type ${type.name} is not defined`)
