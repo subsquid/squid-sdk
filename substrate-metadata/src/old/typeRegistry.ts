@@ -13,15 +13,43 @@ import {
 } from "./types"
 
 
+interface TypeAlias {
+    kind: -1
+    alias: Ti
+    name: string
+}
+
+
 export class OldTypeRegistry {
-    private types: Type[] = []
+    private types: (Type | TypeAlias)[] = []
     private lookup = new Map<OldTypeExp, Ti>()
 
     constructor(private oldTypes: OldTypes) {
     }
 
     getTypes(): Type[] {
+        this.replaceAliases()
         return normalizeMetadataTypes(this.types)
+    }
+
+    private replaceAliases(): void {
+        let types = this.types
+        let seen = new Set<Ti>()
+
+        function replace(ti: Ti): Type {
+            let type = types[ti]
+            if (type.kind != -1) return type
+            if (seen.has(ti)) {
+                throw new Error(`Cycle of non-constructable types involving ${type.name}`)
+            } else {
+                seen.add(ti)
+            }
+            return types[ti] = replace(type.alias)
+        }
+
+        for (let ti = 0; ti < types.length; ti++) {
+            replace(ti)
+        }
     }
 
     create(typeName: string, fn: () => Type): Ti {
@@ -255,10 +283,10 @@ export class OldTypeRegistry {
         throw new Error(`Type ${type.name} is not defined`)
     }
 
-    private buildFromDefinition(typeName: string, def: OldTypeDefinition): Type {
+    private buildFromDefinition(typeName: string, def: OldTypeDefinition): Type | TypeAlias {
         let result: Type
         if (typeof def == 'string') {
-            return this.types[this.use(def)]
+            return {kind: -1, alias: this.use(def), name: typeName}
         } else if (def._enum) {
             result = this.buildEnum(def as OldEnumDefinition)
         } else if (def._set) {
