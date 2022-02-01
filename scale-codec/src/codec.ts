@@ -1,7 +1,6 @@
-import assert from "assert"
-import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
 import {Src} from "./src"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
+import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
 import {throwUnexpectedCase} from "./util"
 
 
@@ -13,10 +12,6 @@ export class Codec {
     }
 
     decodeBinary(type: Ti, data: string | Uint8Array): any {
-        if (typeof data == 'string') {
-            assert(/^0x([a-fA-F0-9]{2})+$/.test(data))
-            data = Buffer.from(data.slice(2), 'hex')
-        }
         let src = new Src(data)
         let val = this.decode(type, src)
         src.assertEOF()
