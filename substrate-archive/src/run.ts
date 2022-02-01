@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { RpcClient } from "@subsquid/rpc-client"
+import { ResilientRpcClient } from "@subsquid/rpc-client/lib/resilient"
 import {
     decodeMetadata,
     decodeExtrinsic,
@@ -35,6 +34,7 @@ interface SignedBlock {
 }
 
 interface BlockEntity {
+    id: string
     height: number
     hash: string
     parent_hash: string
@@ -82,32 +82,38 @@ function getBlockTimestamp(extrinsics: Extrinsic[]): number {
     return extrinsic ? extrinsic.call.value.now : 0
 }
 
-// type BlockHash = string
 
-// class SubstrateService {
-//     private client: RpcClient
+export const BLOCK_PAD_LENGTH = 10
+export const INDEX_PAD_LENGTH = 6
+export const HASH_PAD_LENGTH = 5
 
-//     constructor(url: string) {
-//         this.client = new RpcClient(url)
-//     }
 
-//     async getBlockHash(): Promise<BlockHash> {
-//         return this.client.call<BlockHash>("chain_getBlockHash")
-//     }
-// }
+/**
+ * Formats the event id into a fixed-lentgth string. When formatted the natural string ordering
+ * is the same as the ordering
+ * in the blockchain (first ordered by block height, then by block ID)
+ *
+ * @return  id in the format 000000..00<blockNum>-000<index>-<shorthash>
+ *
+ */
+function formatId(height: number, hash: string, index?: number): string {
+    const blockPart = `${String(height).padStart(BLOCK_PAD_LENGTH, '0')}`
+    const indexPart =
+      index !== undefined
+        ? `-${String(index).padStart(INDEX_PAD_LENGTH, '0')}`
+        : ''
+    const _hash = hash.startsWith('0x') ? hash.substring(2) : hash
+    const shortHash =
+      _hash.length < HASH_PAD_LENGTH
+        ? _hash.padEnd(HASH_PAD_LENGTH, '0')
+        : _hash.slice(0, HASH_PAD_LENGTH)
+    return `${blockPart}${indexPart}-${shortHash}`
+}
+
 
 async function main() {
-    // let client = new RpcClient("wss://kusama-rpc.polkadot.io")
-    let client = new RpcClient("wss://rpc.polkadot.io")
+    let client = new ResilientRpcClient("wss://rpc.polkadot.io")
     let blockHeight = 1463;
-    // let blockHeight = 3876;
-    // let blockHeight = 10000123;
-    // let blockNumber = 10000119; // decode error
-
-    let lastSpecVersion = null
-    // let lastDescription = null
-    let description: ChainDescription
-    let updateMetadata = false
 
     while (true) {
         console.log(`Processing block at ${blockHeight}`)
@@ -117,27 +123,10 @@ async function main() {
 
         let typesBundle = getOldTypesBundle("polkadot")
         if (typesBundle) {
-            if (lastSpecVersion != null) {
-                if (lastSpecVersion != runtimeVersion.specVersion) {
-                    console.log(lastSpecVersion, runtimeVersion.specVersion)
-                    throw 'error'
-                    updateMetadata = true
-                } else {
-                    if (updateMetadata) {
-                        let rawMetadata = await client.call<RawMetadata>("state_getMetadata", [blockHash])
-                        let metadata = decodeMetadata(rawMetadata)
-                        let oldTypes = getTypesFromBundle(typesBundle, runtimeVersion.specVersion)
-                        description = getChainDescriptionFromMetadata(metadata, oldTypes)
-                        updateMetadata = false
-                    }
-                }
-            } else {
-                let rawMetadata = await client.call<RawMetadata>("state_getMetadata", [blockHash])
-                let metadata = decodeMetadata(rawMetadata)
-                let oldTypes = getTypesFromBundle(typesBundle, runtimeVersion.specVersion)
-                description = getChainDescriptionFromMetadata(metadata, oldTypes)
-            }
-            lastSpecVersion = runtimeVersion.specVersion
+            let rawMetadata = await client.call<RawMetadata>("state_getMetadata", [blockHash])
+            let metadata = decodeMetadata(rawMetadata)
+            let oldTypes = getTypesFromBundle(typesBundle, runtimeVersion.specVersion)
+            let description = getChainDescriptionFromMetadata(metadata, oldTypes)
 
             let storageKey = "0x" + Buffer.from([
                 ...xxhashAsU8a("System", 128),
@@ -159,6 +148,7 @@ async function main() {
                 logEntities.push(log)
             })
             let blockEntity = {
+                id: formatId(blockHeight, blockHash),
                 height: blockHeight,
                 hash: blockHash,
                 parent_hash: signedBlock.block.header.parentHash,
@@ -167,12 +157,10 @@ async function main() {
             }
 
             console.log(blockEntity)
-            console.log(logEntities)
+            // console.log(logEntities)
         }
         blockHeight++
-        // break
     }
-    client.close()
 }
 
 main()

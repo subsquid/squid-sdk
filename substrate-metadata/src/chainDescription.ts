@@ -201,13 +201,9 @@ class FromOld {
         return this.registry.create('GenericCall', () => {
             let variants: Variant[] = []
             this.forEachPallet_Call((palletName, index, calls) => {
-                console.log('palletName', palletName)
                 let fields = [
                     {type: this.makeCallEnum(palletName, calls)}
                 ]
-                if (palletName == 'Utility') {
-                    console.log(fields)
-                }
                 variants.push({
                     name: palletName,
                     index,
@@ -307,6 +303,11 @@ class FromOld {
     private makeCallEnum(palletName: string, calls: FunctionMetadataV9[]): Ti {
         let variants = calls.map((call, index) => {
             let fields = call.args.map(arg => {
+                let type = this.registry.use(arg.type, palletName)
+                if (type == 64) {
+                    // Why do we get the same id for different types
+                    console.log(arg.type, palletName)
+                }
                 return {
                     name: arg.name,
                     type: this.registry.use(arg.type, palletName)
