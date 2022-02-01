@@ -184,7 +184,24 @@ export class Chain {
         squid.forEach(se => {
             let pe = polka.get(se.blockNumber)
             if (pe == null) return
-            expect(se).toEqual(pe)
+            expect({
+                blockNumber: se.blockNumber,
+                count: se.events.length
+            }).toEqual({
+                blockNumber: pe.blockNumber,
+                count: pe.events.length
+            })
+            for (let i = 0; i < se.events.length; i++) {
+                expect({
+                    blockNumber: se.blockNumber,
+                    blockEventIndex: i,
+                    event: se.events[i]
+                }).toEqual({
+                    blockNumber: pe.blockNumber,
+                    blockEventIndex: i,
+                    event: pe.events[i]
+                })
+            }
         })
     }
 
@@ -223,6 +240,7 @@ export class Chain {
             return {
                 blockNumber: v.blockNumber,
                 specVersion: v.specVersion,
+                metadata,
                 description,
                 codec: new Codec(description.types),
                 jsonCodec: new JsonCodec(description.types),
