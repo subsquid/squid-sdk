@@ -7,7 +7,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'test skip')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: run
         working-directory: test/e2e-suite
         run: ./run.sh
