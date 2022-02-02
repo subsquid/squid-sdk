@@ -120,8 +120,8 @@ export class Src {
             case 2:
                 return i + this.byte() * 2 ** 32 + this.byte() * 2 ** 40
         }
-        let n = BigInt(i + this.byte() * 2 ** 32 + this.byte() * 2 ** 40)
-        let base = 48n
+        let n = BigInt(i)
+        let base = 32n
         while (len--) {
             n += BigInt(this.byte()) << base
             base += 8n

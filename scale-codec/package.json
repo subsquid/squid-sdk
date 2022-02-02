@@ -13,7 +13,8 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node lib/test.js"
   },
   "dependencies": {
     "@subsquid/ss58-codec": "^0.0.2"
