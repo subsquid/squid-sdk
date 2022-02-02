@@ -2,6 +2,18 @@
   "name": "@subsquid/util",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/util_v0.0.4",
+      "date": "Wed, 02 Feb 2022 11:01:32 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/util_v0.0.3",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",

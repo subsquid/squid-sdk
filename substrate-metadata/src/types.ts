@@ -17,8 +17,6 @@ export interface CompactType extends scale.CompactType, TypeInfo {}
 export interface SequenceType extends scale.SequenceType, TypeInfo {}
 export interface BitSequenceType extends scale.BitSequenceType, TypeInfo {}
 export interface ArrayType extends scale.ArrayType, TypeInfo {}
-export interface BytesType extends scale.BytesType, TypeInfo {}
-export interface BytesArrayType extends scale.BytesArrayType, TypeInfo {}
 export interface TupleType extends scale.TupleType, TypeInfo {}
 export interface OptionType extends scale.OptionType, TypeInfo {}
 
@@ -50,8 +48,6 @@ export type Type =
     SequenceType |
     BitSequenceType |
     ArrayType |
-    BytesType |
-    BytesArrayType |
     TupleType |
     OptionType |
     CompositeType |

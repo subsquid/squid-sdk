@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/cli",
   "description": "squid cli tool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -38,28 +38,28 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@oclif/core": "^1.0.11",
-    "@oclif/plugin-help": "^5.1.10",
+    "@oclif/core": "^1.3.0",
+    "@oclif/plugin-help": "^5.1.11",
     "@octokit/auth-oauth-device": "^3.1.2",
-    "@subsquid/openreader": "^0.4.0",
-    "@subsquid/typeorm-config": "^0.0.3",
-    "@subsquid/util": "^0.0.3",
+    "@subsquid/openreader": "^0.4.1",
+    "@subsquid/typeorm-config": "^0.0.4",
+    "@subsquid/util": "^0.0.4",
     "chalk": "^4.1.2",
     "cli-select": "^1.1.2",
     "cli-ux": "^5.6.7",
     "dotenv": "^10.0.0",
-    "oclif": "^2.1.0",
-    "node-fetch": "^2.6.6",
+    "oclif": "^2.4.3",
+    "node-fetch": "^2.6.7",
     "pg": "^8.7.1",
     "pgtools": "^0.3.2",
-    "query-string": "^7.0.1",
+    "query-string": "^7.1.0",
     "simple-git": "^2.48.0",
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@subsquid/substrate-processor": "^0.2.5",
-    "@types/node": "^16.11.17",
+    "@subsquid/substrate-processor": "^0.2.6",
+    "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
-    "typescript": "~4.5.4"
+    "typescript": "~4.5.5"
   }
 }

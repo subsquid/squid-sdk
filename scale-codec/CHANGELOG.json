@@ -2,6 +2,31 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/scale-codec_v0.3.0",
+      "date": "Wed, 02 Feb 2022 11:01:32 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix decoding of compact structs and tuples"
+          },
+          {
+            "comment": "fix decoding of big compact numbers"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "breaking: remove extra type kinds"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ss58-codec\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.3",
       "tag": "@subsquid/scale-codec_v0.2.3",
       "date": "Tue, 25 Jan 2022 12:44:12 GMT",

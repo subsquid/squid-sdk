@@ -35,6 +35,7 @@ ADD test/data/package.json test/data/
 ADD test/e2e-project/package.json test/e2e-project/
 ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
+ADD test/types/package.json test/types/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
 ADD workspace/package.json workspace/

@@ -99,7 +99,7 @@ processor.addEventHandler('balances.Transfer', async ctx => {
 
 processor.addExtrinsicHandler('timestamp.set', async ctx => {
     let timestamp = new TimestampSetCall(ctx).asLatest.now
-    if (ctx.block.timestamp !== timestamp) {
+    if (ctx.block.timestamp !== Number(timestamp)) {
         throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
     }
     await ctx.store.save(new BlockTimestamp({

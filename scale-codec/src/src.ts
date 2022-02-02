@@ -9,8 +9,15 @@ const UTF8_DECODER = new TextDecoder('utf-8', {
 
 export class Src {
     private idx = 0
+    private buf: Uint8Array
 
-    constructor(private buf: Uint8Array) {
+    constructor(buf: Uint8Array | string) {
+        if (typeof buf == 'string') {
+            assert(/^0x([a-fA-F0-9]{2})+$/.test(buf))
+            this.buf = Buffer.from(buf.slice(2), 'hex')
+        } else {
+            this.buf = buf
+        }
     }
 
     private byte(): number {
@@ -113,8 +120,8 @@ export class Src {
             case 2:
                 return i + this.byte() * 2 ** 32 + this.byte() * 2 ** 40
         }
-        let n = BigInt(i + this.byte() * 2 ** 32 + this.byte() * 2 ** 40)
-        let base = 48n
+        let n = BigInt(i)
+        let base = 32n
         while (len--) {
             n += BigInt(this.byte()) << base
             base += 8n

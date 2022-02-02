@@ -1,6 +1,20 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Tue, 25 Jan 2022 12:44:12 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+
+## 0.2.0
+Wed, 02 Feb 2022 11:01:32 GMT
+
+### Minor changes
+
+- breaking: assign better names to event and call types
+- breaking: normalize inline option types to `T | undefined`
+- breaking: normalize inline result types to `Result<Ok, Err>`
+- allow to generate all events or calls via `events: true` / `calls: true` option
+
+### Patches
+
+- correctly generate type for compact structs and tuples
 
 ## 0.1.0
 Tue, 25 Jan 2022 12:44:12 GMT

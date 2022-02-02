@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,12 +17,12 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.2",
-    "@subsquid/scale-codec-json": "^0.0.5",
-    "@subsquid/substrate-metadata": "^0.1.3",
-    "@subsquid/typeorm-config": "^0.0.3",
-    "@subsquid/util": "^0.0.3",
-    "node-fetch": "^2.6.6",
+    "@subsquid/rpc-client": "^0.1.3",
+    "@subsquid/scale-codec-json": "^0.1.0",
+    "@subsquid/substrate-metadata": "^0.2.0",
+    "@subsquid/typeorm-config": "^0.0.4",
+    "@subsquid/util": "^0.0.4",
+    "node-fetch": "^2.6.7",
     "prom-client": "^14.0.1",
     "stoppable": "^1.1.0"
   },
@@ -30,13 +30,13 @@
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.17",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
     "@types/stoppable": "^1.1.1",
     "expect": "^27.4.6",
-    "fast-check": "^2.20.0",
-    "mocha": "^9.1.3",
-    "typescript": "~4.5.4"
+    "fast-check": "^2.21.0",
+    "mocha": "^9.2.0",
+    "typescript": "~4.5.5"
   }
 }
