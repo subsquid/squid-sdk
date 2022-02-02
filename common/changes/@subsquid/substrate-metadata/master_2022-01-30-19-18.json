@@ -24,6 +24,11 @@
       "packageName": "@subsquid/substrate-metadata",
       "comment": "remove checks for Compact type parameter",
       "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "old types bundle: remove `Compact` alias in `staking`",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/substrate-metadata"
