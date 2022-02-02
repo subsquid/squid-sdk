@@ -1,6 +1,21 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Thu, 20 Jan 2022 12:30:26 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+
+## 0.2.0
+Wed, 02 Feb 2022 11:01:32 GMT
+
+### Minor changes
+
+- normalize variant option types to `TypeKind.Option`
+- breaking: remove extra type kinds
+
+### Patches
+
+- fix: remove spaces from VoteThreshold variant names
+- fix erroneous DoNotConstruct type encounters on old recursive types
+- remove checks for Compact type parameter
+- old types bundle: remove `Compact` alias in `staking`
 
 ## 0.1.3
 Thu, 20 Jan 2022 12:30:26 GMT

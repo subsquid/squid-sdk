@@ -1,6 +1,17 @@
 # Change Log - @subsquid/scale-codec-json
 
-This log was last generated on Thu, 20 Jan 2022 08:42:53 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+
+## 0.1.0
+Wed, 02 Feb 2022 11:01:32 GMT
+
+### Minor changes
+
+- breaking: remove extra type kinds
+
+### Patches
+
+- decode `[u64; 4]` types encoded by polkadot.js as number
 
 ## 0.0.5
 Thu, 20 Jan 2022 08:42:53 GMT
