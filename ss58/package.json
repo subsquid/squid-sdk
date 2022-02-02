@@ -20,7 +20,7 @@
     "@subsquid/ss58-codec": "^0.0.2"
   },
   "devDependencies": {
-    "@types/node": "^16.11.17",
-    "typescript": "~4.5.4"
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
   }
 }
