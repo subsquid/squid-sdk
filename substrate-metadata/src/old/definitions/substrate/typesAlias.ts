@@ -89,7 +89,10 @@ export const typesAlias: OldTypesAlias = {
         Vote: 'SocietyVote'
     },
     staking: {
-        Compact: 'CompactAssignments'
+        // Compact: 'CompactAssignments'
+        // The above alias caused types like `Compact<Balance>` to be treated
+        // as `CompactAssignments` which is incorrect.
+        // Remove it until further investigations.
     },
     treasury: {
         Proposal: 'TreasuryProposal'
