@@ -9,6 +9,21 @@
       "packageName": "@subsquid/substrate-metadata",
       "comment": "normalize variant option types to `TypeKind.Option`",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "breaking: remove extra type kinds",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "fix erroneous DoNotConstruct type encounters on old recursive types",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "remove checks for Compact type parameter",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/substrate-metadata"

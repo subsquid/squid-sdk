@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "fix decoding of big compact numbers",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "breaking: remove extra type kinds",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}
