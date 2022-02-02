@@ -2,7 +2,7 @@
   "name": "@subsquid/substrate-archive",
   "private": "true",
   "description": "Data indexer for substrate chains",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "files": [
