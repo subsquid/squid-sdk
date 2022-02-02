@@ -1,4 +1,4 @@
-name: unit tests
+name: 'test: unit'
 on: [pull_request, workflow_dispatch]
 
 jobs:

@@ -1,4 +1,4 @@
-name: e2e tests
+name: 'test: e2e'
 on: [pull_request, workflow_dispatch]
 
 jobs:
