@@ -24,7 +24,6 @@ export interface EventHandlerOptions {
     range?: Range
 }
 
-
 export interface ExtrinsicHandlerOptions {
     range?: Range
     triggerEvents?: QualifiedName[]
@@ -44,7 +43,7 @@ export interface DataSource {
 
 
 export class SubstrateProcessor {
-    private hooks: Hooks = {pre: [], post: [], event: [], extrinsic: []}
+    protected hooks: Hooks = {pre: [], post: [], event: [], extrinsic: [], evmLog: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -160,7 +159,7 @@ export class SubstrateProcessor {
         })
     }
 
-    private assertNotRunning(): void {
+    protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
         }
@@ -231,7 +230,7 @@ export class SubstrateProcessor {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
-            let {handlers: {pre, post, events, extrinsics}, blocks, range} = batch
+            let {handlers: {pre, post, events, extrinsics, evmLogs}, blocks, range} = batch
             let beg = blocks.length > 0 ? process.hrtime.bigint() : 0n
             for (let i = 0; i < blocks.length; i++) {
                 let block = blocks[i]
@@ -252,6 +251,25 @@ export class SubstrateProcessor {
                         let eventHandlers = events[event.name] || []
                         for (let k = 0; k < eventHandlers.length; k++) {
                             await eventHandlers[k]({...ctx, event, extrinsic})
+                        }
+
+                        if(event.evmLogAddress) {
+                            let evmLogHandlers = evmLogs[event.evmLogAddress] || []
+                            for (let k = 0; k < evmLogHandlers.length; k++) {
+                                await evmLogHandlers[k]({
+                                    topics: event.evmLogTopics,
+                                    data: event.evmLogData,
+                                    txHash: event.evmHash,
+                                    contractAddress: event.evmLogAddress,
+                                    substrate: {
+                                        _chain: chain,
+                                        event: event,
+                                        block: ctx.block,
+                                        extrinsic
+                                    },
+                                    store
+                                })
+                            }
                         }
                         if (extrinsic == null) continue
                         let callHandlers = extrinsics[event.name]?.[extrinsic.name] || []

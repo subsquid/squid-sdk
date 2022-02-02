@@ -66,14 +66,12 @@ export interface SubstrateBlock {
 
 export type QualifiedName = string
 
-
 export interface EventInfo {
     id: string
     name: QualifiedName
     extrinsic: QualifiedName
     extrinsicId: string
 }
-
 
 export interface ExtrinsicInfo {
     id: string
@@ -118,6 +116,7 @@ export interface SubstrateEvent {
      * Timestamp of the block, as set by call timestamp.now()
      */
     blockTimestamp: number
+
 }
 
 

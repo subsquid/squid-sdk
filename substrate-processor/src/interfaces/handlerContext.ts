@@ -27,7 +27,6 @@ export interface EventHandler {
     (ctx: EventHandlerContext): Promise<void>
 }
 
-
 export interface ExtrinsicHandlerContext extends EventHandlerContext {
     extrinsic: SubstrateExtrinsic
 }

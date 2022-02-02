@@ -7,10 +7,16 @@ import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
+interface EvmEvent extends SubstrateEvent {
+    evmLogAddress?: string
+    evmLogData?: string;
+    evmLogTopics?: string[];
+    evmHash?: string
+}
 
 export interface BlockData {
     block: SubstrateBlock
-    events: SubstrateEvent[]
+    events: SubstrateEvent[] & EvmEvent[]
 }
 
 
@@ -126,6 +132,8 @@ export class Ingest {
 
         let hs = batch.handlers
         let events = Object.keys(hs.events)
+        let evmLogs = Object.keys(hs.evmLogs)
+        const topics = batch.topics || [];
         let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
 
         // filters
@@ -136,6 +144,15 @@ export class Ingest {
             events.forEach(name => {
                 or.push(`events: {_contains: [{name: "${name}"}]}`)
             })
+            if (evmLogs?.length > 0) {
+                evmLogs.forEach(contractAddress => {
+                    let evmTopicsFilter = ''
+                    if (topics.length > 0) {
+                        evmTopicsFilter = `, evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
+                    }
+                    or.push(`substrate_events: {evmLogAddress: {_eq: "${contractAddress}"} ${evmTopicsFilter}}`)
+                })
+            }
             let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
             extrinsics.forEach(name => {
                 or.push(`extrinsics: {_contains: [{name: "${name}"}]}`)
@@ -160,11 +177,23 @@ export class Ingest {
                 let extrinsics = Object.keys(hs.extrinsics[event])
                 or.push(`name: {_eq: "${event}"}, extrinsic: {name: {_in: [${extrinsics.map(name => `"${name}"`).join(', ')}]}}`)
             }
-            if (or.length == 1) {
-                eventWhere = ` where: {${or[0]}}`
-            } else if (or.length > 1) {
-                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}]}`
+            if (evmLogs && evmLogs.length > 0) {
+                or.push(`evmLogAddress: {_in: [${evmLogs.map(contractAddress => `"${contractAddress}"`).join(', ')}]}`)
             }
+
+            let topicsClause;
+            if (topics.length > 0) {
+                topicsClause = `evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
+            }
+
+            if (or.length == 1) {
+                eventWhere = ` where: {${or[0]} ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (or.length > 1) {
+                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}] ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (topicsClause) {
+                eventWhere = ` where: {${topicsClause}}`
+            }
+
         }
 
         let q = new Output()
@@ -199,6 +228,12 @@ export class Ingest {
                     q.line('indexInBlock')
                     q.line('blockNumber')
                     q.line('blockTimestamp')
+                    if (evmLogs?.length > 0) {
+                        q.line('evmLogAddress')
+                        q.line('evmLogData')
+                        q.line('evmLogTopics')
+                        q.line('evmHash')
+                    }
                     q.block('extrinsic', () => {
                         q.line('id')
                     })
