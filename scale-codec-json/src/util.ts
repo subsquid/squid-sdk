@@ -119,3 +119,16 @@ export function decodeBinaryArray(len: number, value: unknown): Uint8Array {
         return bytes
     }
 }
+
+
+export function encodeUnsignedInt(byteLength: number, n: bigint): Uint8Array {
+    let buf = Buffer.alloc(byteLength, 0)
+    let pos = 0
+    while (n > 0n) {
+        assert(pos < byteLength)
+        buf[pos] = Number(n & 0b11111111n)
+        n = n >> 8n
+        pos += 1
+    }
+    return buf
+}

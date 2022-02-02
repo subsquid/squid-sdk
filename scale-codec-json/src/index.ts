@@ -3,7 +3,7 @@ import {CodecStructType} from "@subsquid/scale-codec/lib/types-codec"
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import assert from "assert"
 import {JsonType, JsonVariantType, toJsonTypes} from "./types"
-import {decodeBinaryArray, decodeHex, decodePrimitive} from "./util"
+import {decodeBinaryArray, decodeHex, decodePrimitive, encodeUnsignedInt} from "./util"
 
 
 export class Codec {
@@ -25,7 +25,7 @@ export class Codec {
             case TypeKind.BitSequence:
                 return decodeHex(value)
             case TypeKind.Array:
-                return this.decodeArray(def, value)
+                return this.decodeArray(type, def, value)
             case TypeKind.Sequence:
                 return this.decodeSequence(def, value)
             case TypeKind.Tuple:
@@ -49,7 +49,7 @@ export class Codec {
         }
     }
 
-    private decodeArray(def: ArrayType, value: unknown): any[] {
+    private decodeArray(ti: Ti, def: ArrayType, value: unknown): any[] {
         if (Array.isArray(value)) {
             assert(value.length == def.len)
             let result: any[] = new Array(value.length)
@@ -58,7 +58,16 @@ export class Codec {
             }
             return result
         } else {
-            return []
+            // For some reasons, polkadot can encode values
+            // for which we get type [u64; 4] as a single u256 number.
+            // This branch is for that case.
+            assert(typeof value == 'string' || typeof value == 'number')
+            let n = BigInt(value)
+            let itemType = this.types[def.type]
+            assert(itemType.kind == TypeKind.Primitive && itemType.primitive[0] == 'U')
+            let totalLength = def.len * Number.parseInt(itemType.primitive.slice(1)) / 8
+            let binary = encodeUnsignedInt(totalLength, n)
+            return this.scaleCodec.decodeBinary(ti, binary)
         }
     }
 
