@@ -67,8 +67,8 @@ specifiers:
   latest-version: ^5.1.0
   mocha: ^9.1.3
   oclif: ^2.1.0
-  pg: ^8.7.1
   pgtools: ^0.3.2
+  postgres-migrations: 5.3.0
   prom-client: ^14.0.1
   query-string: ^7.0.1
   semver: ^7.3.5
@@ -106,9 +106,9 @@ dependencies:
   '@rush-temp/substrate-archive-status-service': file:projects/substrate-archive-status-service.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
-  '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1
+  '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_ioredis@4.28.2
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
-  '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1
+  '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.2
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
@@ -147,8 +147,8 @@ dependencies:
   latest-version: 5.1.0
   mocha: 9.1.3
   oclif: 2.1.0
-  pg: 8.7.1
   pgtools: 0.3.2
+  postgres-migrations: 5.3.0
   prom-client: 14.0.1
   query-string: 7.0.1
   semver: 7.3.5
@@ -156,7 +156,7 @@ dependencies:
   stoppable: 1.1.0
   type-fest: 2.8.0
   type-graphql: 1.2.0-rc.1_aea24acf06b899fbc466d3b3b949c72d
-  typeorm: 0.2.41_ioredis@4.28.2+pg@8.7.1
+  typeorm: 0.2.41_ioredis@4.28.2
   typescript: 4.5.4
   websocket: 1.0.34
 
@@ -764,6 +764,8 @@ packages:
       '@polkadot/util': 8.2.2
       '@polkadot/util-crypto': 8.2.2
       rxjs: 7.4.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@polkadot/api/6.11.2-24:
@@ -781,6 +783,8 @@ packages:
       '@polkadot/util-crypto': 8.2.2
       eventemitter3: 4.0.7
       rxjs: 7.4.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@polkadot/keyring/8.2.2:
@@ -815,6 +819,8 @@ packages:
       '@polkadot/types': 6.11.2-24
       '@polkadot/util': 8.2.2
       rxjs: 7.4.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@polkadot/rpc-provider/6.11.2-24:
@@ -829,6 +835,8 @@ packages:
       '@polkadot/x-global': 8.2.2
       '@polkadot/x-ws': 8.2.2
       eventemitter3: 4.0.7
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@polkadot/types-known/6.11.2-24:
@@ -981,7 +989,9 @@ packages:
       '@babel/runtime': 7.16.5
       '@polkadot/x-global': 8.2.2
       '@types/node-fetch': 2.5.12
-      node-fetch: 2.6.6
+      node-fetch: 2.6.7
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@polkadot/x-global/8.1.2:
@@ -5513,6 +5523,17 @@ packages:
       xtend: 4.0.2
     dev: false
 
+  /postgres-migrations/5.3.0:
+    resolution: {integrity: sha512-gnTHWJZVWbW8T3mXIxJm1JRU853TqBVWkhgfsTJr7zqT3VexjRmJj9kNi96rVhfTezDU4FVW6pf701kLOZiKIA==}
+    engines: {node: '>10.17.0'}
+    hasBin: true
+    dependencies:
+      pg: 8.7.1
+      sql-template-strings: 2.2.2
+    transitivePeerDependencies:
+      - pg-native
+    dev: false
+
   /prepend-http/1.0.4:
     resolution: {integrity: sha1-1PRWKwzjaW5BrFLQ4ALlemNdxtw=}
     engines: {node: '>=0.10.0'}
@@ -6281,6 +6302,11 @@ packages:
     resolution: {integrity: sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=}
     dev: false
 
+  /sql-template-strings/2.2.2:
+    resolution: {integrity: sha1-PxFQiiWt384hejBCqdMAwxk7lv8=}
+    engines: {node: '>=4.0.0'}
+    dev: false
+
   /stack-utils/2.0.5:
     resolution: {integrity: sha512-xrQcmYhOsn/1kX+Vraq+7j4oE2j/6BFscZ0etmYg81xuM8Gq0022Pxb8+IqgOFUIaxHs0KaSb7T1+OegiNrNFA==}
     engines: {node: '>=10'}
@@ -6721,6 +6747,78 @@ packages:
     resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
     dependencies:
       is-typedarray: 1.0.0
+    dev: false
+
+  /typeorm/0.2.41_ioredis@4.28.2:
+    resolution: {integrity: sha512-/d8CLJJxKPgsnrZWiMyPI0rz2MFZnBQrnQ5XP3Vu3mswv2WPexb58QM6BEtmRmlTMYN5KFWUz8SKluze+wS9xw==}
+    hasBin: true
+    peerDependencies:
+      '@sap/hana-client': '*'
+      better-sqlite3: '*'
+      hdb-pool: '*'
+      ioredis: '*'
+      mongodb: ^3.6.0
+      mssql: '*'
+      mysql2: '*'
+      oracledb: '*'
+      pg: '*'
+      pg-native: '*'
+      pg-query-stream: '*'
+      redis: '*'
+      sql.js: '*'
+      sqlite3: '*'
+      typeorm-aurora-data-api-driver: '*'
+    peerDependenciesMeta:
+      '@sap/hana-client':
+        optional: true
+      better-sqlite3:
+        optional: true
+      hdb-pool:
+        optional: true
+      ioredis:
+        optional: true
+      mongodb:
+        optional: true
+      mssql:
+        optional: true
+      mysql2:
+        optional: true
+      oracledb:
+        optional: true
+      pg:
+        optional: true
+      pg-native:
+        optional: true
+      pg-query-stream:
+        optional: true
+      redis:
+        optional: true
+      sql.js:
+        optional: true
+      sqlite3:
+        optional: true
+      typeorm-aurora-data-api-driver:
+        optional: true
+    dependencies:
+      '@sqltools/formatter': 1.2.3
+      app-root-path: 3.0.0
+      buffer: 6.0.3
+      chalk: 4.1.2
+      cli-highlight: 2.1.11
+      debug: 4.3.3
+      dotenv: 8.6.0
+      glob: 7.2.0
+      ioredis: 4.28.2
+      js-yaml: 4.1.0
+      mkdirp: 1.0.4
+      reflect-metadata: 0.1.13
+      sha.js: 2.4.11
+      tslib: 2.3.1
+      xml2js: 0.4.23
+      yargs: 17.3.0
+      zen-observable-ts: 1.1.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /typeorm/0.2.41_ioredis@4.28.2+pg@8.7.1:
@@ -7620,12 +7718,17 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-QLtFj3t/mw8irXay1rdJ6pdbCp/b1FMMT7Ec5r8xokCTzdlefT/G2Dmy8jIM+UO7NllyRBWXlgS0/0YRDsRljQ==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-+t5PZuH7fnkSKSwzZe23aZVx4+vFoyMYnzCPX2AbW4YtV7pmb8dYignokEVdpTaqn2D2TFUd9nUvWchknkwm7g==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
       '@polkadot/util-crypto': 8.1.2
       '@subsquid/scale-codec': 0.2.2
+      '@types/pg': 8.6.4
+      pg: 8.7.1
+      postgres-migrations: 5.3.0
+    transitivePeerDependencies:
+      - pg-native
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
@@ -7663,7 +7766,7 @@ packages:
       typescript: 4.5.4
     dev: false
 
-  file:projects/substrate-processor.tgz_ioredis@4.28.2+pg@8.7.1:
+  file:projects/substrate-processor.tgz_ioredis@4.28.2:
     resolution: {integrity: sha512-7Fs2RVjFKobl+HHbfLl9Q0YtQFa6sgTEKoX9+Zlfu041EhcWTrXenO7WD1KyUmVyozEazooXJtNv1Qq8vb6/NA==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
@@ -7679,7 +7782,7 @@ packages:
       node-fetch: 2.6.7
       prom-client: 14.0.1
       stoppable: 1.1.0
-      typeorm: 0.2.41_ioredis@4.28.2+pg@8.7.1
+      typeorm: 0.2.41_ioredis@4.28.2
       typescript: 4.5.4
     transitivePeerDependencies:
       - '@sap/hana-client'
@@ -7712,14 +7815,14 @@ packages:
       typescript: 4.5.4
     dev: false
 
-  file:projects/typeorm-config.tgz_ioredis@4.28.2+pg@8.7.1:
+  file:projects/typeorm-config.tgz_ioredis@4.28.2:
     resolution: {integrity: sha512-UntC1hRoTXnv/2gHa5Vh4UOfVhdOjEV/UkwDGY9BgKVPMjH+6MlT+ODuBHdW1SiOgnoH+jbvFm/Ur+9YAt1+cQ==, tarball: file:projects/typeorm-config.tgz}
     id: file:projects/typeorm-config.tgz
     name: '@rush-temp/typeorm-config'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.17
-      typeorm: 0.2.41_ioredis@4.28.2+pg@8.7.1
+      typeorm: 0.2.41_ioredis@4.28.2
       typescript: 4.5.4
     transitivePeerDependencies:
       - '@sap/hana-client'

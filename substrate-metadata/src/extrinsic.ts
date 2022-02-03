@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {Codec, Src} from "@subsquid/scale-codec"
 import {ChainDescription} from "./chainDescription"
 import {Extrinsic} from "./interfaces"
@@ -13,44 +12,8 @@ export function decodeExtrinsic(rawExtrinsic: string, description: ChainDescript
     src.compact()
     let signed = (src.u8() & BIT_SIGNED) == BIT_SIGNED
     if (signed) {
-        let signature = codec.decode(description.signature, src)
-        let palletIndex = src.u8()
-        codec.types[description.call].variants.forEach((variant) => {
-            if (variant.index == palletIndex) {
-                let callIndex = src.u8()
-                let call = variant.fields[callIndex]
-                let len = src.compact()
-                for (let index = 0; index < len; index++) {
-                    let childPalletIndex = src.u8()
-                    let childVariant = codec.types[description.call].variants[childPalletIndex]
-                    let variantIndex = src.u8() // 0
-                    let childType = codec.types[childVariant.fields[0].type]
-
-                    // name: 'bond',
-                    // fields: [
-                    //   { name: 'controller', type: 34 },
-                    //   { name: 'value', type: 64 },
-                    //   { name: 'payee', type: 121 }
-                    // ],
-                    let bond = childType.variants[variantIndex]
-                    bond.fields.forEach((field, index) => {
-                        console.log('field', field)
-                        if (index == 1) {
-                            // field "value"
-                            console.log('res', codec.decode(field.type, src)) // error
-                            // console.log('res', src.compact()) // no error
-                        } else {
-                            let res = codec.decode(field.type, src) // check type 64
-                            console.log('res', res)
-                        }
-                    })
-
-                    throw 'error'
-                }
-            }
-        })
         return {
-            signature,
+            signature: codec.decode(description.signature, src),
             call: codec.decode(description.call, src),
         }
     } else {
