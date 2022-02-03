@@ -218,6 +218,9 @@ export class Chain {
         let blocks: DecodedBlockEvents[] = this.readJsonLines('events-by-polka.jsonl')
         return blocks.map(b => {
             let d = this.getVersion(b.blockNumber)
+            if (b.blockNumber == 200732) {
+                console.log('Problematic block')
+            }
             let events = d.jsonCodec.decode(d.description.eventRecordList, b.events)
             return {blockNumber: b.blockNumber, events}
         })
