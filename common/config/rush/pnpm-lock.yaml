@@ -33,7 +33,6 @@ specifiers:
   '@rush-temp/util': file:./projects/util.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
-  '@subsquid/scale-codec': 0.2.2
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
   '@types/ioredis': ^4.28.5
@@ -113,7 +112,6 @@ dependencies:
   '@rush-temp/util': file:projects/util.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
-  '@subsquid/scale-codec': 0.2.2
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
   '@types/ioredis': 4.28.5
@@ -7718,7 +7716,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-+t5PZuH7fnkSKSwzZe23aZVx4+vFoyMYnzCPX2AbW4YtV7pmb8dYignokEVdpTaqn2D2TFUd9nUvWchknkwm7g==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-oDTG6ZeX5S2Y0TMR+gjEX+4L4dHTNVRGM/0s7BDgLTGEVokGEM/AKcoiFvuPigBIjs3Hitcqa0yKa+ABu2JH3A==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -7755,10 +7753,11 @@ packages:
     dev: false
 
   file:projects/substrate-metadata.tgz:
-    resolution: {integrity: sha512-A9eXmvlzFMFuThE5ecjJppA9ogPg/h9H7zCYZCsN6521stU1BDE4xpu7epeGFVVZD9/bt2Aw9sam729Fy4dFfw==, tarball: file:projects/substrate-metadata.tgz}
+    resolution: {integrity: sha512-SDKffT/CtjGWNL6agkvGXTTaIt8qGnu9jnoZPi4j818keEXrMiIeTafM4VK4chg39hE7QF3P4k8BUKFVZmfvxA==, tarball: file:projects/substrate-metadata.tgz}
     name: '@rush-temp/substrate-metadata'
     version: 0.0.0
     dependencies:
+      '@polkadot/util-crypto': 8.1.2
       '@types/mocha': 9.0.0
       '@types/node': 16.11.17
       expect: 27.4.6

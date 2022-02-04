@@ -1,4 +1,3 @@
-import assert from "assert"
 import { ResilientRpcClient } from "@subsquid/rpc-client/lib/resilient"
 import {
     decodeMetadata,
@@ -11,7 +10,7 @@ import {
 } from "@subsquid/substrate-metadata"
 import {Codec} from "@subsquid/scale-codec"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {toCamelCase} from "@subsquid/util"
+import {toCamelCase, assertNotNull} from "@subsquid/util"
 import {xxhashAsU8a} from "@polkadot/util-crypto"
 import {getConnection} from "./db"
 
@@ -58,6 +57,7 @@ interface ExtrinsicEntity {
     name: QualifiedName
     tip: BigInt
     nonce: number
+    hash: string
 }
 
 interface CallEntity {
@@ -145,12 +145,6 @@ function formatId(height: number, hash: string, index?: number): string {
 }
 
 
-export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
-    assert(val != null, msg)
-    return val
-}
-
-
 function omit(obj: any, ...keys: string[]): any {
     let copy = {...obj}
     keys.forEach(key => {
@@ -163,7 +157,7 @@ function omit(obj: any, ...keys: string[]): any {
 async function main() {
     let client = new ResilientRpcClient("wss://kusama-rpc.polkadot.io")
     let db = await getConnection()
-    let blockHeight = 10000123;
+    let blockHeight = 1;
 
     let specDescription: SpecDescription | undefined
     let lastBlock: LastBlock | undefined
@@ -252,6 +246,7 @@ async function main() {
         let codec = new Codec(specDescription.description.types)
         let events = codec.decodeBinary(specDescription.description.eventRecordList, rawEvents)
         let eventEntities: EventEntity[] = []
+        let blockId = formatId(blockHeight, blockHash)
         events.forEach((decodedEvent: any, index: number) => {
             let eventEntity = {
                 id: formatId(blockHeight, blockHash, index),
@@ -264,7 +259,6 @@ async function main() {
 
         let extrinsics: Extrinsic[] = []
         let extrinsicEntities: ExtrinsicEntity[] = []
-        let blockId = formatId(blockHeight, blockHash)
         let callEntities: CallEntity[] = []
         signedBlock.block.extrinsics.forEach((extrinsic, index) => {
             let decodedExtrinsic = decodeExtrinsic(extrinsic, assertNotNull(specDescription).description)
@@ -276,6 +270,7 @@ async function main() {
                 name: getQualifiedName(decodedExtrinsic.call),
                 tip: decodedExtrinsic.signature?.tip || 0n,
                 nonce: decodedExtrinsic.signature?.nonce || 0,
+                hash: decodedExtrinsic.hash,
             }
             extrinsicEntities.push(extrinsicEntity)
             if (decodedExtrinsic.call.__kind == "Utility" && decodedExtrinsic.call.value.__kind == "batch") {
@@ -316,7 +311,7 @@ async function main() {
             extrinsicEntities.forEach(extrinsicEntity => {
                 queries.push(
                     db.query(
-                        "INSERT INTO extrinsic(id, block_id, name, tip, nonce) VALUES($1, $2, $3, $4, $5)",
+                        "INSERT INTO extrinsic(id, block_id, name, tip, nonce, hash) VALUES($1, $2, $3, $4, $5, $6)",
                         Object.values(extrinsicEntity),
                     )
                 )

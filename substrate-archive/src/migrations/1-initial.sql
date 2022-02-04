@@ -18,7 +18,8 @@ CREATE TABLE extrinsic (
     block_id varchar REFERENCES block ON DELETE CASCADE,
     name varchar NOT NULL,
     tip numeric NOT NULL,
-    nonce integer NOT NULL
+    nonce integer NOT NULL,
+    hash varchar NOT NULL
 );
 
 CREATE TABLE call (

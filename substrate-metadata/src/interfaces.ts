@@ -694,5 +694,6 @@ export interface ExtrinsicSignature {
 
 export interface Extrinsic {
   signature?: ExtrinsicSignature
+  hash: string
   call: {__kind: string, value: {__kind: string, [key: string]: any}}
 }

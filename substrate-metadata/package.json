@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@subsquid/util": "^0.0.3",
-    "@subsquid/scale-codec": "^0.2.3"
+    "@subsquid/scale-codec": "^0.2.3",
+    "@polkadot/util-crypto": "8.1.2"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
