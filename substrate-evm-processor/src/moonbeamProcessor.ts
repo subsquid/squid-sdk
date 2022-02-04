@@ -31,7 +31,7 @@ export class MoonbeamProcessor extends SubstrateProcessor {
             contractAddress,
             handler: (ctx: EvmLogHandlerContext) => {
                 if (ctx.data) {
-                    ctx.parsedLogs = eventParser(this.abi, ctx.data, ctx.topics || []);
+                    ctx.parsedLogs = eventParser(this.abi, ctx.data, ctx.topic || []);
                 }
                 return handler(ctx);
             },

@@ -10,7 +10,7 @@ export const eventParser = (
         return {
             name: event.name,
             args: event.args,
-            topics: event.topic,
+            topic: event.topic,
             fragment: event.eventFragment,
             signature: event.signature
         }
