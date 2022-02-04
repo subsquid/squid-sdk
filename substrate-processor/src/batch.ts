@@ -4,7 +4,7 @@ import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
-import {ContractAddress, EvmLogHandler} from "./interfaces/evm";
+import {AnyTopics, ContractAddress, EvmLogHandler, Topics, TopicsSeparator} from "./interfaces/evm";
 
 
 export interface DataHandlers {
@@ -15,12 +15,14 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
-    evmLogs: Record<ContractAddress, EvmLogHandler[]>
+    /**
+     * Mapping of type `trigger event` -> `topic` -> `EVM handler list`
+     */
+    evmLogs: Record<ContractAddress, Record<Topics, EvmLogHandler[]>>
 }
 
 
 export interface Batch {
-    topics?: string[]
     range: Range
     handlers: DataHandlers
 }
@@ -106,14 +108,13 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         if (!range) return
         batches.push({
             range,
-            topics: hook.topics,
             handlers: {
                 pre: [],
                 post: [],
                 events: {},
                 extrinsics: {},
                 evmLogs: {
-                    [hook.contractAddress]: [hook.handler]
+                    [hook.contractAddress]: {[hook.topics?.join(TopicsSeparator) || AnyTopics]: [hook.handler] }
                 }
             }
         })
@@ -168,7 +169,9 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
         extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
             return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
         }),
-        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb))
+        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ea, eb) => {
+            return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
+        }),
     }
 }
 

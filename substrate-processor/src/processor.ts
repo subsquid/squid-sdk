@@ -13,6 +13,7 @@ import {Prometheus} from "./prometheus"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
 import {ServiceManager} from "./util/sm"
+import {AnyTopics, TopicsSeparator} from "./interfaces/evm";
 
 
 export interface BlockHookOptions {
@@ -51,7 +52,8 @@ export class SubstrateProcessor {
     private typesBundle?: OldTypesBundle
     private running = false
 
-    constructor(private name: string) {}
+    constructor(private name: string) {
+    }
 
     setDataSource(src: DataSource): void {
         this.assertNotRunning()
@@ -83,12 +85,10 @@ export class SubstrateProcessor {
         this.prometheusPort = port
     }
 
-    private getPrometheusPort(): number | string {
-        return this.prometheusPort == null ? process.env.PROCESSOR_PROMETHEUS_PORT || 0 : this.prometheusPort
-    }
-
     addPreHook(fn: BlockHandler): void
+
     addPreHook(options: BlockHookOptions, fn: BlockHandler): void
+
     addPreHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
@@ -103,7 +103,9 @@ export class SubstrateProcessor {
     }
 
     addPostHook(fn: BlockHandler): void
+
     addPostHook(options: BlockHookOptions, fn: BlockHandler): void
+
     addPostHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
@@ -118,7 +120,9 @@ export class SubstrateProcessor {
     }
 
     addEventHandler(eventName: QualifiedName, fn: EventHandler): void
+
     addEventHandler(eventName: QualifiedName, options: EventHandlerOptions, fn: EventHandler): void
+
     addEventHandler(eventName: QualifiedName, fnOrOptions: EventHandlerOptions | EventHandler, fn?: EventHandler): void {
         this.assertNotRunning()
         let handler: EventHandler
@@ -137,7 +141,9 @@ export class SubstrateProcessor {
     }
 
     addExtrinsicHandler(extrinsicName: QualifiedName, fn: ExtrinsicHandler): void
+
     addExtrinsicHandler(extrinsicName: QualifiedName, options: ExtrinsicHandlerOptions, fn: ExtrinsicHandler): void
+
     addExtrinsicHandler(extrinsicName: QualifiedName, fnOrOptions: ExtrinsicHandler | ExtrinsicHandlerOptions, fn?: ExtrinsicHandler): void {
         this.assertNotRunning()
         let handler: ExtrinsicHandler
@@ -159,16 +165,20 @@ export class SubstrateProcessor {
         })
     }
 
+    run(): void {
+        if (this.running) return
+        this.running = true
+        ServiceManager.run(sm => this._run(sm))
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
         }
     }
 
-    run(): void {
-        if (this.running) return
-        this.running = true
-        ServiceManager.run(sm => this._run(sm))
+    private getPrometheusPort(): number | string {
+        return this.prometheusPort == null ? process.env.PROCESSOR_PROMETHEUS_PORT || 0 : this.prometheusPort
     }
 
     private async _run(sm: ServiceManager): Promise<void> {
@@ -253,22 +263,26 @@ export class SubstrateProcessor {
                             await eventHandlers[k]({...ctx, event, extrinsic})
                         }
 
-                        if(event.evmLogAddress) {
-                            let evmLogHandlers = evmLogs[event.evmLogAddress] || []
-                            for (let k = 0; k < evmLogHandlers.length; k++) {
-                                await evmLogHandlers[k]({
-                                    topics: event.evmLogTopics,
-                                    data: event.evmLogData,
-                                    txHash: event.evmHash,
-                                    contractAddress: event.evmLogAddress,
-                                    substrate: {
-                                        _chain: chain,
-                                        event: event,
-                                        block: ctx.block,
-                                        extrinsic
-                                    },
-                                    store
-                                })
+                        if (event.evmLogAddress) {
+                            let evmLogHandlers = Object.values(evmLogs[event.evmLogAddress])[0] || []
+                            let evmLogTopics = Object.keys(evmLogs[event.evmLogAddress])[0].split(TopicsSeparator)
+                            for (let l = 0; l < evmLogTopics.length; l++) {
+                                let topic = evmLogTopics[l];
+                                for (let k = 0; k < evmLogHandlers.length; k++) {
+                                    await evmLogHandlers[k]({
+                                        topic: topic != AnyTopics ? topic : undefined,
+                                        data: event.evmLogData,
+                                        txHash: event.evmHash,
+                                        contractAddress: event.evmLogAddress,
+                                        substrate: {
+                                            _chain: chain,
+                                            event: event,
+                                            block: ctx.block,
+                                            extrinsic
+                                        },
+                                        store
+                                    })
+                                }
                             }
                         }
                         if (extrinsic == null) continue
@@ -312,28 +326,16 @@ export class SubstrateProcessor {
 
 
 class ProgressTracker {
-    private window: {time: bigint, count: number}[] = []
+    private window: { time: bigint, count: number }[] = []
     private ratio = 0
     private eta = 0
 
     constructor(
         private count: number,
-        private wholeRange: {range: Range}[],
+        private wholeRange: { range: Range }[],
         private prometheus: Prometheus
     ) {
         this.tick(process.hrtime.bigint(), 0)
-    }
-
-    private tick(time: bigint, inc: number): bigint {
-        this.count += inc
-        this.window.push({
-            time,
-            count: this.count
-        })
-        if (this.window.length > 5) {
-            this.window.shift()
-        }
-        return time
     }
 
     batch(time: bigint, batch: DataBatch): void {
@@ -357,5 +359,17 @@ class ProgressTracker {
 
     getSyncEtaSeconds(): number {
         return this.eta
+    }
+
+    private tick(time: bigint, inc: number): bigint {
+        this.count += inc
+        this.window.push({
+            time,
+            count: this.count
+        })
+        if (this.window.length > 5) {
+            this.window.shift()
+        }
+        return time
     }
 }

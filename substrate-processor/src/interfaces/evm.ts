@@ -13,7 +13,7 @@ export interface ParsedEvmLogs {
 }
 
 export interface EvmLogHandlerContext {
-    topics?: string[]
+    topic?: string
     data?: string
     txHash?: string
     contractAddress?: string
@@ -40,3 +40,8 @@ export interface EvmLogHandlerOptions {
 
 export type ContractAddress = string
 
+export type Topics = string
+
+export const TopicsSeparator = ' ,';
+
+export const AnyTopics = '*';
