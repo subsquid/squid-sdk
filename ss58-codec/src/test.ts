@@ -47,14 +47,13 @@ function ed(prefix: number, bytes: Uint8Array): void {
 }
 
 
-ed(0, new Uint8Array())
-ed(64, new Uint8Array([1, 2, 3]))
+ed(0, new Uint8Array([1, 2, 3, 4]))
+ed(64, new Uint8Array([1, 2]))
 ed(16383, new Uint8Array([2]))
 
 
-for (let i = 0; i < 100; i++) {
+for (let len of [1, 2, 4, 8, 32, 33]) {
     let prefix = getRandomInt(16384)
-    let len = getRandomInt(255)
     ed(prefix, Buffer.alloc(len, len))
 }
 
