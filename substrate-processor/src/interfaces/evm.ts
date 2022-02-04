@@ -7,7 +7,7 @@ import {Chain} from "../chain";
 export interface ParsedEvmLogs {
     name: string;
     args?: any;
-    topics: string;
+    topic: string;
     fragment: any;
     signature: string;
 }
