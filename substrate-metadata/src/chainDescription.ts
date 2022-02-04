@@ -10,6 +10,7 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
+    signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
@@ -98,6 +99,8 @@ function fromV14(metadata: MetadataV14): ChainDescription {
 
     types = normalizeMetadataTypes(types)
 
+    let signatureType = createSignatureType(metadata, types)
+    let signature = types.push(signatureType) - 1
     let eventRecord = getTypeByPath(types, ['frame_system', 'EventRecord'])
     let eventRecordList = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)
     if (eventRecordList < 0) {
@@ -107,6 +110,7 @@ function fromV14(metadata: MetadataV14): ChainDescription {
     return {
         types,
         call: getCallType(metadata),
+        signature,
         event: getEventTypeFromEventRecord(types, eventRecord),
         eventRecord,
         eventRecordList
@@ -121,6 +125,43 @@ function getCallType(metadata: MetadataV14): Ti {
     let call = params[1]
     assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
     return assertNotNull(call.type)
+}
+
+
+function createSignatureType(metadata: MetadataV14, types: Type[]): Type {
+    let fields = [
+        {
+            name: "address",
+            type: getTypeByPath(types, ["sp_runtime", "multiaddress", "MultiAddress"]),
+        },
+        {
+            name: "signature",
+            type: getTypeByPath(types, ["sp_runtime", "MultiSignature"]),
+        },
+    ]
+    metadata.extrinsic.signedExtensions.forEach(extension => {
+        switch(extension.identifier) {
+            case "CheckMortality":
+                fields.push({name: "mortality", type: extension.type})
+                break
+            case "CheckEra":
+                fields.push({name: "era", type: extension.type})
+                break
+            case "CheckNonce":
+                fields.push({name: "nonce", type: extension.type})
+                break
+            case "ChargeTransactionPayment":
+                fields.push({name: "tip", type: extension.type})
+                break
+            case "ChargeAssetTxPayment":
+                fields.push({name: "asset", type: extension.type})
+                break
+        }
+    })
+    return {
+        kind: TypeKind.Composite,
+        fields,
+    }
 }
 
 
@@ -144,11 +185,13 @@ class FromOld {
         // order is important
         let call = this.call()
         let event = this.event()
+        let signature = this.signature()
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         return {
             types: this.registry.getTypes(),
             call,
+            signature,
             event,
             eventRecord,
             eventRecordList
@@ -164,13 +207,49 @@ class FromOld {
                     name: palletName,
                     index,
                     fields: [
-                        {type: assertNotNull(this.makeCallEnum(palletName, calls))}
+                        {type: this.makeCallEnum(palletName, calls)}
                     ]
                 })
             })
             return {
                 kind: TypeKind.Variant,
                 variants: variants
+            }
+        })
+    }
+
+    @def
+    private signature(): Ti {
+        let fields = [
+            {name: "address", type: this.registry.use("Address")},
+            {name: "signature", type: this.registry.use("ExtrinsicSignature")},
+        ];
+        let signedExtensions = this.metadata.__kind == "V9" || this.metadata.__kind == "V10"
+            ? []
+            : this.metadata.value.extrinsic.signedExtensions
+        signedExtensions.forEach(extension => {
+            switch(extension) {
+                case "CheckMortality":
+                    fields.push({name: "mortality", type: this.registry.use("U16")})
+                    break
+                case "CheckEra":
+                    fields.push({name: "era", type: this.registry.use("U16")})
+                    break
+                case "CheckNonce":
+                    fields.push({name: "nonce", type: this.registry.use("Compact<Index>")})
+                    break
+                case "ChargeTransactionPayment":
+                    fields.push({name: "tip", type: this.registry.use("Compact<Balance>")})
+                    break
+                case "ChargeAssetTxPayment":
+                    fields.push({name: "asset", type: this.registry.use("Option<AssetId>")})
+                    break
+            }
+        })
+        return this.registry.create("GenericSignature", () => {
+            return {
+                kind: TypeKind.Composite,
+                fields,
             }
         })
     }
@@ -216,8 +295,7 @@ class FromOld {
         })
     }
 
-    private makeCallEnum(palletName: string, calls?: FunctionMetadataV9[]): Ti | undefined {
-        if (!calls?.length) return undefined
+    private makeCallEnum(palletName: string, calls: FunctionMetadataV9[]): Ti {
         let variants = calls.map((call, index) => {
             let fields = call.args.map(arg => {
                 return {
@@ -245,7 +323,7 @@ class FromOld {
             case 'V11': {
                 let index = 0
                 this.metadata.value.modules.forEach(mod => {
-                    if (!mod.calls?.length) return
+                    if (!mod.calls) return
                     cb(mod.name, index, mod.calls)
                     index += 1
                 })
@@ -254,7 +332,7 @@ class FromOld {
             case 'V12':
             case 'V13': {
                 this.metadata.value.modules.forEach(mod => {
-                    if (!mod.calls?.length) return
+                    if (!mod.calls) return
                     cb(mod.name, mod.index, mod.calls)
                 })
                 return

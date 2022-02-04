@@ -666,3 +666,33 @@ export interface Si1Variant {
   index: number
   docs: string[]
 }
+
+export interface Address {
+  __kind: string
+  value: Uint8Array
+}
+
+export interface Signature {
+  __kind: string
+  value: Uint8Array
+}
+
+export interface Mortality {
+  __kind: string
+  value: number
+}
+
+export interface ExtrinsicSignature {
+  address: Address
+  signature: Signature
+  mortality?: Mortality
+  era?: any
+  nonce?: number
+  tip?: BigInt
+  asset?: any
+}
+
+export interface Extrinsic {
+  signature?: ExtrinsicSignature
+  call: {__kind: string, value: {__kind: string, [key: string]: any}}
+}
