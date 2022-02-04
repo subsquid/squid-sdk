@@ -11,6 +11,7 @@ import {
 } from "@subsquid/substrate-metadata"
 import {Codec} from "@subsquid/scale-codec"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
+import {toCamelCase} from "@subsquid/util"
 import {xxhashAsU8a} from "@polkadot/util-crypto"
 import {getConnection} from "./db"
 
@@ -21,6 +22,7 @@ interface RuntimeVersion {
 type RawExtrinsic = string
 type RawMetadata = string
 type Spec = number
+type QualifiedName = string
 
 interface BlockHeader {
     parentHash: string
@@ -35,18 +37,24 @@ interface SignedBlock {
     block: Block
 }
 
-interface BlockEntity {
+interface BlockEntity {  // TODO: rename/remove entity postfix
     id: string
     height: number
     hash: string
     parent_hash: string
-    spec: Spec
     timestamp: number
 }
 
-interface LogEntity {
+interface ExtrinsicEntity {
+    id: string
+    block_id: string
     name: string
     tip: BigInt
+}
+
+interface CallEntity {
+    extrinsic_id: string
+    args: object
 }
 
 interface MetadataEntity {
@@ -62,16 +70,14 @@ interface SpecDescription {
 }
 
 
-function capitalize(value: string) {
-    return value.charAt(0).toUpperCase() + value.slice(1)
+interface LastBlock extends BlockEntity {
+    spec: SpecVersion
 }
 
-function getExtrinsicName(extrinsic: Extrinsic) {
-    let section = extrinsic.call.__kind.toLowerCase() // TODO: switch to camelCase
-    let method = extrinsic.call.value.__kind.split('_').reduce((memo: string, value: string, index: number) => {
-        memo += index === 0 ? value : capitalize(value)
-        return memo
-    }, '')
+
+function getQualifiedName(extrinsic: Extrinsic): QualifiedName {
+    let section = toCamelCase(extrinsic.call.__kind)
+    let method = extrinsic.call.value.__kind
     return `${section}.${method}`
 }
 
@@ -125,16 +131,27 @@ export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
 }
 
 
+function omit(obj: any, ...keys: string[]): any {
+    let copy = {...obj}
+    keys.forEach(key => {
+        delete copy[key]
+    })
+    return copy
+}
+
+
 async function main() {
     let client = new ResilientRpcClient("wss://kusama-rpc.polkadot.io")
     let db = await getConnection()
-    let blockHeight = 1;
+    let blockHeight = 10000123;
 
     let specDescription: SpecDescription | undefined
-    let lastBlock: BlockEntity | undefined
+    let lastBlock: LastBlock | undefined
     if (blockHeight != 1) {
-        let res = await db.query("SELECT * FROM block WHERE height = 1")
-        lastBlock = res.rows[0]
+        let res = await db.query<BlockEntity>("SELECT * FROM block ORDER BY height LIMIT 1")  // potential problem with forks
+        let blockEntity = res.rows[0]
+        let runtimeVersion = await client.call<RuntimeVersion>("chain_getRuntimeVersion", [blockEntity.hash])
+        lastBlock = {...blockEntity, spec: runtimeVersion.specVersion}
     }
     while (true) {
         console.log(`Processing block at ${blockHeight}`)
@@ -215,32 +232,81 @@ async function main() {
         let codec = new Codec(specDescription.description.types)
         let events = codec.decodeBinary(specDescription.description.eventRecordList, rawEvents)
 
-        let logEntities: LogEntity[] = []
         let extrinsics: Extrinsic[] = []
-        signedBlock.block.extrinsics.forEach(extrinsic => {
+        let extrinsicEntities: ExtrinsicEntity[] = []
+        let blockId = formatId(blockHeight, blockHash)
+        let callEntities: CallEntity[] = []
+        signedBlock.block.extrinsics.forEach((extrinsic, index) => {
             let decodedExtrinsic = decodeExtrinsic(extrinsic, assertNotNull(specDescription).description)
             extrinsics.push(decodedExtrinsic)
-            let log = {
-                name: getExtrinsicName(decodedExtrinsic),
-                tip: decodedExtrinsic.signature?.tip || 0n
+            let extrinsicId = formatId(blockHeight, blockHash, index)
+            let extrinsicEntity = {
+                id: extrinsicId,
+                block_id: blockId,
+                name: getQualifiedName(decodedExtrinsic),
+                tip: decodedExtrinsic.signature?.tip || 0n,
             }
-            logEntities.push(log)
+            extrinsicEntities.push(extrinsicEntity)
+            if (decodedExtrinsic.call.__kind == "Utility" && decodedExtrinsic.call.value.__kind == "batch") {
+                decodedExtrinsic.call.value.calls.forEach((call: any) => {
+                    let callEntity = {
+                        extrinsic_id: extrinsicId,
+                        args: omit(call.value, "__kind"),
+                    }
+                    callEntities.push(callEntity)
+                })
+            } else {
+                let callEntity = {
+                    extrinsic_id: extrinsicId,
+                    args: omit(decodedExtrinsic.call.value, "__kind"),
+                }
+                callEntities.push(callEntity)
+            }
         })
+
         let blockEntity = {
-            id: formatId(blockHeight, blockHash),
+            id: blockId,
             height: blockHeight,
             hash: blockHash,
             parent_hash: signedBlock.block.header.parentHash,
-            spec: runtimeVersion.specVersion,
             timestamp: getBlockTimestamp(extrinsics),
         }
 
-        await db.query(
-            "INSERT INTO block(id, height, hash, parent_hash, spec, timestamp) VALUES($1, $2, $3, $4, $5, $6)",
-            Object.values(blockEntity)
-        )
+        // is there more than one query to db?
+        try {
+            await db.query("BEGIN")
+            let queries: Promise<any>[] = []
+            queries.push(
+                db.query(
+                    "INSERT INTO block(id, height, hash, parent_hash, timestamp) VALUES($1, $2, $3, $4, $5)",
+                    Object.values(blockEntity)
+                )
+            )
+            extrinsicEntities.forEach(extrinsicEntity => {
+                queries.push(
+                    db.query(
+                        "INSERT INTO extrinsic(id, block_id, name, tip) VALUES($1, $2, $3, $4)",
+                        Object.values(extrinsicEntity),
+                    )
+                )
+            })
+            callEntities.forEach(callEntity => {
+                queries.push(
+                    db.query(
+                        "INSERT INTO call(extrinsic_id, args) VALUES($1, $2)",
+                        Object.values(callEntity)
+                    )
+                )
+            })
+            await Promise.all(queries)
+            await db.query("COMMIT")
+        } catch (e) {
+            await db.query("ROLLBACK")
+            throw e
+        }
 
-        lastBlock = blockEntity
+        // TODO: disconnect from db
+        lastBlock = {...blockEntity, spec: runtimeVersion.specVersion}
         blockHeight++
     }
 }

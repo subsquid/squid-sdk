@@ -1,11 +1,3 @@
-CREATE TABLE extrinsic (
-    id varchar NOT NULL,
-    name varchar NOT NULL,
-    tip number NOT NULL
-);
-
 CREATE TABLE event (
     id varchar NOT NULL,
 );
-
-CREATE TABLE call ();
