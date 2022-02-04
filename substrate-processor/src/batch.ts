@@ -16,7 +16,7 @@ export interface DataHandlers {
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
     /**
-     * Mapping of type `trigger event` -> `topic` -> `EVM handler list`
+     * Mapping of type `trigger evm event` -> `topic` -> `EVM handler list`
      */
     evmLogs: Record<ContractAddress, Record<Topics, EvmLogHandler[]>>
 }
@@ -31,7 +31,7 @@ export interface Batch {
 export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     let batches: Batch[] = []
 
-    function getRange(hook: {range?: Range}): Range | undefined {
+    function getRange(hook: { range?: Range }): Range | undefined {
         let range: Range | undefined = hook.range || {from: 0}
         if (blockRange) {
             range = rangeIntersection(range, blockRange)
@@ -114,7 +114,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 extrinsics: {},
                 evmLogs: {
-                    [hook.contractAddress]: {[hook.topics?.join(TopicsSeparator) || AnyTopics]: [hook.handler] }
+                    [hook.contractAddress]: {[hook.topics?.join(TopicsSeparator) || AnyTopics]: [hook.handler]}
                 }
             }
         })
@@ -194,7 +194,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 
-export function getBlocksCount(batches: {range: Range}[], chainHeight: number): number {
+export function getBlocksCount(batches: { range: Range }[], chainHeight: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
         let range = batches[i].range
