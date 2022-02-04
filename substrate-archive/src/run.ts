@@ -45,16 +45,24 @@ interface BlockEntity {  // TODO: rename/remove entity postfix
     timestamp: number
 }
 
+interface EventEntity {
+    id: string
+    block_id: string
+    name: QualifiedName
+    args: unknown
+}
+
 interface ExtrinsicEntity {
     id: string
     block_id: string
-    name: string
+    name: QualifiedName
     tip: BigInt
+    nonce: number
 }
 
 interface CallEntity {
     extrinsic_id: string
-    args: object
+    args: unknown
 }
 
 interface MetadataEntity {
@@ -75,11 +83,23 @@ interface LastBlock extends BlockEntity {
 }
 
 
-function getQualifiedName(extrinsic: Extrinsic): QualifiedName {
-    let section = toCamelCase(extrinsic.call.__kind)
-    let method = extrinsic.call.value.__kind
-    return `${section}.${method}`
+interface ExtrinsicCall {
+    __kind: string,
+    value: {__kind: string, [key: string]: any}
 }
+
+
+interface Event {
+    __kind: string
+    value: {__kind: string, value: any}
+}
+
+
+function getQualifiedName(eventOrCall: ExtrinsicCall | Event): QualifiedName {
+    let section = toCamelCase(eventOrCall.__kind)
+    return `${section}.${eventOrCall.value.__kind}`
+}
+
 
 /**
  * All blocks have timestamp event except for the genesic block.
@@ -231,6 +251,16 @@ async function main() {
         let rawEvents = await client.call("state_getStorageAt", [storageKey, blockHash])
         let codec = new Codec(specDescription.description.types)
         let events = codec.decodeBinary(specDescription.description.eventRecordList, rawEvents)
+        let eventEntities: EventEntity[] = []
+        events.forEach((decodedEvent: any, index: number) => {
+            let eventEntity = {
+                id: formatId(blockHeight, blockHash, index),
+                block_id: blockId,
+                name: getQualifiedName(decodedEvent.event),
+                args: decodedEvent.event.value.value,
+            }
+            eventEntities.push(eventEntity)
+        })
 
         let extrinsics: Extrinsic[] = []
         let extrinsicEntities: ExtrinsicEntity[] = []
@@ -243,8 +273,9 @@ async function main() {
             let extrinsicEntity = {
                 id: extrinsicId,
                 block_id: blockId,
-                name: getQualifiedName(decodedExtrinsic),
+                name: getQualifiedName(decodedExtrinsic.call),
                 tip: decodedExtrinsic.signature?.tip || 0n,
+                nonce: decodedExtrinsic.signature?.nonce || 0,
             }
             extrinsicEntities.push(extrinsicEntity)
             if (decodedExtrinsic.call.__kind == "Utility" && decodedExtrinsic.call.value.__kind == "batch") {
@@ -285,7 +316,7 @@ async function main() {
             extrinsicEntities.forEach(extrinsicEntity => {
                 queries.push(
                     db.query(
-                        "INSERT INTO extrinsic(id, block_id, name, tip) VALUES($1, $2, $3, $4)",
+                        "INSERT INTO extrinsic(id, block_id, name, tip, nonce) VALUES($1, $2, $3, $4, $5)",
                         Object.values(extrinsicEntity),
                     )
                 )
@@ -295,6 +326,14 @@ async function main() {
                     db.query(
                         "INSERT INTO call(extrinsic_id, args) VALUES($1, $2)",
                         Object.values(callEntity)
+                    )
+                )
+            })
+            eventEntities.forEach(eventEntity => {
+                queries.push(
+                    db.query(
+                        "INSERT INTO event(id, block_id, name, args) VALUES($1, $2, $3, $4)",
+                        Object.values(eventEntity)
                     )
                 )
             })

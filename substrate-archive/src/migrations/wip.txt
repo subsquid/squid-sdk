@@ -1,3 +1,0 @@
-CREATE TABLE event (
-    id varchar NOT NULL,
-);

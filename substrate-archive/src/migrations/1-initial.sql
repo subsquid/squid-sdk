@@ -17,10 +17,18 @@ CREATE TABLE extrinsic (
     id varchar PRIMARY KEY,
     block_id varchar REFERENCES block ON DELETE CASCADE,
     name varchar NOT NULL,
-    tip numeric NOT NULL
+    tip numeric NOT NULL,
+    nonce integer NOT NULL
 );
 
 CREATE TABLE call (
     extrinsic_id varchar REFERENCES extrinsic ON DELETE CASCADE,
+    args jsonb NOT NULL
+);
+
+CREATE TABLE event (
+    id varchar PRIMARY KEY,
+    block_id varchar REFERENCES block ON DELETE CASCADE,
+    name varchar NOT NULL,
     args jsonb NOT NULL
 );
