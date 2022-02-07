@@ -4,7 +4,7 @@ import {assertNotNull, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {createBatches, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
-import {Db} from "./db"
+import {Db, IsolationLevel} from "./db"
 import {DataBatch, Ingest} from "./ingest"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
@@ -50,6 +50,7 @@ export class SubstrateProcessor {
     private prometheusPort?: number | string
     private src?: DataSource
     private typesBundle?: OldTypesBundle
+    private isolationLevel?: IsolationLevel
     private running = false
 
     constructor(private name: string) {}
@@ -82,6 +83,10 @@ export class SubstrateProcessor {
     setPrometheusPort(port: number | string) {
         this.assertNotRunning()
         this.prometheusPort = port
+    }
+
+    setIsolationLevel(isolationLevel?: IsolationLevel): void {
+        this.isolationLevel = isolationLevel
     }
 
     private getPrometheusPort(): number | string {
@@ -177,8 +182,12 @@ export class SubstrateProcessor {
         let prometheusServer = sm.add(await prometheus.serve(this.getPrometheusPort()))
         console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
-        let db = sm.add(await Db.connect())
-        let {height: heightAtStart} = await db.init(this.name)
+        let db = sm.add(await Db.connect({
+            processorName: this.name,
+            isolationLevel: this.isolationLevel
+        }))
+
+        let {height: heightAtStart} = await db.init()
 
         prometheus.setLastProcessedBlock(heightAtStart)
 
@@ -237,7 +246,7 @@ export class SubstrateProcessor {
                 let block = blocks[i]
                 assert(lastBlock < block.block.height)
                 let chain = await chainManager.getChainForBlock(block.block)
-                await db.transact(this.name, block.block.height, async store => {
+                await db.transact(block.block.height, async store => {
                     let ctx: BlockHandlerContext = {
                         _chain: chain,
                         store,
@@ -269,7 +278,7 @@ export class SubstrateProcessor {
 
             if (lastBlock < range.to) {
                 lastBlock = range.to
-                await db.setHeight(this.name, lastBlock)
+                await db.setHeight(lastBlock)
                 prom.setLastProcessedBlock(lastBlock)
             }
 
