@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec-json
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+
+## 0.1.1
+Mon, 07 Feb 2022 15:16:41 GMT
+
+### Patches
+
+- fix `AccountIndex` decoding
 
 ## 0.1.0
 Wed, 02 Feb 2022 11:01:32 GMT

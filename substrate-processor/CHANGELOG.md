@@ -1,6 +1,18 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+
+## 0.3.0
+Mon, 07 Feb 2022 15:16:41 GMT
+
+### Minor changes
+
+- allow to customize transaction isolation level
+
+### Patches
+
+- handle camelCase call names within `ctx._chain.decodeCall()`
+- handle tx serialization failures
 
 ## 0.2.6
 Wed, 02 Feb 2022 11:01:32 GMT
