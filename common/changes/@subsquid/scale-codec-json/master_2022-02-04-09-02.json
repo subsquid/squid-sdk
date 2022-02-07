@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/scale-codec-json",
-      "comment": "handle `AccountIndex` encoding",
+      "comment": "fix `AccountIndex` decoding",
       "type": "patch"
     }
   ],
