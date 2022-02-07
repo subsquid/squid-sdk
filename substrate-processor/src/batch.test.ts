@@ -142,8 +142,10 @@ describe('batching', function () {
                         return handlers.every(h => containsRange(h.range, b.range))
                     })
                 })
-                let evmLogHandlersOk = Object.entries(hs.evmLogs).every(([e, handlers]) => {
-                    return handlers.every(h => containsRange(h.range, b.range))
+                let evmLogHandlersOk = Object.entries(hs.evmLogs).every(e => {
+                    return Object.entries(e[1]).every(([_, handlers]) => {
+                        return handlers.every(h => containsRange(h.range, b.range))
+                    })
                 })
                 return prePostHooksOk && eventHandlersOk && extrinsicHandlersOk && evmLogHandlersOk
             })
@@ -217,8 +219,10 @@ describe('batching', function () {
                         hs.forEach(call)
                     })
                 })
-                Object.entries(b.handlers.evmLogs).forEach(([event, hs]) => {
-                    hs.forEach(call)
+                Object.entries(b.handlers.evmLogs).forEach(([contractAndress, evmLog]) => {
+                    Object.entries(evmLog).forEach(([topics, hs]) => {
+                        hs.forEach(call)
+                    });
                 })
             })
 
@@ -301,6 +305,6 @@ interface ABatch {
         post: ABlockHandler[],
         events: Record<string, AEventHandler[]>
         extrinsics: Record<string, Record<string, AExtrinsicHandler[]>>
-        evmLogs: Record<string, AEvmLogHandler[]>
+        evmLogs: Record<string, Record<string, AEvmLogHandler[]>>
     }
 }
