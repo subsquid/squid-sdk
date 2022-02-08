@@ -1,4 +1,4 @@
-import {assertNotNull, def} from "@subsquid/util"
+import {assertNotNull, def, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from "./interfaces"
 import {OldTypeRegistry} from "./old/typeRegistry"
@@ -92,6 +92,8 @@ function fromV14(metadata: MetadataV14): ChainDescription {
                     variants: def.value.variants,
                     ...info
                 }
+            default:
+                throw unexpectedCase((def as any).__kind)
         }
     })
 

@@ -1,6 +1,23 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Tue, 25 Jan 2022 12:44:12 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+
+## 0.3.1
+Mon, 07 Feb 2022 15:16:41 GMT
+
+_Version update only_
+
+## 0.3.0
+Wed, 02 Feb 2022 11:01:32 GMT
+
+### Minor changes
+
+- breaking: remove extra type kinds
+
+### Patches
+
+- fix decoding of compact structs and tuples
+- fix decoding of big compact numbers
 
 ## 0.2.3
 Tue, 25 Jan 2022 12:44:12 GMT

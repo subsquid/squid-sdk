@@ -78,7 +78,7 @@ export class Chain {
     constructor(public readonly description: ChainDescription) {
         this.jsonCodec = new JsonCodec(description.types)
         this.events = new eac.Registry(description.types, description.event)
-        this.calls = new eac.Registry(description.types, description.call)
+        this.calls = new eac.Registry(description.types, description.call, true)
     }
 
     getEventHash(eventName: QualifiedName): string {

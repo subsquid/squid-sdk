@@ -2,6 +2,33 @@
   "name": "@subsquid/ss58-codec",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/ss58-codec_v0.1.0",
+      "date": "Mon, 07 Feb 2022 15:16:41 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "restrict lengths of raw address bytes as polkadot.js does"
+          },
+          {
+            "comment": "use 1 byte hash for lengths 1, 2, 4, 8"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.3",
+      "tag": "@subsquid/ss58-codec_v0.0.3",
+      "date": "Wed, 02 Feb 2022 11:01:32 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/ss58-codec_v0.0.2",
       "date": "Thu, 20 Jan 2022 08:42:53 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-archive",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/substrate-archive_v0.0.2",
+      "date": "Wed, 02 Feb 2022 11:01:32 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/substrate-archive_v0.0.1",
       "date": "Tue, 18 Jan 2022 09:31:27 GMT",

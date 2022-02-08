@@ -15,7 +15,7 @@ export class Registry {
     public readonly definitions: Record<QualifiedName, Definition> = {}
     private hashes: Record<QualifiedName, string> = {}
 
-    constructor(private types: Type[], ti: Ti) {
+    constructor(private types: Type[], ti: Ti, camelCaseName?: boolean) {
         let pallets = types[ti]
         assert(pallets.kind == TypeKind.Variant)
         pallets.variants.forEach(pallet => {
@@ -24,10 +24,13 @@ export class Registry {
             let palletType = types[pallet.fields[0].type]
             assert(palletType.kind == TypeKind.Variant)
             palletType.variants.forEach(def => {
-                let qualifiedName = `${section}.${def.name}`
-                this.definitions[qualifiedName] = {
+                let e = {
                     ...def,
                     pallet: pallet.name
+                }
+                this.definitions[`${section}.${def.name}`] = e
+                if (camelCaseName) {
+                    this.definitions[`${section}.${toCamelCase(def.name)}`] = e
                 }
             })
         })

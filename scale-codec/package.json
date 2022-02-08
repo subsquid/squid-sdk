@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/scale-codec",
-  "version": "0.2.3",
+  "version": "0.3.1",
   "description": "Scale decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -13,13 +13,14 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node lib/test.js"
   },
   "dependencies": {
-    "@subsquid/ss58-codec": "^0.0.2"
+    "@subsquid/ss58-codec": "^0.1.0"
   },
   "devDependencies": {
-    "@types/node": "^16.11.17",
-    "typescript": "~4.5.4"
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
   }
 }

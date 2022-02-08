@@ -1,3 +1,4 @@
+import {CodecStructType, CodecType, toCodecTypes} from "@subsquid/scale-codec/lib/types-codec"
 import {
     ChainDescription,
     CompactType,
@@ -17,6 +18,7 @@ import {asResultType, toNativePrimitive} from "./util"
 
 export class Interfaces {
     private types: Type[]
+    private codecTypes: CodecType[]
     private nameAssignment: Map<Ti, string>
     private assignedNames: Set<string>
     private generated: (string | undefined)[]
@@ -25,6 +27,7 @@ export class Interfaces {
 
     constructor(description: ChainDescription) {
         this.types = description.types
+        this.codecTypes = toCodecTypes(this.types)
         this.nameAssignment = assignNames(description)
         this.assignedNames = new Set(this.nameAssignment.values())
         this.generated = new Array(this.types.length)
@@ -55,84 +58,42 @@ export class Interfaces {
     }
 
     private makeType(ti: Ti): string {
-        let type = this.types[ti]
-        switch(type.kind) {
+        let codecType = this.codecTypes[ti]
+
+        switch(codecType.kind) {
             case TypeKind.Primitive:
-                return toNativePrimitive(type.primitive)
+                return toNativePrimitive(codecType.primitive)
             case TypeKind.Compact:
-                return this.makeCompact(type)
+                return toNativePrimitive(codecType.integer)
             case TypeKind.BitSequence:
             case TypeKind.Bytes:
             case TypeKind.BytesArray:
                 return 'Uint8Array'
             case TypeKind.Sequence:
             case TypeKind.Array:
-                return this.use(type.type) + '[]'
+                return this.use(codecType.type) + '[]'
             case TypeKind.Tuple:
-                return this.makeTuple(type.tuple)
-            case TypeKind.Composite:
-                return this.useComposite(type, ti)
+                return this.makeTuple(codecType.tuple)
+            case TypeKind.Struct:
+                return this.makeStruct(codecType, ti)
             case TypeKind.Variant: {
-                let result = asResultType(type)
+                let type = this.types[ti]
+                assert(type.kind == TypeKind.Variant)
+                let result = asResultType(this.types[ti])
                 if (result) {
                     return `Result<${this.use(result.ok)}, ${this.use(result.err)}>`
                 } else {
-                    return this.useVariant(type, ti)
+                    return this.makeVariant(type, ti)
                 }
             }
             case TypeKind.Option:
-                return `(${this.use(type.type)} | undefined)`
+                return `(${this.use(codecType.type)} | undefined)`
+            case TypeKind.BooleanOption:
+                return `(boolean | undefined)`
             case TypeKind.DoNotConstruct:
                 return 'never'
             default:
-                throw unexpectedCase((type as any).kind)
-        }
-    }
-
-    private makeCompact(type: CompactType): string {
-        let primitive = this.getCompactPrimitive(type.type)
-        switch(primitive) {
-            case null:
-                return 'null'
-            case 'U8':
-            case 'U16':
-            case 'U32':
-                return 'number'
-            case 'U64':
-            case 'U128':
-            case 'U256':
-                return '(number | bigint)'
-            default:
-                throw unexpectedCase(primitive)
-        }
-    }
-
-    private getCompactPrimitive(ti: Ti): Primitive | null {
-        let type = this.types[ti]
-        switch(type.kind) {
-            case TypeKind.Primitive:
-                return type.primitive
-            case TypeKind.Tuple:
-                switch(type.tuple.length) {
-                    case 0:
-                        return null
-                    case 1:
-                        return this.getCompactPrimitive(type.tuple[0])
-                    default:
-                        throw new Error(`Tuples with more than 1 field can't be compact`)
-                }
-            case TypeKind.Composite:
-                switch(type.fields.length) {
-                    case 0:
-                        return null
-                    case 1:
-                        assert(type.fields[0].name == null, `Composite types with named fields can't be compact`)
-                        return this.getCompactPrimitive(type.fields[0].type)
-                    default:
-                        throw new Error(`Composite types with more than 1 field can't be compact`)
-                }
-            default:
-                throw unexpectedCase(type.kind)
+                throw unexpectedCase((codecType as any).kind)
         }
     }
 
@@ -147,15 +108,13 @@ export class Interfaces {
         }
     }
 
-    private useComposite(type: CompositeType, ti: Ti): string {
-        if (type.fields.length == 0) return 'null'
-        if (type.fields[0].name == null) return this.makeTuple(type.fields.map(f => f.type))
+    private makeStruct(type: CodecStructType, ti: Ti): string {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
         this.generatedNames.add(name)
         this.queue.push(out => {
             out.line()
-            out.blockComment(type.docs)
+            out.blockComment(this.types[ti].docs)
             out.block(`export interface ${name}`, () => {
                 this.printStructFields(out, type.fields)
             })
@@ -172,7 +131,7 @@ export class Interfaces {
         })
     }
 
-    private useVariant(type: VariantType, ti: Ti): string {
+    private makeVariant(type: VariantType, ti: Ti): string {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
         this.generatedNames.add(name)
