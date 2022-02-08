@@ -1,28 +1,45 @@
 import {Codec, Src} from "@subsquid/scale-codec"
-import {blake2AsHex} from "@polkadot/util-crypto"
+import assert from "assert"
 import {ChainDescription} from "./chainDescription"
-import {Extrinsic} from "./interfaces"
 
-const BIT_SIGNED = 0b10000000;
 
-export function decodeExtrinsic(rawExtrinsic: string, description: ChainDescription): Extrinsic {
-    let data = Buffer.from(rawExtrinsic.slice(2), 'hex')
-    let src = new Src(data)
-    let codec = new Codec(description.types)
-    let hash = blake2AsHex(data)
+export interface ExtrinsicSignature {
+    address: any
+    signature: any
+    signedExtensions: any
+}
 
+
+export interface Extrinsic {
+    call: any
+    signature?: ExtrinsicSignature
+}
+
+
+export function decodeExtrinsic(
+    rawExtrinsic: string | Uint8Array,
+    chainDescription: ChainDescription,
+    codec?: Codec
+): Extrinsic {
+    codec = codec || new Codec(chainDescription.types)
+
+    let src = new Src(rawExtrinsic)
     src.compact()
-    let signed = (src.u8() & BIT_SIGNED) == BIT_SIGNED
+
+    let meta = src.u8()
+    let signed = meta & 0b10000000
+    let version = meta | 0b01111111
+
+    assert(version == 4, 'unsupported extrinsic version')
+
     if (signed) {
         return {
-            signature: codec.decode(description.signature, src),
-            call: codec.decode(description.call, src),
-            hash,
+            signature: codec.decode(chainDescription.signature, src),
+            call: codec.decode(chainDescription.call, src)
         }
     } else {
         return {
-            call: codec.decode(description.call, src),
-            hash,
+            call: codec.decode(chainDescription.call, src)
         }
     }
 }

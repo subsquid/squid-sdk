@@ -1,99 +1,33 @@
-import { ResilientRpcClient } from "@subsquid/rpc-client/lib/resilient"
+import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {Codec} from "@subsquid/scale-codec"
 import {
+    ChainDescription,
     decodeMetadata,
-    decodeExtrinsic,
+    Extrinsic,
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
-    SpecVersion,
-    Extrinsic,
-    ChainDescription,
+    OldTypes,
+    OldTypesBundle,
+    SpecVersion
 } from "@subsquid/substrate-metadata"
-import {Codec} from "@subsquid/scale-codec"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {toCamelCase, assertNotNull} from "@subsquid/util"
-import {xxhashAsU8a} from "@polkadot/util-crypto"
-import {getConnection} from "./db"
-import {Client} from "pg"
-
-interface RuntimeVersion {
-    specVersion: SpecVersion
-}
-
-type RawExtrinsic = string
-type RawMetadata = string
-type Spec = number
-type QualifiedName = string
-
-interface BlockHeader {
-    parentHash: string
-}
-
-interface Block {
-    header: BlockHeader
-    extrinsics: RawExtrinsic[]
-}
-
-interface SignedBlock {
-    block: Block
-}
-
-interface BlockEntity {  // TODO: rename/remove entity postfix
-    id: string
-    height: number
-    hash: string
-    parent_hash: string
-    timestamp: number
-}
-
-interface EventEntity {
-    id: string
-    block_id: string
-    name: QualifiedName
-    args: unknown
-}
-
-interface ExtrinsicEntity {
-    id: string
-    block_id: string
-    name: QualifiedName
-    tip: BigInt
-    nonce: number
-    hash: string
-}
-
-interface CallEntity {
-    extrinsic_id: string
-    args: unknown
-}
-
-interface MetadataEntity {
-    spec: Spec
-    block_height: number
-    block_hash: number
-    data: string
-}
-
-interface SpecDescription {
-    spec: SpecVersion
-    description: ChainDescription
-}
-
-
-interface LastBlock extends BlockEntity {
-    spec: SpecVersion
-}
-
-
-interface ExtrinsicCall {
-    __kind: string,
-    value: {__kind: string, [key: string]: any}
-}
-
-
-interface Event {
-    __kind: string
-    value: {__kind: string, value: any}
-}
+import {assertNotNull, toCamelCase} from "@subsquid/util"
+import * as pg from "pg"
+import {
+    BlockEntity,
+    CallEntity,
+    Event,
+    EventEntity,
+    ExtrinsicCall,
+    ExtrinsicEntity,
+    LastBlock,
+    QualifiedName,
+    RawMetadata,
+    RuntimeVersion,
+    SignedBlock,
+    SpecInfo
+} from "./model"
+import {formatId, isPreV14, omit} from "./util"
 
 
 function getQualifiedName(eventOrCall: ExtrinsicCall | Event): QualifiedName {
@@ -118,89 +52,49 @@ function getBlockTimestamp(extrinsics: Extrinsic[]): number {
 }
 
 
-export const BLOCK_PAD_LENGTH = 10
-export const INDEX_PAD_LENGTH = 6
-export const HASH_PAD_LENGTH = 5
-
-
-/**
- * Formats the event id into a fixed-lentgth string. When formatted the natural string ordering
- * is the same as the ordering
- * in the blockchain (first ordered by block height, then by block ID)
- *
- * @return  id in the format 000000..00<blockNum>-000<index>-<shorthash>
- *
- */
-function formatId(height: number, hash: string, index?: number): string {
-    const blockPart = `${String(height).padStart(BLOCK_PAD_LENGTH, '0')}`
-    const indexPart =
-      index !== undefined
-        ? `-${String(index).padStart(INDEX_PAD_LENGTH, '0')}`
-        : ''
-    const _hash = hash.startsWith('0x') ? hash.substring(2) : hash
-    const shortHash =
-      _hash.length < HASH_PAD_LENGTH
-        ? _hash.padEnd(HASH_PAD_LENGTH, '0')
-        : _hash.slice(0, HASH_PAD_LENGTH)
-    return `${blockPart}${indexPart}-${shortHash}`
-}
-
-
-function omit(obj: any, ...keys: string[]): any {
-    let copy = {...obj}
-    keys.forEach(key => {
-        delete copy[key]
-    })
-    return copy
+export interface SubstrateArchiveOptions {
+    client: ResilientRpcClient
+    db: pg.ClientBase
+    typesBundle?: OldTypesBundle
 }
 
 
 export class SubstrateArchive {
     private client: ResilientRpcClient
-    private typesBundle?: string
+    private db: pg.ClientBase
+    private typesBundle?: OldTypesBundle
 
-    constructor(url: string, typesBundle?: string) {
-        this.client = new ResilientRpcClient(url)
-        this.typesBundle = typesBundle
+    constructor(options: SubstrateArchiveOptions) {
+        this.client = options.client
+        this.db = options.db
+        this.typesBundle = options.typesBundle
+    }
+
+    async saveBlock(blockHeight: number, prevSpecInfo?: SpecInfo) {
+        let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
+        let runtimeVersion = await this.client.call<RuntimeVersion>("chain_getRuntimeVersion", [blockHash])
+        let signedBlock = await this.client.call<SignedBlock>("chain_getBlock", [blockHash])
     }
 
     async run(): Promise<void> {
-        let db = await getConnection()
-
-        let lastBlock = await this.getLastBlock(db)
+        let lastBlock = await this.getLastBlock()
         let blockHeight = lastBlock ? lastBlock.height + 1 : 1
-        
-        let specDescription: SpecDescription | undefined
+        let specInfo: SpecInfo | undefined
+
         while (true) {
             console.log(`Processing block at ${blockHeight}`)
             let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
-            let runtimeVersion = await this.client.call<RuntimeVersion>("chain_getRuntimeVersion", [blockHash])
-            let signedBlock = await this.client.call<SignedBlock>("chain_getBlock", [blockHash])
-            let header = await this.client.call("chain_getHeader", [blockHash])  // TODO: decode block author
 
-            let oldTypes
-            if (this.typesBundle) {
-                let typesBundle = assertNotNull(getOldTypesBundle(this.typesBundle))
-                oldTypes = getTypesFromBundle(typesBundle, runtimeVersion.specVersion)
-            }
+
+
             if (lastBlock === undefined) {  // start indexing
-                let rawMetadata = await this.client.call<RawMetadata>("state_getMetadata", [blockHash])
-                let metadata = decodeMetadata(rawMetadata)
-                let description = getChainDescriptionFromMetadata(metadata, oldTypes)
-                specDescription = {spec: runtimeVersion.specVersion, description}
-
-                let metadataEntity = {
-                    spec: runtimeVersion.specVersion,
-                    block_height: blockHeight,
-                    block_hash: blockHash,
-                    data: rawMetadata,
-                }
-                await db.query(
-                    "INSERT INTO metadata(spec, block_height, block_hash, data) VALUES($1, $2, $3, $4)",
-                    Object.values(metadataEntity)
+                let metadata = await this.getSpecInfo(blockHash, runtimeVersion.specVersion)
+                await this.db.query(
+                    "INSERT INTO metadata(spec_version, block_height, block_hash, hex) VALUES($1, $2, $3, $4)",
+                    [metadata.specVersion, blockHeight, blockHash, metadata.rawMetadata]
                 )
             } else if (specDescription === undefined) {  // resume indexing
-                if (runtimeVersion.specVersion == lastBlock.spec) {
+                if (runtimeVersion.specVersion == lastBlock.specVersion) {
                     let rawMetadata = await this.client.call<RawMetadata>("state_getMetadata", [blockHash])
                     let metadata = decodeMetadata(rawMetadata)
                     let description = getChainDescriptionFromMetadata(metadata, oldTypes)
@@ -209,10 +103,10 @@ export class SubstrateArchive {
                     let rawMetadata = await this.client.call<RawMetadata>("state_getMetadata", [lastBlock.hash])
                     let metadata = decodeMetadata(rawMetadata)
                     let description = getChainDescriptionFromMetadata(metadata, oldTypes)
-                    specDescription = {spec: lastBlock.spec, description}
+                    specDescription = {spec: lastBlock.specVersion, description}
 
                     let metadataEntity = {
-                        spec: lastBlock.spec,
+                        spec: lastBlock.specVersion,
                         block_height: lastBlock.height,
                         block_hash: lastBlock.hash,
                         data: rawMetadata,
@@ -223,14 +117,14 @@ export class SubstrateArchive {
                     )
                 }
             } else {
-                if (specDescription.spec != runtimeVersion.specVersion && runtimeVersion.specVersion == lastBlock.spec) {
+                if (specDescription.spec != runtimeVersion.specVersion && runtimeVersion.specVersion == lastBlock.specVersion) {
                     let rawMetadata = await this.client.call<RawMetadata>("state_getMetadata", [lastBlock.hash])
                     let metadata = decodeMetadata(rawMetadata)
                     let description = getChainDescriptionFromMetadata(metadata, oldTypes)
-                    specDescription = {spec: lastBlock.spec, description}
+                    specDescription = {spec: lastBlock.specVersion, description}
 
                     let metadataEntity = {
-                        spec: lastBlock.spec,
+                        spec: lastBlock.specVersion,
                         block_height: lastBlock.height,
                         block_hash: lastBlock.hash,
                         data: rawMetadata,
@@ -344,19 +238,50 @@ export class SubstrateArchive {
             }
 
             // TODO: disconnect from db
-            lastBlock = {...blockEntity, spec: runtimeVersion.specVersion}
+            lastBlock = {...blockEntity, specVersion: runtimeVersion.specVersion}
             blockHeight++
         }
     }
 
-    private async getLastBlock(db: Client): Promise<LastBlock | undefined> {
-        let lastBlock: LastBlock | undefined
-        let res = await db.query<BlockEntity>("SELECT * FROM block ORDER BY height LIMIT 1")  // potential problem with forks
-        if (res.rows.length == 1) {
-            let blockEntity = res.rows[0]
-            let runtimeVersion = await this.client.call<RuntimeVersion>("chain_getRuntimeVersion", [blockEntity.hash])
-            lastBlock = {...blockEntity, spec: runtimeVersion.specVersion}
+    private async getSpecInfo(
+        blockHash: string,
+        specVersion?: number
+    ): Promise<SpecInfo> {
+        if (specVersion == null) {
+            let rt = await this.client.call<RuntimeVersion>('chain_getRuntimeVersion', [blockHash])
+            specVersion = rt.specVersion
         }
-        return lastBlock
+        let rawMetadata = await this.client.call<RawMetadata>("state_getMetadata", [blockHash])
+        let metadata = decodeMetadata(rawMetadata)
+        let oldTypes: OldTypes | undefined
+        if (isPreV14(metadata)) {
+            oldTypes = getTypesFromBundle(assertNotNull(this.typesBundle), specVersion)
+        }
+        let description = getChainDescriptionFromMetadata(metadata, oldTypes)
+        return {
+            description,
+            rawMetadata,
+            specVersion
+        }
+    }
+
+    private async getLastBlock(): Promise<LastBlock | undefined> {
+        let res = await this.db.query<BlockEntity>("SELECT * FROM block ORDER BY height DESC LIMIT 1")
+        if (res.rows.length == 0) return undefined
+        let blockEntity = res.rows[0]
+        let runtimeVersion = await this.client.call<RuntimeVersion>("chain_getRuntimeVersion", [blockEntity.hash])
+        return {...blockEntity, specVersion: runtimeVersion.specVersion}
+    }
+
+    private async tx<T>(cb: () => Promise<T>): Promise<T> {
+        await this.db.query('BEGIN')
+        try {
+            let result = await cb()
+            await this.db.query('COMMIT')
+            return result
+        } catch(e: any) {
+            await this.db.query('ROLLBACK').catch(() => {})
+            throw e
+        }
     }
 }
