@@ -40,6 +40,7 @@ CREATE TABLE event (
     id varchar(16) PRIMARY KEY,
     block_id varchar(16) not null REFERENCES block,
     index_in_block integer NOT NULL,
+    phase varchar NOT NULL,
     extrinsic_id varchar(16) REFERENCES extrinsic,
     call_id varchar(16) REFERENCES call,
     name varchar NOT NULL,

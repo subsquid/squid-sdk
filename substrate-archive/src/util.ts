@@ -1,9 +1,19 @@
-import {Metadata} from "@subsquid/substrate-metadata"
+import {Extrinsic, Metadata} from "@subsquid/substrate-metadata"
+import {toHex} from "@subsquid/util"
 import blake2b from "blake2b"
 
 
-export function blake2bHash(bytes: Uint8Array): Uint8Array {
-    let hash = blake2b(32)
+export const EVENT_STORAGE_KEY = '0x' + Buffer.from([
+    ...blake2bHash("System", 16),
+    ...blake2bHash("Events", 16)
+]).toString("hex")
+
+
+export function blake2bHash(bytes: Uint8Array | string, len: number): Uint8Array {
+    if (typeof bytes == 'string') {
+        bytes = Buffer.from(bytes)
+    }
+    let hash = blake2b(len)
     hash.update(bytes)
     return hash.digest()
 }
@@ -61,4 +71,41 @@ export function isPreV14(metadata: Metadata): boolean {
         default:
             return false
     }
+}
+
+
+export function toJsonString(obj: unknown): string {
+    return JSON.stringify(obj, jsonReplacer)
+}
+
+
+function jsonReplacer(key: string, value: unknown): any {
+    switch(typeof value) {
+        case 'bigint':
+            return value.toString()
+        case 'object':
+            if (value instanceof Uint8Array) {
+                return toHex(value)
+            } else {
+                return value
+            }
+        default:
+            return value
+    }
+}
+
+
+/**
+ * All blocks have timestamp event except for the genesic block.
+ * This method looks up `timestamp.set` and reads off the block timestamp
+ *
+ * @param extrinsics block extrinsics
+ * @returns timestamp as set by a `timestamp.set` call
+ */
+function getBlockTimestamp(extrinsics: Extrinsic[]): number {
+    let extrinsic = extrinsics.find(extrinsic => {
+        if (extrinsic.call.__kind !== "Timestamp") return false
+        return extrinsic.call.value.__kind === "set"
+    })
+    return extrinsic ? extrinsic.call.value.now : 0
 }

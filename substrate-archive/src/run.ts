@@ -10,7 +10,16 @@ async function main() {
     let client = new ResilientRpcClient("wss://kusama-rpc.polkadot.io")
     let typesBundle = assertNotNull(getOldTypesBundle("kusama"))
     let archive = new SubstrateArchive({client, db, typesBundle})
-    await archive.run()
+    let interrupted = false
+
+    process.on('SIGINT', () => {
+        interrupted = true
+    })
+
+    for await (let block of archive.loop()) {
+        console.log(`Saved block #${block}`)
+        if (interrupted) return
+    }
 }
 
 main()

@@ -1,3 +1,4 @@
+import * as path from "path"
 import {Client} from "pg"
 import {migrate} from "postgres-migrations"
 
@@ -11,6 +12,6 @@ export async function getConnection(): Promise<Client> {
         port: 5432,
     })
     await db.connect()
-    await migrate({client: db}, "/home/sar/projects/squid/substrate-archive/src/migrations")
+    await migrate({client: db}, path.resolve(__dirname, '../migration'))
     return db
 }

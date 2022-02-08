@@ -1,30 +1,8 @@
-import {ChainDescription, SpecVersion} from "@subsquid/substrate-metadata"
+import type {QualifiedName, SpecVersion} from "@subsquid/substrate-metadata"
+import {sub} from "./interfaces"
 
 
-export interface RuntimeVersion {
-    specVersion: SpecVersion
-}
-
-
-type RawExtrinsic = string
-export type RawMetadata = string
-type Spec = number
-export type QualifiedName = string
-
-interface BlockHeader {
-    parentHash: string
-}
-
-interface Block {
-    header: BlockHeader
-    extrinsics: RawExtrinsic[]
-}
-
-export interface SignedBlock {
-    block: Block
-}
-
-export interface BlockEntity {  // TODO: rename/remove entity postfix
+export interface Block {
     id: string
     height: number
     hash: string
@@ -32,51 +10,39 @@ export interface BlockEntity {  // TODO: rename/remove entity postfix
     timestamp: Date
 }
 
-export interface EventEntity {
+
+export interface Event {
     id: string
     block_id: string
+    phase: sub.EventRecordPhase['__kind']
+    index_in_block: number
     name: QualifiedName
+    extrinsic_id?: string
+    call_id?: string
     args: unknown
 }
 
-export interface ExtrinsicEntity {
+
+export interface Extrinsic {
     id: string
     block_id: string
     name: QualifiedName
-    tip: BigInt
-    nonce: number
-    hash: string
+    index_in_block: number
+    signature?: sub.ExtrinsicSignature
+    success: boolean
+    hash: Uint8Array
 }
 
-export interface CallEntity {
+
+export interface Call {
     extrinsic_id: string
     args: unknown
 }
 
-interface MetadataEntity {
-    spec_version: Spec
+
+export interface Metadata {
+    spec_version: SpecVersion
     block_height: number
     block_hash: number
     data: string
-}
-
-export interface SpecInfo {
-    specVersion: SpecVersion
-    description: ChainDescription
-    rawMetadata: string
-}
-
-
-export interface LastBlock extends BlockEntity {
-    specVersion: SpecVersion
-}
-
-export interface ExtrinsicCall {
-    __kind: string,
-    value: {__kind: string, [key: string]: any}
-}
-
-export interface Event {
-    __kind: string
-    value: {__kind: string, value: any}
 }
