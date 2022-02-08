@@ -54,7 +54,7 @@ export interface CallEntity {
 }
 
 interface MetadataEntity {
-    spec: Spec
+    spec_version: Spec
     block_height: number
     block_hash: number
     data: string
