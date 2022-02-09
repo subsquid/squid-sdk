@@ -6914,7 +6914,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-S+YYkIn7+yUmqMF/q4TiE/TVXrmq787j8bt6HnoDYLKKOzZmODRjOYYmXfVPYrnLwpRUOg7h+QrKn6bYqXYLtA==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-m0PlmC/C4BVYHA4LDokVX79vdzybjkCoezqkFUSVQJqNqCSnUcRAXhT76gxg5e2AVOyx9IHWccFK97QUW99hQw==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -6925,6 +6925,7 @@ packages:
       '@subsquid/util': 0.0.3
       '@types/pg': 8.6.4
       blake2b: 2.1.4
+      dotenv: 10.0.0
       pg: 8.7.3
       postgres-migrations: 5.3.0
     transitivePeerDependencies:

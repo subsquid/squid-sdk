@@ -18,7 +18,8 @@
     "@subsquid/util": "^0.0.4",
     "blake2b": "^2.1.4",
     "pg": "^8.7.3",
-    "postgres-migrations": "^5.3.0"
+    "postgres-migrations": "^5.3.0",
+    "dotenv": "^10.0.0"
   },
   "devDependencies": {
     "@types/pg": "8.6.4"

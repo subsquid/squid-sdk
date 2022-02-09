@@ -5,13 +5,13 @@ import {migrate} from "postgres-migrations"
 
 export async function getConnection(): Promise<Client> {
     let db = new Client({
-        user: 'postgres',
-        host: 'localhost',
-        database: 'archive',
-        password: '',
-        port: 5432,
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASS,
+        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
     })
     await db.connect()
-    await migrate({client: db}, path.resolve(__dirname, '../migration'))
+    await migrate({client: db}, path.resolve(__dirname, '../migrations'))
     return db
 }
