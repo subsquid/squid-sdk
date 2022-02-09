@@ -36,7 +36,11 @@ export namespace sub {
 
 
     export interface BlockHeader {
+        digest: string[]
+        extrinsicRoot: string
+        number: string
         parentHash: string
+        stateRoot: string
     }
 
 

@@ -37,7 +37,10 @@ export class SubstrateArchive {
     }
 
     async *loop() {
-        let block = 1
+        let lastHeight = await this.getLastHeight()
+        let block = lastHeight ? lastHeight + 1 : 1
+        await this.initSpecInfo(block)
+
         while (true) {
             yield await this.processBlock(block)
             block += 1
@@ -116,6 +119,19 @@ export class SubstrateArchive {
                 await this.saveMetadata(blockHeight, blockHash, metadataToSave)
             }
         })
+    }
+
+    private async initSpecInfo(blockHeight: number) {
+        let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
+        let header = await this.client.call<sub.BlockHeader>("chain_getHeader", [blockHash])
+        this._specInfo = await this.getSpecInfo(header.parentHash)
+    }
+
+    private async getLastHeight(): Promise<number | undefined> {
+        let res = await this.db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
+        if (res.rowCount) {
+            return res.rows[0].height
+        }
     }
 
     private saveMetadata(blockHeight: number, blockHash: string, specInfo: SpecInfo): Promise<unknown> {
