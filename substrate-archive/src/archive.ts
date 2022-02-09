@@ -13,8 +13,8 @@ import {assertNotNull, def, toCamelCase} from "@subsquid/util"
 import * as pg from "pg"
 import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
-import {Event, Extrinsic} from "./model"
-import {blake2bHash, EVENT_STORAGE_KEY, formatId, isPreV14, omit} from "./util"
+import {Event, Extrinsic, Call} from "./model"
+import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit} from "./util"
 
 
 export interface SubstrateArchiveOptions {
@@ -38,7 +38,8 @@ export class SubstrateArchive {
 
     async *loop() {
         let lastHeight = await this.getLastHeight()
-        let block = lastHeight ? lastHeight + 1 : 1
+        let block = lastHeight ? lastHeight + 1 : 0
+        block = 10000123  // utility.batch
         await this.initSpecInfo(block)
 
         while (true) {
@@ -95,6 +96,8 @@ export class SubstrateArchive {
                 let name = toCamelCase(call.__kind) + '.' + call.value.__kind
                 let args: unknown
                 let def = assertNotNull(specInfo.calls.definitions[name])
+                console.log('def', def)
+                console.log('call.value', call.value)
                 if (def.fields[0]?.name != null) {
                     args = omit(call.value, '__kind')
                 } else {
@@ -112,12 +115,23 @@ export class SubstrateArchive {
                 }
             })
 
+        let timestamp = getBlockTimestamp(extrinsics)
         let calls = new CallParser(events, extrinsics).calls
 
         await this.tx(async () => {
             if (metadataToSave) {
                 await this.saveMetadata(blockHeight, blockHash, metadataToSave)
             }
+            await this.saveBlock(block_id, blockHeight, blockHash, signedBlock.block.header.parentHash, timestamp)
+            extrinsics.forEach(async (extrinsic) => {
+                await this.saveExtrinsic(extrinsic)
+            })
+            calls.forEach(async (call) => {
+                await this.saveCall(call)
+            })
+            events.forEach(async (event) => {
+                await this.saveEvent(event)
+            })
         })
     }
 
@@ -138,6 +152,34 @@ export class SubstrateArchive {
         return this.db.query(
             "INSERT INTO metadata(spec_version, block_height, block_hash, hex) VALUES($1, $2, $3, $4)",
             [specInfo.specVersion, blockHeight, blockHash, specInfo.rawMetadata]
+        )
+    }
+
+    private saveBlock(id: string, height: number, hash: string, parentHash: string, timestamp: Date): Promise<unknown> {
+        return this.db.query(
+            "INSERT INTO block(id, height, hash, parent_hash, timestamp) VALUES($1, $2, $3, $4, $5)",
+            [id, height, hash, parentHash, timestamp]
+        )
+    }
+
+    private saveExtrinsic(ex: Extrinsic): Promise<unknown> {
+        return this.db.query(
+            "INSERT INTO extrinsic(id, block_id, index_in_block, name, signature, success, hash) VALUES($1, $2, $3, $4, $5, $6, $7)",
+            [ex.id, ex.block_id, ex.index_in_block, ex.name, ex.signature, ex.success, ex.hash]
+        )
+    }
+
+    private saveCall(call: Call): Promise<unknown> {
+        return this.db.query(
+            "INSERT INTO call(extrinsic_id, args) VALUES($1, $2)",
+            [call.extrinsic_id, call.args]
+        )
+    }
+
+    private saveEvent(e: Event): Promise<unknown> {
+        return this.db.query(
+            "INSERT INTO event(id, block_id, index_in_block, phase, extrinsic_id, call_id, name, args) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+            [e.id, e.block_id, e.index_in_block, e.phase, e.extrinsic_id, e.call_id, e.name, e.args]
         )
     }
 

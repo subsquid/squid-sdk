@@ -1,12 +1,16 @@
-import {Extrinsic, Metadata} from "@subsquid/substrate-metadata"
-import {toHex} from "@subsquid/util"
+import {Metadata} from "@subsquid/substrate-metadata"
+import {assertNotNull, toHex} from "@subsquid/util"
+import assert from "assert"
 import blake2b from "blake2b"
+import {Extrinsic} from "./model"
 
 
-export const EVENT_STORAGE_KEY = '0x' + Buffer.from([
-    ...blake2bHash("System", 16),
-    ...blake2bHash("Events", 16)
-]).toString("hex")
+// 0x789f1c09383940a7773420432ffd084a7767e29082d7fa0e8d744e796f6c3399
+// export const EVENT_STORAGE_KEY = '0x' + Buffer.from([
+//     ...blake2bHash("System", 16),
+//     ...blake2bHash("Events", 16)
+// ]).toString("hex")
+export const EVENT_STORAGE_KEY = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
 
 
 export function blake2bHash(bytes: Uint8Array | string, len: number): Uint8Array {
@@ -102,10 +106,9 @@ function jsonReplacer(key: string, value: unknown): any {
  * @param extrinsics block extrinsics
  * @returns timestamp as set by a `timestamp.set` call
  */
-function getBlockTimestamp(extrinsics: Extrinsic[]): number {
+export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): Date {  // TODO: change args to unknown
     let extrinsic = extrinsics.find(extrinsic => {
-        if (extrinsic.call.__kind !== "Timestamp") return false
-        return extrinsic.call.value.__kind === "set"
+        return extrinsic.name == 'timestamp.set'
     })
-    return extrinsic ? extrinsic.call.value.now : 0
+    return new Date(extrinsic ? extrinsic.args.now : 0)
 }

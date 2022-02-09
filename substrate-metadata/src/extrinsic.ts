@@ -28,7 +28,7 @@ export function decodeExtrinsic(
 
     let meta = src.u8()
     let signed = meta & 0b10000000
-    let version = meta | 0b01111111
+    let version = meta & 0b01111111
 
     assert(version == 4, 'unsupported extrinsic version')
 
