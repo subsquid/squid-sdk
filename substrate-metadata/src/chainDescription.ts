@@ -3,7 +3,7 @@ import assert from "assert"
 import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from "./interfaces"
 import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
-import {Ti, Type, TypeKind, Variant} from "./types"
+import {Field, Ti, Type, TypeKind, Variant} from "./types"
 import {getTypeByPath, normalizeMetadataTypes} from "./util"
 
 
@@ -27,150 +27,167 @@ export function getChainDescriptionFromMetadata(metadata: Metadata, oldTypes?: O
             assert(oldTypes, `Type definitions are required for metadata ${metadata.__kind}`)
             return new FromOld(metadata, oldTypes).convert()
         case "V14":
-            return fromV14(metadata.value)
+            return new FromV14(metadata.value).convert()
         default:
             throw new Error(`Unsupported metadata version: ${metadata.__kind}`)
     }
 }
 
 
-function fromV14(metadata: MetadataV14): ChainDescription {
-    let types: Type[] = metadata.lookup.types.map(t => {
-        let info = {
-            path: t.type.path,
-            docs: t.type.docs
-        }
-        let def = t.type.def
-        switch(def.__kind) {
-            case 'Primitive':
-                return {
-                    kind: TypeKind.Primitive,
-                    primitive: def.value.__kind,
-                    ...info
-                }
-            case "Compact":
-                return {
-                    kind: TypeKind.Compact,
-                    type: def.value.type,
-                    ...info
-                }
-            case "Sequence":
-                return {
-                    kind: TypeKind.Sequence,
-                    type: def.value.type,
-                    ...info
-                }
-            case "BitSequence":
-                return {
-                    kind: TypeKind.BitSequence,
-                    bitStoreType: def.value.bitStoreType,
-                    bitOrderType: def.value.bitOrderType,
-                    ...info
-                }
-            case "Array":
-                return {
-                    kind: TypeKind.Array,
-                    type: def.value.type,
-                    len: def.value.len,
-                    ...info
-                }
-            case "Tuple":
-                return {
-                    kind: TypeKind.Tuple,
-                    tuple: def.value,
-                    ...info
-                }
-            case "Composite":
-                return {
-                    kind: TypeKind.Composite,
-                    fields: def.value.fields,
-                    ...info
-                }
-            case "Variant":
-                return {
-                    kind: TypeKind.Variant,
-                    variants: def.value.variants,
-                    ...info
-                }
-            default:
-                throw unexpectedCase((def as any).__kind)
-        }
-    })
+class FromV14 {
+    constructor(private metadata: MetadataV14) {}
 
-    types = normalizeMetadataTypes(types)
-
-    let signatureType = createSignatureType(metadata, types)
-    let signature = types.push(signatureType) - 1
-    let eventRecord = getTypeByPath(types, ['frame_system', 'EventRecord'])
-    let eventRecordList = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)
-    if (eventRecordList < 0) {
-        eventRecordList = types.push({kind: TypeKind.Sequence, type: eventRecord}) - 1
+    convert(): ChainDescription {
+        return {
+            types: this.types(),
+            call: this.call(),
+            signature: this.signature(),
+            event: this.event(),
+            eventRecord: this.eventRecord(),
+            eventRecordList: this.eventRecordList()
+        }
     }
 
-    return {
-        types,
-        call: getCallType(metadata),
-        signature,
-        event: getEventTypeFromEventRecord(types, eventRecord),
-        eventRecord,
-        eventRecordList
+    @def
+    private event(): Ti {
+        let rec = this.types()[this.eventRecord()]
+        assert(rec.kind == TypeKind.Composite)
+        let eventField = rec.fields.find(f => f.name == 'event')
+        assert(eventField != null)
+        return eventField.type
     }
-}
 
+    @def
+    private call(): Ti {
+        let types = this.metadata.lookup.types
+        let extrinsic = this.metadata.extrinsic.type
+        let params = types[extrinsic].type.params
+        let call = params[1]
+        assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
+        return assertNotNull(call.type)
+    }
 
-function getCallType(metadata: MetadataV14): Ti {
-    let types = metadata.lookup.types
-    let extrinsic = metadata.extrinsic.type
-    let params = types[extrinsic].type.params
-    let call = params[1]
-    assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
-    return assertNotNull(call.type)
-}
-
-
-function createSignatureType(metadata: MetadataV14, types: Type[]): Type {
-    let fields = [
-        {
-            name: "address",
-            type: getTypeByPath(types, ["sp_runtime", "multiaddress", "MultiAddress"]),
-        },
-        {
-            name: "signature",
-            type: getTypeByPath(types, ["sp_runtime", "MultiSignature"]),
-        },
-    ]
-    metadata.extrinsic.signedExtensions.forEach(extension => {
-        switch(extension.identifier) {
-            case "CheckMortality":
-                fields.push({name: "mortality", type: extension.type})
-                break
-            case "CheckEra":
-                fields.push({name: "era", type: extension.type})
-                break
-            case "CheckNonce":
-                fields.push({name: "nonce", type: extension.type})
-                break
-            case "ChargeTransactionPayment":
-                fields.push({name: "tip", type: extension.type})
-                break
-            case "ChargeAssetTxPayment":
-                fields.push({name: "asset", type: extension.type})
-                break
+    @def
+    private eventRecordList(): Ti {
+        let types = this.types()
+        let eventRecord = this.eventRecord()
+        let list = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)
+        if (list < 0) {
+            list = types.push({kind: TypeKind.Sequence, type: eventRecord}) - 1
         }
-    })
-    return {
-        kind: TypeKind.Composite,
-        fields,
+        return list
     }
-}
 
+    @def
+    private eventRecord(): Ti {
+        return getTypeByPath(this.types(), ['frame_system', 'EventRecord'])
+    }
 
-function getEventTypeFromEventRecord(types: Type[], eventRecord: Ti): Ti {
-    let rec = types[eventRecord]
-    assert(rec.kind == TypeKind.Composite)
-    let eventField = rec.fields.find(f => f.name == 'event')
-    assert(eventField != null)
-    return eventField.type
+    @def
+    private signature(): Ti {
+        let types = this.types()
+
+        let signedExtensionsType: Type = {
+            kind: TypeKind.Composite,
+            fields: this.metadata.extrinsic.signedExtensions.map(ext => {
+                return {
+                    name: ext.identifier,
+                    type: ext.type
+                }
+            }),
+            path: ['SignedExtensions']
+        }
+
+        let signedExtensions = types.push(signedExtensionsType) - 1
+
+        let signatureType: Type = {
+            kind: TypeKind.Composite,
+            fields: [
+                {
+                    name: "address",
+                    type: getTypeByPath(types, ["sp_runtime", "multiaddress", "MultiAddress"]),
+                },
+                {
+                    name: "signature",
+                    type: getTypeByPath(types, ["sp_runtime", "MultiSignature"]),
+                },
+                {
+                    name: 'signedExtensions',
+                    type: signedExtensions
+                }
+            ],
+            path: ['ExtrinsicSignature']
+        }
+
+        return types.push(signatureType) - 1
+    }
+
+    @def
+    private types(): Type[] {
+        let types: Type[] = this.metadata.lookup.types.map(t => {
+            let info = {
+                path: t.type.path,
+                docs: t.type.docs
+            }
+            let def = t.type.def
+            switch(def.__kind) {
+                case 'Primitive':
+                    return {
+                        kind: TypeKind.Primitive,
+                        primitive: def.value.__kind,
+                        ...info
+                    }
+                case "Compact":
+                    return {
+                        kind: TypeKind.Compact,
+                        type: def.value.type,
+                        ...info
+                    }
+                case "Sequence":
+                    return {
+                        kind: TypeKind.Sequence,
+                        type: def.value.type,
+                        ...info
+                    }
+                case "BitSequence":
+                    return {
+                        kind: TypeKind.BitSequence,
+                        bitStoreType: def.value.bitStoreType,
+                        bitOrderType: def.value.bitOrderType,
+                        ...info
+                    }
+                case "Array":
+                    return {
+                        kind: TypeKind.Array,
+                        type: def.value.type,
+                        len: def.value.len,
+                        ...info
+                    }
+                case "Tuple":
+                    return {
+                        kind: TypeKind.Tuple,
+                        tuple: def.value,
+                        ...info
+                    }
+                case "Composite":
+                    return {
+                        kind: TypeKind.Composite,
+                        fields: def.value.fields,
+                        ...info
+                    }
+                case "Variant":
+                    return {
+                        kind: TypeKind.Variant,
+                        variants: def.value.variants,
+                        ...info
+                    }
+                default:
+                    throw unexpectedCase((def as any).__kind)
+            }
+        })
+
+        return normalizeMetadataTypes(types)
+    }
 }
 
 
@@ -183,6 +200,7 @@ class FromOld {
 
     convert(): ChainDescription {
         // order is important
+        this.extrinsicEra()
         let call = this.call()
         let event = this.event()
         let signature = this.signature()
@@ -221,42 +239,108 @@ class FromOld {
 
     @def
     private signature(): Ti {
-        let fields = [
-            {name: "address", type: this.registry.use("Address")},
-            {name: "signature", type: this.registry.use("ExtrinsicSignature")},
-        ];
-
-        if ("extrinsic" in this.metadata.value) {
-            this.metadata.value.extrinsic.signedExtensions.forEach(extension => {
-                switch(extension) {
-                    case "CheckMortality":
-                        fields.push({name: "mortality", type: this.registry.use("U16")})
-                        break
-                    case "CheckEra":
-                        fields.push({name: "era", type: this.registry.use("U16")})
-                        break
-                    case "CheckNonce":
-                        fields.push({name: "nonce", type: this.registry.use("Compact<Index>")})
-                        break
-                    case "ChargeTransactionPayment":
-                        fields.push({name: "tip", type: this.registry.use("Compact<Balance>")})
-                        break
-                    case "ChargeAssetTxPayment":
-                        fields.push({name: "asset", type: this.registry.use("Option<AssetId>")})
-                        break
-                }
-            })
-        } else {
-            fields.push(
-                {name: "era", type: this.registry.use("U16")},
-                {name: "nonce", type: this.registry.use("Compact<Index>")},
-                {name: "tip", type: this.registry.use("Compact<Balance>")},
-            )
-        }
         return this.registry.create("GenericSignature", () => {
             return {
                 kind: TypeKind.Composite,
-                fields,
+                fields: [
+                    {
+                        name: "address",
+                        type: this.registry.use("Address")
+                    },
+                    {
+                        name: "signature",
+                        type: this.registry.use("ExtrinsicSignature")
+                    },
+                    {
+                        name: 'signedExtensions',
+                        type: this.signedExtensions()
+                    }
+                ]
+            }
+        })
+    }
+
+    @def
+    private signedExtensions(): Ti {
+        let fields: Field[] = []
+        switch(this.metadata.__kind) {
+            case "V9":
+            case "V10":
+                this.addSignedExtensionField(fields, 'CheckEra')
+                this.addSignedExtensionField(fields, 'CheckNonce')
+                this.addSignedExtensionField(fields, 'ChargeTransactionPayment')
+                break
+            case "V11":
+            case "V12":
+            case "V13":
+                this.metadata.value.extrinsic.signedExtensions.forEach(name => {
+                    this.addSignedExtensionField(fields, name)
+                })
+                break
+            default:
+                throw unexpectedCase(this.metadata.__kind)
+        }
+        return this.registry.add({
+            kind: TypeKind.Composite,
+            fields
+        })
+    }
+
+    private addSignedExtensionField(fields: Field[], name: string): void {
+        let type = this.getSignedExtensionType(name)
+        if (type == null) return
+        fields.push({name, type})
+    }
+
+    private getSignedExtensionType(name: string): Ti | undefined {
+        switch(name) {
+            case 'ChargeTransactionPayment':
+                return this.registry.use('Compact<Balance>')
+            case 'CheckMortality':
+            case 'CheckEra':
+                return this.registry.use('ExtrinsicEra')
+            case 'CheckNonce':
+                return this.registry.use('Compact<Index>')
+            case 'CheckBlockGasLimit':
+            case 'CheckGenesis':
+            case 'CheckNonZeroSender':
+            case 'CheckSpecVersion':
+            case 'CheckTxVersion':
+            case 'CheckVersion':
+            case 'CheckWeight':
+            case 'LockStakingStatus':
+            case 'ValidateEquivocationReport':
+                return undefined
+            default:
+                console.error('WARNING: Unknown signed extension: ' + name)
+                return undefined
+        }
+    }
+
+    @def
+    private extrinsicEra(): Ti {
+        return this.registry.create('GenericExtrinsicEra', () => {
+            let variants: Variant[] = []
+
+            variants.push({
+                name: 'Immortal',
+                fields: [],
+                index: 0
+            })
+
+            for (let index = 1; index < 256; index++) {
+                variants.push({
+                    name: 'Mortal' + index,
+                    fields: [
+                        {type: this.registry.use('U8')}
+                    ],
+                    index
+                })
+            }
+
+            return {
+                kind: TypeKind.Variant,
+                variants
             }
         })
     }
