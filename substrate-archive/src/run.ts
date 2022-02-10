@@ -19,10 +19,23 @@ async function main() {
         interrupted = true
     })
 
-    for await (let block of archive.loop()) {
-        console.log(`Saved block #${block}`)
-        if (interrupted) return
+    process.on('SIGTERM', () => {
+        interrupted = true
+    })
+
+    try {
+        for await (let block of archive.loop()) {
+            console.log(`Saved block #${block}`)
+            if (interrupted) break
+        }
+    } finally {
+        console.log('Closing the database connection')
+        await db.end()
+        console.log('Closing the rpc-client connection')
+        client.close()
     }
+
+    process.exit()
 }
 
 main()
