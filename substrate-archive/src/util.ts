@@ -1,6 +1,7 @@
 import {Metadata} from "@subsquid/substrate-metadata"
-import {toHex} from "@subsquid/util"
+import {assertNotNull, toCamelCase, toHex} from "@subsquid/util"
 import blake2b from "blake2b"
+import {SpecInfo, sub} from "./interfaces"
 import {Extrinsic} from "./model"
 
 
@@ -110,4 +111,17 @@ export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): Date
         return extrinsic.name == 'timestamp.set'
     })
     return new Date(extrinsic ? extrinsic.args.now : 0)
+}
+
+
+export function unwrapCall(call: sub.Call, specInfo: SpecInfo): {name: string, args: unknown} {
+    let name = toCamelCase(call.__kind) + '.' + call.value.__kind
+    let args: unknown
+    let def = assertNotNull(specInfo.calls.definitions[name])
+    if (def.fields[0]?.name != null) {
+        args = omit(call.value, '__kind')
+    } else {
+        args = call.value.value
+    }
+    return {name, args}
 }

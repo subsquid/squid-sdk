@@ -14,7 +14,7 @@ import * as pg from "pg"
 import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
 import {Event, Extrinsic, Call} from "./model"
-import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit} from "./util"
+import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit, unwrapCall} from "./util"
 
 
 export interface SubstrateArchiveOptions {
@@ -92,15 +92,7 @@ export class SubstrateArchive {
                 let bytes = Buffer.from(hex.slice(2), 'hex')
                 let hash = blake2bHash(bytes, 32)
                 let ex = decodeExtrinsic(bytes, specInfo.description, specInfo.scaleCodec)
-                let call: sub.Call = ex.call
-                let name = toCamelCase(call.__kind) + '.' + call.value.__kind
-                let args: unknown
-                let def = assertNotNull(specInfo.calls.definitions[name])
-                if (def.fields[0]?.name != null) {
-                    args = omit(call.value, '__kind')
-                } else {
-                    args = call.value.value
-                }
+                let {name, args} = unwrapCall(ex.call, specInfo)
                 return {
                     id: formatId(blockHeight, blockHash, idx),
                     block_id,
@@ -114,16 +106,16 @@ export class SubstrateArchive {
             })
 
         let timestamp = getBlockTimestamp(extrinsics)
-        let calls = new CallParser(blockHeight, blockHash, events, extrinsics).calls
+        let calls = new CallParser(specInfo, blockHeight, blockHash, events, extrinsics).calls
 
         await this.tx(async () => {
             if (metadataToSave) {
                 await this.saveMetadata(blockHeight, blockHash, metadataToSave)
             }
             await this.saveBlock(block_id, blockHeight, blockHash, signedBlock.block.header.parentHash, timestamp)
-            extrinsics.forEach(async (extrinsic) => {
-                await this.saveExtrinsic(extrinsic)
-            })
+            for (const ex of extrinsics) {
+                await this.saveExtrinsic(ex)
+            }
             calls.forEach(async (call) => {
                 await this.saveCall(call)
             })

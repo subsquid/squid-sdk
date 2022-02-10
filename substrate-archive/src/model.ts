@@ -38,7 +38,8 @@ export interface Call {
     id: string,
     index: number
     extrinsic_id: string
-    parent_id: string | null
+    name: string
+    parent_id?: string
     success: boolean
     args: unknown
 }
