@@ -36,9 +36,9 @@ export interface Extrinsic {
 
 export interface Call {
     id: string,
-    index: string
+    index: number
     extrinsic_id: string
-    parent_id: string
+    parent_id: string | null
     success: boolean
     args: unknown
 }

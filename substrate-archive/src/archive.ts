@@ -96,8 +96,6 @@ export class SubstrateArchive {
                 let name = toCamelCase(call.__kind) + '.' + call.value.__kind
                 let args: unknown
                 let def = assertNotNull(specInfo.calls.definitions[name])
-                console.log('def', def)
-                console.log('call.value', call.value)
                 if (def.fields[0]?.name != null) {
                     args = omit(call.value, '__kind')
                 } else {
@@ -116,7 +114,7 @@ export class SubstrateArchive {
             })
 
         let timestamp = getBlockTimestamp(extrinsics)
-        let calls = new CallParser(events, extrinsics).calls
+        let calls = new CallParser(blockHeight, blockHash, events, extrinsics).calls
 
         await this.tx(async () => {
             if (metadataToSave) {
@@ -171,8 +169,8 @@ export class SubstrateArchive {
 
     private saveCall(call: Call): Promise<unknown> {
         return this.db.query(
-            "INSERT INTO call(extrinsic_id, args) VALUES($1, $2)",
-            [call.extrinsic_id, call.args]
+            "INSERT INTO call(id, index, extrinsic_id, parent_id, success, args) VALUES($1, $2, $3, $4, $5, $6)",
+            [call.id, call.index, call.extrinsic_id, call.parent_id, call.success, call.args]
         )
     }
 

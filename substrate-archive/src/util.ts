@@ -1,6 +1,5 @@
 import {Metadata} from "@subsquid/substrate-metadata"
-import {assertNotNull, toHex} from "@subsquid/util"
-import assert from "assert"
+import {toHex} from "@subsquid/util"
 import blake2b from "blake2b"
 import {Extrinsic} from "./model"
 
