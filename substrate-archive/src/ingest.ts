@@ -9,37 +9,34 @@ import {
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def, toCamelCase} from "@subsquid/util"
-import * as pg from "pg"
+import {assertNotNull, toCamelCase} from "@subsquid/util"
 import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
-import {Event, Extrinsic, Call} from "./model"
+import {Event, Extrinsic} from "./model"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit, unwrapCall} from "./util"
+import {Sync, SyncData} from './sync'
 
 
-export interface SubstrateArchiveOptions {
+export interface SubstrateIngestOptions {
     client: ResilientRpcClient
-    db: pg.ClientBase
+    sync: Sync,
     typesBundle?: OldTypesBundle
 }
 
 
-export class SubstrateArchive {
+export class SubstrateIngest {
     private client: ResilientRpcClient
-    private db: pg.ClientBase
+    private sync: Sync
     private typesBundle?: OldTypesBundle
     private _specInfo?: SpecInfo
 
-    constructor(options: SubstrateArchiveOptions) {
+    constructor(options: SubstrateIngestOptions) {
         this.client = options.client
-        this.db = options.db
+        this.sync = options.sync
         this.typesBundle = options.typesBundle
     }
 
-    async *loop() {
-        let lastHeight = await this.getLastHeight()
-        let block = lastHeight ? lastHeight + 1 : 0
-        block = 10000123  // utility.batch
+    async *loop(block: number) {
         await this.initSpecInfo(block)
 
         while (true) {
@@ -105,72 +102,37 @@ export class SubstrateArchive {
                 }
             })
 
-        let timestamp = getBlockTimestamp(extrinsics)
         let calls = new CallParser(specInfo, blockHeight, blockHash, events, extrinsics).calls
 
-        await this.tx(async () => {
-            if (metadataToSave) {
-                await this.saveMetadata(blockHeight, blockHash, metadataToSave)
+        let syncData: SyncData = {
+            block: {
+                id: block_id,
+                height: blockHeight,
+                hash: blockHash,
+                parent_hash: signedBlock.block.header.parentHash,
+                timestamp: getBlockTimestamp(extrinsics)
+            },
+            extrinsics,
+            events,
+            calls,
+        }
+
+        if (metadataToSave) {
+            syncData.metadata = {
+                spec_version: metadataToSave.specVersion,
+                block_hash: blockHash,
+                block_height: blockHeight,
+                hex: metadataToSave.rawMetadata,
             }
-            await this.saveBlock(block_id, blockHeight, blockHash, signedBlock.block.header.parentHash, timestamp)
-            for (const ex of extrinsics) {
-                await this.saveExtrinsic(ex)
-            }
-            calls.forEach(async (call) => {
-                await this.saveCall(call)
-            })
-            events.forEach(async (event) => {
-                await this.saveEvent(event)
-            })
-        })
+        }
+
+        await this.sync.write(syncData)
     }
 
     private async initSpecInfo(blockHeight: number) {
         let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
         let header = await this.client.call<sub.BlockHeader>("chain_getHeader", [blockHash])
         this._specInfo = await this.getSpecInfo(header.parentHash)
-    }
-
-    private async getLastHeight(): Promise<number | undefined> {
-        let res = await this.db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
-        if (res.rowCount) {
-            return res.rows[0].height
-        }
-    }
-
-    private saveMetadata(blockHeight: number, blockHash: string, specInfo: SpecInfo): Promise<unknown> {
-        return this.db.query(
-            "INSERT INTO metadata(spec_version, block_height, block_hash, hex) VALUES($1, $2, $3, $4)",
-            [specInfo.specVersion, blockHeight, blockHash, specInfo.rawMetadata]
-        )
-    }
-
-    private saveBlock(id: string, height: number, hash: string, parentHash: string, timestamp: Date): Promise<unknown> {
-        return this.db.query(
-            "INSERT INTO block(id, height, hash, parent_hash, timestamp) VALUES($1, $2, $3, $4, $5)",
-            [id, height, hash, parentHash, timestamp]
-        )
-    }
-
-    private saveExtrinsic(ex: Extrinsic): Promise<unknown> {
-        return this.db.query(
-            "INSERT INTO extrinsic(id, block_id, index_in_block, name, signature, success, hash) VALUES($1, $2, $3, $4, $5, $6, $7)",
-            [ex.id, ex.block_id, ex.index_in_block, ex.name, ex.signature, ex.success, ex.hash]
-        )
-    }
-
-    private saveCall(call: Call): Promise<unknown> {
-        return this.db.query(
-            "INSERT INTO call(id, index, extrinsic_id, parent_id, success, args) VALUES($1, $2, $3, $4, $5, $6)",
-            [call.id, call.index, call.extrinsic_id, call.parent_id, call.success, call.args]
-        )
-    }
-
-    private saveEvent(e: Event): Promise<unknown> {
-        return this.db.query(
-            "INSERT INTO event(id, block_id, index_in_block, phase, extrinsic_id, call_id, name, args) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
-            [e.id, e.block_id, e.index_in_block, e.phase, e.extrinsic_id, e.call_id, e.name, e.args]
-        )
     }
 
     private async getSpecInfo(
@@ -195,18 +157,6 @@ export class SubstrateArchive {
             scaleCodec: new Codec(description.types),
             events: new eac.Registry(description.types, description.event),
             calls: new eac.Registry(description.types, description.call)
-        }
-    }
-
-    private async tx<T>(cb: () => Promise<T>): Promise<T> {
-        await this.db.query('BEGIN')
-        try {
-            let result = await cb()
-            await this.db.query('COMMIT')
-            return result
-        } catch(e: any) {
-            await this.db.query('ROLLBACK').catch(() => {})
-            throw e
         }
     }
 }

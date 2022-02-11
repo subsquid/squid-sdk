@@ -24,7 +24,7 @@ export function blake2bHash(bytes: Uint8Array | string, len: number): Uint8Array
 
 
 /**
- * Formats the event id into a fixed-lentgth string. When formatted the natural string ordering
+ * Formats the event id into a fixed-length string. When formatted the natural string ordering
  * is the same as the ordering
  * in the blockchain (first ordered by block height, then by block ID)
  *

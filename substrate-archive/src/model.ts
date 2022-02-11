@@ -48,6 +48,6 @@ export interface Call {
 export interface Metadata {
     spec_version: SpecVersion
     block_height: number
-    block_hash: number
-    data: string
+    block_hash: string
+    hex: string
 }

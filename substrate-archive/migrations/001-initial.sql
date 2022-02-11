@@ -16,7 +16,7 @@ CREATE TABLE metadata (
 
 
 CREATE TABLE extrinsic (
-    id varchar(16) PRIMARY KEY,
+    id varchar(23) PRIMARY KEY,
     block_id varchar(16) REFERENCES block,
     index_in_block integer NOT NULL,
     name varchar NOT NULL,
@@ -27,9 +27,9 @@ CREATE TABLE extrinsic (
 
 
 CREATE TABLE call (
-    id varchar(16) primary key,
+    id varchar(23) primary key,
     index integer not null,
-    extrinsic_id varchar(16) not null REFERENCES extrinsic,
+    extrinsic_id varchar(23) not null REFERENCES extrinsic,
     parent_id varchar REFERENCES call,
     success bool not null,
     args jsonb
@@ -37,12 +37,12 @@ CREATE TABLE call (
 
 
 CREATE TABLE event (
-    id varchar(16) PRIMARY KEY,
+    id varchar(23) PRIMARY KEY,
     block_id varchar(16) not null REFERENCES block,
     index_in_block integer NOT NULL,
     phase varchar NOT NULL,
-    extrinsic_id varchar(16) REFERENCES extrinsic,
-    call_id varchar(16) REFERENCES call,
+    extrinsic_id varchar(23) REFERENCES extrinsic,
+    call_id varchar(23) REFERENCES call,
     name varchar NOT NULL,
     args jsonb
 );
