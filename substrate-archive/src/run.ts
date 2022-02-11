@@ -8,11 +8,10 @@ import {getConnection} from "./db"
 import {PostgresSync} from "./sync"
 
 
-async function getLastHeight(db: Client): Promise<number | undefined> {
+async function getArchiveHead(db: Client): Promise<number> {
     let res = await db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
-    if (res.rowCount) {
-        return res.rows[0].height
-    }
+    if (!res.rowCount) return 1  // TODO: set first block to 0
+    return res.rows[0].height + 1
 }
 
 
@@ -35,10 +34,8 @@ async function main() {
     })
 
     try {
-        let lastHeight = await getLastHeight(db)
-        let blockHeight = lastHeight ? lastHeight + 1 : 1  // TODO: set first block to 0
-
-        for await (let block of ingest.loop(blockHeight)) {
+        let archiveHead = await getArchiveHead(db)
+        for await (let block of ingest.loop(archiveHead)) {
             console.log(`Saved block #${block}`)
             if (interrupted) break
         }
