@@ -30,6 +30,11 @@ export class ResilientRpcClient {
         }
     }
 
+    async connect() {
+        let client = await this.client
+        return client.connect()
+    }
+
     private reconnect(): void {
         if (this.closed) return
         this.errors += 1
@@ -45,13 +50,14 @@ export class ResilientRpcClient {
         }
     }
 
-    close(err?: Error): void {
-        if (this.closed) return
+    close(err?: Error): Promise<void> {
+        if (this.closed) return Promise.resolve()
         this.closed = true
-        this.client.then(client => client.close(err))
+        let promise = this.client.then(client => client.close(err))
         this.client = Promise.reject(err || new Error('Closed'))
         this.client.catch(err => {
             // handle error, so that node doesn't warn you that something is unhandled
         })
+        return promise
     }
 }
