@@ -137,8 +137,12 @@ export class SubstrateIngest {
 
     private async initSpecInfo(blockHeight: number) {
         let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
-        let header = await this.client.call<sub.BlockHeader>("chain_getHeader", [blockHash])
-        this._specInfo = await this.getSpecInfo(header.parentHash)
+        if (blockHeight == 0) {
+            this._specInfo = await this.getSpecInfo(blockHash)
+        } else {
+            let header = await this.client.call<sub.BlockHeader>("chain_getHeader", [blockHash])
+            this._specInfo = await this.getSpecInfo(header.parentHash)
+        }
     }
 
     private async getSpecInfo(

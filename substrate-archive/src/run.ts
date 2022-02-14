@@ -10,7 +10,7 @@ import {Sync} from "./sync"
 
 async function getArchiveHead(db: Client): Promise<number> {
     let res = await db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
-    if (!res.rowCount) return 1  // TODO: set first block to 0
+    if (!res.rowCount) return 0
     return res.rows[0].height + 1
 }
 
