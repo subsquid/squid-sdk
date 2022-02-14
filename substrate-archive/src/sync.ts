@@ -11,20 +11,7 @@ export interface SyncData {
 }
 
 
-export interface Sync {
-    write(data: SyncData): Promise<void>
-}
-
-
-export class StdoutSync implements Sync {
-    write(data: SyncData) {
-        console.log(data)
-        return Promise.resolve()
-    }
-}
-
-
-export class PostgresSync implements Sync {
+export class Sync {
     constructor(private db: pg.ClientBase) {}
 
     write(data: SyncData) {

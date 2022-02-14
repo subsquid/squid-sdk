@@ -126,7 +126,13 @@ export class SubstrateIngest {
             }
         }
 
-        await this.sync.write(syncData)
+        try {
+            await this.sync.write(syncData)
+        } catch (e) {
+            console.log('Error while saving data:')
+            console.log(syncData)
+            throw e
+        }
     }
 
     private async initSpecInfo(blockHeight: number) {
