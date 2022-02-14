@@ -54,7 +54,7 @@ export class CallParser {
         private blockHeight: number,
         private blockHash: string,
         private events: Event[],
-        private extrinsics: (Extrinsic & {args: any})[]  // TODO: change any to unknown
+        private extrinsics: (Extrinsic & {args: any})[]
     ) {
         for (let i = 0; i < this.extrinsics.length; i++) {
             let ex = this.extrinsics[i]
@@ -124,26 +124,5 @@ export class CallParser {
         return this.callStack.length
             ? this.callStack[this.callStack.length - 1]
             : undefined
-    }
-
-    // private parseExtrinsic(extrinsic: Extrinsic) {
-    //     if (extrinsic.name == 'utility.batch') {
-    //         extrinsic.args.calls.forEach((call: any) => {
-    //
-    //         })
-    //     } else {
-    //         this.calls.push({
-    //             id: formatId(blockHeight, blockHash, index++),
-    //             index,
-    //             extrinsic_id: extrinsic.id,
-    //             parent_id: null,
-    //             success: true,
-    //             args: extrinsic.args,
-    //         })
-    //     }
-    // }
-
-    private parseCalls() {
-
     }
 }

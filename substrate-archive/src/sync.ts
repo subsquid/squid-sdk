@@ -1,5 +1,6 @@
 import * as pg from "pg"
 import {Block, Metadata, Event, Extrinsic, Call} from './model'
+import {toJsonString} from "./util"
 
 
 export interface SyncData {
@@ -43,21 +44,21 @@ export class Sync {
     private saveExtrinsics(extrinsics: Extrinsic[]) {
         let columns = ['id', 'block_id', 'index_in_block', 'name', 'signature', 'success', 'hash']
         return this.insertMany('extrinsic', columns, extrinsics, (values, ex) => {
-            values.push(ex.id, ex.block_id, ex.index_in_block, ex.name, ex.signature, ex.success, ex.hash)
+            values.push(ex.id, ex.block_id, ex.index_in_block, ex.name, toJsonString(ex.signature), ex.success, ex.hash)
         })
     }
 
     private saveCalls(calls: Call[]) {
         let columns = ['id', 'index', 'extrinsic_id', 'parent_id', 'success', 'args']
         return this.insertMany('call', columns, calls, (values, call) => {
-            values.push(call.id, call.index, call.extrinsic_id, call.parent_id, call.success, call.args)
+            values.push(call.id, call.index, call.extrinsic_id, call.parent_id, call.success, toJsonString(call.args))
         })
     }
 
     private saveEvents(events: Event[]) {
         let columns = ['id', 'block_id', 'index_in_block', 'phase', 'extrinsic_id', 'call_id', 'name', 'args']
         return this.insertMany('event', columns, events, (values, e) => {
-            values.push(e.id, e.block_id, e.index_in_block, e.phase, e.extrinsic_id, e.call_id, e.name, e.args)
+            values.push(e.id, e.block_id, e.index_in_block, e.phase, e.extrinsic_id, e.call_id, e.name, toJsonString(e.args))
         })
     }
 

@@ -88,8 +88,8 @@ function jsonReplacer(key: string, value: unknown): any {
         case 'bigint':
             return value.toString()
         case 'object':
-            if (value instanceof Uint8Array) {
-                return toHex(value)
+            if (value && (value as any).type == 'Buffer') {
+                return toHex(Buffer.from((value as any).data))
             } else {
                 return value
             }
@@ -106,7 +106,7 @@ function jsonReplacer(key: string, value: unknown): any {
  * @param extrinsics block extrinsics
  * @returns timestamp as set by a `timestamp.set` call
  */
-export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): Date {  // TODO: change args to unknown
+export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): Date {
     let extrinsic = extrinsics.find(extrinsic => {
         return extrinsic.name == 'timestamp.set'
     })
