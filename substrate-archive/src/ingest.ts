@@ -10,11 +10,11 @@ import {
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull, toCamelCase} from "@subsquid/util"
-import {CallParser} from "./callParser"
+import {CallParser} from "./call-parser"
 import {SpecInfo, sub} from "./interfaces"
 import {Event, Extrinsic} from "./model"
+import {Sync, SyncData} from "./sync"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit, unwrapCall} from "./util"
-import {Sync, SyncData} from './sync'
 
 
 export interface SubstrateIngestOptions {
@@ -102,7 +102,7 @@ export class SubstrateIngest {
                 }
             })
 
-        let calls = new CallParser(specInfo, blockHeight, blockHash, events, extrinsics).calls
+        let calls = new CallParser(specInfo, blockHeight, blockHash, events, extrinsics).getCalls()
 
         let syncData: SyncData = {
             block: {

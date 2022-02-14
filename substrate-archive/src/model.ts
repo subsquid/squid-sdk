@@ -19,7 +19,7 @@ export interface Event {
     name: QualifiedName
     extrinsic_id?: string
     call_id?: string
-    args: unknown
+    args: any
 }
 
 

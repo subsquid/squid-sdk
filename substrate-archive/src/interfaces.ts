@@ -19,22 +19,6 @@ export interface SpecInfo {
 
 
 export namespace sub {
-    export type EventRecordPhase = {
-        __kind: 'ApplyExtrinsic'
-        value: number
-    } | {
-        __kind: 'Initialization'
-    } | {
-        __kind: 'Finalization'
-    }
-
-
-    export interface EventRecord {
-        phase: EventRecordPhase
-        event: {__kind: string, value: {__kind: string} & any}
-    }
-
-
     export interface BlockHeader {
         digest: string[]
         extrinsicRoot: string
@@ -57,6 +41,28 @@ export namespace sub {
 
     export interface RuntimeVersion {
         specVersion: SpecVersion
+    }
+
+
+    export interface EventRecord {
+        phase: EventRecordPhase
+        event: Event
+    }
+
+
+    export type EventRecordPhase = {
+        __kind: 'ApplyExtrinsic'
+        value: number
+    } | {
+        __kind: 'Initialization'
+    } | {
+        __kind: 'Finalization'
+    }
+
+
+    export interface Event {
+        __kind: string
+        value: {__kind: string} & any
     }
 
 
