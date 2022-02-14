@@ -51,3 +51,12 @@ export interface Metadata {
     block_hash: string
     hex: string
 }
+
+
+export interface BlockData {
+    header: Block
+    extrinsics: Extrinsic[]
+    events: Event[]
+    calls: Call[]
+    metadata?: Metadata
+}

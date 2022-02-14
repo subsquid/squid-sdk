@@ -1,4 +1,4 @@
-import {AbortError} from "./async"
+import {AbortError} from "./abort"
 
 
 export interface Service {
@@ -36,7 +36,7 @@ export class ServiceManager {
         return ok
     }
 
-    private shutdown(err?: Error) {
+    private shutdown(err?: Error | string) {
         if (err) console.error(err)
         if (this.stopped) return
         this.stopped = true
@@ -48,7 +48,12 @@ export class ServiceManager {
 
     static run(app: (sm: ServiceManager) => Promise<void>): void {
         let sm = new ServiceManager()
-
+        process.on('SIGINT', () => {
+            sm.shutdown('SIGINT received')
+        })
+        process.on('SIGTERM', () => {
+            sm.shutdown('SIGTERM received')
+        })
         app(sm).then(
             () => sm.shutdown(),
             err => sm.shutdown(err)

@@ -4,48 +4,56 @@ import {
     decodeExtrinsic,
     decodeMetadata,
     getChainDescriptionFromMetadata,
+    getOldTypesBundle,
     OldTypes,
     OldTypesBundle
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, toCamelCase} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util"
+import assert from "assert"
 import {CallParser} from "./call-parser"
 import {SpecInfo, sub} from "./interfaces"
-import {Event, Extrinsic} from "./model"
-import {Sync, SyncData} from "./sync"
-import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit, unwrapCall} from "./util"
+import {BlockData, Event, Extrinsic} from "./model"
+import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, unwrapArguments} from "./util/misc"
 
 
-export interface SubstrateIngestOptions {
+export interface IngestOptions {
     client: ResilientRpcClient
-    sync: Sync,
     typesBundle?: OldTypesBundle
+    startBlock?: number
 }
 
 
-export class SubstrateIngest {
+export class Ingest {
+    static getBlocks(options: IngestOptions): AsyncGenerator<BlockData> {
+        return new Ingest(options).loop()
+    }
+
+    private initialBlock = 0
     private client: ResilientRpcClient
-    private sync: Sync
     private typesBundle?: OldTypesBundle
     private _specInfo?: SpecInfo
 
-    constructor(options: SubstrateIngestOptions) {
+    private constructor(options: IngestOptions) {
         this.client = options.client
-        this.sync = options.sync
         this.typesBundle = options.typesBundle
-    }
-
-    async *loop(block: number) {
-        await this.initSpecInfo(block)
-
-        while (true) {
-            yield await this.processBlock(block)
-            block += 1
+        if (options.startBlock) {
+            assert(options.startBlock >= 0)
+            this.initialBlock = options.startBlock
         }
     }
 
-    private async processBlock(blockHeight: number): Promise<void> {
+    private async *loop(): AsyncGenerator<BlockData> {
+        let height = this.initialBlock
+        await this.init()
+        while (true) {
+            yield await this.fetchBlock(height)
+            height += 1
+        }
+    }
+
+    private async fetchBlock(blockHeight: number): Promise<BlockData> {
         let metadataToSave: SpecInfo | undefined
         let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
         let runtimeVersion = await this.client.call<sub.RuntimeVersion>("chain_getRuntimeVersion", [blockHash])
@@ -53,22 +61,17 @@ export class SubstrateIngest {
         if (specInfo.specVersion != runtimeVersion.specVersion) {
             this._specInfo = await this.getSpecInfo(blockHash, runtimeVersion.specVersion)
             metadataToSave = this._specInfo
+        } else if (blockHeight == 0) {
+            metadataToSave = this._specInfo
         }
 
         let signedBlock = await this.client.call<sub.SignedBlock>("chain_getBlock", [blockHash])
         let rawEvents = await this.client.call("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
 
         let block_id = formatId(blockHeight, blockHash)
-        let events: Event[] = specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, rawEvents)
+        let events: Event[] = rawEvents == null ? [] : specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, rawEvents)
             .map((e: sub.EventRecord, idx: number) => {
-                let name = toCamelCase(e.event.__kind) + '.' + e.event.value.__kind
-                let args: unknown
-                let def = assertNotNull(specInfo.events.definitions[name])
-                if (def.fields[0]?.name != null) {
-                    args = omit(e.event.value, '__kind')
-                } else {
-                    args = e.event.value.value
-                }
+                let {name, args} = unwrapArguments(e.event, specInfo.events)
                 let extrinsic_id: string | undefined
                 if (e.phase.__kind == 'ApplyExtrinsic') {
                     extrinsic_id = formatId(blockHeight, blockHash, e.phase.value)
@@ -89,7 +92,7 @@ export class SubstrateIngest {
                 let bytes = Buffer.from(hex.slice(2), 'hex')
                 let hash = blake2bHash(bytes, 32)
                 let ex = decodeExtrinsic(bytes, specInfo.description, specInfo.scaleCodec)
-                let {name, args} = unwrapCall(ex.call, specInfo)
+                let {name, args} = unwrapArguments(ex.call, specInfo.calls)
                 return {
                     id: formatId(blockHeight, blockHash, idx),
                     block_id,
@@ -104,13 +107,13 @@ export class SubstrateIngest {
 
         let calls = new CallParser(specInfo, blockHeight, blockHash, events, extrinsics).getCalls()
 
-        let syncData: SyncData = {
-            block: {
+        let block: BlockData = {
+            header: {
                 id: block_id,
                 height: blockHeight,
                 hash: blockHash,
                 parent_hash: signedBlock.block.header.parentHash,
-                timestamp: getBlockTimestamp(extrinsics)
+                timestamp: new Date(getBlockTimestamp(extrinsics))
             },
             extrinsics,
             events,
@@ -118,7 +121,7 @@ export class SubstrateIngest {
         }
 
         if (metadataToSave) {
-            syncData.metadata = {
+            block.metadata = {
                 spec_version: metadataToSave.specVersion,
                 block_hash: blockHash,
                 block_height: blockHeight,
@@ -126,29 +129,23 @@ export class SubstrateIngest {
             }
         }
 
-        try {
-            await this.sync.write(syncData)
-        } catch (e) {
-            console.log('Error while saving data:')
-            console.log(syncData)
-            throw e
-        }
+        return block
     }
 
-    private async initSpecInfo(blockHeight: number) {
-        let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
-        let header = await this.client.call<sub.BlockHeader>("chain_getHeader", [blockHash])
-        this._specInfo = await this.getSpecInfo(header.parentHash)
+    private async init(): Promise<void> {
+        let height = this.initialBlock == 0 ? 0 : this.initialBlock - 1
+        let blockHash = await this.client.call<string>("chain_getBlockHash", [height])
+        let rt = await this.client.call<sub.RuntimeVersion>('chain_getRuntimeVersion', [blockHash])
+        if (this.typesBundle == null) {
+            this.typesBundle = getOldTypesBundle(rt.specName)
+        }
+        this._specInfo = await this.getSpecInfo(blockHash, rt.specVersion)
     }
 
     private async getSpecInfo(
         blockHash: string,
-        specVersion?: number
+        specVersion: number
     ): Promise<SpecInfo> {
-        if (specVersion == null) {
-            let rt = await this.client.call<sub.RuntimeVersion>('chain_getRuntimeVersion', [blockHash])
-            specVersion = rt.specVersion
-        }
         let rawMetadata: string = await this.client.call("state_getMetadata", [blockHash])
         let metadata = decodeMetadata(rawMetadata)
         let oldTypes: OldTypes | undefined

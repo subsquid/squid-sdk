@@ -40,6 +40,7 @@ export namespace sub {
 
 
     export interface RuntimeVersion {
+        specName: string
         specVersion: SpecVersion
     }
 

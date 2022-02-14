@@ -2,7 +2,7 @@ import {QualifiedName} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util"
 import {SpecInfo, sub} from "./interfaces"
 import * as model from "./model"
-import {formatId, unwrapCall} from "./util"
+import {formatId, unwrapArguments} from "./util/misc"
 
 
 interface Call extends model.Call {
@@ -87,7 +87,7 @@ export class CallParser {
     }
 
     private unwrapAndCreate(call: sub.Call, parent?: Call): void  {
-        let c = unwrapCall(call, this.specInfo)
+        let c = unwrapArguments(call, this.specInfo.calls)
         this.createCall(c.name, c.args, parent)
     }
 

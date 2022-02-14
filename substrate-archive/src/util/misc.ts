@@ -1,8 +1,9 @@
 import {Metadata} from "@subsquid/substrate-metadata"
-import {assertNotNull, toCamelCase, toHex} from "@subsquid/util"
+import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
+import {assertNotNull, toCamelCase} from "@subsquid/util"
 import blake2b from "blake2b"
-import {SpecInfo, sub} from "./interfaces"
-import {Extrinsic} from "./model"
+import {sub} from "../interfaces"
+import {Extrinsic} from "../model"
 
 
 // 0x789f1c09383940a7773420432ffd084a7767e29082d7fa0e8d744e796f6c3399
@@ -46,12 +47,9 @@ export function formatId(height: number, hash: string, index?: number): string {
 }
 
 
-export function omit(obj: any, ...keys: string[]): any {
-    let copy = {...obj}
-    keys.forEach(key => {
-        delete copy[key]
-    })
-    return copy
+export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, '__kind'> {
+    let {__kind, ...props} = obj
+    return props
 }
 
 
@@ -78,48 +76,27 @@ export function isPreV14(metadata: Metadata): boolean {
 }
 
 
-export function toJsonString(obj: unknown): string {
-    return JSON.stringify(obj, jsonReplacer)
-}
-
-
-function jsonReplacer(key: string, value: unknown): any {
-    switch(typeof value) {
-        case 'bigint':
-            return value.toString()
-        case 'object':
-            if (value && (value as any).type == 'Buffer') {
-                return toHex(Buffer.from((value as any).data))
-            } else {
-                return value
-            }
-        default:
-            return value
-    }
-}
-
-
 /**
  * All blocks have timestamp event except for the genesic block.
  * This method looks up `timestamp.set` and reads off the block timestamp
- *
- * @param extrinsics block extrinsics
- * @returns timestamp as set by a `timestamp.set` call
  */
-export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): Date {
-    let extrinsic = extrinsics.find(extrinsic => {
-        return extrinsic.name == 'timestamp.set'
-    })
-    return new Date(extrinsic ? extrinsic.args.now : 0)
+export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): number {
+    for (let i = 0; i < extrinsics.length; i++) {
+        let ex = extrinsics[i]
+        if (ex.name == 'timestamp.set') {
+            return ex.args.now
+        }
+    }
+    return 0
 }
 
 
-export function unwrapCall(call: sub.Call, specInfo: SpecInfo): {name: string, args: unknown} {
+export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Registry): {name: string, args: unknown} {
     let name = toCamelCase(call.__kind) + '.' + call.value.__kind
     let args: unknown
-    let def = assertNotNull(specInfo.calls.definitions[name])
+    let def = assertNotNull(registry.definitions[name])
     if (def.fields[0]?.name != null) {
-        args = omit(call.value, '__kind')
+        args = omitKind(call.value)
     } else {
         args = call.value.value
     }
