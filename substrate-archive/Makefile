@@ -1,13 +1,16 @@
-run: migrate
-	@node lib/run.js index
+DB="postgres://postgres:postgres@localhost:29387/archive"
 
-migrate:
-	@node lib/run.js migrate
+
+polkadot:
+	@node lib/main.js --chain wss://rpc.polkadot.io --out $DB
+
 
 up:
 	@docker-compose up -d
 
+
 down:
 	@docker-compose down
 
-.PHONY: run migrate up down reset
+
+.PHONY: up down

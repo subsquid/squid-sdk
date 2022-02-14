@@ -39,40 +39,37 @@ export class PostgresSink implements Sink {
         )
     }
 
-    private saveExtrinsics(extrinsics: Extrinsic[]) {
-        let columns = ['id', 'block_id', 'index_in_block', 'name', 'signature', 'success', 'hash']
-        return this.insertMany('extrinsic', columns, extrinsics, (values, ex) => {
-            values.push(ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, ex.hash)
-        })
-    }
-
-    private saveCalls(calls: Call[]) {
-        let columns = ['id', 'index', 'extrinsic_id', 'parent_id', 'success', 'args']
-        return this.insertMany('call', columns, calls, (values, call) => {
-            values.push(call.id, call.index, call.extrinsic_id, call.parent_id, call.success, toJSON(call.args))
-        })
-    }
-
-    private saveEvents(events: Event[]) {
-        let columns = ['id', 'block_id', 'index_in_block', 'phase', 'extrinsic_id', 'call_id', 'name', 'args']
-        return this.insertMany('event', columns, events, (values, e) => {
-            values.push(e.id, e.block_id, e.index_in_block, e.phase, e.extrinsic_id, e.call_id, e.name, toJSON(e.args))
-        })
-    }
-
-    private insertMany<T>(table: string, columns: string[], data: T[], mapFn: (values: any[], entity: T) => void) {
-        let placeholders = []
-        let values: any = []
-        let pos = 0
-        for (let i = 0; i < data.length; i++) {
-            let entity = data[i]
-            placeholders.push('(' + Array.from({length: columns.length}, () => '$' + ++pos).join(', ') + ')')
-            mapFn(values, entity)
+    private async saveExtrinsics(extrinsics: Extrinsic[]) {
+        for (let ex of extrinsics) {
+            await this.db.query(
+                `INSERT INTO extrinsic (id, block_id, index_in_block, name, signature, success, hash) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [
+                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, ex.hash
+                ]
+            )
         }
-        return this.db.query(
-            `INSERT INTO ${table} (${columns.join(', ')}) VALUES ${placeholders.join(', ')}`,
-            values
-        )
+    }
+
+    private async saveCalls(calls: Call[]) {
+        for (let call of calls) {
+            await this.db.query(
+                `INSERT INTO call (id, index, name, extrinsic_id, parent_id, success, args) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
+                [
+                    call.id, call.index, call.name, call.extrinsic_id, call.parent_id, call.success, JSON.stringify(toJSON(call.args))
+                ]
+            )
+        }
+    }
+
+    private async saveEvents(events: Event[]) {
+        for (let e of events) {
+            await this.db.query(
+                `INSERT INTO event (id, block_id, index_in_block, name, phase, extrinsic_id, call_id, args) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
+                [
+                    e.id, e.block_id, e.index_in_block, e.name, e.phase, e.extrinsic_id, e.call_id, JSON.stringify(toJSON(e.args))
+                ]
+            )
+        }
     }
 
     private async tx<T>(cb: () => Promise<T>): Promise<T> {

@@ -32,6 +32,7 @@ CREATE TABLE call (
     extrinsic_id varchar(23) not null REFERENCES extrinsic,
     parent_id varchar REFERENCES call,
     success bool not null,
+    name varchar not null,
     args jsonb
 );
 
