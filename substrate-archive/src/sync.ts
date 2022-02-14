@@ -21,9 +21,15 @@ export class Sync {
                 this.saveMetadata(data.metadata)
             }
             await this.saveBlock(data.block)
-            await this.saveExtrinsics(data.extrinsics)
-            await this.saveCalls(data.calls)
-            await this.saveEvents(data.events)
+            if (data.extrinsics.length) {
+                await this.saveExtrinsics(data.extrinsics)
+            }
+            if (data.calls.length) {
+                await this.saveCalls(data.calls)
+            }
+            if (data.events.length) {
+                await this.saveEvents(data.events)
+            }
         })
     }
 

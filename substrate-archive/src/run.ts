@@ -19,8 +19,14 @@ async function main() {
     dotenv.config()
 
     let db = await getConnection()
-    let client = new ResilientRpcClient("wss://kusama-rpc.polkadot.io")
-    let typesBundle = assertNotNull(getOldTypesBundle("kusama"))
+    console.log('Database connection is opened')
+
+    let url = assertNotNull(process.env.WS_PROVIDER_ENDPOINT_URI)
+    let client = new ResilientRpcClient(url)
+    console.log(`Rpc-client connected to ${url}`)
+
+    let chain = assertNotNull(process.env.CHAIN)
+    let typesBundle = assertNotNull(getOldTypesBundle(chain))
     let sync = new Sync(db)
     let ingest = new SubstrateIngest({client, typesBundle, sync})
     let interrupted = false
@@ -36,14 +42,14 @@ async function main() {
     try {
         let archiveHead = await getArchiveHead(db)
         for await (let block of ingest.loop(archiveHead)) {
-            console.log(`Saved block #${block}`)
+            console.log(`Saved block №${block.height}`)
             if (interrupted) break
         }
     } finally {
-        console.log('Closing the database connection')
         await db.end()
-        console.log('Closing the rpc-client connection')
-        client.close()
+        console.log('The database connection is closed')
+        await client.close()
+        console.log('The rpc-client connection is closed')
     }
 
     process.exit()

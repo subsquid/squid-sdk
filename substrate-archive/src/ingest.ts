@@ -12,7 +12,7 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {assertNotNull, toCamelCase} from "@subsquid/util"
 import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
-import {Event, Extrinsic} from "./model"
+import {Block, Event, Extrinsic} from "./model"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, omit, unwrapCall} from "./util"
 import {Sync, SyncData} from './sync'
 
@@ -45,7 +45,7 @@ export class SubstrateIngest {
         }
     }
 
-    private async processBlock(blockHeight: number): Promise<void> {
+    private async processBlock(blockHeight: number): Promise<Block> {
         let metadataToSave: SpecInfo | undefined
         let blockHash = await this.client.call<string>("chain_getBlockHash", [blockHeight])
         let runtimeVersion = await this.client.call<sub.RuntimeVersion>("chain_getRuntimeVersion", [blockHash])
@@ -56,33 +56,35 @@ export class SubstrateIngest {
         }
 
         let signedBlock = await this.client.call<sub.SignedBlock>("chain_getBlock", [blockHash])
-        let rawEvents = await this.client.call("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
-
         let block_id = formatId(blockHeight, blockHash)
-        let events: Event[] = specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, rawEvents)
-            .map((e: sub.EventRecord, idx: number) => {
-                let name = toCamelCase(e.event.__kind) + '.' + e.event.value.__kind
-                let args: unknown
-                let def = assertNotNull(specInfo.events.definitions[name])
-                if (def.fields[0]?.name != null) {
-                    args = omit(e.event.value, '__kind')
-                } else {
-                    args = e.event.value.value
-                }
-                let extrinsic_id: string | undefined
-                if (e.phase.__kind == 'ApplyExtrinsic') {
-                    extrinsic_id = formatId(blockHeight, blockHash, e.phase.value)
-                }
-                return {
-                    id: formatId(blockHeight, blockHash, idx),
-                    block_id,
-                    phase: e.phase.__kind,
-                    index_in_block: idx,
-                    name,
-                    args,
-                    extrinsic_id
-                }
-            })
+        let rawEvents = await this.client.call("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
+        let events: Event[] = []
+        if (rawEvents) {
+            events = specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, rawEvents)
+                .map((e: sub.EventRecord, idx: number) => {
+                    let name = toCamelCase(e.event.__kind) + '.' + e.event.value.__kind
+                    let args: unknown
+                    let def = assertNotNull(specInfo.events.definitions[name])
+                    if (def.fields[0]?.name != null) {
+                        args = omit(e.event.value, '__kind')
+                    } else {
+                        args = e.event.value.value
+                    }
+                    let extrinsic_id: string | undefined
+                    if (e.phase.__kind == 'ApplyExtrinsic') {
+                        extrinsic_id = formatId(blockHeight, blockHash, e.phase.value)
+                    }
+                    return {
+                        id: formatId(blockHeight, blockHash, idx),
+                        block_id,
+                        phase: e.phase.__kind,
+                        index_in_block: idx,
+                        name,
+                        args,
+                        extrinsic_id
+                    }
+                })
+        }
 
         let extrinsics: (Extrinsic & {args: unknown})[] = signedBlock.block.extrinsics
             .map((hex, idx) => {
@@ -133,6 +135,7 @@ export class SubstrateIngest {
             console.log(syncData)
             throw e
         }
+        return syncData.block
     }
 
     private async initSpecInfo(blockHeight: number) {
