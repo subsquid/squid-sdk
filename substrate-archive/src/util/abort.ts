@@ -1,7 +1,16 @@
 import assert from "assert"
 
 
-export class AbortHandle {
+export interface Abort {
+    readonly isAborted: boolean
+    assertNotAborted(): void
+    addListener(f: (err: Error) => void): void
+    removeListener(f: (err: Error) => void): void
+    guard<T>(promise: Promise<T>): Promise<T>
+}
+
+
+export class AbortHandle implements Abort {
     private abortError: Error | undefined
     private listeners: ((err: Error) => void)[] = []
 
@@ -68,7 +77,7 @@ export class AbortError extends Error {
 }
 
 
-export function wait(ms: number, abort?: AbortHandle): Promise<void> {
+export function wait(ms: number, abort?: Abort): Promise<void> {
     return new Promise((resolve, reject) => {
         abort?.assertNotAborted()
 

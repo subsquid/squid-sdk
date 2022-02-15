@@ -8,8 +8,8 @@ import * as pg from "pg"
 import {migrate} from "postgres-migrations"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
-import {AbortHandle} from "./util/abort"
 import {ServiceManager} from "./util/sm"
+import {ProgressTracker, round, SpeedTracker} from "./util/tracking"
 
 
 ServiceManager.run(async sm => {
@@ -72,7 +72,13 @@ ServiceManager.run(async sm => {
         sink = new WritableSink(process.stdout)
     }
 
-    let abort = sm.add(new AbortHandle())
+    let blockProgress = new ProgressTracker()
+    let writeSpeed = new SpeedTracker()
+    let lastBlock = startBlock
+
+    sm.every(5000, () => {
+        console.error(`last block: ${lastBlock}, processing: ${round(2, blockProgress.speed())} blocks/sec, writing: ${round(2, writeSpeed.speed())} blocks/sec`)
+    })
 
     let blocks = Ingest.getBlocks({
         client,
@@ -80,9 +86,20 @@ ServiceManager.run(async sm => {
         startBlock
     })
 
+    let sinking: Promise<void> | undefined
     for await (let block of blocks) {
-        abort.assertNotAborted()
-        await sink.write(block)
+        sm.abort.assertNotAborted()
+        if (sinking) {
+            await sinking
+        }
+        writeSpeed.mark()
+        sinking = sink.write(block)
+        sinking.catch(err => {}).finally(() => {
+            let time = process.hrtime.bigint()
+            writeSpeed.inc(1, time)
+            blockProgress.inc(1, time)
+            lastBlock = block.header.height
+        })
     }
 })
 

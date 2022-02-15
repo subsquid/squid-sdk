@@ -1,4 +1,4 @@
-import {AbortError} from "./abort"
+import {Abort, AbortError, AbortHandle} from "./abort"
 
 
 export interface Service {
@@ -9,11 +9,42 @@ export interface Service {
 export class ServiceManager {
     private services: Service[] = []
     private stopped = false
+    private _abort = new AbortHandle()
 
     add<T extends Service>(s: T): T {
         if (this.stopped) throw new Error('Service manager is already stopped')
         this.services.push(s)
         return s
+    }
+
+    get abort(): Abort {
+        return this._abort
+    }
+
+    every(ms: number, fn: () => void): void {
+        let timer: any
+
+        this.add({
+            close() {
+                if (timer) clearTimeout(timer)
+            }
+        })
+
+        let schedule = () => {
+            if (this.stopped) return
+            timer = setTimeout(() => {
+                timer = undefined
+                if (this.stopped) return
+                try {
+                    fn()
+                } catch(e: any) {
+                    this.shutdown(e)
+                }
+                schedule()
+            }, ms)
+        }
+
+        schedule()
     }
 
     private async stop(): Promise<boolean> {
@@ -36,8 +67,8 @@ export class ServiceManager {
         return ok
     }
 
-    private shutdown(err?: Error | string) {
-        if (err) console.error(err)
+    private shutdown(err?: Error) {
+        if (err && !(err instanceof AbortError)) console.error(err)
         if (this.stopped) return
         this.stopped = true
         this.stop().then(ok => {
@@ -49,16 +80,15 @@ export class ServiceManager {
     static run(app: (sm: ServiceManager) => Promise<void>): void {
         let sm = new ServiceManager()
         process.on('SIGINT', () => {
-            sm.shutdown('SIGINT received')
+            sm._abort.abort()
         })
         process.on('SIGTERM', () => {
-            sm.shutdown('SIGTERM received')
+            sm._abort.abort()
         })
-        app(sm).then(
-            () => sm.shutdown(),
-            err => sm.shutdown(err)
-        )
+        try {
+            app(sm).then(() => sm.shutdown(), err => sm.shutdown(err))
+        } catch(err: any) {
+            sm.shutdown(err)
+        }
     }
 }
-
-
