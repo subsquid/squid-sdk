@@ -77,6 +77,7 @@ ServiceManager.run(async sm => {
     let lastBlock = startBlock
 
     sm.every(5000, () => {
+        blockProgress.tick()
         console.error(`last block: ${lastBlock}, processing: ${round(2, blockProgress.speed())} blocks/sec, writing: ${round(2, writeSpeed.speed())} blocks/sec`)
     })
 
@@ -86,20 +87,14 @@ ServiceManager.run(async sm => {
         startBlock
     })
 
-    let sinking: Promise<void> | undefined
     for await (let block of blocks) {
         sm.abort.assertNotAborted()
-        if (sinking) {
-            await sinking
-        }
         writeSpeed.mark()
-        sinking = sink.write(block)
-        sinking.catch(err => {}).finally(() => {
-            let time = process.hrtime.bigint()
-            writeSpeed.inc(1, time)
-            blockProgress.inc(1, time)
-            lastBlock = block.header.height
-        })
+        await sink.write(block)
+        let time = process.hrtime.bigint()
+        writeSpeed.inc(1, time)
+        blockProgress.inc(1, time)
+        lastBlock = block.header.height
     }
 })
 

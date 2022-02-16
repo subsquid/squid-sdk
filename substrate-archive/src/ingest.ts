@@ -45,11 +45,15 @@ export class Ingest {
     }
 
     private async *loop(): AsyncGenerator<BlockData> {
-        let height = this.initialBlock
         await this.init()
+        let height = this.initialBlock
+        let promise = this.fetchBlock(height).catch(err => err as Error)
         while (true) {
-            yield await this.fetchBlock(height)
+            let block = await promise
+            if (block instanceof Error) throw block
             height += 1
+            promise = this.fetchBlock(height).catch(err => err as Error)
+            yield block
         }
     }
 
@@ -65,8 +69,10 @@ export class Ingest {
             metadataToSave = this._specInfo
         }
 
-        let signedBlock = await this.client.call<sub.SignedBlock>("chain_getBlock", [blockHash])
-        let rawEvents = await this.client.call("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
+        let [signedBlock, rawEvents] = await Promise.all([
+            this.client.call<sub.SignedBlock>("chain_getBlock", [blockHash]),
+            this.client.call<string>("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
+        ])
 
         let block_id = formatId(blockHeight, blockHash)
         let events: Event[] = rawEvents == null ? [] : specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, rawEvents)
