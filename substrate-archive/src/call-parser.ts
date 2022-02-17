@@ -64,8 +64,8 @@ export class CallParser {
         switch(name) {
             case 'utility.batch':
             case 'utility.batch_all': {
-                let items = args as sub.Call[]
-                for (let item of items) {
+                let batch = args as {calls: sub.Call[]}
+                for (let item of batch.calls) {
                     this.unwrapAndCreate(item, call)
                 }
                 break
@@ -147,7 +147,6 @@ export class CallParser {
     private visitBatchItems(batch: Call, lastCompletedItem: number) {
         let idx = lastCompletedItem
         let boundary = this.boundary
-        this.boundary = undefined
         while (idx >= 0) {
             let endOfItem = this.find(batch, BATCH_ITEM_COMPLETED)
             endOfItem.call_id = batch.id
@@ -156,6 +155,7 @@ export class CallParser {
             }
             this.visitCall(batch.children[idx], batch)
             this.boundary = boundary
+            idx -= 1
         }
     }
 

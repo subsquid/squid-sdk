@@ -17,13 +17,13 @@ ServiceManager.run(async sm => {
 
     program.description('Data dumper for substrate based chains')
 
-    program.requiredOption('--chain <url>', 'WS rpc endpoint', urlOptionValidator(['ws:', 'wss:']))
+    program.option('-e, --endpoint <url...>', 'WS rpc endpoint')
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
     program.option('--out <sink>', 'Name of a file or postgres connection string')
     program.option('--start-block <number>', 'Height of the block from which to start processing', positiveInteger)
 
     let options = program.parse().opts() as {
-        chain: string
+        endpoint: string[]
         out?: string
         typesBundle?: string
         startBlock?: number
@@ -35,7 +35,7 @@ ServiceManager.run(async sm => {
 
     let startBlock = options.startBlock || 0
 
-    let client = sm.add(new ResilientRpcClient(options.chain))
+    let clients = options.endpoint.map(url => sm.add(new ResilientRpcClient(url)))
 
     let sink: Sink
     if (options.out) {
@@ -82,7 +82,7 @@ ServiceManager.run(async sm => {
     })
 
     let blocks = Ingest.getBlocks({
-        client,
+        clients,
         typesBundle,
         startBlock
     })
