@@ -9,7 +9,7 @@ import {migrate} from "postgres-migrations"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 import {ServiceManager} from "./util/sm"
-import {ProgressTracker, round, SpeedTracker} from "./util/tracking"
+import {ProgressTracker, SpeedTracker} from "./util/tracking"
 
 
 ServiceManager.run(async sm => {
@@ -78,7 +78,7 @@ ServiceManager.run(async sm => {
 
     sm.every(5000, () => {
         blockProgress.tick()
-        console.error(`last block: ${lastBlock}, processing: ${round(2, blockProgress.speed())} blocks/sec, writing: ${round(2, writeSpeed.speed())} blocks/sec`)
+        console.error(`last block: ${lastBlock}, processing: ${Math.round(blockProgress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
     let blocks = Ingest.getBlocks({

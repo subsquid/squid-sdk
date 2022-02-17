@@ -44,7 +44,7 @@ export class PostgresSink implements Sink {
             await this.db.query(
                 `INSERT INTO extrinsic (id, block_id, index_in_block, name, signature, success, hash) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [
-                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, ex.hash
+                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, toJSON(ex.hash)
                 ]
             )
         }
