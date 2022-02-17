@@ -146,16 +146,28 @@ export class CallParser {
 
     private visitBatchItems(batch: Call, lastCompletedItem: number) {
         let idx = lastCompletedItem
-        let boundary = this.boundary
-        while (idx >= 0) {
-            let endOfItem = this.find(batch, BATCH_ITEM_COMPLETED)
-            endOfItem.call_id = batch.id
-            if (idx > 0) {
-                this.boundary = BATCH_ITEM_COMPLETED
+        if (idx >= 0 && this.lookup(BATCH_ITEM_COMPLETED) == null) {
+            // ItemCompleted were not yet implemented
+            // assign all events to batch call
+            // This might break parsing for nested calls
+            // Hope chains don't have blocks with such issue.
+            this.takeEvents(batch)
+            while (idx >= 0) {
+                this.visitCall(batch.children[idx], batch)
+                idx -= 1
             }
-            this.visitCall(batch.children[idx], batch)
-            this.boundary = boundary
-            idx -= 1
+        } else {
+            let boundary = this.boundary
+            while (idx >= 0) {
+                let endOfItem = this.find(batch, BATCH_ITEM_COMPLETED)
+                endOfItem.call_id = batch.id
+                if (idx > 0) {
+                    this.boundary = BATCH_ITEM_COMPLETED
+                }
+                this.visitCall(batch.children[idx], batch)
+                this.boundary = boundary
+                idx -= 1
+            }
         }
     }
 
@@ -196,6 +208,17 @@ export class CallParser {
                 return m
             }
         }
+    }
+
+    private lookup<T>(test: (e: model.Event) => T | undefined): T | undefined {
+        let pos = this.pos
+        let event, m
+        while (event = this.tryNext()) {
+            m = test(event)
+            if (m != null) break
+        }
+        this.pos = pos
+        return m
     }
 
     private next(): model.Event {
