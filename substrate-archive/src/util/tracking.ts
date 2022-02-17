@@ -18,8 +18,15 @@ export class ProgressTracker {
 
     tick(time?: bigint): void {
         time = time ?? process.hrtime.bigint()
-        this.window.push({time, value: this.value})
-        if (this.window.length > 50) {
+        let tenSeconds = 10_000_000_000n
+        if (this.window.length > 2 && time - this.window[this.window.length - 1].time < tenSeconds) {
+            let last = this.window[this.window.length - 1]
+            last.time = time
+            last.value = this.value
+        } else {
+            this.window.push({time, value: this.value})
+        }
+        if (this.window.length > 60) {
             this.window.shift()
         }
     }
