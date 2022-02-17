@@ -33,9 +33,11 @@ export function decodeExtrinsic(
     assert(version == 4, 'unsupported extrinsic version')
 
     if (signed) {
+        let signature = codec.decode(chainDescription.signature, src)
+        let call = codec.decode(chainDescription.call, src)
         return {
-            signature: codec.decode(chainDescription.signature, src),
-            call: codec.decode(chainDescription.call, src)
+            signature,
+            call
         }
     } else {
         return {

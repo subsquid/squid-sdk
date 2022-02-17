@@ -17,7 +17,39 @@ export const types = {
   "Data": {
     "_enum": {
       "None": "Null",
-      "Raw": "Bytes",
+      "Raw0": "[u8; 0]",
+      "Raw1": "[u8; 1]",
+      "Raw2": "[u8; 2]",
+      "Raw3": "[u8; 3]",
+      "Raw4": "[u8; 4]",
+      "Raw5": "[u8; 5]",
+      "Raw6": "[u8; 6]",
+      "Raw7": "[u8; 7]",
+      "Raw8": "[u8; 8]",
+      "Raw9": "[u8; 9]",
+      "Raw10": "[u8; 10]",
+      "Raw11": "[u8; 11]",
+      "Raw12": "[u8; 12]",
+      "Raw13": "[u8; 13]",
+      "Raw14": "[u8; 14]",
+      "Raw15": "[u8; 15]",
+      "Raw16": "[u8; 16]",
+      "Raw17": "[u8; 17]",
+      "Raw18": "[u8; 18]",
+      "Raw19": "[u8; 19]",
+      "Raw20": "[u8; 20]",
+      "Raw21": "[u8; 21]",
+      "Raw22": "[u8; 22]",
+      "Raw23": "[u8; 23]",
+      "Raw24": "[u8; 24]",
+      "Raw25": "[u8; 25]",
+      "Raw26": "[u8; 26]",
+      "Raw27": "[u8; 27]",
+      "Raw28": "[u8; 28]",
+      "Raw29": "[u8; 29]",
+      "Raw30": "[u8; 30]",
+      "Raw31": "[u8; 31]",
+      "Raw32": "[u8; 32]",
       "BlakeTwo256": "H256",
       "Sha256": "H256",
       "Keccak256": "H256",
@@ -602,7 +634,6 @@ export const types = {
     "rentProjection": "Option<RentProjection>"
   },
   "InstantiateReturnValue": {
-    "_fallback": "InstantiateReturnValueTo267",
     "result": "ExecReturnValue",
     "accountId": "AccountId"
   },
@@ -1624,7 +1655,6 @@ export const types = {
     "image": "Data"
   },
   "IdentityInfo": {
-    "_fallback": "IdentityInfoTo198",
     "additional": "Vec<IdentityInfoAdditional>",
     "display": "Data",
     "legal": "Data",
@@ -1653,7 +1683,6 @@ export const types = {
     "info": "IdentityInfoTo198"
   },
   "Registration": {
-    "_fallback": "RegistrationTo198",
     "judgements": "Vec<RegistrationJudgement>",
     "deposit": "Balance",
     "info": "IdentityInfo"
@@ -2821,7 +2850,6 @@ export const types = {
     "deposit": "Balance"
   },
   "SignedSubmission": {
-    "_fallback": "SignedSubmissionTo276",
     "who": "AccountId",
     "deposit": "Balance",
     "solution": "RawSolution",
@@ -3042,13 +3070,11 @@ export const types = {
     "data": "AccountData"
   },
   "AccountInfoWithRefCount": {
-    "_fallback": "AccountInfoWithRefCountU8",
     "nonce": "Index",
     "refcount": "RefCount",
     "data": "AccountData"
   },
   "AccountInfoWithDualRefCount": {
-    "_fallback": "AccountInfoWithRefCount",
     "nonce": "Index",
     "consumers": "RefCount",
     "providers": "RefCount",
@@ -3056,7 +3082,6 @@ export const types = {
   },
   "AccountInfoWithProviders": "AccountInfoWithDualRefCount",
   "AccountInfoWithTripleRefCount": {
-    "_fallback": "AccountInfoWithDualRefCount",
     "nonce": "Index",
     "consumers": "RefCount",
     "providers": "RefCount",

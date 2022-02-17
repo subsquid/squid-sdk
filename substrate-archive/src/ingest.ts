@@ -38,14 +38,14 @@ export class Ingest {
     private typesBundle?: OldTypesBundle
     private _specInfo?: SpecInfo
     private strides: Promise<RawBlockData[] | Error>[] = []
-    private maxStrides = 10
+    private maxStrides
     private specs: BlockSpec[] = []
 
     private constructor(options: IngestOptions) {
         assert(options.clients.length > 0, 'no chain client to work with')
         this.clients = options.clients
         this.idle = this.clients.slice()
-        this.maxStrides = Math.max(this.clients.length, 10)
+        this.maxStrides = Math.max(this.clients.length * 10)
         this.typesBundle = options.typesBundle
         if (options.startBlock) {
             assert(options.startBlock >= 0)
