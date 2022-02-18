@@ -201,6 +201,7 @@ class FromOld {
     convert(): ChainDescription {
         // order is important
         this.extrinsicEra()
+        this.lookupSource()
         let call = this.call()
         let event = this.event()
         let signature = this.signature()
@@ -453,5 +454,43 @@ class FromOld {
                 return
             }
         }
+    }
+
+    @def
+    private lookupSource(): Ti {
+        return this.registry.create('GenericLookupSource', () => {
+            let variants: Variant[] = []
+            for (let i = 0; i < 0xef; i++) {
+                variants.push({
+                    name: 'Idx' + i,
+                    fields: [],
+                    index: i
+                })
+            }
+            variants.push({
+                name: 'IdxU16',
+                fields: [{type: this.registry.use('U16')}],
+                index: 0xfc
+            })
+            variants.push({
+                name: 'IdxU32',
+                fields: [{type: this.registry.use('U32')}],
+                index: 0xfd
+            })
+            variants.push({
+                name: 'IdxU64',
+                fields: [{type: this.registry.use('U64')}],
+                index: 0xfe
+            })
+            variants.push({
+                name: 'AccountId',
+                fields: [{type: this.registry.use('AccountId')}],
+                index: 0xff
+            })
+            return {
+                kind: TypeKind.Variant,
+                variants
+            }
+        })
     }
 }
