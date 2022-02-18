@@ -9,4 +9,4 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
-    command: ["postgres", "-c", "log_statement=all"]
+#    command: ["postgres", "-c", "log_statement=all"]

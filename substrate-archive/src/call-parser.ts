@@ -148,17 +148,23 @@ export class CallParser {
         let idx = lastCompletedItem
         if (idx >= 0 && this.lookup(BATCH_ITEM_COMPLETED) == null) {
             // ItemCompleted were not yet implemented
-            // assign all events to batch call
-            // This might break parsing for nested calls
-            // Hope chains don't have blocks with such issue.
+            // assign all events to batch call and set all
+            // calls as successful.
+            let event
+            while (event = this.tryNext()) {
+                event.call_id = batch.id
+                if (isFailure(event)) {
+                    console.error(`WARNING: batch call ${batch.id} has failed nested calls (linked to event ${event.id}) which will be marked as successful.`)
+                }
+            }
             this.takeEvents(batch)
             while (idx >= 0) {
-                this.visitCall(batch.children[idx], batch)
+                this.markAsSuccessful(batch.children[idx])
                 idx -= 1
             }
         } else {
-            let boundary = this.boundary
             while (idx >= 0) {
+                let boundary = this.boundary
                 let endOfItem = this.find(batch, BATCH_ITEM_COMPLETED)
                 endOfItem.call_id = batch.id
                 if (idx > 0) {
@@ -169,6 +175,11 @@ export class CallParser {
                 idx -= 1
             }
         }
+    }
+
+    private markAsSuccessful(call: Call): void {
+        call.success = true
+        call.children.forEach(c => this.markAsSuccessful(c))
     }
 
     private visitDispatchAs(call: Call, parent?: Call): void {
@@ -314,5 +325,19 @@ function PROXY_EXECUTED(event: model.Event): {ok: boolean, event: model.Event} |
             return {ok: false, event}
         default:
             throw unexpectedCase(result.__kind)
+    }
+}
+
+
+function isFailure(event: model.Event): boolean {
+    switch(event.name) {
+        case 'proxy.ProxyExecuted':
+            return !PROXY_EXECUTED(event)!.ok
+        case 'utility.DispatchedAs':
+            return !DISPATCHED_AS(event)!.ok
+        case 'utility.BatchInterrupted':
+            return !END_OF_BATCH(event)!.ok
+        default:
+            return false
     }
 }
