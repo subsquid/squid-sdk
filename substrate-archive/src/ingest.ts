@@ -219,7 +219,7 @@ export class Ingest {
         }
         let client = this.clients[0]
         let h = rec == null ? height + 5000 : height + Math.floor((rec.blockHeight - height)/2)
-        while (h > height || rec == null) {
+        while (rec == null || rec.blockHeight > height) {
             rec = await this.getSpec(client, h)
             this.specs.push(rec)
             if (rec.specVersion == this.specInfo.specVersion) return false
