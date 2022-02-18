@@ -109,9 +109,11 @@ export class Ingest {
                 client.call<sub.SignedBlock>("chain_getBlock", [blockHash]),
                 client.call<string>("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
             ])
+            let blockHeight = parseInt(signedBlock.block.header.number)
+            assert(blockHeight === height + i)
             result[i] = {
                 blockHash,
-                blockHeight: height + i,
+                blockHeight,
                 block: signedBlock.block,
                 events
             }
