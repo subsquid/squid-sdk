@@ -20,7 +20,7 @@ export interface SpecInfo {
 
 export namespace sub {
     export interface BlockHeader {
-        digest: string[]
+        digest: {logs: string[]}
         extrinsicRoot: string
         number: string
         parentHash: string

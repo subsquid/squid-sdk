@@ -93,10 +93,13 @@ RUN cd cli && npx oclif manifest
 
 FROM builder AS substrate-archive-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-archive
+
+
 FROM node AS substrate-archive
 COPY --from=substrate-archive-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-archive
-CMD ["node", "./lib/run.js", "index"]
+ADD substrate-archive/migrations migrations
+ENTRYPOINT ["node", "/squid/substrate-archive/lib/main.js"]
 
 
 FROM builder AS substrate-archive-status-service-builder

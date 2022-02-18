@@ -145,8 +145,12 @@ export class CallParser {
     }
 
     private visitBatchItems(batch: Call, lastCompletedItem: number) {
+        if (lastCompletedItem < 0) {
+            this.takeEvents(batch)
+            return
+        }
         let idx = lastCompletedItem
-        if (idx >= 0 && this.lookup(BATCH_ITEM_COMPLETED) == null) {
+        if (this.lookup(BATCH_ITEM_COMPLETED) == null) {
             // ItemCompleted were not yet implemented
             // assign all events to batch call and set all
             // calls as successful.
