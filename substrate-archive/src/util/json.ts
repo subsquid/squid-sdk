@@ -37,3 +37,8 @@ function toJsonObject(val: any): any {
     }
     return result
 }
+
+
+export function toJsonString(val: unknown): string {
+    return JSON.stringify(toJSON(val))
+}

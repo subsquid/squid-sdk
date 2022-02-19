@@ -1,7 +1,8 @@
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
-import {toJSON} from "./util/json"
+import {toJSON, toJsonString} from "./util/json"
+import {identity} from "./util/misc"
 import WritableStream = NodeJS.WritableStream
 
 
@@ -42,53 +43,85 @@ export class PostgresSink implements Sink {
         )
     }
 
-    private async saveExtrinsics(extrinsics: Extrinsic[]) {
-        for (let ex of extrinsics) {
-            await this.db.query(
-                `INSERT INTO extrinsic (id, block_id, index_in_block, name, signature, success, hash, call_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                [
-                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, toJSON(ex.hash), ex.call_id
-                ]
-            )
-        }
+    private saveExtrinsics(extrinsics: Extrinsic[]) {
+        return this.insertMany(this.extrinsic_columns, 'extrinsic', extrinsics)
+    }
+
+    private extrinsic_columns = {
+        id: {cast: 'text'},
+        block_id: {cast: 'text'},
+        name: {cast: 'text'},
+        index_in_block: {cast: 'integer'},
+        signature: {map: toJsonString, cast: 'jsonb'},
+        success: {cast: 'bool'},
+        hash: {cast: 'text', map: toJSON},
+        call_id: {cast: 'text'}
     }
 
     private async saveCalls(calls: Call[]) {
-        for (let call of calls) {
-            await this.db.query(
-                `INSERT INTO call (id, index, name, extrinsic_id, parent_id, success, args) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-                [
-                    call.id, call.index, call.name, call.extrinsic_id, call.parent_id, call.success, JSON.stringify(toJSON(call.args))
-                ]
-            )
-        }
+        return this.insertMany(this.call_columns, 'call', calls)
     }
 
-    private async saveEvents(events: Event[]) {
-        for (let e of events) {
-            await this.db.query(
-                `INSERT INTO event (id, block_id, index_in_block, name, phase, extrinsic_id, call_id, args) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
-                [
-                    e.id, e.block_id, e.index_in_block, e.name, e.phase, e.extrinsic_id, e.call_id, JSON.stringify(toJSON(e.args))
-                ]
-            )
-        }
+    private call_columns = {
+        id: {cast: 'text'},
+        index: {cast: 'integer'},
+        extrinsic_id: {cast: 'text'},
+        name: {cast: 'text'},
+        parent_id: {cast: 'text'},
+        success: {cast: 'bool'},
+        args: {map: toJsonString, cast: 'jsonb'}
+    }
+
+    private saveEvents(events: Event[]) {
+        return this.insertMany(this.event_columns, 'event', events)
+    }
+
+    private event_columns = {
+        id: {cast: 'text'},
+        block_id: {cast: 'text'},
+        phase: {cast: 'text'},
+        index_in_block: {cast: 'integer'},
+        name: {cast: 'text'},
+        extrinsic_id: {cast: 'text'},
+        call_id: {cast: 'text'},
+        args: {map: toJsonString, cast: 'jsonb'}
     }
 
     private async saveWarnings(warnings: Warning[]) {
-        for (let w of warnings) {
-            await this.db.query(
-                `INSERT INTO warning (block_id, message) VALUES ($1, $2)`,
-                [
-                    w.block_id, w.message
-                ]
-            )
-        }
+        return this.insertMany(this.warning_columns, 'warning', warnings)
     }
 
-    // private insertMany<R>(mapping: {[name in keyof R]: (val: R[name]) => any}, table: string, rows: R[]) {
-    //     let names =
-    // }
+    private warning_columns = {
+        block_id: {cast: 'text'},
+        message: {cast: 'text'}
+    }
+
+    private insertMany<R>(mapping: TableColumns<R>, table: string, rows: R[]) {
+        let columns: Record<string, unknown[]> = {}
+        for (let name in mapping) {
+            columns[name] = new Array(rows.length)
+        }
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i]
+            for (let name in mapping) {
+                let def = mapping[name]
+                columns[name][i] = def.map ? def.map(row[name]) : row[name]
+            }
+        }
+        let names = Object.keys(mapping) as (keyof R)[]
+        let args = names.map((name, idx) => {
+            let param = '$' + (idx + 1)
+            let cast = mapping[name].cast
+            if (cast) {
+                param += '::' + cast + '[]'
+            }
+            return param
+        })
+        return this.db.query(
+            `INSERT INTO ${table} (${names.join(', ')}) SELECT * FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`,
+            names.map(name => columns[name as string])
+        )
+    }
 
     private async tx<T>(cb: () => Promise<T>): Promise<T> {
         await this.db.query('BEGIN')
@@ -101,6 +134,11 @@ export class PostgresSink implements Sink {
             throw e
         }
     }
+}
+
+
+type TableColumns<E> = {
+    [name in keyof E]: {map?: (val: E[name]) => unknown, cast?: string}
 }
 
 
@@ -120,8 +158,7 @@ export class WritableSink implements Sink {
 
     async write(block: BlockData): Promise<void> {
         if (this.error) throw this.error
-        let json = JSON.stringify(toJSON(block))
-        this.writable.write(json)
+        this.writable.write(toJsonString(block))
         let wait = !this.writable.write('\n')
         if (wait) {
             await this.drain()

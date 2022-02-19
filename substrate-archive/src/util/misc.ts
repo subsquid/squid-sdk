@@ -102,3 +102,8 @@ export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Regist
     }
     return {name, args}
 }
+
+
+export function identity<T>(val: T): T {
+    return val
+}
