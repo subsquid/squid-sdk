@@ -6,7 +6,7 @@ on:
         description: 'Target to publish'
         required: true
       tag:
-        description: 'image tag'
+        description: 'Tag'
         required: true
 
 env:
