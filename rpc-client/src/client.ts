@@ -88,6 +88,7 @@ export class RpcClient {
         if (h == null) {
             throw new RpcProtocolError(undefined, `Got response for unknown request ${res.id}`)
         }
+        delete this.requests[res.id]
         if (res.error) {
             h.reject(new RpcError(res.error))
         } else {
