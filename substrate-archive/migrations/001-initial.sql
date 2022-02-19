@@ -67,3 +67,9 @@ CREATE INDEX event__block_index__idx ON event(block_id, index_in_block);
 CREATE INDEX event__extrinsic__idx ON event(extrinsic_id);
 CREATE INDEX event__call__idx ON event(call_id);
 CREATE INDEX event__name__idx ON event(name);
+
+
+CREATE TABLE warning (
+    block_id char(16),
+    message varchar
+);

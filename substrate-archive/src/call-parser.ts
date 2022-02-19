@@ -2,6 +2,7 @@ import {QualifiedName} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util"
 import {SpecInfo, sub} from "./interfaces"
 import * as model from "./model"
+import {Warning} from "./model"
 import {formatId, unwrapArguments} from "./util/misc"
 
 
@@ -22,7 +23,8 @@ export class CallParser {
         private blockHeight: number,
         private blockHash: string,
         private events: model.Event[],
-        private extrinsics: (model.Extrinsic & {args: any})[]
+        private extrinsics: (model.Extrinsic & {args: any})[],
+        private warnings: Warning[]
     ) {
         for (let i = 0; i < this.extrinsics.length; i++) {
             let ex = this.extrinsics[i]
@@ -158,7 +160,9 @@ export class CallParser {
             while (event = this.tryNext()) {
                 event.call_id = batch.id
                 if (isFailure(event)) {
-                    console.error(`WARNING: batch call ${batch.id} has failed nested calls (linked to event ${event.id}) which will be marked as successful.`)
+                    let message = `WARNING: batch call ${batch.id} has failed nested calls (linked to event ${event.id}) which will be marked as successful.`
+                    console.error(message)
+                    this.warnings.push({block_id: this.extrinsic.block_id, message})
                 }
             }
             this.takeEvents(batch)

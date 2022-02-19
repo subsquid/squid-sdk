@@ -1,6 +1,6 @@
 import assert from "assert"
 import * as pg from "pg"
-import {Block, BlockData, Call, Event, Extrinsic, Metadata} from "./model"
+import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
 import {toJSON} from "./util/json"
 import WritableStream = NodeJS.WritableStream
 
@@ -22,6 +22,9 @@ export class PostgresSink implements Sink {
             await this.saveExtrinsics(block.extrinsics)
             await this.saveCalls(block.calls)
             await this.saveEvents(block.events)
+            if (block.warnings?.length) {
+                await this.saveWarnings(block.warnings)
+            }
         })
     }
 
@@ -67,6 +70,17 @@ export class PostgresSink implements Sink {
                 `INSERT INTO event (id, block_id, index_in_block, name, phase, extrinsic_id, call_id, args) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
                 [
                     e.id, e.block_id, e.index_in_block, e.name, e.phase, e.extrinsic_id, e.call_id, JSON.stringify(toJSON(e.args))
+                ]
+            )
+        }
+    }
+
+    private async saveWarnings(warnings: Warning[]) {
+        for (let w of warnings) {
+            await this.db.query(
+                `INSERT INTO warning (block_id, message) VALUES ($1, $2)`,
+                [
+                    w.block_id, w.message
                 ]
             )
         }

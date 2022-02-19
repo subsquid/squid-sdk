@@ -53,10 +53,17 @@ export interface Metadata {
 }
 
 
+export interface Warning {
+    block_id: string
+    message: string
+}
+
+
 export interface BlockData {
     header: Block
     extrinsics: Extrinsic[]
     events: Event[]
     calls: Call[]
     metadata?: Metadata
+    warnings?: Warning[]
 }
