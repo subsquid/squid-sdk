@@ -29,6 +29,7 @@ export class CallParser {
         for (let i = 0; i < this.extrinsics.length; i++) {
             let ex = this.extrinsics[i]
             this.extrinsic = ex
+            this.extrinsic.call_id = formatId(this.blockHeight, this.blockHash, this.numberOfCalls)
             this.createCall(ex.name, ex.args)
         }
         this.pos = this.events.length - 1
@@ -288,9 +289,10 @@ function END_OF_BATCH(event: model.Event): EndOfBatch | undefined {
         case 'utility.BatchCompleted':
             return {ok: true, event}
         case 'utility.BatchInterrupted':
+            let failedItem = Array.isArray(event.args) ? event.args[0] : event.args.index
             return {
                 ok: false,
-                failedItem: event.args[0],
+                failedItem,
                 event
             }
         default:

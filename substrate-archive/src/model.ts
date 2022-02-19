@@ -31,6 +31,7 @@ export interface Extrinsic {
     signature?: sub.ExtrinsicSignature
     success: boolean
     hash: Uint8Array
+    call_id: string
 }
 
 

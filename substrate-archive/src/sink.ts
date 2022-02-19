@@ -45,9 +45,9 @@ export class PostgresSink implements Sink {
     private async saveExtrinsics(extrinsics: Extrinsic[]) {
         for (let ex of extrinsics) {
             await this.db.query(
-                `INSERT INTO extrinsic (id, block_id, index_in_block, name, signature, success, hash) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                `INSERT INTO extrinsic (id, block_id, index_in_block, name, signature, success, hash, call_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
                 [
-                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, toJSON(ex.hash)
+                    ex.id, ex.block_id, ex.index_in_block, ex.name, toJSON(ex.signature), ex.success, toJSON(ex.hash), ex.call_id
                 ]
             )
         }
@@ -85,6 +85,10 @@ export class PostgresSink implements Sink {
             )
         }
     }
+
+    // private insertMany<R>(mapping: {[name in keyof R]: (val: R[name]) => any}, table: string, rows: R[]) {
+    //     let names =
+    // }
 
     private async tx<T>(cb: () => Promise<T>): Promise<T> {
         await this.db.query('BEGIN')

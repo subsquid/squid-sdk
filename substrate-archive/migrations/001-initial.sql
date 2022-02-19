@@ -27,7 +27,8 @@ CREATE TABLE extrinsic (
     name varchar NOT NULL,
     signature jsonb,
     success bool not null,
-    hash char(66) NOT NULL
+    hash char(66) NOT NULL,
+    call_id char(23) NOT NULL
 );
 
 

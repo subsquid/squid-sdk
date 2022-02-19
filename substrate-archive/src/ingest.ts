@@ -15,7 +15,7 @@ import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import {CallParser} from "./call-parser"
 import {SpecInfo, sub} from "./interfaces"
-import {BlockData, Event, Extrinsic} from "./model"
+import {BlockData, Event, Extrinsic, Warning} from "./model"
 import {wait} from "./util/abort"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, unwrapArguments} from "./util/misc"
 
@@ -172,11 +172,21 @@ export class Ingest {
                     signature: ex.signature,
                     success: true,
                     hash,
-                    args
+                    args,
+                    call_id: ''
                 }
             })
 
-        let calls = new CallParser(specInfo, raw.blockHeight, raw.blockHash, events, extrinsics).getCalls()
+        let warnings: Warning[] = []
+
+        let calls = new CallParser(
+            specInfo,
+            raw.blockHeight,
+            raw.blockHash,
+            events,
+            extrinsics,
+            warnings
+        ).getCalls()
 
         return  {
             header: {
@@ -188,7 +198,8 @@ export class Ingest {
             },
             extrinsics,
             events,
-            calls
+            calls,
+            warnings
         }
     }
 
