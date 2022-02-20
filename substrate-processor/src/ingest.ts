@@ -6,11 +6,18 @@ import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/s
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
+import {AnyTopics, TopicsSeparator} from "./interfaces/evm";
 
+interface EvmEvent extends SubstrateEvent {
+    evmLogAddress?: string
+    evmLogData?: string;
+    evmLogTopics?: string[];
+    evmHash?: string
+}
 
 export interface BlockData {
     block: SubstrateBlock
-    events: SubstrateEvent[]
+    events: SubstrateEvent[] & EvmEvent[]
 }
 
 
@@ -18,13 +25,14 @@ export interface DataBatch extends Batch {
     /**
      * This is roughly the range of scanned blocks
      */
-    range: {from: number, to: number}
+    range: { from: number, to: number }
     blocks: BlockData[]
 }
 
 
 export interface IngestMetrics {
     setChainHeight(height: number): void
+
     setIngestSpeed(blocksPerSecond: number): void
 }
 
@@ -70,7 +78,7 @@ export class Ingest {
     private async run(): Promise<void | Error> {
         try {
             await this.loop()
-        } catch(err: any) {
+        } catch (err: any) {
             return err
         } finally {
             this.out.close(null)
@@ -93,8 +101,8 @@ export class Ingest {
 
             let from = batch.range.from
             let to: number
-            if (blocks.length === this.limit && blocks[blocks.length-1].block.height < rangeEnd(batch.range)) {
-                to = blocks[blocks.length-1].block.height
+            if (blocks.length === this.limit && blocks[blocks.length - 1].block.height < rangeEnd(batch.range)) {
+                to = blocks[blocks.length - 1].block.height
                 batch.range = {from: to + 1, to: batch.range.to}
             } else if (archiveHeight < rangeEnd(batch.range)) {
                 to = archiveHeight
@@ -107,7 +115,7 @@ export class Ingest {
             if (this.options.metrics && blocks.length > 0) {
                 let fetchEnd = process.hrtime.bigint()
                 let duration = Number(fetchEnd - fetchStart)
-                let speed =  blocks.length * Math.pow(10, 9) / duration
+                let speed = blocks.length * Math.pow(10, 9) / duration
                 this.options.metrics.setIngestSpeed(speed)
             }
 
@@ -126,6 +134,8 @@ export class Ingest {
 
         let hs = batch.handlers
         let events = Object.keys(hs.events)
+        let evmLogs = Object.keys(hs.evmLogs)
+        let topics: string[] = []
         let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
 
         // filters
@@ -136,6 +146,17 @@ export class Ingest {
             events.forEach(name => {
                 or.push(`events: {_contains: [{name: "${name}"}]}`)
             })
+            if (evmLogs?.length > 0) {
+                evmLogs.forEach(contractAddress => {
+                    let topicsString = Object.keys(hs.evmLogs[contractAddress])[0];
+                    let evmTopicsFilter = ''
+                    if (topicsString != AnyTopics) {
+                        topics = topicsString.split(TopicsSeparator);
+                        evmTopicsFilter = `, evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
+                    }
+                    or.push(`substrate_events: {evmLogAddress: {_eq: "${contractAddress}"} ${evmTopicsFilter}}`)
+                })
+            }
             let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
             extrinsics.forEach(name => {
                 or.push(`extrinsics: {_contains: [{name: "${name}"}]}`)
@@ -160,11 +181,23 @@ export class Ingest {
                 let extrinsics = Object.keys(hs.extrinsics[event])
                 or.push(`name: {_eq: "${event}"}, extrinsic: {name: {_in: [${extrinsics.map(name => `"${name}"`).join(', ')}]}}`)
             }
-            if (or.length == 1) {
-                eventWhere = ` where: {${or[0]}}`
-            } else if (or.length > 1) {
-                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}]}`
+            if (evmLogs && evmLogs.length > 0) {
+                or.push(`evmLogAddress: {_in: [${evmLogs.map(contractAddress => `"${contractAddress}"`).join(', ')}]}`)
             }
+
+            let topicsClause;
+            if (topics.length > 0) {
+                topicsClause = `evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
+            }
+
+            if (or.length == 1) {
+                eventWhere = ` where: {${or[0]} ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (or.length > 1) {
+                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}] ${topicsClause ? `, ${topicsClause}` : ''}}`
+            } else if (topicsClause) {
+                eventWhere = ` where: {${topicsClause}}`
+            }
+
         }
 
         let q = new Output()
@@ -199,6 +232,12 @@ export class Ingest {
                     q.line('indexInBlock')
                     q.line('blockNumber')
                     q.line('blockTimestamp')
+                    if (evmLogs?.length > 0) {
+                        q.line('evmLogAddress')
+                        q.line('evmLogData')
+                        q.line('evmLogTopics')
+                        q.line('evmHash')
+                    }
                     q.block('extrinsic', () => {
                         q.line('id')
                     })
@@ -216,11 +255,11 @@ export class Ingest {
         let blocks = new Array<BlockData>(fetchedBlocks.length)
 
         for (let i = 0; i < fetchedBlocks.length; i++) {
-            i > 0 && assert(fetchedBlocks[i-1].height < fetchedBlocks[i].height)
+            i > 0 && assert(fetchedBlocks[i - 1].height < fetchedBlocks[i].height)
             let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
             block.timestamp = Number.parseInt(timestamp)
             for (let j = 0; j < events.length; j++) {
-                j > 0 && assert(events[j-1].indexInBlock < events[j].indexInBlock)
+                j > 0 && assert(events[j - 1].indexInBlock < events[j].indexInBlock)
                 let event = events[j]
                 event.blockTimestamp = block.timestamp
                 if (event.extrinsic) {
@@ -249,7 +288,7 @@ export class Ingest {
             })
         })
         let gql = q.toString()
-        let {substrate_extrinsic}: {substrate_extrinsic: SubstrateExtrinsic[]} = await this.archiveRequest(gql)
+        let {substrate_extrinsic}: { substrate_extrinsic: SubstrateExtrinsic[] } = await this.archiveRequest(gql)
 
         let extrinsics = new Map<string, SubstrateExtrinsic>() // lying a bit about type here
         for (let i = 0; i < substrate_extrinsic.length; i++) {
@@ -297,7 +336,7 @@ export class Ingest {
         return this.archiveHeight
     }
 
-    private setArchiveHeight(res: {indexerStatus: {head: number}}): void {
+    private setArchiveHeight(res: { indexerStatus: { head: number } }): void {
         let height = res.indexerStatus.head
         this.archiveHeight = Math.max(this.archiveHeight, height)
         this.options.metrics?.setChainHeight(this.archiveHeight)

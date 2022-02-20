@@ -4,6 +4,7 @@ import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
+import {AnyTopics, ContractAddress, EvmLogHandler, Topics, TopicsSeparator} from "./interfaces/evm";
 
 
 export interface DataHandlers {
@@ -14,6 +15,10 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
+    /**
+     * Mapping of type `trigger evm event` -> `topic` -> `EVM handler list`
+     */
+    evmLogs: Record<ContractAddress, Record<Topics, EvmLogHandler[]>>
 }
 
 
@@ -26,7 +31,7 @@ export interface Batch {
 export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     let batches: Batch[] = []
 
-    function getRange(hook: {range?: Range}): Range | undefined {
+    function getRange(hook: { range?: Range }): Range | undefined {
         let range: Range | undefined = hook.range || {from: 0}
         if (blockRange) {
             range = rangeIntersection(range, blockRange)
@@ -43,7 +48,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [hook.handler],
                 post: [],
                 events: {},
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -57,7 +63,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [hook.handler],
                 events: {},
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -73,7 +80,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {
                     [hook.event]: [hook.handler]
                 },
-                extrinsics: {}
+                extrinsics: {},
+                evmLogs: {}
             }
         })
     })
@@ -89,6 +97,24 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 extrinsics: {
                     [hook.event]: {[hook.extrinsic]: [hook.handler]}
+                },
+                evmLogs: {}
+            }
+        })
+    })
+
+    hooks.evmLog.forEach(hook => {
+        let range = getRange(hook)
+        if (!range) return
+        batches.push({
+            range,
+            handlers: {
+                pre: [],
+                post: [],
+                events: {},
+                extrinsics: {},
+                evmLogs: {
+                    [hook.contractAddress]: {[hook.topics?.join(TopicsSeparator) || AnyTopics]: [hook.handler]}
                 }
             }
         })
@@ -142,7 +168,10 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
         events: mergeMaps(a.events, b.events, (ha, hb) => ha.concat(hb)),
         extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
             return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
-        })
+        }),
+        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ea, eb) => {
+            return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
+        }),
     }
 }
 
@@ -165,7 +194,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 
-export function getBlocksCount(batches: {range: Range}[], chainHeight: number): number {
+export function getBlocksCount(batches: { range: Range }[], chainHeight: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
         let range = batches[i].range

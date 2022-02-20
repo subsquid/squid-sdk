@@ -27,6 +27,7 @@ ADD substrate-metadata/package.json substrate-metadata/
 ADD substrate-metadata-explorer/package.json substrate-metadata-explorer/
 ADD substrate-metadata-explorer/bin substrate-metadata-explorer/bin
 ADD substrate-processor/package.json substrate-processor/
+ADD substrate-evm-processor/package.json substrate-evm-processor/
 ADD substrate-typegen/package.json substrate-typegen/
 ADD substrate-typegen/bin substrate-typegen/bin
 ADD test/balances/package.json test/balances/
@@ -66,6 +67,8 @@ ADD substrate-metadata-explorer/src substrate-metadata-explorer/src
 ADD substrate-metadata-explorer/tsconfig.json substrate-metadata-explorer/
 ADD substrate-processor/src substrate-processor/src
 ADD substrate-processor/tsconfig.json substrate-processor/
+ADD substrate-evm-processor/src substrate-evm-processor/src
+ADD substrate-evm-processor/tsconfig.json substrate-evm-processor/
 ADD substrate-typegen/src substrate-typegen/src
 ADD substrate-typegen/tsconfig.json substrate-typegen/
 ADD test/balances/src test/balances/src
