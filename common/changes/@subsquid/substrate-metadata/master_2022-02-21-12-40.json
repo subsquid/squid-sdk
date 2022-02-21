@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "add type definitions for altair",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}
