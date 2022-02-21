@@ -151,7 +151,7 @@ export class Ingest {
                 })
             })
             if (evmLogFilter) {
-                blockArgs.where._or.push({substrate_events: evmLogFilter})
+                blockArgs.where._or.push({substrate_events: this.evmLogFilter(hs.evmLogs, true)})
             }
         }
 
@@ -290,7 +290,7 @@ export class Ingest {
         return blocks
     }
 
-    private evmLogFilter(logs: DataHandlers['evmLogs']): any | undefined {
+    private evmLogFilter(logs: DataHandlers['evmLogs'], noTopics?: boolean): any | undefined {
         let or: any[] = []
         for (let contract in logs) {
             let cond = {
@@ -298,7 +298,7 @@ export class Ingest {
                 evmLogTopics: {_or: [] as any[]}
             }
             let topics = logs[contract]
-            if (!topics['*']) {
+            if (!(topics['*'] || noTopics)) {
                 for (let topic in topics) {
                     cond.evmLogTopics._or.push({_contains: topic})
                 }

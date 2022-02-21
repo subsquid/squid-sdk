@@ -4,6 +4,7 @@ import {SubstrateEvmProcessor} from "@subsquid/substrate-evm-processor"
 const processor = new SubstrateEvmProcessor('erc721')
 
 
+processor.setBatchSize(500)
 processor.setTypesBundle('moonriver')
 processor.setDataSource({
     chain: 'wss://wss.moonriver.moonbeam.network',

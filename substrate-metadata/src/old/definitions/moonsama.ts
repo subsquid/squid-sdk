@@ -360,7 +360,9 @@ const TYPES_POST_900: OldTypesBundle['types'] = {
 
 
 export const bundle: OldTypesBundle = {
-    types: {},
+    types: {
+        GenericEthereumAccountId: '[u8; 20]'
+    },
     typesAlias: {
         assetManager: {
             Balance: "TAssetBalance"
