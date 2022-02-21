@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-evm-processor",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Data fetcher and mappings executor for substrate chains with EVM pallet",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

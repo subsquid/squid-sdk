@@ -418,6 +418,6 @@ function collectOrExpressions(or: any[], fields: string[]): void {
         case 1:
             return collectFields(or[0], fields)
         default:
-            fields.push(`_or: ${printArguments(or)}`)
+            fields.push(`_or: ${_printArguments(or)}`)
     }
 }

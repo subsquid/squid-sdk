@@ -35,6 +35,7 @@ ADD test/data/package.json test/data/
 ADD test/e2e-project/package.json test/e2e-project/
 ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
+ADD test/moonsama-erc721/package.json test/moonsama-erc721/
 ADD test/types/package.json test/types/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
@@ -84,6 +85,8 @@ ADD test/e2e-suite/src test/e2e-suite/src
 ADD test/e2e-suite/tsconfig.json test/e2e-suite/
 ADD test/gql-client/src test/gql-client/src
 ADD test/gql-client/tsconfig.json test/gql-client/
+ADD test/moonsama-erc721/src test/moonsama-erc721/src
+ADD test/moonsama-erc721/tsconfig.json test/moonsama-erc721/
 ADD typeorm-config/src typeorm-config/src
 ADD typeorm-config/tsconfig.json typeorm-config/
 ADD util/src util/src
