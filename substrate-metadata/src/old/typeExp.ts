@@ -104,7 +104,7 @@ class TypeExpParser {
         while (this.tok(sep)) {
             item = p()
             if (item == null) {
-                throw this.abort()
+                break
             } else {
                 result.push(item)
             }
