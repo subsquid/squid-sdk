@@ -4,7 +4,7 @@ import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
-import {AnyTopics, ContractAddress, EvmLogHandler, Topics, TopicsSeparator} from "./interfaces/evm";
+import {EvmContractAddress, EvmLogHandler, EvmLogTopic} from "./interfaces/evm"
 
 
 export interface DataHandlers {
@@ -15,10 +15,7 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
-    /**
-     * Mapping of type `trigger evm event` -> `topic` -> `EVM handler list`
-     */
-    evmLogs: Record<ContractAddress, Record<Topics, EvmLogHandler[]>>
+    evmLogs: Record<EvmContractAddress, Record<EvmLogTopic, EvmLogHandler[]>>
 }
 
 
@@ -106,6 +103,14 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     hooks.evmLog.forEach(hook => {
         let range = getRange(hook)
         if (!range) return
+        let topicHandlers: Record<EvmLogTopic, EvmLogHandler[]> = {}
+        if (hook.topics?.length) {
+            hook.topics.forEach(topic => {
+                topicHandlers[topic] = [hook.handler]
+            })
+        } else {
+            topicHandlers['*'] = [hook.handler]
+        }
         batches.push({
             range,
             handlers: {
@@ -114,7 +119,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 extrinsics: {},
                 evmLogs: {
-                    [hook.contractAddress]: {[hook.topics?.join(TopicsSeparator) || AnyTopics]: [hook.handler]}
+                    [hook.contractAddress]: topicHandlers
                 }
             }
         })

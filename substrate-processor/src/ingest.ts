@@ -1,23 +1,16 @@
-import {assertNotNull, Output} from "@subsquid/util"
+import {assertNotNull, Output, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import fetch from "node-fetch"
-import {Batch} from "./batch"
+import {Batch, DataHandlers} from "./batch"
 import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {AbortHandle, Channel, wait} from "./util/async"
 import {unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
-import {AnyTopics, TopicsSeparator} from "./interfaces/evm";
 
-interface EvmEvent extends SubstrateEvent {
-    evmLogAddress?: string
-    evmLogData?: string;
-    evmLogTopics?: string[];
-    evmHash?: string
-}
 
 export interface BlockData {
     block: SubstrateBlock
-    events: SubstrateEvent[] & EvmEvent[]
+    events: SubstrateEvent[]
 }
 
 
@@ -32,7 +25,6 @@ export interface DataBatch extends Batch {
 
 export interface IngestMetrics {
     setChainHeight(height: number): void
-
     setIngestSpeed(blocksPerSecond: number): void
 }
 
@@ -134,70 +126,56 @@ export class Ingest {
 
         let hs = batch.handlers
         let events = Object.keys(hs.events)
-        let evmLogs = Object.keys(hs.evmLogs)
-        let topics: string[] = []
         let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
+        let evmLogFilter = this.evmLogFilter(hs.evmLogs)
 
-        // filters
-        let height = `height: {_gte: ${from}, _lte: ${to}}`
-        let blockWhere: string
-        if (notAllBlocksRequired) {
-            let or: string[] = []
-            events.forEach(name => {
-                or.push(`events: {_contains: [{name: "${name}"}]}`)
-            })
-            if (evmLogs?.length > 0) {
-                evmLogs.forEach(contractAddress => {
-                    let topicsString = Object.keys(hs.evmLogs[contractAddress])[0];
-                    let evmTopicsFilter = ''
-                    if (topicsString != AnyTopics) {
-                        topics = topicsString.split(TopicsSeparator);
-                        evmTopicsFilter = `, evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
-                    }
-                    or.push(`substrate_events: {evmLogAddress: {_eq: "${contractAddress}"} ${evmTopicsFilter}}`)
-                })
+        let blockArgs = {
+            limit: this.limit,
+            order_by: {height: {$: 'asc'}},
+            where: {
+                height: {_gte: from, _lte: to},
+                _or: [] as any[]
             }
-            let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
-            extrinsics.forEach(name => {
-                or.push(`extrinsics: {_contains: [{name: "${name}"}]}`)
-            })
-            if (or.length > 1) {
-                blockWhere = `{_and: [{${height}}, {_or: [${or.map(f => `{${f}}`).join(', ')}]}]}`
-            } else {
-                assert(or.length == 1)
-                blockWhere = `{${height} ${or[0]}}`
-            }
-        } else {
-            blockWhere = `{${height}}`
         }
 
-        let eventWhere = ''
-        {
-            let or: string[] = []
-            if (events.length > 0) {
-                or.push(`name: {_in: [${events.map(event => `"${event}"`).join(', ')}]}`)
+        if (notAllBlocksRequired) {
+            events.forEach(name => {
+                blockArgs.where._or.push({
+                    events: {_contains: [{name}]}
+                })
+            })
+            let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
+            extrinsics.forEach(name => {
+                blockArgs.where._or.push({
+                    extrinsics: {_contains: [{name}]}
+                })
+            })
+            if (evmLogFilter) {
+                blockArgs.where._or.push({substrate_events: evmLogFilter})
             }
-            for (let event in hs.extrinsics) {
-                let extrinsics = Object.keys(hs.extrinsics[event])
-                or.push(`name: {_eq: "${event}"}, extrinsic: {name: {_in: [${extrinsics.map(name => `"${name}"`).join(', ')}]}}`)
-            }
-            if (evmLogs && evmLogs.length > 0) {
-                or.push(`evmLogAddress: {_in: [${evmLogs.map(contractAddress => `"${contractAddress}"`).join(', ')}]}`)
-            }
+        }
 
-            let topicsClause;
-            if (topics.length > 0) {
-                topicsClause = `evmLogTopics: {_contains: [${topics.map(topic => `"${topic}"`).join(', ')}]}`
-            }
+        let eventArgs = {
+            order_by: {indexInBlock: {$: 'asc'}},
+            where: {_or: [] as any[]}
+        }
 
-            if (or.length == 1) {
-                eventWhere = ` where: {${or[0]} ${topicsClause ? `, ${topicsClause}` : ''}}`
-            } else if (or.length > 1) {
-                eventWhere = ` where: {_or: [${or.map(exp => `{${exp}}`).join(', ')}] ${topicsClause ? `, ${topicsClause}` : ''}}`
-            } else if (topicsClause) {
-                eventWhere = ` where: {${topicsClause}}`
-            }
+        if (events.length > 0) {
+            eventArgs.where._or.push({
+                name: {_in: events}
+            })
+        }
 
+        for (let event in hs.extrinsics) {
+            let extrinsics = Object.keys(hs.extrinsics[event])
+            eventArgs.where._or.push({
+                name: {_eq: event},
+                extrinsic: {name: {_in: extrinsics}}
+            })
+        }
+
+        if (evmLogFilter) {
+            eventArgs.where._or.push(evmLogFilter)
         }
 
         let q = new Output()
@@ -205,7 +183,7 @@ export class Ingest {
             q.block(`indexerStatus`, () => {
                 q.line('head')
             })
-            q.block(`substrate_block(limit: ${this.limit} order_by: {height: asc} where: ${blockWhere})`, () => {
+            q.block(`substrate_block(${printArguments(blockArgs)})`, () => {
                 q.line('id')
                 q.line('hash')
                 q.line('height')
@@ -223,7 +201,7 @@ export class Ingest {
                 })
                 q.line('extrinsics')
                 q.line()
-                q.block(`substrate_events(order_by: {indexInBlock: asc}${eventWhere})`, () => {
+                q.block(`substrate_events(${printArguments(eventArgs)})`, () => {
                     q.line('id')
                     q.line('name')
                     q.line('method')
@@ -232,7 +210,7 @@ export class Ingest {
                     q.line('indexInBlock')
                     q.line('blockNumber')
                     q.line('blockTimestamp')
-                    if (evmLogs?.length > 0) {
+                    if (evmLogFilter) {
                         q.line('evmLogAddress')
                         q.line('evmLogData')
                         q.line('evmLogTopics')
@@ -312,6 +290,28 @@ export class Ingest {
         return blocks
     }
 
+    private evmLogFilter(logs: DataHandlers['evmLogs']): any | undefined {
+        let or: any[] = []
+        for (let contract in logs) {
+            let cond = {
+                evmLogAddress: {_eq: contract},
+                evmLogTopics: {_or: [] as any[]}
+            }
+            let topics = logs[contract]
+            if (!topics['*']) {
+                for (let topic in topics) {
+                    cond.evmLogTopics._or.push({_contains: topic})
+                }
+            }
+            or.push(cond)
+        }
+        if (or.length == 0) return undefined
+        return {
+            name: {_eq: 'evm.Log'},
+            _or: or
+        }
+    }
+
     private async waitForHeight(minimumHeight: number): Promise<number> {
         while (this.archiveHeight < minimumHeight) {
             await this.fetchArchiveHeight()
@@ -361,5 +361,63 @@ export class Ingest {
             throw new Error(`GraphQL error: ${result.errors[0].message}`)
         }
         return assertNotNull(result.data) as T
+    }
+}
+
+
+function printArguments(args: any): string {
+    let exp = _printArguments(args)
+    assert(exp[0] == '{' && exp[exp.length - 1] == '}')
+    return exp.slice(1, exp.length - 1)
+}
+
+
+function _printArguments(args: any): string {
+    if (args == null) return ''
+    switch(typeof args) {
+        case 'string':
+            return `"${args}"`
+        case 'number':
+            return ''+args
+        case 'object':
+            if (Array.isArray(args)) {
+                return `[${args.map(i => _printArguments(i)).filter(e => !!e).join(', ')}]`
+            } else if (args.$) {
+                return args.$
+            } else {
+                let fields: string[] = []
+                collectFields(args, fields)
+                return fields.length ? `{${fields.join(', ')}}` : ''
+            }
+        default:
+            throw unexpectedCase(typeof args)
+    }
+}
+
+
+function collectFields(obj: any, fields: string[]): void {
+    for (let field in obj) {
+        let val = obj[field]
+        if (field == '_or') {
+            assert(Array.isArray(val))
+            collectOrExpressions(val, fields)
+        } else {
+            let exp = _printArguments(val)
+            if (exp) {
+                fields.push(`${field}: ${exp}`)
+            }
+        }
+    }
+}
+
+
+function collectOrExpressions(or: any[], fields: string[]): void {
+    switch(or.length) {
+        case 0:
+            return
+        case 1:
+            return collectFields(or[0], fields)
+        default:
+            fields.push(`_or: ${printArguments(or)}`)
     }
 }
