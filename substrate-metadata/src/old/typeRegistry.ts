@@ -178,7 +178,9 @@ export class OldTypeRegistry {
                     name: 'Address',
                     params: []
                 }, pallet)
-            case 'PairOf': {
+            case 'PairOf':
+            case 'Range':
+            case 'RangeInclusive': {
                 let param = this.normalizeType(assertOneParam(type), pallet)
                 return {
                     kind: 'tuple',

@@ -1,0 +1,7 @@
+{
+  "outDir": "../src/altair",
+  "chainVersions": "../../data/chain/altair/versions.json",
+  "typesBundle": "altair",
+  "events": true,
+  "calls": true
+}

@@ -89,6 +89,11 @@ describe('Type expressions', function () {
     test('<T::Balance as HasCompact>', 'Compact<Balance>')
     test('<T as Trait<I>>::Proposal', 'Proposal')
     test('rstd::marker::PhantomData<(AccountId, Event)>', 'PhantomData<(AccountId, Event)>')
+
+    test(
+        'Vec<(T::AccountId,<<T as pallet_proxy::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId,>>::Balance, (BoundedVec<ProxyDefinition<T::AccountId, T::ProxyType, T::BlockNumber>,<T as pallet_proxy::Config>::MaxProxies,>,<<T as pallet_proxy::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId,>>::Balance,),)>',
+        'Vec<(AccountId, Balance, (BoundedVec<ProxyDefinition<AccountId, ProxyType, BlockNumber>, MaxProxies>, Balance))>'
+    )
 })
 
 

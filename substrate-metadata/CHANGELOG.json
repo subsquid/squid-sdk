@@ -2,6 +2,24 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/substrate-metadata_v0.3.1",
+      "date": "Mon, 21 Feb 2022 12:42:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support `Range`, `RangeInclusive` in old types"
+          },
+          {
+            "comment": "allow trailing commas in old type expression lists"
+          },
+          {
+            "comment": "add type definitions for altair"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/substrate-metadata_v0.3.0",
       "date": "Mon, 07 Feb 2022 15:16:41 GMT",

@@ -4,6 +4,8 @@ import {OldTypesBundle} from "./old/types"
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
     switch(chain) {
+        case 'altair':
+            return require('./old/definitions/altair').bundle
         case 'khala':
             return require('./old/definitions/khala').bundle
         case 'kusama':

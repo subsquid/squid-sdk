@@ -2,7 +2,7 @@
 
 rm -rf src || exit 1
 
-for chain in polkadot kusama khala; do
+for chain in polkadot kusama khala altair; do
   echo -n "gen $chain: "
   npx squid-substrate-typegen "config/$chain.json" || exit 1
   echo ok
