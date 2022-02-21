@@ -1,6 +1,15 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Mon, 21 Feb 2022 12:42:24 GMT and should not be manually modified.
+
+## 0.3.1
+Mon, 21 Feb 2022 12:42:24 GMT
+
+### Patches
+
+- support `Range`, `RangeInclusive` in old types
+- allow trailing commas in old type expression lists
+- add type definitions for altair
 
 ## 0.3.0
 Mon, 07 Feb 2022 15:16:41 GMT
