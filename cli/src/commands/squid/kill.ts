@@ -6,7 +6,7 @@ import {
 import { parseNameAndVersion } from '../../utils'
 
 export default class Kill extends Command {
-    static description = 'Kill squid or version';
+    static description = 'Kill a squid or a squid version';
     static args = [
         {
             name: 'nameAndVersion',

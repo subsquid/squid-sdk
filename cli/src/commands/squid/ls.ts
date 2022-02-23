@@ -31,11 +31,11 @@ export default class Ls extends Command {
                 cli.table(
                     deployments,
                     {
-                        name: { header: 'version name' },
-                        artifactUrl: { header: 'artifactUrl' },
-                        deploymentUrl: { header: 'deploymentUrl' },
+                        name: { header: 'version' },
+                        artifactUrl: { header: 'endpoint' },
+                        deploymentUrl: { header: 'source' },
                         status: {},
-                        createdAt: { header: 'Created at' },
+                        createdAt: { header: 'created at' },
                     },
                     { 'no-truncate': noTruncate }
                 );
