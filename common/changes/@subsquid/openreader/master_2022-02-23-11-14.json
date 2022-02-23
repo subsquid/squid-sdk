@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "implement isNull operator",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "fix not enough columns in SQL result regression when typeorm connection is used",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
