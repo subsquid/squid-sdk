@@ -14,7 +14,7 @@ const options: Partial<SimpleGitOptions> = {
 const git: SimpleGit = simpleGit(options);
 
 export default class Release extends Command {
-    static description = 'Create a version';
+    static description = 'Create a new Squid version';
     static args = [
         {
             name: 'nameAndVersion',
@@ -26,7 +26,7 @@ export default class Release extends Command {
     static flags = {
         source: Flags.string({
             char: 's',
-            description: 'source',
+            description: 'A fully qualified git url, e.g. https://github.com/squidlover/my-squid.git#v5',
             required: false,
         }),
         description: Flags.string({
@@ -64,10 +64,10 @@ export default class Release extends Command {
             description
         );
         this.log(
-            '◷ You can detach from the resulting build process by pressing Ctrl + C. This does not cancel the deploy.'
+            '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'
         );
         this.log(
-            '◷ The deploy will continue in the background and will create a new squid as soon as it completes.'
+            '◷ The new squid will be available as soon as the deployment is complete.'
         );
         await pollDeployPipelines(
             squidName,

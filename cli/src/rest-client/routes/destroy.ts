@@ -17,7 +17,7 @@ export async function destroyDeployment(
     });
     const responseBody = await response.json();
     if (response.status === 200) {
-        return `Destroyed version with name ${responseBody.squidName}`;
+        return `Destroyed Squid version ${responseBody.squidName}`;
     }
 }
 
@@ -33,6 +33,6 @@ export async function destroyApp(name: string): Promise<string | undefined> {
     });
     const responseBody = await response.json();
     if (response.status === 200) {
-        return `Destroyed squid with name ${responseBody.name}`;
+        return `Destroyed Squid ${responseBody.name}`;
     }
 }

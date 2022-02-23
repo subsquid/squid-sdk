@@ -27,7 +27,7 @@ export function getCreds(): string {
     try {
         creds = readFileSync(credentialsFilePath, 'utf8');
     } catch (e) {
-        throw new Error(`Credentials data not found. Run hydra-cli login`);
+        throw new Error(`Deployment key not found. Please obtain a new deployment key at https://app.subsquid.io`);
     }
     return creds;
 }
@@ -36,7 +36,7 @@ export function deleteCreds(): void {
     try {
         unlinkSync(credentialsFilePath);
     } catch (e) {
-        throw new Error(`Credentials data not found. Run hydra-cli login`);
+        throw new Error(`Deployment key not found. Please obtain a new deployment key at https://app.subsquid.io`);
     }
 }
 

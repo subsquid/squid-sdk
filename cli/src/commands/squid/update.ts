@@ -64,10 +64,10 @@ export default class Update extends Command {
             flags.hardReset
         );
         this.log(
-            '◷ You can detach from the resulting build process by pressing Ctrl + C. This does not cancel the deploy.'
+            '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'
         );
         this.log(
-            '◷ The deploy will continue in the background and will create a new squid as soon as it completes.'
+            '◷ The new squid will be available as soon as the deployment is complete.'
         );
         await pollDeployPipelines(
             squidName,
