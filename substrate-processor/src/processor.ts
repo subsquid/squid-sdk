@@ -270,10 +270,10 @@ export class SubstrateProcessor {
                         for (let evmLogHandler of this.getEvmLogHandlers(handlers.evmLogs, event)) {
                             let log = event as EvmLogEvent
                             await evmLogHandler({
-                                contractAddress: log.contractAddress,
-                                topics: log.topics,
-                                data: log.data,
-                                txHash: log.txHash,
+                                contractAddress: log.evmLogAddress,
+                                topics: log.evmLogTopics,
+                                data: log.evmLogData,
+                                txHash: log.evmHash,
                                 substrate: {...ctx, event, extrinsic},
                                 store
                             })
@@ -322,7 +322,7 @@ export class SubstrateProcessor {
         if (event.name != 'evm.Log') return
         let log = event as EvmLogEvent
 
-        let contractHandlers = evmLogs[log.contractAddress]
+        let contractHandlers = evmLogs[log.evmLogAddress]
         if (contractHandlers == null) return
 
         let called = new Set<EvmLogHandler>()
@@ -335,7 +335,7 @@ export class SubstrateProcessor {
             }
         }
 
-        for (let topic of log.topics) {
+        for (let topic of log.evmLogTopics) {
             handlers = contractHandlers[topic]
             if (handlers == null) continue
             for (let h of handlers) {

@@ -10,10 +10,10 @@ export type EvmLogTopic = string
 
 export interface EvmLogEvent extends SubstrateEvent {
     name: 'evm.Log'
-    contractAddress: EvmContractAddress
-    topics: EvmLogTopic[]
-    data: string
-    txHash: string
+    evmLogAddress: EvmContractAddress
+    evmLogTopics: EvmLogTopic[]
+    evmLogData: string
+    evmHash: string
 }
 
 

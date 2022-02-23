@@ -4,7 +4,7 @@ import fetch from "node-fetch"
 import {Batch, DataHandlers} from "./batch"
 import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {AbortHandle, Channel, wait} from "./util/async"
-import {unique} from "./util/misc"
+import {hasProperties, unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
 
@@ -127,7 +127,6 @@ export class Ingest {
         let hs = batch.handlers
         let events = Object.keys(hs.events)
         let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
-        let evmLogFilter = this.evmLogFilter(hs.evmLogs)
 
         let blockArgs = {
             limit: this.limit,
@@ -150,9 +149,14 @@ export class Ingest {
                     extrinsics: {_contains: [{name}]}
                 })
             })
-            if (evmLogFilter) {
-                blockArgs.where._or.push({substrate_events: this.evmLogFilter(hs.evmLogs, true)})
-            }
+            this.forEachEvmTopic(hs.evmLogs, (contract, topic) => {
+                blockArgs.where._or.push({
+                    evm_log: {
+                        contract_address: {_eq: contract},
+                        topic: topic && {_eq: topic}
+                    }
+                })
+            })
         }
 
         let eventArgs = {
@@ -174,9 +178,12 @@ export class Ingest {
             })
         }
 
-        if (evmLogFilter) {
-            eventArgs.where._or.push(evmLogFilter)
-        }
+        this.forEachEvmTopic(hs.evmLogs, (contract, topic) => {
+            eventArgs.where._or.push({
+                evmLogAddress: {_eq: contract},
+                evmLogTopics: topic && {_contains: topic}
+            })
+        })
 
         let q = new Output()
         q.block(`query`, () => {
@@ -210,7 +217,7 @@ export class Ingest {
                     q.line('indexInBlock')
                     q.line('blockNumber')
                     q.line('blockTimestamp')
-                    if (evmLogFilter) {
+                    if (hasProperties(hs.evmLogs)) {
                         q.line('evmLogAddress')
                         q.line('evmLogData')
                         q.line('evmLogTopics')
@@ -290,25 +297,16 @@ export class Ingest {
         return blocks
     }
 
-    private evmLogFilter(logs: DataHandlers['evmLogs'], noTopics?: boolean): any | undefined {
-        let or: any[] = []
+    private forEachEvmTopic(logs: DataHandlers['evmLogs'], cb: (contract: string, topic?: string) => void): void {
         for (let contract in logs) {
-            let cond = {
-                evmLogAddress: {_eq: contract},
-                evmLogTopics: {_or: [] as any[]}
-            }
             let topics = logs[contract]
-            if (!(topics['*'] || noTopics)) {
+            if (topics['*']) {
+                cb(contract)
+            } else {
                 for (let topic in topics) {
-                    cond.evmLogTopics._or.push({_contains: topic})
+                    cb(contract, topic)
                 }
             }
-            or.push(cond)
-        }
-        if (or.length == 0) return undefined
-        return {
-            name: {_eq: 'evm.Log'},
-            _or: or
         }
     }
 
