@@ -5,3 +5,16 @@ type Scalar @entity {
   bigNumber: BigInt
   bytes: Bytes
 }
+
+
+type Child @entity {
+  id: ID!
+  name: String
+  parent: Parent
+}
+
+
+type Parent @entity {
+  id: ID!
+  name: String
+}
