@@ -303,6 +303,15 @@ export class QueryBuilder {
 
     private addPropCondition(exps: string[], cursor: Cursor, field: string, op: WhereOp, arg: any): void {
         let propType = cursor.object.properties[field].type
+        if (op == 'isNull') {
+            let lhs = propType.kind == 'fk' ? cursor.fk(field) : cursor.field(field)
+            if (arg) {
+                exps.push(`${lhs} IS NULL`)
+            } else {
+                exps.push(`${lhs} IS NOT NULL`)
+            }
+            return
+        }
         switch(propType.kind) {
             case 'scalar':
             case 'enum': {
