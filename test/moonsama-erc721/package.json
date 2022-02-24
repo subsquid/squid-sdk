@@ -10,6 +10,7 @@
     "@subsquid/substrate-metadata": "^0.3.1",
     "@subsquid/substrate-evm-processor": "^0.0.0",
     "dotenv": "^10.0.0",
+    "@ethersproject/abi": "^5.5.0",
     "pg": "^8.7.1",
     "typeorm": "^0.2.41"
   },
