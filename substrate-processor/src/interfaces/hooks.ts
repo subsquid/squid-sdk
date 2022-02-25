@@ -1,5 +1,5 @@
 import {Range} from "../util/range"
-import {EvmLogHandler} from "./evm"
+import {EvmLogHandler, EvmTopicSet} from "./evm"
 import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
 import {QualifiedName} from "./substrate"
 
@@ -28,7 +28,7 @@ export interface ExtrinsicHook {
 export interface EvmLogHook {
     handler: EvmLogHandler
     contractAddress: string
-    topics?: string[]
+    filter?: EvmTopicSet[]
     range?: Range
 }
 

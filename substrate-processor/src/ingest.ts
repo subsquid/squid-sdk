@@ -18,7 +18,7 @@ export interface DataBatch extends Batch {
     /**
      * This is roughly the range of scanned blocks
      */
-    range: { from: number, to: number }
+    range: {from: number, to: number}
     blocks: BlockData[]
 }
 
@@ -149,13 +149,23 @@ export class Ingest {
                     extrinsics: {_contains: [{name}]}
                 })
             })
-            this.forEachEvmTopic(hs.evmLogs, (contract, topic) => {
-                blockArgs.where._or.push({
-                    evm_log: {
-                        contract_address: {_eq: contract},
-                        topic: topic && {_eq: topic}
+            this.forEachEvmContract(hs.evmLogs, (contract, topics) => {
+                if (topics.length) {
+                    for (let topic of topics) {
+                        blockArgs.where._or.push({
+                            evm_log: {
+                                contract_address: {_eq: contract},
+                                topic: {_eq: topic}
+                            }
+                        })
                     }
-                })
+                } else {
+                    blockArgs.where._or.push({
+                        evm_log: {
+                            contract_address: {_eq: contract}
+                        }
+                    })
+                }
             })
         }
 
@@ -178,10 +188,14 @@ export class Ingest {
             })
         }
 
-        this.forEachEvmTopic(hs.evmLogs, (contract, topic) => {
+        this.forEachEvmContract(hs.evmLogs, (contract, topics) => {
             eventArgs.where._or.push({
                 evmLogAddress: {_eq: contract},
-                evmLogTopics: topic && {_contains: topic}
+                _or: topics.map(topic => {
+                    return {
+                        evmLogTopics: {_contains: topic}
+                    }
+                })
             })
         })
 
@@ -297,16 +311,39 @@ export class Ingest {
         return blocks
     }
 
-    private forEachEvmTopic(logs: DataHandlers['evmLogs'], cb: (contract: string, topic?: string) => void): void {
+    /**
+     * Collects the set of mentioned topics per contract.
+     *
+     * If there is a handler without any topic restriction the resulting set will be empty.
+     * Otherwise, every topic mentioned in any restriction will be included in the resulting set.
+     *
+     * The ingester will fetch every evm.Log event which includes any mentioned topic (regardless it's position).
+     * This is a lame procedure, we'll rework it when new archive will be ready.
+     */
+    private forEachEvmContract(logs: DataHandlers['evmLogs'], cb: (contract: string, topics: string[]) => void): void {
         for (let contract in logs) {
-            let topics = logs[contract]
-            if (topics['*']) {
-                cb(contract)
-            } else {
-                for (let topic in topics) {
-                    cb(contract, topic)
+            let topics: string[] = []
+            for (let h of logs[contract]) {
+                if (h.filter ==null) {
+                    return cb(contract, [])
+                }
+                let allEmpty = true
+                for (let set of h.filter) {
+                    if (set == null || Array.isArray(set) && set.length == 0) {
+                        continue
+                    }
+                    allEmpty = false
+                    if (Array.isArray(set)) {
+                        topics.push(...set)
+                    } else {
+                        topics.push(set)
+                    }
+                }
+                if (allEmpty) {
+                    return cb(contract, [])
                 }
             }
+            cb(contract, unique(topics))
         }
     }
 

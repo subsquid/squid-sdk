@@ -2,6 +2,7 @@ import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import * as fc from "fast-check"
 import {createBatches} from "./batch"
+import {EvmTopicSet} from "./interfaces/evm"
 import {Range, rangeEnd, rangeIntersection} from "./util/range"
 
 
@@ -134,7 +135,7 @@ describe('batching', function () {
                 let prePostHooksOk = hs.pre.concat(hs.post).every(h => {
                     return containsRange(h.range, b.range)
                 })
-                let eventHandlersOk = Object.entries(hs.events).every(([e, handlers]) => {
+                let eventHandlersOk = Object.entries(hs.events).every(([_, handlers]) => {
                     return handlers.every(h => containsRange(h.range, b.range))
                 })
                 let extrinsicHandlersOk = Object.entries(hs.extrinsics).every(e => {
@@ -142,10 +143,8 @@ describe('batching', function () {
                         return handlers.every(h => containsRange(h.range, b.range))
                     })
                 })
-                let evmLogHandlersOk = Object.entries(hs.evmLogs).every(e => {
-                    return Object.entries(e[1]).every(([_, handlers]) => {
-                        return handlers.every(h => containsRange(h.range, b.range))
-                    })
+                let evmLogHandlersOk = Object.entries(hs.evmLogs).every(([_, handlers]) => {
+                    return handlers.every(h => containsRange(h.handler.range, b.range))
                 })
                 return prePostHooksOk && eventHandlersOk && extrinsicHandlersOk && evmLogHandlersOk
             })
@@ -157,6 +156,16 @@ describe('batching', function () {
             return batches.every(b => {
                 return Object.entries(b.handlers.events).every(([e, handlers]) => {
                     return handlers.every(h => h.event === e)
+                })
+            })
+        })
+    })
+
+    it('evm log handler is never called for wrong contract address', function () {
+        assertBatch(batches => {
+            return batches.every(b => {
+                return Object.entries(b.handlers.evmLogs).every(([contract, handlers]) => {
+                    return handlers.every(h => h.handler.contractAddress === contract)
                 })
             })
         })
@@ -219,10 +228,8 @@ describe('batching', function () {
                         hs.forEach(call)
                     })
                 })
-                Object.entries(b.handlers.evmLogs).forEach(([contractAndress, evmLog]) => {
-                    Object.entries(evmLog).forEach(([topics, hs]) => {
-                        hs.forEach(call)
-                    });
+                Object.entries(b.handlers.evmLogs).forEach(([contractAddress, hs]) => {
+                   hs.forEach(h => call(h.handler))
                 })
             })
 
@@ -305,6 +312,6 @@ interface ABatch {
         post: ABlockHandler[],
         events: Record<string, AEventHandler[]>
         extrinsics: Record<string, Record<string, AExtrinsicHandler[]>>
-        evmLogs: Record<string, Record<string, AEvmLogHandler[]>>
+        evmLogs: Record<string, {filter: EvmTopicSet[], handler: AEvmLogHandler}[]>
     }
 }

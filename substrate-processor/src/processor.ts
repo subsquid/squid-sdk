@@ -6,7 +6,7 @@ import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
 import {Db, IsolationLevel} from "./db"
 import {DataBatch, Ingest} from "./ingest"
-import {EvmLogEvent, EvmLogHandler} from "./interfaces/evm"
+import {EvmLogEvent, EvmLogHandler, EvmTopic, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName, SubstrateEvent} from "./interfaces/substrate"
@@ -325,24 +325,24 @@ export class SubstrateProcessor {
         let contractHandlers = evmLogs[log.evmLogAddress]
         if (contractHandlers == null) return
 
-        let called = new Set<EvmLogHandler>()
-        let handlers: EvmLogHandler[] | undefined = contractHandlers['*']
-
-        if (handlers) {
-            for (let h of handlers) {
-                called.add(h)
-                yield h
+        for (let h of contractHandlers) {
+            if (this.evmHandlerMatches(h, log)) {
+                yield h.handler
             }
         }
+    }
 
-        for (let topic of log.evmLogTopics) {
-            handlers = contractHandlers[topic]
-            if (handlers == null) continue
-            for (let h of handlers) {
-                if (called.has(h)) continue
-                called.add(h)
-                yield h
+    private evmHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmLogEvent): boolean {
+        if (handler.filter == null) return true
+        for (let i = 0; i < handler.filter.length; i++) {
+            let set = handler.filter[i]
+            if (set == null) continue
+            if (Array.isArray(set) && !set.includes(log.evmLogTopics[i])) {
+                return false
+            } else if (set !== log.evmLogTopics[i]) {
+                return false
             }
         }
+        return true
     }
 }

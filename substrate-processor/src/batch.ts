@@ -1,10 +1,10 @@
 import {assertNotNull} from "@subsquid/util"
+import {EvmContractAddress, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
-import {EvmContractAddress, EvmLogHandler, EvmLogTopic} from "./interfaces/evm"
 
 
 export interface DataHandlers {
@@ -15,7 +15,7 @@ export interface DataHandlers {
      * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
      */
     extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
-    evmLogs: Record<EvmContractAddress, Record<EvmLogTopic, EvmLogHandler[]>>
+    evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], handler: EvmLogHandler}[]>
 }
 
 
@@ -103,14 +103,6 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     hooks.evmLog.forEach(hook => {
         let range = getRange(hook)
         if (!range) return
-        let topicHandlers: Record<EvmLogTopic, EvmLogHandler[]> = {}
-        if (hook.topics?.length) {
-            hook.topics.forEach(topic => {
-                topicHandlers[topic] = [hook.handler]
-            })
-        } else {
-            topicHandlers['*'] = [hook.handler]
-        }
         batches.push({
             range,
             handlers: {
@@ -119,7 +111,10 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 extrinsics: {},
                 evmLogs: {
-                    [hook.contractAddress]: topicHandlers
+                    [hook.contractAddress]: [{
+                        filter: hook.filter,
+                        handler: hook.handler
+                    }]
                 }
             }
         })
@@ -174,9 +169,7 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
         extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
             return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
         }),
-        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ea, eb) => {
-            return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
-        }),
+        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb)),
     }
 }
 

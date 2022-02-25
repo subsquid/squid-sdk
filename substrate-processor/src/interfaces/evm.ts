@@ -5,20 +5,20 @@ import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./substrate"
 
 
 export type EvmContractAddress = string
-export type EvmLogTopic = string
+export type EvmTopic = string
 
 
 export interface EvmLogEvent extends SubstrateEvent {
     name: 'evm.Log'
     evmLogAddress: EvmContractAddress
-    evmLogTopics: EvmLogTopic[]
+    evmLogTopics: EvmTopic[]
     evmLogData: string
     evmHash: string
 }
 
 
 export interface EvmLogHandlerContext {
-    topics: EvmLogTopic[]
+    topics: EvmTopic[]
     data: string
     txHash: string
     contractAddress: EvmContractAddress
@@ -37,7 +37,13 @@ export interface EvmLogHandler {
 }
 
 
+export type EvmTopicSet = EvmTopic | null | undefined | EvmTopic[]
+
+
 export interface EvmLogHandlerOptions {
     range?: Range
-    topics?: string[]
+    /**
+     * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
+     */
+    filter?: EvmTopicSet[]
 }

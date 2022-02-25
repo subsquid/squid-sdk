@@ -20,7 +20,9 @@ processor.setBlockRange({from: 568970})
 processor.addEvmLogHandler(
     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
     {
-        topics: [erc721.events['Transfer(address,address,uint256)'].topic]
+        filter: [
+            erc721.events['Transfer(address,address,uint256)'].topic
+        ]
     },
     async ctx => {
         let transfer = erc721.events['Transfer(address,address,uint256)'].decode(ctx)
