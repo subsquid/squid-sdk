@@ -28,6 +28,6 @@ type Transfer @entity {
   # Empty to is burning
   to: Owner
   timestamp: BigInt!
-  block: BigInt!
+  block: Int!
   transactionHash: String!
 }

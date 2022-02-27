@@ -27,8 +27,8 @@ export class Transfer {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
   timestamp!: bigint
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  block!: bigint
+  @Column_("integer", {nullable: false})
+  block!: number
 
   @Column_("text", {nullable: false})
   transactionHash!: string
