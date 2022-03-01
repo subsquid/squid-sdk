@@ -149,24 +149,12 @@ export class Ingest {
                     extrinsics: {_contains: [{name}]}
                 })
             })
-            this.forEachEvmContract(hs.evmLogs, (contract, topics) => {
-                if (topics.length) {
-                    for (let topic of topics) {
-                        blockArgs.where._or.push({
-                            evm_log: {
-                                contract_address: {_eq: contract},
-                                topic: {_eq: topic}
-                            }
-                        })
-                    }
-                } else {
-                    blockArgs.where._or.push({
-                        evm_log: {
-                            contract_address: {_eq: contract}
-                        }
-                    })
-                }
-            })
+            if (hasProperties(hs.evmLogs)) {
+                let blocks = await this.fetchBlocksWithEvmData(from, to, hs.evmLogs)
+                blocks.evm_log_idx.forEach(({block_id}) => {
+                    blockArgs.where._or.push({id: {_eq: block_id}})
+                })
+            }
         }
 
         let eventArgs = {
@@ -309,6 +297,40 @@ export class Ingest {
         }
 
         return blocks
+    }
+
+    private fetchBlocksWithEvmData(from: number, to: number, logs: DataHandlers['evmLogs']): Promise<{evm_log_idx: {block_id: string}[]}> {
+        let args: any = {
+            limit: this.limit,
+            distinct_on: {$: 'block_id'},
+            where: {
+                block_id: {
+                    _gte: String(from).padStart(10, '0'),
+                    _lte: String(to).padStart(10, '0')
+                },
+                _or: []
+            }
+        }
+
+        this.forEachEvmContract(logs, (contract, topics) => {
+            args.where._or.push({
+                contract_address: {_eq: contract},
+                _or: (topics.length == 0 ? ['*'] : topics).map(topic => {
+                    return {
+                        topic: {_eq: topic}
+                    }
+                })
+            })
+        })
+
+        let q = new Output()
+        q.block('query', () => {
+            q.block(`evm_log_idx(${printArguments(args)})`, () => {
+                q.line('block_id')
+            })
+        })
+        let gql = q.toString()
+        return this.archiveRequest(gql)
     }
 
     /**

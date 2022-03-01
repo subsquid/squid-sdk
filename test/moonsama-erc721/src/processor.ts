@@ -7,8 +7,6 @@ import {Owner, Token, Transfer} from "./model"
 const processor = new SubstrateEvmProcessor('erc721')
 
 
-processor.setBatchSize(500)
-processor.setTypesBundle('moonriver')
 processor.setDataSource({
     chain: assertNotNull(process.env.CHAIN_NODE),
     archive: assertNotNull(process.env.ARCHIVE)
@@ -46,7 +44,7 @@ processor.addEvmLogHandler(
         if (token == null) {
             token = new Token({
                 id: transfer.tokenId.toString(),
-                uri: await contract.tokenUri(transfer.tokenId),
+                uri: await contract.tokenURI(transfer.tokenId),
                 contract: await getContractEntity(ctx),
                 owner: to
             })
