@@ -6,10 +6,7 @@ import {BalancesTransferEvent} from "./types/events"
 const processor = new SubstrateProcessor('kusama_balances')
 
 
-processor.setTypesBundle('kusama')
 processor.setBatchSize(500)
-
-
 processor.setDataSource({
     archive: 'https://kusama.indexer.gc.subsquid.io/v4/graphql',
     chain: 'wss://kusama-rpc.polkadot.io'

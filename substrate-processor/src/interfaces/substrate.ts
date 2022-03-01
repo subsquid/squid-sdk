@@ -2,6 +2,7 @@ import type {SpecVersion} from "@subsquid/substrate-metadata"
 
 
 export interface SubstrateRuntimeVersion {
+    specName: string
     specVersion: SpecVersion
 }
 
