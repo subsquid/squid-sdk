@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "improve cli messages",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

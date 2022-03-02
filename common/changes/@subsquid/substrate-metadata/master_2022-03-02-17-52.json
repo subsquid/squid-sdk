@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "add types for `bifrost`, `moonbeam`, `moonriver`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

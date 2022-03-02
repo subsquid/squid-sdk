@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "support special processing for `evm.Log` events",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "allow not to `.setTypesBundle()` for known chains",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

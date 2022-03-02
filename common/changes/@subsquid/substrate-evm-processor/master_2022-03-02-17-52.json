@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-evm-processor",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/substrate-evm-processor"
+}
