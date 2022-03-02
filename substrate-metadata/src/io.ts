@@ -6,6 +6,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
     switch(chain) {
         case 'altair':
             return require('./old/definitions/altair').bundle
+        case 'bifrost':
+            return require('./old/definitions/bifrost').bundle
         case 'khala':
             return require('./old/definitions/khala').bundle
         case 'kusama':
