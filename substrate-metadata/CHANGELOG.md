@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 21 Feb 2022 12:42:24 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+
+## 0.4.0
+Wed, 02 Mar 2022 18:11:28 GMT
+
+### Minor changes
+
+- add types for `bifrost`, `moonbeam`, `moonriver`
 
 ## 0.3.1
 Mon, 21 Feb 2022 12:42:24 GMT

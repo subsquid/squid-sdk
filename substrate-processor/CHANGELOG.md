@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+
+## 0.4.0
+Wed, 02 Mar 2022 18:11:28 GMT
+
+### Minor changes
+
+- support special processing for `evm.Log` events
+- allow not to `.setTypesBundle()` for known chains
 
 ## 0.3.0
 Mon, 07 Feb 2022 15:16:41 GMT
