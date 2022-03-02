@@ -6,7 +6,7 @@ import type {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./substra
 
 
 export interface Store extends EntityManager {
-    get<Entity>(entityClass: EntityTarget<Entity>, options?: FindOneOptions<Entity>): Promise<Entity | undefined>
+    get<Entity>(entityClass: EntityTarget<Entity>, optionsOrId?: FindOneOptions<Entity> | string): Promise<Entity | undefined>
 }
 
 

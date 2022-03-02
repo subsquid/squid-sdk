@@ -5,6 +5,8 @@ import {
     decodeMetadata,
     Field,
     getChainDescriptionFromMetadata,
+    getOldTypesBundle,
+    OldTypes,
     OldTypesBundle,
     QualifiedName,
     SpecVersion
@@ -33,7 +35,7 @@ export class ChainManager {
 
     constructor(
         private client: ResilientRpcClient,
-        private typesBundle: OldTypesBundle = {types: {}}) {
+        private typesBundle?: OldTypesBundle) {
     }
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
@@ -52,7 +54,7 @@ export class ChainManager {
             let metadataHex: string = await this.client.call('state_getMetadata', [hash])
             v = this.versions.get(rtv.specVersion) // perhaps it was fetched
             if (v == null) {
-                let chain = this.createChain(rtv.specVersion, metadataHex)
+                let chain = this.createChain(rtv, metadataHex)
                 v = {chain, height}
                 this.versions.set(rtv.specVersion, v)
             }
@@ -61,9 +63,16 @@ export class ChainManager {
         return v.chain
     }
 
-    private createChain(specVersion: SpecVersion, metadataHex: string): Chain {
+    private createChain(rtv: SubstrateRuntimeVersion, metadataHex: string): Chain {
         let metadata = decodeMetadata(metadataHex)
-        let types = getTypesFromBundle(this.typesBundle, specVersion)
+        let types: OldTypes | undefined
+        if (parseInt(metadata.__kind.slice(1)) < 14) {
+            let typesBundle = assertNotNull(
+                this.typesBundle || getOldTypesBundle(rtv.specName),
+                `types bundle is required for ${rtv.specName} chain`
+            )
+            types = getTypesFromBundle(typesBundle, rtv.specVersion)
+        }
         let description = getChainDescriptionFromMetadata(metadata, types)
         return new Chain(description)
     }

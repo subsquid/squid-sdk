@@ -1,0 +1,25 @@
+{
+  "name": "moonsama-erc721",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@ethersproject/abi": "^5.5.0",
+    "@subsquid/graphql-server": "^0.1.4",
+    "@subsquid/substrate-metadata": "^0.3.1",
+    "@subsquid/substrate-evm-processor": "^0.0.0",
+    "dotenv": "^10.0.0",
+    "ethers": "^5.5.4",
+    "pg": "^8.7.1",
+    "typeorm": "^0.2.41"
+  },
+  "devDependencies": {
+    "@subsquid/cli": "^0.1.2",
+    "@subsquid/substrate-metadata-explorer": "^0.0.7",
+    "@subsquid/substrate-typegen": "^0.2.1",
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

@@ -76,7 +76,13 @@ export class Db {
             assert(status.length == 1)
             assert(status[0].height < blockNumber)
             let store = em as Store
-            store.get = em.findOne
+            store.get = function(entityClass, cond) {
+                if (typeof cond == 'string') {
+                    return this.findOne(entityClass, {where: {id: cond}})
+                } else {
+                    return this.findOne(entityClass, cond)
+                }
+            }
             await cb(store)
             await em.query(`UPDATE ${this.statusSchema}.status SET height = $1`, [blockNumber])
         })

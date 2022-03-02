@@ -17,3 +17,11 @@ export function timeInterval(seconds: number): string {
     minutes = minutes - hours * 60
     return hours + 'h ' + minutes + 'm'
 }
+
+
+export function hasProperties(obj?: object | null): boolean {
+    for (let key in obj) {
+        return true
+    }
+    return false
+}

@@ -2,13 +2,15 @@ import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, toCamelCase} from "@subsquid/util"
 import assert from "assert"
-import {createBatches, getBlocksCount} from "./batch"
+import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
 import {Db, IsolationLevel} from "./db"
 import {DataBatch, Ingest} from "./ingest"
+import {EvmLogEvent, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
-import {QualifiedName} from "./interfaces/substrate"
+import {QualifiedName, SubstrateEvent} from "./interfaces/substrate"
+import {ProgressTracker} from "./progress-tracker"
 import {Prometheus} from "./prometheus"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
@@ -44,7 +46,7 @@ export interface DataSource {
 
 
 export class SubstrateProcessor {
-    private hooks: Hooks = {pre: [], post: [], event: [], extrinsic: []}
+    protected hooks: Hooks = {pre: [], post: [], event: [], extrinsic: [], evmLog: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -86,6 +88,7 @@ export class SubstrateProcessor {
     }
 
     setIsolationLevel(isolationLevel?: IsolationLevel): void {
+        this.assertNotRunning()
         this.isolationLevel = isolationLevel
     }
 
@@ -165,7 +168,7 @@ export class SubstrateProcessor {
         })
     }
 
-    private assertNotRunning(): void {
+    protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
         }
@@ -240,10 +243,10 @@ export class SubstrateProcessor {
         let batch: DataBatch | null
         let lastBlock = -1
         while (batch = await ingest.nextBatch()) {
-            let {handlers: {pre, post, events, extrinsics}, blocks, range} = batch
+            let {handlers, blocks, range} = batch
             let beg = blocks.length > 0 ? process.hrtime.bigint() : 0n
-            for (let i = 0; i < blocks.length; i++) {
-                let block = blocks[i]
+
+            for (let block of blocks) {
                 assert(lastBlock < block.block.height)
                 let chain = await chainManager.getChainForBlock(block.block)
                 await db.transact(block.block.height, async store => {
@@ -252,26 +255,41 @@ export class SubstrateProcessor {
                         store,
                         ...block
                     }
-                    for (let j = 0; j < pre.length; j++) {
-                        await pre[j](ctx)
+
+                    for (let pre of handlers.pre) {
+                        await pre(ctx)
                     }
-                    for (let j = 0; j < block.events.length; j++) {
-                        let event = block.events[j]
+
+                    for (let event of block.events) {
                         let extrinsic = event.extrinsic
-                        let eventHandlers = events[event.name] || []
-                        for (let k = 0; k < eventHandlers.length; k++) {
-                            await eventHandlers[k]({...ctx, event, extrinsic})
+
+                        for (let eventHandler of handlers.events[event.name] || []) {
+                            await eventHandler({...ctx, event, extrinsic})
                         }
+
+                        for (let evmLogHandler of this.getEvmLogHandlers(handlers.evmLogs, event)) {
+                            let log = event as EvmLogEvent
+                            await evmLogHandler({
+                                contractAddress: log.evmLogAddress,
+                                topics: log.evmLogTopics,
+                                data: log.evmLogData,
+                                txHash: log.evmHash,
+                                substrate: {...ctx, event, extrinsic},
+                                store
+                            })
+                        }
+
                         if (extrinsic == null) continue
-                        let callHandlers = extrinsics[event.name]?.[extrinsic.name] || []
-                        for (let k = 0; k < callHandlers.length; k++) {
-                            await callHandlers[k]({...ctx, event, extrinsic})
+                        for (let callHandler of handlers.extrinsics[event.name]?.[extrinsic.name] || []) {
+                            await callHandler({...ctx, event, extrinsic})
                         }
                     }
-                    for (let j = 0; j < post.length; j++) {
-                        await post[j](ctx)
+
+                    for (let post of handlers.post) {
+                        await post(ctx)
                     }
                 })
+
                 lastBlock = block.block.height
                 prom.setLastProcessedBlock(lastBlock)
             }
@@ -299,54 +317,32 @@ export class SubstrateProcessor {
             console.log(status.join(', '))
         }
     }
-}
 
+    private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler> {
+        if (event.name != 'evm.Log') return
+        let log = event as EvmLogEvent
 
-class ProgressTracker {
-    private window: {time: bigint, count: number}[] = []
-    private ratio = 0
-    private eta = 0
+        let contractHandlers = evmLogs[log.evmLogAddress]
+        if (contractHandlers == null) return
 
-    constructor(
-        private count: number,
-        private wholeRange: {range: Range}[],
-        private prometheus: Prometheus
-    ) {
-        this.tick(process.hrtime.bigint(), 0)
-    }
-
-    private tick(time: bigint, inc: number): bigint {
-        this.count += inc
-        this.window.push({
-            time,
-            count: this.count
-        })
-        if (this.window.length > 5) {
-            this.window.shift()
+        for (let h of contractHandlers) {
+            if (this.evmHandlerMatches(h, log)) {
+                yield h.handler
+            }
         }
-        return time
     }
 
-    batch(time: bigint, batch: DataBatch): void {
-        this.tick(time, batch.range.to - batch.range.from + 1)
-
-        let total = getBlocksCount(this.wholeRange, this.prometheus.getChainHeight())
-        this.ratio = Math.round(10000 * this.count / total) / 10000
-        this.prometheus.setSyncRatio(this.ratio)
-
-        let beg = this.window[0]
-        let end = this.window[this.window.length - 1]
-        let duration = end.time - beg.time
-        let processed = end.count - beg.count
-        this.eta = Number(BigInt(total - this.count) * duration / (BigInt(processed) * 1000_000_000n))
-        this.prometheus.setSyncETA(this.eta)
-    }
-
-    getSyncRatio(): number {
-        return this.ratio
-    }
-
-    getSyncEtaSeconds(): number {
-        return this.eta
+    private evmHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmLogEvent): boolean {
+        if (handler.filter == null) return true
+        for (let i = 0; i < handler.filter.length; i++) {
+            let set = handler.filter[i]
+            if (set == null) continue
+            if (Array.isArray(set) && !set.includes(log.evmLogTopics[i])) {
+                return false
+            } else if (set !== log.evmLogTopics[i]) {
+                return false
+            }
+        }
+        return true
     }
 }
