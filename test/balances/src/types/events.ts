@@ -11,7 +11,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded (from, to, value, fees).
    */
   get isV1020(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === 'e1ceec345fa4674275d2608b64d810ecec8e9c26719985db4998568cfcafa72b'
+    return this.ctx._chain.getEventHash('balances.Transfer') === '154fca303841d334782de2e871e3572f786f81f86e2a6153c2b9e8dc6fc27422'
   }
 
   /**
@@ -26,7 +26,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded (from, to, value).
    */
   get isV1050(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '2082574713e816229f596f97b58d3debbdea4b002607df469a619e037cc11120'
+    return this.ctx._chain.getEventHash('balances.Transfer') === '9611bd6b933331f197e8fa73bac36184681838292120987fec97092ae037d1c8'
   }
 
   /**
@@ -41,7 +41,7 @@ export class BalancesTransferEvent {
    * Transfer succeeded.
    */
   get isV9130(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '68dcb27fbf3d9279c1115ef6dd9d30a3852b23d8e91c1881acd12563a212512d'
+    return this.ctx._chain.getEventHash('balances.Transfer') === '99bc4786247456e0d4a44373efe405e598bfadfac87a7c41b0a82a91296836c1'
   }
 
   /**
