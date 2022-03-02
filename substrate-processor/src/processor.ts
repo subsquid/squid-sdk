@@ -93,7 +93,9 @@ export class SubstrateProcessor {
     }
 
     private getPrometheusPort(): number | string {
-        return this.prometheusPort == null ? process.env.PROCESSOR_PROMETHEUS_PORT || 0 : this.prometheusPort
+        return this.prometheusPort == null
+            ? process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT || 0
+            : this.prometheusPort
     }
 
     addPreHook(fn: BlockHandler): void
