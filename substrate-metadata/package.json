@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Substrate metadata tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
