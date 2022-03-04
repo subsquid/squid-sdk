@@ -25,6 +25,7 @@ specifiers:
   '@rush-temp/scale-codec-json': file:./projects/scale-codec-json.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
+  '@rush-temp/storage': file:./projects/storage.tgz
   '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
   '@rush-temp/substrate-archive-status-service': file:./projects/substrate-archive-status-service.tgz
   '@rush-temp/substrate-evm-processor': file:./projects/substrate-evm-processor.tgz
@@ -52,6 +53,7 @@ specifiers:
   '@types/shortid': ^0.0.29
   '@types/stoppable': ^1.1.1
   '@types/websocket': ^1.0.5
+  '@types/xxhashjs': ^0.2.2
   ajv: ^8.9.0
   apollo-server-core: ^3.6.2
   apollo-server-express: ^3.6.2
@@ -69,6 +71,7 @@ specifiers:
   dotenv: ^10.0.0
   dotenv-cli: ^4.1.1
   envalid: ^7.2.2
+  ethers: ^5.5.4
   expect: ^27.4.6
   express: ^4.17.2
   fast-check: ^2.21.0
@@ -101,6 +104,7 @@ specifiers:
   typeorm: ^0.2.41
   typescript: ~4.5.5
   websocket: ^1.0.34
+  xxhashjs: ^0.2.2
 
 dependencies:
   '@ethersproject/abi': 5.5.0
@@ -127,6 +131,7 @@ dependencies:
   '@rush-temp/scale-codec-json': file:projects/scale-codec-json.tgz
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
+  '@rush-temp/storage': file:projects/storage.tgz
   '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz_pg@8.7.1
   '@rush-temp/substrate-archive-status-service': file:projects/substrate-archive-status-service.tgz
   '@rush-temp/substrate-evm-processor': file:projects/substrate-evm-processor.tgz
@@ -154,6 +159,7 @@ dependencies:
   '@types/shortid': 0.0.29
   '@types/stoppable': 1.1.1
   '@types/websocket': 1.0.5
+  '@types/xxhashjs': 0.2.2
   ajv: 8.9.0
   apollo-server-core: 3.6.2_graphql@15.8.0
   apollo-server-express: 3.6.2_express@4.17.2+graphql@15.8.0
@@ -171,6 +177,7 @@ dependencies:
   dotenv: 10.0.0
   dotenv-cli: 4.1.1
   envalid: 7.2.2
+  ethers: 5.5.4
   expect: 27.4.6
   express: 4.17.2
   fast-check: 2.21.0
@@ -203,6 +210,7 @@ dependencies:
   typeorm: 0.2.41_ioredis@4.28.3+pg@8.7.1
   typescript: 4.5.5
   websocket: 1.0.34
+  xxhashjs: 0.2.2
 
 packages:
 
@@ -1687,6 +1695,12 @@ packages:
       '@types/node': 16.11.22
     dev: false
 
+  /@types/xxhashjs/0.2.2:
+    resolution: {integrity: sha512-+hlk/W1kgnZn0vR22XNhxHk/qIRQYF54i0UTF2MwBAPd0e7xSy+jKOJwSwTdRQrNnOMRVv+vsh8ITV0uyhp2yg==}
+    dependencies:
+      '@types/node': 16.11.22
+    dev: false
+
   /@types/yargs-parser/20.2.1:
     resolution: {integrity: sha512-7tFImggNeNBVMsn0vLrpn1H1uPrUBdnARPTpZoitY37ZrdJREzf7I16tMrlK3hen349gr1NYh8CmZQa7CTG6Aw==}
     dev: false
@@ -2737,6 +2751,10 @@ packages:
 
   /cssfilter/0.0.10:
     resolution: {integrity: sha1-xtJnJjKi5cg+AT5oZKQs6N79IK4=}
+    dev: false
+
+  /cuint/0.2.2:
+    resolution: {integrity: sha1-QICG1AlVDCYxFVYZ6fp7ytw7mRs=}
     dev: false
 
   /d/1.0.1:
@@ -7045,6 +7063,12 @@ packages:
     engines: {node: '>=0.4'}
     dev: false
 
+  /xxhashjs/0.2.2:
+    resolution: {integrity: sha512-AkTuIuVTET12tpsVIQo+ZU6f/qDmKuRUcjaqR+OIvm+aCBsZ95i7UVY5WJ9TMsSaZ0DA2WxoZ4acu0sPH+OKAw==}
+    dependencies:
+      cuint: 0.2.2
+    dev: false
+
   /y18n/3.2.2:
     resolution: {integrity: sha512-uGZHXkHnhF0XeeAPgnKfPv1bgKAYyVvmNL1xlKsPYZPaIHxGti2hHqvOCQv71XMsLxu1QjergkqogUnms5D3YQ==}
     dev: false
@@ -7269,7 +7293,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-Otcr9dw++wnXQxsfz5fOCpVWqtHdNj0Tp1OYNo6IPxb2icbEK8YEFbUdMflmR9oAEDkiHoSTopNRPF08qxfCmw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-K1bc6h7yPrakceOvGsaDSYKpGAoPPuGpyFTbdOcy5Ebzg81AQDDafVUeOidEKRyaRVe/dL5AVxorIBm3Voq6aw==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7298,7 +7322,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-x9hRdR2aym5TKhj9jIJ8aIbNXNztbZ80xWzHXgmk0i6148ke+wS1Rk5DkK9TO0Aq+IDbvA9JC+u72dxx+VkJQg==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-MmM4bK931XBT2Vrg2EqZRyiAWqi0dQFobUfTgdQgHFqbh4wN5pHFDxhEWEZkuDxa5/j9O3v7ZoMfwYx8FWuctw==, tarball: file:projects/cli.tgz}
     id: file:projects/cli.tgz
     name: '@rush-temp/cli'
     version: 0.0.0
@@ -7340,7 +7364,7 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-v7vVJs+JhTylQv6ZbuBlJ5JQE7qDe2Rhb8nIXTjWPeO4dZIU3pnOseN+9ot7e0Wa0H70ZC+2xJqYlk0vo2ExRQ==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-6PwTRFbLdvR3nq2Oj1RZipeCZ6PEwWk8lgmbbM5HXyDnDWihdiC1KoJj/Of15cWhMA8XgC8UsSpuugJXGBgycQ==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
@@ -7360,7 +7384,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-LmeHhDGBhEShxIo0jWex15wEDjRT6vE5CB3vw+3HDM+T8Gdr1c6s3/EBXm+4ZLpiR7IgXigc/yXdcZCPpVzdTg==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-2aNpCf8TPBdKQbVRtOx/g3WFC7gwi8qE9qctcV+iLQWZ+S6LmM3pksh6WEVxJxBL0F7BC73NwrA6cd36httgsw==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7466,7 +7490,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-ptp3Q9JVvjQ1ApdLHdtBTYMntCyEXYJIHY+emBShRDp6NNBdz2li/48NFwutY1skN+oSThbl0uI52xYkqj8sJg==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-vFhMkCPP2i0wgp1AZxRSNJs/ZhAPuTw5VubtbLrXxCxAx4VdDomcrkdgEd95+GOJMWV2B43/Q44M0ea4PEUCzQ==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7484,6 +7508,7 @@ packages:
     transitivePeerDependencies:
       - '@sap/hana-client'
       - better-sqlite3
+      - bufferutil
       - hdb-pool
       - ioredis
       - mongodb
@@ -7497,6 +7522,7 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
+      - utf-8-validate
     dev: false
 
   file:projects/openreader.tgz:
@@ -7579,6 +7605,17 @@ packages:
       typescript: 4.5.5
     dev: false
 
+  file:projects/storage.tgz:
+    resolution: {integrity: sha512-IQwwjjzTGm2siyTmt9nHmF2DapdegYD2czATcnnwcsuVMMeoJeYC52Z0BwXECGHZL6qCkeCqx3PFpFHkX2ohUw==, tarball: file:projects/storage.tgz}
+    name: '@rush-temp/storage'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.22
+      '@types/xxhashjs': 0.2.2
+      typescript: 4.5.5
+      xxhashjs: 0.2.2
+    dev: false
+
   file:projects/substrate-archive-status-service.tgz:
     resolution: {integrity: sha512-mV58vsmJ/VAK034/7QxgKqsGqN5Y5ZSk0BIzjMZ12R8YNGawBjArYd5/TWiY2m4i9K6XUSbUwWXMyTq+tNi9fg==, tarball: file:projects/substrate-archive-status-service.tgz}
     name: '@rush-temp/substrate-archive-status-service'
@@ -7644,7 +7681,7 @@ packages:
     dev: false
 
   file:projects/substrate-evm-processor.tgz:
-    resolution: {integrity: sha512-baSi/d0z/Pf0PE02m8iRn2USeOW+sCx/NHM1pQOCtp21OZ52woqO0h9nPsJr70FKbRUV+wtjz07aHKY/a/a6dw==, tarball: file:projects/substrate-evm-processor.tgz}
+    resolution: {integrity: sha512-SV6ASxc2+roZj21bl9GwZt38JQLeDnx/mW3lEoaqhXCmDPpnF3PMoqU9cBPDCvo3va5YrAdQs2c4FUBdHRCB6w==, tarball: file:projects/substrate-evm-processor.tgz}
     name: '@rush-temp/substrate-evm-processor'
     version: 0.0.0
     dependencies:
@@ -7653,7 +7690,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-D2MKZ9A77QG+IBUs7HgWGVU5Otc+aFT2gxzSzgh1ItNImGK+AupxFRQ+xpNIWPFzAO2rpTlxtvvOUtOHQtvcbg==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-YUHt3Rs7rRgvc+Ow2jSeH6Bf5QZqyTuBGA1WobwErkLosf3ZWZZOsCHyHoUfiyQhPykXu1H+MdKdMez6XBC4qA==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -7688,7 +7725,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_ioredis@4.28.3+pg@8.7.1:
-    resolution: {integrity: sha512-Ipq3eYOvuM6pnl1W2SWMgOZkGcAMw0DA7RaZU7LYJl2wueKdjuhF2ogx4wcxanm/Jbz9V3PGDRauXzKnADVxpw==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-ZHZfT4xa+txQRH1zJF+Yd/KS8t9YoBBhLryTOVs+IKRhKFMPGFR+E0gXno/NGWh9WYhSGkMx/frlsIuRy6iLuA==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7726,7 +7763,7 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-Q2ws//yJuwI11vgGJTKcVCUNJTXe/SwFwe12w9yf3hrY/C738c8hlC0fh2mbQoFMmR010K+72Z7rNk8KNMKcFQ==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-mupLJeSI6GFSihG74yTuBvzK0486CzDB6ZEwqFVw9EtpalH8x/l1Ng3bYgzcm7O+FnoVWLr29OgEokQO+COpyw==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
@@ -7765,7 +7802,7 @@ packages:
     dev: false
 
   file:projects/types-test.tgz:
-    resolution: {integrity: sha512-QEQqPoBbFLCkePVz5HndVdKJLvdFB+hpvDfsxDz+WnngOZV+G6J/JBhR4D3nNTP+zO9QxIbbmBeRiJ7JNTFykg==, tarball: file:projects/types-test.tgz}
+    resolution: {integrity: sha512-fhFX9ex62WqwGqkOXGbNVKjyQz1lzs/d9G1YlhrBGYopc7nIi4Cb8SIb+5CPcwy7sEVpUHBDDnfvq4rSCf8Okw==, tarball: file:projects/types-test.tgz}
     name: '@rush-temp/types-test'
     version: 0.0.0
     dependencies:

@@ -578,6 +578,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "storage",
+      "projectFolder": "test/storage",
+      "shouldPublish": false
+    },
+    {
       "packageName": "types-test",
       "projectFolder": "test/types",
       "shouldPublish": false
