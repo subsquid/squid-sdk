@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Mar 2022 14:30:51 GMT and should not be manually modified.
+
+## 0.5.0
+Fri, 04 Mar 2022 14:30:51 GMT
+
+### Minor changes
+
+- exclude qualified name from event/call type hash
 
 ## 0.4.0
 Wed, 02 Mar 2022 18:11:28 GMT
