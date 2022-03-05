@@ -60,7 +60,6 @@ export class Registry {
             }
         })
         return sha256({
-            name,
             fields
         })
     }
