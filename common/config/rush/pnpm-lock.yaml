@@ -36,6 +36,7 @@ specifiers:
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util': file:./projects/util.tgz
+  '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
   '@types/bn.js': ^4.11.6
@@ -104,6 +105,7 @@ specifiers:
   typeorm: ^0.2.41
   typescript: ~4.5.5
   websocket: ^1.0.34
+  xxhash-wasm: ^1.0.1
   xxhashjs: ^0.2.2
 
 dependencies:
@@ -142,6 +144,7 @@ dependencies:
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_ioredis@4.28.3+pg@8.7.1
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
+  '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
   '@types/bn.js': 4.11.6
@@ -210,6 +213,7 @@ dependencies:
   typeorm: 0.2.41_ioredis@4.28.3+pg@8.7.1
   typescript: 4.5.5
   websocket: 1.0.34
+  xxhash-wasm: 1.0.1
   xxhashjs: 0.2.2
 
 packages:
@@ -1456,6 +1460,33 @@ packages:
 
   /@subsquid/graphiql-console/0.2.0:
     resolution: {integrity: sha512-Wh2Oxi9JkK79Y728yDEeY7JelcY1cGiQTbzVIRMFLT2tjkkoQ69goAGXdh9QmM/ANAVrHQkBUNJOLd5oAg//oQ==}
+    dev: false
+
+  /@subsquid/scale-codec/0.3.1:
+    resolution: {integrity: sha512-IIjAikQ76/jKci5lLMoBTRnckICjJo1Xsb9jwxh9VMdgYZUzfpaTMl/ENfp1EXBmS1OcrnvbCbgiLhqNc+U8Ew==}
+    dependencies:
+      '@subsquid/ss58-codec': 0.1.0
+    dev: false
+
+  /@subsquid/ss58-codec/0.1.0:
+    resolution: {integrity: sha512-MXXc2xGYm/Mqok6v8QaR6vpamTIgS3bCWf8iYG4lVbVBYzL8wZhPZCAOm1Z7dmgLFTEnyOWbc+Bt4wv4HL2+GA==}
+    dependencies:
+      base-x: 3.0.9
+      blake2b: 2.1.4
+    dev: false
+
+  /@subsquid/substrate-metadata/0.4.0:
+    resolution: {integrity: sha512-gwqxHvg+sy4hqVgaefN0hMRuCD1nGWKSOzx9YY4IvmL4eTeQ00p9NCYEdQlOQouHrrPsTwBBfei0x7OaY6ZKTQ==}
+    dependencies:
+      '@subsquid/scale-codec': 0.3.1
+      '@subsquid/util': 0.0.4
+    dev: false
+
+  /@subsquid/util/0.0.4:
+    resolution: {integrity: sha512-H62DBxWzfWhzbpKNnaRMdFNL8ZksxNAxOlFfZFFBwFGiV5xEFKrjPa/nI/Iz6+8luCo8zcOMZ+xd1IMGlT/FZQ==}
+    dependencies:
+      camelcase: 6.3.0
+      inflected: 2.1.0
     dev: false
 
   /@szmarczak/http-timer/1.1.2:
@@ -7063,6 +7094,10 @@ packages:
     engines: {node: '>=0.4'}
     dev: false
 
+  /xxhash-wasm/1.0.1:
+    resolution: {integrity: sha512-Lc9CTvDrH2vRoiaUzz25q7lRaviMhz90pkx6YxR9EPYtF99yOJnv2cB+CQ0hp/TLoqrUsk8z/W2EN31T568Azw==}
+    dev: false
+
   /xxhashjs/0.2.2:
     resolution: {integrity: sha512-AkTuIuVTET12tpsVIQo+ZU6f/qDmKuRUcjaqR+OIvm+aCBsZ95i7UVY5WJ9TMsSaZ0DA2WxoZ4acu0sPH+OKAw==}
     dependencies:
@@ -7293,7 +7328,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-K1bc6h7yPrakceOvGsaDSYKpGAoPPuGpyFTbdOcy5Ebzg81AQDDafVUeOidEKRyaRVe/dL5AVxorIBm3Voq6aw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-MYHLrPxusHJ2OQLX94WUZV/DG2cPaYIVpamJj5Ki052fMF6RAbSpR3PHnHQLYGSSmfhJt5a0duuRR0STE7fWfA==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7322,7 +7357,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-MmM4bK931XBT2Vrg2EqZRyiAWqi0dQFobUfTgdQgHFqbh4wN5pHFDxhEWEZkuDxa5/j9O3v7ZoMfwYx8FWuctw==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-ViDjEWzsZTiErj0PGFJaR/mubhoqd4QfdVcBdVNCmbT/kyzZ3OmFzwwlAnbKMPGI2b28dtmHavnN4joslrpV/A==, tarball: file:projects/cli.tgz}
     id: file:projects/cli.tgz
     name: '@rush-temp/cli'
     version: 0.0.0
@@ -7364,7 +7399,7 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-6PwTRFbLdvR3nq2Oj1RZipeCZ6PEwWk8lgmbbM5HXyDnDWihdiC1KoJj/Of15cWhMA8XgC8UsSpuugJXGBgycQ==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-3FJxuU1NuMcXU69mhHGyDy5kWTqBqUcQ3UFi9YKDiqG4V+EmA+AhssatYKx5ZjOiCato5jQf9oB1MfGgIhvgrw==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
@@ -7384,7 +7419,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-2aNpCf8TPBdKQbVRtOx/g3WFC7gwi8qE9qctcV+iLQWZ+S6LmM3pksh6WEVxJxBL0F7BC73NwrA6cd36httgsw==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-QwGMegREHfXnU/UHPOq74WhHf/q0Z9h9GauvaoKQUdjLxXuQHIUOL0JO2UA97SQjjasV+B+RysRqGKWbATqa4A==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7490,7 +7525,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_ioredis@4.28.3:
-    resolution: {integrity: sha512-vFhMkCPP2i0wgp1AZxRSNJs/ZhAPuTw5VubtbLrXxCxAx4VdDomcrkdgEd95+GOJMWV2B43/Q44M0ea4PEUCzQ==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-Stz8arwXPIB0lKUa5x63y5duyjRDTXsh71bxfY6U1DadQ6RpiaOG9Hiyx7fClWGfcb0RBGp0O/05LN66Nu5M8g==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7606,10 +7641,11 @@ packages:
     dev: false
 
   file:projects/storage.tgz:
-    resolution: {integrity: sha512-IQwwjjzTGm2siyTmt9nHmF2DapdegYD2czATcnnwcsuVMMeoJeYC52Z0BwXECGHZL6qCkeCqx3PFpFHkX2ohUw==, tarball: file:projects/storage.tgz}
+    resolution: {integrity: sha512-mOWoqSaf3ut512Y550Ej2DRoliiQFlIq9JNOJ/sjfTYfCwknbwTGt/jovH+8oIQT0KIaamZXPGpnQZ87+EEjCw==, tarball: file:projects/storage.tgz}
     name: '@rush-temp/storage'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 0.4.0
       '@types/node': 16.11.22
       '@types/xxhashjs': 0.2.2
       typescript: 4.5.5
@@ -7681,7 +7717,7 @@ packages:
     dev: false
 
   file:projects/substrate-evm-processor.tgz:
-    resolution: {integrity: sha512-SV6ASxc2+roZj21bl9GwZt38JQLeDnx/mW3lEoaqhXCmDPpnF3PMoqU9cBPDCvo3va5YrAdQs2c4FUBdHRCB6w==, tarball: file:projects/substrate-evm-processor.tgz}
+    resolution: {integrity: sha512-aGyaOHASCROZdk+z9mgtyGs0qhIKwXQchDoFOwwrl/GFrLE38XkM4pl9+bet36sd9Nc4elkX1M5ukoiCyuAW7A==, tarball: file:projects/substrate-evm-processor.tgz}
     name: '@rush-temp/substrate-evm-processor'
     version: 0.0.0
     dependencies:
@@ -7725,7 +7761,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_ioredis@4.28.3+pg@8.7.1:
-    resolution: {integrity: sha512-ZHZfT4xa+txQRH1zJF+Yd/KS8t9YoBBhLryTOVs+IKRhKFMPGFR+E0gXno/NGWh9WYhSGkMx/frlsIuRy6iLuA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-vyU5ytYsxxmJKVfS7S7cvHie0NbO1bFGoq7qFv7EgZzU8dw8cKFU1CbAeAGC0VWELJPYT5UL0xH8NfDOqR9OIw==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7763,7 +7799,7 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-mupLJeSI6GFSihG74yTuBvzK0486CzDB6ZEwqFVw9EtpalH8x/l1Ng3bYgzcm7O+FnoVWLr29OgEokQO+COpyw==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-jyYEJvmCCtCB4th+nIt/WrnDEfR/utLj7DRE5zUjGlvpCNsJfjcWyK4Sf53IVwRkapvIL+ssXeQhhYAiUOJm4A==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
@@ -7802,12 +7838,24 @@ packages:
     dev: false
 
   file:projects/types-test.tgz:
-    resolution: {integrity: sha512-fhFX9ex62WqwGqkOXGbNVKjyQz1lzs/d9G1YlhrBGYopc7nIi4Cb8SIb+5CPcwy7sEVpUHBDDnfvq4rSCf8Okw==, tarball: file:projects/types-test.tgz}
+    resolution: {integrity: sha512-5bipvyPV/aTH+1InEwZieUiWQ8i8GyBf2BOvSMP5OKGJRMGaVX8aA/Tls6M0qfmppNKeDVm25R+JrsVSqJXYMw==, tarball: file:projects/types-test.tgz}
     name: '@rush-temp/types-test'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.22
       typescript: 4.5.5
+    dev: false
+
+  file:projects/util-xxhash.tgz:
+    resolution: {integrity: sha512-XHgCnBQcBE6DC04X7VOrndLHoaMAZZRQyelQqgsvgzwqbi4CnFIH0e6jz2GKC3uhwbzSPoQ2kI5WugNQ5p0sdA==, tarball: file:projects/util-xxhash.tgz}
+    name: '@rush-temp/util-xxhash'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.22
+      '@types/xxhashjs': 0.2.2
+      typescript: 4.5.5
+      xxhash-wasm: 1.0.1
+      xxhashjs: 0.2.2
     dev: false
 
   file:projects/util.tgz:
