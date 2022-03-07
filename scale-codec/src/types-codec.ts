@@ -25,6 +25,7 @@ export interface CodecStructType {
 export interface CodecStructVariant {
     kind: 'struct'
     name: string
+    index: number
     def: CodecStructType
 }
 
@@ -32,6 +33,7 @@ export interface CodecStructVariant {
 export interface CodecTupleVariant {
     kind: 'tuple'
     name: string
+    index: number
     def: TupleType
 }
 
@@ -39,6 +41,7 @@ export interface CodecTupleVariant {
 export interface CodecValueVariant {
     kind: 'value'
     name: string
+    index: number
     type: Ti
 }
 
@@ -46,6 +49,7 @@ export interface CodecValueVariant {
 export interface CodecEmptyVariant {
     kind: 'empty'
     name: string
+    index: number
 }
 
 
@@ -55,6 +59,7 @@ export type CodecVariant = CodecStructVariant | CodecTupleVariant | CodecValueVa
 export interface CodecVariantType {
     kind: TypeKind.Variant
     variants: (CodecVariant | undefined)[]
+    variantsByName: Record<string, CodecVariant>
 }
 
 
@@ -170,6 +175,7 @@ export function toCodecTypes(types: Type[]): CodecType[] {
                 }
             case TypeKind.Variant: {
                 let variants = def.variants.filter(v => v != null) as Variant[]
+                let variantsByName: Record<string, CodecVariant> = {}
                 let uniqueIndexes = new Set(variants.map(v => v.index))
                 if (uniqueIndexes.size != variants.length) {
                     throw new Error(`Variant type ${ti} has duplicate case indexes`)
@@ -181,15 +187,16 @@ export function toCodecTypes(types: Type[]): CodecType[] {
                     if (v.fields[0]?.name == null) {
                         switch(v.fields.length) {
                             case 0:
-                                cv = {kind: 'empty', name: v.name}
+                                cv = {kind: 'empty', name: v.name, index: v.index}
                                 break
                             case 1:
-                                cv = {kind: 'value', name: v.name, type: v.fields[0].type}
+                                cv = {kind: 'value', name: v.name, index: v.index, type: v.fields[0].type}
                                 break
                             default:
                                 cv = {
                                     kind: 'tuple',
                                     name: v.name,
+                                    index: v.index,
                                     def: {
                                         kind: TypeKind.Tuple,
                                         tuple: v.fields.map(f => {
@@ -203,6 +210,7 @@ export function toCodecTypes(types: Type[]): CodecType[] {
                         cv = {
                             kind: 'struct',
                             name: v.name,
+                            index: v.index,
                             def: {
                                 kind: TypeKind.Struct,
                                 fields: v.fields.map(f => {
@@ -213,10 +221,12 @@ export function toCodecTypes(types: Type[]): CodecType[] {
                         }
                     }
                     placedVariants[v.index] = cv
+                    variantsByName[cv.name] = cv
                 })
                 return {
                     kind: TypeKind.Variant,
-                    variants: placedVariants
+                    variants: placedVariants,
+                    variantsByName
                 }
             }
             default:
