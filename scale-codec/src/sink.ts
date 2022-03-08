@@ -163,3 +163,33 @@ export class HexSink extends Sink {
         return this.hex
     }
 }
+
+
+export class ByteSink extends Sink {
+    private buf = Buffer.allocUnsafe(128)
+    private pos = 0
+
+    private alloc(size: number): void {
+        if (this.buf.length - this.pos < size) {
+            let buf = Buffer.allocUnsafe(Math.max(size, this.buf.length) * 2)
+            buf.set(this.buf)
+            this.buf = buf
+        }
+    }
+
+    protected write(byte: number): void {
+        this.alloc(1)
+        this.buf[this.pos] = byte
+        this.pos += 1
+    }
+
+    bytes(b: Uint8Array): void {
+        this.alloc(b.length)
+        this.buf.set(b, this.pos)
+        this.pos += b.length
+    }
+
+    toBytes(): Uint8Array {
+        return this.buf.subarray(0, this.pos)
+    }
+}

@@ -1,0 +1,50 @@
+import {HexSink} from "@subsquid/scale-codec"
+import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
+import {StorageHasher} from "@subsquid/substrate-metadata"
+import {toHex} from "@subsquid/util"
+import {xxhash128, xxhash64} from "@subsquid/util-xxhash"
+import blake2b from "blake2b"
+
+
+const NAME_HASHES: Record<string, string> = {}
+
+
+export function getNameHash(name: string): string {
+    let hash = NAME_HASHES[name]
+    if (hash == null) {
+        let digest = xxhash128().update(name).digest()
+        let sink = new HexSink()
+        sink.u128(digest)
+        hash = sink.toHex()
+    }
+    return hash
+}
+
+
+export function getKeyHash(hasher: StorageHasher, key: Uint8Array): string {
+    switch(hasher) {
+        case 'Identity':
+            return toHex(key)
+        case 'Blake2_128':
+            return toHex(blake2b(16).update(key).digest())
+        case 'Blake2_128Concat': {
+            let digest = blake2b(16).update(key).digest()
+            return toHex(digest) + toHex(key).slice(2)
+        }
+        case 'Twox64Concat': {
+            let digest = xxhash64().update(key).digest()
+            let sink = new HexSink()
+            sink.u64(digest)
+            sink.bytes(key)
+            return sink.toHex()
+        }
+        case 'Twox128': {
+            let digest = xxhash128().update(key).digest()
+            let sink = new HexSink()
+            sink.u128(digest)
+            return sink.toHex()
+        }
+        default:
+            throwUnexpectedCase(hasher)
+    }
+}

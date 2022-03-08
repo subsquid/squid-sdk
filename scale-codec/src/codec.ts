@@ -1,5 +1,5 @@
 import assert from "assert"
-import {HexSink, Sink} from "./sink"
+import {ByteSink, HexSink, Sink} from "./sink"
 import {Src} from "./src"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
 import {CodecBytesArrayType, CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
@@ -24,6 +24,12 @@ export class Codec {
         let sink = new HexSink()
         this.encode(type, val, sink)
         return sink.toHex()
+    }
+
+    encodeToBinary(type: Ti, val: unknown): Uint8Array {
+        let sink = new ByteSink()
+        this.encode(type, val, sink)
+        return sink.toBytes()
     }
 
     decode(type: Ti, src: Src): any {
