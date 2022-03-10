@@ -1,3 +1,4 @@
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
 import assert from "assert"
 import {asResultType} from "./util"
@@ -36,7 +37,7 @@ export function assignNames(d: ChainDescription): Map<Ti, string> {
         if (name && reserved.has(name)) {
             name = undefined
         }
-        if (name == null && needsName(type)) {
+        if (name == null && needsName(types, ti)) {
             name = `Type_${ti}`
         }
         if (name) {
@@ -64,7 +65,7 @@ export function assignNames(d: ChainDescription): Map<Ti, string> {
                 return
             }
 
-            tis = tis.filter(ti => needsName(types[ti]))
+            tis = tis.filter(ti => needsName(types, ti))
             hashes.clear()
         }
 
@@ -111,12 +112,13 @@ function deriveName(type: Type): string | undefined {
 }
 
 
-export function needsName(type: Type): boolean {
+export function needsName(types: Type[], ti: Ti): boolean {
+    let type = getUnwrappedType(types, ti)
     switch(type.kind) {
         case TypeKind.Variant:
             return !asResultType(type)
         case TypeKind.Composite:
-            return type.fields.length > 0 && type.fields[0].name != null
+            return true
         default:
             return false
     }

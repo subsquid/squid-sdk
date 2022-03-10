@@ -39,6 +39,7 @@ ADD test/moonsama-erc721/package.json test/moonsama-erc721/
 ADD test/types/package.json test/types/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
+ADD util-xxhash/package.json util-xxhash/
 ADD workspace/package.json workspace/
 RUN node common/scripts/install-run-rush.js install
 ADD cli/src cli/src
@@ -91,6 +92,8 @@ ADD typeorm-config/src typeorm-config/src
 ADD typeorm-config/tsconfig.json typeorm-config/
 ADD util/src util/src
 ADD util/tsconfig.json util/
+ADD util-xxhash/src util-xxhash/src
+ADD util-xxhash/tsconfig.json util-xxhash/
 ADD workspace/src workspace/src
 ADD workspace/tsconfig.json workspace/
 RUN node common/scripts/install-run-rush.js build

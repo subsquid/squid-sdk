@@ -18,6 +18,15 @@ export const bundle: OldTypesBundle = {
             ]
         },
         RelayChainAccountId: "AccountId",
-        RootHashOf: "Hash"
+        RootHashOf: "Hash",
+        Fee: {
+            key: 'Hash',
+            price: 'Balance'
+        },
+        PreCommitData: {
+            signingRoot: 'Hash',
+            identity: 'AccountId',
+            expiration_block: 'BlockNumber'
+        }
     }
 }

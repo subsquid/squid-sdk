@@ -3,5 +3,6 @@
   "chainVersions": "../../data/chain/altair/versions.json",
   "typesBundle": "altair",
   "events": true,
-  "calls": true
+  "calls": true,
+  "storage": true
 }

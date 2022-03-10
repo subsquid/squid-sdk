@@ -4,41 +4,15 @@ import assert from "assert"
 import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from "./interfaces"
 import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
+import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
 import {getTypeByPath, normalizeMetadataTypes} from "./util"
-
-
-export type StorageHasher =
-    'Blake2_128' |
-    'Blake2_256' |
-    'Blake2_128Concat' |
-    'Twox128' |
-    'Twox256' |
-    'Twox64Concat' |
-    'Identity'
-
-
-export interface StorageItem {
-    hashers: StorageHasher[]
-    keys: Ti[]
-    value: Ti
-    modifier: 'Optional' | 'Default' | 'Required'
-    fallback: Uint8Array
-    docs?: string[]
-}
-
-
-export interface Storage {
-    [prefix: string]: {
-        [name: string]: StorageItem
-    }
-}
 
 
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    signature: Ti
+    // signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
@@ -70,7 +44,7 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            signature: this.signature(),
+            // signature: this.signature(),
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
@@ -268,14 +242,14 @@ class FromOld {
         this.lookupSource()
         let call = this.call()
         let event = this.event()
-        let signature = this.signature()
+        // let signature = this.signature()
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
         return {
             types: this.registry.getTypes(),
             call,
-            signature,
+            // signature,
             event,
             eventRecord,
             eventRecordList,

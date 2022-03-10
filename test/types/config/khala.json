@@ -3,5 +3,6 @@
   "chainVersions": "../../data/chain/khala/versions.json",
   "typesBundle": "khala",
   "events": true,
-  "calls": true
+  "calls": true,
+  "storage": true
 }

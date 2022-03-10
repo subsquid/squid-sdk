@@ -16,6 +16,7 @@ import {
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
+import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
@@ -88,6 +89,7 @@ export class Chain {
     private scaleCodec: ScaleCodec
     private events: eac.Registry
     private calls: eac.Registry
+    private storageHash = Symbol('storage_hash')
 
     constructor(
         public readonly description: ChainDescription,
@@ -179,5 +181,14 @@ export class Chain {
             `Unknown storage item: ${prefix}.${name}`
         )
         return def
+    }
+
+    getStorageItemTypeHash(prefix: string, name: string): string {
+        let item = this.getStorageItem(prefix, name)
+        let hash = (item as any)[this.storageHash]
+        if (hash == null) {
+            hash = (item as any)[this.storageHash] = getStorageItemTypeHash(this.description.types, item)
+        }
+        return hash
     }
 }

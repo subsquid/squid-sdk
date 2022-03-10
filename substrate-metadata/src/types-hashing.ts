@@ -1,6 +1,6 @@
 import {assertNotNull, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
-import {Ti, TypeKind, TypeRegistry} from "./types"
+import {Ti, Type, TypeKind, TypeRegistry} from "./types"
 import {sha256} from "./util"
 
 
@@ -63,7 +63,7 @@ export class TypeHasher {
     private nodes: (HashNode | undefined)[]
     private stack: Ti[] = []
 
-    constructor(private types: TypeRegistry) {
+    constructor(private types: Type[]) {
         this.cache = new Array(types.length).fill('')
         this.nodes = new Array(types.length)
     }
