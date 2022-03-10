@@ -7554,12 +7554,13 @@ packages:
     dev: false
 
   file:projects/e2e-test-suite.tgz:
-    resolution: {integrity: sha512-4zmzQUQXaXQ0dy8eCVoOJXbwxQg1uJ+YF/2MW+11PruxtTcPAKLgtZ+walZd52hmFg3TRnz8ezRxaMYEtZTgjQ==, tarball: file:projects/e2e-test-suite.tgz}
+    resolution: {integrity: sha512-CADV+Fvwi7rCzEs+MKBzbJ1K7XqzMk2rpzLYcR8M2N72CC5AwjXXR1hEQ492ED7BlN6yUjParPIDiZXYML6P/w==, tarball: file:projects/e2e-test-suite.tgz}
     name: '@rush-temp/e2e-test-suite'
     version: 0.0.0
     dependencies:
       '@polkadot/api': 6.12.1
       '@polkadot/keyring': 8.4.1
+      '@polkadot/types': 6.12.1
       '@types/mocha': 9.1.0
       '@types/node': 16.11.22
       '@types/node-fetch': 2.5.12
