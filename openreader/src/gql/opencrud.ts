@@ -1,4 +1,5 @@
-import {Output, toCamelCase, toPlural} from "@subsquid/util"
+import {Output} from "@subsquid/util"
+import {toCamelCase, toPlural} from "@subsquid/util-naming"
 import assert from "assert"
 import {DocumentNode, parse, print} from "graphql"
 import {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"

@@ -23,6 +23,7 @@
     "@subsquid/scale-codec": "^0.4.0",
     "@subsquid/substrate-metadata": "^0.6.0",
     "@subsquid/util": "^0.0.4",
+    "@subsquid/util-naming": "^0.0.0",
     "ajv": "^8.9.0",
     "commander": "^9.0.0"
   },

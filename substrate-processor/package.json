@@ -23,6 +23,7 @@
     "@subsquid/substrate-metadata": "^0.6.0",
     "@subsquid/typeorm-config": "^0.0.4",
     "@subsquid/util": "^0.0.4",
+    "@subsquid/util-naming": "^0.0.0",
     "@subsquid/util-xxhash": "^0.0.0",
     "blake2b": "^2.1.4",
     "node-fetch": "^2.6.7",

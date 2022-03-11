@@ -28,6 +28,7 @@
     "@graphql-tools/utils": "^8",
     "@subsquid/graphiql-console": "^0.2.0",
     "@subsquid/util": "^0.0.4",
+    "@subsquid/util-naming": "^0.0.0",
     "apollo-server-core": "^3.6.2",
     "apollo-server-express": "^3.6.2",
     "express": "^4.17.2",

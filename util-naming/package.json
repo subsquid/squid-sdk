@@ -1,32 +1,26 @@
 {
-  "name": "@subsquid/typeorm-config",
-  "version": "0.0.4",
-  "description": "TypeORM conventions of a squid project",
+  "name": "@subsquid/util-naming",
+  "version": "0.0.0",
+  "description": "Squid framework utilities",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
+  "main": "lib/naming.js",
   "files": [
     "lib",
     "src"
   ],
-  "main": "lib/config.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-naming": "^0.0.0"
-  },
-  "peerDependencies": {
-    "typeorm": "^0.2.41"
-  },
-  "peerDependenciesMeta": {
-    "typeorm": {
-      "optional": true
-    }
+    "camelcase": "^6.3.0",
+    "inflected": "^2.1.0"
   },
   "devDependencies": {
+    "@types/inflected": "^1.1.29",
     "@types/node": "^16.11.22",
     "typescript": "~4.5.5"
   }

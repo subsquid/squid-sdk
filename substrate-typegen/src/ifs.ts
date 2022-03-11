@@ -1,6 +1,7 @@
 import {CodecStructType, getCodecType} from "@subsquid/scale-codec/lib/types-codec"
 import {ChainDescription, Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
-import {assertNotNull, Output, toCamelCase, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, Output, unexpectedCase} from "@subsquid/util"
+import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {assignNames, needsName} from "./names"
 import {asResultType, toNativePrimitive} from "./util"

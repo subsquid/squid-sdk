@@ -1,5 +1,6 @@
 import type {Entity, Enum, JsonObject, Model, Prop, Union} from "@subsquid/openreader/dist/model"
-import {OutDir, Output, toCamelCase, unexpectedCase} from "@subsquid/util"
+import {OutDir, Output, unexpectedCase} from "@subsquid/util"
+import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import * as path from "path"
 

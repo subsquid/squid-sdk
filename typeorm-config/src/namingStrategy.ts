@@ -1,4 +1,4 @@
-import {toSnakeCase} from '@subsquid/util'
+import {toSnakeCase} from '@subsquid/util-naming'
 import {DefaultNamingStrategy} from 'typeorm'
 
 

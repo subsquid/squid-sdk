@@ -44,6 +44,7 @@
     "@subsquid/openreader": "^0.5.0",
     "@subsquid/typeorm-config": "^0.0.4",
     "@subsquid/util": "^0.0.4",
+    "@subsquid/util-naming": "^0.0.0",
     "chalk": "^4.1.2",
     "cli-select": "^1.1.2",
     "cli-ux": "^5.6.7",

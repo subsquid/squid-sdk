@@ -1,5 +1,5 @@
 import {Ti} from "@subsquid/scale-codec"
-import {toCamelCase} from "@subsquid/util"
+import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {QualifiedName, Type, TypeKind, Variant} from "./types"
 import {getTypeHash} from "./types-hashing"

@@ -1,4 +1,4 @@
-import {toCamelCase} from "@subsquid/util"
+import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
 import {Field, Ti, Type, TypeKind} from "./types"
 

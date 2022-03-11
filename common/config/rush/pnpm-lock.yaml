@@ -34,6 +34,7 @@ specifiers:
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util': file:./projects/util.tgz
+  '@rush-temp/util-naming': file:./projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
@@ -122,6 +123,7 @@ dependencies:
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_pg@8.7.3
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
+  '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
@@ -7462,6 +7464,18 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.22
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/util-naming.tgz:
+    resolution: {integrity: sha512-8p2a9NFQRE0Ef9ZmPZ+fPtE7c/D2Bx5rI2VowNU8Y50LihvmMYVFSMbOAc5FwqusbGS4Tv9Vl/InzaU4o/vCog==, tarball: file:projects/util-naming.tgz}
+    name: '@rush-temp/util-naming'
+    version: 0.0.0
+    dependencies:
+      '@types/inflected': 1.1.29
+      '@types/node': 16.11.22
+      camelcase: 6.3.0
+      inflected: 2.1.0
       typescript: 4.5.5
     dev: false
 
