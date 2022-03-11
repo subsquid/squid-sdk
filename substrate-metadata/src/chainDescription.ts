@@ -12,7 +12,7 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    // signature: Ti
+    signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
@@ -44,7 +44,7 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            // signature: this.signature(),
+            signature: this.signature(),
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
@@ -242,14 +242,14 @@ class FromOld {
         this.lookupSource()
         let call = this.call()
         let event = this.event()
-        // let signature = this.signature()
+        let signature = this.signature()
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
         return {
             types: this.registry.getTypes(),
             call,
-            // signature,
+            signature,
             event,
             eventRecord,
             eventRecordList,
