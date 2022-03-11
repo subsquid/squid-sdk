@@ -1,6 +1,18 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Fri, 04 Mar 2022 14:30:51 GMT and should not be manually modified.
+This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+
+## 0.6.0
+Fri, 11 Mar 2022 07:38:31 GMT
+
+### Minor changes
+
+- storage description
+
+### Patches
+
+- fixes for altair types bundle
+- handle generic `Int<?>` types in old bundles
 
 ## 0.5.0
 Fri, 04 Mar 2022 14:30:51 GMT

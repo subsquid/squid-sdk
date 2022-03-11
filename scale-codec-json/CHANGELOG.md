@@ -1,6 +1,11 @@
 # Change Log - @subsquid/scale-codec-json
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+
+## 0.1.2
+Fri, 11 Mar 2022 07:38:31 GMT
+
+_Version update only_
 
 ## 0.1.1
 Mon, 07 Feb 2022 15:16:41 GMT

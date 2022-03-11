@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Fri, 04 Mar 2022 14:30:51 GMT and should not be manually modified.
+This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+
+## 0.3.0
+Fri, 11 Mar 2022 07:38:31 GMT
+
+### Minor changes
+
+- typesafe classes for storage requests
 
 ## 0.2.3
 Fri, 04 Mar 2022 14:30:51 GMT

@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/substrate-typegen_v0.3.0",
+      "date": "Fri, 11 Mar 2022 07:38:31 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "typesafe classes for storage requests"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.3.1` to `^0.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.5.0` to `^0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.3",
       "tag": "@subsquid/substrate-typegen_v0.2.3",
       "date": "Fri, 04 Mar 2022 14:30:51 GMT",
