@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Substrate metadata tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/util": "^0.0.4",
-    "@subsquid/scale-codec": "^0.3.1"
+    "@subsquid/scale-codec": "^0.4.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.0",
