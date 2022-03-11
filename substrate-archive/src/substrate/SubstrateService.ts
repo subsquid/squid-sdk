@@ -1,4 +1,5 @@
 import {ApiPromise} from '@polkadot/api'
+import {Metadata, Option} from "@polkadot/types"
 import {
     AccountId,
     BlockNumber,
@@ -170,7 +171,7 @@ export class SubstrateService implements ISubstrateService {
   }
 
   async metadata(hash: Hash): Promise<MetadataLatest> {
-    const metadata = await this.apiCall((api) =>
+    const metadata: Metadata = await this.apiCall((api) =>
       api.rpc.state.getMetadata(hash)
     )
     return metadata.asLatest
@@ -194,7 +195,7 @@ export class SubstrateService implements ISubstrateService {
   async lastRuntimeUpgrade(
     hash: Hash
   ): Promise<LastRuntimeUpgradeInfo | undefined> {
-    const info = await this.apiCall((api) =>
+    const info: Option<LastRuntimeUpgradeInfo> = await this.apiCall((api) =>
       api.query.system.lastRuntimeUpgrade.at(hash)
     )
     return info.unwrapOr(undefined)

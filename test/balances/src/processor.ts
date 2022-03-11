@@ -1,4 +1,4 @@
-import {EventHandlerContext, Store, SubstrateProcessor} from "@subsquid/substrate-processor"
+import {EventHandlerContext, Store, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import {Account, HistoricalBalance} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
@@ -67,11 +67,6 @@ function getTransferEvent(ctx: EventHandlerContext): TransferEvent {
     } else {
         return event.asLatest
     }
-}
-
-
-function toHex(data: Uint8Array): string {
-    return '0x' + Buffer.from(data).toString('hex')
 }
 
 

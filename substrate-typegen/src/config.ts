@@ -14,6 +14,7 @@ interface Config {
     typesBundle?: string
     events?: QualifiedName[] | boolean
     calls?: QualifiedName[] | boolean
+    storage?: QualifiedName[] | boolean
 }
 
 
@@ -48,7 +49,8 @@ export function readConfig(file: string): TypegenOptions {
             chainVersions,
             typesBundle,
             events: json.events,
-            calls: json.calls
+            calls: json.calls,
+            storage: json.storage
         }
     } else {
         throw new ConfigError(`Invalid typegen config ${file}:\n  ${ajv.errorsText(validateConfig.errors, {separator: '\n  '})}`)

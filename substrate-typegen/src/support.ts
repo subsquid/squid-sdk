@@ -51,3 +51,14 @@ export function deprecateLatest(): void {
         console.warn(`.isLatest, .asLatest properties are deprecated, if you believe this is a mistake, please leave a comment at https://github.com/subsquid/squid/issues/9`)
     }
 }
+
+
+export interface StorageContext {
+    _chain: {
+        getStorageItemTypeHash(prefix: string, name: string): string
+        getStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any>
+    }
+    block: {
+        hash: string
+    }
+}

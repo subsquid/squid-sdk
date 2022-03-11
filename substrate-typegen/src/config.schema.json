@@ -41,6 +41,20 @@
           "type": "boolean"
         }
       ]
+    },
+    "storage": {
+      "description": "List of storage items to generate",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "boolean"
+        }
+      ]
     }
   }
 }

@@ -1,5 +1,6 @@
 import {ApiPromise, WsProvider} from "@polkadot/api"
 import {createTestKeyring} from "@polkadot/keyring"
+import {Header} from "@polkadot/types/interfaces/runtime"
 import {assertNotNull} from "@subsquid/util"
 import {Client} from "gql-test-client"
 import fetch from "node-fetch"
@@ -83,7 +84,7 @@ export async function transfer(api: ApiPromise, from: string, to: string, amount
             }).then(u => (unsub = u), reject)
     })
 
-    let header = await api.rpc.chain.getHeader(blockHash)
+    let header: Header = await api.rpc.chain.getHeader(blockHash)
     return header.number.toNumber()
 }
 

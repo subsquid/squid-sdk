@@ -1,3 +1,4 @@
+import * as ss58 from "@subsquid/ss58"
 import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import assert from "assert"
 import * as process from "process"
@@ -5,13 +6,14 @@ import {loadInitialData} from "./initialData"
 import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
 import {TimestampSetCall} from "./types/calls"
 import {BalancesTransferEvent} from "./types/events"
+import {SystemAccountStorage} from "./types/storage"
 import {getOrCreate} from "./util"
 
 
 const processor = new SubstrateProcessor('test')
 
 
-processor.setTypesBundle('./typedefs.json')
+processor.setTypesBundle('typesBundle.json')
 
 
 if (process.env.ARCHIVE_ENDPOINT && process.env.CHAIN_ENDPOINT) {
@@ -51,7 +53,7 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 
 
 processor.addEventHandler('balances.Transfer', async ctx => {
-    let [from, to, value] = new BalancesTransferEvent(ctx).asLatest
+    let [from, to, value] = new BalancesTransferEvent(ctx).asV1
 
     let blockEvent = ctx.block.events.find(e => e.name === 'balances.Transfer')
     assert(blockEvent != null, 'should find event among block events')
@@ -97,8 +99,16 @@ processor.addEventHandler('balances.Transfer', async ctx => {
 })
 
 
+processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
+    let accounts = new SystemAccountStorage(ctx)
+    let aliceAddress = ss58.decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY').bytes
+    let aliceAccount = await accounts.getAsV1(aliceAddress)
+    assert(aliceAccount.data.free > 0)
+})
+
+
 processor.addExtrinsicHandler('timestamp.set', async ctx => {
-    let timestamp = new TimestampSetCall(ctx).asLatest.now
+    let timestamp = new TimestampSetCall(ctx).asV1.now
     if (ctx.block.timestamp !== Number(timestamp)) {
         throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
     }

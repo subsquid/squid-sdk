@@ -548,6 +548,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-xxhash",
+      "projectFolder": "util-xxhash",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "balances",
       "projectFolder": "test/balances",
       "shouldPublish": false

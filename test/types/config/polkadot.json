@@ -3,5 +3,6 @@
   "chainVersions": "../../data/chain/polkadot/versions.json",
   "typesBundle": "polkadot",
   "events": true,
-  "calls": true
+  "calls": true,
+  "storage": true
 }

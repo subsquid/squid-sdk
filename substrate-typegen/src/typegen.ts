@@ -4,11 +4,12 @@ import {
     getChainDescriptionFromMetadata,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion,
+    SpecVersion, StorageItem,
     Type
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
+import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {def, OutDir, toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {Interfaces} from "./ifs"
@@ -29,6 +30,7 @@ export interface TypegenOptions {
     typesBundle?: OldTypesBundle
     events?: string[] | boolean
     calls?: string[] | boolean
+    storage?: string[] | boolean
 }
 
 
@@ -46,8 +48,9 @@ export class Typegen {
 
     generate(): void {
         this.dir.del()
-        this.generateItems('events')
-        this.generateItems('calls')
+        this.generateEnums('events')
+        this.generateEnums('calls')
+        this.generateStorage()
         this.interfaces.forEach((ifs, specVersion) => {
             if (ifs.isEmpty()) return
             let file = this.dir.file(`v${specVersion}.ts`)
@@ -57,8 +60,15 @@ export class Typegen {
         this.dir.add('support.ts', [__dirname, '../src/support.ts'])
     }
 
-    private generateItems(kind: 'events' | 'calls'): void {
-        let items = this.collectItems(kind)
+    private generateEnums(kind: 'events' | 'calls'): void {
+        let items = this.collectItems(
+            this.options[kind],
+            chain => Object.entries(chain[kind].definitions).map(([name, def]) => {
+                return {name, def, chain}
+            }),
+            (chain, name) => chain[kind].getHash(name)
+        )
+
         if (items.size == 0) return
 
         let out = this.dir.file(`${kind}.ts`)
@@ -129,22 +139,96 @@ export class Typegen {
         out.write()
     }
 
-    /**
-     * Create a mapping between qualified name and list of unique versions
-     */
-    private collectItems(kind: 'events' | 'calls'): Map<QualifiedName, Item[]> {
-        let request = this.options[kind]
-        if (!request) return new Map()
-        let requested = Array.isArray(request) ? new Set(request) : undefined
-        if (requested?.size === 0) return new Map()
+    private generateStorage(): void {
+        let items = this.collectItems(
+            this.options.storage,
+            chain => {
+                let items: Item<StorageItem>[] = []
+                let storage = chain.description.storage
+                for (let prefix in storage) {
+                    for (let name in storage[prefix]) {
+                        items.push({
+                            chain,
+                            name: prefix + '.' + name,
+                            def: storage[prefix][name]
+                        })
+                    }
+                }
+                return items
+            },
+            (chain, name) => {
+                let [prefix, itemName] = name.split('.')
+                return getStorageItemTypeHash(chain.description.types, chain.description.storage[prefix][itemName])
+            }
+        )
+        if (items.size == 0) return
 
-        let list = this.chain().flatMap(chain => {
-            return Object.entries(chain[kind].definitions).map(([name, def]) => {
-                return {name, def, chain}
+        let out = this.dir.file('storage.ts')
+        let names = Array.from(items.keys()).sort()
+        let importedInterfaces = new Set<SpecVersion>()
+
+        out.line(`import assert from 'assert'`)
+        out.line(`import {StorageContext, Result} from './support'`)
+        out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
+        names.forEach(qualifiedName => {
+            let versions = items.get(qualifiedName)!
+            let [prefix, name] = qualifiedName.split('.')
+            out.line()
+            out.block(`export class ${prefix}${name}Storage`, () => {
+                out.line(`constructor(private ctx: StorageContext) {}`)
+                versions.forEach(v => {
+                    let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
+                    let ifs = this.getInterface(v.chain.specVersion)
+                    let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
+                    let qualifiedTypes = types.map(texp => ifs.qualify(`v${v.chain.specVersion}`, texp))
+                    if (qualifiedTypes.some((texp, idx) => texp != types[idx])) {
+                        importedInterfaces.add(v.chain.specVersion)
+                    }
+
+                    out.line()
+                    out.blockComment(v.def.docs)
+                    out.block(`get isV${v.chain.specVersion}()`, () => {
+                        out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
+                    })
+
+                    out.line()
+                    out.blockComment(v.def.docs)
+                    let returnType = qualifiedTypes[qualifiedTypes.length - 1]
+                    let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
+                    let keyNames = keyTypes.map((type, idx) => {
+                        if (qualifiedTypes.length == 2) {
+                            return `key`
+                        } else {
+                            return `key${idx + 1}`
+                        }
+                    })
+                    let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`].concat(keyNames)
+                    out.block(`async getAsV${v.chain.specVersion}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                        out.line(`assert(this.isV${v.chain.specVersion})`)
+                        out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
+                    })
+                })
             })
         })
 
+        out.write()
+    }
+
+    /**
+     * Create a mapping between qualified name and list of unique versions
+     */
+    private collectItems<T>(
+        req: string[] | boolean | undefined,
+        extract: (chain: VersionDescription) => Item<T>[],
+        hash: (chain: VersionDescription, name: QualifiedName) => string
+    ): Map<QualifiedName, Item<T>[]> {
+        if (!req) return new Map()
+        let requested = Array.isArray(req) ? new Set(req) : undefined
+        if (requested?.size === 0) return new Map()
+
+        let list = this.chain().flatMap(chain => extract(chain))
         let items = groupBy(list, i => i.name)
+
         requested?.forEach(name => {
             if (!items.has(name)) {
                 throw new Error(`${name} is not defined by the chain metadata`)
@@ -154,10 +238,10 @@ export class Typegen {
         items.forEach((versions, name) => {
             if (requested == null || requested.has(name)) {
                 versions.sort((a, b) => a.chain.blockNumber - b.chain.blockNumber)
-                let unique: Item[] = []
+                let unique: Item<T>[] = []
                 versions.forEach(v => {
                     let prev = unique.length ? unique[unique.length - 1] : undefined
-                    if (prev && v.chain[kind].getHash(name) == prev.chain[kind].getHash(name)) {
+                    if (prev && hash(v.chain, name) === hash(prev.chain, name)) {
                         // TODO: use the latest definition, but set specVersion and blockNumber of a previous one
                         // for hopefully better docs
                     } else {
@@ -212,8 +296,8 @@ interface VersionDescription {
 }
 
 
-interface Item {
+interface Item<T> {
     name: QualifiedName
-    def: eac.Definition
+    def: T
     chain: VersionDescription
 }

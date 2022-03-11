@@ -1,15 +1,5 @@
-import {CodecStructType, CodecType, toCodecTypes} from "@subsquid/scale-codec/lib/types-codec"
-import {
-    ChainDescription,
-    CompactType,
-    CompositeType,
-    Field,
-    Primitive,
-    Ti,
-    Type,
-    TypeKind,
-    VariantType
-} from "@subsquid/substrate-metadata"
+import {CodecStructType, getCodecType} from "@subsquid/scale-codec/lib/types-codec"
+import {ChainDescription, Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
 import {assertNotNull, Output, toCamelCase, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import {assignNames, needsName} from "./names"
@@ -18,7 +8,6 @@ import {asResultType, toNativePrimitive} from "./util"
 
 export class Interfaces {
     private types: Type[]
-    private codecTypes: CodecType[]
     private nameAssignment: Map<Ti, string>
     private assignedNames: Set<string>
     private generated: (string | undefined)[]
@@ -27,7 +16,6 @@ export class Interfaces {
 
     constructor(description: ChainDescription) {
         this.types = description.types
-        this.codecTypes = toCodecTypes(this.types)
         this.nameAssignment = assignNames(description)
         this.assignedNames = new Set(this.nameAssignment.values())
         this.generated = new Array(this.types.length)
@@ -39,15 +27,14 @@ export class Interfaces {
 
         name = this.makeType(ti)
 
-        let type = this.types[ti]
-        if (!needsName(type) && this.nameAssignment.has(ti)) {
+        if (!needsName(this.types, ti) && this.nameAssignment.has(ti)) {
             let alias = this.nameAssignment.get(ti)!
             if (!this.generatedNames.has(alias)) {
                 this.generatedNames.add(alias)
                 let typeExp = name
                 this.queue.push(out => {
                     out.line()
-                    out.blockComment(type.docs)
+                    out.blockComment( this.types[ti].docs)
                     out.line(`export type ${alias} = ${typeExp}`)
                 })
             }
@@ -58,8 +45,7 @@ export class Interfaces {
     }
 
     private makeType(ti: Ti): string {
-        let codecType = this.codecTypes[ti]
-
+        let codecType = getCodecType(this.types, ti)
         switch(codecType.kind) {
             case TypeKind.Primitive:
                 return toNativePrimitive(codecType.primitive)
