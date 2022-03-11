@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-archive",
+      "comment": "ts fixes",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-archive"
+}
