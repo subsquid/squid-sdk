@@ -1,6 +1,8 @@
+import assert from "assert"
+import {ByteSink, HexSink, Sink} from "./sink"
 import {Src} from "./src"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
-import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
+import {CodecBytesArrayType, CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
 import {throwUnexpectedCase} from "./util"
 
 
@@ -16,6 +18,18 @@ export class Codec {
         let val = this.decode(type, src)
         src.assertEOF()
         return val
+    }
+
+    encodeToHex(type: Ti, val: unknown): string {
+        let sink = new HexSink()
+        this.encode(type, val, sink)
+        return sink.toHex()
+    }
+
+    encodeToBinary(type: Ti, val: unknown): Uint8Array {
+        let sink = new ByteSink()
+        this.encode(type, val, sink)
+        return sink.toBytes()
     }
 
     decode(type: Ti, src: Src): any {
@@ -128,6 +142,110 @@ export class Codec {
                 throwUnexpectedCase(byte.toString())
         }
     }
+
+    encode(type: Ti, val: any, sink: Sink): void {
+        let def = this.types[type]
+        switch(def.kind) {
+            case TypeKind.Primitive:
+                encodePrimitive(def.primitive, val, sink)
+                break
+            case TypeKind.Compact:
+                sink.compact(val)
+                break
+            case TypeKind.BitSequence:
+                encodeBitSequence(val, sink)
+                break
+            case TypeKind.Array:
+                this.encodeArray(def, val, sink)
+                break
+            case TypeKind.Sequence:
+                this.encodeSequence(def, val, sink)
+                break
+            case TypeKind.Tuple:
+                this.encodeTuple(def, val, sink)
+                break
+            case TypeKind.Struct:
+                this.encodeStruct(def, val, sink)
+                break
+            case TypeKind.Variant:
+                this.encodeVariant(def, val, sink)
+                break
+            case TypeKind.BytesArray:
+                encodeBytesArray(def, val, sink)
+                break
+            case TypeKind.Bytes:
+                encodeBytes(val, sink)
+                break
+            case TypeKind.BooleanOption:
+                encodeBooleanOption(val, sink)
+                break
+            case TypeKind.Option:
+                this.encodeOption(def, val, sink)
+                break
+            default:
+                throwUnexpectedCase(def.kind)
+        }
+    }
+
+    private encodeArray(def: ArrayType, val: unknown, sink: Sink): void {
+        assert(Array.isArray(val) && val.length == def.len)
+        for (let i = 0; i < val.length; i++) {
+            this.encode(def.type, val[i], sink)
+        }
+    }
+
+    private encodeSequence(def: SequenceType, val: unknown, sink: Sink): void {
+        assert(Array.isArray(val))
+        sink.compact(val.length)
+        for (let i = 0; i < val.length; i++) {
+            this.encode(def.type, val[i], sink)
+        }
+    }
+
+    private encodeTuple(def: TupleType, val: unknown, sink: Sink): void {
+        assert(Array.isArray(val) && def.tuple.length == val.length)
+        for (let i = 0; i < val.length; i++) {
+            this.encode(def.tuple[i], val[i], sink)
+        }
+    }
+
+    private encodeStruct(def: CodecStructType, val: any, sink: Sink): void {
+        for (let i = 0; i < def.fields.length; i++) {
+            let f = def.fields[i]
+            this.encode(f.type, val[f.name], sink)
+        }
+    }
+
+    private encodeVariant(def: CodecVariantType, val: any, sink: Sink): void {
+        assert(typeof val?.__kind == 'string', 'not a variant type value')
+        let variant = def.variantsByName[val.__kind]
+        if (variant == null) throw new Error(`Unknown variant: ${val.__kind}`)
+        sink.u8(variant.index)
+        switch(variant.kind) {
+            case 'empty':
+                break
+            case 'value':
+                this.encode(variant.type, val.value, sink)
+                break
+            case 'tuple':
+                this.encodeTuple(variant.def, val.value, sink)
+                break
+            case 'struct':
+                this.encodeStruct(variant.def, val.value, sink)
+                break
+            default:
+                throwUnexpectedCase()
+        }
+    }
+
+    private encodeOption(def: OptionType, val: unknown, sink: Sink): void {
+        if (val === undefined) {
+            sink.u8(0)
+        } else {
+            sink.u8(1)
+            this.encode(def.type, val, sink)
+        }
+    }
 }
 
 
@@ -137,9 +255,29 @@ function decodeBytes(src: Src): Uint8Array {
 }
 
 
+function encodeBytes(val: unknown, sink: Sink): void {
+    assert(val instanceof Uint8Array)
+    sink.compact(val.length)
+    sink.bytes(val)
+}
+
+
+function encodeBytesArray(def: CodecBytesArrayType, val: unknown, sink: Sink): void {
+    assert(val instanceof Uint8Array && val.length == def.len)
+    sink.bytes(val)
+}
+
+
 function decodeBitSequence(src: Src): Uint8Array {
     let len = Math.ceil(src.compactLength() / 8)
     return src.bytes(len)
+}
+
+
+function encodeBitSequence(bits: unknown, sink: Sink): void {
+    assert(bits instanceof Uint8Array)
+    sink.compact(bits.length * 8)
+    sink.bytes(bits)
 }
 
 
@@ -154,6 +292,16 @@ function decodeBooleanOption(src: Src): boolean | null {
             return false
         default:
             throwUnexpectedCase(byte.toString())
+    }
+}
+
+
+function encodeBooleanOption(val: unknown, sink: Sink): void {
+    if (val == null) {
+        sink.u8(0)
+    } else {
+        assert(typeof val == 'boolean')
+        sink.u8(val ? 1 : 2)
     }
 }
 
@@ -188,6 +336,56 @@ function decodePrimitive(type: Primitive, src: Src): any {
             return src.bool()
         case 'Str':
             return src.str()
+        default:
+            throwUnexpectedCase(type)
+    }
+}
+
+
+function encodePrimitive(type: Primitive, val: any, sink: Sink): void {
+    switch(type) {
+        case 'I8':
+            sink.i8(val)
+            break
+        case 'U8':
+            sink.u8(val)
+            break
+        case 'I16':
+            sink.i16(val)
+            break
+        case 'U16':
+            sink.u16(val)
+            break
+        case 'I32':
+            sink.i32(val)
+            break
+        case 'U32':
+            sink.u32(val)
+            break
+        case 'I64':
+            sink.i64(val)
+            break
+        case 'U64':
+            sink.u64(val)
+            break
+        case 'I128':
+            sink.i128(val)
+            break
+        case 'U128':
+            sink.u128(val)
+            break
+        case 'I256':
+            sink.i256(val)
+            break
+        case 'U256':
+            sink.u256(val)
+            break
+        case 'Bool':
+            sink.bool(val)
+            break
+        case 'Str':
+            sink.str(val)
+            break
         default:
             throwUnexpectedCase(type)
     }

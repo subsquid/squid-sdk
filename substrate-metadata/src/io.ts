@@ -4,10 +4,18 @@ import {OldTypesBundle} from "./old/types"
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
     switch(chain) {
+        case 'altair':
+            return require('./old/definitions/altair').bundle
+        case 'bifrost':
+            return require('./old/definitions/bifrost').bundle
         case 'khala':
             return require('./old/definitions/khala').bundle
         case 'kusama':
             return require('./old/definitions/kusama').bundle
+        case 'moonbeam':
+        case 'moonbase':
+        case 'moonriver':
+            return require('./old/definitions/moonsama').bundle
         case 'polkadot':
             return require('./old/definitions/polkadot').bundle
         default:

@@ -1,6 +1,5 @@
 import {toSnakeCase} from "@subsquid/util"
 import assert from "assert"
-import type {ClientBase, QueryArrayResult} from "pg"
 import {Database} from "./db"
 import type {Entity, JsonObject, Model} from "./model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "./model.tools"
@@ -81,7 +80,7 @@ export class QueryBuilder {
                 break
             default:
                 if (columns.size()) {
-                    out += `SELECT ${columns.render()}\n`
+                    out += `SELECT ${columns.render(true)}\n`
                 }
         }
 
@@ -304,6 +303,15 @@ export class QueryBuilder {
 
     private addPropCondition(exps: string[], cursor: Cursor, field: string, op: WhereOp, arg: any): void {
         let propType = cursor.object.properties[field].type
+        if (op == 'isNull') {
+            let lhs = propType.kind == 'fk' ? cursor.fk(field) : cursor.field(field)
+            if (arg) {
+                exps.push(`${lhs} IS NULL`)
+            } else {
+                exps.push(`${lhs} IS NOT NULL`)
+            }
+            return
+        }
         switch(propType.kind) {
             case 'scalar':
             case 'enum': {
@@ -724,8 +732,12 @@ class ColumnSet {
         return idx
     }
 
-    render(): string {
-        return Array.from(this.columns.keys()).join(', ')
+    render(withAliases?: boolean): string {
+        let cols = Array.from(this.columns.keys())
+        if (withAliases) {
+            cols = cols.map((col, idx) => `${col} AS _c${idx}`)
+        }
+        return cols.join(', ')
     }
 
     size(): number {

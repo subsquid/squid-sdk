@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-archive
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+
+## 0.0.3
+Fri, 11 Mar 2022 07:38:31 GMT
+
+### Patches
+
+- ts fixes
 
 ## 0.0.2
 Wed, 02 Feb 2022 11:01:32 GMT

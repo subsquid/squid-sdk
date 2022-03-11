@@ -1,10 +1,5 @@
 import assert from "assert"
-
-
-const UTF8_DECODER = new TextDecoder('utf-8', {
-    fatal: true,
-    ignoreBOM: false
-})
+import {UTF8_DECODER} from "./util"
 
 
 export class Src {

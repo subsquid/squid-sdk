@@ -27,6 +27,7 @@ ADD substrate-metadata/package.json substrate-metadata/
 ADD substrate-metadata-explorer/package.json substrate-metadata-explorer/
 ADD substrate-metadata-explorer/bin substrate-metadata-explorer/bin
 ADD substrate-processor/package.json substrate-processor/
+ADD substrate-evm-processor/package.json substrate-evm-processor/
 ADD substrate-typegen/package.json substrate-typegen/
 ADD substrate-typegen/bin substrate-typegen/bin
 ADD test/balances/package.json test/balances/
@@ -34,9 +35,11 @@ ADD test/data/package.json test/data/
 ADD test/e2e-project/package.json test/e2e-project/
 ADD test/e2e-suite/package.json test/e2e-suite/
 ADD test/gql-client/package.json test/gql-client/
+ADD test/moonsama-erc721/package.json test/moonsama-erc721/
 ADD test/types/package.json test/types/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
+ADD util-xxhash/package.json util-xxhash/
 ADD workspace/package.json workspace/
 RUN node common/scripts/install-run-rush.js install
 ADD cli/src cli/src
@@ -66,6 +69,8 @@ ADD substrate-metadata-explorer/src substrate-metadata-explorer/src
 ADD substrate-metadata-explorer/tsconfig.json substrate-metadata-explorer/
 ADD substrate-processor/src substrate-processor/src
 ADD substrate-processor/tsconfig.json substrate-processor/
+ADD substrate-evm-processor/src substrate-evm-processor/src
+ADD substrate-evm-processor/tsconfig.json substrate-evm-processor/
 ADD substrate-typegen/src substrate-typegen/src
 ADD substrate-typegen/tsconfig.json substrate-typegen/
 ADD test/balances/src test/balances/src
@@ -74,17 +79,21 @@ ADD test/data/src test/data/src
 ADD test/data/tsconfig.json test/data/
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
-ADD test/e2e-project/typedefs.json test/e2e-project/
+ADD test/e2e-project/typesBundle.json test/e2e-project/
 ADD test/e2e-project/typegen.json test/e2e-project/
 ADD test/e2e-project/tsconfig.json test/e2e-project/
 ADD test/e2e-suite/src test/e2e-suite/src
 ADD test/e2e-suite/tsconfig.json test/e2e-suite/
 ADD test/gql-client/src test/gql-client/src
 ADD test/gql-client/tsconfig.json test/gql-client/
+ADD test/moonsama-erc721/src test/moonsama-erc721/src
+ADD test/moonsama-erc721/tsconfig.json test/moonsama-erc721/
 ADD typeorm-config/src typeorm-config/src
 ADD typeorm-config/tsconfig.json typeorm-config/
 ADD util/src util/src
 ADD util/tsconfig.json util/
+ADD util-xxhash/src util-xxhash/src
+ADD util-xxhash/tsconfig.json util-xxhash/
 ADD workspace/src workspace/src
 ADD workspace/tsconfig.json workspace/
 RUN node common/scripts/install-run-rush.js build

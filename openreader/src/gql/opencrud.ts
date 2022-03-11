@@ -141,9 +141,11 @@ export function generateOpenCrudQueries(model: Model): string {
             switch(prop.type.kind) {
                 case 'scalar':
                 case 'enum':
+                    generateIsNullFilter(key, prop)
                     generateScalarFilters(key, prop.type.name)
                     break
                 case 'list':
+                    generateIsNullFilter(key, prop)
                     if (prop.type.item.type.kind == 'scalar' || prop.type.item.type.kind == 'enum') {
                         let item = prop.type.item.type.name
                         out.line(`${key}_containsAll: [${item}!]`)
@@ -152,14 +154,17 @@ export function generateOpenCrudQueries(model: Model): string {
                     }
                     break
                 case 'object':
+                    generateIsNullFilter(key, prop)
                     if (hasFilters(getObject(prop.type.name))) {
                         out.line(`${key}: ${prop.type.name}WhereInput`)
                     }
                     break
                 case 'union':
+                    generateIsNullFilter(key, prop)
                     out.line(`${key}: ${prop.type.name}WhereInput`)
                     break
                 case 'fk':
+                    generateIsNullFilter(key, prop)
                     out.line(`${key}: ${prop.type.foreignEntity}WhereInput`)
                     break
                 case 'lookup':
@@ -172,6 +177,11 @@ export function generateOpenCrudQueries(model: Model): string {
                     break
             }
         }
+    }
+
+    function generateIsNullFilter(key: string, prop: Prop): void {
+        if (!prop.nullable) return
+        out.line(`${key}_isNull: Boolean`)
     }
 
     function hasFilters(obj: JsonObject): boolean {

@@ -1,4 +1,4 @@
-import {EventHandlerContext, Store, SubstrateProcessor} from "@subsquid/substrate-processor"
+import {EventHandlerContext, Store, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import {Account, HistoricalBalance} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
@@ -6,10 +6,7 @@ import {BalancesTransferEvent} from "./types/events"
 const processor = new SubstrateProcessor('kusama_balances')
 
 
-processor.setTypesBundle('kusama')
 processor.setBatchSize(500)
-
-
 processor.setDataSource({
     archive: 'https://kusama.indexer.gc.subsquid.io/v4/graphql',
     chain: 'wss://kusama-rpc.polkadot.io'
@@ -70,11 +67,6 @@ function getTransferEvent(ctx: EventHandlerContext): TransferEvent {
     } else {
         return event.asLatest
     }
-}
-
-
-function toHex(data: Uint8Array): string {
-    return '0x' + Buffer.from(data).toString('hex')
 }
 
 

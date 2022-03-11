@@ -22,7 +22,7 @@ export default class Tail extends Command {
         lines: Flags.integer({
             char: 'l',
             description:
-                'output a specific number of lines (if "follow" is false)',
+                'output a specific number of lines (if "follow" is not set)',
             required: false,
             default: 50,
         }),
@@ -38,7 +38,7 @@ export default class Tail extends Command {
         const follow = flags.follow;
         const lines = flags.lines;
 
-        this.log('Getting logs...');
+        this.log('Fetching logs...');
         await log(squidName, versionName, follow, lines);
     }
 }

@@ -1,5 +1,6 @@
 import {ApiPromise, WsProvider} from "@polkadot/api"
 import {GenericEventData} from "@polkadot/types"
+import {FrameSystemEventRecord} from "@polkadot/types/lookup"
 import {xxhashAsU8a} from "@polkadot/util-crypto"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {Codec} from "@subsquid/scale-codec"
@@ -153,7 +154,7 @@ export class Chain {
             for (let h of this.blocks()) {
                 if (saved.has(h)) continue
                 let blockHash = await api.rpc.chain.getBlockHash(h)
-                let events
+                let events: FrameSystemEventRecord[]
                 try {
                     events = await api.query.system.events.at(blockHash)
                 } catch(e: any) {

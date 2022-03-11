@@ -1,6 +1,17 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Wed, 23 Feb 2022 11:18:26 GMT and should not be manually modified.
+
+## 0.5.0
+Wed, 23 Feb 2022 11:18:26 GMT
+
+### Minor changes
+
+- implement isNull operator
+
+### Patches
+
+- fix not enough columns in SQL result regression when typeorm connection is used
 
 ## 0.4.1
 Wed, 02 Feb 2022 11:01:32 GMT

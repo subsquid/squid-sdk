@@ -1,19 +1,26 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {Codec as ScaleCodec} from "@subsquid/scale-codec"
 import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
+import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {
     ChainDescription,
     decodeMetadata,
     Field,
     getChainDescriptionFromMetadata,
+    getOldTypesBundle,
+    OldTypes,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion
+    SpecVersion,
+    StorageItem
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
+import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull} from "@subsquid/util"
 import assert from "assert"
 import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
+import * as sto from "./util/storage"
 
 
 /**
@@ -33,7 +40,7 @@ export class ChainManager {
 
     constructor(
         private client: ResilientRpcClient,
-        private typesBundle: OldTypesBundle = {types: {}}) {
+        private typesBundle?: OldTypesBundle) {
     }
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
@@ -52,7 +59,7 @@ export class ChainManager {
             let metadataHex: string = await this.client.call('state_getMetadata', [hash])
             v = this.versions.get(rtv.specVersion) // perhaps it was fetched
             if (v == null) {
-                let chain = this.createChain(rtv.specVersion, metadataHex)
+                let chain = this.createChain(rtv, metadataHex)
                 v = {chain, height}
                 this.versions.set(rtv.specVersion, v)
             }
@@ -61,22 +68,35 @@ export class ChainManager {
         return v.chain
     }
 
-    private createChain(specVersion: SpecVersion, metadataHex: string): Chain {
+    private createChain(rtv: SubstrateRuntimeVersion, metadataHex: string): Chain {
         let metadata = decodeMetadata(metadataHex)
-        let types = getTypesFromBundle(this.typesBundle, specVersion)
+        let types: OldTypes | undefined
+        if (parseInt(metadata.__kind.slice(1)) < 14) {
+            let typesBundle = assertNotNull(
+                this.typesBundle || getOldTypesBundle(rtv.specName),
+                `types bundle is required for ${rtv.specName} chain`
+            )
+            types = getTypesFromBundle(typesBundle, rtv.specVersion)
+        }
         let description = getChainDescriptionFromMetadata(metadata, types)
-        return new Chain(description)
+        return new Chain(description, this.client)
     }
 }
 
 
 export class Chain {
     private jsonCodec: JsonCodec
+    private scaleCodec: ScaleCodec
     private events: eac.Registry
     private calls: eac.Registry
+    private storageHash = Symbol('storage_hash')
 
-    constructor(public readonly description: ChainDescription) {
+    constructor(
+        public readonly description: ChainDescription,
+        private client: ResilientRpcClient
+    ) {
         this.jsonCodec = new JsonCodec(description.types)
+        this.scaleCodec = new ScaleCodec(description.types)
         this.events = new eac.Registry(description.types, description.event)
         this.calls = new eac.Registry(description.types, description.call, true)
     }
@@ -122,5 +142,53 @@ export class Chain {
             }
             return result
         }
+    }
+
+    async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
+        let item = this.getStorageItem(prefix, name)
+        assert(item.keys.length === keys.length)
+        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+        for (let i = 0; i < keys.length; i++) {
+            req += sto.getKeyHash(
+                item.hashers[i],
+                this.scaleCodec.encodeToBinary(item.keys[i], keys[i])
+            ).slice(2)
+        }
+        let res = await this.client.call('state_getStorageAt', [req, blockHash])
+        if (res == null) {
+            switch(item.modifier) {
+                case 'Optional':
+                    return undefined
+                case 'Default':
+                    res = item.fallback
+                    break
+                case 'Required':
+                    throw new Error(`Required storage item not found`)
+                default:
+                    throwUnexpectedCase(item.modifier)
+            }
+        }
+        return this.scaleCodec.decodeBinary(item.value, res)
+    }
+
+    private getStorageItem(prefix: string, name: string): StorageItem {
+        let items = this.description.storage[prefix]
+        if (items == null) throw new Error(
+            `There are no storage items under prefix ${prefix}`
+        )
+        let def = items[name]
+        if (def == null) throw new Error(
+            `Unknown storage item: ${prefix}.${name}`
+        )
+        return def
+    }
+
+    getStorageItemTypeHash(prefix: string, name: string): string {
+        let item = this.getStorageItem(prefix, name)
+        let hash = (item as any)[this.storageHash]
+        if (hash == null) {
+            hash = (item as any)[this.storageHash] = getStorageItemTypeHash(this.description.types, item)
+        }
+        return hash
     }
 }

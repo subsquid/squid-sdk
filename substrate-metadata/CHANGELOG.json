@@ -2,6 +2,73 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.6.0",
+      "tag": "@subsquid/substrate-metadata_v0.6.0",
+      "date": "Fri, 11 Mar 2022 07:38:31 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "storage description"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fixes for altair types bundle"
+          },
+          {
+            "comment": "handle generic `Int<?>` types in old bundles"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.3.1` to `^0.4.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.5.0",
+      "tag": "@subsquid/substrate-metadata_v0.5.0",
+      "date": "Fri, 04 Mar 2022 14:30:51 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "exclude qualified name from event/call type hash"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.4.0",
+      "tag": "@subsquid/substrate-metadata_v0.4.0",
+      "date": "Wed, 02 Mar 2022 18:11:28 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add types for `bifrost`, `moonbeam`, `moonriver`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.1",
+      "tag": "@subsquid/substrate-metadata_v0.3.1",
+      "date": "Mon, 21 Feb 2022 12:42:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support `Range`, `RangeInclusive` in old types"
+          },
+          {
+            "comment": "allow trailing commas in old type expression lists"
+          },
+          {
+            "comment": "add type definitions for altair"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/substrate-metadata_v0.3.0",
       "date": "Mon, 07 Feb 2022 15:16:41 GMT",

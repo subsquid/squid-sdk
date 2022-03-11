@@ -52,6 +52,7 @@ export class RpcClient {
                 reject(err)
             }
         })
+        this.connection.catch(err => {})
 
         this.ws.onmessage = event => {
             try {

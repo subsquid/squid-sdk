@@ -1,6 +1,41 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+
+## 0.6.0
+Fri, 11 Mar 2022 07:38:31 GMT
+
+### Minor changes
+
+- storage description
+
+### Patches
+
+- fixes for altair types bundle
+- handle generic `Int<?>` types in old bundles
+
+## 0.5.0
+Fri, 04 Mar 2022 14:30:51 GMT
+
+### Minor changes
+
+- exclude qualified name from event/call type hash
+
+## 0.4.0
+Wed, 02 Mar 2022 18:11:28 GMT
+
+### Minor changes
+
+- add types for `bifrost`, `moonbeam`, `moonriver`
+
+## 0.3.1
+Mon, 21 Feb 2022 12:42:24 GMT
+
+### Patches
+
+- support `Range`, `RangeInclusive` in old types
+- allow trailing commas in old type expression lists
+- add type definitions for altair
 
 ## 0.3.0
 Mon, 07 Feb 2022 15:16:41 GMT

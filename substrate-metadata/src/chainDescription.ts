@@ -1,8 +1,10 @@
+import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {assertNotNull, def, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
 import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from "./interfaces"
 import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
+import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
 import {getTypeByPath, normalizeMetadataTypes} from "./util"
 
@@ -10,10 +12,11 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    signature: Ti
+    // signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
+    storage: Storage
 }
 
 
@@ -41,10 +44,11 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            signature: this.signature(),
+            // signature: this.signature(),
             event: this.event(),
             eventRecord: this.eventRecord(),
-            eventRecordList: this.eventRecordList()
+            eventRecordList: this.eventRecordList(),
+            storage: this.storage()
         }
     }
 
@@ -120,6 +124,40 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    @def
+    private storage(): Storage {
+        let storage: Storage = {}
+        this.metadata.pallets.forEach(pallet => {
+            if (pallet.storage == null) return
+            let items: Record<string, StorageItem> = storage[pallet.storage.prefix] = {}
+            pallet.storage.items.forEach(e => {
+                let hashers: StorageHasher[]
+                let keys: Ti[]
+                switch(e.type.__kind) {
+                    case 'Plain':
+                        hashers = []
+                        keys = []
+                        break
+                    case 'Map':
+                        hashers = e.type.hashers.map(h => h.__kind)
+                        keys = [e.type.key]
+                        break
+                    default:
+                        throwUnexpectedCase()
+                }
+                items[e.name] = {
+                    modifier: e.modifier.__kind,
+                    hashers,
+                    keys,
+                    value: e.type.value,
+                    fallback: e.fallback,
+                    docs: e.docs
+                }
+            })
+        })
+        return storage
     }
 
     @def
@@ -204,16 +242,18 @@ class FromOld {
         this.lookupSource()
         let call = this.call()
         let event = this.event()
-        let signature = this.signature()
+        // let signature = this.signature()
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
+        let storage = this.storage()
         return {
             types: this.registry.getTypes(),
             call,
-            signature,
+            // signature,
             event,
             eventRecord,
-            eventRecordList
+            eventRecordList,
+            storage
         }
     }
 
@@ -492,5 +532,64 @@ class FromOld {
                 variants
             }
         })
+    }
+
+    @def
+    private storage(): Storage {
+        let storage: Storage = {}
+        switch(this.metadata.__kind) {
+            case 'V9':
+            case 'V10':
+            case 'V11':
+            case 'V12':
+            case 'V13':
+                this.metadata.value.modules.forEach(mod => {
+                    if (mod.storage == null) return
+                    let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
+                    mod.storage.items.forEach(e => {
+                        let hashers: StorageHasher[]
+                        let keys: Ti[]
+                        switch(e.type.__kind) {
+                            case 'Plain':
+                                hashers = []
+                                keys = []
+                                break
+                            case 'Map':
+                                hashers = [e.type.hasher.__kind]
+                                keys = [this.registry.use(e.type.key, mod.name)]
+                                break
+                            case 'DoubleMap':
+                                hashers = [
+                                    e.type.hasher.__kind,
+                                    e.type.key2Hasher.__kind
+                                ]
+                                keys = [
+                                    this.registry.use(e.type.key1, mod.name),
+                                    this.registry.use(e.type.key2, mod.name)
+                                ]
+                                break
+                            case 'NMap':
+                                hashers = e.type.hashers.map(h => h.__kind)
+                                keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
+                                break
+                            default:
+                                throwUnexpectedCase()
+                        }
+                        items[e.name] = {
+                            modifier: e.modifier.__kind,
+                            hashers,
+                            keys,
+                            value: this.registry.use(e.type.value, mod.name),
+                            fallback: e.fallback,
+                            docs: e.docs
+                        }
+                    })
+                    storage[mod.storage.prefix] = items
+                })
+                break
+            default:
+                throwUnexpectedCase(this.metadata.__kind)
+        }
+        return storage
     }
 }

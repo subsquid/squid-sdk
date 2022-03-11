@@ -1,6 +1,7 @@
 
 export type WhereOp =
     '-' | // no operator
+    'isNull' |
     'eq' | 'not_eq' |
     'gt' |
     'gte' |
@@ -19,6 +20,7 @@ export type WhereOp =
 
 
 const ENDINGS = [
+    'isNull',
     'eq',
     'not_eq',
     'gt',

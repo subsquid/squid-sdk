@@ -1,6 +1,20 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+
+## 0.1.5
+Wed, 02 Mar 2022 18:11:28 GMT
+
+### Patches
+
+- fix unhandled promise rejection
+
+## 0.1.4
+Mon, 21 Feb 2022 12:42:23 GMT
+
+### Patches
+
+- fix memory leak
 
 ## 0.1.3
 Wed, 02 Feb 2022 11:01:32 GMT

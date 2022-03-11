@@ -133,6 +133,12 @@ export class OldTypeRegistry {
                     name: convertGenericIntegerToPrimitive('U', type),
                     params: []
                 }
+            case 'Int':
+                return {
+                    kind: 'named',
+                    name: convertGenericIntegerToPrimitive('I', type),
+                    params: []
+                }
             case 'Box':
                 return this.normalizeType(assertOneParam(type), pallet)
             case 'Bytes':
@@ -145,7 +151,8 @@ export class OldTypeRegistry {
             case 'Vec':
             case 'VecDeque':
             case 'WeakVec':
-            case 'BoundedVec': {
+            case 'BoundedVec':
+            case 'WeakBoundedVec': {
                 let param = this.normalizeType(assertOneParam(type), pallet)
                 return {
                     kind: 'named',
@@ -178,7 +185,9 @@ export class OldTypeRegistry {
                     name: 'Address',
                     params: []
                 }, pallet)
-            case 'PairOf': {
+            case 'PairOf':
+            case 'Range':
+            case 'RangeInclusive': {
                 let param = this.normalizeType(assertOneParam(type), pallet)
                 return {
                     kind: 'tuple',
@@ -293,7 +302,7 @@ export class OldTypeRegistry {
     }
 
     private buildSet(def: OldSetDefinition): Ti {
-        let len = def._set._bitLength
+        let len = def._set._bitLength || 8
         switch(len) {
             case 8:
             case 16:
