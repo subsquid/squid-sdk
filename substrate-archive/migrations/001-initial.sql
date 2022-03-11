@@ -32,8 +32,8 @@ CREATE TABLE extrinsic (
 );
 
 
-CREATE INDEX extrinsic__block_name__idx ON extrinsic(name);
-CREATE INDEX extrinsic__block_index__idx ON extrinsic(block_id);
+CREATE INDEX extrinsic__name_block__idx ON extrinsic(name, block_id);
+CREATE INDEX extrinsic__block_index__idx ON extrinsic(block_id, index_in_block);
 
 
 CREATE TABLE call (
@@ -48,8 +48,8 @@ CREATE TABLE call (
 
 
 CREATE INDEX call__extrinsic_index__idx ON call(extrinsic_id, index);
+CREATE INDEX call__name_extrinsic__idx ON call(name, extrinsic_id);
 CREATE INDEX call__parent__idx ON call(parent_id);
-CREATE INDEX call__name__idx ON call(name);
 
 
 CREATE TABLE event (
@@ -67,7 +67,7 @@ CREATE TABLE event (
 CREATE INDEX event__block_index__idx ON event(block_id, index_in_block);
 CREATE INDEX event__extrinsic__idx ON event(extrinsic_id);
 CREATE INDEX event__call__idx ON event(call_id);
-CREATE INDEX event__name__idx ON event(name);
+CREATE INDEX event__name_block__idx ON event(name, block_id);
 
 
 CREATE TABLE warning (

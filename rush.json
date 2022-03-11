@@ -500,12 +500,6 @@
       "versionPolicyName": "docker-only"
     },
     {
-      "packageName": "@subsquid/substrate-archive-status-service",
-      "projectFolder": "substrate-archive-status-service",
-      "shouldPublish": false,
-      "versionPolicyName": "docker-only"
-    },
-    {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "shouldPublish": true,
