@@ -8,6 +8,7 @@
   "dependencies": {
     "@subsquid/cli": "^0.1.4",
     "@subsquid/graphql-server": "^0.1.5",
+    "@subsquid/ss58": "^0.0.4",
     "@subsquid/substrate-metadata-explorer": "^0.0.7",
     "@subsquid/substrate-processor": "^0.4.1",
     "@subsquid/substrate-typegen": "^0.2.3",

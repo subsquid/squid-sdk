@@ -79,7 +79,7 @@ ADD test/data/src test/data/src
 ADD test/data/tsconfig.json test/data/
 ADD test/e2e-project/src test/e2e-project/src
 ADD test/e2e-project/schema.graphql test/e2e-project/
-ADD test/e2e-project/typedefs.json test/e2e-project/
+ADD test/e2e-project/typesBundle.json test/e2e-project/
 ADD test/e2e-project/typegen.json test/e2e-project/
 ADD test/e2e-project/tsconfig.json test/e2e-project/
 ADD test/e2e-suite/src test/e2e-suite/src

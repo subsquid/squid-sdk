@@ -10,7 +10,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded. \[from, to, value\]
    */
   get isV1(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '2082574713e816229f596f97b58d3debbdea4b002607df469a619e037cc11120'
+    return this.ctx._chain.getEventHash('balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
   }
 
   /**

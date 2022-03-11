@@ -1,6 +1,5 @@
 import assert from 'assert'
 import {CallContext, Result, deprecateLatest} from './support'
-import * as v1 from './v1'
 
 export class BalancesSetBalanceCall {
   constructor(private ctx: CallContext) {
@@ -28,7 +27,7 @@ export class BalancesSetBalanceCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('balances.set_balance') === '99d45eea22d5909f0cca3c075a5bc2ebc4e35ab21cc987bd7c9e12eedc8ee727'
+    return this.ctx._chain.getCallHash('balances.set_balance') === 'a65ed3500227691ff89565c1bf5a0244c2a05366e34d1ab50167d0c006774edc'
   }
 
   /**
@@ -51,7 +50,7 @@ export class BalancesSetBalanceCall {
    *  - DB Weight: 1 Read, 1 Write to `who`
    *  # </weight>
    */
-  get asV1(): {who: v1.GenericMultiAddress, newFree: (number | bigint), newReserved: (number | bigint)} {
+  get asV1(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
     assert(this.isV1)
     return this.ctx._chain.decodeCall(this.ctx.extrinsic)
   }
@@ -61,7 +60,7 @@ export class BalancesSetBalanceCall {
     return this.isV1
   }
 
-  get asLatest(): {who: v1.GenericMultiAddress, newFree: (number | bigint), newReserved: (number | bigint)} {
+  get asLatest(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
     deprecateLatest()
     return this.asV1
   }
@@ -90,7 +89,7 @@ export class TimestampSetCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('timestamp.set') === '3c832e2f9c65e106d08e422b5962c90f9f8bc4c4172cb0bf1927eb3c2b23f6ce'
+    return this.ctx._chain.getCallHash('timestamp.set') === '6a8b8ba2be107f0853b674eec0026cc440b314db44d0e2c59b36e353355aed14'
   }
 
   /**
@@ -110,7 +109,7 @@ export class TimestampSetCall {
    *  - 1 event handler `on_timestamp_set` `O(T)`.
    *  # </weight>
    */
-  get asV1(): {now: (number | bigint)} {
+  get asV1(): {now: bigint} {
     assert(this.isV1)
     return this.ctx._chain.decodeCall(this.ctx.extrinsic)
   }
@@ -120,7 +119,7 @@ export class TimestampSetCall {
     return this.isV1
   }
 
-  get asLatest(): {now: (number | bigint)} {
+  get asLatest(): {now: bigint} {
     deprecateLatest()
     return this.asV1
   }
