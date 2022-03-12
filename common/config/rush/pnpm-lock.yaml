@@ -35,6 +35,7 @@ specifiers:
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util': file:./projects/util.tgz
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
+  '@rush-temp/util-internal-http-server': file:./projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:./projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
@@ -126,6 +127,7 @@ dependencies:
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
+  '@rush-temp/util-internal-http-server': file:projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
@@ -7323,7 +7325,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-EQ9nqMeeqdXctsB4xlGbjwytoo3xwq7NTDj2yJbCIsJ7CdTJxXvkJpDCm3PuZOVw1AqCNz+yZzXzXmXntcxSQQ==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-oPaQGQWTDSnnl6FY5L74d9mff+Glyz6Dablli1a0vUgMJ444/G8uTCA+4Gb8hF2zWjTPTYs2sFkfb72QmcGSgA==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -7385,7 +7387,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_pg@8.7.3:
-    resolution: {integrity: sha512-VJd+jQ9giiGwY5R0slZzVFA69s9p0Xd1w8WER0ScmSBgveqLtVmm+fCj64bc7Jczjfj7OjkSCH6+pZL/0rLoTA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-oqylZ7mrYGMCfRr0JvLQX/TLli/qz6TV7L/a5JIluQOPK/kFdaJkvt2Q1h60yG9TNBg9Dmud5a//szofmqpMQA==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7468,6 +7470,17 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.22
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/util-internal-http-server.tgz:
+    resolution: {integrity: sha512-01y/TqLf7dKwIeC2vZYFb0/g5sqGcheqCK0chYZiwQN0k1fXfDKr1tEVgJF1qBshP+rwj6cRFhhgR3dml7l4Fg==, tarball: file:projects/util-internal-http-server.tgz}
+    name: '@rush-temp/util-internal-http-server'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.22
+      '@types/stoppable': 1.1.1
+      stoppable: 1.1.0
       typescript: 4.5.5
     dev: false
 
