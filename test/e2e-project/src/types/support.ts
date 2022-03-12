@@ -55,7 +55,7 @@ export function deprecateLatest(): void {
 
 export interface StorageContext {
     _chain: {
-        getStorageItemTypeHash(prefix: string, name: string): string
+        getStorageItemTypeHash(prefix: string, name: string): string | undefined
         getStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any>
     }
     block: {
