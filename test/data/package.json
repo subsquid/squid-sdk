@@ -8,7 +8,7 @@
   "devDependencies": {
     "@polkadot/api": "6.12.1",
     "@polkadot/types": "6.12.1",
-    "@polkadot/util-crypto": "^8.3.3",
+    "@polkadot/util-crypto": "^8.1.2",
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.0",
     "@subsquid/scale-codec-json": "^0.1.2",
