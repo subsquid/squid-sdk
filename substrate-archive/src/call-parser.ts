@@ -1,5 +1,5 @@
 import {QualifiedName} from "@subsquid/substrate-metadata"
-import {assertNotNull, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {SpecInfo, sub} from "./interfaces"
 import * as model from "./model"
 import {Warning} from "./model"

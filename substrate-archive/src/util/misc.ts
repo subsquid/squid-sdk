@@ -1,6 +1,6 @@
 import {Metadata} from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import blake2b from "blake2b"
 import {sub} from "../interfaces"

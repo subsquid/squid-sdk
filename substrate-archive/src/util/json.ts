@@ -1,4 +1,4 @@
-import {toHex} from "@subsquid/util"
+import {toHex} from "@subsquid/util-internal"
 
 
 export function toJSON(val: unknown): any {

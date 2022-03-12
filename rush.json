@@ -542,6 +542,18 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal",
+      "projectFolder": "util-internal",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
+      "packageName": "@subsquid/util-internal-service-manager",
+      "projectFolder": "util-internal-service-manager",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util-naming",
       "shouldPublish": true,

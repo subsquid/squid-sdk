@@ -1,4 +1,4 @@
-import {Abort, AbortError, AbortHandle} from "./abort"
+import {Abort, AbortHandle, isAbortError} from "@subsquid/util-internal"
 
 
 export interface Service {
@@ -59,7 +59,7 @@ export class ServiceManager {
             } catch(e: any) {
                 err = e
             }
-            if (!(err instanceof AbortError)) {
+            if (!isAbortError(err)) {
                 ok = ok && !err
                 if (err) console.error(err)
             }
@@ -68,7 +68,7 @@ export class ServiceManager {
     }
 
     private shutdown(err?: Error) {
-        if (err && !(err instanceof AbortError)) console.error(err)
+        if (err && !isAbortError(err)) console.error(err)
         if (this.stopped) return
         this.stopped = true
         this.stop().then(ok => {

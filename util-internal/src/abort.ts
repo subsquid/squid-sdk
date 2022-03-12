@@ -1,4 +1,5 @@
 import assert from "assert"
+import {safeCall} from "./misc"
 
 
 export interface Abort {
@@ -50,7 +51,7 @@ export class AbortHandle implements Abort {
     guard<T>(promise: Promise<T>): Promise<T> {
         return new Promise((resolve, reject) => {
             if (this.abortError) {
-                promise.catch(() => null)
+                promise.catch(() => {})
                 reject(this.abortError)
                 return
             }
@@ -71,9 +72,16 @@ export class AbortHandle implements Abort {
 
 
 export class AbortError extends Error {
+    public readonly __squid_abort_error = true
+
     constructor() {
         super('Aborted')
     }
+}
+
+
+export function isAbortError(e: unknown): e is AbortError {
+    return e instanceof Error && !!(e as any).__squid_abort_error
 }
 
 
@@ -93,13 +101,4 @@ export function wait(ms: number, abort?: Abort): Promise<void> {
 
         abort?.addListener(onabort)
     })
-}
-
-
-function safeCall(f: () => void): void {
-    try {
-        f()
-    } catch(e: any) {
-        // TODO: log
-    }
 }

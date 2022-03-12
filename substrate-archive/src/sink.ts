@@ -2,7 +2,6 @@ import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
 import {toJSON, toJsonString} from "./util/json"
-import {identity} from "./util/misc"
 import WritableStream = NodeJS.WritableStream
 
 

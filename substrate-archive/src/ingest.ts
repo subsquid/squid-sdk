@@ -11,12 +11,11 @@ import {
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull, wait} from "@subsquid/util-internal"
 import assert from "assert"
 import {CallParser} from "./call-parser"
 import {SpecInfo, sub} from "./interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "./model"
-import {wait} from "./util/abort"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, unwrapArguments} from "./util/misc"
 
 

@@ -1,5 +1,6 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {ServiceManager} from "@subsquid/util-internal-service-manager"
 import assert from "assert"
 import {Command, InvalidOptionArgumentError} from "commander"
 import * as fs from "fs"
@@ -8,7 +9,6 @@ import * as pg from "pg"
 import {migrate} from "postgres-migrations"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
-import {ServiceManager} from "./util/sm"
 import {ProgressTracker, SpeedTracker} from "./util/tracking"
 
 
