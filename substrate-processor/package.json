@@ -24,6 +24,8 @@
     "@subsquid/typeorm-config": "^0.0.4",
     "@subsquid/util": "^0.0.4",
     "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-counters": "^0.0.0",
+    "@subsquid/util-internal-http-server": "^0.0.0",
     "@subsquid/util-internal-service-manager": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",
     "@subsquid/util-xxhash": "^0.0.0",

@@ -35,6 +35,8 @@ specifiers:
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util': file:./projects/util.tgz
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
+  '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
+  '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
   '@rush-temp/util-internal-http-server': file:./projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:./projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
@@ -127,6 +129,8 @@ dependencies:
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util': file:projects/util.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
+  '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
+  '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
   '@rush-temp/util-internal-http-server': file:projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:projects/util-naming.tgz
@@ -7387,7 +7391,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_pg@8.7.3:
-    resolution: {integrity: sha512-oqylZ7mrYGMCfRr0JvLQX/TLli/qz6TV7L/a5JIluQOPK/kFdaJkvt2Q1h60yG9TNBg9Dmud5a//szofmqpMQA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-ursWzOLk/3W8tTCQBy45Aw8R6Zq36S0XsqujvN3+hL7vfKyF3gmUTqAGnAeRO3uxM8yrL7b9CthPZgX5LyqFUQ==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7467,6 +7471,24 @@ packages:
   file:projects/types-test.tgz:
     resolution: {integrity: sha512-49bsOU/KZ5rgrA+uYW1A8JX3PIYcVFHYzeBOII81oHCvFd3iIZ+dX77FeczdDauRjDJbMeJTHbzoa7HAiqmddg==, tarball: file:projects/types-test.tgz}
     name: '@rush-temp/types-test'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.22
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/util-internal-code-printer.tgz:
+    resolution: {integrity: sha512-Q2F5bKMCP0YirqmTJ6FGieUAlxSc+v+oMtsCqEnDqGsdAz173jg0jerquYSUcVWsOwYjQzQC8WD7RxwpEbRTPw==, tarball: file:projects/util-internal-code-printer.tgz}
+    name: '@rush-temp/util-internal-code-printer'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.22
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/util-internal-counters.tgz:
+    resolution: {integrity: sha512-6HIDqf7qJEArVZ3YatNCpFqUoRj2GXM3dgjXooxAroCUhKe5YKFaI3xjO3VaC5RMUfVkkMablYGgE8Fp4Crihg==, tarball: file:projects/util-internal-counters.tgz}
+    name: '@rush-temp/util-internal-counters'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.22

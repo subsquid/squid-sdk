@@ -548,6 +548,18 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal-code-printer",
+      "projectFolder": "util-internal-code-printer",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
+      "packageName": "@subsquid/util-internal-counters",
+      "projectFolder": "util-internal-counters",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util-internal-http-server",
       "shouldPublish": true,
