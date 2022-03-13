@@ -1,0 +1,4 @@
+{
+  "chain": "wss://rpc.crust.network",
+  "archive": "https://crust.indexer.gc.subsquid.io/v4/graphql"
+}

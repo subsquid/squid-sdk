@@ -18,6 +18,21 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/moonsama').bundle
         case 'polkadot':
             return require('./old/definitions/polkadot').bundle
+        case 'astar':
+            return require('./old/definitions/astar').bundle
+        case 'shiden':
+            return require('./old/definitions/shiden').bundle
+        case 'crust':
+            return require('./old/definitions/crust').bundle
+        case 'statemint':
+        case 'statemine':
+            return require('./old/definitions/statemint').bundle
+        case 'subsocial':
+            return require('./old/definitions/subsocial').bundle
+        case 'kilt':
+            return require('./old/definitions/kilt').bundle
+        case 'hydradx':
+            return require('./old/definitions/hydradx').bundle
         default:
             return undefined
     }

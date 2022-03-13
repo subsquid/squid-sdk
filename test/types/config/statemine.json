@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/statemine",
+    "chainVersions": "../../data/chain/statemine/versions.json",
+    "typesBundle": "statemine",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  
