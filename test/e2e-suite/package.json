@@ -6,9 +6,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@polkadot/api": "6.12.1",
-    "@polkadot/types": "6.12.1",
-    "@polkadot/keyring": "^8.1.2",
+    "@polkadot/api": "^7.12.1",
+    "@polkadot/types": "^7.12.1",
+    "@polkadot/keyring": "^8.5.1",
     "@subsquid/util": "^0.0.4",
     "dotenv": "^10.0.0",
     "gql-test-client": "^0.0.0",

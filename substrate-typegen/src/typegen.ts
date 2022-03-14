@@ -213,7 +213,7 @@ export class Typegen {
                     'Checks whether the storage item is defined for the current chain version.'
                 ])
                 out.block(`get isExists(): boolean`, () => {
-                    return `this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`
+                    out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
                 })
             })
         })

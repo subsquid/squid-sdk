@@ -19,4 +19,11 @@ export class SystemAccountStorage {
     assert(this.isV1)
     return this.ctx._chain.getStorage(this.ctx.block.hash, 'System', 'Account', key)
   }
+
+  /**
+   * Checks whether the storage item is defined for the current chain version.
+   */
+  get isExists(): boolean {
+    return this.ctx._chain.getStorageItemTypeHash('System', 'Account') != null
+  }
 }
