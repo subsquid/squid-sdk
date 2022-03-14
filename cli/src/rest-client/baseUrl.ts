@@ -1,1 +1,3 @@
-export const baseUrl = 'https://saas.infra.gc.subsquid.io/api';
+import { getConfigField } from "../config";
+
+export const baseUrl = getConfigField('apiUrl');
