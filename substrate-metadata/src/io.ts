@@ -33,6 +33,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/kilt').bundle
         case 'hydradx':
             return require('./old/definitions/hydradx').bundle
+        case 'pioneer':
+            return require('./old/definitions/pioneer').bundle
         default:
             return undefined
     }
