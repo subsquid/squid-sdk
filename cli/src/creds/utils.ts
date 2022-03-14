@@ -3,14 +3,13 @@ import {
     writeFileSync
 } from 'fs';
 import fetch from 'node-fetch';
-import YAML from 'yaml';
 import { configFilePath, normalizeDefaults } from '../config';
 
 export function setCreds(creds: string): void {
     normalizeDefaults();
-    const config = YAML.parse(readFileSync(configFilePath, 'utf8'));
+    const config = JSON.parse(readFileSync(configFilePath, 'utf8'));
     config.credentials = creds;
-    writeFileSync(configFilePath, YAML.stringify(config), {
+    writeFileSync(configFilePath, JSON.stringify(config), {
         flag: 'w',
         encoding: 'utf8',
     });
@@ -21,7 +20,7 @@ export function getCreds(): string {
     let config;
     try {
         const rawConfig = readFileSync(configFilePath, 'utf8');
-        config = YAML.parse(rawConfig);
+        config = JSON.parse(rawConfig);
     } catch (e) {
         throw new Error(`Deployment key not found. Please obtain a new deployment key at https://app.subsquid.io`);
     }

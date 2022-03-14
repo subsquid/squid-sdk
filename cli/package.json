@@ -54,8 +54,7 @@
     "pgtools": "^0.3.2",
     "query-string": "^7.1.0",
     "simple-git": "^2.48.0",
-    "typeorm": "^0.2.41",
-    "yaml": "~1.10.2"
+    "typeorm": "^0.2.41"
   },
   "devDependencies": {
     "@subsquid/substrate-processor": "^0.5.0",

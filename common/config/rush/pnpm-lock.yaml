@@ -6648,11 +6648,6 @@ packages:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
     dev: false
 
-  /yaml/1.10.2:
-    resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
-    engines: {node: '>= 6'}
-    dev: false
-
   /yargs-parser/20.2.4:
     resolution: {integrity: sha512-WOkpgNhPTlE73h4VFAFsOnomJVaovO8VqLDzy5saChRBFQFBoMYirowyW+Q9HB4HFF4Z7VZTiG3iSzJJA29yRA==}
     engines: {node: '>=10'}
@@ -6859,7 +6854,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz_ioredis@4.28.5:
-    resolution: {integrity: sha512-Zfbwa7dn6PJrSbYCSmuyDoz/anJnFsur3/GDReEnwqmcKCzyZ9ZmqwM07TAG6DaD9MEPWUQWCdX+bHhJkm++uQ==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-cTDsLE6+DKba1H+FNlZDSIQRLMns7A0rXRaVqUiFs56U9N9y70r5FsuEqkP193Jahbovs9hHVjoBJaCQeltGdQ==, tarball: file:projects/cli.tgz}
     id: file:projects/cli.tgz
     name: '@rush-temp/cli'
     version: 0.0.0
@@ -6881,7 +6876,6 @@ packages:
       simple-git: 2.48.0
       typeorm: 0.2.45_ioredis@4.28.5+pg@8.7.3
       typescript: 4.5.5
-      yaml: 1.10.2
     transitivePeerDependencies:
       - '@sap/hana-client'
       - better-sqlite3
