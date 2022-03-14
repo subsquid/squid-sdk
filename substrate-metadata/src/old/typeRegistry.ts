@@ -160,7 +160,8 @@ export class OldTypeRegistry {
                     params: [param]
                 }
             }
-            case 'BTreeMap': {
+            case 'BTreeMap':
+            case 'BoundedBTreeMap': {
                 let [key, val] = assertTwoParams(type)
                 return this.normalizeType({
                     kind: 'named',
@@ -174,6 +175,7 @@ export class OldTypeRegistry {
                 }, pallet)
             }
             case 'BTreeSet':
+            case 'BoundedBTreeSet':
                 return this.normalizeType({
                     kind: 'named',
                     name: 'Vec',
