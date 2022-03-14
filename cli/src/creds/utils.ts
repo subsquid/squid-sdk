@@ -1,40 +1,36 @@
 import {
     readFileSync,
-    writeFileSync,
-    existsSync,
-    mkdirSync,
-    unlinkSync,
+    writeFileSync
 } from 'fs';
-import { resolve } from 'path';
-import { homedir } from 'os';
 import fetch from 'node-fetch';
-
-export const credentialsDirectory = resolve(homedir(), '.hydra-cli');
-export const credentialsFilePath = resolve(credentialsDirectory, 'credentials');
+import YAML from 'yaml';
+import { configFilePath, normalizeDefaults } from '../config';
 
 export function setCreds(creds: string): void {
-    if (!existsSync(credentialsDirectory)) {
-        mkdirSync(credentialsDirectory);
-    }
-    writeFileSync(credentialsFilePath, creds, {
+    normalizeDefaults();
+    const config = YAML.parse(readFileSync(configFilePath, 'utf8'));
+    config.credentials = creds;
+    writeFileSync(configFilePath, YAML.stringify(config), {
         flag: 'w',
         encoding: 'utf8',
     });
 }
 
 export function getCreds(): string {
-    let creds;
+    normalizeDefaults();
+    let config;
     try {
-        creds = readFileSync(credentialsFilePath, 'utf8');
+        const rawConfig = readFileSync(configFilePath, 'utf8');
+        config = YAML.parse(rawConfig);
     } catch (e) {
         throw new Error(`Deployment key not found. Please obtain a new deployment key at https://app.subsquid.io`);
     }
-    return creds;
+    return config.credentials;
 }
 
 export function deleteCreds(): void {
     try {
-        unlinkSync(credentialsFilePath);
+        setCreds('empty');
     } catch (e) {
         throw new Error(`Deployment key not found. Please obtain a new deployment key at https://app.subsquid.io`);
     }
