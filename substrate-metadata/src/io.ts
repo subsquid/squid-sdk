@@ -35,6 +35,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/hydradx').bundle
         case 'pioneer':
             return require('./old/definitions/pioneer').bundle
+        case 'parallel':
+            return require('./old/definitions/parallel').bundle
         default:
             return undefined
     }
