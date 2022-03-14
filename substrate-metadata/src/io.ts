@@ -37,6 +37,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/pioneer').bundle
         case 'parallel':
             return require('./old/definitions/parallel').bundle
+        case 'clover':
+            return require('./old/definitions/clover').bundle
         default:
             return undefined
     }
