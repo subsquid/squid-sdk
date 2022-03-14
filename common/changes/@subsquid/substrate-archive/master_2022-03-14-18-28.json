@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-archive",
+      "comment": "update polkadot",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-archive"
+}

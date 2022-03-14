@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "don't throw from `.isV*` methods of storage classes when item doesn't exist in current chain version",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "add `.isExists` property to storage classes to test for storage item existence",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
