@@ -1,4 +1,0 @@
-{
-  "chain": "wss://bifrost-rpc.liebi.com/ws",
-  "archive": "https://bifrost.indexer.gc.subsquid.io/v4/graphql"
-}

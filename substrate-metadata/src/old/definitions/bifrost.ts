@@ -1,5 +1,79 @@
 import {OldTypesBundle} from "../types"
-import { ormlAlias, ormlTypes } from "./orml"
+
+
+const orml = {
+    CallOf: 'Call',
+    DispatchTime: {
+        _enum: {
+            At: 'BlockNumber',
+            After: 'BlockNumber'
+        }
+    },
+    ScheduleTaskIndex: 'u32',
+    DelayedOrigin: {
+        delay: 'BlockNumber',
+        origin: 'PalletsOrigin'
+    },
+    AuthorityOrigin: 'DelayedOrigin',
+    StorageValue: 'Vec<u8>',
+    GraduallyUpdate: {
+        key: 'StorageKey',
+        targetValue: 'StorageValue',
+        perBlock: 'StorageValue'
+    },
+    StorageKeyBytes: 'Vec<u8>',
+    StorageValueBytes: 'Vec<u8>',
+    RpcDataProviderId: 'Text',
+    DataProviderId: 'u8',
+    TimestampedValue: {
+        value: 'OracleValue',
+        timestamp: 'Moment'
+    },
+    TimestampedValueOf: 'TimestampedValue',
+    OrderedSet: 'Vec<AccountId>',
+    OrmlAccountData: {
+        free: 'Balance',
+        reserved: 'Balance',
+        frozen: 'Balance'
+    },
+    OrmlBalanceLock: {
+        amount: 'Balance',
+        id: 'LockIdentifier'
+    },
+    AuctionInfo: {
+        bid: 'Option<(AccountId, Balance)>',
+        start: 'BlockNumber',
+        end: 'Option<BlockNumber>'
+    },
+    DelayedDispatchTime: {
+        _enum: {
+            At: 'BlockNumber',
+            After: 'BlockNumber'
+        }
+    },
+    DispatchId: 'u32',
+    Price: 'FixedU128',
+    OrmlVestingSchedule: {
+        start: 'BlockNumber',
+        period: 'BlockNumber',
+        periodCount: 'u32',
+        perPeriod: 'Compact<Balance>'
+    },
+    VestingScheduleOf: 'OrmlVestingSchedule',
+    OrmlCurrencyId: 'u8',
+    PoolInfo: {
+        totalShares: 'Share',
+        rewards: 'BTreeMap<OrmlCurrencyId, (Balance, Balance)>'
+    },
+    CompactBalance: 'Compact<Balance>',
+    PoolInfoV0: {
+        totalShares: 'Compact<Share>',
+        totalRewards: 'CompactBalance',
+        totalWithdrawnRewards: 'CompactBalance'
+    },
+    Share: 'u128',
+    OracleValue: 'FixedU128'
+}
 
 
 const bancor = {
@@ -367,8 +441,7 @@ const primitives = {
             'FromRelayChain',
             'FromSiblingParaChain'
         ]
-    },
-    Nonce: 'u64',
+    }
 }
 
 
@@ -460,7 +533,7 @@ const xcmV1 = {
 
 export const bundle: OldTypesBundle = {
     types: {
-        ...ormlTypes,
+        ...orml,
         ...bancor,
         ...bid,
         ...bridgeEos,
@@ -480,7 +553,10 @@ export const bundle: OldTypesBundle = {
         Keys: 'SessionKeys1'
     },
     typesAlias: {
-        ...ormlAlias,
+        tokens: {
+            AccountData: 'OrmlAccountData',
+            BalanceLock: 'OrmlBalanceLock'
+        },
         zenlinkProtocol: {
             AssetBalance: 'U128'
         }

@@ -1,8 +1,0 @@
-{
-  "outDir": "../src/bifrost",
-  "chainVersions": "../../data/chain/bifrost/versions.json",
-  "typesBundle": "bifrost",
-  "events": true,
-  "calls": true,
-  "storage": true
-}
