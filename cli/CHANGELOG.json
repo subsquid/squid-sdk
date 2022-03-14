@@ -2,6 +2,23 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/cli_v0.2.0",
+      "date": "Mon, 14 Mar 2022 18:47:21 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "dot config format improvements"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-processor\" from `^0.5.0` to `^0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.5",
       "tag": "@subsquid/cli_v0.1.5",
       "date": "Fri, 11 Mar 2022 07:38:31 GMT",

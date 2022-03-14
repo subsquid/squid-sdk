@@ -10,7 +10,7 @@ export interface OldStructDefinition {
 
 
 export interface OldEnumDefinition {
-    _enum: string[] | Record<string, OldTypeExp | OldStructDefinition | null>
+    _enum: string[] | Record<string, OldTypeExp | OldStructDefinition | null> | Record<string, number>
     _set?: undefined
 }
 

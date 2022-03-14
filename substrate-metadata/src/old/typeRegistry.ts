@@ -329,6 +329,14 @@ export class OldTypeRegistry {
                     fields: []
                 }
             })
+        } else if (isIndexedEnum(def)) {
+            variants = Object.entries(def._enum).map(([name, index]) => {
+                return {
+                    name,
+                    index,
+                    fields: []
+                }
+            })
         } else {
             let index = 0
             for (let name in def._enum) {
@@ -339,6 +347,7 @@ export class OldTypeRegistry {
                         type: this.use(type)
                     })
                 } else if (type != null) {
+                    assert(typeof type == 'object')
                     for (let key in type) {
                         fields.push({
                             name: key,
@@ -396,6 +405,15 @@ export class OldTypeRegistry {
     get(ti: Ti): Type {
         return assertNotNull(this.types[ti])
     }
+}
+
+
+function isIndexedEnum(def: OldEnumDefinition): def is {_enum: Record<string, number>} {
+    if (Array.isArray(def._enum)) return false
+    for (let key in def._enum) {
+        if (typeof def._enum[key] != 'number') return false
+    }
+    return true
 }
 
 
