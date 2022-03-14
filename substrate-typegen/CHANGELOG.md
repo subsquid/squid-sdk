@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Fri, 11 Mar 2022 07:38:31 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+
+## 0.4.0
+Mon, 14 Mar 2022 18:47:21 GMT
+
+### Minor changes
+
+- add `.isExists` property to storage classes to test for storage item existence
+
+### Patches
+
+- don't throw from `.isV*` methods of storage classes when item doesn't exist in current chain version
 
 ## 0.3.0
 Fri, 11 Mar 2022 07:38:31 GMT
