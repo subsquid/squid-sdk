@@ -39,6 +39,9 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/parallel').bundle
         case 'clover':
             return require('./old/definitions/clover').bundle
+        case 'manta':
+        case 'calamari':
+            return require('./old/definitions/calamari').bundle
         default:
             return undefined
     }
