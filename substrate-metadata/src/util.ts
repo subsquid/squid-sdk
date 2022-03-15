@@ -9,7 +9,7 @@ export function normalizeMetadataTypes(types: Type[]): Type[] {
             case TypeKind.Composite:
                 return  {
                     ...type,
-                    fields: camelCaseFields(type.fields)
+                    fields: normalizeFieldNames(type.fields)
                 }
             case TypeKind.Variant:
                 if (isOptionType(type)) {
@@ -25,7 +25,7 @@ export function normalizeMetadataTypes(types: Type[]): Type[] {
                         variants: type.variants.map(v => {
                             return {
                                 ...v,
-                                fields: camelCaseFields(v.fields)
+                                fields: normalizeFieldNames(v.fields)
                             }
                         })
                     }
@@ -52,10 +52,15 @@ function isOptionType(type: Type): boolean {
 }
 
 
-function camelCaseFields(fields: Field[]): Field[] {
+function normalizeFieldNames(fields: Field[]): Field[] {
     return fields.map(f => {
         if (f.name) {
-            return {...f, name: toCamelCase(f.name)}
+            let name = f.name
+            if (name.startsWith('r#')) {
+                name = name.slice(2)
+            }
+            name = toCamelCase(name)
+            return {...f, name}
         } else {
             return f
         }
