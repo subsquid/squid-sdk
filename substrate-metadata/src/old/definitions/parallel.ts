@@ -42,8 +42,24 @@ const loans = {
     MarketState: {
         _enum: ['Active', 'Pending', 'Supervision']
     },
+    PriceWithDecimal: {
+        price: 'Price',
+        decimal: 'u8'
+    },
     Liquidity: 'FixedU128',
-    Shortfall: 'FixedU128'
+    Shortfall: 'FixedU128',
+    ValidatorInfo: {
+        name: 'Option<Text>',
+        address: 'AccountId',
+        stakes: 'u128',
+        score: 'u128'
+    },
+    ValidatorSet: 'Vec<ValidatorInfo>',
+    UnstakeInfo: {
+        amount: 'Balance',
+        blockNumber: 'u32',
+        eraIndex: 'Option<u32>'
+    }
 }
 
 const liquidStaking = {
