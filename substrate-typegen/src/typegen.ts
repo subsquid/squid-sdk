@@ -209,6 +209,13 @@ export class Typegen {
                         out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
                     })
                 })
+                out.line()
+                out.blockComment([
+                    'Checks whether the storage item is defined for the current chain version.'
+                ])
+                out.block(`get isExists(): boolean`, () => {
+                    out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
+                })
             })
         })
 

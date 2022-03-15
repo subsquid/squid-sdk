@@ -183,8 +183,9 @@ export class Chain {
         return def
     }
 
-    getStorageItemTypeHash(prefix: string, name: string): string {
-        let item = this.getStorageItem(prefix, name)
+    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
+        let item = this.description.storage[prefix]?.[name]
+        if (item == null) return undefined
         let hash = (item as any)[this.storageHash]
         if (hash == null) {
             hash = (item as any)[this.storageHash] = getStorageItemTypeHash(this.description.types, item)

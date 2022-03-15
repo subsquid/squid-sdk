@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-archive",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/substrate-archive_v0.0.4",
+      "date": "Mon, 14 Mar 2022 18:47:21 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update polkadot"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/substrate-archive_v0.0.3",
       "date": "Fri, 11 Mar 2022 07:38:31 GMT",
