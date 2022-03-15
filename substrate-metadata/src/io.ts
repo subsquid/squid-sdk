@@ -45,6 +45,9 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/manta').bundle
         case 'basilisk':
             return require('./old/definitions/basilisk').bundle
+        case 'unique':
+        case 'quartz':
+            return require('./old/definitions/unique').bundle
         default:
             return undefined
     }
