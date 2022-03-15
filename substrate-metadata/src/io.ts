@@ -48,6 +48,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'unique':
         case 'quartz':
             return require('./old/definitions/unique').bundle
+        case 'darwinia':
+            return require('./old/definitions/darwinia').bundle
         default:
             return undefined
     }
