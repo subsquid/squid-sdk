@@ -50,6 +50,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/unique').bundle
         case 'darwinia':
             return require('./old/definitions/darwinia').bundle
+        case 'kintsugi':
+            return require('./old/definitions/kintsugi').bundle
         default:
             return undefined
     }
