@@ -58,7 +58,7 @@ export interface RequestHandler {
 }
 
 
-export function startHttpServer(handler: RequestHandler, port?: number | string): Promise<ListeningServer> {
+export function createHttpServer(handler: RequestHandler, port?: number | string): Promise<ListeningServer> {
     let server = stoppable(http.createServer(async (req, res) => {
         let ctx = new HttpContext(req as HttpRequest, res)
         try {

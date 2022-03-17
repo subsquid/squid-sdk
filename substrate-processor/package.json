@@ -22,7 +22,6 @@
     "@subsquid/scale-codec-json": "^0.1.2",
     "@subsquid/substrate-metadata": "^0.7.0",
     "@subsquid/typeorm-config": "^0.0.4",
-    "@subsquid/util": "^0.0.4",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
@@ -32,8 +31,7 @@
     "@subsquid/util-xxhash": "^0.0.0",
     "blake2b": "^2.1.4",
     "node-fetch": "^2.6.7",
-    "prom-client": "^14.0.1",
-    "stoppable": "^1.1.0"
+    "prom-client": "^14.0.1"
   },
   "peerDependencies": {
     "typeorm": "^0.2.41"
@@ -42,7 +40,6 @@
     "@types/mocha": "^9.1.0",
     "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
-    "@types/stoppable": "^1.1.1",
     "expect": "^27.4.6",
     "fast-check": "^2.21.0",
     "mocha": "^9.2.0",

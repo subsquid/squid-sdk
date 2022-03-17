@@ -1,21 +1,20 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {assertNotNull} from "@subsquid/util"
+import {Abort, assertNotNull, def} from "@subsquid/util-internal"
+import {ServiceManager} from "@subsquid/util-internal-service-manager"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
 import {Db, IsolationLevel} from "./db"
-import {DataBatch, Ingest} from "./ingest"
+import {Ingest} from "./ingest"
 import {EvmLogEvent, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
 import {QualifiedName, SubstrateEvent} from "./interfaces/substrate"
-import {ProgressTracker} from "./progress-tracker"
-import {Prometheus} from "./prometheus"
+import {Metrics} from "./metrics"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
-import {ServiceManager} from "./util/sm"
 
 
 export interface BlockHookOptions {
@@ -54,6 +53,7 @@ export class SubstrateProcessor {
     private src?: DataSource
     private typesBundle?: OldTypesBundle
     private isolationLevel?: IsolationLevel
+    private metrics = new Metrics()
     private running = false
 
     constructor(private name: string) {}
@@ -177,6 +177,19 @@ export class SubstrateProcessor {
         }
     }
 
+    @def
+    private wholeRange(): {range: Range}[] {
+        return createBatches(this.hooks, this.blockRange)
+    }
+
+    private updateProgressMetrics(lastProcessedBlock: number, time?: bigint): void {
+        let totalBlocksCount = getBlocksCount(this.wholeRange(), 0, this.metrics.getChainHeight())
+        let blocksLeft = getBlocksCount(this.wholeRange(), lastProcessedBlock + 1, this.metrics.getChainHeight())
+        this.metrics.setLastProcessedBlock(lastProcessedBlock)
+        this.metrics.setTotalNumberOfBlocks(totalBlocksCount)
+        this.metrics.setProgress(totalBlocksCount - blocksLeft)
+    }
+
     run(): void {
         if (this.running) return
         this.running = true
@@ -184,18 +197,12 @@ export class SubstrateProcessor {
     }
 
     private async _run(sm: ServiceManager): Promise<void> {
-        let prometheus = new Prometheus()
-        let prometheusServer = sm.add(await prometheus.serve(this.getPrometheusPort()))
-        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
-
         let db = sm.add(await Db.connect({
             processorName: this.name,
             isolationLevel: this.isolationLevel
         }))
 
         let {height: heightAtStart} = await db.init()
-
-        prometheus.setLastProcessedBlock(heightAtStart)
 
         let blockRange = this.blockRange
         if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
@@ -207,32 +214,27 @@ export class SubstrateProcessor {
             }
         }
 
-        let batches = createBatches(this.hooks, blockRange)
-
         let ingest = sm.add(new Ingest({
             archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
-            batches$: batches,
+            batches$: createBatches(this.hooks, blockRange),
             batchSize: this.batchSize,
-            metrics: prometheus
+            metrics: this.metrics
         }))
 
         let client = sm.add(new ResilientRpcClient(
             assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
         ))
 
-        let wholeRange = createBatches(this.hooks, this.blockRange)
-        let progress = new ProgressTracker(
-            getBlocksCount(wholeRange, heightAtStart),
-            wholeRange,
-            prometheus
-        )
+        await ingest.fetchArchiveHeight()
+        this.updateProgressMetrics(heightAtStart)
+        let prometheusServer = sm.add(await this.metrics.serve(this.getPrometheusPort()))
+        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
         await this.process(
             ingest,
             new ChainManager(client, this.typesBundle),
             db,
-            prometheus,
-            progress
+            sm.abort
         )
     }
 
@@ -240,17 +242,18 @@ export class SubstrateProcessor {
         ingest: Ingest,
         chainManager: ChainManager,
         db: Db,
-        prom: Prometheus,
-        progress: ProgressTracker
+        abort: Abort
     ): Promise<void> {
-        let batch: DataBatch | null
         let lastBlock = -1
-        while (batch = await ingest.nextBatch()) {
+        for await (let batch of ingest.getBlocks()) {
+            let beg = process.hrtime.bigint()
+
             let {handlers, blocks, range} = batch
-            let beg = blocks.length > 0 ? process.hrtime.bigint() : 0n
 
             for (let block of blocks) {
+                abort.assertNotAborted()
                 assert(lastBlock < block.block.height)
+
                 let chain = await chainManager.getChainForBlock(block.block)
                 await db.transact(block.block.height, async store => {
                     let ctx: BlockHandlerContext = {
@@ -282,9 +285,10 @@ export class SubstrateProcessor {
                             })
                         }
 
-                        if (extrinsic == null) continue
-                        for (let callHandler of handlers.extrinsics[event.name]?.[extrinsic.name] || []) {
-                            await callHandler({...ctx, event, extrinsic})
+                        if (extrinsic) {
+                            for (let callHandler of handlers.extrinsics[event.name]?.[extrinsic.name] || []) {
+                                await callHandler({...ctx, event, extrinsic})
+                            }
                         }
                     }
 
@@ -294,30 +298,25 @@ export class SubstrateProcessor {
                 })
 
                 lastBlock = block.block.height
-                prom.setLastProcessedBlock(lastBlock)
+                this.metrics.setLastProcessedBlock(lastBlock)
             }
 
             if (lastBlock < range.to) {
                 lastBlock = range.to
                 await db.setHeight(lastBlock)
-                prom.setLastProcessedBlock(lastBlock)
             }
 
             let end = process.hrtime.bigint()
-            progress.batch(end, batch)
+            this.metrics.batchProcessingTime(beg, end, batch.blocks.length)
+            this.updateProgressMetrics(lastBlock, end)
 
-            let status: string[] = []
-            status.push(`Last block: ${lastBlock}`)
-            if (blocks.length > 0) {
-                let speed = blocks.length * Math.pow(10, 9) / Number(end - beg)
-                let roundedSpeed = Math.round(speed)
-                status.push(`mapping: ${roundedSpeed} blocks/sec`)
-                prom.setMappingSpeed(speed)
-            }
-            status.push(`ingest: ${Math.round(prom.getIngestSpeed())} blocks/sec`)
-            status.push(`eta: ${timeInterval(progress.getSyncEtaSeconds())}`)
-            status.push(`progress: ${Math.round(progress.getSyncRatio() * 100)}%`)
-            console.log(status.join(', '))
+            console.log(
+                `Last block: ${lastBlock}, ` +
+                `mapping: ${Math.round(this.metrics.getMappingSpeed())} blocks/sec, ` +
+                `ingest: ${Math.round(this.metrics.getIngestSpeed())} blocks/sec, ` +
+                `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}, ` +
+                `progress: ${Math.round(this.metrics.getSyncRatio() * 100)}%`
+            )
         }
     }
 

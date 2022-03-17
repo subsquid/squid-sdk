@@ -192,13 +192,15 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 
-export function getBlocksCount(batches: { range: Range }[], chainHeight: number): number {
+export function getBlocksCount(batches: {range: Range}[], from: number, to: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
         let range = batches[i].range
-        if (chainHeight < range.from) return count
-        let to = Math.min(chainHeight, range.to ?? Infinity)
-        count += to - range.from + 1
+        if (to < range.from) return count
+        if (from > (range.to ?? Infinity)) continue
+        let beg = Math.max(from, range.from)
+        let end = Math.min(to, range.to ?? Infinity)
+        count += end - beg + 1
     }
     return count
 }

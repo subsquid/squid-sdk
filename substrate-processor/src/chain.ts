@@ -17,7 +17,7 @@ import {
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
 import * as sto from "./util/storage"

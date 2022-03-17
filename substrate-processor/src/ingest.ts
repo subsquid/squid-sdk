@@ -1,9 +1,9 @@
-import {assertNotNull, Output, unexpectedCase} from "@subsquid/util"
+import {AbortHandle, assertNotNull, def, unexpectedCase, wait} from "@subsquid/util-internal"
+import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Batch, DataHandlers} from "./batch"
 import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
-import {AbortHandle, Channel, wait} from "./util/async"
 import {hasProperties, unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
@@ -25,7 +25,7 @@ export interface DataBatch extends Batch {
 
 export interface IngestMetrics {
     setChainHeight(height: number): void
-    setIngestSpeed(blocksPerSecond: number): void
+    batchRequestTime(start: bigint, end: bigint, fetchedBlocksCount: number): void
 }
 
 
@@ -35,7 +35,7 @@ export interface IngestOptions {
     /**
      * Mutable array of batches to ingest.
      *
-     * Ingest will shift elements and modify the range of a head branch.
+     * Ingest will shift elements and modify the range of a head batch.
      */
     batches$: Batch[]
     batchSize: number
@@ -44,78 +44,91 @@ export interface IngestOptions {
 
 
 export class Ingest {
-    private out = new Channel<DataBatch | null>(3)
     private _abort = new AbortHandle()
     private archiveHeight = -1
     private readonly limit: number // maximum number of blocks in a single batch
     private readonly batches: Batch[]
-    private readonly ingestion: Promise<void | Error>
+    private readonly maxQueueSize = 3
+    private queue: Promise<DataBatch>[] = []
+    private fetchLoopRunning = false
 
     constructor(private options: IngestOptions) {
         this.batches = options.batches$
         this.limit = this.options.batchSize
         assert(this.limit > 0)
-        this.ingestion = this.run()
     }
 
-    nextBatch(): Promise<DataBatch | null> {
-        return this.out.take()
-    }
-
-    close(): Promise<Error | void> {
+    close(): void {
         this._abort.abort()
-        return this.ingestion
     }
 
-    private async run(): Promise<void | Error> {
-        try {
-            await this.loop()
-        } catch (err: any) {
-            return err
-        } finally {
-            this.out.close(null)
+    @def
+    async *getBlocks(): AsyncGenerator<DataBatch> {
+        while (this.batches.length) {
+            this.startFetchLoop()
+            yield await assertNotNull(this.queue[0])
+            this.queue.shift()
         }
     }
 
-    private async loop(): Promise<void> {
-        while (this.batches.length) {
-            this._abort.assertNotAborted()
+    private startFetchLoop(): void {
+        this._abort.assertNotAborted()
+        if (this.fetchLoopRunning) return
+        this.fetchLoopRunning = true
+        this.fetchLoop().finally(() => this.fetchLoopRunning = false)
+    }
+
+    private async fetchLoop(): Promise<void> {
+        while (this.batches.length && this.queue.length < this.maxQueueSize) {
             let batch = this.batches[0]
-            let archiveHeight = await this.waitForHeight(batch.range.from)
-            let fetchStart = process.hrtime.bigint()
-            let blocks = await this.batchFetch(batch, archiveHeight)
-            if (blocks.length) {
-                assert(blocks.length <= this.limit)
-                assert(batch.range.from <= blocks[0].block.height)
-                assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].block.height)
-                assert(archiveHeight >= blocks[blocks.length - 1].block.height)
-            }
+            let promise = this.waitForHeight(batch.range.from)
+                .then(async archiveHeight => {
+                    let metrics = this.options.metrics
+                    let beg = metrics && process.hrtime.bigint()
+                    let blocks = await this.batchFetch(batch, archiveHeight)
+                    if (metrics) {
+                        let end = process.hrtime.bigint()
+                        metrics.batchRequestTime(beg!, end, blocks.length)
+                    }
 
-            let from = batch.range.from
-            let to: number
-            if (blocks.length === this.limit && blocks[blocks.length - 1].block.height < rangeEnd(batch.range)) {
-                to = blocks[blocks.length - 1].block.height
-                batch.range = {from: to + 1, to: batch.range.to}
-            } else if (archiveHeight < rangeEnd(batch.range)) {
-                to = archiveHeight
-                batch.range = {from: to + 1, to: batch.range.to}
-            } else {
-                to = assertNotNull(batch.range.to)
-                this.batches.shift()
-            }
+                    if (blocks.length) {
+                        assert(blocks.length <= this.limit)
+                        assert(batch.range.from <= blocks[0].block.height)
+                        assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].block.height)
+                        assert(archiveHeight >= blocks[blocks.length - 1].block.height)
+                    }
 
-            if (this.options.metrics && blocks.length > 0) {
-                let fetchEnd = process.hrtime.bigint()
-                let duration = Number(fetchEnd - fetchStart)
-                let speed = blocks.length * Math.pow(10, 9) / duration
-                this.options.metrics.setIngestSpeed(speed)
-            }
+                    let from = batch.range.from
+                    let to: number
+                    if (blocks.length === this.limit && blocks[blocks.length - 1].block.height < rangeEnd(batch.range)) {
+                        to = blocks[blocks.length - 1].block.height
+                        batch.range = {from: to + 1, to: batch.range.to}
+                    } else if (archiveHeight < rangeEnd(batch.range)) {
+                        to = archiveHeight
+                        batch.range = {from: to + 1, to: batch.range.to}
+                    } else {
+                        to = assertNotNull(batch.range.to)
+                        this.batches.shift()
+                    }
 
-            await this._abort.guard(this.out.put({
-                blocks,
-                range: {from, to},
-                handlers: batch.handlers
-            }))
+                    return {
+                        blocks,
+                        range: {from, to},
+                        handlers: batch.handlers
+                    }
+                })
+
+            this.queue.push(promise)
+
+            let result = await promise.catch((err: unknown) => {
+                assert(err instanceof Error)
+                return err
+            })
+
+            if (result instanceof Error) {
+                this._abort.abort(result)
+                return
+            }
         }
     }
 
@@ -381,7 +394,7 @@ export class Ingest {
         return this.archiveHeight
     }
 
-    private async fetchArchiveHeight(): Promise<number> {
+    async fetchArchiveHeight(): Promise<number> {
         let res: any = await this.archiveRequest(`
             query {
                 indexerStatus {
