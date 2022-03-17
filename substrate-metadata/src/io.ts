@@ -44,8 +44,9 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'clover':
             return require('./old/definitions/clover').bundle
         case 'manta':
-        case 'calamari':
             return require('./old/definitions/manta').bundle
+        case 'calamari':
+            return require('./old/definitions/calamari').bundle
         case 'basilisk':
             return require('./old/definitions/basilisk').bundle
         case 'unique':
