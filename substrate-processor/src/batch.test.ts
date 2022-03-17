@@ -1,4 +1,4 @@
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import * as fc from "fast-check"
 import {createBatches} from "./batch"

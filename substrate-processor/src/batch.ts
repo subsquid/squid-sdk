@@ -1,4 +1,4 @@
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import {EvmContractAddress, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"

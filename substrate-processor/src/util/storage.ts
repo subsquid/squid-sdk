@@ -1,7 +1,7 @@
 import {HexSink} from "@subsquid/scale-codec"
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {StorageHasher} from "@subsquid/substrate-metadata"
-import {toHex} from "@subsquid/util"
+import {toHex} from "@subsquid/util-internal"
 import {xxhash128, xxhash64} from "@subsquid/util-xxhash"
 import blake2b from "blake2b"
 
