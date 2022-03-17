@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/acala",
+    "chainVersions": "../../data/chain/acala/versions.json",
+    "typesBundle": "acala",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  

@@ -18,6 +18,9 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/moonsama').bundle
         case 'polkadot':
             return require('./old/definitions/polkadot').bundle
+        case 'acala':
+        case 'karura':
+            return require('./old/definitions/acala').bundle
         case 'astar':
             return require('./old/definitions/astar').bundle
         case 'shiden':
