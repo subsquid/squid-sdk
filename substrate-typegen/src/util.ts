@@ -2,6 +2,11 @@ import {Primitive, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
 import {unexpectedCase} from "@subsquid/util"
 
 
+export function isEmptyVariant(type: Type): boolean {
+    return type.kind == TypeKind.Variant && type.variants.length == 0
+}
+
+
 export function asResultType(type: Type): {ok: Ti, err: Ti} | undefined {
     if (type.kind != TypeKind.Variant) return undefined
     if (type.variants.length != 2) return undefined
