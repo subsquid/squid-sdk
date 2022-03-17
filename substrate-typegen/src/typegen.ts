@@ -14,7 +14,7 @@ import {def, OutDir} from "@subsquid/util"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Interfaces} from "./ifs"
-import {groupBy, upperCaseFirst} from "./util"
+import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
 
 
 export interface ChainVersion {
@@ -192,22 +192,27 @@ export class Typegen {
                         out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
                     })
 
-                    out.line()
-                    out.blockComment(v.def.docs)
-                    let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                    let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
-                    let keyNames = keyTypes.map((type, idx) => {
-                        if (qualifiedTypes.length == 2) {
-                            return `key`
-                        } else {
-                            return `key${idx + 1}`
-                        }
-                    })
-                    let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`].concat(keyNames)
-                    out.block(`async getAsV${v.chain.specVersion}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
-                        out.line(`assert(this.isV${v.chain.specVersion})`)
-                        out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
-                    })
+                    if (isEmptyVariant(v.chain.description.types[v.def.value])) {
+                        // Meaning storage item can't hold any value
+                        // Let's just silently omit .get method for this case
+                    } else {
+                        out.line()
+                        out.blockComment(v.def.docs)
+                        let returnType = qualifiedTypes[qualifiedTypes.length - 1]
+                        let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
+                        let keyNames = keyTypes.map((type, idx) => {
+                            if (qualifiedTypes.length == 2) {
+                                return `key`
+                            } else {
+                                return `key${idx + 1}`
+                            }
+                        })
+                        let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`].concat(keyNames)
+                        out.block(`async getAsV${v.chain.specVersion}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                            out.line(`assert(this.isV${v.chain.specVersion})`)
+                            out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
+                        })
+                    }
                 })
                 out.line()
                 out.blockComment([
