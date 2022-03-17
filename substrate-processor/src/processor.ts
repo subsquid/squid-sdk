@@ -187,7 +187,7 @@ export class SubstrateProcessor {
         let blocksLeft = getBlocksCount(this.wholeRange(), lastProcessedBlock + 1, this.metrics.getChainHeight())
         this.metrics.setLastProcessedBlock(lastProcessedBlock)
         this.metrics.setTotalNumberOfBlocks(totalBlocksCount)
-        this.metrics.setProgress(totalBlocksCount - blocksLeft)
+        this.metrics.setProgress(totalBlocksCount - blocksLeft, time)
     }
 
     run(): void {

@@ -67,6 +67,7 @@ export class Metrics implements IngestMetrics {
         collectDefaultMetrics({register: this.registry})
         this.setLastProcessedBlock(-1)
         this.setChainHeight(-1)
+        this.blockProgress.setInitialValue(0)
     }
 
     setLastProcessedBlock(height: number): void {
@@ -77,8 +78,8 @@ export class Metrics implements IngestMetrics {
         this.chainHeight = height
     }
 
-    setProgress(blocksCount: number, time?: bigint): void {
-        this.blockProgress.setCurrentValue(blocksCount, time)
+    setProgress(blocksProcessedSoFar: number, time?: bigint): void {
+        this.blockProgress.setCurrentValue(blocksProcessedSoFar, time)
     }
 
     setTotalNumberOfBlocks(blocksCount: number): void {

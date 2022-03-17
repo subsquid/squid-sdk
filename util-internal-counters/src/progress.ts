@@ -34,7 +34,7 @@ export class Progress {
 
     tick(time?: bigint): void {
         time = time ?? process.hrtime.bigint()
-        let last = this.window[this.window.length - 1]
+        let last = this.window[this.window.length - 1] || {time, value: this.value}
         time = last.time > time ? last.time : time
         if (this.window.length > 2 && time - this.window[this.window.length - 2].time < this.windowGranularity) {
             last.time = time
