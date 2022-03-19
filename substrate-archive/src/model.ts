@@ -8,6 +8,7 @@ export interface Block {
     hash: string
     parent_hash: string
     timestamp: Date
+    spec_version: number
 }
 
 
@@ -38,6 +39,7 @@ export interface Extrinsic {
 export interface Call {
     id: string,
     index: number
+    block_id: string
     extrinsic_id: string
     name: string
     parent_id?: string
@@ -67,4 +69,5 @@ export interface BlockData {
     calls: Call[]
     metadata?: Metadata
     warnings?: Warning[]
+    last?: boolean
 }

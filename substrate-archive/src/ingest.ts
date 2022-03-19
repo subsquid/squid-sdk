@@ -76,6 +76,8 @@ export class Ingest {
                         hex: this.specInfo.rawMetadata,
                     }
                 }
+                block.header.spec_version = this.specInfo.specVersion
+                block.last = this.chainHeight === block.header.height
                 yield block
             }
         }
@@ -193,7 +195,8 @@ export class Ingest {
                 height: raw.blockHeight,
                 hash: raw.blockHash,
                 parent_hash: raw.block.header.parentHash,
-                timestamp: new Date(getBlockTimestamp(extrinsics))
+                timestamp: new Date(getBlockTimestamp(extrinsics)),
+                spec_version: 0 // to be set later
             },
             extrinsics,
             events,

@@ -56,6 +56,7 @@ export class CallParser {
         let index = this.numberOfCalls++
         let call: Call = {
             id: formatId(this.blockHeight, this.blockHash, index),
+            block_id: this.extrinsic.block_id,
             extrinsic_id: this.extrinsic.id,
             name,
             index,

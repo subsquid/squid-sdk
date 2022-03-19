@@ -1,5 +1,6 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {ServiceManager} from "@subsquid/util-internal-service-manager"
 import assert from "assert"
 import {Command, InvalidOptionArgumentError} from "commander"
@@ -9,7 +10,6 @@ import * as pg from "pg"
 import {migrate} from "postgres-migrations"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
-import {ProgressTracker, SpeedTracker} from "./util/tracking"
 
 
 ServiceManager.run(async sm => {
@@ -34,6 +34,9 @@ ServiceManager.run(async sm => {
         : readOldTypesBundle(options.typesBundle)
 
     let startBlock = options.startBlock || 0
+    let writeSpeed = new Speed()
+    let progress = new Progress()
+    progress.setInitialValue(startBlock)
 
     let clients = options.endpoint.map(url => sm.add(new ResilientRpcClient(url)))
 
@@ -54,7 +57,12 @@ ServiceManager.run(async sm => {
             })
             let height = await getDbHeight(db)
             startBlock = Math.max(startBlock, height == null ? 0 : height + 1)
-            sink = new PostgresSink(db)
+            progress.setCurrentValue(startBlock)
+            sink = new PostgresSink({
+                db,
+                speed: writeSpeed,
+                progress
+            })
         } else {
             let out = fs.createWriteStream(options.out, {flags: 'a'})
             sm.add({
@@ -66,19 +74,25 @@ ServiceManager.run(async sm => {
                     })
                 }
             })
-            sink = new WritableSink(out)
+            progress.setCurrentValue(startBlock)
+            sink = new WritableSink({
+                writable: out,
+                speed: writeSpeed,
+                progress
+            })
         }
     } else {
-        sink = new WritableSink(process.stdout)
+        progress.setCurrentValue(startBlock)
+        sink = new WritableSink({
+            writable: process.stdout,
+            speed: writeSpeed,
+            progress
+        })
     }
 
-    let blockProgress = new ProgressTracker()
-    let writeSpeed = new SpeedTracker()
-    let lastBlock = startBlock
-
     sm.every(5000, () => {
-        blockProgress.tick()
-        console.error(`last block: ${lastBlock}, processing: ${Math.round(blockProgress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
+        progress.tick()
+        console.error(`last block: ${progress.getCurrentValue()}, processing: ${Math.round(progress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
     let blocks = Ingest.getBlocks({
@@ -89,12 +103,7 @@ ServiceManager.run(async sm => {
 
     for await (let block of blocks) {
         sm.abort.assertNotAborted()
-        writeSpeed.mark()
         await sink.write(block)
-        let time = process.hrtime.bigint()
-        writeSpeed.inc(1, time)
-        blockProgress.inc(1, time)
-        lastBlock = block.header.height
     }
 })
 

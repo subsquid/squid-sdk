@@ -7,11 +7,6 @@ import {sub} from "../interfaces"
 import {Extrinsic} from "../model"
 
 
-// 0x789f1c09383940a7773420432ffd084a7767e29082d7fa0e8d744e796f6c3399
-// export const EVENT_STORAGE_KEY = '0x' + Buffer.from([
-//     ...blake2bHash("System", 16),
-//     ...blake2bHash("Events", 16)
-// ]).toString("hex")
 export const EVENT_STORAGE_KEY = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
 
 

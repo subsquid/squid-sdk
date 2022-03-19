@@ -1,8 +1,18 @@
 DB="postgres://postgres:postgres@localhost:29387/archive"
 
 
-polkadot:
-	@node lib/main.js --chain wss://rpc.polkadot.io --out $DB
+kusama:
+	@node lib/main.js --out $(DB) \
+		-e wss://kusama-rpc.polkadot.io \
+		-e wss://kusama-rpc.polkadot.io \
+		-e wss://kusama-rpc.polkadot.io \
+		-e wss://kusama-rpc.dwellir.com \
+		-e wss://kusama-rpc.dwellir.com \
+		-e wss://kusama-rpc.dwellir.com \
+		-e wss://kusama-rpc.dwellir.com \
+		-e wss://kusama.api.onfinality.io/public-ws \
+		-e wss://kusama.api.onfinality.io/public-ws \
+		-e wss://kusama.api.onfinality.io/public-ws
 
 
 up:
