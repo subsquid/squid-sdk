@@ -102,20 +102,20 @@ export class PostgresSink implements Sink {
     private async submit(): Promise<void> {
         let size = this.headerInsert.size
         this.speed?.start()
+        let metadataInsert = this.metadataInsert.take()
+        let headerInsert = this.headerInsert.take()
+        let extrinsicInsert = this.extrinsicInsert.take()
+        let callInsert = this.callInsert.take()
+        let eventInsert = this.eventInsert.take()
+        let warningInsert = this.warningInsert.take()
         await this.tx(async () => {
-            await this.metadataInsert.query(this.db)
-            await this.headerInsert.query(this.db)
-            await this.extrinsicInsert.query(this.db)
-            await this.callInsert.query(this.db)
-            await this.eventInsert.query(this.db)
-            await this.warningInsert.query(this.db)
+            await metadataInsert.query(this.db)
+            await headerInsert.query(this.db)
+            await extrinsicInsert.query(this.db)
+            await callInsert.query(this.db)
+            await eventInsert.query(this.db)
+            await warningInsert.query(this.db)
         })
-        this.metadataInsert.clear()
-        this.headerInsert.clear()
-        this.extrinsicInsert.clear()
-        this.callInsert.clear()
-        this.eventInsert.clear()
-        this.warningInsert.clear()
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()
             this.speed?.stop(size, time)
@@ -146,18 +146,22 @@ class Insert<E> {
     private sql: string
     private columns: Record<string, unknown[]>
 
-    constructor(private table: string, private mapping: TableColumns<E>) {
-        let names = Object.keys(mapping) as (keyof E)[]
-        let args = names.map((name, idx) => {
-            let param = '$' + (idx + 1)
-            let cast = mapping[name].cast
-            if (cast) {
-                param += '::' + cast + '[]'
-            }
-            return param
-        })
-        this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT * FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
-        this.columns = this.makeColumns()
+    constructor(private table: string, private mapping: TableColumns<E>, sql?: string, columns?: Record<string, unknown[]>) {
+        if (sql == null) {
+            let names = Object.keys(mapping) as (keyof E)[]
+            let args = names.map((name, idx) => {
+                let param = '$' + (idx + 1)
+                let cast = mapping[name].cast
+                if (cast) {
+                    param += '::' + cast + '[]'
+                }
+                return param
+            })
+            this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT * FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
+        } else {
+            this.sql = sql
+        }
+        this.columns = columns || this.makeColumns()
     }
 
     async query(db: pg.ClientBase): Promise<void> {
@@ -186,8 +190,10 @@ class Insert<E> {
         return 0
     }
 
-    clear(): void {
+    take(): Insert<E> {
+        let insert = new Insert(this.table, this.mapping, this.sql, this.columns)
         this.columns = this.makeColumns()
+        return insert
     }
 
     private makeColumns(): Record<string, unknown[]> {
