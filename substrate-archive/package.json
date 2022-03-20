@@ -5,7 +5,7 @@
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "bin": {
-    "squid-substrate-archiver": "./lib/main.js"
+    "squid-substrate-archive": "./lib/main.js"
   },
   "files": [
     "lib",

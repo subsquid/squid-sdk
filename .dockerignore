@@ -3,9 +3,12 @@
 # Build artifacts
 /*/lib/
 /test/*/lib
+/tools/*/lib
 /openreader/dist/
 
-# Exclude large files not needed for container
+# Large files not needed in docker containers
+/test/data/chain
+/test/balances/chainVersions.json
 
 # Rush temporary files
 /common/deploy/
@@ -17,3 +20,6 @@
 .git
 .idea
 *.log
+
+# Ignore Dockerfile, so that we can work on it without full rebuild each time
+Dockerfile

@@ -1,13 +1,21 @@
 ARG node=node:16-alpine
-ARG npm_registry=https://registry.npmjs.org/
 FROM ${node} AS node
-ARG npm_registry
 
 
-FROM node AS node-with-gyp
+FROM node AS builder
 RUN apk add g++ make python3
-
-
-FROM node-with-gyp AS substrate-archive
 WORKDIR /squid
-RUN NPM_CONFIG_REGISTRY=$npm_registry npm install -g @subsquid/substrate-archive
+ADD . .
+RUN node common/scripts/install-run-rush.js install
+RUN node common/scripts/install-run-rush.js build
+RUN cd cli && npx oclif manifest
+
+
+FROM builder AS substrate-archive-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-archive
+
+
+FROM node AS substrate-archive
+COPY --from=substrate-archive-builder /squid/common/deploy /squid
+WORKDIR /squid/substrate-archive
+CMD ["node", "./lib/main.js"]

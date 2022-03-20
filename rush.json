@@ -496,8 +496,8 @@
     {
       "packageName": "@subsquid/substrate-archive",
       "projectFolder": "substrate-archive",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
+      "shouldPublish": false,
+      "versionPolicyName": "docker-only"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
