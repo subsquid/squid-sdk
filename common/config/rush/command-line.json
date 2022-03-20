@@ -15,13 +15,13 @@
       "name": "unify-dependencies",
       "commandKind": "global",
       "summary": "Unify external dependencies across project",
-      "shellCommand": "node workspace/lib/unify.js"
+      "shellCommand": "node tools/workspace/lib/unify.js"
     },
     {
       "name": "add-change",
       "commandKind": "global",
       "summary": "Create change file for a package",
-      "shellCommand": "node workspace/lib/change.js"
+      "shellCommand": "node tools/workspace/lib/change.js"
     },
     {
       "name": "e2e",

@@ -5,6 +5,8 @@
 /test/*/lib
 /openreader/dist/
 
+# Exclude large files not needed for container
+
 # Rush temporary files
 /common/deploy/
 /common/temp/

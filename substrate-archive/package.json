@@ -1,12 +1,15 @@
 {
   "name": "@subsquid/substrate-archive",
-  "private": "true",
   "description": "Data indexer for substrate chains",
   "version": "0.0.0",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
+  "bin": {
+    "squid-substrate-archiver": "./lib/main.js"
+  },
   "files": [
-    "lib"
+    "lib",
+    "migrations"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc"
