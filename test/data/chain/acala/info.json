@@ -1,0 +1,4 @@
+{
+  "chain": "wss://acala-polkadot.api.onfinality.io/public-ws",
+  "archive": "https://acala.indexer.gc.subsquid.io/v4/graphql"
+}

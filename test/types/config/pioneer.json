@@ -1,0 +1,8 @@
+{
+  "outDir": "../src/pioneer",
+  "chainVersions": "../../data/chain/pioneer/versions.json",
+  "typesBundle": "pioneer",
+  "events": true,
+  "calls": true,
+  "storage": true
+}

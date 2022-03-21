@@ -1,0 +1,4 @@
+{
+  "chain": "wss://arch.subsocial.network",
+  "archive": "https://subsocial.indexer.gc.subsquid.io/v4/graphql"
+}

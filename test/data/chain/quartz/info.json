@@ -1,0 +1,4 @@
+{
+  "chain": "wss://quartz.unique.network",
+  "archive": "https://quartz.indexer.gc.subsquid.io/v4/graphql"
+}

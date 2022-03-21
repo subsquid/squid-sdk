@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/astar",
+    "chainVersions": "../../data/chain/astar/versions.json",
+    "typesBundle": "astar",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  

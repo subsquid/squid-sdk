@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/kilt",
+    "chainVersions": "../../data/chain/kilt/versions.json",
+    "typesBundle": "kilt",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  

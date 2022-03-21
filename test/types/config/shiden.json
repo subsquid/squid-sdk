@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/shiden",
+    "chainVersions": "../../data/chain/shiden/versions.json",
+    "typesBundle": "shiden",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  

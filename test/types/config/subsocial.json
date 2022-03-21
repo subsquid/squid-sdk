@@ -1,0 +1,9 @@
+{
+    "outDir": "../src/subsocial",
+    "chainVersions": "../../data/chain/subsocial/versions.json",
+    "typesBundle": "subsocial",
+    "events": true,
+    "calls": true,
+    "storage": true
+  }
+  
