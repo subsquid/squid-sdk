@@ -38,6 +38,11 @@ cd ./test/e2e-suite && ./run.sh
 
 To start using the framework and understand its versatility, clone or fork our [squid-template](https://github.com/subsquid/squid-template) repository and find out how convenient it makes to build an API based on blockchain data.
 
+### Documentation
+
+For more information about the project, visit our [documentation page](docs.subsquid.io).
+If you find any inconsistencies in the documentation (spelling mistakes, missing things, passages that are not easy to understand), please report it on our [documentation repositoriy](https://github.com/subsquid/docs).
+
 ## Contributing
 
 Subsquid is an OpenSource project, contributions are welcomed, encouraged and will be rewarded!
