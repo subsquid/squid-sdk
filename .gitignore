@@ -4,6 +4,9 @@ node_modules/
 # Tooling logs
 *.log
 
+# Our temprorary files (e.g. ad-hoc scripts)
+*.temp.*
+
 # Rush temporary files
 common/deploy/
 common/temp/

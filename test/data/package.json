@@ -6,9 +6,6 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "@polkadot/api": "^7.12.1",
-    "@polkadot/types": "^7.12.1",
-    "@polkadot/util-crypto": "^8.5.1",
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.0",
     "@subsquid/scale-codec-json": "^0.1.2",
