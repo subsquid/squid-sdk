@@ -182,6 +182,7 @@ export function isHex(value: unknown): value is string {
 
 export function decodeHex(value: unknown): Buffer {
     assert(typeof value == "string")
+    if (value == '0x') return Buffer.alloc(0)
     assert(isHex(value))
     return Buffer.from(value.slice(2), "hex")
 }
