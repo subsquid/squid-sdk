@@ -198,6 +198,9 @@ export class Typegen {
                         out.line()
                         out.blockComment(v.def.docs)
                         let returnType = qualifiedTypes[qualifiedTypes.length - 1]
+                        if (v.def.modifier == 'Optional') {
+                            returnType = `${returnType} | undefined`
+                        }
                         let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
                         let keyNames = keyTypes.map((type, idx) => {
                             if (qualifiedTypes.length == 2) {
