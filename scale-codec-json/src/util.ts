@@ -176,13 +176,11 @@ function toBigInt(len: bigint, val: unknown): bigint {
 
 
 export function isHex(value: unknown): value is string {
-    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})+$/.test(value)
+    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})*$/.test(value)
 }
 
 
 export function decodeHex(value: unknown): Buffer {
-    assert(typeof value == "string")
-    if (value == '0x') return Buffer.alloc(0)
     assert(isHex(value))
     return Buffer.from(value.slice(2), "hex")
 }
