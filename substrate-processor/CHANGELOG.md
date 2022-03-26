@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+This log was last generated on Sat, 26 Mar 2022 16:32:43 GMT and should not be manually modified.
+
+## 0.6.1
+Sat, 26 Mar 2022 16:32:43 GMT
+
+### Patches
+
+- implement missing storage hashers
 
 ## 0.6.0
 Mon, 14 Mar 2022 18:47:21 GMT

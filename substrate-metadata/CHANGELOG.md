@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+This log was last generated on Sat, 26 Mar 2022 16:32:43 GMT and should not be manually modified.
+
+## 0.8.0
+Sat, 26 Mar 2022 16:32:43 GMT
+
+### Minor changes
+
+- add type bundles for parachains
+
+### Patches
+
+- define old type for `OriginCaller`
 
 ## 0.7.0
 Mon, 14 Mar 2022 18:47:21 GMT

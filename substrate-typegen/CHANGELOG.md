@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+This log was last generated on Sat, 26 Mar 2022 16:32:43 GMT and should not be manually modified.
+
+## 0.4.1
+Sat, 26 Mar 2022 16:32:43 GMT
+
+### Patches
+
+- fix return type of optional storage items
+- don't generate `.get()` methods for storage items which can't hold any value
 
 ## 0.4.0
 Mon, 14 Mar 2022 18:47:21 GMT
