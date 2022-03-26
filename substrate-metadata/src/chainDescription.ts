@@ -379,13 +379,12 @@ class FromOld {
     private defineGenericCall(): void {
         this.registry.define('GenericCall', () => {
             let variants: Variant[] = []
-            this.forEachPallet((name, index, mod) => {
-                if (!mod.calls?.length) return
+            this.forEachPallet(mod => mod.calls?.length, (mod, index) => {
                 variants.push({
-                    name,
+                    name: mod.name,
                     index,
                     fields: [{
-                        type: this.makeCallEnum(name, mod.calls)
+                        type: this.makeCallEnum(mod.name, mod.calls!)
                     }]
                 })
             })
@@ -399,13 +398,12 @@ class FromOld {
     private defineGenericEvent(): void {
         this.registry.define('GenericEvent', () => {
             let variants: Variant[] = []
-            this.forEachPallet((name, index, mod) => {
-                if (!mod.events?.length) return
+            this.forEachPallet(mod => mod.events?.length, (mod, index) => {
                 variants.push({
-                    name,
+                    name: mod.name,
                     index,
                     fields: [{
-                        type: this.makeEventEnum(name, mod.events)
+                        type: this.makeEventEnum(mod.name, mod.events!)
                     }]
                 })
             })
@@ -497,7 +495,7 @@ class FromOld {
     @def
     private storage(): Storage {
         let storage: Storage = {}
-        this.forEachPallet((name, index, mod) => {
+        this.forEachPallet(null, mod => {
             if (mod.storage == null) return
             let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
             mod.storage.items.forEach(e => {
@@ -546,7 +544,7 @@ class FromOld {
     private defineOriginCaller(): void {
         this.registry.define('OriginCaller', () => {
             let variants: Variant[] = []
-            this.forEachPallet((name, index, mod) => {
+            this.forEachPallet(null, (mod, index) => {
                 let type: string
                 switch(mod.name) {
                     case 'Authority':
@@ -568,7 +566,7 @@ class FromOld {
                         return
                 }
                 variants.push({
-                    name,
+                    name: mod.name,
                     index,
                     fields: [{
                         type: this.registry.use(type)
@@ -583,15 +581,15 @@ class FromOld {
         })
     }
 
-    private forEachPallet(cb: (palletName: string, palletIndex: number, mod: AnyOldModule) => void): void {
+    private forEachPallet(filter: ((mod: AnyOldModule) => unknown) | null | undefined, cb: (mod: AnyOldModule, index: number) => void): void {
         switch(this.metadata.__kind) {
             case 'V9':
             case 'V10':
             case 'V11': {
                 let index = 0
                 this.metadata.value.modules.forEach(mod => {
-                    if (!mod.events?.length) return
-                    cb(mod.name, index, mod)
+                    if (filter && !filter(mod)) return
+                    cb(mod, index)
                     index += 1
                 })
                 return
@@ -599,8 +597,8 @@ class FromOld {
             case 'V12':
             case 'V13': {
                 this.metadata.value.modules.forEach(mod => {
-                    if (!mod.events?.length) return
-                    cb(mod.name, mod.index, mod)
+                    if (filter && !filter(mod)) return
+                    cb(mod, mod.index)
                 })
                 return
             }
