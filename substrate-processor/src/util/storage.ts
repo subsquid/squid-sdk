@@ -2,7 +2,7 @@ import {HexSink} from "@subsquid/scale-codec"
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {StorageHasher} from "@subsquid/substrate-metadata"
 import {toHex} from "@subsquid/util"
-import {xxhash128, xxhash64} from "@subsquid/util-xxhash"
+import {xxhash128, xxhash256, xxhash64} from "@subsquid/util-xxhash"
 import blake2b from "blake2b"
 
 
@@ -27,6 +27,8 @@ export function getKeyHash(hasher: StorageHasher, key: Uint8Array): string {
             return toHex(key)
         case 'Blake2_128':
             return toHex(blake2b(16).update(key).digest())
+        case 'Blake2_256':
+            return toHex(blake2b(32).update(key).digest())
         case 'Blake2_128Concat': {
             let digest = blake2b(16).update(key).digest()
             return toHex(digest) + toHex(key).slice(2)
@@ -42,6 +44,12 @@ export function getKeyHash(hasher: StorageHasher, key: Uint8Array): string {
             let digest = xxhash128().update(key).digest()
             let sink = new HexSink()
             sink.u128(digest)
+            return sink.toHex()
+        }
+        case 'Twox256': {
+            let digest = xxhash256().update(key).digest()
+            let sink = new HexSink()
+            sink.u256(digest)
             return sink.toHex()
         }
         default:
