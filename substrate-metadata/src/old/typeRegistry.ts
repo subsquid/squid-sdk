@@ -23,6 +23,7 @@ interface TypeAlias {
 export class OldTypeRegistry {
     private types: (Type | TypeAlias)[] = []
     private lookup = new Map<OldTypeExp, Ti>()
+    private definitions: Record<string, () => Type> = {}
 
     constructor(private oldTypes: OldTypes) {
     }
@@ -52,12 +53,8 @@ export class OldTypeRegistry {
         }
     }
 
-    create(typeName: string, fn: () => Type): Ti {
-        assert(!this.lookup.has(typeName), `Type ${typeName} was already defined`)
-        let ti = this.types.push({kind: TypeKind.DoNotConstruct}) - 1
-        this.lookup.set(typeName, ti)
-        this.types[ti] = fn()
-        return ti
+    define(typeName: string, fn: () => Type): void {
+        this.definitions[typeName] = fn
     }
 
     use(typeExp: OldTypeExp | texp.Type, pallet?: string): Ti {
@@ -219,6 +216,8 @@ export class OldTypeRegistry {
     }
 
     private buildNamedType(type: texp.NamedType): Type {
+        if (this.definitions[type.name]) return this.definitions[type.name]()
+
         let def = this.oldTypes.types[type.name]
         if (def) return this.buildFromDefinition(type.name, def)
 

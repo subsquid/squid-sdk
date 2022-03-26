@@ -1,7 +1,17 @@
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {assertNotNull, def, unexpectedCase} from "@subsquid/util"
 import assert from "assert"
-import type {EventMetadataV9, FunctionMetadataV9, Metadata, MetadataV14} from "./interfaces"
+import type {
+    EventMetadataV9,
+    FunctionMetadataV9,
+    Metadata,
+    MetadataV14,
+    ModuleMetadataV10,
+    ModuleMetadataV11,
+    ModuleMetadataV12,
+    ModuleMetadataV13,
+    ModuleMetadataV9
+} from "./interfaces"
 import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Storage, StorageHasher, StorageItem} from "./storage"
@@ -234,22 +244,25 @@ class FromOld {
 
     constructor(private metadata: Metadata, oldTypes: OldTypes) {
         this.registry = new OldTypeRegistry(oldTypes)
+        this.defineGenericExtrinsicEra()
+        this.defineGenericLookupSource()
+        this.defineOriginCaller()
+        this.defineGenericCall()
+        this.defineGenericEvent()
+        this.defineGenericSignature()
     }
 
     convert(): ChainDescription {
-        // order is important
-        this.extrinsicEra()
-        this.lookupSource()
-        let call = this.call()
-        let event = this.event()
         // let signature = this.signature()
+        let call = this.registry.use('GenericCall')
+        let event = this.registry.use('GenericEvent')
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
         return {
             types: this.registry.getTypes(),
-            call,
             // signature,
+            call,
             event,
             eventRecord,
             eventRecordList,
@@ -257,30 +270,8 @@ class FromOld {
         }
     }
 
-    @def
-    private call(): Ti {
-        return this.registry.create('GenericCall', () => {
-            let variants: Variant[] = []
-            this.forEachPallet_Call((palletName, index, calls) => {
-                let fields = [
-                    {type: this.makeCallEnum(palletName, calls)}
-                ]
-                variants.push({
-                    name: palletName,
-                    index,
-                    fields
-                })
-            })
-            return {
-                kind: TypeKind.Variant,
-                variants: variants
-            }
-        })
-    }
-
-    @def
-    private signature(): Ti {
-        return this.registry.create("GenericSignature", () => {
+    private defineGenericSignature(): void {
+        this.registry.define("GenericSignature", () => {
             return {
                 kind: TypeKind.Composite,
                 fields: [
@@ -358,9 +349,8 @@ class FromOld {
         }
     }
 
-    @def
-    private extrinsicEra(): Ti {
-        return this.registry.create('GenericExtrinsicEra', () => {
+    private defineGenericExtrinsicEra(): void {
+        this.registry.define('GenericExtrinsicEra', () => {
             let variants: Variant[] = []
 
             variants.push({
@@ -386,17 +376,37 @@ class FromOld {
         })
     }
 
-    @def
-    private event(): Ti {
-        return this.registry.create('GenericEvent', () => {
+    private defineGenericCall(): void {
+        this.registry.define('GenericCall', () => {
             let variants: Variant[] = []
-            this.forEachPallet_Event((palletName, index, events) => {
+            this.forEachPallet((name, index, mod) => {
+                if (!mod.calls?.length) return
                 variants.push({
-                    name: palletName,
+                    name,
                     index,
-                    fields: [
-                        {type: assertNotNull(this.makeEventEnum(palletName, events))}
-                    ]
+                    fields: [{
+                        type: this.makeCallEnum(name, mod.calls)
+                    }]
+                })
+            })
+            return {
+                kind: TypeKind.Variant,
+                variants: variants
+            }
+        })
+    }
+
+    private defineGenericEvent(): void {
+        this.registry.define('GenericEvent', () => {
+            let variants: Variant[] = []
+            this.forEachPallet((name, index, mod) => {
+                if (!mod.events?.length) return
+                variants.push({
+                    name,
+                    index,
+                    fields: [{
+                        type: this.makeEventEnum(name, mod.events)
+                    }]
                 })
             })
             return {
@@ -406,8 +416,7 @@ class FromOld {
         })
     }
 
-    private makeEventEnum(palletName: string, events?: EventMetadataV9[]): Ti | undefined {
-        if (!events?.length) return undefined
+    private makeEventEnum(palletName: string, events: EventMetadataV9[]): Ti {
         let variants = events.map((e, index) => {
             let fields = e.args.map(arg => {
                 return {
@@ -448,57 +457,8 @@ class FromOld {
         })
     }
 
-    private forEachPallet_Call(cb: (palletName: string, palletIndex: number, calls: FunctionMetadataV9[]) => void): void {
-        switch(this.metadata.__kind) {
-            case 'V9':
-            case 'V10':
-            case 'V11': {
-                let index = 0
-                this.metadata.value.modules.forEach(mod => {
-                    if (!mod.calls) return
-                    cb(mod.name, index, mod.calls)
-                    index += 1
-                })
-                return
-            }
-            case 'V12':
-            case 'V13': {
-                this.metadata.value.modules.forEach(mod => {
-                    if (!mod.calls) return
-                    cb(mod.name, mod.index, mod.calls)
-                })
-                return
-            }
-        }
-    }
-
-    private forEachPallet_Event(cb: (palletName: string, palletIndex: number, events: EventMetadataV9[]) => void): void {
-        switch(this.metadata.__kind) {
-            case 'V9':
-            case 'V10':
-            case 'V11': {
-                let index = 0
-                this.metadata.value.modules.forEach(mod => {
-                    if (!mod.events?.length) return
-                    cb(mod.name, index, mod.events)
-                    index += 1
-                })
-                return
-            }
-            case 'V12':
-            case 'V13': {
-                this.metadata.value.modules.forEach(mod => {
-                    if (!mod.events?.length) return
-                    cb(mod.name, mod.index, mod.events)
-                })
-                return
-            }
-        }
-    }
-
-    @def
-    private lookupSource(): Ti {
-        return this.registry.create('GenericLookupSource', () => {
+    private defineGenericLookupSource(): void {
+        this.registry.define('GenericLookupSource', () => {
             let variants: Variant[] = []
             for (let i = 0; i < 0xef; i++) {
                 variants.push({
@@ -537,59 +497,116 @@ class FromOld {
     @def
     private storage(): Storage {
         let storage: Storage = {}
+        this.forEachPallet((name, index, mod) => {
+            if (mod.storage == null) return
+            let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
+            mod.storage.items.forEach(e => {
+                let hashers: StorageHasher[]
+                let keys: Ti[]
+                switch(e.type.__kind) {
+                    case 'Plain':
+                        hashers = []
+                        keys = []
+                        break
+                    case 'Map':
+                        hashers = [e.type.hasher.__kind]
+                        keys = [this.registry.use(e.type.key, mod.name)]
+                        break
+                    case 'DoubleMap':
+                        hashers = [
+                            e.type.hasher.__kind,
+                            e.type.key2Hasher.__kind
+                        ]
+                        keys = [
+                            this.registry.use(e.type.key1, mod.name),
+                            this.registry.use(e.type.key2, mod.name)
+                        ]
+                        break
+                    case 'NMap':
+                        hashers = e.type.hashers.map(h => h.__kind)
+                        keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
+                        break
+                    default:
+                        throwUnexpectedCase()
+                }
+                items[e.name] = {
+                    modifier: e.modifier.__kind,
+                    hashers,
+                    keys,
+                    value: this.registry.use(e.type.value, mod.name),
+                    fallback: e.fallback,
+                    docs: e.docs
+                }
+            })
+            storage[mod.storage.prefix] = items
+        })
+        return storage
+    }
+
+    private defineOriginCaller(): void {
+        this.registry.define('OriginCaller', () => {
+            let variants: Variant[] = []
+            this.forEachPallet((name, index, mod) => {
+                let type: string
+                switch(mod.name) {
+                    case 'Authority':
+                        type = 'AuthorityOrigin'
+                        break
+                    case 'Council':
+                    case 'TechnicalCommittee':
+                    case 'GeneralCouncil':
+                        type = 'CollectiveOrigin'
+                        break
+                    case 'System':
+                        type = 'SystemOrigin'
+                        break
+                    case 'Xcm':
+                    case 'XcmPallet':
+                        type = 'XcmOrigin'
+                        break
+                    default:
+                        return
+                }
+                variants.push({
+                    name,
+                    index,
+                    fields: [{
+                        type: this.registry.use(type)
+                    }]
+                })
+            })
+            return {
+                kind: TypeKind.Variant,
+                variants,
+                path: ['OriginCaller']
+            }
+        })
+    }
+
+    private forEachPallet(cb: (palletName: string, palletIndex: number, mod: AnyOldModule) => void): void {
         switch(this.metadata.__kind) {
             case 'V9':
             case 'V10':
-            case 'V11':
-            case 'V12':
-            case 'V13':
+            case 'V11': {
+                let index = 0
                 this.metadata.value.modules.forEach(mod => {
-                    if (mod.storage == null) return
-                    let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
-                    mod.storage.items.forEach(e => {
-                        let hashers: StorageHasher[]
-                        let keys: Ti[]
-                        switch(e.type.__kind) {
-                            case 'Plain':
-                                hashers = []
-                                keys = []
-                                break
-                            case 'Map':
-                                hashers = [e.type.hasher.__kind]
-                                keys = [this.registry.use(e.type.key, mod.name)]
-                                break
-                            case 'DoubleMap':
-                                hashers = [
-                                    e.type.hasher.__kind,
-                                    e.type.key2Hasher.__kind
-                                ]
-                                keys = [
-                                    this.registry.use(e.type.key1, mod.name),
-                                    this.registry.use(e.type.key2, mod.name)
-                                ]
-                                break
-                            case 'NMap':
-                                hashers = e.type.hashers.map(h => h.__kind)
-                                keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
-                                break
-                            default:
-                                throwUnexpectedCase()
-                        }
-                        items[e.name] = {
-                            modifier: e.modifier.__kind,
-                            hashers,
-                            keys,
-                            value: this.registry.use(e.type.value, mod.name),
-                            fallback: e.fallback,
-                            docs: e.docs
-                        }
-                    })
-                    storage[mod.storage.prefix] = items
+                    if (!mod.events?.length) return
+                    cb(mod.name, index, mod)
+                    index += 1
                 })
-                break
-            default:
-                throwUnexpectedCase(this.metadata.__kind)
+                return
+            }
+            case 'V12':
+            case 'V13': {
+                this.metadata.value.modules.forEach(mod => {
+                    if (!mod.events?.length) return
+                    cb(mod.name, mod.index, mod)
+                })
+                return
+            }
         }
-        return storage
     }
 }
+
+
+type AnyOldModule = ModuleMetadataV9 | ModuleMetadataV10 | ModuleMetadataV11 | ModuleMetadataV12 | ModuleMetadataV13
