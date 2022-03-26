@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-xxhash",
+      "comment": "implement 256 byte hash",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-xxhash"
+}
