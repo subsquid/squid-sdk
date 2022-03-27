@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "0.4.1",
+      "tag": "@subsquid/substrate-typegen_v0.4.1",
+      "date": "Sat, 26 Mar 2022 16:32:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix return type of optional storage items"
+          },
+          {
+            "comment": "don't generate `.get()` methods for storage items which can't hold any value"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.4.0` to `^0.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.7.0` to `^0.8.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/substrate-typegen_v0.4.0",
       "date": "Mon, 14 Mar 2022 18:47:21 GMT",

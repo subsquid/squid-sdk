@@ -203,6 +203,10 @@ export class Codec {
     }
 
     private encodeTuple(def: TupleType, val: unknown, sink: Sink): void {
+        if (def.tuple.length == 0) {
+            assert(val == null)
+            return
+        }
         assert(Array.isArray(val) && def.tuple.length == val.length)
         for (let i = 0; i < val.length; i++) {
             this.encode(def.tuple[i], val[i], sink)
@@ -231,7 +235,7 @@ export class Codec {
                 this.encodeTuple(variant.def, val.value, sink)
                 break
             case 'struct':
-                this.encodeStruct(variant.def, val.value, sink)
+                this.encodeStruct(variant.def, val, sink)
                 break
             default:
                 throwUnexpectedCase()

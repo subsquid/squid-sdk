@@ -1,0 +1,8 @@
+{
+  "outDir": "../src/parallel",
+  "chainVersions": "../../data/chain/parallel/versions.json",
+  "typesBundle": "parallel",
+  "events": true,
+  "calls": true,
+  "storage": true
+}

@@ -1,0 +1,4 @@
+{
+  "chain": "wss://statemint-rpc.polkadot.io",
+  "archive": "https://statemint.indexer.gc.subsquid.io/v4/graphql"
+}

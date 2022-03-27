@@ -1,0 +1,4 @@
+{
+  "chain": "wss://calamari.api.onfinality.io/public-ws",
+  "archive": "https://calamari.indexer.gc.subsquid.io/v4/graphql"
+}

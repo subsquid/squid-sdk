@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Wed, 23 Feb 2022 11:18:26 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+
+## 0.5.1
+Sun, 27 Mar 2022 11:00:39 GMT
+
+### Patches
+
+- fix stack overflow when dealing with self-referencing entities and objects
 
 ## 0.5.0
 Wed, 23 Feb 2022 11:18:26 GMT

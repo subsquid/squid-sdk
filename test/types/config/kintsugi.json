@@ -1,0 +1,8 @@
+{
+  "outDir": "../src/kintsugi",
+  "chainVersions": "../../data/chain/kintsugi/versions.json",
+  "typesBundle": "kintsugi",
+  "events": true,
+  "calls": true,
+  "storage": true
+}

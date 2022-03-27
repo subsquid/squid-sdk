@@ -6,10 +6,10 @@ async function main(): Promise<void> {
     switch(process.argv[3]) {
         case 'save-events':
             return chain.saveEvents()
-        case 'save-events-by-polka':
-            return chain.saveEventsByPolka()
-        case 'test-events-decoding':
-            return chain.testEventsDecoding()
+        case 'test-events-scale-encoding-decoding':
+            return chain.testEventsScaleEncodingDecoding()
+        case 'test-compare-events-with-polka':
+            return chain.testCompareEventsWithPolka()
         case 'select-test-blocks':
             return chain.selectTestBlocks()
         case 'select-test-blocks-from-db':

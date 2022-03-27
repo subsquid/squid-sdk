@@ -1,0 +1,4 @@
+{
+  "chain": "wss://rpc-para.clover.finance",
+  "archive": "https://clover.indexer.gc.subsquid.io/v4/graphql"
+}

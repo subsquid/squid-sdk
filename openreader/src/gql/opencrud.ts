@@ -193,10 +193,12 @@ export function generateOpenCrudQueries(model: Model): string {
                 case 'enum':
                 case 'union':
                     return true
-                case 'object':
-                    if (hasFilters(getObject(propType.name))) {
+                case 'object': {
+                    let ref = getObject(propType.name)
+                    if (ref !== obj && hasFilters(ref)) {
                         return true
                     }
+                }
             }
         }
         return false

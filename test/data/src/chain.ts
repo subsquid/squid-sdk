@@ -1,6 +1,3 @@
-import {ApiPromise, WsProvider} from "@polkadot/api"
-import {GenericEventData} from "@polkadot/types"
-import {xxhashAsU8a} from "@polkadot/util-crypto"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {Codec} from "@subsquid/scale-codec"
 import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
@@ -122,7 +119,10 @@ export class Chain {
             for (let h of this.blocks()) {
                 if (saved.has(h)) continue
                 let blockHash = await client.call('chain_getBlockHash', [h])
-                let events = await client.call('state_getStorageAt', [this.eventStorageKey(), blockHash])
+                let events = await client.call('state_getStorageAt', [
+                    '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7',
+                    blockHash
+                ])
                 this.append(out, {blockNumber: h, events})
                 progress.block(h)
             }
@@ -139,49 +139,22 @@ export class Chain {
         )
     }
 
-    @def
-    eventStorageKey(): string {
-        let moduleHash = xxhashAsU8a('System', 128)
-        let itemHash = xxhashAsU8a('Events', 128)
-        return '0x' + Buffer.from([...moduleHash, ...itemHash]).toString('hex')
-    }
-
-    saveEventsByPolka(): Promise<void> {
-        return this.withPolka(async api => {
-            let out = this.item('events-by-polka.jsonl')
-            let saved = this.getSavedBlocks(out)
-            let progress = new ProgressReporter(this.blocks().length)
-            for (let h of this.blocks()) {
-                if (saved.has(h)) continue
-                let blockHash = await api.rpc.chain.getBlockHash(h)
-                let events: any[]
-                try {
-                    events = await api.query.system.events.at(blockHash)
-                } catch(e: any) {
-                    throw new Error(`Failed to fetch events for block ${h}:\n\n` + e.stack)
-                }
-                let normalizedEvents = events.map(e => {
-                    // normalize event presentation, so
-                    // that it follows rules for regular scale types
-                    return {
-                        phase: e.phase,
-                        event: {
-                            [e.event.section]: {
-                                [toCamelCase(e.event.method)]: normalizeGenericEventData(e.event.data)
-                            }
-                        },
-                        topics: e.topics
-                    }
-                })
-                this.append(out, {blockNumber: h, events: normalizedEvents})
-                progress.block(h)
-            }
+    testEventsScaleEncodingDecoding(): void {
+        let decoded = this.decodedEvents()
+        let encoded = decoded.map(b => {
+            let d = this.getVersion(b.blockNumber)
+            let events = d.codec.encodeToHex(d.description.eventRecordList, b.events)
+            return {blockNumber: b.blockNumber, events}
         })
+        let original = this.events()
+        for (let i = 0; i < decoded.length; i++) {
+            expect(encoded[i]).toEqual(original[i])
+        }
     }
 
-    testEventsDecoding(): void {
-        let squid = this.decodeEvents()
-        let polka = new Map(this.decodeEventsFromPolka().map(e => [e.blockNumber, e]))
+    testCompareEventsWithPolka(): void {
+        let squid = this.decodedEvents()
+        let polka = new Map(this.decodedEventsFromPolka().map(e => [e.blockNumber, e]))
         squid.forEach(se => {
             let pe = polka.get(se.blockNumber)
             if (pe == null) return
@@ -206,8 +179,9 @@ export class Chain {
         })
     }
 
-    decodeEvents(): DecodedBlockEvents[] {
-        let blocks: BlockEvents[] = this.readJsonLines('events.jsonl')
+    @def
+    decodedEvents(): DecodedBlockEvents[] {
+        let blocks = this.events()
         return blocks.map(b => {
             let d = this.getVersion(b.blockNumber)
             let events = d.codec.decodeBinary(d.description.eventRecordList, b.events)
@@ -215,7 +189,13 @@ export class Chain {
         })
     }
 
-    decodeEventsFromPolka(): DecodedBlockEvents[] {
+    @def
+    events(): BlockEvents[] {
+        return this.readJsonLines('events.jsonl')
+    }
+
+    @def
+    decodedEventsFromPolka(): DecodedBlockEvents[] {
         let blocks: DecodedBlockEvents[] = this.readJsonLines('events-by-polka.jsonl')
         return blocks.map(b => {
             let d = this.getVersion(b.blockNumber)
@@ -249,38 +229,6 @@ export class Chain {
                 calls: new eac.Registry(description.types, description.call)
             }
         })
-    }
-
-    async getMetadataByPolka(blockNumber: number) {
-        return this.withPolka(async api => {
-            let hash = await api.rpc.chain.getBlockHash(blockNumber)
-            return api.rpc.state.getMetadata(hash)
-        })
-    }
-
-    private async withPolka<T>(cb: (api: ApiPromise) => Promise<T>): Promise<T> {
-        let bundle = this.name == 'polkadot' || this.name == 'kusama'
-            ? undefined
-            : getOldTypesBundle(this.name)
-
-        let api = new ApiPromise({
-            provider: new WsProvider(this.info().chain),
-            types: bundle?.types as any,
-            typesAlias: bundle?.typesAlias,
-            typesBundle: bundle && {
-                spec: {
-                    [this.name]: {
-                        types: bundle.versions as any
-                    }
-                }
-            }
-        })
-        try {
-            await api.isReadyOrError
-            return await cb(api)
-        } finally {
-            await api.disconnect()
-        }
     }
 
     private async withRpcClient<T>(cb: (client: ResilientRpcClient) => Promise<T>): Promise<T> {
@@ -346,7 +294,8 @@ export class Chain {
     }
 
     private readJsonLines<T>(name: string): T[] {
-        let lines = fs.readFileSync(this.item(name), 'utf-8').split('\n')
+        if (!this.exists(name)) return []
+        let lines = this.read(name).split('\n')
         let out: T[] = []
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim()
@@ -358,7 +307,7 @@ export class Chain {
     }
 
     private readJson<T>(name: string): T {
-        let content = fs.readFileSync(this.item(name), 'utf-8')
+        let content = this.read(name)
         return JSON.parse(content)
     }
 
@@ -375,13 +324,21 @@ export class Chain {
         }
         fs.appendFileSync(this.item(file), content + '\n')
     }
+
+    private exists(name: string): boolean {
+        return fs.existsSync(this.item(name))
+    }
+
+    private read(name: string): string {
+        return fs.readFileSync(this.item(name), 'utf-8')
+    }
 }
 
 
 /**
  * Normalize event arguments, so that they follow rules for regular scale types
  */
-function normalizeGenericEventData(data: GenericEventData): any {
+function normalizeGenericEventData(data: any): any {
     if (data.length == 0) return null
     let fields = data.meta.fields
     let named = fields[0].name.isSome

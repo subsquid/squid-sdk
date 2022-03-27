@@ -1,6 +1,13 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+
+## 0.2.1
+Sun, 27 Mar 2022 11:00:39 GMT
+
+### Patches
+
+- fix code generation for self referencing models
 
 ## 0.2.0
 Mon, 14 Mar 2022 18:47:21 GMT

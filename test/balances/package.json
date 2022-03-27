@@ -7,16 +7,16 @@
   },
   "dependencies": {
     "@subsquid/graphql-server": "^0.1.5",
-    "@subsquid/substrate-metadata": "^0.7.0",
-    "@subsquid/substrate-processor": "^0.6.0",
+    "@subsquid/substrate-metadata": "^0.8.0",
+    "@subsquid/substrate-processor": "^0.6.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@subsquid/cli": "^0.2.0",
+    "@subsquid/cli": "^0.2.1",
     "@subsquid/substrate-metadata-explorer": "^0.0.7",
-    "@subsquid/substrate-typegen": "^0.4.0",
+    "@subsquid/substrate-typegen": "^0.4.1",
     "@types/node": "^16.11.22",
     "typescript": "~4.5.5"
   }
