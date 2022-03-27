@@ -177,3 +177,15 @@ type ScalarRaw @entity {
 type NestedScalars {
   float: Float
 }
+
+
+type SelfReferencedEntity @entity {
+  id: ID!
+  ref: SelfReferencedEntity
+  obj: SelfReferencedObject
+}
+
+
+type SelfReferencedObject {
+  ref: SelfReferencedObject
+}

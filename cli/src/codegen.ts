@@ -32,7 +32,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     function generateEntity(name: string, entity: Entity): void {
         index.line(`export * from "./${toCamelCase(name)}.model"`)
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
-        const imports = new ImportRegistry()
+        const imports = new ImportRegistry(name)
         imports.useTypeorm('Entity', 'Column', 'PrimaryColumn')
         out.lazy(() => imports.render(model))
         out.line()
@@ -189,7 +189,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     function generateObject(name: string, object: JsonObject): void {
         index.line(`export * from "./_${toCamelCase(name)}"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
-        const imports = new ImportRegistry()
+        const imports = new ImportRegistry(name)
         imports.useMarshal()
         imports.useAssert()
         out.lazy(() => imports.render(model))
@@ -343,7 +343,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     function generateUnion(name: string, union: Union): void {
         index.line(`export * from "./_${toCamelCase(name)}"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
-        const imports = new ImportRegistry()
+        const imports = new ImportRegistry(name)
         out.lazy(() => imports.render(model))
         union.variants.forEach((v) => imports.useModel(v))
         out.line()
@@ -494,12 +494,18 @@ class ImportRegistry {
     private marshal = false
     private assert = false
 
+    constructor(private owner: string) {
+    }
+
     useTypeorm(...names: string[]): void {
         names.forEach((name) => this.typeorm.add(name))
     }
 
     useModel(...names: string[]): void {
-        names.forEach((name) => this.model.add(name))
+        names.forEach((name) => {
+            if (name == this.owner) return
+            this.model.add(name)
+        })
     }
 
     useMarshal() {
