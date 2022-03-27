@@ -57,12 +57,12 @@
     },
     {
       "prefix": 5,
-      "network": "plasm",
-      "displayName": "Plasm Network",
-      "symbols": ["PLM"],
-      "decimals": [15],
+      "network": "astar",
+      "displayName": "Astar Network",
+      "symbols": ["ASTR"],
+      "decimals": [18],
       "standardAccount": "*25519",
-      "website": "https://plasmnet.io"
+      "website": "https://astar.network"
     },
     {
       "prefix": 6,
@@ -182,15 +182,6 @@
       "website": "https://darwinia.network/"
     },
     {
-      "prefix": 19,
-      "network": "geek",
-      "displayName": "GeekCash",
-      "symbols": ["GEEK"],
-      "decimals": [12],
-      "standardAccount": "*25519",
-      "website": "https://geekcash.org"
-    },
-    {
       "prefix": 20,
       "network": "stafi",
       "displayName": "Stafi",
@@ -230,7 +221,7 @@
       "prefix": 24,
       "network": "zero",
       "displayName": "ZERO",
-      "symbols": ["PLAY"],
+      "symbols": ["ZERO"],
       "decimals": [18],
       "standardAccount": "*25519",
       "website": "https://zero.io"
@@ -239,7 +230,7 @@
       "prefix": 25,
       "network": "zero-alphaville",
       "displayName": "ZERO Alphaville",
-      "symbols": ["PLAY"],
+      "symbols": ["ZERO"],
       "decimals": [18],
       "standardAccount": "*25519",
       "website": "https://zero.io"
@@ -252,6 +243,15 @@
       "decimals": [10],
       "standardAccount": "*25519",
       "website": "https://jupiter.patract.io"
+    },
+    {
+      "prefix": 27,
+      "network": "kabocha",
+      "displayName": "Kabocha",
+      "symbols": ["KAB"],
+      "decimals": [12],
+      "standardAccount": "*25519",
+      "website": "https://kabocha.network"
     },
     {
       "prefix": 28,
@@ -461,6 +461,33 @@
       "website": "https://composable.finance"
     },
     {
+      "prefix": 51,
+      "network": "oak",
+      "displayName": "OAK Network",
+      "symbols": ["OAK"],
+      "decimals": [10],
+      "standardAccount": "*25519",
+      "website": "https://oak.tech"
+    },
+    {
+      "prefix": 52,
+      "network": "KICO",
+      "displayName": "KICO",
+      "symbols": ["KICO"],
+      "decimals": [14],
+      "standardAccount": "*25519",
+      "website": "https://dico.io"
+    },
+    {
+      "prefix": 53,
+      "network": "DICO",
+      "displayName": "DICO",
+      "symbols": ["DICO"],
+      "decimals": [14],
+      "standardAccount": "*25519",
+      "website": "https://dico.io"
+    },
+    {
       "prefix": 55,
       "network": "xxnetwork",
       "displayName": "xx network",
@@ -623,6 +650,15 @@
       "website": "https://clover.finance"
     },
     {
+      "prefix": 131,
+      "network": "litmus",
+      "displayName": "Litmus Network",
+      "symbols": ["LIT"],
+      "decimals": [12],
+      "standardAccount": "*25519",
+      "website": "https://litentry.com/"
+    },
+    {
       "prefix": 136,
       "network": "altair",
       "displayName": "Altair",
@@ -677,6 +713,15 @@
       "website": "https://sora.org"
     },
     {
+      "prefix": 789,
+      "network": "geek",
+      "displayName": "GEEK Network",
+      "symbols": ["GEEK"],
+      "decimals": [18],
+      "standardAccount": "*25519",
+      "website": "https://geek.gl"
+    },
+    {
       "prefix": 1110,
       "network": "efinity",
       "displayName": "Efinity",
@@ -702,6 +747,15 @@
       "decimals": [18],
       "standardAccount": "secp256k1",
       "website": "https://moonbeam.network"
+    },
+    {
+      "prefix": 1337,
+      "network": "ajuna",
+      "displayName": "Ajuna Network",
+      "symbols": ["AJUN"],
+      "decimals": [12],
+      "standardAccount": "Sr25519",
+      "website": "https://ajuna.io"
     },
     {
       "prefix": 2007,
@@ -747,6 +801,15 @@
       "decimals": [18],
       "standardAccount": "*25519",
       "website": "https://subspace.network"
+    },
+    {
+      "prefix": 7391,
+      "network": "unique_mainnet",
+      "displayName": "Unique Network",
+      "symbols": ["UNQ"],
+      "decimals": [18],
+      "standardAccount": "*25519",
+      "website": "https://unique.network"
     },
     {
       "prefix": 10041,
