@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "fix code generation for self referencing models",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

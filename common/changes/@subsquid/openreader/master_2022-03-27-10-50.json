@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "fix stack overflow when dealing with self-referencing entities and objects",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
