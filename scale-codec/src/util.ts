@@ -12,19 +12,119 @@ export function throwUnexpectedCase(val?: unknown): never {
 }
 
 
-export function checkInt(val: unknown, typeName: string, min: number, max: number): asserts val is number {
+function checkInt(val: unknown, sign: string, bitSize: number, min: number, max: number): asserts val is number {
     let ok = Number.isInteger(val) && min <= (val as number) && max >= (val as number)
     if (!ok) throw new Error(
-        `Invalid ${typeName}: ${val}`
+        `Invalid ${sign}${bitSize}: ${val}`
     )
 }
 
 
-export function checkBigInt(val: unknown, typeName: string, min: bigint, max: bigint): asserts val is bigint {
+function checkBigInt(val: unknown, sign: string, bitSize: number, min: bigint, max: bigint): asserts val is bigint {
     let ok = typeof val == 'bigint' && min <= val && max >= val
     if (!ok) throw new Error(
-        `Invalid ${typeName}: ${val}`
+        `Invalid ${sign}${bitSize}: ${val}`
     )
+}
+
+
+export function checkSignedInt(val: unknown, bitSize: number): asserts val is number {
+    let min: number
+    let max: number
+    switch(bitSize) {
+        case 8:
+            min = -0x80
+            max = 0x7f
+            break
+        case 16:
+            min = -0x8000
+            max = 0x7fff
+            break
+        case 32:
+            min = -0x80000000
+            max = 0x7fffffff
+            break
+        default:
+            throwUnexpectedCase(bitSize)
+    }
+    checkInt(val, 'I', bitSize, min, max)
+}
+
+
+export function checkSignedBigInt(val: unknown, bitSize: number): asserts val is bigint {
+    let min: bigint
+    let max: bigint
+    switch(bitSize) {
+        case 64:
+            min = -(2n ** 63n)
+            max = 2n ** 63n - 1n
+            break
+        case 128:
+            min = -(2n ** 127n)
+            max = 2n ** 127n - 1n
+            break
+        case 256:
+            min = -(2n ** 255n)
+            max = 2n ** 255n - 1n
+            break
+        default:
+            throwUnexpectedCase(bitSize)
+    }
+    checkBigInt(val, 'I', bitSize, min, max)
+}
+
+
+export function checkUnsignedInt(val: unknown, bitSize: number): asserts val is number {
+    let max: number
+    switch(bitSize) {
+        case 8:
+            max = 0xff
+            break
+        case 16:
+            max = 0xffff
+            break
+        case 32:
+            max = 0xffffffff
+            break
+        default:
+            throwUnexpectedCase(bitSize)
+    }
+    checkInt(val, 'U', bitSize, 0, max)
+}
+
+
+export function checkUnsignedBigInt(val: unknown, bitSize: number): asserts val is bigint {
+    let max: bigint
+    switch(bitSize) {
+        case 64:
+            max = 0xffffffffffffffffn
+            break
+        case 128:
+            max = 2n ** 128n - 1n
+            break
+        case 256:
+            max = 2n ** 256n - 1n
+            break
+        default:
+            throwUnexpectedCase(bitSize)
+    }
+    checkBigInt(val, 'U', bitSize, 0n, max)
+}
+
+
+export function toSignedBigInt(val: unknown, bitSize: number): bigint {
+    assert(typeof val == 'string' || typeof val == 'number')
+    val = BigInt(val)
+    checkSignedBigInt(val, bitSize)
+    return val
+}
+
+
+export function toUnsignedBigInt(val: unknown, bitSize: number): bigint {
+    assert(typeof val == 'string' || typeof val == 'number')
+    val = BigInt(val)
+    checkUnsignedBigInt(val, bitSize)
+    return val
 }
 
 
@@ -44,4 +144,67 @@ export function unsignedIntByteLength(val: bigint): number {
         len += 1
     }
     return len
+}
+
+
+export function toJSON(val: unknown): any {
+    switch(typeof val) {
+        case 'bigint':
+            return val.toString()
+        case 'object':
+            if (Array.isArray(val)) {
+                return toJsonArray(val)
+            } else if (val instanceof Uint8Array) {
+                return toHex(val)
+            } else if (val instanceof Date) {
+                return val.toISOString()
+            } else {
+                return toJsonObject(val)
+            }
+        default:
+            return val
+    }
+}
+
+
+function toJsonArray(val: unknown[]): any[] {
+    let arr = new Array(val.length)
+    for (let i = 0; i < val.length; i++) {
+        arr[i] = toJSON(val[i])
+    }
+    return arr
+}
+
+
+function toJsonObject(val: any): any {
+    let result: any = {}
+    for (let key in val) {
+        result[key] = toJSON(val[key])
+    }
+    return result
+}
+
+
+export function toHex(data: Uint8Array): string {
+    if (Buffer.isBuffer(data)) {
+        return '0x' + data.toString('hex')
+    } else {
+        return '0x' + Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('hex')
+    }
+}
+
+
+export function isHex(value: unknown): value is string {
+    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})*$/.test(value)
+}
+
+
+export function decodeHex(value: unknown): Buffer {
+    assert(isHex(value))
+    return Buffer.from(value.slice(2), "hex")
+}
+
+
+export function isObject(value: unknown): boolean {
+    return value != null && typeof value == 'object'
 }

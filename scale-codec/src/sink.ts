@@ -1,5 +1,12 @@
 import assert from "assert"
-import {checkBigInt, checkInt, unsignedIntByteLength, UTF8_ENCODER} from "./util"
+import {
+    checkSignedBigInt,
+    checkSignedInt,
+    checkUnsignedBigInt,
+    checkUnsignedInt,
+    unsignedIntByteLength,
+    UTF8_ENCODER
+} from "./util"
 
 
 export abstract class Sink {
@@ -35,70 +42,70 @@ export abstract class Sink {
     }
 
     u8(val: number): void {
-        checkInt(val, 'U8', 0, 0xff)
+        checkUnsignedInt(val, 8)
         this.write(val)
     }
 
     u16(val: number): void {
-        checkInt(val, 'U16', 0, 0xffff)
+        checkUnsignedInt(val, 16)
         this.uncheckedU16(val)
     }
 
     u32(val: number): void {
-        checkInt(val, 'U32', 0, 0xffffffff)
+        checkUnsignedInt(val, 32)
         this.uncheckedU32(val)
     }
 
     u64(val: bigint): void {
-        checkBigInt(val, 'U64', 0n, 0xffffffffffffffffn)
+        checkUnsignedBigInt(val, 64)
         this.uncheckedU64(val)
     }
 
     u128(val: bigint): void {
-        checkBigInt(val, 'U128', 0n, 2n ** 128n - 1n)
+        checkUnsignedBigInt(val, 128)
         this.uncheckedU128(val)
     }
 
     u256(val: bigint): void {
-        checkBigInt(val, 'U128', 0n, 2n ** 256n - 1n)
+        checkUnsignedBigInt(val, 256)
         this.uncheckedU256(val)
     }
 
     i8(val: number): void {
-        checkInt(val, 'I8', -0x80, 0x7f)
+        checkSignedInt(val, 8)
         this.write((val + 256) % 256)
     }
 
     i16(val: number): void {
-        checkInt(val, 'I16', -0x8000, 0x7fff)
+        checkSignedInt(val, 16)
         let base = 2 ** 16
         val = (val + base) % base
         this.uncheckedU16(val)
     }
 
     i32(val: number): void {
-        checkInt(val, 'I16', -0x80000000, 0x7fffffff)
+        checkSignedInt(val, 32)
         let base = 2 ** 32
         val = (val + base) % base
         this.uncheckedU32(val)
     }
 
     i64(val: bigint): void {
-        checkBigInt(val, 'I64', -(2n ** 63n), 2n ** 63n - 1n)
+        checkSignedBigInt(val, 64)
         let base = 2n ** 64n
         val = (val + base) % base
         this.uncheckedU64(val)
     }
 
     i128(val: bigint): void {
-        checkBigInt(val, 'I128', -(2n ** 127n), 2n ** 127n - 1n)
+        checkSignedBigInt(val, 128)
         let base = 2n ** 128n
         val = (val + base) % base
         this.uncheckedU128(val)
     }
 
     i256(val: bigint): void {
-        checkBigInt(val, 'I256', -(2n ** 255n), 2n ** 255n - 1n)
+        checkSignedBigInt(val, 256)
         let base = 2n ** 256n
         val = (val + base) % base
         this.uncheckedU256(val)
