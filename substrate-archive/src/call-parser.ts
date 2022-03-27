@@ -3,7 +3,7 @@ import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {SpecInfo, sub} from "./interfaces"
 import * as model from "./model"
 import {Warning} from "./model"
-import {formatId, unwrapArguments} from "./util/misc"
+import {formatId, unwrapArguments} from "./util"
 
 
 interface Call extends model.Call {

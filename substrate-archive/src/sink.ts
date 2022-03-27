@@ -2,7 +2,7 @@ import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
-import {toJSON, toJsonString} from "./util/json"
+import {toJSON, toJsonString} from "./util"
 import WritableStream = NodeJS.WritableStream
 
 

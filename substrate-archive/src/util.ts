@@ -1,10 +1,11 @@
+import {JsonCodec} from "@subsquid/scale-codec"
 import {Metadata} from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {assertNotNull} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import blake2b from "blake2b"
-import {sub} from "../interfaces"
-import {Extrinsic} from "../model"
+import {sub} from "./interfaces"
+import {Extrinsic} from "./model"
 
 
 export const EVENT_STORAGE_KEY = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
@@ -102,4 +103,14 @@ export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Regist
 
 export function identity<T>(val: T): T {
     return val
+}
+
+
+export function toJsonString(val: unknown): string {
+    return JSON.stringify(toJSON(val))
+}
+
+
+export function toJSON(val: unknown): any {
+    return JsonCodec.encode(val)
 }

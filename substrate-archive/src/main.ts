@@ -3,7 +3,7 @@ import {readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {ServiceManager} from "@subsquid/util-internal-service-manager"
 import assert from "assert"
-import {Command, InvalidOptionArgumentError} from "commander"
+import {Command} from "commander"
 import * as fs from "fs"
 import path from "path"
 import * as pg from "pg"
@@ -118,24 +118,8 @@ async function getDbHeight(db: pg.ClientBase): Promise<number | undefined> {
 }
 
 
-function urlOptionValidator(protocol?: string[]): (s: string) => string {
-    return function (s) {
-        let url
-        try {
-            url = new URL(s)
-        } catch(e: any) {
-            throw new InvalidOptionArgumentError('invalid url')
-        }
-        if (protocol && !protocol.includes(url.protocol)) {
-            throw new InvalidOptionArgumentError(`invalid protocol, expected ${protocol.join(', ')}`)
-        }
-        return url.toString()
-    }
-}
-
-
 function positiveInteger(s: string): number {
     let n = parseInt(s)
-    assert(!isNaN(n) && n >= 0)
+    assert(Number.isInteger(n) && n >= 0)
     return n
 }
