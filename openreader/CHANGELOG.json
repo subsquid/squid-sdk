@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.5.1",
+      "tag": "@subsquid/openreader_v0.5.1",
+      "date": "Sun, 27 Mar 2022 11:00:39 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix stack overflow when dealing with self-referencing entities and objects"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.0",
       "tag": "@subsquid/openreader_v0.5.0",
       "date": "Wed, 23 Feb 2022 11:18:26 GMT",

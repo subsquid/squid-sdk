@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ss58
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+
+## 0.1.0
+Sun, 27 Mar 2022 11:00:39 GMT
+
+### Minor changes
+
+- update ss58 registry
 
 ## 0.0.4
 Mon, 07 Feb 2022 15:16:41 GMT
