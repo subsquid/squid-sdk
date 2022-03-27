@@ -1,5 +1,4 @@
-import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
-import {assertNotNull, def, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {
     EventMetadataV9,
@@ -22,7 +21,7 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    // signature: Ti
+    signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
@@ -54,7 +53,7 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            // signature: this.signature(),
+            signature: this.signature(),
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
@@ -155,7 +154,7 @@ class FromV14 {
                         keys = [e.type.key]
                         break
                     default:
-                        throwUnexpectedCase()
+                        throw unexpectedCase()
                 }
                 items[e.name] = {
                     modifier: e.modifier.__kind,
@@ -253,7 +252,7 @@ class FromOld {
     }
 
     convert(): ChainDescription {
-        // let signature = this.signature()
+        let signature = this.registry.use('GenericSignature')
         let call = this.registry.use('GenericCall')
         let event = this.registry.use('GenericEvent')
         let eventRecord = this.registry.use('EventRecord')
@@ -261,7 +260,7 @@ class FromOld {
         let storage = this.storage()
         return {
             types: this.registry.getTypes(),
-            // signature,
+            signature,
             call,
             event,
             eventRecord,
@@ -525,7 +524,7 @@ class FromOld {
                         keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
                         break
                     default:
-                        throwUnexpectedCase()
+                        throw unexpectedCase()
                 }
                 items[e.name] = {
                     modifier: e.modifier.__kind,

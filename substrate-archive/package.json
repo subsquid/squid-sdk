@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@subsquid/rpc-client": "^0.1.5",
-    "@subsquid/substrate-metadata": "^0.7.0",
-    "@subsquid/scale-codec": "^0.4.0",
+    "@subsquid/substrate-metadata": "^0.8.0",
+    "@subsquid/scale-codec": "^0.4.1",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-internal-service-manager": "^0.0.0",
@@ -28,7 +28,7 @@
     "postgres-migrations": "^5.3.0"
   },
   "devDependencies": {
-    "@types/node": "^16.11.7",
+    "@types/node": "^16.11.22",
     "@types/pg": "8.6.4",
     "dotenv": "^10.0.0"
   }

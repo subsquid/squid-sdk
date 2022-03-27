@@ -1,7 +1,6 @@
 import {HexSink} from "@subsquid/scale-codec"
-import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import {StorageHasher} from "@subsquid/substrate-metadata"
-import {toHex} from "@subsquid/util"
+import {toHex, unexpectedCase} from "@subsquid/util-internal"
 import {xxhash128, xxhash256, xxhash64} from "@subsquid/util-xxhash"
 import blake2b from "blake2b"
 
@@ -53,6 +52,6 @@ export function getKeyHash(hasher: StorageHasher, key: Uint8Array): string {
             return sink.toHex()
         }
         default:
-            throwUnexpectedCase(hasher)
+            throw unexpectedCase(hasher)
     }
 }

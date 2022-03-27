@@ -17,8 +17,9 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util": "^0.0.4",
-    "@subsquid/scale-codec": "^0.4.1"
+    "@subsquid/scale-codec": "^0.4.1",
+    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-naming": "^0.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.0",

@@ -1,4 +1,4 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Field, Primitive, Ti, Type, TypeKind, Variant} from "../types"
