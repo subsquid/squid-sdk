@@ -202,6 +202,7 @@ export class Ingest {
                 q.line('extrinsicsRoot')
                 q.line('runtimeVersion')
                 q.line('lastRuntimeUpgrade')
+                q.line('validatorId')
                 q.block('events: substrate_events(order_by: {indexInBlock: asc})', () => {
                     q.line('id')
                     q.line('name')
@@ -245,6 +246,7 @@ export class Ingest {
             i > 0 && assert(fetchedBlocks[i - 1].height < fetchedBlocks[i].height)
             let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
             block.timestamp = Number.parseInt(timestamp)
+            block.validatorId = block.validatorId.length > 0 ? block.validatorId : undefined
             for (let j = 0; j < events.length; j++) {
                 j > 0 && assert(events[j - 1].indexInBlock < events[j].indexInBlock)
                 let event = events[j]

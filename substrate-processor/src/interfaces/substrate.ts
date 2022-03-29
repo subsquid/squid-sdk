@@ -54,6 +54,11 @@ export interface SubstrateBlock {
     lastRuntimeUpgrade: unknown
 
     /**
+     * Hex string representing the block validator
+     */
+    validatorId?: string
+
+    /**
      * An array with basic event information
      */
     events: EventInfo[]
