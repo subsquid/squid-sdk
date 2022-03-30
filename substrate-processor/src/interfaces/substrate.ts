@@ -56,7 +56,7 @@ export interface SubstrateBlock {
     /**
      * Hex string representing the block validator
      */
-    validatorId?: string
+    validator?: string
 
     /**
      * An array with basic event information

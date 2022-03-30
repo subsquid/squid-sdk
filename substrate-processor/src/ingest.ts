@@ -244,9 +244,9 @@ export class Ingest {
 
         for (let i = 0; i < fetchedBlocks.length; i++) {
             i > 0 && assert(fetchedBlocks[i - 1].height < fetchedBlocks[i].height)
-            let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
+            let {timestamp, substrate_events: events, validatorId, ...block} = fetchedBlocks[i]
             block.timestamp = Number.parseInt(timestamp)
-            block.validatorId = block.validatorId.length > 0 ? block.validatorId : undefined
+            block.validator = validatorId.length > 0 ? validatorId : undefined
             for (let j = 0; j < events.length; j++) {
                 j > 0 && assert(events[j - 1].indexInBlock < events[j].indexInBlock)
                 let event = events[j]
