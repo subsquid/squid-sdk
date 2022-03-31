@@ -1,6 +1,7 @@
 import {Range} from "../util/range"
+import {BlockHandler, CallHandler, EventHandler} from "./dataHandlerContext"
+import {ContextRequest} from "./dataSelection"
 import {EvmLogHandler, EvmTopicSet} from "./evm"
-import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
 import {QualifiedName} from "./substrate"
 
 
@@ -13,14 +14,16 @@ export interface BlockHook {
 export interface EventHook {
     handler: EventHandler
     event: QualifiedName
+    data?: ContextRequest
     range?: Range
 }
 
 
-export interface ExtrinsicHook {
-    handler: ExtrinsicHandler
-    event: QualifiedName
-    extrinsic: QualifiedName
+export interface CallHook {
+    handler: CallHandler
+    call: QualifiedName
+    failures?: boolean
+    data?: ContextRequest
     range?: Range
 }
 
@@ -37,6 +40,6 @@ export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
     event: EventHook[]
-    extrinsic: ExtrinsicHook[]
+    call: CallHook[]
     evmLog: EvmLogHook[]
 }

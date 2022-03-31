@@ -1,16 +1,28 @@
-import {AbortHandle, assertNotNull, def, unexpectedCase, wait} from "@subsquid/util-internal"
+import {AbortHandle, assertNotNull, def, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
 import fetch from "node-fetch"
-import {Batch, DataHandlers} from "./batch"
-import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
-import {hasProperties, unique} from "./util/misc"
+import {Batch} from "./batch"
+import {ContextRequest} from "./interfaces/dataSelection"
+import * as gw from "./interfaces/gateway"
+import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
+import {printGqlArguments} from "./util/gql"
 import {rangeEnd} from "./util/range"
 
 
+export type LogItem = {
+    kind: 'call'
+    call: SubstrateCall
+    extrinsic: SubstrateExtrinsic
+} | {
+    kind: 'event'
+    event: SubstrateEvent
+}
+
+
 export interface BlockData {
-    block: SubstrateBlock
-    events: SubstrateEvent[]
+    header: SubstrateBlock
+    log: LogItem[]
 }
 
 
@@ -93,15 +105,15 @@ export class Ingest {
 
                     if (blocks.length) {
                         assert(blocks.length <= this.limit)
-                        assert(batch.range.from <= blocks[0].block.height)
-                        assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].block.height)
-                        assert(archiveHeight >= blocks[blocks.length - 1].block.height)
+                        assert(batch.range.from <= blocks[0].header.height)
+                        assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].header.height)
+                        assert(archiveHeight >= blocks[blocks.length - 1].header.height)
                     }
 
                     let from = batch.range.from
                     let to: number
-                    if (blocks.length === this.limit && blocks[blocks.length - 1].block.height < rangeEnd(batch.range)) {
-                        to = blocks[blocks.length - 1].block.height
+                    if (blocks.length === this.limit && blocks[blocks.length - 1].header.height < rangeEnd(batch.range)) {
+                        to = blocks[blocks.length - 1].header.height
                         batch.range = {from: to + 1, to: batch.range.to}
                     } else if (archiveHeight < rangeEnd(batch.range)) {
                         to = archiveHeight
@@ -138,248 +150,52 @@ export class Ingest {
         assert(from <= to)
 
         let hs = batch.handlers
-        let events = Object.keys(hs.events)
-        let notAllBlocksRequired = hs.pre.length == 0 && hs.post.length == 0
+        let includeAllBlocks = hs.pre.length > 0 || hs.post.length > 0
 
-        let blockArgs = {
+        let args: gw.BatchRequest = {
+            fromBlock: from,
+            toBlock: to,
             limit: this.limit,
-            order_by: {height: {$: 'asc'}},
-            where: {
-                height: {_gte: from, _lte: to},
-                _or: [] as any[]
+            includeAllBlocks
+        }
+
+        args.events = Object.entries(hs.events).map(([name, options]) => {
+            return {
+                name,
+                fields: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
             }
-        }
+        })
 
-        if (notAllBlocksRequired) {
-            events.forEach(name => {
-                blockArgs.where._or.push({
-                    events: {_contains: [{name}]}
-                })
-            })
-            let extrinsics = unique(Object.entries(hs.extrinsics).flatMap(e => Object.keys(e[1])))
-            extrinsics.forEach(name => {
-                blockArgs.where._or.push({
-                    extrinsics: {_contains: [{name}]}
-                })
-            })
-            if (hasProperties(hs.evmLogs)) {
-                let blocks = await this.fetchBlocksWithEvmData(from, to, hs.evmLogs)
-                blocks.evm_log_idx.forEach(({block_id}) => {
-                    blockArgs.where._or.push({id: {_eq: block_id}})
-                })
+        args.calls = Object.entries(hs.calls).map(([name, options]) => {
+            return {
+                name,
+                fields: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
             }
-        }
-
-        let eventArgs = {
-            order_by: {indexInBlock: {$: 'asc'}},
-            where: {_or: [] as any[]}
-        }
-
-        if (events.length > 0) {
-            eventArgs.where._or.push({
-                name: {_in: events}
-            })
-        }
-
-        for (let event in hs.extrinsics) {
-            let extrinsics = Object.keys(hs.extrinsics[event])
-            eventArgs.where._or.push({
-                name: {_eq: event},
-                extrinsic: {name: {_in: extrinsics}}
-            })
-        }
-
-        this.forEachEvmContract(hs.evmLogs, (contract, topics) => {
-            eventArgs.where._or.push({
-                evmLogAddress: {_eq: contract},
-                _or: topics.map(topic => {
-                    return {
-                        evmLogTopics: {_contains: topic}
-                    }
-                })
-            })
         })
 
         let q = new Output()
         q.block(`query`, () => {
-            q.block(`indexerStatus`, () => {
+            q.block(`status`, () => {
                 q.line('head')
             })
-            q.block(`substrate_block(${printArguments(blockArgs)})`, () => {
-                q.line('id')
-                q.line('hash')
-                q.line('height')
-                q.line('timestamp')
-                q.line('parentHash')
-                q.line('stateRoot')
-                q.line('extrinsicsRoot')
-                q.line('runtimeVersion')
-                q.line('lastRuntimeUpgrade')
-                q.block('events: substrate_events(order_by: {indexInBlock: asc})', () => {
+            q.block(`batch(${printGqlArguments(args)})`, () => {
+                q.block('header', () => {
                     q.line('id')
-                    q.line('name')
-                    q.line('extrinsic: extrinsicName')
-                    q.line('extrinsicId')
+                    q.line('height')
+                    q.line('hash')
+                    q.line('parentHash')
+                    q.line('timestamp')
+                    q.line('specVersion')
                 })
+                q.line('events')
+                q.line('calls')
                 q.line('extrinsics')
-                q.line()
-                q.block(`substrate_events(${printArguments(eventArgs)})`, () => {
-                    q.line('id')
-                    q.line('name')
-                    q.line('method')
-                    q.line('section')
-                    q.line('params')
-                    q.line('indexInBlock')
-                    q.line('blockNumber')
-                    q.line('blockTimestamp')
-                    if (hasProperties(hs.evmLogs)) {
-                        q.line('evmLogAddress')
-                        q.line('evmLogData')
-                        q.line('evmLogTopics')
-                        q.line('evmHash')
-                    }
-                    q.block('extrinsic', () => {
-                        q.line('id')
-                    })
-                })
             })
         })
         let gql = q.toString()
-        let response = await this.archiveRequest<any>(gql)
+        let response = await this.archiveRequest<{status: {head: number}, batch: gw.BlockData[]}>(gql)
         this.setArchiveHeight(response)
-        return this.joinExtrinsicsAndDoPostProcessing(response.substrate_block)
-    }
-
-    private async joinExtrinsicsAndDoPostProcessing(fetchedBlocks: any[]): Promise<BlockData[]> {
-        let extrinsicIds = new Set<string>()
-        let blocks = new Array<BlockData>(fetchedBlocks.length)
-
-        for (let i = 0; i < fetchedBlocks.length; i++) {
-            i > 0 && assert(fetchedBlocks[i - 1].height < fetchedBlocks[i].height)
-            let {timestamp, substrate_events: events, ...block} = fetchedBlocks[i]
-            block.timestamp = Number.parseInt(timestamp)
-            for (let j = 0; j < events.length; j++) {
-                j > 0 && assert(events[j - 1].indexInBlock < events[j].indexInBlock)
-                let event = events[j]
-                event.blockTimestamp = block.timestamp
-                if (event.extrinsic) {
-                    extrinsicIds.add(`"${event.extrinsic.id}"`)
-                }
-            }
-            blocks[i] = {block, events}
-        }
-
-        if (extrinsicIds.size == 0) return blocks
-
-        let q = new Output()
-        q.block(`query`, () => {
-            q.block(`substrate_extrinsic(where: {id: {_in: [${Array.from(extrinsicIds).join(', ')}]}})`, () => {
-                q.line('id')
-                q.line('name')
-                q.line('method')
-                q.line('section')
-                q.line('versionInfo')
-                q.line('era')
-                q.line('signer')
-                q.line('args')
-                q.line('hash')
-                q.line('tip')
-                q.line('indexInBlock')
-            })
-        })
-        let gql = q.toString()
-        let {substrate_extrinsic}: { substrate_extrinsic: SubstrateExtrinsic[] } = await this.archiveRequest(gql)
-
-        let extrinsics = new Map<string, SubstrateExtrinsic>() // lying a bit about type here
-        for (let i = 0; i < substrate_extrinsic.length; i++) {
-            let ex = substrate_extrinsic[i]
-            if (ex.tip != null) {
-                ex.tip = BigInt(ex.tip)
-            }
-            extrinsics.set(ex.id, ex)
-        }
-
-        for (let i = 0; i < blocks.length; i++) {
-            let events = blocks[i].events
-            for (let j = 0; j < events.length; j++) {
-                let event = events[j]
-                if (event.extrinsic) {
-                    event.extrinsic = assertNotNull(extrinsics.get(event.extrinsic.id))
-                }
-            }
-        }
-
-        return blocks
-    }
-
-    private fetchBlocksWithEvmData(from: number, to: number, logs: DataHandlers['evmLogs']): Promise<{evm_log_idx: {block_id: string}[]}> {
-        let args: any = {
-            limit: this.limit,
-            distinct_on: {$: 'block_id'},
-            where: {
-                block_id: {
-                    _gte: String(from).padStart(10, '0'),
-                    _lte: String(to).padStart(10, '0')
-                },
-                _or: []
-            }
-        }
-
-        this.forEachEvmContract(logs, (contract, topics) => {
-            args.where._or.push({
-                contract_address: {_eq: contract},
-                _or: (topics.length == 0 ? ['*'] : topics).map(topic => {
-                    return {
-                        topic: {_eq: topic}
-                    }
-                })
-            })
-        })
-
-        let q = new Output()
-        q.block('query', () => {
-            q.block(`evm_log_idx(${printArguments(args)})`, () => {
-                q.line('block_id')
-            })
-        })
-        let gql = q.toString()
-        return this.archiveRequest(gql)
-    }
-
-    /**
-     * Collects the set of mentioned topics per contract.
-     *
-     * If there is a handler without any topic restriction the resulting set will be empty.
-     * Otherwise, every topic mentioned in any restriction will be included in the resulting set.
-     *
-     * The ingester will fetch every evm.Log event which includes any mentioned topic (regardless it's position).
-     * This is a lame procedure, we'll rework it when new archive will be ready.
-     */
-    private forEachEvmContract(logs: DataHandlers['evmLogs'], cb: (contract: string, topics: string[]) => void): void {
-        for (let contract in logs) {
-            let topics: string[] = []
-            for (let h of logs[contract]) {
-                if (h.filter ==null) {
-                    return cb(contract, [])
-                }
-                let allEmpty = true
-                for (let set of h.filter) {
-                    if (set == null || Array.isArray(set) && set.length == 0) {
-                        continue
-                    }
-                    allEmpty = false
-                    if (Array.isArray(set)) {
-                        topics.push(...set)
-                    } else {
-                        topics.push(set)
-                    }
-                }
-                if (allEmpty) {
-                    return cb(contract, [])
-                }
-            }
-            cb(contract, unique(topics))
-        }
+        return response.batch.map(mapGatewayBlock)
     }
 
     private async waitForHeight(minimumHeight: number): Promise<number> {
@@ -395,19 +211,13 @@ export class Ingest {
     }
 
     async fetchArchiveHeight(): Promise<number> {
-        let res: any = await this.archiveRequest(`
-            query {
-                indexerStatus {
-                    head
-                }
-            }
-        `)
+        let res: any = await this.archiveRequest('query { status { head } }')
         this.setArchiveHeight(res)
         return this.archiveHeight
     }
 
-    private setArchiveHeight(res: { indexerStatus: { head: number } }): void {
-        let height = res.indexerStatus.head
+    private setArchiveHeight(res: {status: {head: number}}): void {
+        let height = res.status.head
         this.archiveHeight = Math.max(this.archiveHeight, height)
         this.options.metrics?.setChainHeight(this.archiveHeight)
     }
@@ -435,59 +245,41 @@ export class Ingest {
 }
 
 
-function printArguments(args: any): string {
-    let exp = _printArguments(args)
-    assert(exp[0] == '{' && exp[exp.length - 1] == '}')
-    return exp.slice(1, exp.length - 1)
-}
-
-
-function _printArguments(args: any): string {
-    if (args == null) return ''
-    switch(typeof args) {
-        case 'string':
-            return `"${args}"`
-        case 'number':
-            return ''+args
-        case 'object':
-            if (Array.isArray(args)) {
-                return `[${args.map(i => _printArguments(i)).filter(e => !!e).join(', ')}]`
-            } else if (args.$) {
-                return args.$
-            } else {
-                let fields: string[] = []
-                collectFields(args, fields)
-                return fields.length ? `{${fields.join(', ')}}` : ''
-            }
-        default:
-            throw unexpectedCase(typeof args)
+const CONTEXT_NESTING_SHAPE = {
+    event: {
+        call: {
+            parent: {}
+        },
+        extrinsic: {
+            call: {}
+        }
+    },
+    call: {
+        parent: {}
+    },
+    extrinsic: {
+        call: {}
     }
 }
 
 
-function collectFields(obj: any, fields: string[]): void {
-    for (let field in obj) {
-        let val = obj[field]
-        if (field == '_or') {
-            assert(Array.isArray(val))
-            collectOrExpressions(val, fields)
-        } else {
-            let exp = _printArguments(val)
-            if (exp) {
-                fields.push(`${field}: ${exp}`)
-            }
+function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any | undefined {
+    if (req == null || !req) return undefined
+    if (req === true) return shape ? {_all: true} : true
+    let fields: any = {}
+    for (let key in req) {
+        let val = toGatewayFields(req[key], shape?.[key])
+        if (val != null) {
+            fields[key] = val
         }
     }
+    return fields
 }
 
 
-function collectOrExpressions(or: any[], fields: string[]): void {
-    switch(or.length) {
-        case 0:
-            return
-        case 1:
-            return collectFields(or[0], fields)
-        default:
-            fields.push(`_or: ${_printArguments(or)}`)
+function mapGatewayBlock(block: gw.BlockData): BlockData {
+    return {
+        header: block.header,
+        log: []
     }
 }

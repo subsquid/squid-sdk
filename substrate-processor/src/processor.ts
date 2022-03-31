@@ -1,36 +1,20 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {Abort, assertNotNull, def} from "@subsquid/util-internal"
+import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {Abort, assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
 import {ServiceManager} from "@subsquid/util-internal-service-manager"
-import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
 import {Db, IsolationLevel} from "./db"
 import {Ingest} from "./ingest"
+import {BlockHandler, BlockHandlerContext, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
+import {ContextRequest} from "./interfaces/dataSelection"
 import {EvmLogEvent, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
-import {BlockHandler, BlockHandlerContext, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
 import {Hooks} from "./interfaces/hooks"
-import {QualifiedName, SubstrateEvent} from "./interfaces/substrate"
+import {SubstrateEvent} from "./interfaces/substrate"
 import {Metrics} from "./metrics"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
-
-
-export interface BlockHookOptions {
-    range?: Range
-}
-
-
-export interface EventHandlerOptions {
-    range?: Range
-}
-
-
-export interface ExtrinsicHandlerOptions {
-    range?: Range
-    triggerEvents?: QualifiedName[]
-}
 
 
 export interface DataSource {
@@ -45,8 +29,28 @@ export interface DataSource {
 }
 
 
+interface RangeOption {
+    range?: Range
+}
+
+
+interface DataSelection<R extends ContextRequest> {
+    data: R
+}
+
+
+interface NoDataSelection {
+    data?: undefined
+}
+
+
+interface MayBeDataSelection {
+    data?: ContextRequest
+}
+
+
 export class SubstrateProcessor {
-    protected hooks: Hooks = {pre: [], post: [], event: [], extrinsic: [], evmLog: []}
+    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -100,11 +104,12 @@ export class SubstrateProcessor {
     }
 
     addPreHook(fn: BlockHandler): void
-    addPreHook(options: BlockHookOptions, fn: BlockHandler): void
-    addPreHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
+    addPreHook(options: RangeOption, fn: BlockHandler): void
+    // addPreHook<R>(options: RangeOption & DataSelection<R>, fn: BlockHandler<R>): void
+    addPreHook(fnOrOptions: BlockHandler | RangeOption & MayBeDataSelection, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
-        let options: BlockHookOptions = {}
+        let options: RangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -115,11 +120,12 @@ export class SubstrateProcessor {
     }
 
     addPostHook(fn: BlockHandler): void
-    addPostHook(options: BlockHookOptions, fn: BlockHandler): void
-    addPostHook(fnOrOptions: BlockHandler | BlockHookOptions, fn?: BlockHandler): void {
+    addPostHook(options: RangeOption, fn: BlockHandler): void
+    // addPostHook<R>(options: RangeOption & DataSelection<R>, fn: BlockHandler<R>): void
+    addPostHook(fnOrOptions: BlockHandler | RangeOption & MayBeDataSelection, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
-        let options: BlockHookOptions = {}
+        let options: RangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -130,11 +136,12 @@ export class SubstrateProcessor {
     }
 
     addEventHandler(eventName: QualifiedName, fn: EventHandler): void
-    addEventHandler(eventName: QualifiedName, options: EventHandlerOptions, fn: EventHandler): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: EventHandlerOptions | EventHandler, fn?: EventHandler): void {
+    addEventHandler(eventName: QualifiedName, options: RangeOption & NoDataSelection, fn: EventHandler): void
+    addEventHandler<R>(eventName: QualifiedName, options: RangeOption & DataSelection<R>, fn: EventHandler<R> ): void
+    addEventHandler(eventName: QualifiedName, fnOrOptions: RangeOption & MayBeDataSelection | EventHandler, fn?: EventHandler): void {
         this.assertNotRunning()
         let handler: EventHandler
-        let options: EventHandlerOptions = {}
+        let options: RangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions === 'function') {
             handler = fnOrOptions
         } else {
@@ -148,26 +155,23 @@ export class SubstrateProcessor {
         })
     }
 
-    addExtrinsicHandler(extrinsicName: QualifiedName, fn: ExtrinsicHandler): void
-    addExtrinsicHandler(extrinsicName: QualifiedName, options: ExtrinsicHandlerOptions, fn: ExtrinsicHandler): void
-    addExtrinsicHandler(extrinsicName: QualifiedName, fnOrOptions: ExtrinsicHandler | ExtrinsicHandlerOptions, fn?: ExtrinsicHandler): void {
+    addCallHandler(callName: QualifiedName, fn: CallHandler): void
+    addCallHandler(callName: QualifiedName, options: RangeOption & NoDataSelection, fn: CallHandler): void
+    addCallHandler<R>(callName: QualifiedName, options: RangeOption & DataSelection<R>, fn: CallHandler<R>): void
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler | RangeOption & MayBeDataSelection, fn?: CallHandler): void {
         this.assertNotRunning()
-        let handler: ExtrinsicHandler
-        let options: ExtrinsicHandlerOptions = {}
+        let handler: CallHandler
+        let options:  RangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        let triggers = options.triggerEvents || ['system.ExtrinsicSuccess']
-        new Set(triggers).forEach(event => {
-            this.hooks.extrinsic.push({
-                event,
-                handler,
-                extrinsic: extrinsicName.split('.').map(n => toCamelCase(n)).join('.'),
-                range: options.range
-            })
+        this.hooks.call.push({
+            call: callName,
+            handler,
+            ...options
         })
     }
 
@@ -252,43 +256,35 @@ export class SubstrateProcessor {
 
             for (let block of blocks) {
                 abort.assertNotAborted()
-                assert(lastBlock < block.block.height)
+                assert(lastBlock < block.header.height)
 
-                let chain = await chainManager.getChainForBlock(block.block)
-                await db.transact(block.block.height, async store => {
+                let chain = await chainManager.getChainForBlock(block.header)
+
+                await db.transact(block.header.height, async store => {
                     let ctx: BlockHandlerContext = {
                         _chain: chain,
                         store,
-                        ...block
+                        block: block.header
                     }
 
                     for (let pre of handlers.pre) {
                         await pre(ctx)
                     }
 
-                    for (let event of block.events) {
-                        let extrinsic = event.extrinsic
-
-                        for (let eventHandler of handlers.events[event.name] || []) {
-                            await eventHandler({...ctx, event, extrinsic})
-                        }
-
-                        for (let evmLogHandler of this.getEvmLogHandlers(handlers.evmLogs, event)) {
-                            let log = event as EvmLogEvent
-                            await evmLogHandler({
-                                contractAddress: log.evmLogAddress,
-                                topics: log.evmLogTopics,
-                                data: log.evmLogData,
-                                txHash: log.evmHash,
-                                substrate: {...ctx, event, extrinsic},
-                                store
-                            })
-                        }
-
-                        if (extrinsic) {
-                            for (let callHandler of handlers.extrinsics[event.name]?.[extrinsic.name] || []) {
-                                await callHandler({...ctx, event, extrinsic})
-                            }
+                    for (let item of block.log) {
+                        switch(item.kind) {
+                            case 'event':
+                                for (let handler of handlers.events[item.event.name].handlers || []) {
+                                    await handler({...ctx, event: item.event})
+                                }
+                                break
+                            case 'call':
+                                for (let handler of handlers.calls[item.call.name].handlers || []) {
+                                    await handler({...ctx, call: item.call, extrinsic: item.extrinsic})
+                                }
+                                break
+                            default:
+                                throw unexpectedCase()
                         }
                     }
 
@@ -297,7 +293,7 @@ export class SubstrateProcessor {
                     }
                 })
 
-                lastBlock = block.block.height
+                lastBlock = block.header.height
                 this.metrics.setLastProcessedBlock(lastBlock)
             }
 

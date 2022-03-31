@@ -1,7 +1,7 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import assert from "assert"
 import {Connection, createConnection, EntityManager} from "typeorm"
-import {Store} from "./interfaces/handlerContext"
+import {Store} from "./interfaces/store"
 
 
 export interface ProcessingStatus {

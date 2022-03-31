@@ -1,20 +1,24 @@
 import {assertNotNull} from "@subsquid/util-internal"
 import {EvmContractAddress, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
-import {BlockHandler, EventHandler, ExtrinsicHandler} from "./interfaces/handlerContext"
+import {BlockHandler, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
 import {Hooks} from "./interfaces/hooks"
+import {ContextRequest} from "./interfaces/dataSelection"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
 
+interface AccurateHandlers<H> {
+    data?: ContextRequest
+    handlers: H[]
+}
+
+
 export interface DataHandlers {
     pre: BlockHandler[]
     post: BlockHandler[]
-    events: Record<QualifiedName, EventHandler[]>
-    /**
-     * Mapping of type `trigger event` -> `extrinsic` -> `extrinsic handler list`
-     */
-    extrinsics: Record<QualifiedName, Record<QualifiedName, ExtrinsicHandler[]>>
+    events: Record<QualifiedName, AccurateHandlers<EventHandler>>
+    calls: Record<QualifiedName, AccurateHandlers<CallHandler>>
     evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], handler: EvmLogHandler}[]>
 }
 
@@ -45,7 +49,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [hook.handler],
                 post: [],
                 events: {},
-                extrinsics: {},
+                calls: {},
                 evmLogs: {}
             }
         })
@@ -60,7 +64,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [hook.handler],
                 events: {},
-                extrinsics: {},
+                calls: {},
                 evmLogs: {}
             }
         })
@@ -75,15 +79,15 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [],
                 events: {
-                    [hook.event]: [hook.handler]
+                    [hook.event]: {data: hook.data, handlers: [hook.handler]}
                 },
-                extrinsics: {},
+                calls: {},
                 evmLogs: {}
             }
         })
     })
 
-    hooks.extrinsic.forEach(hook => {
+    hooks.call.forEach(hook => {
         let range = getRange(hook)
         if (!range) return
         batches.push({
@@ -92,8 +96,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [],
                 events: {},
-                extrinsics: {
-                    [hook.event]: {[hook.extrinsic]: [hook.handler]}
+                calls: {
+                    [hook.call]: {data: hook.data, handlers: [hook.handler]}
                 },
                 evmLogs: {}
             }
@@ -109,7 +113,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 pre: [],
                 post: [],
                 events: {},
-                extrinsics: {},
+                calls: {},
                 evmLogs: {
                     [hook.contractAddress]: [{
                         filter: hook.filter,
@@ -165,12 +169,35 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
     return {
         pre: a.pre.concat(b.pre),
         post: a.post.concat(b.post),
-        events: mergeMaps(a.events, b.events, (ha, hb) => ha.concat(hb)),
-        extrinsics: mergeMaps(a.extrinsics, b.extrinsics, (ea, eb) => {
-            return mergeMaps(ea, eb, (ha, hb) => ha.concat(hb))
-        }),
+        events: mergeMaps(a.events, b.events, mergeAccurateHandlers),
+        calls: mergeMaps(a.calls, b.calls, mergeAccurateHandlers),
         evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb)),
     }
+}
+
+
+function mergeAccurateHandlers<H>(
+    a: AccurateHandlers<H>,
+    b: AccurateHandlers<H>
+): AccurateHandlers<H> {
+    return {
+        data: mergeContextRequests(a.data, b.data),
+        handlers: a.handlers.concat(b.handlers)
+    }
+}
+
+
+function mergeContextRequests(a?: ContextRequest, b?: ContextRequest): ContextRequest | undefined {
+    if (a == null || b == null) return undefined
+
+    function merge(fa: any, fb: any): any {
+        if (fa === true || fb === true) return true
+        if (!fa) return fb
+        if (!fb) return fa
+        return mergeMaps(fa, fb, merge)
+    }
+
+    return mergeMaps(a, b, merge)
 }
 
 
@@ -184,7 +211,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
         }
     }
     for (let key in b) {
-        if (result[key] == null) {
+        if (a[key] == null) {
             result[key] = b[key]
         }
     }

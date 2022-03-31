@@ -1,14 +1,14 @@
 import {Chain} from "../chain"
 import {Range} from "../util/range"
-import {Store} from "./handlerContext"
-import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./substrate"
+import {Store} from "./store"
+import {SubstrateApplyExtrinsicEvent, SubstrateBlock, SubstrateEvent} from "./substrate"
 
 
 export type EvmContractAddress = string
 export type EvmTopic = string
 
 
-export interface EvmLogEvent extends SubstrateEvent {
+export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
     name: 'evm.Log'
     evmLogAddress: EvmContractAddress
     evmLogTopics: EvmTopic[]
@@ -23,10 +23,9 @@ export interface EvmLogHandlerContext {
     txHash: string
     contractAddress: EvmContractAddress
     substrate: {
-        _chain: Chain,
-        event: SubstrateEvent,
-        block: SubstrateBlock,
-        extrinsic?: SubstrateExtrinsic
+        _chain: Chain
+        event: SubstrateEvent
+        block: SubstrateBlock
     }
     store: Store
 }

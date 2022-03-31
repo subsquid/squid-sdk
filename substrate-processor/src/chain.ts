@@ -31,7 +31,8 @@ interface BlockInfo {
     height: number
     hash: string
     parentHash: string
-    runtimeVersion: SpecVersion | SubstrateRuntimeVersion
+    specName: string
+    specVersion: number
 }
 
 
@@ -44,9 +45,7 @@ export class ChainManager {
     }
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
-        let specVersion = typeof block.runtimeVersion == 'number'
-            ? block.runtimeVersion
-            : block.runtimeVersion.specVersion
+        let specVersion = block.specVersion
 
         let v = this.versions.get(specVersion)
         if (v != null && v.height < block.height) return v.chain
