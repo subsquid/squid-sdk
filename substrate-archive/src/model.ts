@@ -1,5 +1,5 @@
 import type {QualifiedName, SpecVersion} from "@subsquid/substrate-metadata"
-import {sub} from "./interfaces"
+import type {sub} from "./interfaces"
 
 
 export interface Block {
@@ -8,47 +8,50 @@ export interface Block {
     hash: string
     parent_hash: string
     timestamp: Date
-    spec_version: number
+    spec_id: string
 }
 
 
 export interface Event {
     id: string
     block_id: string
-    phase: sub.EventRecordPhase['__kind']
     index_in_block: number
     name: QualifiedName
+    phase: sub.EventRecordPhase['__kind']
     extrinsic_id?: string
     call_id?: string
     args: any
+    pos: number
 }
 
 
 export interface Extrinsic {
     id: string
     block_id: string
-    name: QualifiedName
     index_in_block: number
     signature?: sub.ExtrinsicSignature
     success: boolean
-    hash: Uint8Array
     call_id: string
+    hash: Uint8Array
+    pos: number
 }
 
 
 export interface Call {
     id: string,
-    index: number
+    parent_id?: string
     block_id: string
     extrinsic_id: string
-    name: string
-    parent_id?: string
     success: boolean
-    args: unknown
+    name: string
+    args: any
+    pos: number
 }
 
 
 export interface Metadata {
+    id: string
+    spec_name: string
     spec_version: SpecVersion
     block_height: number
     block_hash: string

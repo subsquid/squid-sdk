@@ -9,9 +9,9 @@ import type * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 
 
 export interface SpecInfo {
-    specVersion: SpecVersion
-    description: ChainDescription
+    specId: string
     rawMetadata: string
+    description: ChainDescription
     scaleCodec: ScaleCodec
     events: eac.Registry
     calls: eac.Registry

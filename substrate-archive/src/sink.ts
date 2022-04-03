@@ -20,6 +20,8 @@ export interface PostgresSinkOptions {
 
 export class PostgresSink implements Sink {
     private metadataInsert = new Insert<Metadata>('metadata', {
+        id: {cast: 'text'},
+        spec_name: {cast: 'text'},
         spec_version: {cast: 'int'},
         block_height: {cast: 'int'},
         block_hash: {cast: 'text'},
@@ -32,40 +34,41 @@ export class PostgresSink implements Sink {
         hash: {cast: 'text'},
         parent_hash: {cast: 'text'},
         timestamp: {cast: 'timestamptz'},
-        spec_version: {cast: 'int'}
+        spec_id: {cast: 'text'}
     })
 
     private extrinsicInsert = new Insert<Extrinsic>('extrinsic', {
         id: {cast: 'text'},
         block_id: {cast: 'text'},
-        name: {cast: 'text'},
         index_in_block: {cast: 'integer'},
         signature: {map: toJsonString, cast: 'jsonb'},
         success: {cast: 'bool'},
+        call_id: {cast: 'text'},
         hash: {cast: 'text', map: toJSON},
-        call_id: {cast: 'text'}
+        pos: {cast: 'int'}
     })
 
     private callInsert = new Insert<Call>('call', {
         id: {cast: 'text'},
-        index: {cast: 'integer'},
+        parent_id: {cast: 'text'},
         block_id: {cast: 'text'},
         extrinsic_id: {cast: 'text'},
-        name: {cast: 'text'},
-        parent_id: {cast: 'text'},
         success: {cast: 'bool'},
-        args: {map: toJsonString, cast: 'jsonb'}
+        name: {cast: 'text'},
+        args: {map: toJsonString, cast: 'jsonb'},
+        pos: {cast: 'int'}
     })
 
     private eventInsert = new Insert<Event>('event', {
         id: {cast: 'text'},
         block_id: {cast: 'text'},
+        index_in_block: {cast: 'int'},
         phase: {cast: 'text'},
-        index_in_block: {cast: 'integer'},
-        name: {cast: 'text'},
         extrinsic_id: {cast: 'text'},
         call_id: {cast: 'text'},
-        args: {map: toJsonString, cast: 'jsonb'}
+        name: {cast: 'text'},
+        args: {map: toJsonString, cast: 'jsonb'},
+        pos: {cast: 'int'}
     })
 
     private warningInsert = new Insert<Warning>('warning', {

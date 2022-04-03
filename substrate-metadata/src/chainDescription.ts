@@ -378,7 +378,7 @@ class FromOld {
     private defineGenericCall(): void {
         this.registry.define('GenericCall', () => {
             let variants: Variant[] = []
-            this.forEachPallet(mod => mod.calls?.length, (mod, index) => {
+            this.forEachPallet(mod => mod.calls, (mod, index) => {
                 variants.push({
                     name: mod.name,
                     index,

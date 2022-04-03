@@ -6,8 +6,7 @@ import {
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
     OldTypes,
-    OldTypesBundle,
-    SpecVersion
+    OldTypesBundle
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
@@ -16,7 +15,15 @@ import assert from "assert"
 import {CallParser} from "./call-parser"
 import {SpecInfo, sub} from "./interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "./model"
-import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, isPreV14, unwrapArguments} from "./util"
+import {
+    blake2bHash,
+    EVENT_STORAGE_KEY,
+    formatId,
+    getBlockTimestamp,
+    isPreV14,
+    splitSpecId,
+    unwrapArguments
+} from "./util"
 
 
 export interface IngestOptions {
@@ -69,14 +76,17 @@ export class Ingest {
                 let specInfo = this.specInfo
                 let block = this.parse(specInfo, raw)
                 if (await this.updateSpecInfo(raw.blockHeight) || raw.blockHeight == 0) {
+                    let [spec_name, spec_version] = splitSpecId(this.specInfo.specId)
                     block.metadata = {
-                        spec_version: this.specInfo.specVersion,
+                        id: this.specInfo.specId,
+                        spec_name,
+                        spec_version,
                         block_hash: raw.blockHash,
                         block_height: raw.blockHeight,
                         hex: this.specInfo.rawMetadata,
                     }
                 }
-                block.header.spec_version = this.specInfo.specVersion
+                block.header.spec_id = this.specInfo.specId
                 block.last = this.chainHeight === block.header.height
                 yield block
             }
@@ -141,6 +151,7 @@ export class Ingest {
 
     private parse(specInfo: SpecInfo, raw: RawBlockData): BlockData {
         let block_id = formatId(raw.blockHeight, raw.blockHash)
+
         let events: Event[] = raw.events == null ? [] : specInfo.scaleCodec.decodeBinary(specInfo.description.eventRecordList, raw.events)
             .map((e: sub.EventRecord, idx: number) => {
                 let {name, args} = unwrapArguments(e.event, specInfo.events)
@@ -155,11 +166,12 @@ export class Ingest {
                     index_in_block: idx,
                     name,
                     args,
-                    extrinsic_id
+                    extrinsic_id,
+                    pos: -1
                 }
             })
 
-        let extrinsics: (Extrinsic & {args: unknown})[] = raw.block.extrinsics
+        let extrinsics: (Extrinsic & {name: string, args: unknown})[] = raw.block.extrinsics
             .map((hex, idx) => {
                 let bytes = Buffer.from(hex.slice(2), 'hex')
                 let hash = blake2bHash(bytes, 32)
@@ -169,12 +181,13 @@ export class Ingest {
                     id: formatId(raw.blockHeight, raw.blockHash, idx),
                     block_id,
                     index_in_block: idx,
-                    name,
-                    signature: ex.signature,
                     success: true,
+                    signature: ex.signature,
+                    call_id: '',
                     hash,
+                    name,
                     args,
-                    call_id: ''
+                    pos: -1
                 }
             })
 
@@ -196,7 +209,7 @@ export class Ingest {
                 hash: raw.blockHash,
                 parent_hash: raw.block.header.parentHash,
                 timestamp: new Date(getBlockTimestamp(extrinsics)),
-                spec_version: 0 // to be set later
+                spec_id: '' // to be set later
             },
             extrinsics,
             events,
@@ -210,28 +223,31 @@ export class Ingest {
         let height = this.initialBlock == 0 ? 0 : this.initialBlock - 1
         let spec = await this.getSpec(client, height)
         if (this.typesBundle == null) {
-            this.typesBundle = getOldTypesBundle(spec.specName)
+            this.typesBundle = getOldTypesBundle(splitSpecId(spec.specId)[0])
         }
-        this._specInfo = await this.getSpecInfo(client, spec.blockHash, spec.specVersion)
+        this._specInfo = await this.getSpecInfo(client, spec.blockHash, spec.specId)
         this.chainHeight = await this.getChainHeight(client)
     }
 
     private async getSpecInfo(
         client: ResilientRpcClient,
         blockHash: string,
-        specVersion: number
+        specId: string
     ): Promise<SpecInfo> {
         let rawMetadata: string = await client.call("state_getMetadata", [blockHash])
         let metadata = decodeMetadata(rawMetadata)
         let oldTypes: OldTypes | undefined
         if (isPreV14(metadata)) {
-            oldTypes = getTypesFromBundle(assertNotNull(this.typesBundle), specVersion)
+            oldTypes = getTypesFromBundle(
+                assertNotNull(this.typesBundle),
+                splitSpecId(specId)[1]
+            )
         }
         let description = getChainDescriptionFromMetadata(metadata, oldTypes)
         return {
+            specId,
             description,
             rawMetadata,
-            specVersion,
             scaleCodec: new Codec(description.types),
             events: new eac.Registry(description.types, description.event),
             calls: new eac.Registry(description.types, description.call)
@@ -245,7 +261,7 @@ export class Ingest {
         }
         if (rec) {
             this.specs.push(rec)
-            if (rec.specVersion == this.specInfo.specVersion) {
+            if (rec.specId == this.specInfo.specId) {
                 return false
             }
         }
@@ -254,10 +270,10 @@ export class Ingest {
         while (rec == null || rec.blockHeight > height) {
             rec = await this.getSpec(client, h)
             this.specs.push(rec)
-            if (rec.specVersion == this.specInfo.specVersion) return false
+            if (rec.specId == this.specInfo.specId) return false
             h = height + Math.floor((h - height)/2)
         }
-        this._specInfo = await this.getSpecInfo(client, rec.blockHash, rec.specVersion)
+        this._specInfo = await this.getSpecInfo(client, rec.blockHash, rec.specId)
         return true
     }
 
@@ -267,8 +283,7 @@ export class Ingest {
         return {
             blockHeight: height,
             blockHash,
-            specVersion: rt.specVersion,
-            specName: rt.specName
+            specId: `${rt.specName}@${rt.specVersion}`
         }
     }
 
@@ -297,6 +312,5 @@ interface RawBlockData {
 interface BlockSpec {
     blockHash: string
     blockHeight: number
-    specVersion: SpecVersion
-    specName: string
+    specId: string
 }

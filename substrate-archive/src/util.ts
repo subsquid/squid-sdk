@@ -77,7 +77,7 @@ export function isPreV14(metadata: Metadata): boolean {
  * All blocks have timestamp event except for the genesic block.
  * This method looks up `timestamp.set` and reads off the block timestamp
  */
-export function getBlockTimestamp(extrinsics: (Extrinsic & {args: any})[]): number {
+export function getBlockTimestamp(extrinsics: (Extrinsic & {name: string, args: any})[]): number {
     for (let i = 0; i < extrinsics.length; i++) {
         let ex = extrinsics[i]
         if (ex.name == 'timestamp.set') {
@@ -113,4 +113,14 @@ export function toJsonString(val: unknown): string {
 
 export function toJSON(val: unknown): any {
     return JsonCodec.encode(val)
+}
+
+
+export function splitSpecId(specId: string): [name: string, version: number] {
+    let m = /^(.*)@(\d+)$/.exec(specId)
+    if (m == null) throw new Error(`Invalid spec id: ${specId}`)
+    return [
+        m[1],
+        parseInt(m[2])
+    ]
 }

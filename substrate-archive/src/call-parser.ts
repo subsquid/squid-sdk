@@ -1,9 +1,9 @@
 import {QualifiedName} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import assert from "assert"
 import {SpecInfo, sub} from "./interfaces"
 import * as model from "./model"
-import {Warning} from "./model"
-import {formatId, unwrapArguments} from "./util"
+import {unwrapArguments} from "./util"
 
 
 interface Call extends model.Call {
@@ -12,9 +12,10 @@ interface Call extends model.Call {
 
 
 export class CallParser {
-    private numberOfCalls = 0
     private calls: Call[] = []
-    private pos: number
+    private callsCounter = 0
+    private pos = 0
+    private eix: number
     private boundary?: (e: model.Event) => unknown
     private _extrinsic: model.Extrinsic | undefined
 
@@ -23,44 +24,39 @@ export class CallParser {
         private blockHeight: number,
         private blockHash: string,
         private events: model.Event[],
-        private extrinsics: (model.Extrinsic & {args: any})[],
-        private warnings: Warning[]
+        private extrinsics: (model.Extrinsic & {name: string, args: any})[],
+        private warnings: model.Warning[]
     ) {
         for (let i = 0; i < this.extrinsics.length; i++) {
             let ex = this.extrinsics[i]
             this.extrinsic = ex
-            this.extrinsic.call_id = formatId(this.blockHeight, this.blockHash, this.numberOfCalls)
+            this.extrinsic.call_id = this.extrinsic.id
             this.createCall(ex.name, ex.args)
         }
-        this.pos = this.events.length - 1
+        this.eix = this.events.length - 1
+        this.pos += this.events.length + this.extrinsics.length
         for (let i = this.extrinsics.length - 1; i >= 0; i--) {
             this.extrinsic = this.extrinsics[i]
             this.visitExtrinsic(this.calls[i])
         }
-    }
-
-    getCalls(): model.Call[] {
-        let calls: model.Call[] = []
-
-        function push(c: Call): void {
-            let {children, ...call} = c
-            calls.push(call)
-            children.forEach(push)
-        }
-
-        this.calls.forEach(push)
-        return calls
+        assert(this.pos == 0)
     }
 
     private createCall(name: QualifiedName, args: unknown, parent?: Call): void {
-        let index = this.numberOfCalls++
+        let id = this.extrinsic.id
+        if (parent) {
+            let idx = this.callsCounter += 1
+            id += '-' + idx.toString().padStart(6, '0')
+        } else {
+            this.callsCounter = 0
+        }
         let call: Call = {
-            id: formatId(this.blockHeight, this.blockHash, index),
+            id,
             block_id: this.extrinsic.block_id,
             extrinsic_id: this.extrinsic.id,
             name,
-            index,
             args,
+            pos: -1,
             parent_id: parent?.id,
             success: false,
             children: []
@@ -88,6 +84,7 @@ export class CallParser {
         } else {
             this.calls.push(call)
         }
+        this.pos += 1
     }
 
     private unwrapAndCreate(call: sub.Call, parent?: Call): void  {
@@ -96,6 +93,7 @@ export class CallParser {
     }
 
     private visitExtrinsic(call: Call): void {
+        this.extrinsic.pos = this.takePos()
         let event = this.next()
         switch(event.name) {
             case 'system.ExtrinsicSuccess':
@@ -104,6 +102,7 @@ export class CallParser {
                 break
             case 'system.ExtrinsicFailed':
                 this.extrinsic.success = false
+                this.skipCall(call, false)
                 while (this.tryNext()) {}
                 break
             default:
@@ -111,7 +110,20 @@ export class CallParser {
         }
     }
 
+    private skipCall(call: Call, success: boolean): void {
+        call.pos = this.takePos()
+        call.success = success
+        this.skipCalls(call.children, success)
+    }
+
+    private skipCalls(calls: Call[], success: boolean): void {
+        for (let i = calls.length - 1; i >= 0; i--) {
+            this.skipCall(calls[i], success)
+        }
+    }
+
     private visitCall(call: Call, parent?: Call): void {
+        call.pos = this.takePos()
         call.success = true
         switch(call.name) {
             case 'utility.batch':
@@ -150,14 +162,16 @@ export class CallParser {
 
     private visitBatchItems(batch: Call, lastCompletedItem: number) {
         if (lastCompletedItem < 0) {
+            this.skipCalls(batch.children, false)
             this.takeEvents(batch)
             return
         }
-        let idx = lastCompletedItem
+        this.skipCalls(batch.children.slice(lastCompletedItem + 1), false)
         if (this.lookup(BATCH_ITEM_COMPLETED) == null) {
             // ItemCompleted were not yet implemented
             // assign all events to batch call and set all
             // calls as successful.
+            this.skipCalls(batch.children.slice(0, lastCompletedItem + 1), true)
             let event
             while (event = this.tryNext()) {
                 event.call_id = batch.id
@@ -167,12 +181,8 @@ export class CallParser {
                     this.warnings.push({block_id: this.extrinsic.block_id, message})
                 }
             }
-            this.takeEvents(batch)
-            while (idx >= 0) {
-                this.markAsSuccessful(batch.children[idx])
-                idx -= 1
-            }
         } else {
+            let idx = lastCompletedItem
             while (idx >= 0) {
                 let boundary = this.boundary
                 let endOfItem = this.find(batch, BATCH_ITEM_COMPLETED)
@@ -187,17 +197,13 @@ export class CallParser {
         }
     }
 
-    private markAsSuccessful(call: Call): void {
-        call.success = true
-        call.children.forEach(c => this.markAsSuccessful(c))
-    }
-
     private visitDispatchAs(call: Call, parent?: Call): void {
         let result = this.find(parent, DISPATCHED_AS)
         result.event.call_id = call.id
         if (result.ok) {
             this.visitCall(call.children[0], call)
         } else {
+            this.skipCall(call.children[0], false)
             this.takeEvents(call)
         }
     }
@@ -208,6 +214,7 @@ export class CallParser {
         if (result.ok) {
             this.visitCall(call.children[0], call)
         } else {
+            this.skipCall(call.children[0], false)
             this.takeEvents(call)
         }
     }
@@ -232,6 +239,7 @@ export class CallParser {
     }
 
     private lookup<T>(test: (e: model.Event) => T | undefined): T | undefined {
+        let eix = this.eix
         let pos = this.pos
         let event, m
         while (event = this.tryNext()) {
@@ -239,6 +247,7 @@ export class CallParser {
             if (m != null) break
         }
         this.pos = pos
+        this.eix = eix
         return m
     }
 
@@ -247,22 +256,28 @@ export class CallParser {
     }
 
     private tryNext(): model.Event | undefined {
-        while (this.pos >= 0) {
-            let event = this.events[this.pos]
+        while (this.eix >= 0) {
+            let event = this.events[this.eix]
             if (event.phase == 'ApplyExtrinsic') {
                 if (this.boundary?.(event)) {
                     return undefined
                 }
                 if (event.extrinsic_id == this.extrinsic.id) {
-                    this.pos -= 1
+                    event.pos = this.takePos()
+                    this.eix -= 1
                     return event
                 } else {
                     return undefined
                 }
             } else {
-                this.pos -= 1
+                event.pos = this.takePos()
+                this.eix -= 1
             }
         }
+    }
+
+    private takePos(): number {
+        return this.pos -= 1
     }
 
     private get extrinsic(): model.Extrinsic {
@@ -271,6 +286,19 @@ export class CallParser {
 
     private set extrinsic(ex: model.Extrinsic) {
         this._extrinsic = ex
+    }
+
+    getCalls(): model.Call[] {
+        let calls: model.Call[] = []
+
+        function push(c: Call): void {
+            let {children, ...call} = c
+            calls.push(call)
+            children.forEach(push)
+        }
+
+        this.calls.forEach(push)
+        return calls
     }
 }
 
