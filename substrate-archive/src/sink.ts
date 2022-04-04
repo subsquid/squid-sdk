@@ -34,7 +34,8 @@ export class PostgresSink implements Sink {
         hash: {cast: 'text'},
         parent_hash: {cast: 'text'},
         timestamp: {cast: 'timestamptz'},
-        spec_id: {cast: 'text'}
+        spec_id: {cast: 'text'},
+        validator: {cast: 'text'}
     })
 
     private extrinsicInsert = new Insert<Extrinsic>('extrinsic', {

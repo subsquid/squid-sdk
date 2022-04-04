@@ -21,10 +21,10 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    signature: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
+    signature: Ti
     storage: Storage
 }
 

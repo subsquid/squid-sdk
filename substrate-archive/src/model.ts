@@ -9,6 +9,7 @@ export interface Block {
     parent_hash: string
     timestamp: Date
     spec_id: string
+    validator?: string
 }
 
 
