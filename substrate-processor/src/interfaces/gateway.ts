@@ -13,11 +13,11 @@ export interface BatchRequest {
 
 export interface ObjectRequest {
     name: string
-    fields?: any
+    data?: any
 }
 
 
-export interface BlockData {
+export interface BatchBlock {
     header: SubstrateBlock
     events: Event[]
     calls: Call[]
@@ -27,31 +27,33 @@ export interface BlockData {
 
 export interface Event {
     id: string
-    index_in_block: number
-    name: QualifiedName
-    args: any
-    phase: SubstrateEvent["phase"]
-    extrinsic_id?: string
-    call_id?: string
+    indexInBlock?: number
+    name?: QualifiedName
+    args?: any
+    phase?: SubstrateEvent["phase"]
+    extrinsicId?: string
+    callId?: string
+    pos: number
 }
 
 
 export interface Call {
     id: string
-    index: number
-    name: QualifiedName
-    args: any
-    success: boolean
-    extrinsic_id?: string
-    parent_id?: string
+    name?: QualifiedName
+    args?: any
+    success?: boolean
+    extrinsicId?: string
+    parentId?: string
+    pos: number
 }
 
 
 export interface Extrinsic {
     id: string
-    index_in_block: number
-    call_id: string
+    indexInBlock?: number
+    callId?: string
     signature?: SubstrateExtrinsicSignature
-    success: boolean
-    hash: string
+    success?: boolean
+    hash?: string
+    pos: number
 }

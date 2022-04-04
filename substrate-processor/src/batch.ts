@@ -8,7 +8,7 @@ import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
 
-interface AccurateHandlers<H> {
+interface Handlers<H> {
     data?: ContextRequest
     handlers: H[]
 }
@@ -17,8 +17,8 @@ interface AccurateHandlers<H> {
 export interface DataHandlers {
     pre: BlockHandler[]
     post: BlockHandler[]
-    events: Record<QualifiedName, AccurateHandlers<EventHandler>>
-    calls: Record<QualifiedName, AccurateHandlers<CallHandler>>
+    events: Record<QualifiedName, Handlers<EventHandler>>
+    calls: Record<QualifiedName, Handlers<CallHandler>>
     evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], handler: EvmLogHandler}[]>
 }
 
@@ -169,17 +169,17 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
     return {
         pre: a.pre.concat(b.pre),
         post: a.post.concat(b.post),
-        events: mergeMaps(a.events, b.events, mergeAccurateHandlers),
-        calls: mergeMaps(a.calls, b.calls, mergeAccurateHandlers),
+        events: mergeMaps(a.events, b.events, mergeHandlers),
+        calls: mergeMaps(a.calls, b.calls, mergeHandlers),
         evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb)),
     }
 }
 
 
-function mergeAccurateHandlers<H>(
-    a: AccurateHandlers<H>,
-    b: AccurateHandlers<H>
-): AccurateHandlers<H> {
+function mergeHandlers<H>(
+    a: Handlers<H>,
+    b: Handlers<H>
+): Handlers<H> {
     return {
         data: mergeContextRequests(a.data, b.data),
         handlers: a.handlers.concat(b.handlers)
@@ -211,7 +211,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
         }
     }
     for (let key in b) {
-        if (a[key] == null) {
+        if (a?.[key] == null) {
             result[key] = b[key]
         }
     }

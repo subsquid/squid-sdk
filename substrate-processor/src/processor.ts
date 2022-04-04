@@ -105,8 +105,7 @@ export class SubstrateProcessor {
 
     addPreHook(fn: BlockHandler): void
     addPreHook(options: RangeOption, fn: BlockHandler): void
-    // addPreHook<R>(options: RangeOption & DataSelection<R>, fn: BlockHandler<R>): void
-    addPreHook(fnOrOptions: BlockHandler | RangeOption & MayBeDataSelection, fn?: BlockHandler): void {
+    addPreHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
         let options: RangeOption = {}
@@ -121,8 +120,7 @@ export class SubstrateProcessor {
 
     addPostHook(fn: BlockHandler): void
     addPostHook(options: RangeOption, fn: BlockHandler): void
-    // addPostHook<R>(options: RangeOption & DataSelection<R>, fn: BlockHandler<R>): void
-    addPostHook(fnOrOptions: BlockHandler | RangeOption & MayBeDataSelection, fn?: BlockHandler): void {
+    addPostHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
         this.assertNotRunning()
         let handler: BlockHandler
         let options: RangeOption = {}
@@ -280,7 +278,8 @@ export class SubstrateProcessor {
                                 break
                             case 'call':
                                 for (let handler of handlers.calls[item.call.name].handlers || []) {
-                                    await handler({...ctx, call: item.call, extrinsic: item.extrinsic})
+                                    let {kind, ...data} = item
+                                    await handler({...ctx, ...data})
                                 }
                                 break
                             default:

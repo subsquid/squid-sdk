@@ -11,7 +11,6 @@ import {
     OldTypes,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion,
     StorageItem
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
@@ -19,7 +18,7 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
-import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
+import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
 
 
@@ -31,13 +30,18 @@ interface BlockInfo {
     height: number
     hash: string
     parentHash: string
+    specId: SpecId
+}
+
+
+interface RuntimeVersion {
     specName: string
     specVersion: number
 }
 
 
 export class ChainManager {
-    private versions = new Map<SpecVersion, {height: number, chain: Chain}>()
+    private versions = new Map<SpecId, {height: number, chain: Chain}>()
 
     constructor(
         private client: ResilientRpcClient,
@@ -45,29 +49,28 @@ export class ChainManager {
     }
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
-        let specVersion = block.specVersion
-
-        let v = this.versions.get(specVersion)
+        let v = this.versions.get(block.specId)
         if (v != null && v.height < block.height) return v.chain
 
         let height = Math.max(0, block.height - 1)
         let hash = height > 0 ? block.parentHash : block.hash
-        let rtv: SubstrateRuntimeVersion = await this.client.call('chain_getRuntimeVersion', [hash])
-        v = this.versions.get(rtv.specVersion)
+        let rtv: RuntimeVersion = await this.client.call('chain_getRuntimeVersion', [hash])
+        let specId = `${rtv.specName}@${rtv.specVersion}`
+        v = this.versions.get(specId)
         if (v == null) {
             let metadataHex: string = await this.client.call('state_getMetadata', [hash])
-            v = this.versions.get(rtv.specVersion) // perhaps it was fetched
+            v = this.versions.get(specId) // perhaps it was fetched
             if (v == null) {
                 let chain = this.createChain(rtv, metadataHex)
                 v = {chain, height}
-                this.versions.set(rtv.specVersion, v)
+                this.versions.set(specId, v)
             }
         }
         v.height = Math.min(v.height, height)
         return v.chain
     }
 
-    private createChain(rtv: SubstrateRuntimeVersion, metadataHex: string): Chain {
+    private createChain(rtv: RuntimeVersion, metadataHex: string): Chain {
         let metadata = decodeMetadata(metadataHex)
         let types: OldTypes | undefined
         if (parseInt(metadata.__kind.slice(1)) < 14) {

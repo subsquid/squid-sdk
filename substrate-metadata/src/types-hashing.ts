@@ -107,7 +107,7 @@ export class TypeHasher {
                 let hash = this.cache[ti]
                 if (hash) return hash
             }
-            // Otherwise perform a regular Tarjan's visit as nothing happened.
+            // Otherwise, perform a regular Tarjan's visit as nothing happened.
         }
         node = {
             index: this.index,

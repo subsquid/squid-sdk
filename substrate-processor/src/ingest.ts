@@ -1,9 +1,8 @@
-import {AbortHandle, assertNotNull, def, wait} from "@subsquid/util-internal"
+import {AbortHandle, assertNotNull, def, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
 import fetch from "node-fetch"
 import {Batch} from "./batch"
-import {ContextRequest} from "./interfaces/dataSelection"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {printGqlArguments} from "./util/gql"
@@ -162,14 +161,14 @@ export class Ingest {
         args.events = Object.entries(hs.events).map(([name, options]) => {
             return {
                 name,
-                fields: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
+                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
             }
         })
 
         args.calls = Object.entries(hs.calls).map(([name, options]) => {
             return {
                 name,
-                fields: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
+                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
             }
         })
 
@@ -185,7 +184,7 @@ export class Ingest {
                     q.line('hash')
                     q.line('parentHash')
                     q.line('timestamp')
-                    q.line('specVersion')
+                    q.line('specId')
                 })
                 q.line('events')
                 q.line('calls')
@@ -193,7 +192,7 @@ export class Ingest {
             })
         })
         let gql = q.toString()
-        let response = await this.archiveRequest<{status: {head: number}, batch: gw.BlockData[]}>(gql)
+        let response = await this.archiveRequest<{status: {head: number}, batch: gw.BatchBlock[]}>(gql)
         this.setArchiveHeight(response)
         return response.batch.map(mapGatewayBlock)
     }
@@ -245,22 +244,22 @@ export class Ingest {
 }
 
 
-const CONTEXT_NESTING_SHAPE = {
-    event: {
-        call: {
-            parent: {}
-        },
-        extrinsic: {
-            call: {}
-        }
-    },
-    call: {
+const CONTEXT_NESTING_SHAPE = (() => {
+    let call = {
         parent: {}
-    },
-    extrinsic: {
-        call: {}
     }
-}
+    let extrinsic = {
+        call
+    }
+    return {
+        event: {
+            call,
+            extrinsic
+        },
+        call,
+        extrinsic
+    }
+})();
 
 
 function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any | undefined {
@@ -277,9 +276,89 @@ function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any
 }
 
 
-function mapGatewayBlock(block: gw.BlockData): BlockData {
+function mapGatewayBlock(block: gw.BatchBlock): BlockData {
+    let events = createObjects(block.events, go => {
+        let {callId, extrinsicId, ...event} = go
+        return event
+    })
+
+    let calls = createObjects<gw.Call, SubstrateCall>(block.calls, go => {
+        let {parentId, extrinsicId, ...call} = go
+        return call
+    })
+
+    let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics, go => {
+        let {callId, ...extrinsic} = go
+        return extrinsic
+    })
+
+    let log: LogItem[] = []
+
+    for (let go of block.events) {
+        let event = assertNotNull(events.get(go.id)) as SubstrateEvent
+        if (go.extrinsicId) {
+            event.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
+        }
+        if (go.callId) {
+            event.call = assertNotNull(calls.get(go.callId)) as SubstrateCall
+        }
+        log.push({
+            kind: 'event',
+            event
+        })
+    }
+
+    for (let go of block.calls) {
+        let call = assertNotNull(calls.get(go.id)) as SubstrateCall
+        if (go.parentId) {
+            call.parent = assertNotNull(calls.get(go.parentId)) as SubstrateCall
+        }
+        let item: Partial<LogItem> = {
+            kind: 'call',
+            call
+        }
+        if (go.extrinsicId) {
+            item.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
+        }
+        log.push(item as LogItem)
+    }
+
+    for (let go of block.extrinsics) {
+        if (go.callId) {
+            let extrinsic = assertNotNull(extrinsics.get(go.id)) as SubstrateExtrinsic
+            extrinsic.call = assertNotNull(calls.get(go.id)) as SubstrateCall
+        }
+    }
+
+    log.sort((a, b) => getPos(a) - getPos(b))
+
     return {
         header: block.header,
-        log: []
+        log
+    }
+}
+
+
+function createObjects<S, T extends {id: string}>(src: S[], f: (s: S) => PartialObj<T>): Map<string, PartialObj<T>> {
+    let m = new Map<string, PartialObj<T>>()
+    for (let i = 0; i < src.length; i++) {
+        let obj = f(src[i])
+        m.set(obj.id, obj)
+    }
+    return m
+}
+
+
+type PartialObj<T> = Partial<T> & {id: string, pos: number}
+
+
+function getPos(item: LogItem): number {
+    switch(item.kind) {
+        case 'call':
+            return item.call.pos
+        case 'event':
+            return item.event.pos
+        default:
+            throw unexpectedCase()
     }
 }

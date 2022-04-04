@@ -1,18 +1,15 @@
-import type {SpecVersion} from "@subsquid/substrate-metadata"
-
-
 export type QualifiedName = string
 
 
-export interface SubstrateRuntimeVersion {
-    specName: string
-    specVersion: SpecVersion
-}
+/**
+ * Runtime spec id formatted as `<spec_name>@<spec_version>`
+ */
+export type SpecId = string
 
 
-export interface SubstrateBlock extends SubstrateRuntimeVersion {
+export interface SubstrateBlock {
     /**
-     * Unique block id, following the format <block height>-<first hex digits of the hash>
+     * Unique block id, following the format `<block height>-<first hex digits of the hash>`
      */
     id: string
     /**
@@ -28,9 +25,17 @@ export interface SubstrateBlock extends SubstrateRuntimeVersion {
      */
     parentHash: string
     /**
-     * Block timestamp as set by timestamp.now()
+     * Block timestamp as set by `timestamp.now()`
      */
     timestamp: number
+    /**
+     * Runtime spec id formatted as `{spec_name}@{spec_version}`
+     */
+    specId: SpecId
+    /**
+     * Account address of block validator
+     */
+    validator?: string
 }
 
 
@@ -51,6 +56,11 @@ interface EventBase {
      * JSON encoded event arguments
      */
     args: any
+    /**
+     * Event position in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
+     */
+    pos: number
 }
 
 
@@ -89,12 +99,17 @@ export interface SubstrateExtrinsic {
      */
     hash: string
     /**
-     * Ordinal index in the event array of the current block
+     * Ordinal index in the extrinsics array of the current block
      */
     indexInBlock: number
     call: SubstrateCall
     signature?: SubstrateExtrinsicSignature
     success: boolean
+    /**
+     * Extrinsic position in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
+     */
+    pos: number
 }
 
 
@@ -114,4 +129,9 @@ export interface SubstrateCall {
     args: any
     success: boolean
     parent?: SubstrateCall
+    /**
+     * Call position in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
+     */
+    pos: number
 }
