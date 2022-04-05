@@ -18,7 +18,7 @@ type PlainReq<T> = {
 
 
 type Select<T, R extends Req<T>> = {
-    [P in keyof T as R[P] extends true ? P : P extends 'id' ? P : never]: T[P]
+    [P in keyof T as R[P] extends true ? P : P extends 'id' | 'pos' ? P : never]: T[P]
 }
 
 
