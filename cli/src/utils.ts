@@ -1,6 +1,5 @@
-import { Command } from '@oclif/core';
+import { Command, CliUx } from '@oclif/core';
 import cliSelect from 'cli-select';
-import cli from 'cli-ux';
 import {
     DefaultLogFields,
     LogOptions,
@@ -29,11 +28,11 @@ export async function pollDeployPipelines(
         if (pipeline) {
             if (pipeline.status !== lastStatus) {
                 lastStatus = pipeline.status;
-                cli.action.stop('✔️');
+                CliUx.ux.action.stop('✔️');
             }
             switch (pipeline?.status) {
                 case DeployPipelineStatusEnum.CREATED:
-                    cli.action.start('◷ Preparing your squid');
+                    CliUx.ux.action.start('◷ Preparing your squid');
                     if (pipeline.isErrorOccurred) {
                         command.error(
                             buildPipelineErrorMessage(
@@ -44,7 +43,7 @@ export async function pollDeployPipelines(
                     }
                     break;
                 case DeployPipelineStatusEnum.IMAGE_BUILDING:
-                    cli.action.start('◷ Building your squid');
+                    CliUx.ux.action.start('◷ Building your squid');
                     if (pipeline.isErrorOccurred) {
                         command.error(
                             buildPipelineErrorMessage(
@@ -55,7 +54,7 @@ export async function pollDeployPipelines(
                     }
                     break;
                 case DeployPipelineStatusEnum.IMAGE_PUSHING:
-                    cli.action.start('◷ Publishing your squid');
+                    CliUx.ux.action.start('◷ Publishing your squid');
                     if (pipeline.isErrorOccurred) {
                         command.error(
                             buildPipelineErrorMessage(
@@ -66,7 +65,7 @@ export async function pollDeployPipelines(
                     }
                     break;
                 case DeployPipelineStatusEnum.DEPLOYING:
-                    cli.action.start('◷ Almost ready');
+                    CliUx.ux.action.start('◷ Almost ready');
                     if (pipeline.isErrorOccurred) {
                         command.error(
                             buildPipelineErrorMessage(

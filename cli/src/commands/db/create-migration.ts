@@ -1,7 +1,6 @@
-import {Command} from '@oclif/core'
+import { CliUx, Command } from '@oclif/core';
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull, OutDir} from "@subsquid/util"
-import cli from 'cli-ux'
 import * as dotenv from 'dotenv'
 import {ConnectionOptions, createConnection} from "typeorm"
 import {Query} from "typeorm/driver/Query"
@@ -18,7 +17,7 @@ export default class CreateMigration extends Command {
         dotenv.config()
 
         let {args} = await this.parse(CreateMigration)
-        let name: string = args.name ? args.name : await cli.prompt('Enter migration name', {
+        let name: string = args.name ? args.name : await CliUx.ux.prompt('Enter migration name', {
             required: true,
         })
 
