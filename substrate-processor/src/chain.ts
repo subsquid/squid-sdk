@@ -1,7 +1,5 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec} from "@subsquid/scale-codec"
-import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
-import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
+import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
 import {
     ChainDescription,
     decodeMetadata,
@@ -16,7 +14,7 @@ import {
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull} from "@subsquid/util-internal"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
@@ -95,7 +93,7 @@ export class Chain {
 
     constructor(
         public readonly description: ChainDescription,
-        private client: ResilientRpcClient
+        public readonly client: ResilientRpcClient
     ) {
         this.jsonCodec = new JsonCodec(description.types)
         this.scaleCodec = new ScaleCodec(description.types)
@@ -111,36 +109,37 @@ export class Chain {
         return this.calls.getHash(callName)
     }
 
-    decodeEvent(event: {name: string, params: {value: unknown}[]}): any {
+    decodeEvent(event: {name: string, args: any}): any {
         let def = this.events.get(event.name)
-        return this.decode(def, event.params)
+        return this.decode(def, event.args)
     }
 
-    decodeCall(call: {name: string, args: {value: unknown}[]}): any {
+    decodeCall(call: {name: string, args: any}): any {
         let def = this.calls.get(call.name)
         return this.decode(def, call.args)
     }
 
-    private decode(def: eac.Definition, args: {value: unknown}[]): any {
+    private decode(def: eac.Definition, args: any): any {
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeTuple(def.fields, args)
+        assert(args != null && typeof args == 'object', 'invalid args')
         let result: any = {}
         for (let i = 0; i < def.fields.length; i++) {
             let f = def.fields[i]
             let name = assertNotNull(f.name)
-            result[name] = this.jsonCodec.decode(f.type, args[i].value)
+            result[name] = this.jsonCodec.decode(f.type, args[name])
         }
         return result
     }
 
-    private decodeTuple(fields: Field[], values: {value: unknown}[]): any {
+    private decodeTuple(fields: Field[], args: unknown): any {
         if (fields.length == 1) {
-            return this.jsonCodec.decode(fields[0].type, values[0].value)
+            return this.jsonCodec.decode(fields[0].type, args)
         } else {
-            assert(fields.length == values.length, 'invalid event data')
+            assert(Array.isArray(args) && fields.length == args.length, 'invalid args')
             let result: any[] = new Array(fields.length)
             for (let i = 0; i < fields.length; i++) {
-                result[i] = this.jsonCodec.decode(fields[i].type, values[i].value)
+                result[i] = this.jsonCodec.decode(fields[i].type, args[i])
             }
             return result
         }
@@ -167,7 +166,7 @@ export class Chain {
                 case 'Required':
                     throw new Error(`Required storage item not found`)
                 default:
-                    throwUnexpectedCase(item.modifier)
+                    throw unexpectedCase(item.modifier)
             }
         }
         return this.scaleCodec.decodeBinary(item.value, res)

@@ -343,3 +343,20 @@ export class SubstrateProcessor {
         return true
     }
 }
+
+
+const processor = new SubstrateProcessor('hello')
+
+processor.addCallHandler('hello', {
+    data: {
+        call: {
+            name: true,
+            args: true
+        },
+        extrinsic: {
+            signature: true
+        }
+    }
+} as const, async ctx => {
+
+})

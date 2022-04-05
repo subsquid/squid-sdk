@@ -1,6 +1,7 @@
-import {EventHandlerContext, Store, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {getTransferEvent} from "./events"
 import {Account, HistoricalBalance} from "./model"
-import {BalancesTransferEvent} from "./types/events"
+import {getOrCreate} from "./util"
 
 
 const processor = new SubstrateProcessor('kusama_balances')
@@ -13,9 +14,16 @@ processor.setDataSource({
 })
 
 
-processor.addEventHandler('balances.Transfer', async ctx => {
+processor.addEventHandler('balances.Transfer', {
+    data: {
+        event: {
+            name: true,
+            args: true
+        }
+    }
+} as const, async ctx => {
     let transfer = getTransferEvent(ctx)
-    let tip = ctx.extrinsic?.tip || 0n
+    let tip = 0n
 
     let fromAcc = await getOrCreate(ctx.store, Account, toHex(transfer.from))
     fromAcc.wallet = fromAcc.id
@@ -47,48 +55,3 @@ processor.addEventHandler('balances.Transfer', async ctx => {
 
 
 processor.run()
-
-
-interface TransferEvent {
-    from: Uint8Array
-    to: Uint8Array
-    amount: bigint
-}
-
-
-function getTransferEvent(ctx: EventHandlerContext): TransferEvent {
-    let event = new BalancesTransferEvent(ctx)
-    if (event.isV1020) {
-        let [from, to, amount] = event.asV1020
-        return {from, to, amount}
-    } else if (event.isV1050) {
-        let [from, to, amount] = event.asV1050
-        return {from, to, amount}
-    } else {
-        return event.asLatest
-    }
-}
-
-
-async function getOrCreate<T extends {id: string}>(
-    store: Store,
-    entityConstructor: EntityConstructor<T>,
-    id: string
-): Promise<T> {
-
-    let e = await store.get<T>(entityConstructor, {
-        where: { id },
-    })
-
-    if (e == null) {
-        e = new entityConstructor()
-        e.id = id
-    }
-
-    return e
-}
-
-
-type EntityConstructor<T> = {
-    new (...args: any[]): T
-}
