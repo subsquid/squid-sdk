@@ -12,7 +12,7 @@ import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull, wait} from "@subsquid/util-internal"
 import assert from "assert"
-import {CallParser} from "./call-parser"
+import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "./model"
 import {

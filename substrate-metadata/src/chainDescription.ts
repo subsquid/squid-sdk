@@ -21,6 +21,8 @@ import {getTypeByPath, normalizeMetadataTypes} from "./util"
 export interface ChainDescription {
     types: Type[]
     call: Ti
+    digest: Ti
+    digestItem: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
@@ -53,21 +55,14 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            signature: this.signature(),
+            digest: this.digest(),
+            digestItem: this.digestItem(),
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
+            signature: this.signature(),
             storage: this.storage()
         }
-    }
-
-    @def
-    private event(): Ti {
-        let rec = this.types()[this.eventRecord()]
-        assert(rec.kind == TypeKind.Composite)
-        let eventField = rec.fields.find(f => f.name == 'event')
-        assert(eventField != null)
-        return eventField.type
     }
 
     @def
@@ -81,19 +76,45 @@ class FromV14 {
     }
 
     @def
-    private eventRecordList(): Ti {
-        let types = this.types()
-        let eventRecord = this.eventRecord()
-        let list = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)
-        if (list < 0) {
-            list = types.push({kind: TypeKind.Sequence, type: eventRecord}) - 1
+    private digest(): Ti {
+        return this.getStorageItem('System', 'Digest').value
+    }
+
+    @def
+    private digestItem(): Ti {
+        let digest = this.types()[this.digest()]
+        assert(digest.kind == TypeKind.Composite)
+        for (let field of digest.fields) {
+            if (field.name == 'logs') {
+                let seq = this.types()[field.type]
+                assert(seq.kind == TypeKind.Sequence)
+                return seq.type
+            }
         }
-        return list
+        assert(false, `Can't extract DigestItem from Digest`)
+    }
+
+    @def
+    private event(): Ti {
+        let rec = this.types()[this.eventRecord()]
+        assert(rec.kind == TypeKind.Composite)
+        let eventField = rec.fields.find(f => f.name == 'event')
+        assert(eventField != null)
+        return eventField.type
     }
 
     @def
     private eventRecord(): Ti {
-        return getTypeByPath(this.types(), ['frame_system', 'EventRecord'])
+        let types = this.types()
+        let eventRecordList = this.eventRecordList()
+        let seq = types[eventRecordList]
+        assert(seq.kind == TypeKind.Sequence)
+        return seq.type
+    }
+
+    @def
+    private eventRecordList(): Ti {
+        return this.getStorageItem('System', 'Events').value
     }
 
     @def
@@ -133,6 +154,12 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    private getStorageItem(prefix: string, name: string): StorageItem {
+        let storage = this.storage()
+        let item = storage[prefix]?.[name]
+        return assertNotNull(item, `Can't find ${prefix}.${name} storage item`)
     }
 
     @def
@@ -254,17 +281,21 @@ class FromOld {
     convert(): ChainDescription {
         let signature = this.registry.use('GenericSignature')
         let call = this.registry.use('GenericCall')
+        let digest = this.registry.use('Digest')
+        let digestItem = this.registry.use('DigestItem')
         let event = this.registry.use('GenericEvent')
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
         return {
             types: this.registry.getTypes(),
-            signature,
             call,
+            digest,
+            digestItem,
             event,
             eventRecord,
             eventRecordList,
+            signature,
             storage
         }
     }
