@@ -476,12 +476,6 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/scale-codec-json",
-      "projectFolder": "scale-codec-json",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
       "packageName": "@subsquid/ss58",
       "projectFolder": "ss58",
       "shouldPublish": true,
@@ -531,49 +525,49 @@
     },
     {
       "packageName": "@subsquid/typeorm-config",
-      "projectFolder": "typeorm-config",
+      "projectFolder": "util/typeorm-config",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-internal",
-      "projectFolder": "util-internal",
+      "projectFolder": "util/util-internal",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-internal-code-printer",
-      "projectFolder": "util-internal-code-printer",
+      "projectFolder": "util/util-internal-code-printer",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-internal-counters",
-      "projectFolder": "util-internal-counters",
+      "projectFolder": "util/util-internal-counters",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-internal-http-server",
-      "projectFolder": "util-internal-http-server",
+      "projectFolder": "util/util-internal-http-server",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-internal-service-manager",
-      "projectFolder": "util-internal-service-manager",
+      "projectFolder": "util/util-internal-service-manager",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-naming",
-      "projectFolder": "util-naming",
+      "projectFolder": "util/util-naming",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/util-xxhash",
-      "projectFolder": "util-xxhash",
+      "projectFolder": "util/util-xxhash",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },

@@ -3,6 +3,7 @@
 # Build artifacts
 /*/lib/
 /test/*/lib
+/util/*/lib
 /tools/*/lib
 /openreader/dist/
 

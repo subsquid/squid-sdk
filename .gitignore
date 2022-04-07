@@ -17,6 +17,7 @@ common/autoinstallers/*/.npmrc
 .idea
 
 # Built js libs
-*/lib
+/*/lib
 /test/*/lib
 /tools/*/lib
+/util/*/lib
