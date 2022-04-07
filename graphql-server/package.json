@@ -24,7 +24,7 @@
     "@graphql-tools/utils": "^8",
     "@subsquid/openreader": "^0.5.1",
     "@subsquid/typeorm-config": "^0.0.4",
-    "@subsquid/util": "^0.0.4",
+    "@subsquid/util-internal": "^0.0.0",
     "apollo-server-core": "^3.6.2",
     "apollo-server-express": "^3.6.2",
     "dotenv": "^10.0.0",

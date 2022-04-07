@@ -18,12 +18,6 @@
       "shellCommand": "node tools/workspace/lib/unify.js"
     },
     {
-      "name": "add-change",
-      "commandKind": "global",
-      "summary": "Create change file for a package",
-      "shellCommand": "node tools/workspace/lib/change.js"
-    },
-    {
       "name": "e2e",
       "commandKind": "global",
       "summary": "run e2e test suite",
@@ -55,50 +49,6 @@
       "longName": "--dry",
       "description": "do not perform real changes",
       "associatedCommands": ["unify-dependencies"]
-    },
-    {
-      "parameterKind": "string",
-      "argumentName": "DIR",
-      "longName": "--package",
-      "shortName": "-p",
-      "description": "package directory (must be relative to workspace root)",
-      "required": true,
-      "associatedCommands": ["add-change"]
-    },
-    {
-      "parameterKind": "choice",
-      "longName": "--type",
-      "shortName": "-t",
-      "description": "type of change",
-      "alternatives": [
-        {
-          "name": "major",
-          "description": "leads to a major version bump"
-        },
-        {
-          "name": "minor",
-          "description": "leads to a minor version bump"
-        },
-        {
-          "name": "patch",
-          "description": "leads to a patch version bump"
-        },
-        {
-          "name": "none",
-          "description": "doesn't lead to a version bump"
-        }
-      ],
-      "required": true,
-      "associatedCommands": ["add-change"]
-    },
-    {
-      "parameterKind": "string",
-      "argumentName": "TEXT",
-      "longName": "--message",
-      "shortName": "-m",
-      "description": "change description",
-      "required": true,
-      "associatedCommands": ["add-change"]
     }
   ]
 }

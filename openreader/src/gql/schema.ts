@@ -1,4 +1,4 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {
     buildASTSchema,

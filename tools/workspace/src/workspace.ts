@@ -1,4 +1,4 @@
-import {def} from "@subsquid/util"
+import {def} from "@subsquid/util-internal"
 import fs from "fs"
 import latestVersion from "latest-version"
 import * as path from "path"

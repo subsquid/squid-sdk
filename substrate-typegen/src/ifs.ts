@@ -1,6 +1,7 @@
 import {CodecStructType, getCodecType} from "@subsquid/scale-codec/lib/types-codec"
 import {ChainDescription, Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
-import {assertNotNull, Output, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import {Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {assignNames, needsName} from "./names"

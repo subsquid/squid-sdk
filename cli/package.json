@@ -43,7 +43,9 @@
     "@octokit/auth-oauth-device": "^3.1.2",
     "@subsquid/openreader": "^0.5.1",
     "@subsquid/typeorm-config": "^0.0.4",
-    "@subsquid/util": "^0.0.4",
+    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-code-printer": "^0.0.0",
+
     "@subsquid/util-naming": "^0.0.0",
     "chalk": "^4.1.2",
     "cli-select": "^1.1.2",

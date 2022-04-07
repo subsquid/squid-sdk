@@ -1,7 +1,8 @@
-import {Command} from '@oclif/core'
+import {Command} from "@oclif/core"
 import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull, OutDir} from "@subsquid/util"
-import cli from 'cli-ux'
+import {assertNotNull} from "@subsquid/util-internal"
+import {OutDir} from "@subsquid/util-internal-code-printer"
+import cli from "cli-ux"
 
 
 export default class NewMigration extends Command {

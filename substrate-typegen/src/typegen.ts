@@ -4,13 +4,15 @@ import {
     getChainDescriptionFromMetadata,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion, StorageItem,
+    SpecVersion,
+    StorageItem,
     Type
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {def, OutDir} from "@subsquid/util"
+import {def} from "@subsquid/util-internal"
+import {OutDir} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Interfaces} from "./ifs"
@@ -170,7 +172,11 @@ export class Typegen {
 
         out.line(`import assert from 'assert'`)
         out.line(`import {StorageContext, Result} from './support'`)
-        out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
+        out.lazy(() => {
+            Array.from(importedInterfaces).sort().forEach(v => {
+                out.line(`import * as v${v} from './v${v}'`)
+            })
+        })
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')

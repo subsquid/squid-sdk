@@ -1,5 +1,5 @@
 import {decodeAddress} from "@polkadot/keyring"
-import {toHex} from "@subsquid/util"
+import {toHex} from "@subsquid/util-internal"
 import expect from "expect"
 import {chain, gql, transfer, waitForHeight} from "./setup"
 

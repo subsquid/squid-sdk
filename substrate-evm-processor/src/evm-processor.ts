@@ -1,6 +1,6 @@
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {EvmLogHandler, EvmLogHandlerOptions} from "@subsquid/substrate-processor/lib/interfaces/evm"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 
 
 export class SubstrateEvmProcessor extends SubstrateProcessor {

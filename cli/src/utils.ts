@@ -1,6 +1,9 @@
 import { Command } from '@oclif/core';
 import cliSelect from 'cli-select';
 import cli from 'cli-ux';
+import fs from "fs"
+import path from "path"
+import process from "process"
 import {
     DefaultLogFields,
     LogOptions,

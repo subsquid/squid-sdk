@@ -536,12 +536,6 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/util",
-      "projectFolder": "util",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
       "packageName": "@subsquid/util-internal",
       "projectFolder": "util-internal",
       "shouldPublish": true,

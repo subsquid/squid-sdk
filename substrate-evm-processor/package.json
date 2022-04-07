@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/substrate-processor": "^0.6.1",
-    "@subsquid/util": "^0.0.4"
+    "@subsquid/util-internal": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",

@@ -1,5 +1,5 @@
 import {Primitive, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
-import {unexpectedCase} from "@subsquid/util"
+import {unexpectedCase} from "@subsquid/util-internal"
 
 
 export function isEmptyVariant(type: Type): boolean {

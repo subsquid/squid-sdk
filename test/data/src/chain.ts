@@ -10,7 +10,7 @@ import {
 import {ChainVersion} from "@subsquid/substrate-metadata-explorer"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def} from "@subsquid/util"
+import {assertNotNull, def} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import expect from "expect"

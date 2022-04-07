@@ -1,4 +1,4 @@
-import {toHex} from "@subsquid/util"
+import {toHex} from "@subsquid/util-internal"
 
 export class ProgressReporter {
     private window: {time: bigint, count: number}[] = []

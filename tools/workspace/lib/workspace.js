@@ -32,7 +32,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Workspace = void 0;
-const util_1 = require("@subsquid/util");
+const util_internal_1 = require("@subsquid/util-internal");
 const fs_1 = __importDefault(require("fs"));
 const latest_version_1 = __importDefault(require("latest-version"));
 const path = __importStar(require("path"));
@@ -147,13 +147,13 @@ class Workspace {
     }
 }
 __decorate([
-    util_1.def,
+    util_internal_1.def,
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], Workspace.prototype, "unifiedDependencies", null);
 __decorate([
-    util_1.def,
+    util_internal_1.def,
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Map)

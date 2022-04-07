@@ -1,4 +1,4 @@
-import {Output} from "@subsquid/util"
+import {Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase, toPlural} from "@subsquid/util-naming"
 import assert from "assert"
 import {DocumentNode, parse, print} from "graphql"
