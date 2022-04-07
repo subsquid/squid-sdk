@@ -1,9 +1,9 @@
 import type {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import assert from "assert"
 import fetch from "node-fetch"
-import {Explorer, Version} from "./explorer"
-import {checkChainHeight, fetchVersionMetadata, fetchVersionsFromChain} from "./fromChain"
-import type {ChainVersion, Log} from "./types"
+import {findSpecVersions} from "./binarySearch"
+import {checkChainHeight, enrichWithMetadata, fetchVersionsFromChain} from "./fromChain"
+import type {SpecVersionWithMetadata, Log, SpecVersion} from "./types"
 
 
 export async function fromIndexer(
@@ -11,7 +11,7 @@ export async function fromIndexer(
     indexerUrl: string,
     from: number = 0,
     log?: Log
-): Promise<ChainVersion[]> {
+): Promise<SpecVersionWithMetadata[]> {
     let height: number = await indexerRequest(indexerUrl, `
         query {
             indexerStatus {
@@ -23,19 +23,25 @@ export async function fromIndexer(
     checkChainHeight(from, height)
     log?.(`chain height: ${height}`)
 
-    let versions = await Explorer.getVersions(from, height, heights => {
-        return fetchVersionsFromIndexer(chainClient, indexerUrl, heights)
-    }, log)
+    let versions = await findSpecVersions({
+        firstBlock: from,
+        lastBlock: Math.max(from, height - 1),
+        fetch(heights) {
+            return fetchVersionsFromIndexer(chainClient, indexerUrl, heights)
+        },
+        log
+    })
 
-    return fetchVersionMetadata(chainClient, versions, log)
+    return enrichWithMetadata(chainClient, versions, log)
 }
 
 
-async function fetchVersionsFromIndexer(chainClient: ResilientRpcClient, indexerUrl: string, heights: number[]): Promise<Version[]> {
-    let response: {substrate_block: Version[]} = await indexerRequest(
+async function fetchVersionsFromIndexer(chainClient: ResilientRpcClient, indexerUrl: string, heights: number[]): Promise<SpecVersion[]> {
+    let response: {substrate_block: SpecVersion[]} = await indexerRequest(
         indexerUrl,
         `query {
             substrate_block(where: {height: {_in: [${heights.join(', ')}]}}) {
+                specName: runtimeVersion(path: "$.specName") 
                 specVersion: runtimeVersion(path: "$.specVersion") 
                 blockNumber: height 
                 blockHash: hash

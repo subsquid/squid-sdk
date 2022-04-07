@@ -2,7 +2,7 @@ import {Command, InvalidOptionArgumentError} from "commander"
 import * as fs from "fs"
 import * as process from "process"
 import {exploreChainVersions} from "./index"
-import {ChainVersion} from "./types"
+import {SpecVersionWithMetadata} from "./types"
 
 
 export function run() {
@@ -44,7 +44,7 @@ The resulting file will be updated with new data.
     }
 
     let fromBlock = 0
-    let initialData: ChainVersion[] | undefined
+    let initialData: SpecVersionWithMetadata[] | undefined
     if (fs.existsSync(options.out)) {
         initialData = JSON.parse(fs.readFileSync(options.out, 'utf-8'))
         initialData?.sort((a, b) => a.blockNumber - b.blockNumber)

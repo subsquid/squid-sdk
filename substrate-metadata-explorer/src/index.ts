@@ -1,7 +1,7 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {fromChain} from "./fromChain"
 import {fromIndexer} from "./fromIndexer"
-import type {ChainVersion, Log} from "./types"
+import type {SpecVersionWithMetadata, Log} from "./types"
 
 
 export * from "./types"
@@ -15,7 +15,7 @@ export interface ExplorationOptions {
 }
 
 
-export async function exploreChainVersions(options: ExplorationOptions): Promise<ChainVersion[]> {
+export async function exploreChainVersions(options: ExplorationOptions): Promise<SpecVersionWithMetadata[]> {
     let client = new ResilientRpcClient(options.chainEndpoint)
     try {
         if (options.archiveEndpoint) {

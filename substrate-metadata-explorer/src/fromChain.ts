@@ -1,41 +1,47 @@
 import type {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Explorer, Version} from "./explorer"
-import {ChainVersion, Log} from "./types"
+import {findSpecVersions} from "./binarySearch"
+import {SpecVersionWithMetadata, Log, SpecVersion} from "./types"
 
 
-export async function fromChain(client: ResilientRpcClient, from: number = 0, log?: Log): Promise<ChainVersion[]> {
+export async function fromChain(client: ResilientRpcClient, from: number = 0, log?: Log): Promise<SpecVersionWithMetadata[]> {
     let headHash = await client.call('chain_getFinalizedHead')
     let height = await client.call('chain_getHeader', [headHash]).then((head: any) => {
         return Number.parseInt(head.number)
     })
     checkChainHeight(from, height)
     log?.(`chain height: ${height}`)
-    let versions = await Explorer.getVersions(from, Math.max(from, height - 1), heights => {
-        return fetchVersionsFromChain(client, heights)
-    }, log)
-    return fetchVersionMetadata(client, versions, log)
+    let versions = await findSpecVersions({
+        firstBlock: from,
+        lastBlock: Math.max(from, height - 1),
+        fetch(heights) {
+            return fetchVersionsFromChain(client, heights)
+        },
+        log
+    })
+    return enrichWithMetadata(client, versions, log)
 }
 
 
-export async function fetchVersionsFromChain(client: ResilientRpcClient, heights: number[]): Promise<Version[]> {
-    let versions: Version[] = []
+export async function fetchVersionsFromChain(client: ResilientRpcClient, heights: number[]): Promise<SpecVersion[]> {
+    let versions: SpecVersion[] = []
     for (let height of heights) {
         let hash = await client.call('chain_getBlockHash', [height])
         let rt = await client.call('chain_getRuntimeVersion', [hash])
         versions.push({
+            specName: rt.specName,
+            specVersion: rt.specVersion,
             blockNumber: height,
-            blockHash: hash,
-            specVersion: rt.specVersion
+            blockHash: hash
         })
     }
     return versions
 }
 
 
-export async function fetchVersionMetadata(client: ResilientRpcClient, versions: Version[], log?: Log): Promise<ChainVersion[]> {
-    let records: ChainVersion[] = []
+export async function enrichWithMetadata(client: ResilientRpcClient, versions: SpecVersion[], log?: Log): Promise<SpecVersionWithMetadata[]> {
+    let records: SpecVersionWithMetadata[] = []
     for (let v of versions) {
-        log?.(`fetching metadata for version ${v.specVersion}`)
+        log?.(`fetching metadata for ${v.specName}@${v.specVersion}`)
         let metadata = await client.call('state_getMetadata', [v.blockHash])
         records.push({...v, metadata})
     }
