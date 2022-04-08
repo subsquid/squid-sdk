@@ -1,6 +1,11 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+This log was last generated on Fri, 08 Apr 2022 10:15:29 GMT and should not be manually modified.
+
+## 0.2.2
+Fri, 08 Apr 2022 10:15:29 GMT
+
+_Version update only_
 
 ## 0.2.1
 Sun, 27 Mar 2022 11:00:39 GMT
