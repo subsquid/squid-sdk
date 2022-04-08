@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add validator to SubstrateBlock",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

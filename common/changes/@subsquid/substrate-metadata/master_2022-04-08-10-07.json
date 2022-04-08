@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "fix regression with call indexes in old types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}
