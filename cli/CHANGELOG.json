@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "0.2.3",
+      "tag": "@subsquid/cli_v0.2.3",
+      "date": "Fri, 08 Apr 2022 10:44:56 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't use deprecated cli-ux package"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.2",
       "tag": "@subsquid/cli_v0.2.2",
       "date": "Fri, 08 Apr 2022 10:15:29 GMT",
