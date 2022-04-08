@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "don't use deprecated cli-ux package",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}
