@@ -34,6 +34,7 @@ specifiers:
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
   '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
+  '@rush-temp/util-internal-gql-request': file:./projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-http-server': file:./projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:./projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
@@ -126,6 +127,7 @@ dependencies:
   '@rush-temp/util-internal': file:projects/util-internal.tgz
   '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
+  '@rush-temp/util-internal-gql-request': file:projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-http-server': file:projects/util-internal-http-server.tgz
   '@rush-temp/util-internal-service-manager': file:projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:projects/util-naming.tgz
@@ -7146,7 +7148,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-p/qchTlpfySpr0yZrn7At08Rv1jm6Q+1Q9WkBjpS+n9SVaJJetWwRObyjIny75AmKFpaCHp+cW4N1N0dP4P5GQ==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-hsTWlHfHPL7Gz5XKQywqbi7arc2TyQk/Nj5PTgGejhV5P03RUCaozFLHMyoL7fVi31TQgxcsiQlqrN3aNQ4jMA==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -7155,8 +7157,6 @@ packages:
       commander: 9.0.0
       node-fetch: 2.6.7
       typescript: 4.5.5
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   file:projects/substrate-metadata.tgz:
@@ -7172,7 +7172,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_pg@8.7.3:
-    resolution: {integrity: sha512-KQVixCboAk+jgUfQh4kilcsPZWZQG5nZLLzNRoRGh2rcHw5UgArlFdM+PHKrx3fJzqii5XchYqKgc97y8eHIlw==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-ycSXE9D6pRpe9bOlJeIAr09cUBb0l383z/WzS3b7dZLeffh5jamVOuJYUA3DLrVSNYO5OewfeXOA8yAkUnZ0Qw==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7276,6 +7276,19 @@ packages:
     dependencies:
       '@types/node': 16.11.26
       typescript: 4.5.5
+    dev: false
+
+  file:projects/util-internal-gql-request.tgz:
+    resolution: {integrity: sha512-8IZJ3x8erRH3wS0hjP9HKCnJXkWhH7dtDC3wH8Pn/DWmlF+pmLXdwhV2hZhLBJeWdG2/oofWjoiSw3zafXpXvg==, tarball: file:projects/util-internal-gql-request.tgz}
+    name: '@rush-temp/util-internal-gql-request'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.26
+      '@types/node-fetch': 2.6.1
+      node-fetch: 2.6.7
+      typescript: 4.5.5
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   file:projects/util-internal-http-server.tgz:

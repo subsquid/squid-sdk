@@ -1,11 +1,8 @@
 import {Command, InvalidOptionArgumentError} from "commander"
-import * as fs from "fs"
-import * as process from "process"
-import {exploreChainVersions} from "./index"
-import {SpecVersionWithMetadata} from "./types"
+import {explore, ExploreOptions} from "./explore"
 
 
-export function run() {
+export async function run() {
     let program = new Command()
 
     program.description(`
@@ -16,8 +13,9 @@ The result of exploration is saved in a json file:
 
 [
     {
-        "specVersion": 1,
-        "blockNumber": 10,
+        "specName": "polkadot",
+        "specVersion": 0,
+        "blockNumber": 0,
         "blockHash": "0x..",
         "metadata": "0x.."
     },
@@ -37,39 +35,9 @@ The resulting file will be updated with new data.
         urlOptionValidator(['http:', 'https:'])
     )
 
-    let options = program.parse().opts() as {
-        chain: string
-        out: string
-        archive?: string
-    }
+    let options: ExploreOptions = program.parse().opts()
 
-    let fromBlock = 0
-    let initialData: SpecVersionWithMetadata[] | undefined
-    if (fs.existsSync(options.out)) {
-        initialData = JSON.parse(fs.readFileSync(options.out, 'utf-8'))
-        initialData?.sort((a, b) => a.blockNumber - b.blockNumber)
-    }
-    if (initialData?.length) {
-        fromBlock = initialData[initialData.length - 1].blockNumber
-        console.log(`output file has explored versions, will continue from there and augment the file`)
-    }
-
-    if (fromBlock > 0) {
-        console.log(`starting from block: ${fromBlock}`)
-    }
-
-    exploreChainVersions({
-        chainEndpoint: options.chain,
-        archiveEndpoint: options.archive,
-        fromBlock,
-        log: msg => console.log(msg)
-    }).then(versions => {
-        let data = initialData ? initialData.concat(versions.slice(1)) :  versions
-        fs.writeFileSync(options.out, JSON.stringify(data, null, 2))
-    }).catch(err => {
-        console.error(err)
-        process.exit(1)
-    })
+    await explore(options)
 }
 
 
