@@ -18,7 +18,11 @@ interface Config {
 }
 
 
-const ajv = new Ajv()
+const ajv = new Ajv({
+    messages: true,
+    removeAdditional: false,
+    verbose: true
+})
 const validateConfig = ajv.compile<Config>(CONFIG_SCHEMA)
 const validateChainVersions = ajv.compile<ChainVersion[]>(CHAIN_VERSIONS_SCHEMA)
 
@@ -74,7 +78,7 @@ function readChainVersions(file: string): ChainVersion[] {
     if (validateChainVersions(json)) {
         return json
     } else {
-        throw new ConfigError(`Failed to extract chain versions from ${file}:\n  ${ajv.errorsText(validateConfig.errors, {separator: '\n  '})}`)
+        throw new ConfigError(`Failed to extract chain versions from ${file}:\n  ${ajv.errorsText(validateChainVersions.errors, {separator: '\n  '})}`)
     }
 }
 

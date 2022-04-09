@@ -67,9 +67,13 @@ async function doExploration(
                 if (knownVersions[0].specName == null) {
                     // we've got an old file
                     // fill in the specName
-                    knownVersions.forEach(v => {
-                        v.specName = currentGenesis.specName
-                    })
+                    for (let i = 0; i < knownVersions.length; i++) {
+                        let {specName, ...rest} = knownVersions[i]
+                        knownVersions[i] = {
+                            specName: currentGenesis.specName,
+                            ...rest
+                        }
+                    }
                 }
             }
         } else {

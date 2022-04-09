@@ -4,23 +4,22 @@ import {
     getChainDescriptionFromMetadata,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion,
     StorageItem,
     Type
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {def} from "@subsquid/util-internal"
-import {OutDir} from "@subsquid/util-internal-code-printer"
+import {def, last} from "@subsquid/util-internal"
+import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
-import assert from "assert"
 import {Interfaces} from "./ifs"
 import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
 
 
 export interface ChainVersion {
-    specVersion: SpecVersion
+    specName: string
+    specVersion: number
     blockNumber: number
     blockHash: string
     metadata: string
@@ -42,7 +41,7 @@ export class Typegen {
         new Typegen(options).generate()
     }
 
-    private interfaces = new Map<SpecVersion, Interfaces>()
+    private interfaces = new Map<VersionDescription, Interfaces>()
     private dir: OutDir
 
     constructor(private options: TypegenOptions) {
@@ -54,9 +53,10 @@ export class Typegen {
         this.generateEnums('events')
         this.generateEnums('calls')
         this.generateStorage()
-        this.interfaces.forEach((ifs, specVersion) => {
+        this.interfaces.forEach((ifs, v) => {
             if (ifs.isEmpty()) return
-            let file = this.dir.file(`v${specVersion}.ts`)
+            let fileName = toCamelCase(this.getVersionName(v)) + '.ts'
+            let file = this.dir.file(fileName)
             ifs.generate(file)
             file.write()
         })
@@ -78,11 +78,10 @@ export class Typegen {
         let fix = kind == 'events' ? 'Event' : 'Call'
         let ctx = kind == 'events' ? 'event' : 'extrinsic'
         let names = Array.from(items.keys()).sort()
-        let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
         out.line(`import {${fix}Context, Result, deprecateLatest} from './support'`)
-        out.lazy(() => Array.from(importedInterfaces).sort().map(v => `import * as v${v} from './v${v}'`))
+        let importedInterfaces = this.importInterfaces(out)
         names.forEach(name => {
             let versions = items.get(name)!
             let {def: {pallet, name: unqualifiedName}} = versions[0]
@@ -97,42 +96,39 @@ export class Typegen {
                         out.line(`assert(this.ctx.${ctx}.name === '${camelCased}' || this.ctx.${ctx}.name === '${name}')`)
                     }
                 })
-                versions.forEach((version, idx) => {
+                versions.forEach((v, idx) => {
+                    let versionName = this.getVersionName(v.chain)
                     let isLatest = versions.length === idx + 1
-                    let v = version.chain.specVersion
-                    let ifs = this.getInterface(v)
+                    let ifs = this.getInterface(v.chain)
                     let unqualifiedTypeExp: string
-                    if (version.def.fields[0]?.name == null) {
-                        unqualifiedTypeExp = ifs.makeTuple(version.def.fields.map(f => f.type))
+                    if (v.def.fields[0]?.name == null) {
+                        unqualifiedTypeExp = ifs.makeTuple(v.def.fields.map(f => f.type))
                     } else {
-                        unqualifiedTypeExp = `{${version.def.fields.map(f => `${f.name}: ${ifs.use(f.type)}`).join(', ')}}`
+                        unqualifiedTypeExp = `{${v.def.fields.map(f => `${f.name}: ${ifs.use(f.type)}`).join(', ')}}`
                     }
-                    let typeExp = ifs.qualify('v'+v, unqualifiedTypeExp)
-                    if (typeExp != unqualifiedTypeExp) {
-                        importedInterfaces.add(v)
-                    }
+                    let typeExp = this.qualify(importedInterfaces, v.chain, unqualifiedTypeExp)
                     out.line()
-                    out.blockComment(version.def.docs)
-                    out.block(`get isV${v}(): boolean`, () => {
-                        let hash = version.chain[kind].getHash(name)
+                    out.blockComment(v.def.docs)
+                    out.block(`get is${versionName}(): boolean`, () => {
+                        let hash = v.chain[kind].getHash(name)
                         out.line(`return this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`)
                     })
                     out.line()
-                    out.blockComment(version.def.docs)
-                    out.block(`get asV${v}(): ${typeExp}`, () => {
-                        out.line(`assert(this.isV${v})`)
+                    out.blockComment(v.def.docs)
+                    out.block(`get as${versionName}(): ${typeExp}`, () => {
+                        out.line(`assert(this.is${versionName})`)
                         out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
                     })
                     if (isLatest) {
                         out.line()
                         out.block(`get isLatest(): boolean`, () => {
                             out.line(`deprecateLatest()`)
-                            out.line(`return this.isV${v}`)
+                            out.line(`return this.is${versionName}`)
                         })
                         out.line()
                         out.block(`get asLatest(): ${typeExp}`, () => {
                             out.line(`deprecateLatest()`)
-                            out.line(`return this.asV${v}`)
+                            out.line(`return this.as${versionName}`)
                         })
                     }
                 })
@@ -168,15 +164,10 @@ export class Typegen {
 
         let out = this.dir.file('storage.ts')
         let names = Array.from(items.keys()).sort()
-        let importedInterfaces = new Set<SpecVersion>()
 
         out.line(`import assert from 'assert'`)
         out.line(`import {StorageContext, Result} from './support'`)
-        out.lazy(() => {
-            Array.from(importedInterfaces).sort().forEach(v => {
-                out.line(`import * as v${v} from './v${v}'`)
-            })
-        })
+        let importedInterfaces = this.importInterfaces(out)
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
@@ -184,17 +175,15 @@ export class Typegen {
             out.block(`export class ${prefix}${name}Storage`, () => {
                 out.line(`constructor(private ctx: StorageContext) {}`)
                 versions.forEach(v => {
+                    let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
-                    let ifs = this.getInterface(v.chain.specVersion)
+                    let ifs = this.getInterface(v.chain)
                     let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
-                    let qualifiedTypes = types.map(texp => ifs.qualify(`v${v.chain.specVersion}`, texp))
-                    if (qualifiedTypes.some((texp, idx) => texp != types[idx])) {
-                        importedInterfaces.add(v.chain.specVersion)
-                    }
+                    let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
 
                     out.line()
                     out.blockComment(v.def.docs)
-                    out.block(`get isV${v.chain.specVersion}()`, () => {
+                    out.block(`get is${versionName}()`, () => {
                         out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
                     })
 
@@ -217,8 +206,8 @@ export class Typegen {
                             }
                         })
                         let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`].concat(keyNames)
-                        out.block(`async getAsV${v.chain.specVersion}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
-                            out.line(`assert(this.isV${v.chain.specVersion})`)
+                        out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                            out.line(`assert(this.is${versionName})`)
                             out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
                         })
                     }
@@ -264,8 +253,6 @@ export class Typegen {
                 versions.forEach(v => {
                     let prev = unique.length ? unique[unique.length - 1] : undefined
                     if (prev && hash(v.chain, name) === hash(prev.chain, name)) {
-                        // TODO: use the latest definition, but set specVersion and blockNumber of a previous one
-                        // for hopefully better docs
                     } else {
                         unique.push(v)
                     }
@@ -279,6 +266,20 @@ export class Typegen {
         return items
     }
 
+    private getVersionName(v: VersionDescription): string {
+        if (this.specNameNotChanged() || last(this.chain()).specName == v.specName) {
+            return `V${v.specVersion}`
+        } else {
+            let isName = toCamelCase(`is-${v.specName}-v${v.specVersion}`)
+            return isName.slice(2)
+        }
+    }
+
+    @def
+    private specNameNotChanged(): boolean {
+        return new Set(this.chain().map(v => v.specName)).size < 2
+    }
+
     @def
     chain(): VersionDescription[] {
         return this.options.chainVersions.map(v => {
@@ -286,6 +287,7 @@ export class Typegen {
             let oldTypes = this.options.typesBundle && getTypesFromBundle(this.options.typesBundle, v.specVersion)
             let d = getChainDescriptionFromMetadata(metadata, oldTypes)
             return {
+                specName: v.specName,
                 specVersion: v.specVersion,
                 blockNumber: v.blockNumber,
                 types: d.types,
@@ -296,20 +298,40 @@ export class Typegen {
         }).sort((a, b) => a.blockNumber - b.blockNumber)
     }
 
-    getInterface(specVersion: SpecVersion): Interfaces {
-        let ifs = this.interfaces.get(specVersion)
+    getInterface(version: VersionDescription): Interfaces {
+        let ifs = this.interfaces.get(version)
         if (ifs) return ifs
-        let d = this.chain().find(v => v.specVersion == specVersion)
-        assert(d != null)
-        ifs = new Interfaces(d.description)
-        this.interfaces.set(specVersion, ifs)
+        ifs = new Interfaces(version.description)
+        this.interfaces.set(version, ifs)
         return ifs
+    }
+
+    private importInterfaces(out: Output): Set<VersionDescription> {
+        let set = new Set<VersionDescription>()
+        out.lazy(() => {
+            Array.from(set).sort((a, b) => a.blockNumber - b.blockNumber).forEach(v => {
+                let name = toCamelCase(this.getVersionName(v))
+                out.line(`import * as ${name} from './${name}'`)
+            })
+        })
+        return set
+    }
+
+    private qualify(importedInterfaces: Set<VersionDescription>, v: VersionDescription, texp: string): string {
+        let ifs = this.getInterface(v)
+        let prefix = toCamelCase(this.getVersionName(v))
+        let qualified = ifs.qualify(prefix, texp)
+        if (qualified != texp) {
+            importedInterfaces.add(v)
+        }
+        return qualified
     }
 }
 
 
 interface VersionDescription {
-    specVersion: SpecVersion
+    specName: string
+    specVersion: number
     blockNumber: number
     types: Type[]
     events: eac.Registry

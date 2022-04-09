@@ -15,7 +15,7 @@ import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
-import {getTypeByPath, normalizeMetadataTypes} from "./util"
+import {normalizeMetadataTypes} from "./util"
 
 
 export interface ChainDescription {
@@ -139,11 +139,11 @@ class FromV14 {
             fields: [
                 {
                     name: "address",
-                    type: getTypeByPath(types, ["sp_runtime", "multiaddress", "MultiAddress"]),
+                    type: this.getTypeParameter(this.metadata.extrinsic.type, 0),
                 },
                 {
                     name: "signature",
-                    type: getTypeByPath(types, ["sp_runtime", "MultiSignature"]),
+                    type: this.getTypeParameter(this.metadata.extrinsic.type, 2),
                 },
                 {
                     name: 'signedExtensions',
@@ -154,6 +154,17 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    private getTypeParameter(ti: Ti, idx: number): Ti {
+        let def = this.metadata.lookup.types[ti]
+        if (def.type.params.length <= idx) {
+            let name = def.type.path.length ? def.type.path.join('::') : ''+ti
+            throw new Error(
+                `Type ${name} should have at least ${idx + 1} type parameter${idx > 0 ? 's' : ''}`
+            )
+        }
+        return assertNotNull(def.type.params[idx].type)
     }
 
     private getStorageItem(prefix: string, name: string): StorageItem {
