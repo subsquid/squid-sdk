@@ -464,6 +464,11 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "workspace",
+      "projectFolder": "ops/workspace",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "shouldPublish": true,
@@ -610,11 +615,6 @@
     {
       "packageName": "types-test",
       "projectFolder": "test/types",
-      "shouldPublish": false
-    },
-    {
-      "packageName": "workspace",
-      "projectFolder": "tools/workspace",
       "shouldPublish": false
     }
   ]
