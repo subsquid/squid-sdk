@@ -464,12 +464,6 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/rpc-client",
-      "projectFolder": "rpc-client",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "shouldPublish": true,
@@ -520,6 +514,12 @@
     {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "projectFolder": "util/rpc-client",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
