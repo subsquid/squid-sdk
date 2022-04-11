@@ -1,4 +1,3 @@
 {
-  "chain": "wss://rpc.darwinia.network",
-  "archive": "https://darwinia.indexer.gc.subsquid.io/v4/graphql"
+  "chain": "wss://rpc.darwinia.network"
 }
