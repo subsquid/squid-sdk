@@ -592,16 +592,16 @@
       "projectFolder": "test/data",
       "shouldPublish": false
     },
-    {
-      "packageName": "e2e-test-project",
-      "projectFolder": "test/e2e-project",
-      "shouldPublish": false
-    },
-    {
-      "packageName": "e2e-test-suite",
-      "projectFolder": "test/e2e-suite",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "e2e-test-project",
+//      "projectFolder": "test/e2e-project",
+//      "shouldPublish": false
+//    },
+//    {
+//      "packageName": "e2e-test-suite",
+//      "projectFolder": "test/e2e-suite",
+//      "shouldPublish": false
+//    },
     {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
