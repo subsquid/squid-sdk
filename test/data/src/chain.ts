@@ -1,21 +1,21 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec} from "@subsquid/scale-codec"
-import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
+import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
 import {
     ChainDescription,
+    decodeExtrinsic,
     decodeMetadata,
+    encodeExtrinsic,
     getChainDescriptionFromMetadata,
     getOldTypesBundle
 } from "@subsquid/substrate-metadata"
-import {ChainVersion} from "@subsquid/substrate-metadata-explorer"
+import {SpecVersionWithMetadata} from "@subsquid/substrate-metadata-explorer/lib/types"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def} from "@subsquid/util-internal"
-import {toCamelCase} from "@subsquid/util-naming"
+import {assertNotNull, def, toHex} from "@subsquid/util-internal"
+import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
 import expect from "expect"
 import * as fs from "fs"
-import fetch from "node-fetch"
 import * as path from "path"
 import * as pg from "pg"
 import {ProgressReporter} from "./util"
@@ -25,54 +25,16 @@ export class Chain {
     constructor(private name: string) {}
 
     @def
-    info(): {chain: string, archive: string} {
+    info(): {chain: string, archive?: string} {
        return this.readJson('info.json')
     }
 
     @def
-    versions(): ChainVersion[] {
+    versions(): SpecVersionWithMetadata[] {
         return this.readJson('versions.json')
     }
 
     async selectTestBlocks(): Promise<void> {
-        let selected = new Set<number>()
-        let versions = this.description()
-        for (let i = 0; i < versions.length; i++) {
-            let beg = versions[i].blockNumber + 1
-            let end = i + 1 < versions.length ? versions[i+1].blockNumber : beg + 10000
-            let v = versions[i]
-            for (let event in v.events.definitions) {
-                let result: {substrate_event: {blockNumber: number}[]} = await this.archiveRequest(`
-                    query {
-                        substrate_event(limit: 5 where: {name: {_eq: "${event}"}, blockNumber: {_gte: ${beg}, _lte: ${end}}}) {
-                            blockNumber
-                        }
-                    }
-                `)
-                result.substrate_event.forEach(item => {
-                    selected.add(item.blockNumber)
-                })
-                console.log(`spec: ${v.specVersion}, total: ${selected.size}, event: ${event}`)
-            }
-            for (let call in v.calls.definitions) {
-                let result: {substrate_extrinsic: {blockNumber: number}[]} = await this.archiveRequest(`
-                    query {
-                        substrate_extrinsic(limit: 5 where: {name: {_eq: "${call}"}, blockNumber: {_gte: ${beg}, _lte: ${end}}}) {
-                            blockNumber
-                        }
-                    }
-                `)
-                result.substrate_extrinsic.forEach(item => {
-                    selected.add(item.blockNumber)
-                })
-                console.log(`spec: ${v.specVersion}, total: ${selected.size}, call: ${call}`)
-            }
-        }
-        let blockList = Array.from(selected).sort((a, b) => a - b)
-        this.save('blocks.json', blockList)
-    }
-
-    async selectTestBlocksFromDb(): Promise<void> {
         let selected = new Set<number>()
         let versions = this.description()
         await this.withDatabase(async db => {
@@ -103,31 +65,67 @@ export class Chain {
             }
         })
         let blockList = Array.from(selected).sort((a, b) => a - b)
-        this.save('blocks.json', blockList)
+        this.save('block-numbers.json', blockList)
     }
 
     @def
-    blocks(): number[] {
-       return this.readJson('blocks.json')
+    blockNumbers(): number[] {
+       return this.readJson('block-numbers.json')
     }
 
-    saveEvents(): Promise<void> {
-        return this.withRpcClient(async client => {
-            let out = this.item('events.jsonl')
-            let saved = this.getSavedBlocks(out)
-            let progress = new ProgressReporter(this.blocks().length)
-            for (let h of this.blocks()) {
-                if (saved.has(h)) continue
-                let blockHash = await client.call('chain_getBlockHash', [h])
+    async saveBlocks(): Promise<void> {
+        let out = this.item('blocks.jsonl')
+        let unsaved = this.getUnsavedBlocks(out)
+        if (unsaved.length == 0) return
+        console.log(`Saving ${unsaved.length} blocks`)
+        let progress = new ProgressReporter(unsaved.length)
+        await this.withRpcClient(async client => {
+            for (let blockNumber of unsaved) {
+                let blockHash: string = await client.call('chain_getBlockHash', [blockNumber])
+                let block: {block: RpcBlock} = await client.call('chain_getBlock', [blockHash])
+                this.append(out, {
+                    blockNumber,
+                    ...block.block
+                })
+                progress.tick()
+            }
+            progress.report()
+        })
+    }
+
+    @def
+    blocks(): RawBlock[] {
+        return this.readJsonLines('blocks.jsonl')
+    }
+
+    async saveEvents(): Promise<void> {
+        let out = this.item('events.jsonl')
+        let unsaved = this.getUnsavedBlocks(out)
+        if (unsaved.length == 0) return
+        console.log(`Saving events for ${unsaved.length} blocks`)
+        let progress = new ProgressReporter(unsaved.length)
+        await this.withRpcClient(async client => {
+            for (let blockNumber of unsaved) {
+                let blockHash = await client.call('chain_getBlockHash', [blockNumber])
                 let events = await client.call('state_getStorageAt', [
                     '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7',
                     blockHash
                 ])
-                this.append(out, {blockNumber: h, events})
-                progress.block(h)
+                this.append(out, {blockNumber, events})
+                progress.tick()
             }
             progress.report()
         })
+    }
+
+    @def
+    events(): RawBlockEvents[] {
+        return this.readJsonLines('events.jsonl')
+    }
+
+    private getUnsavedBlocks(file: string): number[] {
+        let saved = this.getSavedBlocks(file)
+        return this.blockNumbers().filter(n => !saved.has(n))
     }
 
     private getSavedBlocks(file: string): Set<number> {
@@ -137,6 +135,49 @@ export class Chain {
         return new Set(
             blocks.map(b => b.blockNumber)
         )
+    }
+
+    testExtrinsicsScaleEncodingDecoding(): void {
+        let decoded = this.decodedExtrinsics()
+
+        let encoded = decoded.map(b => {
+            let d = this.getVersion(b.blockNumber)
+            let extrinsics = b.extrinsics.map(ex => {
+                return toHex(
+                    encodeExtrinsic(ex, d.description, d.codec)
+                )
+            })
+            return {
+                blockNumber: b.blockNumber,
+                extrinsics
+            }
+        })
+
+        let original = this.blocks().map(b => {
+            return {
+                blockNumber: b.blockNumber,
+                extrinsics: b.extrinsics
+            }
+        })
+
+        for (let i = 0; i < encoded.length; i++) {
+            expect(encoded[i]).toEqual(original[i])
+        }
+    }
+
+    @def
+    decodedExtrinsics(): DecodedBlockExtrinsics[] {
+        let blocks = this.blocks()
+        return blocks.map(b => {
+            let d = this.getVersion(b.blockNumber)
+            let extrinsics = b.extrinsics.map(hex => {
+                return decodeExtrinsic(hex, d.description, d.codec)
+            })
+            return {
+                blockNumber: b.blockNumber,
+                extrinsics
+            }
+        })
     }
 
     testEventsScaleEncodingDecoding(): void {
@@ -152,54 +193,12 @@ export class Chain {
         }
     }
 
-    testCompareEventsWithPolka(): void {
-        let squid = this.decodedEvents()
-        let polka = new Map(this.decodedEventsFromPolka().map(e => [e.blockNumber, e]))
-        squid.forEach(se => {
-            let pe = polka.get(se.blockNumber)
-            if (pe == null) return
-            expect({
-                blockNumber: se.blockNumber,
-                count: se.events.length
-            }).toEqual({
-                blockNumber: pe.blockNumber,
-                count: pe.events.length
-            })
-            for (let i = 0; i < se.events.length; i++) {
-                expect({
-                    blockNumber: se.blockNumber,
-                    blockEventIndex: i,
-                    event: se.events[i]
-                }).toEqual({
-                    blockNumber: pe.blockNumber,
-                    blockEventIndex: i,
-                    event: pe.events[i]
-                })
-            }
-        })
-    }
-
     @def
     decodedEvents(): DecodedBlockEvents[] {
         let blocks = this.events()
         return blocks.map(b => {
             let d = this.getVersion(b.blockNumber)
             let events = d.codec.decodeBinary(d.description.eventRecordList, b.events)
-            return {blockNumber: b.blockNumber, events}
-        })
-    }
-
-    @def
-    events(): BlockEvents[] {
-        return this.readJsonLines('events.jsonl')
-    }
-
-    @def
-    decodedEventsFromPolka(): DecodedBlockEvents[] {
-        let blocks: DecodedBlockEvents[] = this.readJsonLines('events-by-polka.jsonl')
-        return blocks.map(b => {
-            let d = this.getVersion(b.blockNumber)
-            let events = d.jsonCodec.decode(d.description.eventRecordList, b.events)
             return {blockNumber: b.blockNumber, events}
         })
     }
@@ -220,10 +219,11 @@ export class Chain {
             let description = getChainDescriptionFromMetadata(metadata, types)
             return {
                 blockNumber: v.blockNumber,
+                specName: v.specName,
                 specVersion: v.specVersion,
                 metadata,
                 description,
-                codec: new Codec(description.types),
+                codec: new ScaleCodec(description.types),
                 jsonCodec: new JsonCodec(description.types),
                 events: new eac.Registry(description.types, description.event),
                 calls: new eac.Registry(description.types, description.call)
@@ -241,10 +241,11 @@ export class Chain {
     }
 
     private async archiveRequest<T>(query: string): Promise<T> {
+        let url = assertNotNull(this.info().archive)
         let attempt = 3
         while (attempt--) {
             try {
-                return await this._archiveRequest(query)
+                return await graphqlRequest({url, query})
             } catch(e: any) {
                 if (attempt && (e.toString().startsWith('FetchError') || /Got http 5/.test(e.toString()))) {
                     console.log(`error: ${e.message}`)
@@ -255,27 +256,6 @@ export class Chain {
             }
         }
         assert(false)
-    }
-
-    private async _archiveRequest<T>(query: string): Promise<T> {
-        let response = await fetch(this.info().archive, {
-            method: 'POST',
-            body: JSON.stringify({query}),
-            headers: {
-                'content-type': 'application/json',
-                'accept': 'application/json',
-                'accept-encoding': 'gzip, br'
-            }
-        })
-        if (!response.ok) {
-            let body = await response.text()
-            throw new Error(`Got http ${response.status}${body ? `, body: ${body}` : ''}`)
-        }
-        let result = await response.json()
-        if (result.errors?.length) {
-            throw new Error(`GraphQL error: ${result.errors[0].message}`)
-        }
-        return assertNotNull(result.data) as T
     }
 
     private async withDatabase<T>(cb: (client: pg.Client) => Promise<T>): Promise<T> {
@@ -335,33 +315,12 @@ export class Chain {
 }
 
 
-/**
- * Normalize event arguments, so that they follow rules for regular scale types
- */
-function normalizeGenericEventData(data: any): any {
-    if (data.length == 0) return null
-    let fields = data.meta.fields
-    let named = fields[0].name.isSome
-    if (named) {
-        let obj: any = {}
-        for (let i = 0; i < fields.length; i++) {
-            let name = toCamelCase(fields[i].name.unwrap().toString())
-            obj[name] = data[i]
-        }
-        return obj
-    } else if (data.length == 1) {
-        return data[0]
-    } else {
-        return data
-    }
-}
-
-
 interface VersionDescription {
     blockNumber: number
+    specName: string
     specVersion: number
     description: ChainDescription
-    codec: Codec
+    codec: ScaleCodec
     jsonCodec: JsonCodec
     events: eac.Registry
     calls: eac.Registry
@@ -374,7 +333,30 @@ interface DecodedBlockEvents {
 }
 
 
-interface BlockEvents {
+interface RawBlockEvents {
     blockNumber: number
     events: string
+}
+
+
+interface RawBlock extends RpcBlock {
+    blockNumber: number
+}
+
+
+interface RpcBlock {
+    header: {
+        number: string
+        parentHash: string
+        digest: {
+            logs: string[]
+        }
+    }
+    extrinsics: string[]
+}
+
+
+interface DecodedBlockExtrinsics {
+    blockNumber: number
+    extrinsics: any[]
 }

@@ -34,3 +34,16 @@ export function last<T>(array: T[]): T {
     assert(array.length > 0)
     return array[array.length - 1]
 }
+
+
+export function runProgram(main: () => Promise<void>): void {
+    main().then(
+        () => {
+            process.exit(0)
+        },
+        err => {
+            console.error(err)
+            process.exit(1)
+        }
+    )
+}

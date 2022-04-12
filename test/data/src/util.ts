@@ -1,35 +1,21 @@
-import {toHex} from "@subsquid/util-internal"
+import {Progress} from "@subsquid/util-internal-counters"
+
 
 export class ProgressReporter {
-    private window: {time: bigint, count: number}[] = []
-    private count = 0
+    private progress: Progress
     private reportTimeout?: any
-    private lastBlock = 0
 
-    constructor(private total: number) {
-        this.tick(0)
+    constructor(total: number) {
+        this.progress = new Progress()
+        this.progress.setInitialValue(0)
+        this.progress.setTargetValue(total)
     }
 
-    private tick(inc: number, time?: bigint): void {
-        if (time == null) {
-            time = process.hrtime.bigint()
-        }
-        this.count += inc
-        this.window.push({
-            time,
-            count: this.count
-        })
-        if (this.window.length > 50) {
-            this.window.shift()
-        }
+    tick(): void {
+        this.progress.inc(1)
         if (this.reportTimeout == null) {
             this.scheduleReport()
         }
-    }
-
-    block(n: number): void {
-        this.lastBlock = n
-        this.tick(1)
     }
 
     private scheduleReport(): void {
@@ -40,14 +26,8 @@ export class ProgressReporter {
     }
 
     report(): void {
-        let percentage = Math.round(100 * this.count / this.total)
-        let beg = this.window[0]
-        let end = this.window[this.window.length - 1]
-        let duration = end.time - beg.time
-        let processed = end.count - beg.count
-        if (processed == 0) return
-        let eta = Number(BigInt(this.total - this.count) * duration / (BigInt(processed) * 1000_000_000n))
-        console.log(`last block: ${this.lastBlock}, progress: ${percentage}%, eta: ${timeInterval(eta)}`)
+        let progress = Math.round(this.progress.ratio() * 100)
+        console.log(`progress: ${progress}%, eta: ${timeInterval(this.progress.eta())}`)
         if (this.reportTimeout) {
             clearTimeout(this.reportTimeout)
             this.reportTimeout = undefined
@@ -58,7 +38,7 @@ export class ProgressReporter {
 
 function timeInterval(seconds: number): string {
     if (seconds < 60) {
-        return seconds + 's'
+        return Math.round(seconds) + 's'
     }
     let minutes = Math.ceil(seconds/60)
     if (minutes < 60) {
@@ -67,11 +47,4 @@ function timeInterval(seconds: number): string {
     let hours = Math.floor(minutes / 60)
     minutes = minutes - hours * 60
     return hours + 'h ' + minutes + 'm'
-}
-
-
-export function jsonReplacer(key: string, val: unknown): any {
-    if (val instanceof Uint8Array) return toHex(val)
-    if (typeof val == 'bigint') return val.toString()
-    return val
 }
