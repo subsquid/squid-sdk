@@ -1,5 +1,5 @@
 DB="postgres://postgres:postgres@localhost:29387/archive"
-COCKROACH="postgres://root@localhost:26257/kusama_archive"
+COCKROACH="postgres://root@localhost:30000/defaultdb"
 
 
 kusama:

@@ -111,7 +111,7 @@ ServiceManager.run(async sm => {
 async function getDbHeight(db: pg.ClientBase): Promise<number | undefined> {
     let res = await db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
     if (res.rowCount) {
-        return res.rows[0].height
+        return parseInt(res.rows[0].height)
     } else {
         return undefined
     }
