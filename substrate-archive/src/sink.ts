@@ -30,7 +30,7 @@ export class PostgresSink implements Sink {
 
     private headerInsert = new Insert<Block>('block', {
         id: {cast: 'text'},
-        height: {cast: 'numeric'},
+        height: {cast: 'int'},
         hash: {cast: 'text'},
         parent_hash: {cast: 'text'},
         timestamp: {cast: 'timestamptz'},
@@ -156,12 +156,23 @@ class Insert<E> {
             let args = names.map((name, idx) => {
                 let param = '$' + (idx + 1)
                 let cast = mapping[name].cast
+                if (cast == 'jsonb') { // Cockroach workaround
+                    cast = 'text'
+                }
                 if (cast) {
                     param += '::' + cast + '[]'
                 }
                 return param
             })
-            this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT * FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
+            let cols = names.map(name => {
+                let cast = mapping[name].cast
+                if (cast == 'jsonb') { // Cockroach workaround
+                    return name + '::jsonb'
+                } else {
+                    return name
+                }
+            })
+            this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT ${cols.join(', ')} FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
         } else {
             this.sql = sql
         }

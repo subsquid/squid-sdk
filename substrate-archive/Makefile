@@ -1,8 +1,9 @@
 DB="postgres://postgres:postgres@localhost:29387/archive"
+COCKROACH="postgres://root@localhost:26257/kusama_archive"
 
 
 kusama:
-	@node lib/main.js --out $(DB) \
+	@node lib/main.js --out $(COCKROACH) \
 		-e wss://kusama-rpc.polkadot.io \
 		-e wss://kusama-rpc.polkadot.io \
 		-e wss://kusama-rpc.polkadot.io \
