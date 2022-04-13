@@ -3,15 +3,15 @@ import process from "process";
 import path from "path";
 import fs from "fs";
 import { Output } from "@subsquid/util-internal-code-printer";
-import { AbiCoder } from "@ethersproject/abi";
+import { Interface } from "@ethersproject/abi";
 
 export function run(): void {
     program.description(`
 Generates TypeScript definitions for evm log events
 for use within substrate-processor mapping handlers.
     `.trim())
-        .option('--input <path>', 'path of JSON abi file')
-        .option('--output <path>', 'path for output typescript file');
+        .requiredOption('--input <path>', 'path of JSON abi file')
+        .requiredOption('--output <path>', 'path for output typescript file');
 
     program.parse();
 
@@ -21,14 +21,10 @@ for use within substrate-processor mapping handlers.
 
     try {
         generateTsFromAbi(inputPath, outputPath);
-    } catch(e: any) {
-        printError(e);
+    } catch(err: any) {
+        console.error(`evm-typegen error: ${err.toString()}`);
         process.exit(1);
     }
-}
-
-function printError(err: any) {
-    console.error(`substrate-typegen ${err.toString()}`);
 }
 
 function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
@@ -49,13 +45,16 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.line("import { Interface } from \"@ethersproject/abi\";");
     output.line("import ethers from \"ethers\";");
-    output.line("import { EvmLogHandlerContext } from \"@subsquid/substrate-evm-processor\";");
-    output.line(`import inputJson from "${path.resolve(inputPathRaw)}";`);
+    output.line("");
+    output.line(`const inputJson = getInputJson();`);
     output.line("");
     output.line("const abi = new Interface(inputJson);");
     output.line("");
 
     const eventTypeIndexes: { [key: string]: number } = {};
+
+    // validate the abi
+    const _abi = new Interface(rawABI);
 
     const abiEvents = rawABI.filter((decl: any): boolean => decl.type === "event").map((decl: any): any => {
         let signature = `${decl.name}(`;
@@ -82,12 +81,10 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         return decl;
     });
 
-    const abiCoder = new AbiCoder();
-
     for(const decl of abiEvents) {
         output.block(`export interface ${decl.eventTypeName}Event`, () => {
             for (const input of decl.inputs) {
-                output.line(`\t${input.name}: ${getType(input)};`);
+                output.line(`${input.name}: ${getType(input)};`);
             }
         });
         output.line("");
@@ -97,7 +94,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         for(const decl of abiEvents) {
             output.block(`"${decl.signature}": `, () => {
                 output.line(`topic: abi.getEventTopic("${decl.signature}"),`);
-                output.block(`decode(data: EvmLogHandlerContext): ${decl.eventTypeName}Event`, () => {
+                output.block(`decode(data: EvmEvent): ${decl.eventTypeName}Event`, () => {
                     output.line(`const result = abi.decodeEventLog(`);
                     output.line(`\tabi.getEvent("${decl.signature}"),`);
                     output.line(`\tdata.data || "",`);
@@ -114,6 +111,21 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             output.line(",");
         }
     });
+
+    output.line("");
+
+    output.block("export interface EvmEvent", () => {
+        output.line("data: string;");
+        output.line("topics: string[];");
+    });
+
+    output.line("");
+
+    output.block("function getInputJson(): string", () => {
+        output.line(`return \`${JSON.stringify(rawABI, null, 2)}\`;`);
+    });
+    
+    output.line("");
 
     fs.writeFileSync(outputPathRaw, output.toString());
 }
