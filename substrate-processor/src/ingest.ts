@@ -7,13 +7,23 @@ import {AbortHandle, Channel, wait} from "./util/async"
 import {hasProperties, unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
-
+/**
+ * Defines block data as part of the ingestion inflow
+ * 
+ * @property block: {@link SubstrateBlock}
+ * @property events: {@link SubstrateEvent}
+ */
 export interface BlockData {
     block: SubstrateBlock
     events: SubstrateEvent[]
 }
 
-
+/**
+ * Defines a batch of ingested blocks.
+ * 
+ * @property range: a {@link Range} of scanned blocks
+ * @property blocks: an array of {@link BlockData}
+ */
 export interface DataBatch extends Batch {
     /**
      * This is roughly the range of scanned blocks
@@ -22,13 +32,23 @@ export interface DataBatch extends Batch {
     blocks: BlockData[]
 }
 
-
+/**
+ * Exposes functions to collect metrics about the ingestion process
+ */
 export interface IngestMetrics {
     setChainHeight(height: number): void
     setIngestSpeed(blocksPerSecond: number): void
 }
 
-
+/**
+ * Set of options for ingesting blockchain data.
+ * 
+ * @property archive: Subsquid archive URL
+ * @property archivePollIntervalMS: Polling interval for the Subssquid Archive, in milliseconds
+ * @property batches$: Mutable array of batches to ingest.
+ * @property batchSize: the number of blocks in a batch
+ * @property metrics: {@link IngestMetrics} (optional)
+ */
 export interface IngestOptions {
     archive: string
     archivePollIntervalMS?: number
@@ -42,7 +62,15 @@ export interface IngestOptions {
     metrics?: IngestMetrics
 }
 
-
+/**
+ * Manages the ingestion of blockchain blocks in batches.
+ * 
+ * The classes' constructor takes care of starting the ingestion loop as well.
+ * 
+ * @see run
+ * @see loop
+ * @see nextBatch
+ */
 export class Ingest {
     private out = new Channel<DataBatch | null>(3)
     private _abort = new AbortHandle()
@@ -58,15 +86,30 @@ export class Ingest {
         this.ingestion = this.run()
     }
 
+    /**
+     * Asynchronous function that will return a new batch of ingested blocks
+     * 
+     * @returns a Promise to a {@link DataBatch}, if there is data, `null` otherwise
+     */
     nextBatch(): Promise<DataBatch | null> {
         return this.out.take()
     }
 
+    /**
+     * Asynchronous function that terminates the ingestion loop
+     * 
+     * @internal 
+     */
     close(): Promise<Error | void> {
         this._abort.abort()
         return this.ingestion
     }
 
+    /**
+     * Asynchronous function to starts the ingestion loop
+     * 
+     * @internal 
+     */
     private async run(): Promise<void | Error> {
         try {
             await this.loop()
@@ -77,6 +120,9 @@ export class Ingest {
         }
     }
 
+    /**
+     * @internal
+     */
     private async loop(): Promise<void> {
         while (this.batches.length) {
             this._abort.assertNotAborted()
@@ -119,6 +165,9 @@ export class Ingest {
         }
     }
 
+    /**
+     * @internal
+     */
     private async batchFetch(batch: Batch, archiveHeight: number): Promise<BlockData[]> {
         let from = batch.range.from
         let to = Math.min(archiveHeight, rangeEnd(batch.range))
@@ -237,6 +286,9 @@ export class Ingest {
         return this.joinExtrinsicsAndDoPostProcessing(response.substrate_block)
     }
 
+    /**
+     * @internal
+     */
     private async joinExtrinsicsAndDoPostProcessing(fetchedBlocks: any[]): Promise<BlockData[]> {
         let extrinsicIds = new Set<string>()
         let blocks = new Array<BlockData>(fetchedBlocks.length)
@@ -299,6 +351,9 @@ export class Ingest {
         return blocks
     }
 
+    /**
+     * @internal
+     */
     private fetchBlocksWithEvmData(from: number, to: number, logs: DataHandlers['evmLogs']): Promise<{evm_log_idx: {block_id: string}[]}> {
         let args: any = {
             limit: this.limit,
@@ -421,14 +476,18 @@ export class Ingest {
     }
 }
 
-
+/**
+ * @internal
+ */
 function printArguments(args: any): string {
     let exp = _printArguments(args)
     assert(exp[0] == '{' && exp[exp.length - 1] == '}')
     return exp.slice(1, exp.length - 1)
 }
 
-
+/**
+ * @internal
+ */
 function _printArguments(args: any): string {
     if (args == null) return ''
     switch(typeof args) {
@@ -451,7 +510,9 @@ function _printArguments(args: any): string {
     }
 }
 
-
+/**
+ * @internal 
+ */
 function collectFields(obj: any, fields: string[]): void {
     for (let field in obj) {
         let val = obj[field]
@@ -467,7 +528,9 @@ function collectFields(obj: any, fields: string[]): void {
     }
 }
 
-
+/**
+ * @internal
+ */
 function collectOrExpressions(or: any[], fields: string[]): void {
     switch(or.length) {
         case 0:

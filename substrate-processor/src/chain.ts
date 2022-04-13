@@ -26,6 +26,12 @@ import * as sto from "./util/storage"
 /**
  * Subset of SubstrateBlock properties required for getting
  * chain metadata for a given block
+ * 
+ * @property height: block number
+ * @property hash: block hash
+ * @property parentHash: hash of the block's parent
+ * @property runtimeVersion: {@link SpecVersion} or {@link SubstrateRuntimeVersion} representing the version of the 
+ * chain
  */
 interface BlockInfo {
     height: number
@@ -34,7 +40,10 @@ interface BlockInfo {
     runtimeVersion: SpecVersion | SubstrateRuntimeVersion
 }
 
-
+/**
+ * Keeps a mapping of {@link Chain} linked to the blockchain's height, to encapsulate metadata in relation to the 
+ * runtime version.
+ */
 export class ChainManager {
     private versions = new Map<SpecVersion, {height: number, chain: Chain}>()
 
@@ -83,7 +92,9 @@ export class ChainManager {
     }
 }
 
-
+/**
+ * Stores Chain metadata and exposes methods to process Events and Extrinsics and obtain Storage items
+ */
 export class Chain {
     private jsonCodec: JsonCodec
     private scaleCodec: ScaleCodec

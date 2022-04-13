@@ -6,7 +6,16 @@ import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
-
+/**
+ * Collects handlers for the various trigger types (pre/post block, event, extrinsic, EVM log).
+ * Keeps a list of handlers of the type corresponding to the trigger
+ * 
+ * @property pre: array of {@link BlockHandler}
+ * @property post: array of {@link BlockHandler}
+ * @property events: mapping of `trigger event` -> array of {@link EventHandler}
+ * @property extrinsics: mapping of type `trigger event` -> `extrinsic` -> array of {@link ExtrinsicHandler}
+ * @property evmLogs: mapping of {@link EvmContractAddress} -> array of { {@link EvmTopicSet}[], EvmLogHandler} objects
+ */
 export interface DataHandlers {
     pre: BlockHandler[]
     post: BlockHandler[]
@@ -18,13 +27,25 @@ export interface DataHandlers {
     evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], handler: EvmLogHandler}[]>
 }
 
-
+/**
+ * Defines a batch of blocks to be processed
+ * 
+ * @property range: a {@link Range} defining start and end blocks for the batch
+ * @property handlers: a {@link DataHandlers} objects to collect the handlers that should be triggered for the batch.
+ */
 export interface Batch {
     range: Range
     handlers: DataHandlers
 }
 
-
+/**
+ * Forms an array of {@link Batch} for the given {@link Range} by mixing in the provided hooks
+ * 
+ * @param hooks a {@link Hooks} object, containing hooks for the various trigger types 
+ * (Block, Event, Extrinsic, EvmLog)
+ * @param blockRange a {@link Range} of blocks for which to create batches
+ * @returns an array of {@link Batch}
+ */
 export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     let batches: Batch[] = []
 
@@ -125,7 +146,11 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
     return batches
 }
 
-
+/**
+ * Given a list of {@link Batch}, it merges their Data Handlers by coalescing them based on their {@link Range}
+ * @param batches an array of {@link Batch}
+ * @returns an array of merged {@link Batch}
+ */
 export function mergeBatches(batches: Batch[]): Batch[] {
     if (batches.length <= 1) return batches
 
@@ -160,7 +185,9 @@ export function mergeBatches(batches: Batch[]): Batch[] {
     return union
 }
 
-
+/**
+ * @internal
+ */
 function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
     return {
         pre: a.pre.concat(b.pre),
@@ -173,7 +200,9 @@ function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
     }
 }
 
-
+/**
+ * @internal
+ */
 function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a: T, b: T) => T): Record<string, T> {
     let result: Record<string, T> = {}
     for (let key in a) {
@@ -191,7 +220,14 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
     return result
 }
 
-
+/**
+ * Given a list of {@link Range}, it counts the total number of blocks, adding each range until the chain height is 
+ * reached
+ * 
+ * @param batches an array of objects containing {@link Range}
+ * @param chainHeight the blockchain height (number of blocks up until the chain's head)
+ * @returns the number of total blocks counted
+ */
 export function getBlocksCount(batches: { range: Range }[], chainHeight: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
