@@ -1,0 +1,27 @@
+{
+  "name": "@subsquid/evm-typegen",
+  "version": "0.0.0",
+  "description": "CLI for generating typescript types and decode implementations for evm logs",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
+  },
+  "dependencies": {
+    "commander": "^9.0.0",
+    "@ethersproject/abi": "^5.5.0",
+    "@subsquid/util-internal-code-printer": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22"
+  }
+}

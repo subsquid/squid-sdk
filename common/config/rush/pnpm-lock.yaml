@@ -10,6 +10,7 @@ specifiers:
   '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-test': file:./projects/data-test.tgz
+  '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:./projects/moonsama-erc721.tgz
@@ -35,6 +36,7 @@ specifiers:
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
+  '@subsquid/evm-typegen': ../../evm-typegen
   '@subsquid/graphiql-console': ^0.2.0
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
@@ -96,6 +98,7 @@ dependencies:
   '@rush-temp/balances': file:projects/balances.tgz
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-test': file:projects/data-test.tgz
+  '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:projects/moonsama-erc721.tgz
@@ -121,6 +124,7 @@ dependencies:
   '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
+  '@subsquid/evm-typegen': link:../../evm-typegen
   '@subsquid/graphiql-console': 0.2.0
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
@@ -6882,6 +6886,17 @@ packages:
       - pg-native
     dev: false
 
+  file:projects/evm-typegen.tgz:
+    resolution: {integrity: sha512-6MOIEdqwEXxuGp1JkKxdEez4xxg1hb/TNd+KkU5A4ff2gpQPyxsMhYiLK+ytSQCCjw4DL+Lw3trl1H7VKJE4WA==, tarball: file:projects/evm-typegen.tgz}
+    name: '@rush-temp/evm-typegen'
+    version: 0.0.0
+    dependencies:
+      '@ethersproject/abi': 5.6.0
+      '@types/node': 16.11.26
+      commander: 9.0.0
+      ethers: 5.6.0
+    dev: false
+
   file:projects/gql-test-client.tgz:
     resolution: {integrity: sha512-b4BXcvjmIub/klYU2YvqGAG51SQpsWjVFUrmJHKFJaL9Z45z+QHjCPzUKZaBGguBHZKaDTcZPPR51fWbAuQvSA==, tarball: file:projects/gql-test-client.tgz}
     name: '@rush-temp/gql-test-client'
@@ -6939,11 +6954,12 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz:
-    resolution: {integrity: sha512-WaScr2DcXy9cTlp5VW61KaLGrOek1JxpV9QdDRvSAn3a42kYjtVsKkQbpFj2JHmy6ydNK6jShxhYNSwn4Em2OA==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-/SA3wu0F8QO8b+gvDsVc114/qbWqHaxgNJ/KAIOT4fVsMwQezcYz6VQzVu9EsIxPhLMC7/kiOP11piqGC+mYVA==, tarball: file:projects/moonsama-erc721.tgz}
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
     dependencies:
       '@ethersproject/abi': 5.6.0
+      '@subsquid/evm-typegen': link:../../evm-typegen
       '@types/node': 16.11.26
       dotenv: 10.0.0
       ethers: 5.6.0
