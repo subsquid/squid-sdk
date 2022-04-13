@@ -1,5 +1,6 @@
 import { Interface } from "@ethersproject/abi";
-import ethers from "ethers";
+import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
+import { BytesLike } from "@ethersproject/bytes";
 
 const inputJson = getInputJson();
 
@@ -8,7 +9,7 @@ const abi = new Interface(inputJson);
 export interface Approval0Event {
   owner: string;
   approved: string;
-  tokenId: ethers.BigNumber;
+  tokenId: BigNumber;
 }
 
 export interface ApprovalForAll0Event {
@@ -20,7 +21,7 @@ export interface ApprovalForAll0Event {
 export interface Transfer0Event {
   from: string;
   to: string;
-  tokenId: ethers.BigNumber;
+  tokenId: BigNumber;
 }
 
 export const events = {

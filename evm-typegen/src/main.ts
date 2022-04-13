@@ -44,7 +44,8 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     const output = new Output();
 
     output.line("import { Interface } from \"@ethersproject/abi\";");
-    output.line("import ethers from \"ethers\";");
+    output.line("import { BigNumber, BigNumberish } from \"@ethersproject/bignumber\";");
+    output.line("import { BytesLike } from \"@ethersproject/bytes\";");
     output.line("");
     output.line(`const inputJson = getInputJson();`);
     output.line("");
@@ -138,7 +139,7 @@ function getType(param: any, flexible?: boolean): string {
 
     if (param.type.substring(0, 5) === "bytes") {
         if (flexible) {
-            return "string | ethers.utils.BytesLike";
+            return "string | BytesLike";
         }
         return "string"
     }
@@ -146,10 +147,10 @@ function getType(param: any, flexible?: boolean): string {
     let match = param.type.match(/^(u?int)([0-9]+)$/)
     if (match) {
         if (flexible) {
-            return "ethers.BigNumberish";
+            return "BigNumberish";
         }
         if (parseInt(match[2]) < 53) { return 'number'; }
-        return 'ethers.BigNumber';
+        return 'BigNumber';
     }
 
     if (param.type === "array") {

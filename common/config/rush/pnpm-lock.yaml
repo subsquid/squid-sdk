@@ -2,6 +2,8 @@ lockfileVersion: 5.3
 
 specifiers:
   '@ethersproject/abi': ^5.5.0
+  '@ethersproject/bignumber': ^5.6.0
+  '@ethersproject/bytes': ^5.6.1
   '@graphql-tools/merge': ^8
   '@graphql-tools/utils': ^8
   '@oclif/core': ^1.3.0
@@ -59,7 +61,6 @@ specifiers:
   cli-ux: ^5.6.7
   commander: ^9.0.0
   dotenv: ^10.0.0
-  ethers: ^5.6.3
   expect: ^27.4.6
   express: ^4.17.2
   fast-check: ^2.21.0
@@ -89,6 +90,8 @@ specifiers:
 
 dependencies:
   '@ethersproject/abi': 5.6.1
+  '@ethersproject/bignumber': 5.6.0
+  '@ethersproject/bytes': 5.6.1
   '@graphql-tools/merge': 8.2.8_graphql@15.8.0
   '@graphql-tools/utils': 8.6.7_graphql@15.8.0
   '@oclif/core': 1.7.0
@@ -146,7 +149,6 @@ dependencies:
   cli-ux: 5.6.7
   commander: 9.1.0
   dotenv: 10.0.0
-  ethers: 5.6.3
   expect: 27.5.1
   express: 4.17.3
   fast-check: 2.24.0
@@ -6658,11 +6660,13 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz:
-    resolution: {integrity: sha512-SQr7r11Geo1s87MGPKwoDl8e+MueAy0Q96EyBlfYnASeh5vsqmZv0i9mwjRwAAj5EMY2z47c2YrqM7EzNjOAEQ==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-wD9mDtm30SMTZsVxORohqXW0Tn8D3G0Uq6hxLE0Fzl2KU1tBezVIvryqk5bwX2ppArjMGchv84bHDsOzBBv7gA==, tarball: file:projects/moonsama-erc721.tgz}
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
     dependencies:
       '@ethersproject/abi': 5.6.1
+      '@ethersproject/bignumber': 5.6.0
+      '@ethersproject/bytes': 5.6.1
       '@types/node': 16.11.26
       dotenv: 10.0.0
       ethers: 5.6.3
@@ -6672,7 +6676,6 @@ packages:
     transitivePeerDependencies:
       - '@sap/hana-client'
       - better-sqlite3
-      - bufferutil
       - hdb-pool
       - ioredis
       - mongodb
@@ -6686,7 +6689,6 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
-      - utf-8-validate
     dev: false
 
   file:projects/openreader.tgz:
