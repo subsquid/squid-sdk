@@ -26,7 +26,7 @@ import { Range } from "./util/range";
 import { ServiceManager } from "./util/sm";
 
 /**
- * Interface used to specify a range of blocks to be processed by BlockHook functions
+ * Specifies a range of blocks to be processed by BlockHook functions
  *
  * @property range: A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
  */
@@ -35,7 +35,7 @@ export interface BlockHookOptions {
 }
 
 /**
- * Interface used to specify a range of blocks to be processed by Event Handler functions
+ * Specifies a range of blocks to be processed by Event Handler functions
  *
  * @property range: A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
  */
@@ -44,7 +44,7 @@ export interface EventHandlerOptions {
 }
 
 /**
- * Interface used to specify to Extrinsig Handler functions:
+ * Specifies to Extrinsig Handler functions:
  *  * a range of blocks to be processed by Extrinsic Handler functions
  *  * a list of names of the events triggered by the Extrinsic. Will be used to
  *
@@ -57,7 +57,7 @@ export interface ExtrinsicHandlerOptions {
 }
 
 /**
- * Interface used to specify to the {@link SubstrateProcessor} the endpoints of Subsquid Archive and blockchain WebSocket.
+ * Specifies to the {@link SubstrateProcessor} the endpoints of Subsquid Archive and blockchain WebSocket.
  *
  * @property archive: a string, representing the URL of a Subsquid Archive endpoint
  * @property chain: a string, representing the URL of a blockchain WebSocket (e.g. 'wss://')
@@ -73,9 +73,8 @@ export interface DataSource {
   chain: string;
 }
 
-/* It takes a list of handlers and a range of blocks, and runs the handlers on the blocks */
 /**
- * Class responsible for coordinating the block ingestion loop and triggering handler functions.
+ * Responsible for coordinating the block ingestion loop and triggering handler functions.
  * The class exposes functions to configure its execution and add handler functions.
  */
 export class SubstrateProcessor {
@@ -102,7 +101,7 @@ export class SubstrateProcessor {
   constructor(private name: string) {}
 
   /**
-   * Method used to configure the data source for the processor. The parameter object should provide URLs for the Subsquid Archive and the blockchain WebSocket
+   * Configures the data source for the processor. The parameter object should provide URLs for the Subsquid Archive and the blockchain WebSocket
    *
    * @param src an object with `archive` and `chain` strings, defining URLs for the Subsquid Archive and the blockchain WebSocket. @see DataSource
    */
@@ -112,7 +111,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to configure the types bundle of the blockchain being processed. This is necessary to correctly parse chain blocks.
+   * Configures the types bundle of the blockchain being processed. This is necessary to correctly parse chain blocks.
    *
    * @param bundle Either a `string` or an {@link OldTypesBundle} object, defining the bundle of types of the blockchain being processed.
    */
@@ -127,7 +126,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to (optionally) set a range of blocks to restrict processing of a blockchain.
+   * Sets a range of blocks to restrict processing of a blockchain. (optional)
    * When used, the processor will start extracting information from the specified `from` block in the {@link Range} object and (optionally) stop at the `to` indicated block.
    * If not set, the processor will default to start from block number 0 and never stop.
    *
@@ -139,7 +138,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to set the size of a block ingestion batch, meaning the number of blocks processed in one cycle.
+   * Sets the size of a block ingestion batch, meaning the number of blocks processed in one cycle.
    * This has performance impacts, as a larger number will require more computational power and more memory. Advised to keep between 200 an 500.
    * If not set, the processor will default to batches of 100 blocks.
    *
@@ -152,7 +151,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to set the port number for the included Prometheus metrics service.
+   * Sets the port number for the included Prometheus metrics service.
    *
    * @param port a port number, or a string representing the port number at which the Prometheus service should expose ingestion metrics.
    */
@@ -162,7 +161,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to set the `isolationLevel` of the instance when creating the Database connection.
+   * Sets the `isolationLevel` of the instance when creating the Database connection.
    *
    * @param isolationLevel an object of type {@link IsolationLevel}, used to configure the database connection
    */
@@ -172,7 +171,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Getter method to return the port number the instance should use to expose Prometheus metrics
+   * Returns the port number the instance should use to expose Prometheus metrics
    *
    * @returns either this instance's {@link prometheusPort}, or the value of environment variables `PROCESSOR_PROMETHEUS_PORT`, `PROMETHEUS_PORT`. Defaults to 0 otherwise.
    */
@@ -185,20 +184,20 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed before processing each block. Can accept an additional {@link BlockHookOptions} parameter.
+   * Adds a {@link BlockHandler} function that should be executed before processing each block. Can accept an additional {@link BlockHookOptions} parameter.
    *
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
    */
   addPreHook(fn: BlockHandler): void;
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed before processing each block.
+   * Adds a {@link BlockHandler} function that should be executed before processing each block.
    *
    * @param options an object corresponding to the {@link BlockHookOptions} interface, setting the {@link Range} of execution for the `fn` function
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
    */
   addPreHook(options: BlockHookOptions, fn: BlockHandler): void;
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed before processing each block.
+   * Adds a {@link BlockHandler} function that should be executed before processing each block.
    *
    * @param fnOrOptions
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
@@ -220,20 +219,20 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed after processing each block. Can accept an additional {@link BlockHookOptions} parameter.
+   * Adds a {@link BlockHandler} function that should be executed after processing each block. Can accept an additional {@link BlockHookOptions} parameter.
    *
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
    */
   addPostHook(fn: BlockHandler): void;
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed after processing each block.
+   * Adds a {@link BlockHandler} function that should be executed after processing each block.
    *
    * @param options an object corresponding to the {@link BlockHookOptions} interface, setting the {@link Range} of execution for the `fn` function
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
    */
   addPostHook(options: BlockHookOptions, fn: BlockHandler): void;
   /**
-   * Method used to add a {@link BlockHandler} function that should be executed after processing each block.
+   * Adds a {@link BlockHandler} function that should be executed after processing each block.
    *
    * @param fnOrOptions either a function implementing the {@link BlockHandler} interface, or an object corresponding to the {@link BlockHookOptions} interface
    * @param fn an asynchronous function that implements the {@link BlockHandler} interface, by accepting a {@link BlockHandlerContext} as argument and returning a `Promise<void>`
@@ -255,14 +254,14 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to add an {@link EventHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link EventHandlerOptions} parameter.
+   * Adds an {@link EventHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link EventHandlerOptions} parameter.
    * 
    * @param eventName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param fn an asynchronous function that implements the {@link EventHandler} interface, by accepting a {@link EventHandlerContext} as argument and returning a `Promise<void>`
    */
   addEventHandler(eventName: QualifiedName, fn: EventHandler): void;
   /**
-   * Method used to add an {@link EventHandler} function that should be executed when an Event with the specified name is encountered.
+   * Adds an {@link EventHandler} function that should be executed when an Event with the specified name is encountered.
    * 
    * @param eventName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param options an object corresponding to the {@link EventHandlerOptions} interface, setting the {@link Range} of execution for the `fn` function
@@ -274,7 +273,7 @@ export class SubstrateProcessor {
     fn: EventHandler
   ): void;
   /**
-   * Method used to add an {@link EventHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link EventHandlerOptions} parameter.
+   * Adds an {@link EventHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link EventHandlerOptions} parameter.
    * 
    * @param eventName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param fnOrOptions either a function implementing the {@link EventHandler} interface, or an object corresponding to the {@link EventHandlerOptions} interface
@@ -302,14 +301,14 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method used to add an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link ExtrinsicHandlerOptions} parameter.
+   * Adds an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link ExtrinsicHandlerOptions} parameter.
    * 
    * @param extrinsicName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param fn an asynchronous function that implements the {@link ExtrinsicHandler} interface, by accepting a {@link ExtrinsicHandlerContext} as argument and returning a `Promise<void>`
    */
   addExtrinsicHandler(extrinsicName: QualifiedName, fn: ExtrinsicHandler): void;
   /**
-   * Method used to add an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered.
+   * Adds an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered.
    * 
    * @param extrinsicName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param options an object corresponding to the {@link ExtrinsicHandlerOptions} interface, setting the {@link Range} of execution for the `fn` function
@@ -321,7 +320,7 @@ export class SubstrateProcessor {
     fn: ExtrinsicHandler
   ): void;
   /**
-   * Method used to add an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link ExtrinsicHandlerOptions} parameter.
+   * Adds an {@link ExtrinsicHandler} function that should be executed when an Event with the specified name is encountered. Can accept an additional {@link ExtrinsicHandlerOptions} parameter.
    * 
    * @param extrinsicName a {@link QualifiedName} (a string), representing the name of the Event of interest. When such Event is encountered, the provided function is executed.
    * @param fnOrOptions either a function implementing the {@link ExtrinsicHandler} interface, or an object corresponding to the {@link ExtrinsicHandlerOptions} interface
@@ -356,7 +355,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method asserting the status of the processor. If the processor is {@link running}, it will throw an {@link Error}.
+   * Checks the status of the processor. If the processor is {@link running}, will throw an {@link Error}.
    */
   protected assertNotRunning(): void {
     if (this.running) {
@@ -367,7 +366,8 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method to launch the processing of the blockchain, after having configured the class' instance.
+   * Launches the processing of the blockchain.
+   * Should be executed after having configured the class' instance.
    * 
    * @returns `void`
    */
@@ -452,7 +452,7 @@ export class SubstrateProcessor {
   }
 
   /**
-   * Method to perform the actual processing the blockchain. Uses the {@link Ingest} class to obtain blocks in batches, then triggers the configured pre/post block handlers, as well as any Event and Extrinsic handlers that should be triggered.
+   * Performs the actual processing the blockchain. Uses the {@link Ingest} class to obtain blocks in batches, then triggers the configured pre/post block handlers, as well as any Event and Extrinsic handlers that should be triggered.
    * The `Db` class is used to interface with the Database and the `Prometheus` one to manage the metrics service.
    * 
    * This is a private method, it should never be called manually, use {@link run} method, instead.
