@@ -12,6 +12,9 @@
     "src"
   ],
   "main": "lib/index.js",
+  "bin": {
+    "squid-evm-typegen": "bin/run.js"
+  },
   "scripts": {
     "build": "rm -rf lib && tsc",
     "test": "mocha lib/**/*.test.js"

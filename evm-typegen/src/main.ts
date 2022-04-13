@@ -1,21 +1,17 @@
-import { Command } from "commander";
+import { program } from "commander";
 import process from "process";
 import path from "path";
 import fs from "fs";
-import { Output } from "@subsquid/util-internal-code-printer"
-import ethersABI from "@ethersproject/abi";
+import { Output } from "@subsquid/util-internal-code-printer";
+import { AbiCoder } from "@ethersproject/abi";
 
 export function run(): void {
-    const program = new Command();
-
     program.description(`
 Generates TypeScript definitions for evm log events
 for use within substrate-processor mapping handlers.
-    `.trim());
-
-    program.option('input', 'path of JSON abi file');
-
-    program.option('output', 'path for output typescript file');
+    `.trim())
+        .option('--input <path>', 'path of JSON abi file')
+        .option('--output <path>', 'path for output typescript file');
 
     program.parse();
 
@@ -52,8 +48,9 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     const output = new Output();
 
     output.line("import { Interface } from \"@ethersproject/abi\";");
+    output.line("import ethers from \"ethers\";");
     output.line("import { EvmLogHandlerContext } from \"@subsquid/substrate-evm-processor\";");
-    output.line(`import inputJson from ${inputPathRaw};`);
+    output.line(`import inputJson from "${path.resolve(inputPathRaw)}";`);
     output.line("");
     output.line("const abi = new Interface(inputJson);");
     output.line("");
@@ -85,11 +82,12 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         return decl;
     });
 
+    const abiCoder = new AbiCoder();
 
     for(const decl of abiEvents) {
         output.block(`export interface ${decl.eventTypeName}Event`, () => {
             for (const input of decl.inputs) {
-                output.line(`\t${input.name}: ${ethersABI.FormatTypes[input.type]};`);
+                output.line(`\t${input.name}: ${getType(input)};`);
             }
         });
         output.line("");
@@ -97,7 +95,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.block("export const events =", () => {
         for(const decl of abiEvents) {
-            output.block(`${decl.signature}: `, () => {
+            output.block(`"${decl.signature}": `, () => {
                 output.line(`topic: abi.getEventTopic("${decl.signature}"),`);
                 output.block(`decode(data: EvmLogHandlerContext): ${decl.eventTypeName}Event`, () => {
                     output.line(`const result = abi.decodeEventLog(`);
@@ -105,14 +103,51 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
                     output.line(`\tdata.data || "",`);
                     output.line("\tdata.topics");
                     output.line(");");
-                    for (let i=0; i<decl.inputs.length; ++i) {
-                        const input = decl.inputs[i];
-                        output.line(`${input.name}: ${`result[${i}]`},`);
-                    }
+                    output.block("return ", () => {
+                        for (let i=0; i<decl.inputs.length; ++i) {
+                            const input = decl.inputs[i];
+                            output.line(`${input.name}: ${`result[${i}]`},`);
+                        }
+                    });
                 });
             });
+            output.line(",");
         }
     });
 
     fs.writeFileSync(outputPathRaw, output.toString());
+}
+
+// taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
+function getType(param: any, flexible?: boolean): string {
+    if (param.type === "address" || param.type === "string") { return "string"; }
+
+    if (param.type === "bool") { return "boolean" }
+
+    if (param.type.substring(0, 5) === "bytes") {
+        if (flexible) {
+            return "string | ethers.utils.BytesLike";
+        }
+        return "string"
+    }
+
+    let match = param.type.match(/^(u?int)([0-9]+)$/)
+    if (match) {
+        if (flexible) {
+            return "ethers.BigNumberish";
+        }
+        if (parseInt(match[2]) < 53) { return 'number'; }
+        return 'ethers.BigNumber';
+    }
+
+    if (param.type === "array") {
+        return "Array<" + getType(param.arrayChildren) + ">";
+    }
+
+    if (param.type === "tuple") {
+        let struct = param.components.map((p: any, i: any): any => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
+        return "{ " + struct.join(", ") + " }";
+    }
+
+    throw new Error("unknown type");
 }
