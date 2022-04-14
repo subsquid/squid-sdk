@@ -41,8 +41,10 @@ interface BlockInfo {
 }
 
 /**
- * Keeps a mapping of {@link Chain} linked to the blockchain's height, to encapsulate metadata in relation to the 
- * runtime version.
+ * Keeps a mapping of {@link SpecVersion}s to the block segments to which such version applies.
+ * 
+ * Block segments are defined as {@link Chain} objects and contain metadata about Substrate entities (events, 
+ * extrinsics, storage items), useful to decode them.
  */
 export class ChainManager {
     private versions = new Map<SpecVersion, {height: number, chain: Chain}>()

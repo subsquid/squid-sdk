@@ -11,7 +11,7 @@ import type {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from "./substra
  */
 export interface Store extends EntityManager {
     /**
-     * Uses the unterlying database interface to fetch an {@link Entity}, given the provided options, or its id.
+     * Uses the underlying database interface to fetch an {@link Entity}, given the provided options, or its id.
      * 
      * @param entityClass The {@link Entity} class to be fetched
      * @param optionsOrId an object conforming to {@link FindOneOptions} type, including options for the search, or the id of the target

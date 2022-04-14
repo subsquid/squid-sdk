@@ -15,10 +15,12 @@ export interface BlockHook {
 }
 
 /**
- * Defines a {@link EventHandler} function, the {@link Range} of blocks, and the Event name that should restrain its execution
+ * Defines a {@link EventHandler} function, the {@link Range} of blocks, and the Event name that should restrain its 
+ * execution
  * 
  * @property handler: {@link EventHandler}
- * @property event: {@link QualifiedName} the name of the event that should trigger the handler
+ * @property event: {@link QualifiedName} the name of the event that should trigger the handler, in the form 
+ * `${module}.${Name}`
  * @property range: {@link Range} (optional)
  */
 export interface EventHook {
@@ -28,11 +30,14 @@ export interface EventHook {
 }
 
 /**
- * Defines a {@link ExtrinsicHandler} function and the {@link Range} of blocks, Event and Extrinsic names that should restrain its execution
+ * Defines a {@link ExtrinsicHandler} function and the {@link Range} of blocks, Event and Extrinsic names that should 
+ * restrain its execution
  * 
  * @property handler: {@link ExtrinsicHandler}
- * @property event: {@link QualifiedName} the name of the event that should trigger the handler
- * @property extrinsic: {@link QualifiedName} the name of the extrinsic that should trigger the handler
+ * @property event: {@link QualifiedName} the name of the event that should trigger the handler, in the form 
+ * `${module}.${Name}`
+ * @property extrinsic: {@link QualifiedName} the name of the extrinsic that should trigger the handler, in the form 
+ * `${section}.${method}`
  * @property range: {@link Range} (optional)
  */
 export interface ExtrinsicHook {
@@ -43,9 +48,12 @@ export interface ExtrinsicHook {
 }
 
 /**
- * Defines a {@link EvmLogHandler} function and the contract address that should restrain its execution.
+ * Defines a {@link EvmLogHandler} function and the conditions for its execution:
  * 
- * Optionally, a {@link Range} of blocks and EvmTopicSet to further filter the function triggering can be provided.
+ *  * the evm log event was emitted by the given `contractAddress`
+ *  * the topic of the evm log event matches {@link EvmTopicSet} as defined by the evm 
+ * [event topic convention](https://docs.ethers.io/v5/concepts/events/#events--filters) (optional)
+ *  * the block height is in range (optional)
  * 
  * @property handler: {@link EvmLogHandler}
  * @property contractAddress: `string` representing the contract address that should trigger the handler
@@ -66,6 +74,14 @@ export interface EvmLogHook {
  * and informations necessary to define these conditions, such as the block {@link Range}, {@link QualifiedName} 
  * for Events and Extrinsics, and, in case of {@link EvmLogHook}, the list of {@link EvmTopicSet} to 
  * filter the handler execution.
+ * 
+ * The execution order of the Hooks, for each block is:
+ *  * `pre` {@link BlockHook}s for current block
+ *  * {@link EventHook}s, executed in the order the events have been emitted within the block, this includes
+ *  {@link EvmLogHook}s
+ *  * {@link ExtrinsicHook}s, executed in the order the triggerEvent (`system.ExtrinsicSuccess` by default) are
+ *  emitted within the block
+ *  * `post` {@link BlockHook}s for current block, after every
  * 
  * @property pre: list of {@link BlockHook}
  * @property post: list of {@link BlockHook}

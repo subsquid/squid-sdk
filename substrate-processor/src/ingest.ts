@@ -8,7 +8,7 @@ import {hasProperties, unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
 /**
- * Defines block data as part of the ingestion inflow
+ * Defines data retrieved for each block
  * 
  * @property block: {@link SubstrateBlock}
  * @property events: {@link SubstrateEvent}
@@ -87,7 +87,7 @@ export class Ingest {
     }
 
     /**
-     * Asynchronous function that will return a new batch of ingested blocks
+     * Returns a new batch of ingested blocks
      * 
      * @returns a Promise to a {@link DataBatch}, if there is data, `null` otherwise
      */
@@ -96,7 +96,7 @@ export class Ingest {
     }
 
     /**
-     * Asynchronous function that terminates the ingestion loop
+     * Terminates the ingestion loop
      * 
      * @internal 
      */
@@ -106,7 +106,7 @@ export class Ingest {
     }
 
     /**
-     * Asynchronous function to starts the ingestion loop
+     * Starts the ingestion loop
      * 
      * @internal 
      */

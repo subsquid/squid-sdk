@@ -28,10 +28,13 @@ export interface DataHandlers {
 }
 
 /**
- * Defines a batch of blocks to be processed
+ * Defines a batch of blocks to be processed by specifying the block {@link Range} and the {@link DataHandlers} that 
+ * are relevant to that range.
+ * 
+ * Each {@link DataHandlers} in a {@link Batch} is valid and can be applied to the Batch's {@link Range}.
  * 
  * @property range: a {@link Range} defining start and end blocks for the batch
- * @property handlers: a {@link DataHandlers} objects to collect the handlers that should be triggered for the batch.
+ * @property handlers: a {@link DataHandlers} objects collecting the handlers that should be triggered for the batch.
  */
 export interface Batch {
     range: Range
@@ -39,7 +42,12 @@ export interface Batch {
 }
 
 /**
- * Forms an array of {@link Batch} for the given {@link Range} by mixing in the provided hooks
+ * Forms an array of {@link Batch} for the given {@link Range} by splitting the latter into smaller ranges and 
+ * assigning {@link DataHandlers} found in {@link Hooks} to them, based on the range definitions of the Hooks 
+ * themseves.
+ * 
+ * The Ranges covered by each Batch are non-overlapping and for each Batch, the {@link DataHandlers} are 
+ * guaranteed to be applicable to its Range.
  * 
  * @param hooks a {@link Hooks} object, containing hooks for the various trigger types 
  * (Block, Event, Extrinsic, EvmLog)
@@ -147,7 +155,9 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
 }
 
 /**
- * Given a list of {@link Batch}, it merges their Data Handlers by coalescing them based on their {@link Range}
+ * Given a list of {@link Batch} as input, it creates a new {@link Batch} list, in which there are no {@link Range} 
+ * intersections and merging {@link DataHandlers} that apply to same batch
+ * 
  * @param batches an array of {@link Batch}
  * @returns an array of merged {@link Batch}
  */
@@ -221,8 +231,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 /**
- * Given a list of {@link Range}, it counts the total number of blocks, adding each range until the chain height is 
- * reached
+ * Given a list of {@link Range}, it counts the total number of blocks spanned by the ranges, up to the chain height.
  * 
  * @param batches an array of objects containing {@link Range}
  * @param chainHeight the blockchain height (number of blocks up until the chain's head)
