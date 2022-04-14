@@ -3,7 +3,7 @@ import {CallContext, Result, deprecateLatest} from './support'
 
 export class BalancesSetBalanceCall {
   constructor(private ctx: CallContext) {
-    assert(this.ctx.extrinsic.name === 'balances.setBalance' || this.ctx.extrinsic.name === 'balances.set_balance')
+    assert(this.ctx.call.name === 'balances.setBalance' || this.ctx.call.name === 'balances.set_balance')
   }
 
   /**
@@ -52,7 +52,7 @@ export class BalancesSetBalanceCall {
    */
   get asV1(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
     assert(this.isV1)
-    return this.ctx._chain.decodeCall(this.ctx.extrinsic)
+    return this.ctx._chain.decodeCall(this.ctx.call)
   }
 
   get isLatest(): boolean {
@@ -68,7 +68,7 @@ export class BalancesSetBalanceCall {
 
 export class TimestampSetCall {
   constructor(private ctx: CallContext) {
-    assert(this.ctx.extrinsic.name === 'timestamp.set')
+    assert(this.ctx.call.name === 'timestamp.set')
   }
 
   /**
@@ -111,7 +111,7 @@ export class TimestampSetCall {
    */
   get asV1(): {now: bigint} {
     assert(this.isV1)
-    return this.ctx._chain.decodeCall(this.ctx.extrinsic)
+    return this.ctx._chain.decodeCall(this.ctx.call)
   }
 
   get isLatest(): boolean {

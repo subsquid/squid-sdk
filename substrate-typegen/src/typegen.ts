@@ -76,7 +76,7 @@ export class Typegen {
 
         let out = this.dir.file(`${kind}.ts`)
         let fix = kind == 'events' ? 'Event' : 'Call'
-        let ctx = kind == 'events' ? 'event' : 'extrinsic'
+        let ctx = kind == 'events' ? 'event' : 'call'
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
