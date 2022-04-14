@@ -21,12 +21,18 @@ ServiceManager.run(async sm => {
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
     program.option('--out <sink>', 'Name of a file or postgres connection string')
     program.option('--start-block <number>', 'Height of the block from which to start processing', positiveInteger)
+    program.option(
+        '--write-batch-size <number>',
+        'A number of blocks to write in one transaction (applies only to postgres sink)',
+        positiveInteger
+    )
 
     let options = program.parse().opts() as {
         endpoint: string[]
         out?: string
         typesBundle?: string
         startBlock?: number
+        writeBatchSize?: number
     }
 
     let typesBundle = options.typesBundle == null
@@ -61,7 +67,8 @@ ServiceManager.run(async sm => {
             sink = new PostgresSink({
                 db,
                 speed: writeSpeed,
-                progress
+                progress,
+                batchSize: options.writeBatchSize
             })
         } else {
             let out = fs.createWriteStream(options.out, {flags: 'a'})

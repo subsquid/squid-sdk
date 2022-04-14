@@ -3,7 +3,7 @@ COCKROACH="postgres://root@localhost:30000/defaultdb"
 
 
 kusama:
-	@node lib/main.js --out $(COCKROACH) \
+	@node lib/main.js --out $(DB) \
 		-e wss://kusama-rpc.polkadot.io \
 		-e wss://kusama-rpc.polkadot.io \
 		-e wss://kusama-rpc.polkadot.io \
@@ -13,7 +13,8 @@ kusama:
 		-e wss://kusama-rpc.dwellir.com \
 		-e wss://kusama.api.onfinality.io/public-ws \
 		-e wss://kusama.api.onfinality.io/public-ws \
-		-e wss://kusama.api.onfinality.io/public-ws
+		-e wss://kusama.api.onfinality.io/public-ws \
+		--write-batch-size 10
 
 
 up:

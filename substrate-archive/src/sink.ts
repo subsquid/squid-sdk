@@ -13,6 +13,7 @@ export interface Sink {
 
 export interface PostgresSinkOptions {
     db: pg.ClientBase
+    batchSize?: number
     speed?: Speed
     progress?: Progress
 }
@@ -80,11 +81,13 @@ export class PostgresSink implements Sink {
     private db: pg.ClientBase
     private speed?: Speed
     private progress?: Progress
+    private batchSize: number
 
     constructor(options: PostgresSinkOptions) {
         this.db = options.db
         this.speed = options.speed
         this.progress = options.progress
+        this.batchSize = options.batchSize ?? 20
     }
 
     async write(block: BlockData): Promise<void> {
@@ -98,7 +101,7 @@ export class PostgresSink implements Sink {
         if (block.warnings) {
             this.warningInsert.addMany(block.warnings)
         }
-        if (block.last || this.headerInsert.size > 20) {
+        if (block.last || this.headerInsert.size >= this.batchSize) {
             await this.submit()
         }
     }
