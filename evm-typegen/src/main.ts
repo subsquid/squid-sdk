@@ -3,7 +3,7 @@ import process from "process";
 import path from "path";
 import fs from "fs";
 import { Output } from "@subsquid/util-internal-code-printer";
-import { Interface } from "@ethersproject/abi";
+import { EventFragment, Interface, ParamType } from "@ethersproject/abi";
 
 export function run(): void {
     program.description(`
@@ -43,43 +43,38 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     const output = new Output();
 
-    output.line("import { Interface } from \"@ethersproject/abi\";");
-    output.line("import { BigNumber, BigNumberish } from \"@ethersproject/bignumber\";");
-    output.line("import { BytesLike } from \"@ethersproject/bytes\";");
+    output.line("import ethers from \"ethers\";");
     output.line("");
     output.line(`const inputJson = getInputJson();`);
     output.line("");
-    output.line("const abi = new Interface(inputJson);");
+    output.line("const abi = new ethers.utils.Interface(inputJson);");
     output.line("");
 
-    const eventTypeIndexes: { [key: string]: number } = {};
-
     // validate the abi
-    const _abi = new Interface(rawABI);
+    const abi = new Interface(rawABI);
 
-    const abiEvents = rawABI.filter((decl: any): boolean => decl.type === "event").map((decl: any): any => {
-        let signature = `${decl.name}(`;
-    
-        if(decl.inputs.length > 0) {
-            signature += decl.inputs[0].type;
+    const abiEvents: Array<AbiEvent> = Object.values(abi.events).map((event: EventFragment): AbiEvent => {
+        let signature = `${event.name}(`;
+        let eventTypeName = `${event.name}`;
+
+        if(event.inputs.length > 0) {
+            signature += event.inputs[0].type;
+            eventTypeName += capitalize(event.inputs[0].type);
         }
     
-        for (let i=1; i<decl.inputs.length; ++i) {
-            const input = decl.inputs[i];
+        for (let i=1; i<event.inputs.length; ++i) {
+            const input = event.inputs[i];
             signature += `,${input.type}`;
+            eventTypeName += capitalize(input.type);
         }
     
         signature += ")";
     
-        decl.signature = signature;
-        if (eventTypeIndexes[decl.name] === undefined) {
-            eventTypeIndexes[decl.name] = 0;
-        } else {
-            eventTypeIndexes[decl.name]++;
-        }
-        decl.eventTypeName = decl.name + eventTypeIndexes[decl.name].toString();
-    
-        return decl;
+        return {
+            signature,
+            eventTypeName,
+            inputs: event.inputs,
+        };
     });
 
     for(const decl of abiEvents) {
@@ -97,9 +92,11 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
                 output.line(`topic: abi.getEventTopic("${decl.signature}"),`);
                 output.block(`decode(data: EvmEvent): ${decl.eventTypeName}Event`, () => {
                     output.line(`const result = abi.decodeEventLog(`);
-                    output.line(`\tabi.getEvent("${decl.signature}"),`);
-                    output.line(`\tdata.data || "",`);
-                    output.line("\tdata.topics");
+                    output.indentation(() => {
+                        output.line(`abi.getEvent("${decl.signature}"),`);
+                        output.line(`data.data || "",`);
+                        output.line("data.topics");
+                    });
                     output.line(");");
                     output.block("return ", () => {
                         for (let i=0; i<decl.inputs.length; ++i) {
@@ -132,14 +129,14 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 }
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
-function getType(param: any, flexible?: boolean): string {
+function getType(param: ParamType, flexible?: boolean): string {
     if (param.type === "address" || param.type === "string") { return "string"; }
 
     if (param.type === "bool") { return "boolean" }
 
     if (param.type.substring(0, 5) === "bytes") {
         if (flexible) {
-            return "string | BytesLike";
+            return "string | ethers.utils.BytesLike";
         }
         return "string"
     }
@@ -147,10 +144,10 @@ function getType(param: any, flexible?: boolean): string {
     let match = param.type.match(/^(u?int)([0-9]+)$/)
     if (match) {
         if (flexible) {
-            return "BigNumberish";
+            return "ethers.BigNumberish";
         }
         if (parseInt(match[2]) < 53) { return 'number'; }
-        return 'BigNumber';
+        return 'ethers.BigNumber';
     }
 
     if (param.type === "array") {
@@ -158,9 +155,19 @@ function getType(param: any, flexible?: boolean): string {
     }
 
     if (param.type === "tuple") {
-        let struct = param.components.map((p: any, i: any): any => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
+        let struct = param.components.map((p, i) => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
         return "{ " + struct.join(", ") + " }";
     }
 
     throw new Error("unknown type");
+}
+
+interface AbiEvent {
+    signature: string;
+    eventTypeName: string;
+    inputs: ParamType[];
+}
+
+function capitalize(input: string): string {
+    return input.charAt(0).toUpperCase() + input.slice(1);
 }

@@ -7,15 +7,12 @@
     "evm-typegen": "npx squid-evm-typegen --input src/erc721.json --output src/erc721.ts"
   },
   "dependencies": {
-    "@ethersproject/abi": "^5.5.0",
     "@subsquid/graphql-server": "^0.1.5",
     "@subsquid/substrate-evm-processor": "^0.0.3",
     "@subsquid/substrate-metadata": "^0.8.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41",
-    "@ethersproject/bignumber": "^5.6.0",
-    "@ethersproject/bytes": "^5.6.1",
     "ethers": "^5.6.3"
   },
   "devDependencies": {

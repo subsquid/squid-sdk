@@ -1,37 +1,35 @@
-import { Interface } from "@ethersproject/abi";
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
-import { BytesLike } from "@ethersproject/bytes";
+import ethers from "ethers";
 
 const inputJson = getInputJson();
 
-const abi = new Interface(inputJson);
+const abi = new ethers.utils.Interface(inputJson);
 
-export interface Approval0Event {
+export interface ApprovalAddressAddressUint256Event {
   owner: string;
   approved: string;
-  tokenId: BigNumber;
+  tokenId: ethers.BigNumber;
 }
 
-export interface ApprovalForAll0Event {
+export interface ApprovalForAllAddressAddressBoolEvent {
   owner: string;
   operator: string;
   approved: boolean;
 }
 
-export interface Transfer0Event {
+export interface TransferAddressAddressUint256Event {
   from: string;
   to: string;
-  tokenId: BigNumber;
+  tokenId: ethers.BigNumber;
 }
 
 export const events = {
   "Approval(address,address,uint256)":  {
     topic: abi.getEventTopic("Approval(address,address,uint256)"),
-    decode(data: EvmEvent): Approval0Event {
+    decode(data: EvmEvent): ApprovalAddressAddressUint256Event {
       const result = abi.decodeEventLog(
-      	abi.getEvent("Approval(address,address,uint256)"),
-      	data.data || "",
-      	data.topics
+        abi.getEvent("Approval(address,address,uint256)"),
+        data.data || "",
+        data.topics
       );
       return  {
         owner: result[0],
@@ -43,11 +41,11 @@ export const events = {
   ,
   "ApprovalForAll(address,address,bool)":  {
     topic: abi.getEventTopic("ApprovalForAll(address,address,bool)"),
-    decode(data: EvmEvent): ApprovalForAll0Event {
+    decode(data: EvmEvent): ApprovalForAllAddressAddressBoolEvent {
       const result = abi.decodeEventLog(
-      	abi.getEvent("ApprovalForAll(address,address,bool)"),
-      	data.data || "",
-      	data.topics
+        abi.getEvent("ApprovalForAll(address,address,bool)"),
+        data.data || "",
+        data.topics
       );
       return  {
         owner: result[0],
@@ -59,11 +57,11 @@ export const events = {
   ,
   "Transfer(address,address,uint256)":  {
     topic: abi.getEventTopic("Transfer(address,address,uint256)"),
-    decode(data: EvmEvent): Transfer0Event {
+    decode(data: EvmEvent): TransferAddressAddressUint256Event {
       const result = abi.decodeEventLog(
-      	abi.getEvent("Transfer(address,address,uint256)"),
-      	data.data || "",
-      	data.topics
+        abi.getEvent("Transfer(address,address,uint256)"),
+        data.data || "",
+        data.topics
       );
       return  {
         from: result[0],
@@ -126,9 +124,7 @@ function getInputJson(): string {
       }
     ],
     "name": "Approval",
-    "type": "event",
-    "signature": "Approval(address,address,uint256)",
-    "eventTypeName": "Approval0"
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -153,9 +149,7 @@ function getInputJson(): string {
       }
     ],
     "name": "ApprovalForAll",
-    "type": "event",
-    "signature": "ApprovalForAll(address,address,bool)",
-    "eventTypeName": "ApprovalForAll0"
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -180,9 +174,7 @@ function getInputJson(): string {
       }
     ],
     "name": "Transfer",
-    "type": "event",
-    "signature": "Transfer(address,address,uint256)",
-    "eventTypeName": "Transfer0"
+    "type": "event"
   },
   {
     "inputs": [
