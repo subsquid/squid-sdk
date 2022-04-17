@@ -1,69 +1,22 @@
 version: "3.7"
 
 services:
-  substrate-archive:
-    build:
-      context: ../..
-      target: substrate-archive
-    environment:
-      - DB_NAME=archive-db
-      - DB_USER=postgres
-      - DB_PASS=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - NEW_BLOCK_TIMEOUT_SEC=150000
-      - WS_PROVIDER_ENDPOINT_URI=ws://node-template:9944/
-      - REDIS_URI=redis://redis:6379/0
-      - DEBUG=index-builder:*,hydra-indexer:*
-      - TYPES_JSON=typedefs.json
-    volumes:
-      - ./typedefs.json:/squid/substrate-archive/typedefs.json
-    command: >
-      sh -c "sleep 3 && node lib/run.js migrate && node lib/run.js index"
+  gateway:
+    image: tmcgroul/archive-gateway:7
     depends_on:
       - db
-      - redis
-      - node-template
-
-  substrate-archive-gateway:
-    build:
-      context: ../..
-      target: substrate-archive-gateway
-    depends_on:
-      - redis
-      - db
-      - substrate-archive-status-service
-      - substrate-archive
     environment:
-      DEV_MODE: "true"
-      DB_NAME: archive-db
-      DB_USER: postgres
-      DB_PASS: postgres
-      DB_HOST: db
-      DB_PORT: 5432
-      HYDRA_INDEXER_STATUS_SERVICE: http://substrate-archive-status-service:8081/status
+      DATABASE_URL: postgres://postgres:postgres@db:5432/archive-db
+      DATABASE_MAX_CONNECTIONS: 5
+      RUST_LOG: actix_web=info,actix_server=info
     ports:
-      - "${ARCHIVE_ENDPOINT_PORT}:8080"
-
-  substrate-archive-status-service:
-    build:
-      context: ../..
-      target: substrate-archive-status-service
-    depends_on:
-      - redis
-    environment:
-      REDIS_URI: redis://redis:6379/0
-      PORT: 8081
+      - "${ARCHIVE_PORT}:8000"
 
   node-template:
     image: paritytech/substrate-playground-template-node-template:sha-7212614
     command: ["./target/release/node-template", "--dev", "--tmp", "--ws-external"]
     ports:
       - "${CHAIN_PORT}:9944"
-
-  redis:
-    image: redis:6.0-alpine
-    restart: always
 
   db:
     image: postgres:12

@@ -10,7 +10,7 @@ export type Result<T, E> = {
 
 interface Event {
     name: string
-    params: {value: unknown}[]
+    args: any
 }
 
 
@@ -19,16 +19,13 @@ export interface EventContext {
         getEventHash(eventName: string): string
         decodeEvent(event: Event): any
     }
-    block: {
-        height: number
-    }
     event: Event
 }
 
 
 interface Call {
     name: string
-    args: {value: unknown}[]
+    args: any
 }
 
 
@@ -37,10 +34,7 @@ export interface CallContext {
         getCallHash(name: string): string
         decodeCall(call: Call): any
     }
-    block: {
-        height: number
-    }
-    extrinsic: Call
+    call: Call
 }
 
 

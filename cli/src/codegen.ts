@@ -36,7 +36,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry(name)
         imports.useTypeorm('Entity', 'Column', 'PrimaryColumn')
-        out.lazy(() => imports.render(model))
+        out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
         entity.indexes?.forEach(index => {
@@ -194,7 +194,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         const imports = new ImportRegistry(name)
         imports.useMarshal()
         imports.useAssert()
-        out.lazy(() => imports.render(model))
+        out.lazy(() => imports.render(model, out))
         out.line()
         printComment(object, out)
         out.block(`export class ${name}`, () => {
@@ -346,7 +346,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         index.line(`export * from "./_${toCamelCase(name)}"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
         const imports = new ImportRegistry(name)
-        out.lazy(() => imports.render(model))
+        out.lazy(() => imports.render(model, out))
         union.variants.forEach((v) => imports.useModel(v))
         out.line()
         out.line(`export type ${name} = ${union.variants.join(' | ')}`)
@@ -518,24 +518,23 @@ class ImportRegistry {
         this.assert = true
     }
 
-    render(model: Model): string[] {
-        const imports: string[] = []
+    render(model: Model, out: Output): void {
         if (this.assert) {
-            imports.push('import assert from "assert"')
+            out.line('import assert from "assert"')
         }
         if (this.typeorm.size > 0) {
             const importList = Array.from(this.typeorm).map(
                 (name) => name + ' as ' + name + '_'
             )
-            imports.push(`import {${importList.join(', ')}} from "typeorm"`)
+            out.line(`import {${importList.join(', ')}} from "typeorm"`)
         }
         if (this.marshal) {
-            imports.push(`import * as marshal from "./marshal"`)
+            out.line(`import * as marshal from "./marshal"`)
         }
         for (const name of this.model) {
             switch(model[name].kind) {
                 case 'entity':
-                    imports.push(
+                    out.line(
                         `import {${name}} from "./${toCamelCase(name)}.model"`
                     )
                     break
@@ -544,12 +543,11 @@ class ImportRegistry {
                     if (model[name].kind === 'union') {
                         names.push('fromJson' + name)
                     }
-                    imports.push(
+                    out.line(
                         `import {${names.join(', ')}} from "./_${toCamelCase(name)}"`
                     )
                 }
             }
         }
-        return imports
     }
 }

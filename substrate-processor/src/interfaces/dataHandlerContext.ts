@@ -20,7 +20,7 @@ export interface BlockHandler {
 }
 
 
-export interface EventHandlerContext<R extends ContextRequest = {event: true}> extends BlockHandlerContext {
+export type EventHandlerContext<R extends ContextRequest = {event: true}> = BlockHandlerContext & {
     event: ContextFields<R>['event']
 }
 
@@ -30,7 +30,7 @@ export interface EventHandler<R extends ContextRequest = {event: true}> {
 }
 
 
-export interface CallHandlerContext<R extends ContextRequest = {call: true, extrinsic: true}> extends BlockHandlerContext {
+export type CallHandlerContext<R extends ContextRequest = {call: true, extrinsic: true}> = BlockHandlerContext & {
     call: ContextFields<R>['call']
     extrinsic: ContextFields<R>['extrinsic']
 }

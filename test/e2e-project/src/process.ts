@@ -1,29 +1,17 @@
 import * as ss58 from "@subsquid/ss58"
 import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import assert from "assert"
-import * as process from "process"
 import {loadInitialData} from "./initialData"
 import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
 import {TimestampSetCall} from "./types/calls"
 import {BalancesTransferEvent} from "./types/events"
 import {SystemAccountStorage} from "./types/storage"
-import {getOrCreate} from "./util"
+import {getDataSource, getOrCreate, waitForGateway} from "./util"
 
 
 const processor = new SubstrateProcessor('test')
-
-
 processor.setTypesBundle('typesBundle.json')
-
-
-if (process.env.ARCHIVE_ENDPOINT && process.env.CHAIN_ENDPOINT) {
-    processor.setDataSource({
-        archive: process.env.ARCHIVE_ENDPOINT,
-        chain: process.env.CHAIN_ENDPOINT
-    })
-} else {
-    throw new Error('ARCHIVE_ENDPOINT and CHAIN_ENDPOINT must be set')
-}
+processor.setDataSource(getDataSource())
 
 
 processor.addPreHook({range: {from: 0, to: 0}}, ctx => loadInitialData(ctx.store))
@@ -55,20 +43,13 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 processor.addEventHandler('balances.Transfer', async ctx => {
     let [from, to, value] = new BalancesTransferEvent(ctx).asV1
 
-    let blockEvent = ctx.block.events.find(e => e.name === 'balances.Transfer')
-    assert(blockEvent != null, 'should find event among block events')
-    assert.strictEqual(blockEvent.extrinsic, 'balances.transfer')
-    assert.strictEqual(blockEvent.extrinsicId, ctx.extrinsic!.id)
-    assert(ctx.block.timestamp != null, 'block.timestamp must be set')
-    assert(ctx.block.timestamp === ctx.event.blockTimestamp, 'event.blockTimestamp must be set to block.timestamp')
-
     let transfer = new Transfer({
         id: ctx.event.id,
         from,
         to,
         value,
-        tip: ctx.extrinsic?.tip ?? 0n,
-        extrinsicId: ctx.extrinsic?.id,
+        tip: 0n,
+        extrinsicId: ctx.event.extrinsic?.id,
         insertedAt: new Date(ctx.block.timestamp),
         block: ctx.block.height,
         timestamp: BigInt(ctx.block.timestamp),
@@ -107,7 +88,7 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
 })
 
 
-processor.addExtrinsicHandler('timestamp.set', async ctx => {
+processor.addCallHandler('timestamp.set', async ctx => {
     let timestamp = new TimestampSetCall(ctx).asV1.now
     if (ctx.block.timestamp !== Number(timestamp)) {
         throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
@@ -120,4 +101,9 @@ processor.addExtrinsicHandler('timestamp.set', async ctx => {
 })
 
 
-processor.run()
+waitForGateway().then(() => {
+    processor.run()
+}, err => {
+    console.error(err)
+    process.exit(1)
+})

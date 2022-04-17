@@ -161,7 +161,16 @@ export class Chain {
         })
 
         for (let i = 0; i < encoded.length; i++) {
-            expect(encoded[i]).toEqual(original[i])
+            // try {
+                expect(encoded[i]).toEqual(original[i])
+            // } catch(e) {
+            //     let b = encoded[i]
+            //     let d = this.getVersion(b.blockNumber)
+            //     let extrinsics = b.extrinsics.map(hex => {
+            //         return decodeExtrinsic(hex, d.description, d.codec)
+            //     })
+            //     expect({blockNumber: b.blockNumber, extrinsics}).toEqual(decoded[i])
+            // }
         }
     }
 

@@ -15,6 +15,7 @@ function print(args: any): string {
         case 'string':
             return `"${args}"`
         case 'number':
+        case 'boolean':
             return ''+args
         case 'object':
             if (Array.isArray(args)) {

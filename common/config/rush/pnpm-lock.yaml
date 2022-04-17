@@ -11,6 +11,7 @@ specifiers:
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-test': file:./projects/data-test.tgz
   '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
+  '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:./projects/moonsama-erc721.tgz
@@ -60,6 +61,7 @@ specifiers:
   commander: ^9.0.0
   dotenv: ^10.0.0
   ethers: ^5.6.3
+  dotenv-cli: ^4.1.1
   expect: ^27.4.6
   express: ^4.17.2
   fast-check: ^2.21.0
@@ -98,6 +100,7 @@ dependencies:
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-test': file:projects/data-test.tgz
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
+  '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:projects/moonsama-erc721.tgz
@@ -147,6 +150,7 @@ dependencies:
   commander: 9.2.0
   dotenv: 10.0.0
   ethers: 5.6.4
+  dotenv-cli: 4.1.1
   expect: 27.5.1
   express: 4.17.3
   fast-check: 2.24.0
@@ -2504,6 +2508,20 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       path-type: 4.0.0
+    dev: false
+
+  /dotenv-cli/4.1.1:
+    resolution: {integrity: sha512-XvKv1pa+UBrsr3CtLGBsR6NdsoS7znqaHUf4Knj0eZO+gOI/hjj9KgWDP+KjpfEbj6wAba1UpbhaP9VezNkWhg==}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+      dotenv: 8.6.0
+      dotenv-expand: 5.1.0
+      minimist: 1.2.5
+    dev: false
+
+  /dotenv-expand/5.1.0:
+    resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
     dev: false
 
   /dotenv/10.0.0:
@@ -6599,6 +6617,33 @@ packages:
       '@ethersproject/abi': 5.6.1
       '@types/node': 16.11.27
       commander: 9.2.0
+  file:projects/e2e-test-project.tgz:
+    resolution: {integrity: sha512-kTGyGrFU5hG3GcGT7Ug0WxTfACAxbKuA9cN21bRh1vzytZqg5G5n4gcuLrQiT6Jzqr85oSmhikVV5vrx0HzMRQ==, tarball: file:projects/e2e-test-project.tgz}
+    name: '@rush-temp/e2e-test-project'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.26
+      dotenv: 10.0.0
+      dotenv-cli: 4.1.1
+      pg: 8.7.3
+      typeorm: 0.2.45_pg@8.7.3
+      typescript: 4.5.5
+    transitivePeerDependencies:
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - typeorm-aurora-data-api-driver
     dev: false
 
   file:projects/gql-test-client.tgz:

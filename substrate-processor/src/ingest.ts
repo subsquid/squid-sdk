@@ -277,6 +277,10 @@ function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any
 
 
 function mapGatewayBlock(block: gw.BatchBlock): BlockData {
+    block.calls = block.calls || []
+    block.events = block.events || []
+    block.extrinsics = block.extrinsics || []
+
     let events = createObjects(block.events, go => {
         let {callId, extrinsicId, ...event} = go
         return event
@@ -287,7 +291,7 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
         return call
     })
 
-    let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics, go => {
+    let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics || [], go => {
         let {callId, ...extrinsic} = go
         return extrinsic
     })

@@ -9,7 +9,7 @@ const processor = new SubstrateProcessor('kusama_balances')
 
 processor.setBatchSize(500)
 processor.setDataSource({
-    archive: 'https://kusama.indexer.gc.subsquid.io/v4/graphql',
+    archive: 'https://kusama.archive.gc.subsquid.io/graphql',
     chain: 'wss://kusama-rpc.polkadot.io'
 })
 
@@ -23,6 +23,7 @@ processor.addEventHandler('balances.Transfer', {
     }
 } as const, async ctx => {
     let transfer = getTransferEvent(ctx)
+    let timestamp = BigInt(new Date(ctx.block.timestamp).valueOf())
     let tip = 0n
 
     let fromAcc = await getOrCreate(ctx.store, Account, toHex(transfer.from))
@@ -42,14 +43,14 @@ processor.addEventHandler('balances.Transfer', {
         id: ctx.event.id + '-to',
         account: fromAcc,
         balance: fromAcc.balance,
-        timestamp: BigInt(ctx.block.timestamp)
+        timestamp
     }))
 
     await ctx.store.save(new HistoricalBalance({
         id: ctx.event.id + '-from',
         account: toAcc,
         balance: toAcc.balance,
-        timestamp: BigInt(ctx.block.timestamp)
+        timestamp
     }))
 })
 
