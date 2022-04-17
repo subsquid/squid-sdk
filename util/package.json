@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/util-internal-hex": "^0.0.0",
     "camelcase": "^6.3.0",
     "inflected": "^2.1.0"
   },

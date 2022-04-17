@@ -1,3 +1,4 @@
+import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import {checkBigInt, checkInt, unsignedIntByteLength, UTF8_ENCODER} from "./util"
 
@@ -152,11 +153,7 @@ export class HexSink extends Sink {
     }
 
     bytes(b: Uint8Array): void {
-        if (Buffer.isBuffer(b)) {
-            this.hex += b.toString('hex')
-        } else {
-            this.hex += Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString('hex')
-        }
+        this.hex += toHex(b)
     }
 
     toHex(): string {

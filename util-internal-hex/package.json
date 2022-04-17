@@ -1,13 +1,13 @@
 {
-  "name": "@subsquid/scale-codec-json",
-  "version": "0.1.3",
-  "description": "JSON codec for squid scale types",
+  "name": "@subsquid/util-internal-hex",
+  "version": "0.0.0",
+  "description": "Squid framework conventions around hex encoding",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/index.js",
+  "main": "lib/hex.js",
   "files": [
     "lib",
     "src"
@@ -16,9 +16,6 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^0.4.1",
-    "@subsquid/ss58-codec": "^0.1.0",
-    "@subsquid/util-internal-hex": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",

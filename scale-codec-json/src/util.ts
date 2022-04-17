@@ -1,6 +1,7 @@
 import {Primitive} from "@subsquid/scale-codec"
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
 import * as ss58 from "@subsquid/ss58-codec"
+import {isHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 
 
@@ -172,17 +173,6 @@ function toBigInt(len: bigint, val: unknown): bigint {
     let abs = n < 0n ? -1n * n : n
     assert(abs < 2n ** (len - 1n))
     return n
-}
-
-
-export function isHex(value: unknown): value is string {
-    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})*$/.test(value)
-}
-
-
-export function decodeHex(value: unknown): Buffer {
-    assert(isHex(value))
-    return Buffer.from(value.slice(2), "hex")
 }
 
 

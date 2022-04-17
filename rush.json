@@ -548,6 +548,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal-hex",
+      "projectFolder": "util-internal-hex",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-xxhash",
       "projectFolder": "util-xxhash",
       "shouldPublish": true,

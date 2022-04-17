@@ -1,9 +1,10 @@
 import {ArrayType, Codec as ScaleCodec, SequenceType, Ti, TupleType, Type, TypeKind} from "@subsquid/scale-codec"
 import {CodecStructType} from "@subsquid/scale-codec/lib/types-codec"
 import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
+import {decodeHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import {JsonType, JsonVariantType, toJsonTypes} from "./types"
-import {decodeBinaryArray, decodeCompact, decodeHex, decodePrimitive, encodeUnsignedInt} from "./util"
+import {decodeBinaryArray, decodeCompact, decodePrimitive, encodeUnsignedInt} from "./util"
 
 
 export class Codec {
@@ -23,7 +24,7 @@ export class Codec {
             case TypeKind.Compact:
                 return decodeCompact(def.integer, value)
             case TypeKind.BitSequence:
-                return decodeHex(value)
+                return decodeHex(value as string)
             case TypeKind.Array:
                 return this.decodeArray(type, def, value)
             case TypeKind.Sequence:
@@ -39,7 +40,7 @@ export class Codec {
             case TypeKind.BooleanOption:
                 return this.decodeBooleanOption(value)
             case TypeKind.Bytes:
-                return decodeHex(value)
+                return decodeHex(value as string)
             case TypeKind.BytesArray:
                 return decodeBinaryArray(def.len, value)
             case TypeKind.DoNotConstruct:
