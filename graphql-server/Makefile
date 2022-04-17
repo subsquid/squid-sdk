@@ -1,6 +1,9 @@
 test:
 	npx mocha -r dotenv/config ./lib/test/*.test.js
 
+test-cockroach:
+	@DB_TYPE=cockroach make test
+
 up:
 	@docker-compose up -d 2>&1
 
@@ -16,4 +19,4 @@ build:
 	@cp src/test/resolvers-extension/schema.graphql lib/test/resolvers-extension
 	@cp src/test/check-extension/schema.graphql lib/test/check-extension
 
-.PHONY: up down logs test build
+.PHONY: up down logs test test-cockroach build

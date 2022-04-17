@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "make build",
-    "test": "make up && sleep 1 && make test && make down || (make down && exit 1)"
+    "test": "make up && sleep 1 && make test test-cockroach && make down || (make down && exit 1)"
   },
   "dependencies": {
     "@graphql-tools/merge": "^8",

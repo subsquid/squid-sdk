@@ -1,8 +1,27 @@
-import {createPoolConfig} from "@subsquid/openreader/dist/db"
+import {assertNotNull} from "@subsquid/util"
 import {Client as PgClient, ClientBase} from "pg"
 
 
-export const db_config = createPoolConfig()
+export function isCockroach(): boolean {
+    return process.env.DB_TYPE == 'cockroach'
+}
+
+
+const PORT = parseInt(assertNotNull(
+    isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
+))
+
+
+process.env.DB_PORT = ''+PORT
+
+
+export const db_config = {
+    host: 'localhost',
+    port: PORT,
+    user: 'root',
+    password: 'root',
+    database: 'defaultdb'
+}
 
 
 async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {
@@ -27,8 +46,8 @@ export function databaseInit(sql: string[]): Promise<void> {
 
 export function databaseDelete(): Promise<void> {
     return withClient(async client => {
-        await client.query(`DROP SCHEMA IF EXISTS public CASCADE`)
-        await client.query(`CREATE SCHEMA public`)
+        await client.query(`DROP SCHEMA IF EXISTS root CASCADE`)
+        await client.query(`CREATE SCHEMA root`)
     })
 }
 
