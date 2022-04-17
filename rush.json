@@ -523,6 +523,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/evm-typegen",
+      "projectFolder": "evm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
