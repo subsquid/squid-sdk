@@ -1,7 +1,7 @@
 import {mergeResolvers} from "@graphql-tools/merge"
 import {createPoolConfig, PoolTransaction} from "@subsquid/openreader/dist/db"
 import {buildServerSchema} from "@subsquid/openreader/dist/gql/opencrud"
-import {Model} from "@subsquid/openreader/dist/model"
+import type {Model} from "@subsquid/openreader/dist/model"
 import {buildResolvers, ResolverContext} from "@subsquid/openreader/dist/resolver"
 import {listen, ListeningServer, setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
 import {loadModel} from "@subsquid/openreader/dist/tools"
@@ -81,8 +81,8 @@ export class Server {
     @def
     async config(): Promise<ApolloServerExpressConfig> {
         let plugins: PluginDefinition[] = []
-        let typeDefs = [buildServerSchema(this.model())]
-        let resolvers = buildResolvers(this.model())
+        let typeDefs = [buildServerSchema(this.model(), 'postgres')]
+        let resolvers = buildResolvers(this.model(), 'postgres')
 
         let requestCheck = this.customCheck()
         if (requestCheck) {

@@ -20,7 +20,7 @@ import {
 } from "graphql"
 import {Index, Model, Prop, PropType} from "../model"
 import {validateModel} from "../model.tools"
-import {scalars_list} from "../scalars"
+import {customScalars} from "./scalars"
 
 
 const baseSchema = buildASTSchema(parse(`
@@ -31,7 +31,8 @@ const baseSchema = buildASTSchema(parse(`
     directive @fulltext(query: String!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
-    ${scalars_list.map(name => 'scalar ' + name).join('\n')}
+    scalar ID
+    ${Object.keys(customScalars).map(name => 'scalar ' + name).join('\n')}
 `))
 
 

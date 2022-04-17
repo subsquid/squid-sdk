@@ -7,6 +7,7 @@ import http from "http"
 import path from "path"
 import type {Pool} from "pg"
 import {PoolTransaction} from "./db"
+import {Dialect} from "./dialect"
 import {buildServerSchema} from "./gql/opencrud"
 import type {Model} from "./model"
 import {buildResolvers} from "./resolver"
@@ -22,14 +23,16 @@ export interface ServerOptions {
     model: Model
     db: Pool
     port: number | string
+    dialect?: Dialect
     graphiqlConsole?: boolean
 }
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let {model, db} = options
-    let resolvers = buildResolvers(model)
-    let typeDefs = buildServerSchema(model)
+    let dialect = options.dialect ?? 'postgres'
+    let resolvers = buildResolvers(model, dialect)
+    let typeDefs = buildServerSchema(model, dialect)
     let app = express()
     let server = http.createServer(app)
 

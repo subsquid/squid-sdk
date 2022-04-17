@@ -4,6 +4,8 @@ import {UserInputError} from "apollo-server-core"
 import assert from "assert"
 import type {GraphQLResolveInfo} from "graphql"
 import type {Database, Transaction} from "./db"
+import type {Dialect} from "./dialect"
+import {customScalars} from "./gql/scalars"
 import type {Entity, JsonObject, Model} from "./model"
 import {QueryBuilder} from "./queryBuilder"
 import {
@@ -15,7 +17,6 @@ import {
     PageInfo
 } from "./relayConnection"
 import {connectionRequestedFields, ftsRequestedFields, requestedFields} from "./requestedFields"
-import {getScalarResolvers} from "./scalars"
 import {ensureArray, toQueryListField, unsupportedCase} from "./util"
 
 
@@ -24,9 +25,9 @@ export interface ResolverContext {
 }
 
 
-export function buildResolvers(model: Model): IResolvers<unknown, ResolverContext> {
+export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unknown, ResolverContext> {
     let Query: Record<string, IFieldResolver<unknown, ResolverContext>> = {}
-    let resolvers: IResolvers = {Query, ...getScalarResolvers()}
+    let resolvers: IResolvers = {Query, ...customScalars}
 
     for (let name in model) {
         let item = model[name]
@@ -35,16 +36,16 @@ export function buildResolvers(model: Model): IResolvers<unknown, ResolverContex
                 Query[toQueryListField(name)] = async (source, args, context, info) => {
                     let fields = requestedFields(model, name, info)
                     let db = await context.openReaderTransaction.get()
-                    return new QueryBuilder(model, db).executeSelect(name, args, fields)
+                    return new QueryBuilder(model, dialect, db).executeSelect(name, args, fields)
                 }
                 Query[toQueryListField(name) + 'Connection'] = async (source, args, context, info) => {
                     let db = await context.openReaderTransaction.get()
-                    return resolveEntityConnection(model, name, args, info, db)
+                    return resolveEntityConnection(model, dialect, name, args, info, db)
                 }
                 Query[`${toCamelCase(name)}ById`] = async (source, args, context, info) => {
                     let fields = requestedFields(model, name, info)
                     let db = await context.openReaderTransaction.get()
-                    let result = await new QueryBuilder(model, db)
+                    let result = await new QueryBuilder(model, dialect, db)
                         .executeSelect(name, {where: {id_eq: args.id}}, fields)
                     assert(result.length < 2)
                     return result[0]
@@ -52,7 +53,7 @@ export function buildResolvers(model: Model): IResolvers<unknown, ResolverContex
                 Query[`${toCamelCase(name)}ByUniqueInput`] = async (source, args, context, info) => {
                     let fields = requestedFields(model, name, info)
                     let db = await context.openReaderTransaction.get()
-                    let result = await new QueryBuilder(model, db)
+                    let result = await new QueryBuilder(model, dialect, db)
                         .executeSelect(name, {where: {id_eq: args.where.id}}, fields)
                     assert(result.length < 2)
                     return result[0]
@@ -71,7 +72,7 @@ export function buildResolvers(model: Model): IResolvers<unknown, ResolverContex
                 Query[name] = async (source, args, context, info) => {
                     let fields = ftsRequestedFields(model, name, info)
                     let db = await context.openReaderTransaction.get()
-                    return new QueryBuilder(model, db).executeFulltextSearch(name, args, fields)
+                    return new QueryBuilder(model, dialect, db).executeFulltextSearch(name, args, fields)
                 }
                 resolvers[`${name}_Item`] = {
                     __resolveType: resolveUnionType
@@ -130,6 +131,7 @@ interface ConnectionResponse extends RelayConnectionResponse<any> {
 
 async function resolveEntityConnection(
     model: Model,
+    dialect: Dialect,
     entityName: string,
     args: ConnectionArgs,
     info: GraphQLResolveInfo,
@@ -162,7 +164,7 @@ async function resolveEntityConnection(
 
     let fields = connectionRequestedFields(model, entityName, info)
     if (fields.edges?.node) {
-        let nodes = await new QueryBuilder(model, db).executeSelect(entityName, listArgs, fields.edges.node)
+        let nodes = await new QueryBuilder(model, dialect, db).executeSelect(entityName, listArgs, fields.edges.node)
         let edges: ConnectionEdge<any>[] = new Array(Math.min(limit, nodes.length))
         for (let i = 0; i < edges.length; i++) {
             edges[i] = {
@@ -176,7 +178,7 @@ async function resolveEntityConnection(
             response.totalCount = offset + nodes.length
         }
     } else if (fields.edges?.cursor || fields.pageInfo) {
-        let listLength = await new QueryBuilder(model, db).executeListCount(entityName, listArgs)
+        let listLength = await new QueryBuilder(model, dialect, db).executeListCount(entityName, listArgs)
         response.pageInfo = pageInfo(listLength)
         if (fields.edges?.cursor) {
             response.edges = []
@@ -192,7 +194,7 @@ async function resolveEntityConnection(
     }
 
     if (fields.totalCount && response.totalCount == null) {
-        response.totalCount = await new QueryBuilder(model, db).executeSelectCount(entityName, listArgs.where)
+        response.totalCount = await new QueryBuilder(model, dialect, db).executeSelectCount(entityName, listArgs.where)
     }
 
     return response

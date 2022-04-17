@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {useDatabase, useServer} from "./setup"
 
 describe('typed json fields', function () {
     useDatabase([

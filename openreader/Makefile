@@ -1,4 +1,4 @@
-test: up
+test:
 	npx mocha -r dotenv/config ./dist/test/*.test.js
 
 up:

@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {isCockroach, useDatabase, useServer} from "./setup"
 
 describe('lookup test', function () {
     useDatabase([
@@ -82,16 +82,22 @@ describe('lookup test', function () {
     it('supports sorting on lookup fields', function () {
         return client.test(`
             query {
-                issues(orderBy: [payment_amount_DESC]) {
+                issues(orderBy: [payment_amount_ASC]) {
                     id
                 }
             }
         `, {
-            issues: [
-                {id: '3'},
-                {id: '1'},
-                {id: '2'}
-            ]
+            issues: isCockroach()
+                ? [
+                    {id: '3'},
+                    {id: '2'},
+                    {id: '1'}
+                ]
+                : [
+                    {id: '2'},
+                    {id: '1'},
+                    {id: '3'}
+                ]
         })
     })
 

@@ -1,13 +1,14 @@
 import {Output, toCamelCase, toPlural} from "@subsquid/util"
 import assert from "assert"
 import {DocumentNode, parse, print} from "graphql"
-import {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
+import type {Dialect} from "../dialect"
+import type {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
 import {getOrderByMapping} from "../orderBy"
-import {scalars_list} from "../scalars"
 import {toQueryListField} from "../util"
+import {customScalars} from "./scalars"
 
 
-export function generateOpenCrudQueries(model: Model): string {
+export function generateOpenCrudQueries(model: Model, dialect: Dialect): string {
     let out = new Output()
 
     generatePageInfoType()
@@ -39,6 +40,7 @@ export function generateOpenCrudQueries(model: Model): string {
                 generateEnumType(name, item)
                 break
             case 'fts':
+                assert(dialect == 'postgres', `Full-text search queries are not supported by ${dialect}`)
                 generateFtsTypes(name, item)
                 break
         }
@@ -333,8 +335,8 @@ export function generateOpenCrudQueries(model: Model): string {
 }
 
 
-export function buildServerSchema(model: Model): DocumentNode {
-    let scalars = scalars_list.map(name => 'scalar ' + name).join('\n')
-    let queries = generateOpenCrudQueries(model)
+export function buildServerSchema(model: Model, dialect: Dialect): DocumentNode {
+    let scalars = ['ID'].concat(Object.keys(customScalars)).map(name => 'scalar ' + name).join('\n')
+    let queries = generateOpenCrudQueries(model, dialect)
     return parse(scalars  + '\n\n' + queries)
 }

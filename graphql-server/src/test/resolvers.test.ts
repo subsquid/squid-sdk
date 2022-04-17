@@ -50,7 +50,7 @@ describe('resolvers extension', function () {
             scalars: [{
                 id: '1',
                 bool: true,
-                date: '2021-09-24T00:00:00.000Z',
+                date: '2021-09-24T00:00:00.000000Z',
                 bigNumber: '1000000000000000',
                 bytes: '0xaa'
             }]

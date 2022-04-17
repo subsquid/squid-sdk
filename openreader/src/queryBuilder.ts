@@ -1,11 +1,11 @@
 import {toSnakeCase} from "@subsquid/util"
 import assert from "assert"
 import {Database} from "./db"
+import type {Dialect} from "./dialect"
 import type {Entity, JsonObject, Model} from "./model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "./model.tools"
 import {OpenCrudOrderByValue, OrderBy, parseOrderBy} from "./orderBy"
 import type {FtsRequestedFields, RequestedFields} from "./requestedFields"
-import {fromJsonCast, fromJsonToOutputCast, toOutputArrayCast, toOutputCast} from "./scalars"
 import {ensureArray, toColumn, toFkColumn, toInt, toTable, unsupportedCase} from "./util"
 import {hasConditions, parseWhereField, WhereOp, whereOpToSqlOperator} from "./where"
 
@@ -24,6 +24,7 @@ export class QueryBuilder {
 
     constructor(
         private model: Model,
+        private dialect: Dialect,
         private db: Database
     ) {}
 
@@ -43,6 +44,7 @@ export class QueryBuilder {
 
         let cursor = new Cursor(
             this.model,
+            this.dialect,
             this.ident.bind(this),
             this.aliases,
             join,
@@ -75,7 +77,7 @@ export class QueryBuilder {
                 break
             case 'list-subquery':
                 if (columns.size()) {
-                    out += `SELECT json_build_array(${columns.render()}) `
+                    out += `SELECT json_build_array(${columns.render()}) AS row `
                 }
                 break
             default:
@@ -177,7 +179,7 @@ export class QueryBuilder {
                     case 'scalar':
                     case 'enum':
                     case 'list':
-                        req.index = columns.add(cursor.transport(fieldName))
+                        req.index = columns.add(cursor.output(fieldName))
                         break
                     case 'object':
                         req.index = columns.add(cursor.field(fieldName) + ' IS NULL')
@@ -189,7 +191,7 @@ export class QueryBuilder {
                         break
                     case 'union':
                         let cu = cursor.child(fieldName)
-                        req.index = columns.add(cu.transport('isTypeOf'))
+                        req.index = columns.add(cu.output('isTypeOf'))
                         this.populateColumns(
                             columns,
                             cu,
@@ -199,7 +201,7 @@ export class QueryBuilder {
                     case 'fk':
                     case 'lookup': {
                         let cu = cursor.child(fieldName)
-                        req.index = columns.add(cu.transport('id'))
+                        req.index = columns.add(cu.output('id'))
                         this.populateColumns(
                             columns,
                             cu,
@@ -209,11 +211,11 @@ export class QueryBuilder {
                     }
                     case 'list-lookup':
                         req.index = columns.add(
-                            'array(' + this.select(field.propType.entity, req.args, req.children, {
+                            '(SELECT jsonb_agg(row) FROM (' + this.select(field.propType.entity, req.args, req.children, {
                                 kind: 'list-subquery',
                                 field: field.propType.field,
                                 parent: cursor.native('id')
-                            }) + ')'
+                            }) + ') as rows)'
                         )
                         break
                     default:
@@ -329,18 +331,29 @@ export class QueryBuilder {
                         break
                     }
                     case 'startsWith':
-                        exps.push(`starts_with(${lhs}, ${this.param(arg)})`)
+                        if (this.dialect == 'cockroach') {
+                            let p = this.param(arg) + '::text'
+                            exps.push(`${lhs} >= ${p}`)
+                            exps.push(`left(${lhs}, length(${p})) = ${p}`)
+                        } else {
+                            exps.push(`starts_with(${lhs}, ${this.param(arg)})`)
+                        }
                         break
                     case 'not_startsWith':
-                        exps.push(`NOT starts_with(${lhs}, ${this.param(arg)})`)
+                        if (this.dialect == 'cockroach') {
+                            let p = this.param(arg) + '::text'
+                            exps.push(`(${lhs} < ${p} OR left(${lhs}, length(${p})) != ${p})`)
+                        } else {
+                            exps.push(`NOT starts_with(${lhs}, ${this.param(arg)})`)
+                        }
                         break
                     case 'endsWith': {
-                        let param = this.param(arg)
+                        let param = this.param(arg) + '::text'
                         exps.push(`right(${lhs}, length(${param})) = ${param}`)
                         break
                     }
                     case 'not_endsWith': {
-                        let param = this.param(arg)
+                        let param = this.param(arg) + '::text'
                         exps.push(`right(${lhs}, length(${param})) != ${param}`)
                         break
                     }
@@ -578,11 +591,12 @@ interface ListSubquery {
  * A pointer to an entity or nested json object within SQL query.
  *
  * It has convenience methods for building various SQL expressions
- * related to individual properties of an entity or an object it points to.
+ * related to individual properties of an entity or of an object it points to.
  */
 class Cursor {
     constructor(
         private model: Model,
+        private dialect: Dialect,
         private ident: (name: string) => string,
         private aliases: AliasSet,
         private join: JoinSet,
@@ -592,15 +606,43 @@ class Cursor {
         private prefix: string
     ) {}
 
-    transport(propName: string): string {
+    output(propName: string): string {
         let prop = this.object.properties[propName]
         switch(prop.type.kind) {
             case 'scalar':
+                if (this.object.kind == 'object') {
+                    switch(prop.type.name) {
+                        case 'Int':
+                            return `(${this.prefix}->'${propName}')::integer`
+                        case 'Float':
+                            return `(${this.prefix}->'${propName}')::numeric`
+                        case 'Boolean':
+                            return `(${this.prefix}->>'${propName}')::bool`
+                        default:
+                            return `${this.prefix}->>'${propName}'`
+                    }
+                } else {
+                    let exp = this.column(propName)
+                    switch(prop.type.name) {
+                        case 'BigInt':
+                            return `(${exp})::text`
+                        case 'Bytes':
+                            return `'0x' || encode(${exp}, 'hex')`
+                        case 'DateTime':
+                            if (this.dialect == 'cockroach') {
+                                return `experimental_strftime((${exp}) at time zone 'UTC', '%Y-%m-%dT%H:%M:%S.%fZ')`
+                            } else {
+                                return `to_char((${exp}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
+                            }
+                        default:
+                            return exp
+                    }
+                }
             case 'enum':
                 if (this.object.kind == 'object') {
-                    return fromJsonToOutputCast(prop.type.name, this.prefix, propName)
+                    return `${this.prefix}->>'${propName}'`
                 } else {
-                    return toOutputCast(prop.type.name, this.column(propName))
+                    return this.column(propName)
                 }
             case 'list':
                 let itemType = prop.type.item.type
@@ -608,7 +650,21 @@ class Cursor {
                     // this is json
                     return this.field(propName)
                 } else {
-                    return toOutputArrayCast(itemType.name, this.column(propName))
+                    let exp = this.column(propName)
+                    switch(itemType.name) {
+                        case 'BigInt':
+                            return `(${exp})::text[]`
+                        case 'Bytes':
+                            return `array(select '0x' || encode(i, 'hex') from unnest(${exp}) as i)`
+                        case 'DateTime':
+                            if (this.dialect == 'cockroach') {
+                                return `array(select experimental_strftime(i at time zone 'UTC', '%Y-%m-%dT%H:%M:%S.%fZ') from unnest(${exp}) as i)`
+                            } else {
+                                return `array(select to_char(i at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') from unnest(${exp}) as i)`
+                            }
+                        default:
+                            return exp
+                    }
                 }
             default:
                 throw unsupportedCase(prop.type.kind)
@@ -624,7 +680,24 @@ class Cursor {
         }
         assert(prop.type.kind == 'scalar' || prop.type.kind == 'enum')
         if (this.object.kind == 'object') {
-            return fromJsonCast(prop.type.name, this.prefix, propName)
+            let js = `${this.prefix}->'${propName}'`
+            let str = `${this.prefix}->>'${propName}'`
+            switch(prop.type.name) {
+                case 'Int':
+                    return `(${js})::integer`
+                case 'Float':
+                    return `(${js})::numeric`
+                case 'Boolean':
+                    return `(${str})::bool`
+                case 'BigInt':
+                    return `(${str})::numeric`
+                case 'Bytes':
+                    return `decode(substr(${str}, 3), 'hex')`
+                case 'DateTime':
+                    return `(${str})::timestamptz`
+                default:
+                    return str
+            }
         } else {
             return this.column(propName)
         }
@@ -676,6 +749,7 @@ class Cursor {
 
         return new Cursor(
             this.model,
+            this.dialect,
             this.ident,
             this.aliases,
             this.join,
@@ -702,7 +776,7 @@ class Cursor {
     fk(propName: string): string {
         return this.object.kind == 'entity'
             ? this.ident(this.alias) + '.' + this.ident(toFkColumn(propName))
-            : fromJsonCast('ID', this.prefix, propName)
+            : `${this.prefix}->>'${propName}'`
     }
 
     tsv(queryName: string): string {

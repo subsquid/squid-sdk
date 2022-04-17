@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {useDatabase, useServer} from "./setup"
 
 describe('scalars', function() {
     useDatabase([
@@ -239,9 +239,9 @@ describe('scalars', function() {
                 }
             `, {
                 scalars: [
-                    {id: '10', dateTime: '2021-09-24T15:43:13.400Z', deep: {dateTime: '2021-09-24T00:00:00.120Z'}},
-                    {id: '11', dateTime: '2021-09-24T00:00:00.000Z', deep: {dateTime: '2021-09-24T00:00:00Z'}},
-                    {id: '12', dateTime: '2021-09-24T01:00:00.001Z', deep: {dateTime: '2021-09-24T00:00:00.1Z'}}
+                    {id: '10', dateTime: '2021-09-24T15:43:13.400000Z', deep: {dateTime: '2021-09-24T00:00:00.120Z'}},
+                    {id: '11', dateTime: '2021-09-24T00:00:00.000000Z', deep: {dateTime: '2021-09-24T00:00:00Z'}},
+                    {id: '12', dateTime: '2021-09-24T01:00:00.001000Z', deep: {dateTime: '2021-09-24T00:00:00.1Z'}}
                 ]
             })
         })
