@@ -10,8 +10,8 @@ specifiers:
   '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/cli': file:./projects/cli.tgz
   '@rush-temp/data-test': file:./projects/data-test.tgz
-  '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
+  '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:./projects/moonsama-erc721.tgz
@@ -60,8 +60,8 @@ specifiers:
   cli-ux: ^5.6.7
   commander: ^9.0.0
   dotenv: ^10.0.0
-  ethers: ^5.6.3
   dotenv-cli: ^4.1.1
+  ethers: ^5.6.3
   expect: ^27.4.6
   express: ^4.17.2
   fast-check: ^2.21.0
@@ -99,8 +99,8 @@ dependencies:
   '@rush-temp/balances': file:projects/balances.tgz
   '@rush-temp/cli': file:projects/cli.tgz
   '@rush-temp/data-test': file:projects/data-test.tgz
-  '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz
+  '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz
   '@rush-temp/moonsama-erc721': file:projects/moonsama-erc721.tgz
@@ -149,8 +149,8 @@ dependencies:
   cli-ux: 5.6.7
   commander: 9.2.0
   dotenv: 10.0.0
-  ethers: 5.6.4
   dotenv-cli: 4.1.1
+  ethers: 5.6.4
   expect: 27.5.1
   express: 4.17.3
   fast-check: 2.24.0
@@ -2517,7 +2517,7 @@ packages:
       cross-spawn: 7.0.3
       dotenv: 8.6.0
       dotenv-expand: 5.1.0
-      minimist: 1.2.5
+      minimist: 1.2.6
     dev: false
 
   /dotenv-expand/5.1.0:
@@ -6609,20 +6609,12 @@ packages:
       - pg-native
     dev: false
 
-  file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-6MOIEdqwEXxuGp1JkKxdEez4xxg1hb/TNd+KkU5A4ff2gpQPyxsMhYiLK+ytSQCCjw4DL+Lw3trl1H7VKJE4WA==, tarball: file:projects/evm-typegen.tgz}
-    name: '@rush-temp/evm-typegen'
-    version: 0.0.0
-    dependencies:
-      '@ethersproject/abi': 5.6.1
-      '@types/node': 16.11.27
-      commander: 9.2.0
   file:projects/e2e-test-project.tgz:
-    resolution: {integrity: sha512-kTGyGrFU5hG3GcGT7Ug0WxTfACAxbKuA9cN21bRh1vzytZqg5G5n4gcuLrQiT6Jzqr85oSmhikVV5vrx0HzMRQ==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-ADTxxrxOewsHks34oakmtiRhFO9FgB4P/Yox4WNPI5eNN4gtwsW45L37y3g4Gaf5yZeArolSRAZSume6qkEz/w==, tarball: file:projects/e2e-test-project.tgz}
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
     dependencies:
-      '@types/node': 16.11.26
+      '@types/node': 16.11.27
       dotenv: 10.0.0
       dotenv-cli: 4.1.1
       pg: 8.7.3
@@ -6644,6 +6636,16 @@ packages:
       - sqlite3
       - supports-color
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/evm-typegen.tgz:
+    resolution: {integrity: sha512-6MOIEdqwEXxuGp1JkKxdEez4xxg1hb/TNd+KkU5A4ff2gpQPyxsMhYiLK+ytSQCCjw4DL+Lw3trl1H7VKJE4WA==, tarball: file:projects/evm-typegen.tgz}
+    name: '@rush-temp/evm-typegen'
+    version: 0.0.0
+    dependencies:
+      '@ethersproject/abi': 5.6.1
+      '@types/node': 16.11.27
+      commander: 9.2.0
     dev: false
 
   file:projects/gql-test-client.tgz:
