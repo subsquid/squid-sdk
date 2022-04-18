@@ -7,7 +7,7 @@ import {ListeningServer, serve} from "../server"
 
 
 export function isCockroach(): boolean {
-    return process.env.DB == 'cockroach'
+    return process.env.DB_TYPE == 'cockroach'
 }
 
 

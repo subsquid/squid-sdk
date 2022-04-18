@@ -11,7 +11,7 @@ export function toHex(data: Uint8Array): string {
 
 
 export function isHex(value: unknown): value is string {
-    return typeof value == 'string' && value.length % 2 == 0 && /^0x[a-f\d]*/i.test(value)
+    return typeof value == 'string' && value.length % 2 == 0 && /^0x[a-f\d]*$/i.test(value)
 }
 
 

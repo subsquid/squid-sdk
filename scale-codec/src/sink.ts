@@ -153,7 +153,11 @@ export class HexSink extends Sink {
     }
 
     bytes(b: Uint8Array): void {
-        this.hex += toHex(b)
+        if (Buffer.isBuffer(b)) {
+            this.hex += b.toString('hex')
+        } else {
+            this.hex += Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString('hex')
+        }
     }
 
     toHex(): string {
