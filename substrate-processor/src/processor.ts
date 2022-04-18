@@ -17,31 +17,30 @@ import {Range} from "./util/range"
 import {ServiceManager} from "./util/sm"
 
 /**
- * Specifies a range of blocks to be processed by BlockHook functions
- *
- * @property range: A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
+ * Specifies a range of blocks to be processed by BlockHook functions.
+ * 
+ * The (optional) `range` ({@link Range}) field specifies a starting and (optionally) end block for processing.
  */
 export interface BlockHookOptions {
     range?: Range
 }
 
 /**
- * Specifies a range of blocks to be processed by Event Handler functions
- *
- * @property range: A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
+ * Specifies a range of blocks to be processed by BlockHook functions.
+ * 
+ * The (optional) `range` ({@link Range}) field specifies a starting and (optionally) end block for processing.
  */
 export interface EventHandlerOptions {
     range?: Range
 }
 
 /**
- * Specifies to Extrinsig Handler functions:
- *  * a range of blocks to be processed by Extrinsic Handler functions
- *  * a list of names of the events triggered by the Extrinsic. Will be used to
- *
- * @property range: A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
- * @property triggerEvents: A list of {@link QualifiedName}, indicating Event names triggered by the Extrinsic. 
- * Optional.
+ * Specifies a range of blocks to be processed by BlockHook functions.
+ * 
+ * The (optional) `range` ({@link Range}) field specifies a starting and (optionally) end block for processing.
+ * 
+ * The (optional) `triggerEvents` field is a list of {@link QualifiedName}, indicating Event names triggered by the 
+ * Extrinsic.
  */
 export interface ExtrinsicHandlerOptions {
     range?: Range
@@ -49,10 +48,11 @@ export interface ExtrinsicHandlerOptions {
 }
 
 /**
- * Specifies to the {@link SubstrateProcessor} the endpoints of Subsquid Archive and blockchain WebSocket.
- *
- * @property archive: a string, representing the URL of a Subsquid Archive endpoint
- * @property chain: a string, representing the URL of a blockchain WebSocket (e.g. 'wss://')
+ * Specifies the endpoints of Subsquid Archive and blockchain WebSocket. (@see setDataSource )
+ * 
+ * The `archive` field is a string, representing the URL of a Subsquid Archive endpoint
+ * 
+ * The `chain` field is a string, representing the URL of a blockchain WebSocket (e.g. 'wss://')
  */
 export interface DataSource {
     /**
@@ -96,8 +96,9 @@ export class SubstrateProcessor {
     /**
      * Configures the types bundle of the blockchain being processed. This is necessary to correctly parse chain blocks.
      * 
-     * @param bundle Either a `string` or an {@link OldTypesBundle} object, defining the bundle of types of the 
-     * blockchain being processed.
+     * @param bundle Either a `string` pointing to a built-in bundle type 
+     * ([list](https://github.com/subsquid/squid/tree/master/substrate-metadata/src/old/definitions))
+     * or an {@link OldTypesBundle} object, defining the bundle of types of the blockchain being processed.
      */
     setTypesBundle(bundle: string | OldTypesBundle): void {
         this.assertNotRunning()
@@ -432,6 +433,8 @@ export class SubstrateProcessor {
    * @param prom a {@link Prometheus} class instance, used to manage the Prometheus metrics service.
    * @param progress a {@link ProgressTracker} class instance, which manages the blockchain processing progress, 
    * updated after processing each batch
+   * 
+   * @internal
    */
     private async process(
         ingest: Ingest,

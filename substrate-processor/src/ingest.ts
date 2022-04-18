@@ -8,10 +8,7 @@ import {hasProperties, unique} from "./util/misc"
 import {rangeEnd} from "./util/range"
 
 /**
- * Defines data retrieved for each block
- * 
- * @property block: {@link SubstrateBlock}
- * @property events: {@link SubstrateEvent}
+ * Defines data retrieved for each block.
  */
 export interface BlockData {
     block: SubstrateBlock
@@ -20,9 +17,6 @@ export interface BlockData {
 
 /**
  * Defines a batch of ingested blocks.
- * 
- * @property range: a {@link Range} of scanned blocks
- * @property blocks: an array of {@link BlockData}
  */
 export interface DataBatch extends Batch {
     /**

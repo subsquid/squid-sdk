@@ -25,13 +25,7 @@ import * as sto from "./util/storage"
 
 /**
  * Subset of SubstrateBlock properties required for getting
- * chain metadata for a given block
- * 
- * @property height: block number
- * @property hash: block hash
- * @property parentHash: hash of the block's parent
- * @property runtimeVersion: {@link SpecVersion} or {@link SubstrateRuntimeVersion} representing the version of the 
- * chain
+ * chain metadata for a given block.
  */
 interface BlockInfo {
     height: number

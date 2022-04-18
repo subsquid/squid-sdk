@@ -8,13 +8,7 @@ import {Range, rangeDifference, rangeIntersection} from "./util/range"
 
 /**
  * Collects handlers for the various trigger types (pre/post block, event, extrinsic, EVM log).
- * Keeps a list of handlers of the type corresponding to the trigger
- * 
- * @property pre: array of {@link BlockHandler}
- * @property post: array of {@link BlockHandler}
- * @property events: mapping of `trigger event` -> array of {@link EventHandler}
- * @property extrinsics: mapping of type `trigger event` -> `extrinsic` -> array of {@link ExtrinsicHandler}
- * @property evmLogs: mapping of {@link EvmContractAddress} -> array of { {@link EvmTopicSet}[], EvmLogHandler} objects
+ * Keeps a list of handlers of the type corresponding to the trigger.
  */
 export interface DataHandlers {
     pre: BlockHandler[]
@@ -28,13 +22,10 @@ export interface DataHandlers {
 }
 
 /**
- * Defines a batch of blocks to be processed by specifying the block {@link Range} and the {@link DataHandlers} that 
- * are relevant to that range.
+ * Defines a batch of blocks to be processed by specifying the block `range` ({@link Range}) and the `handlers` 
+ * ({@link DataHandlers}) that are relevant to that range.
  * 
  * Each {@link DataHandlers} in a {@link Batch} is valid and can be applied to the Batch's {@link Range}.
- * 
- * @property range: a {@link Range} defining start and end blocks for the batch
- * @property handlers: a {@link DataHandlers} objects collecting the handlers that should be triggered for the batch.
  */
 export interface Batch {
     range: Range

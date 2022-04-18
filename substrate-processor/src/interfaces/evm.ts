@@ -24,17 +24,12 @@ export interface EvmLogEvent extends SubstrateEvent {
 }
 
 /**
- * Defines the context for the execution of an {@link EvmLogHandler} function.
  * 
- * Contains EVM-specific information, as well as generic Substrate data (block, event, extrinsics), common to all 
- * other types of contexts.
+ * Defines the context for the execution of an {@link EvmLogHandler} function, including a `store` ({@link Store}) 
+ * instance to interact with the database, the `topcs`, `data` and `contractAddress` of the EVM log, as well as 
+ * `txHash`, the transaction hash.
  * 
- * @property topic: list of {@link EvmTopic}
- * @property data: `string` representing the EvmLog data
- * @property txHash: `string` representing the hash value of the EvmLog
- * @property contractAddress: {@link EvmContractAddress} object
- * @property substrate: object containing {@link SubstrateEvent}, {@link SubstrateBlock} and optionally {@link SubstrateExtrinsic}
- * @property store: {@link Store}
+ * Also contains all Substrate infromation in the `substrate` field.
  * 
  * @see EventHandlerContext
  */
@@ -53,7 +48,7 @@ export interface EvmLogHandlerContext {
 }
 
 /**
- * Functions used to process Substrate EvmLogs should adhere to this interface.
+ * Defines signature for functions that should process Substrate EvmLogs
  */
 export interface EvmLogHandler {
     (ctx: EvmLogHandlerContext): Promise<void>
@@ -63,10 +58,8 @@ export interface EvmLogHandler {
 export type EvmTopicSet = EvmTopic | null | undefined | EvmTopic[]
 
 /**
- * Specifies a range of blocks to be processed by {@link EvmLogHandler} functions
- *
- * @property range: (optional) A {@link Range}, specifying a starting and (optionally) end block for processing. Optional.
- * @property filter: (optional) An {@link EvmTopicSet} to filter handler execution based on evm topics
+ * Specifies an (optional) `range` ({@link Range}) of blocks and an (optional) array of {@link EvmTopicSet} via the 
+ * `filter` field to limit {@link EvmLogHandler} function execution.
  */
 export interface EvmLogHandlerOptions {
     range?: Range

@@ -4,10 +4,8 @@ import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
 import {QualifiedName} from "./substrate"
 
 /**
- * Defines a {@link BlockHandler} function and the {@link Range} of blocks that should restrain its execution
- * 
- * @property handler: {@link BlockHandler}
- * @property range: {@link Range} (optional)
+ * Defines a {@link BlockHandler} function via the `handler` field and (optionally) the {@link Range} of blocks that 
+ * should limit its execution via the `range` field.
  */
 export interface BlockHook {
     handler: BlockHandler
@@ -15,13 +13,9 @@ export interface BlockHook {
 }
 
 /**
- * Defines a {@link EventHandler} function, the {@link Range} of blocks, and the Event name that should restrain its 
- * execution
- * 
- * @property handler: {@link EventHandler}
- * @property event: {@link QualifiedName} the name of the event that should trigger the handler, in the form 
- * `${module}.${Name}`
- * @property range: {@link Range} (optional)
+ * Defines a {@link EventHandler} function via the `handler` field, the (optional) {@link Range} of blocks with the 
+ * `range` field, and the Event name that should limit its execution through the `event` field. Event name should be 
+ * explicited in the form `${module}.${Name}`.
  */
 export interface EventHook {
     handler: EventHandler
@@ -30,15 +24,10 @@ export interface EventHook {
 }
 
 /**
- * Defines a {@link ExtrinsicHandler} function and the {@link Range} of blocks, Event and Extrinsic names that should 
- * restrain its execution
- * 
- * @property handler: {@link ExtrinsicHandler}
- * @property event: {@link QualifiedName} the name of the event that should trigger the handler, in the form 
- * `${module}.${Name}`
- * @property extrinsic: {@link QualifiedName} the name of the extrinsic that should trigger the handler, in the form 
- * `${section}.${method}`
- * @property range: {@link Range} (optional)
+ * Defines a {@link ExtrinsicHandler} function via the `handler` field, the (optional) {@link Range} of blocks with the 
+ * `range` field, Event and Extrinsic names that should limit its execution throught the `event` and `extrinsic` 
+ * fields. Event name should be explicited in the form `${module}.${Name}` and Extrinsic name should be in the form 
+ * `${section}.${method}`.
  */
 export interface ExtrinsicHook {
     handler: ExtrinsicHandler
@@ -48,17 +37,12 @@ export interface ExtrinsicHook {
 }
 
 /**
- * Defines a {@link EvmLogHandler} function and the conditions for its execution:
+ * Defines a {@link EvmLogHandler} function via the `handler` field, and the conditions for its execution:
  * 
  *  * the evm log event was emitted by the given `contractAddress`
- *  * the topic of the evm log event matches {@link EvmTopicSet} as defined by the evm 
- * [event topic convention](https://docs.ethers.io/v5/concepts/events/#events--filters) (optional)
- *  * the block height is in range (optional)
- * 
- * @property handler: {@link EvmLogHandler}
- * @property contractAddress: `string` representing the contract address that should trigger the handler
- * @property filter: {@link EvmTopicSet} (otpional)
- * @property range: {@link Range} (optional)
+ *  * the topic of the evm log event matches the {@link EvmTopicSet} specified in the (optional) `filter` field, as 
+ * defined by the evm [event topic convention](https://docs.ethers.io/v5/concepts/events/#events--filters)
+ *  * the block height is in the specified `range` ({@link Range}) (optional)
  */
 export interface EvmLogHook {
     handler: EvmLogHandler
@@ -82,12 +66,6 @@ export interface EvmLogHook {
  *  * {@link ExtrinsicHook}s, executed in the order the triggerEvent (`system.ExtrinsicSuccess` by default) are
  *  emitted within the block
  *  * `post` {@link BlockHook}s for current block, after every
- * 
- * @property pre: list of {@link BlockHook}
- * @property post: list of {@link BlockHook}
- * @property event: list of {@link EventHook}
- * @property extrinsic: list of {@link ExtrinsicHook}
- * @property evmLog: list of {@link EvmLogHook}
  */
 export interface Hooks {
     pre: BlockHook[]

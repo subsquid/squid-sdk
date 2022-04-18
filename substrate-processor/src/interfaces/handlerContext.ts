@@ -20,12 +20,9 @@ export interface Store extends EntityManager {
 }
 
 /**
- * Defines the context for the execution of an {@link EventHandler} functions.
- * 
- * @property store: {@link Store} instance to interact with the database 
- * @property block: {@link SubstrateBlock}
- * @property event: {@link SubstrateEvent}
- * @property extrinsic: {@link SubstrateExtrinsic} (optional)
+ * Defines the context for the execution of an {@link EventHandler} function, including a `store` ({@link Store}) 
+ * instance to interact with the database, `block` ({@link SubstrateBlock}), `event` ({@link SubstrateEvent}), and 
+ * (optionally) `extrinsic` ({@link SubstrateExtrinsic}) information.
  */
 export interface EventHandlerContext {
     store: Store
@@ -40,7 +37,7 @@ export interface EventHandlerContext {
 }
 
 /**
- * Functions used to process Substrate Events should adhere to this interface.
+ * Defines signature for functions that should process Substrate Events
  */
 export interface EventHandler {
     (ctx: EventHandlerContext): Promise<void>
@@ -57,18 +54,16 @@ export interface ExtrinsicHandlerContext extends EventHandlerContext {
 }
 
 /**
- * Functions used to process Substrate Extrinsics should adhere to this interface.
+ * Defines signature for functions that should process Substrate Extrinsics.
  */
 export interface ExtrinsicHandler {
     (ctx: ExtrinsicHandlerContext): Promise<void>
 }
 
 /**
- * Defines the context for the execution of a {@link BlockHandler} functions.
- * 
- * @property store: {@link Store} instance to interact with the database 
- * @property block: {@link SubstrateBlock}
- * @property event: {@link SubstrateEvent}
+ * Defines the context for the execution of a {@link BlockHandler} function, including a `store` ({@link Store}) 
+ * instance to interact with the database, `block` ({@link SubstrateBlock}), `events` ({@link SubstrateEvent}) 
+ * information.
  * 
  * @see EventHandlerContext
  */
@@ -84,7 +79,7 @@ export interface BlockHandlerContext {
 }
 
 /**
- * Functions used to process Substrate Blocks should adhere to this interface.
+ * Defines signature for functions that should process Substrate Blocks.
  */
 export interface BlockHandler {
     (ctx: BlockHandlerContext): Promise<void>
