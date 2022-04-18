@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util",
+      "comment": "move hex functions to separate package",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util"
+}

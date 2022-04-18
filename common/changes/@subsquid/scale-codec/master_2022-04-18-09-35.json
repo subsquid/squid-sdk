@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "fix stackoverflow when checking long hex bytes",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}
