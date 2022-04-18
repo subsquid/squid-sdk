@@ -30,6 +30,9 @@
       },
       "squid": {
         "description": "Squid management commands (SaaS)"
+      },
+      "archive": {
+        "description": "Squid archive commands (SaaS)"
       }
     }
   },
@@ -53,12 +56,14 @@
     "pgtools": "^0.3.2",
     "query-string": "^7.1.0",
     "simple-git": "^2.48.0",
-    "typeorm": "^0.2.41"
+    "typeorm": "^0.2.41",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@subsquid/substrate-processor": "^0.7.0",
     "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
+    "@types/js-yaml": "^4.0.5",
     "typescript": "~4.5.5"
   }
 }
