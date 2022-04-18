@@ -363,6 +363,12 @@ export class QueryBuilder {
                     case 'not_contains':
                         exps.push(`position(${this.param(arg)} in ${lhs}) = 0`)
                         break
+                    case 'containsInsensitive':
+                        exps.push(`position(lower(${this.param(arg)}) in lower(${lhs})) > 0`)
+                        break
+                    case 'not_containsInsensitive':
+                        exps.push(`position(lower(${this.param(arg)}) in lower(${lhs})) = 0`)
+                        break
                     default: {
                         exps.push(`${lhs} ${whereOpToSqlOperator(op)} ${this.param(arg)}`)
                     }

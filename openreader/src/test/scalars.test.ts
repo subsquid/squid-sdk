@@ -12,6 +12,7 @@ describe('scalars', function() {
         `insert into scalar (id, "string") values ('7', 'bar baz foo')`,
         `insert into scalar (id, "string") values ('8', 'baz foo bar')`,
         `insert into scalar (id, "string") values ('9', 'hello')`,
+        `insert into scalar (id, "string") values ('9-1', 'A fOo B')`,
         `insert into scalar (id, "date_time", deep) values ('10', '2021-09-24T15:43:13.400Z', '{"dateTime": "2021-09-24T00:00:00.120Z"}'::jsonb)`,
         `insert into scalar (id, "date_time", deep) values ('11', '2021-09-24T00:00:00.000Z', '{"dateTime": "2021-09-24T00:00:00Z"}'::jsonb)`,
         `insert into scalar (id, "date_time", deep) values ('12', '2021-09-24 02:00:00.001 +01:00', '{"dateTime": "2021-09-24T00:00:00.1Z"}'::jsonb)`,
@@ -106,16 +107,18 @@ describe('scalars', function() {
                     not_ends_with: scalars(where: {string_not_endsWith: "foo"} orderBy: id_ASC) { id }
                     contains: scalars(where: {string_contains: "foo"} orderBy: id_ASC) { id }
                     not_contains: scalars(where: {string_not_contains: "foo"} orderBy: id_ASC) { id }
-                    case_sensitive: scalars(where: {string_contains: "Foo"} orderBy: id_ASC) { id }
+                    contains_insensitive: scalars(where: {string_containsInsensitive: "FoO"} orderBy: id_ASC) { id }
+                    not_contains_insensitive: scalars(where: {string_not_containsInsensitive: "FoO"} orderBy: id_ASC) { id }
                 }
             `, {
                 starts_with: [{id: '6'}],
-                not_starts_with: [{id: '7'}, {id: '8'}, {id: '9'}],
+                not_starts_with: [{id: '7'}, {id: '8'}, {id: '9'}, {id: '9-1'}],
                 ends_with: [{id: '7'}],
-                not_ends_with: [{id: '6'}, {id: '8'}, {id: '9'}],
+                not_ends_with: [{id: '6'}, {id: '8'}, {id: '9'}, {id: '9-1'}],
                 contains: [{id: '6'}, {id: '7'}, {id: '8'}],
-                not_contains: [{id: '9'}],
-                case_sensitive: []
+                not_contains: [{id: '9'}, {id: '9-1'}],
+                contains_insensitive: [{id: '6'}, {id: '7'}, {id: '8'}, {id: '9-1'}],
+                not_contains_insensitive: [{id: '9'}]
             })
         })
     })

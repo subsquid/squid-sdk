@@ -252,6 +252,8 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
         if (graphqlType == 'String' || graphqlType == 'ID') {
             out.line(`${fieldName}_contains: ${graphqlType}`)
             out.line(`${fieldName}_not_contains: ${graphqlType}`)
+            out.line(`${fieldName}_containsInsensitive: ${graphqlType}`)
+            out.line(`${fieldName}_not_containsInsensitive: ${graphqlType}`)
             out.line(`${fieldName}_startsWith: ${graphqlType}`)
             out.line(`${fieldName}_not_startsWith: ${graphqlType}`)
             out.line(`${fieldName}_endsWith: ${graphqlType}`)

@@ -9,6 +9,7 @@ export type WhereOp =
     'lte' |
     'in' | 'not_in' |
     'contains' | 'not_contains' |
+    'containsInsensitive' | 'not_containsInsensitive' |
     'startsWith' | 'not_startsWith' |
     'endsWith' | 'not_endsWith' |
     'containsAll' |
@@ -31,6 +32,8 @@ const ENDINGS = [
     'not_in',
     'contains',
     'not_contains',
+    'containsInsensitive',
+    'not_containsInsensitive',
     'startsWith',
     'not_startsWith',
     'endsWith',
