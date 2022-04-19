@@ -26,7 +26,7 @@ import {ServiceManager} from "./util/sm"
 
 export interface BlockHookOptions {
     /**
-     * Inclusive range of blocks for which data handler is effective
+     * Inclusive range of blocks for which the block hook is effective.
      */
     range?: Range
 }
@@ -34,7 +34,7 @@ export interface BlockHookOptions {
 
 export interface EventHandlerOptions {
     /**
-     * Inclusive range of blocks for which data handler is effective
+     * Inclusive range of blocks for which the event handler is effective.
      */
     range?: Range
 }
@@ -42,13 +42,14 @@ export interface EventHandlerOptions {
 
 export interface ExtrinsicHandlerOptions {
     /**
-     * Inclusive range of blocks for which data handler is effective
+     * Inclusive range of blocks for which the extrinsic handler is effective.
      */
     range?: Range
     /**
      * A set of trigger events.
      *
-     * See {@link SubstrateProcessor.addExtrinsicHandler} for more details.
+     * The extrinsic handler is triggered on any event from the list.
+     * For more details see {@link SubstrateProcessor.addExtrinsicHandler}.
      */
     triggerEvents?: QualifiedName[]
 }
@@ -118,9 +119,14 @@ export class SubstrateProcessor {
      * 3. as an {@link OldTypesBundle} object
      *
      * @example
-     * processor.setTypesBundle('kusama') // known chain
-     * processor.setTypesBundle('typesBundle.json') // JSON file
-     * processor.setTypesBundle({ // OldTypesBundle object
+     * // known chain
+     * processor.setTypesBundle('kusama')
+     *
+     * // A path to a JSON file resolved relative to `cwd`.
+     * processor.setTypesBundle('typesBundle.json')
+     *
+     * // OldTypesBundle object
+     * processor.setTypesBundle({
      *     types: {
      *         Foo: 'u8'
      *     }
@@ -138,7 +144,7 @@ export class SubstrateProcessor {
     /**
      * Limits the range of blocks to be processed.
      *
-     * When upper bound is specified,
+     * When the upper bound is specified,
      * the processor will terminate with exit code 0 once it reaches it.
      *
      * @example
@@ -155,11 +161,11 @@ export class SubstrateProcessor {
 
     /**
      * Sets the maximum number of blocks which can be fetched
-     * from the data source in one request.
+     * from the data source in a single request.
      *
      * The default is 100.
      *
-     * Usually this setting doesn't have significant impact on performance.
+     * Usually this setting doesn't have any significant impact on the performance.
      */
     setBatchSize(size: number): void {
         this.assertNotRunning()
@@ -168,7 +174,7 @@ export class SubstrateProcessor {
     }
 
     /**
-     * Sets the port for built-in prometheus metrics server.
+     * Sets the port for a built-in prometheus metrics server.
      *
      * By default, the value of `PROMETHEUS_PORT` environment
      * variable is used. When it is not set,
@@ -180,7 +186,7 @@ export class SubstrateProcessor {
     }
 
     /**
-     * Sets an isolation level for database transactions
+     * Sets the isolation level for database transactions
      * in which data handlers are executed.
      *
      * Defaults to `SERIALIZABLE`.
@@ -209,8 +215,9 @@ export class SubstrateProcessor {
      * See {@link BlockHandlerContext} for an API available to the handler.
      *
      * Block level handlers affect performance, as they are
-     * triggered for all chain blocks. Otherwise,
-     * the processor skips blocks without interesting data.
+     * triggered for all chain blocks. If no block hooks are defined,
+     * only blocks that'd trigger a handler execution will be fetched,
+     * which is usually a lot faster.
      *
      * Relative execution order for multiple pre-block hooks is currently not defined.
      *
@@ -244,8 +251,9 @@ export class SubstrateProcessor {
      * See {@link BlockHandlerContext} for an API available to the handler.
      *
      * Block level handlers affect performance, as they are
-     * triggered for all chain blocks.
-     * Otherwise, the processor skips blocks without interesting data.
+     * triggered for all chain blocks. If no block hooks are defined,
+     * only blocks that'd trigger a handler execution will be fetched,
+     * which is usually a lot faster.
      *
      * Relative execution order for multiple post-block hooks is currently not defined.
      *
@@ -273,11 +281,11 @@ export class SubstrateProcessor {
     }
 
     /**
-     * Registers event data handler.
+     * Registers an event data handler.
      *
      * See {@link EventHandlerContext} for an API available to the handler.
      *
-     * All events are processed sequentially according to event log of the current block.
+     * All events are processed sequentially according to the event log of the current block.
      *
      * Relative execution order is currently not defined for multiple event handlers
      * registered for the same event.
@@ -318,10 +326,10 @@ export class SubstrateProcessor {
      *
      * See {@link ExtrinsicHandlerContext} for an API available to the handler.
      *
-     * Extrinsics are processed sequentially according
-     * to position of a `trigger event` in the event log of the current block.
-     * This not only defines relative order between extrinsics,
-     * but also between extrinsic and its events.
+     * Extrinsic handlers are triggered following the relative order
+     * of trigger event in the event log of the current block.
+     * This defines a deterministic canonical ordering
+     * of how all the event and extrinsic handlers are executed within a single block.
      *
      * The set of possible trigger events is customizable and defaults to `['system.ExtrinsicSuccess']`.
      * Which means, by default extrinsic handler will be executed after all events of the same extrinsic
