@@ -16,13 +16,17 @@ export class Output {
 
     block(start: string, cb: () => void): void {
         this.line(start + ' {')
+        this.indentation(cb)
+        this.line('}')
+    }
+
+    indentation(cb: () => void): void {
         this.indent += '  '
         try {
             cb()
         } finally {
             this.indent = this.indent.slice(0, this.indent.length - 2)
         }
-        this.line('}')
     }
 
     blockComment(lines?: string[]): void {

@@ -1,31 +1,30 @@
 {
-  "name": "@subsquid/substrate-metadata-explorer",
-  "version": "0.0.7",
-  "description": "Spec version explorer for substrate chains",
+  "name": "@subsquid/evm-typegen",
+  "version": "0.0.0",
+  "description": "CLI for generating typescript types and decode implementations for evm logs",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/index.js",
   "files": [
     "lib",
     "src"
   ],
+  "main": "lib/index.js",
   "bin": {
-    "squid-substrate-metadata-explorer": "bin/run.js"
+    "squid-evm-typegen": "bin/run.js"
   },
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.5",
     "commander": "^9.0.0",
-    "node-fetch": "^2.6.7"
+    "@ethersproject/abi": "^5.5.0",
+    "@subsquid/util": "^0.0.4"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",
-    "@types/node-fetch": "^2.5.12",
     "typescript": "~4.5.5"
   }
 }

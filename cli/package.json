@@ -52,7 +52,7 @@
     "dotenv": "^10.0.0",
     "oclif": "^2.4.3",
     "node-fetch": "^2.6.7",
-    "pg": "^8.7.1",
+    "pg": "^8.7.3",
     "pgtools": "^0.3.2",
     "query-string": "^7.1.0",
     "simple-git": "^2.48.0",

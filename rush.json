@@ -452,6 +452,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/evm-typegen",
+      "projectFolder": "evm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
       "shouldPublish": true,
