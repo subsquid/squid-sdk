@@ -26,21 +26,26 @@ export class Chain {
 
     @def
     info(): {chain: string, archive?: string} {
-       return this.readJson('info.json')
+       return this.read('info.json')
     }
 
     @def
     versions(): SpecVersionWithMetadata[] {
-        return this.readJson('versions.json')
+        return this.read('versions.json')
     }
 
     async selectTestBlocks(): Promise<void> {
-        let selected = new Set<number>()
+        let selected = new Set(this.readIfExists<number[]>('block-numbers.json'))
+        let maxSelected = -1
+        for (let b of selected.values()) {
+            maxSelected = Math.max(maxSelected, b)
+        }
         let versions = this.description()
         await this.withDatabase(async db => {
             for (let i = 0; i < versions.length; i++) {
                 let beg = versions[i].blockNumber + 1
                 let end = i + 1 < versions.length ? versions[i+1].blockNumber : beg + 10000
+                if (end < maxSelected) continue
                 let v = versions[i]
                 for (let event in v.events.definitions) {
                     let result = await db.query({
@@ -70,7 +75,7 @@ export class Chain {
 
     @def
     blockNumbers(): number[] {
-       return this.readJson('block-numbers.json')
+       return this.read('block-numbers.json')
     }
 
     async saveBlocks(): Promise<void> {
@@ -95,7 +100,7 @@ export class Chain {
 
     @def
     blocks(): RawBlock[] {
-        return this.readJsonLines('blocks.jsonl')
+        return this.readLines('blocks.jsonl')
     }
 
     async saveEvents(): Promise<void> {
@@ -120,7 +125,7 @@ export class Chain {
 
     @def
     events(): RawBlockEvents[] {
-        return this.readJsonLines('events.jsonl')
+        return this.readLines('events.jsonl')
     }
 
     private getUnsavedBlocks(file: string): number[] {
@@ -131,7 +136,7 @@ export class Chain {
     private getSavedBlocks(file: string): Set<number> {
         file = this.item(file)
         if (!fs.existsSync(file)) return new Set()
-        let blocks = this.readJsonLines<{blockNumber: number}>(file)
+        let blocks = this.readLines<{blockNumber: number}>(file)
         return new Set(
             blocks.map(b => b.blockNumber)
         )
@@ -282,9 +287,9 @@ export class Chain {
         return path.resolve(__dirname, '../chain', this.name, name)
     }
 
-    private readJsonLines<T>(name: string): T[] {
+    private readLines<T>(name: string): T[] {
         if (!this.exists(name)) return []
-        let lines = this.read(name).split('\n')
+        let lines = this.readFile(name).split('\n')
         let out: T[] = []
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim()
@@ -295,9 +300,17 @@ export class Chain {
         return out
     }
 
-    private readJson<T>(name: string): T {
-        let content = this.read(name)
+    private read<T>(name: string): T {
+        let content = this.readFile(name)
         return JSON.parse(content)
+    }
+
+    private readIfExists<T>(name: string): T | undefined {
+        if (this.exists(name)) {
+            return this.read(name)
+        } else {
+            return undefined
+        }
     }
 
     private save(file: string, content: string | object): void {
@@ -318,7 +331,7 @@ export class Chain {
         return fs.existsSync(this.item(name))
     }
 
-    private read(name: string): string {
+    private readFile(name: string): string {
         return fs.readFileSync(this.item(name), 'utf-8')
     }
 }
