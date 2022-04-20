@@ -12,6 +12,8 @@ ADD common common
 RUN node common/scripts/install-run-rush.js --help > /dev/null
 ADD cli/package.json cli/
 ADD cli/bin cli/bin
+ADD evm-typegen/package.json evm-typegen/
+ADD evm-typegen/bin evm-typegen/bin
 ADD graphql-server/package.json graphql-server/
 ADD graphql-server/bin graphql-server/bin
 ADD openreader/package.json openreader/
@@ -45,6 +47,8 @@ ADD workspace/package.json workspace/
 RUN node common/scripts/install-run-rush.js install
 ADD cli/src cli/src
 ADD cli/tsconfig.json cli/
+ADD evm-typegen/src evm-typegen/src
+ADD evm-typegen/tsconfig.json evm-typegen/
 ADD graphql-server/src graphql-server/src
 ADD graphql-server/tsconfig.json graphql-server/
 ADD graphql-server/Makefile graphql-server/
