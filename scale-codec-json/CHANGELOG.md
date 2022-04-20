@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec-json
 
-This log was last generated on Sat, 26 Mar 2022 16:32:43 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+
+## 0.1.4
+Wed, 20 Apr 2022 22:55:27 GMT
+
+### Patches
+
+- fix stackoverflow when checking long hex bytes
 
 ## 0.1.3
 Sat, 26 Mar 2022 16:32:43 GMT

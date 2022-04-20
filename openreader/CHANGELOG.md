@@ -1,6 +1,14 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+
+## 0.6.0
+Wed, 20 Apr 2022 22:55:27 GMT
+
+### Minor changes
+
+- compatibility with [cockroachDB](https://www.cockroachlabs.com)
+- implement `containsInsensitive` string filter
 
 ## 0.5.1
 Sun, 27 Mar 2022 11:00:39 GMT

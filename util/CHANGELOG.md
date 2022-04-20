@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util
 
-This log was last generated on Wed, 02 Feb 2022 11:01:32 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+
+## 0.0.5
+Wed, 20 Apr 2022 22:55:27 GMT
+
+### Patches
+
+- move hex functions to separate package
 
 ## 0.0.4
 Wed, 02 Feb 2022 11:01:32 GMT

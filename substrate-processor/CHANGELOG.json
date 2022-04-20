@@ -2,6 +2,35 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "0.7.1",
+      "tag": "@subsquid/substrate-processor_v0.7.1",
+      "date": "Wed, 20 Apr 2022 22:55:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add inline docs to `SubstrateProcessor`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^0.4.1` to `^0.4.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec-json\" from `^0.1.3` to `^0.1.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^0.8.1` to `^0.8.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.4` to `^0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.4` to `^0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.7.0",
       "tag": "@subsquid/substrate-processor_v0.7.0",
       "date": "Fri, 08 Apr 2022 10:15:29 GMT",
