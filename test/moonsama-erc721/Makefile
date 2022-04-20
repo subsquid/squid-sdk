@@ -15,7 +15,7 @@ migration:
 
 
 typegen:
-	@npx squid-evm-typegen --abi src/erc721.json --output src/erc721.ts
+	@npx squid-evm-typegen --abi erc721.json --output src/erc721.ts
 
 
 codegen:
