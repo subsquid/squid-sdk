@@ -3,12 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "evm-typegen": "npx squid-evm-typegen --input src/erc721.json --output src/erc721.ts"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@subsquid/graphql-server": "^0.1.5",
-    "@subsquid/substrate-evm-processor": "^0.0.3",
+    "@subsquid/substrate-evm-processor": "^0.0.4",
     "@subsquid/substrate-metadata": "^0.8.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",

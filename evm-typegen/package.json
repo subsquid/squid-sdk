@@ -16,15 +16,15 @@
     "squid-evm-typegen": "bin/run.js"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "mocha lib/**/*.test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "commander": "^9.0.0",
     "@ethersproject/abi": "^5.5.0",
-    "@subsquid/util-internal-code-printer": "^0.0.0"
+    "@subsquid/util": "^0.0.4"
   },
   "devDependencies": {
-    "@types/node": "^16.11.22"
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
   }
 }

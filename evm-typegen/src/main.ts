@@ -2,7 +2,7 @@ import { program } from "commander";
 import process from "process";
 import path from "path";
 import fs from "fs";
-import { Output } from "@subsquid/util-internal-code-printer";
+import { Output } from "@subsquid/util";
 import { EventFragment, Interface, ParamType } from "@ethersproject/abi";
 
 export function run(): void {
@@ -10,13 +10,13 @@ export function run(): void {
 Generates TypeScript definitions for evm log events
 for use within substrate-processor mapping handlers.
     `.trim())
-        .requiredOption('--input <path>', 'path of JSON abi file')
+        .requiredOption('--abi <path>', 'path to a JSON abi file')
         .requiredOption('--output <path>', 'path for output typescript file');
 
     program.parse();
 
     const options = program.opts();
-    const inputPath = options.input;
+    const inputPath = options.abi;
     const outputPath = options.output;
 
     try {
@@ -39,11 +39,11 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         throw new Error("invalid output file extension");
     }
 
-    const rawABI = JSON.parse(fs.readFileSync(inputPathRaw, { encoding: "utf-8" }));    
+    const rawABI = JSON.parse(fs.readFileSync(inputPathRaw, { encoding: "utf-8" }));
 
     const output = new Output();
 
-    output.line("import ethers from \"ethers\";");
+    output.line("import * as ethers from \"ethers\";");
     output.line("");
     output.line(`const inputJson = getInputJson();`);
     output.line("");
@@ -61,15 +61,15 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             signature += event.inputs[0].type;
             eventTypeName += capitalize(event.inputs[0].type);
         }
-    
+
         for (let i=1; i<event.inputs.length; ++i) {
             const input = event.inputs[i];
             signature += `,${input.type}`;
             eventTypeName += capitalize(input.type);
         }
-    
+
         signature += ")";
-    
+
         return {
             signature,
             eventTypeName,
@@ -122,7 +122,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     output.block("function getInputJson(): string", () => {
         output.line(`return \`${JSON.stringify(rawABI, null, 2)}\`;`);
     });
-    
+
     output.line("");
 
     fs.writeFileSync(outputPathRaw, output.toString());

@@ -10,7 +10,7 @@
     "@subsquid/substrate-metadata": "^0.8.1",
     "@subsquid/substrate-processor": "^0.7.0",
     "dotenv": "^10.0.0",
-    "pg": "^8.7.1",
+    "pg": "^8.7.3",
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
