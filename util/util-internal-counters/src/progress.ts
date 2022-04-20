@@ -8,6 +8,7 @@ export class Progress {
     private initialValue?: number
     private windowSize = 50
     private windowGranularity = 10_000_000_000n // 10 seconds
+    private _hasNews = false
 
     setTargetValue(val: number): void {
         this.targetValue = val
@@ -20,6 +21,7 @@ export class Progress {
     setCurrentValue(val: number, time?: bigint): void {
         this.value = Math.max(this.value, val)
         this.tick(time)
+        this._hasNews = true
     }
 
     getCurrentValue(): number {
@@ -30,6 +32,7 @@ export class Progress {
         assert(val > 0)
         this.value += val
         this.tick(time)
+        this._hasNews = true
     }
 
     tick(time?: bigint): void {
@@ -48,6 +51,7 @@ export class Progress {
     }
 
     speed(): number {
+        this._hasNews = false
         if (this.window.length < 2) return 0
         let beg = this.window[0]
         let end = this.window[this.window.length - 1]
@@ -57,15 +61,21 @@ export class Progress {
     }
 
     eta(): number {
+        this._hasNews = false
         if (this.targetValue == null) return 0
         let left = this.targetValue - Math.min(this.targetValue, this.value)
         return left / this.speed()
     }
 
     ratio(): number {
+        this._hasNews = false
         if (this.targetValue == null || this.initialValue == null) return 0
         let distance = Math.max(this.targetValue, this.initialValue) - this.initialValue
         let pos = Math.max(this.value, this.initialValue) - this.initialValue
         return pos == 0 ? 0 : pos/distance
+    }
+
+    hasNews(): boolean {
+        return this._hasNews
     }
 }

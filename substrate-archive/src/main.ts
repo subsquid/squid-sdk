@@ -98,6 +98,7 @@ ServiceManager.run(async sm => {
     }
 
     sm.every(5000, () => {
+        if (!progress.hasNews()) return
         progress.tick()
         console.error(`last block: ${progress.getCurrentValue()}, processing: ${Math.round(progress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })

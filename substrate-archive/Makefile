@@ -17,6 +17,20 @@ kusama:
 		--write-batch-size 10
 
 
+moonriver:
+	@node lib/main.js --out $(DB) \
+		-e wss://moonriver-rpc.dwellir.com \
+		-e wss://moonriver-rpc.dwellir.com \
+		-e wss://moonriver-rpc.dwellir.com \
+		-e wss://moonriver-rpc.dwellir.com \
+		-e wss://moonriver.api.onfinality.io/public-ws \
+		-e wss://moonriver.api.onfinality.io/public-ws \
+		-e wss://moonriver.api.onfinality.io/public-ws \
+		-e wss://moonriver.api.onfinality.io/public-ws \
+		-e wss://moonriver.api.onfinality.io/public-ws
+		--start-block 344698
+
+
 up:
 	@docker-compose up -d
 
@@ -25,4 +39,4 @@ down:
 	@docker-compose down
 
 
-.PHONY: up down
+.PHONY: up down kusama moonriver
