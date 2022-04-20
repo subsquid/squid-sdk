@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "upgrade `commander` to `^9.0.0`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

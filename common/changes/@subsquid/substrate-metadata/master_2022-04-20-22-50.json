@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "upgrade crust types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

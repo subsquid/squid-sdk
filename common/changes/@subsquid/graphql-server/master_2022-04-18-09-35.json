@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/graphql-server",
-      "comment": "upgrade openreader",
+      "comment": "new features via openreader upgrade",
       "type": "minor"
     }
   ],

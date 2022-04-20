@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "introduce archive deployment commands",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}
