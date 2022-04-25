@@ -120,7 +120,7 @@ export class Logger {
     }
 
     isError(): boolean {
-        return this.level <= LogLevel.WARN
+        return this.level <= LogLevel.ERROR
     }
 
     isFatal(): boolean {
