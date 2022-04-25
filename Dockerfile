@@ -18,4 +18,4 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate
 FROM node AS substrate-archive
 COPY --from=substrate-archive-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-archive
-ENTRYPOINT ["node", "/squid/substrate-archive/lib/main.js"]
+ENTRYPOINT ["node", "/squid/substrate-archive/bin/run.js"]

@@ -5,9 +5,10 @@
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "bin": {
-    "squid-substrate-archive": "./lib/main.js"
+    "squid-substrate-archive": "./bin/run.js"
   },
   "files": [
+    "bin",
     "lib",
     "migrations"
   ],
