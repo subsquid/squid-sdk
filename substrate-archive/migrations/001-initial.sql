@@ -74,6 +74,7 @@ CREATE INDEX IDX_event__name__block ON event(name, block_id);
 CREATE INDEX IDX_event__block__index ON event(block_id, index_in_block);
 CREATE INDEX IDX_event__extrinsic ON event(extrinsic_id);
 CREATE INDEX IDX_event__call ON event(call_id);
+CREATE INDEX IDX_event__args ON event USING GIN (args);
 
 
 CREATE TABLE warning (
