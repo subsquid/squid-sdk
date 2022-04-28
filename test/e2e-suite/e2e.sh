@@ -8,7 +8,6 @@ node common/scripts/install-run-rush.js deploy --project e2e-test-suite || exit 
 
 cd common/deploy/test/e2e-project || exit 1
 cp .env ../e2e-suite/.env || exit 1
-ls -a
 
 make init || exit 1
 

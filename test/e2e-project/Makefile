@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 process: migrate
 	@node -r dotenv/config lib/process.js
 
@@ -27,14 +29,14 @@ migrate:
 
 
 archive:
-	@. .env && npx squid-substrate-archive \
+	@source .env && npx squid-substrate-archive \
 		-e "$${CHAIN_ENDPOINT}" \
 		--out "$${ARCHIVE_DB_URL}" \
 		--types-bundle typesBundle.json
 
 
 explore:
-	@. .env && npx squid-substrate-metadata-explorer \
+	@source .env && npx squid-substrate-metadata-explorer \
 		--chain "$${CHAIN_ENDPOINT}" \
 		--out chainVersions.json
 
