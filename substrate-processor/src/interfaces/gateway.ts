@@ -35,12 +35,12 @@ export interface BatchBlock {
 
 export interface Event {
     id: string
-    index_in_block?: number
+    indexInBlock?: number
     name?: QualifiedName
     args?: any
     phase?: SubstrateEvent["phase"]
-    extrinsic_id?: string
-    call_id?: string
+    extrinsicId?: string
+    callId?: string
     pos: number
 }
 
@@ -50,16 +50,16 @@ export interface Call {
     name?: QualifiedName
     args?: any
     success?: boolean
-    extrinsic_id?: string
-    parent_id?: string
+    extrinsicId?: string
+    parentId?: string
     pos: number
 }
 
 
 export interface Extrinsic {
     id: string
-    index_in_block?: number
-    call_id?: string
+    indexInBlock?: number
+    callId?: string
     signature?: SubstrateExtrinsicSignature
     success?: boolean
     hash?: string

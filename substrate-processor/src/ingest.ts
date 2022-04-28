@@ -301,17 +301,17 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
     block.extrinsics = block.extrinsics || []
 
     let events = createObjects(block.events, go => {
-        let {call_id, extrinsic_id, index_in_block, ...event} = go
+        let {callId, extrinsicId, ...event} = go
         return event
     })
 
     let calls = createObjects<gw.Call, SubstrateCall>(block.calls, go => {
-        let {parent_id, extrinsic_id, ...call} = go
+        let {parentId, extrinsicId, ...call} = go
         return call
     })
 
     let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics || [], go => {
-        let {call_id, index_in_block, ...extrinsic} = go
+        let {callId, ...extrinsic} = go
         return extrinsic
     })
 
@@ -319,12 +319,11 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     for (let go of block.events) {
         let event = assertNotNull(events.get(go.id)) as SubstrateEvent
-        event.indexInBlock = go.index_in_block!
-        if (go.extrinsic_id) {
-            event.extrinsic = assertNotNull(extrinsics.get(go.extrinsic_id)) as SubstrateExtrinsic
+        if (go.extrinsicId) {
+            event.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
         }
-        if (go.call_id) {
-            event.call = assertNotNull(calls.get(go.call_id)) as SubstrateCall
+        if (go.callId) {
+            event.call = assertNotNull(calls.get(go.callId)) as SubstrateCall
         }
         log.push({
             kind: 'event',
@@ -334,23 +333,22 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     for (let go of block.calls) {
         let call = assertNotNull(calls.get(go.id)) as SubstrateCall
-        if (go.parent_id) {
-            call.parent = assertNotNull(calls.get(go.parent_id)) as SubstrateCall
+        if (go.parentId) {
+            call.parent = assertNotNull(calls.get(go.parentId)) as SubstrateCall
         }
         let item: Partial<LogItem> = {
             kind: 'call',
             call
         }
-        if (go.extrinsic_id) {
-            item.extrinsic = assertNotNull(extrinsics.get(go.extrinsic_id)) as SubstrateExtrinsic
+        if (go.extrinsicId) {
+            item.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
         }
         log.push(item as LogItem)
     }
 
     for (let go of block.extrinsics) {
-        let extrinsic = assertNotNull(extrinsics.get(go.id)) as SubstrateExtrinsic
-        extrinsic.indexInBlock = go.index_in_block!
-        if (go.call_id) {
+        if (go.callId) {
+            let extrinsic = assertNotNull(extrinsics.get(go.id)) as SubstrateExtrinsic
             extrinsic.call = assertNotNull(calls.get(go.id)) as SubstrateCall
         }
     }

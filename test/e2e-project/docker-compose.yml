@@ -26,7 +26,7 @@ services:
     ]
 
   gateway:
-    image: tmcgroul/archive-gateway:12
+    image: tmcgroul/archive-gateway:13
     depends_on:
       - db
     environment:
