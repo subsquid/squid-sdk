@@ -15,14 +15,16 @@ set -m
 
 make archive &
 ARCHIVE_PID=$!
-make process &
-make serve &
 
+make process &
+PROCESS_PID=$!
+
+make serve &
+GQL_PID=$!
 
 trap 'terminate' EXIT; terminate() {
     # shellcheck disable=SC2046
-    kill -- -$ARCHIVE_PID
-    kill $(jobs -p)
+    kill -- -$ARCHIVE_PID -$PROCESS_PID -$GQL_PID
     wait
     make down
 }
