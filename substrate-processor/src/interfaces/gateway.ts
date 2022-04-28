@@ -8,6 +8,7 @@ export interface BatchRequest {
     includeAllBlocks?: boolean
     events?: ObjectRequest[]
     calls?: ObjectRequest[]
+    evmLogs?: EvmLogRequest[]
 }
 
 
@@ -17,8 +18,15 @@ export interface ObjectRequest {
 }
 
 
+export interface EvmLogRequest {
+    contract: string
+    filter?: string[][]
+    data?: any
+}
+
+
 export interface BatchBlock {
-    header: SubstrateBlock
+    header: Omit<SubstrateBlock, 'timestamp'> & {timestamp: string}
     events: Event[]
     calls: Call[]
     extrinsics: Extrinsic[]
@@ -27,12 +35,12 @@ export interface BatchBlock {
 
 export interface Event {
     id: string
-    indexInBlock?: number
+    index_in_block?: number
     name?: QualifiedName
     args?: any
     phase?: SubstrateEvent["phase"]
-    extrinsicId?: string
-    callId?: string
+    extrinsic_id?: string
+    call_id?: string
     pos: number
 }
 
@@ -42,16 +50,16 @@ export interface Call {
     name?: QualifiedName
     args?: any
     success?: boolean
-    extrinsicId?: string
-    parentId?: string
+    extrinsic_id?: string
+    parent_id?: string
     pos: number
 }
 
 
 export interface Extrinsic {
     id: string
-    indexInBlock?: number
-    callId?: string
+    index_in_block?: number
+    call_id?: string
     signature?: SubstrateExtrinsicSignature
     success?: boolean
     hash?: string

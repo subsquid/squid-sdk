@@ -38,7 +38,8 @@ export class ServiceManager {
                 try {
                     fn()
                 } catch(e: any) {
-                    this.shutdown(e)
+                    this._abort.abort(e)
+                    return
                 }
                 schedule()
             }, ms)

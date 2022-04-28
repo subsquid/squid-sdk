@@ -1,17 +1,6 @@
 version: "3.7"
 
 services:
-  gateway:
-    image: tmcgroul/archive-gateway:7
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/archive-db
-      DATABASE_MAX_CONNECTIONS: 5
-      RUST_LOG: actix_web=info,actix_server=info
-    ports:
-      - "${ARCHIVE_PORT}:8000"
-
   node-template:
     image: paritytech/substrate-playground-template-node-template:sha-7212614
     command: ["./target/release/node-template", "--dev", "--tmp", "--ws-external"]
@@ -21,8 +10,29 @@ services:
   db:
     image: postgres:12
     environment:
-      POSTGRES_DB: archive-db
+      POSTGRES_DB: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "${DB_PORT}:5432"
       # command: ["postgres", "-c", "log_statement=all"]
+
+  archive-db:
+    image: cockroachdb/cockroach:v21.2.9
+    ports:
+      - "${ARCHIVE_DB_PORT}:26257"
+    command: [
+      "start-single-node",
+      "--insecure"
+    ]
+
+  gateway:
+    image: tmcgroul/archive-gateway:12
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://root@archive-db:26257/defaultdb
+      DATABASE_MAX_CONNECTIONS: 5
+      RUST_LOG: actix_web=info,actix_server=info
+      EVM_SUPPORT: "false"
+    ports:
+      - "${ARCHIVE_PORT}:8000"

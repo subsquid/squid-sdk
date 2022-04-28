@@ -7,7 +7,7 @@ export function unique<T>(items: Iterable<T>): T[] {
 
 export function timeInterval(seconds: number): string {
     if (seconds < 60) {
-        return seconds + 's'
+        return Math.round(seconds) + 's'
     }
     let minutes = Math.ceil(seconds/60)
     if (minutes < 60) {

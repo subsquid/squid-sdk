@@ -6,12 +6,12 @@ serve:
 	@npx squid-graphql-server
 
 
-start:
-	@npx dotenv ./entrypoint.sh
+build:
+	@npm run build
 
 
 codegen:
-	@./node_modules/.bin/sqd codegen
+	@npx sqd codegen
 
 
 typegen:
@@ -25,15 +25,47 @@ migration:
 migrate:
 	@npx sqd db:migrate
 
+
+archive:
+	@source .env && npx squid-substrate-archive \
+		-e "$${CHAIN_ENDPOINT}" \
+		--out "$${ARCHIVE_DB_URL}" \
+		--types-bundle typesBundle.json
+
+
+explore:
+	@source .env && npx squid-substrate-metadata-explorer \
+		--chain "$${CHAIN_ENDPOINT}" \
+		--out chainVersions.json
+
+
 up:
-	@docker-compose up -d
+	@docker compose up -d
+
 
 logs:
-	@docker-compose logs --tail all -f
+	@docker compose logs --tail all -f
 
 
 down:
-	@docker-compose down
+	@docker compose down
 
 
-.PHONY: process serve start codegen typegen migration migrate up logs down
+init:
+	make down
+	make up && sleep 1
+	rm -rf db src/types src/model chainVersions.json
+	make codegen
+	make explore
+	make typegen
+	make build
+	make migration
+
+
+re-process:
+	npx sqd db:drop
+	npx sqd db:create
+	make process
+
+
+.PHONY: process serve start codegen typegen migration migrate archive explore up logs down init re-process

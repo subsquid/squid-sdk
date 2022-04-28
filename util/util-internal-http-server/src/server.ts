@@ -46,7 +46,7 @@ export class HttpContext {
             len = body.length
         }
         this.response.writeHead(status, {
-            'content-type:': contentType,
+            'content-type': contentType,
             'content-length': len
         }).end(body)
     }

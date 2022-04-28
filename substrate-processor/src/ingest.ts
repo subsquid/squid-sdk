@@ -153,7 +153,7 @@ export class Ingest {
 
         let args: gw.BatchRequest = {
             fromBlock: from,
-            toBlock: to,
+            toBlock: to + 1,
             limit: this.limit,
             includeAllBlocks
         }
@@ -161,15 +161,32 @@ export class Ingest {
         args.events = Object.entries(hs.events).map(([name, options]) => {
             return {
                 name,
-                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
+                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
             }
         })
 
         args.calls = Object.entries(hs.calls).map(([name, options]) => {
             return {
                 name,
-                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE) || {_all: true}
+                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
             }
+        })
+
+        args.evmLogs = Object.entries(hs.evmLogs).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                let data: any | undefined
+                if (h.data) {
+                    data = {
+                        txHash: h.data.txHash,
+                        substrate: toGatewayFields(h.data.substrate, CONTEXT_NESTING_SHAPE)
+                    }
+                }
+                return {
+                    contract,
+                    filter: h.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                    data
+                }
+            })
         })
 
         let q = new Output()
@@ -192,7 +209,9 @@ export class Ingest {
             })
         })
         let gql = q.toString()
+        // console.log(gql)
         let response = await this.archiveRequest<{status: {head: number}, batch: gw.BatchBlock[]}>(gql)
+        // console.log(inspect(response, false, 10))
         this.setArchiveHeight(response)
         return response.batch.map(mapGatewayBlock)
     }
@@ -282,17 +301,17 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
     block.extrinsics = block.extrinsics || []
 
     let events = createObjects(block.events, go => {
-        let {callId, extrinsicId, ...event} = go
+        let {call_id, extrinsic_id, index_in_block, ...event} = go
         return event
     })
 
     let calls = createObjects<gw.Call, SubstrateCall>(block.calls, go => {
-        let {parentId, extrinsicId, ...call} = go
+        let {parent_id, extrinsic_id, ...call} = go
         return call
     })
 
     let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics || [], go => {
-        let {callId, ...extrinsic} = go
+        let {call_id, index_in_block, ...extrinsic} = go
         return extrinsic
     })
 
@@ -300,11 +319,12 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     for (let go of block.events) {
         let event = assertNotNull(events.get(go.id)) as SubstrateEvent
-        if (go.extrinsicId) {
-            event.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
+        event.indexInBlock = go.index_in_block!
+        if (go.extrinsic_id) {
+            event.extrinsic = assertNotNull(extrinsics.get(go.extrinsic_id)) as SubstrateExtrinsic
         }
-        if (go.callId) {
-            event.call = assertNotNull(calls.get(go.callId)) as SubstrateCall
+        if (go.call_id) {
+            event.call = assertNotNull(calls.get(go.call_id)) as SubstrateCall
         }
         log.push({
             kind: 'event',
@@ -314,30 +334,33 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     for (let go of block.calls) {
         let call = assertNotNull(calls.get(go.id)) as SubstrateCall
-        if (go.parentId) {
-            call.parent = assertNotNull(calls.get(go.parentId)) as SubstrateCall
+        if (go.parent_id) {
+            call.parent = assertNotNull(calls.get(go.parent_id)) as SubstrateCall
         }
         let item: Partial<LogItem> = {
             kind: 'call',
             call
         }
-        if (go.extrinsicId) {
-            item.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
+        if (go.extrinsic_id) {
+            item.extrinsic = assertNotNull(extrinsics.get(go.extrinsic_id)) as SubstrateExtrinsic
         }
         log.push(item as LogItem)
     }
 
     for (let go of block.extrinsics) {
-        if (go.callId) {
-            let extrinsic = assertNotNull(extrinsics.get(go.id)) as SubstrateExtrinsic
+        let extrinsic = assertNotNull(extrinsics.get(go.id)) as SubstrateExtrinsic
+        extrinsic.indexInBlock = go.index_in_block!
+        if (go.call_id) {
             extrinsic.call = assertNotNull(calls.get(go.id)) as SubstrateCall
         }
     }
 
     log.sort((a, b) => getPos(a) - getPos(b))
 
+    let {timestamp, ...hdr} = block.header
+
     return {
-        header: block.header,
+        header: {...hdr, timestamp: new Date(timestamp).valueOf()},
         log
     }
 }

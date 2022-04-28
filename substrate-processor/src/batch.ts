@@ -1,8 +1,8 @@
 import {assertNotNull} from "@subsquid/util-internal"
-import {EvmContractAddress, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {BlockHandler, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
-import {Hooks} from "./interfaces/hooks"
 import {ContextRequest} from "./interfaces/dataSelection"
+import {EvmContractAddress, EvmLogDataRequest, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
+import {Hooks} from "./interfaces/hooks"
 import {QualifiedName} from "./interfaces/substrate"
 import {Heap} from "./util/heap"
 import {Range, rangeDifference, rangeIntersection} from "./util/range"
@@ -19,7 +19,7 @@ export interface DataHandlers {
     post: BlockHandler[]
     events: Record<QualifiedName, Handlers<EventHandler>>
     calls: Record<QualifiedName, Handlers<CallHandler>>
-    evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], handler: EvmLogHandler}[]>
+    evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], data?: EvmLogDataRequest, handler: EvmLogHandler}[]>
 }
 
 

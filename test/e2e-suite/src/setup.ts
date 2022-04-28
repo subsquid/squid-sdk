@@ -105,4 +105,4 @@ async function start(timeout: number): Promise<void> {
 }
 
 
-start(80).catch(() => {})
+start(10).catch(() => {})

@@ -21,7 +21,6 @@
     "@subsquid/substrate-metadata": "^0.8.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
-    "@subsquid/util-internal-service-manager": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",
     "blake2b": "^2.1.4",
     "commander": "^9.0.0",

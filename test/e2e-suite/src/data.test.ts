@@ -2,7 +2,7 @@ import {gql, waitForHeight} from "./setup"
 
 
 describe('data', function () {
-    before(() => waitForHeight(0))
+    before(() => waitForHeight(3))
 
     it('one-to-one lookups', function () {
         return gql.test(`

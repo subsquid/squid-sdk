@@ -1,7 +1,6 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {Abort, assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
-import {ServiceManager} from "@subsquid/util-internal-service-manager"
+import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {ChainManager} from "./chain"
@@ -195,14 +194,14 @@ export class SubstrateProcessor {
     run(): void {
         if (this.running) return
         this.running = true
-        ServiceManager.run(sm => this._run(sm))
+        runProgram(() => this._run())
     }
 
-    private async _run(sm: ServiceManager): Promise<void> {
-        let db = sm.add(await Db.connect({
+    private async _run(): Promise<void> {
+        let db = await Db.connect({
             processorName: this.name,
             isolationLevel: this.isolationLevel
-        }))
+        })
 
         let {height: heightAtStart} = await db.init()
 
@@ -216,35 +215,33 @@ export class SubstrateProcessor {
             }
         }
 
-        let ingest = sm.add(new Ingest({
+        let ingest = new Ingest({
             archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
             batches$: createBatches(this.hooks, blockRange),
             batchSize: this.batchSize,
             metrics: this.metrics
-        }))
+        })
 
-        let client = sm.add(new ResilientRpcClient(
+        let client = new ResilientRpcClient(
             assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
-        ))
+        )
 
         await ingest.fetchArchiveHeight()
         this.updateProgressMetrics(heightAtStart)
-        let prometheusServer = sm.add(await this.metrics.serve(this.getPrometheusPort()))
+        let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
         console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
         await this.process(
             ingest,
             new ChainManager(client, this.typesBundle),
-            db,
-            sm.abort
+            db
         )
     }
 
     private async process(
         ingest: Ingest,
         chainManager: ChainManager,
-        db: Db,
-        abort: Abort
+        db: Db
     ): Promise<void> {
         let lastBlock = -1
         for await (let batch of ingest.getBlocks()) {
@@ -253,7 +250,6 @@ export class SubstrateProcessor {
             let {handlers, blocks, range} = batch
 
             for (let block of blocks) {
-                abort.assertNotAborted()
                 assert(lastBlock < block.header.height)
 
                 let chain = await chainManager.getChainForBlock(block.header)
@@ -272,12 +268,27 @@ export class SubstrateProcessor {
                     for (let item of block.log) {
                         switch(item.kind) {
                             case 'event':
-                                for (let handler of handlers.events[item.event.name].handlers || []) {
+                                for (let handler of handlers.events[item.event.name]?.handlers || []) {
                                     await handler({...ctx, event: item.event})
+                                }
+                                for (let handler of this.getEvmLogHandlers(handlers.evmLogs, item.event)) {
+                                    let event = item.event as EvmLogEvent
+                                    await handler({
+                                        store: ctx.store,
+                                        txHash: event.txHash,
+                                        contractAddress: event.args.contract,
+                                        data: event.args.data,
+                                        topics: event.args.topics,
+                                        substrate: {
+                                            _chain: ctx._chain,
+                                            block: ctx.block,
+                                            event
+                                        },
+                                    })
                                 }
                                 break
                             case 'call':
-                                for (let handler of handlers.calls[item.call.name].handlers || []) {
+                                for (let handler of handlers.calls[item.call.name]?.handlers || []) {
                                     let {kind, ...data} = item
                                     await handler({...ctx, ...data})
                                 }
@@ -319,7 +330,7 @@ export class SubstrateProcessor {
         if (event.name != 'evm.Log') return
         let log = event as EvmLogEvent
 
-        let contractHandlers = evmLogs[log.evmLogAddress]
+        let contractHandlers = evmLogs[log.args.contract]
         if (contractHandlers == null) return
 
         for (let h of contractHandlers) {
@@ -334,9 +345,9 @@ export class SubstrateProcessor {
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
-            if (Array.isArray(set) && !set.includes(log.evmLogTopics[i])) {
+            if (Array.isArray(set) && !set.includes(log.args.topics[i])) {
                 return false
-            } else if (set !== log.evmLogTopics[i]) {
+            } else if (set !== log.args.topics[i]) {
                 return false
             }
         }

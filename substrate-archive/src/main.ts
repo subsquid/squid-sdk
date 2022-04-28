@@ -1,7 +1,7 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {runProgram} from "@subsquid/util-internal"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
-import {ServiceManager} from "@subsquid/util-internal-service-manager"
 import assert from "assert"
 import {Command} from "commander"
 import * as fs from "fs"
@@ -12,7 +12,7 @@ import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 
 
-ServiceManager.run(async sm => {
+runProgram(async () => {
     let program = new Command()
 
     program.description('Data dumper for substrate based chains')
@@ -44,18 +44,13 @@ ServiceManager.run(async sm => {
     let progress = new Progress()
     progress.setInitialValue(startBlock)
 
-    let clients = options.endpoint.map(url => sm.add(new ResilientRpcClient(url)))
+    let clients = options.endpoint.map(url => new ResilientRpcClient(url))
 
     let sink: Sink
     if (options.out) {
         if (options.out.startsWith('postgres://')) {
             let db = new pg.Client({
                 connectionString: options.out
-            })
-            sm.add({
-                close() {
-                    return db.end()
-                }
             })
             await db.connect()
             await migrate({client: db}, path.resolve(__dirname, '../migrations'), {
@@ -72,15 +67,6 @@ ServiceManager.run(async sm => {
             })
         } else {
             let out = fs.createWriteStream(options.out, {flags: 'a'})
-            sm.add({
-                close() {
-                    return new Promise((resolve, reject) => {
-                        out.on('error', err => reject(err))
-                        out.on('close', () => resolve())
-                        out.end()
-                    })
-                }
-            })
             progress.setCurrentValue(startBlock)
             sink = new WritableSink({
                 writable: out,
@@ -97,7 +83,7 @@ ServiceManager.run(async sm => {
         })
     }
 
-    sm.every(5000, () => {
+    every(5000, () => {
         if (!progress.hasNews()) return
         progress.tick()
         console.error(`last block: ${progress.getCurrentValue()}, processing: ${Math.round(progress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
@@ -110,7 +96,6 @@ ServiceManager.run(async sm => {
     })
 
     for await (let block of blocks) {
-        sm.abort.assertNotAborted()
         await sink.write(block)
     }
 })
@@ -130,4 +115,17 @@ function positiveInteger(s: string): number {
     let n = parseInt(s)
     assert(Number.isInteger(n) && n >= 0)
     return n
+}
+
+
+function every(ms: number, cb: () => void): void {
+    setTimeout(() => {
+        try {
+            cb()
+            every(ms, cb)
+        } catch(e: any) {
+            console.error(e)
+            process.exit(1)
+        }
+    }, ms)
 }
