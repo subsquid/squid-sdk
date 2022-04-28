@@ -16,8 +16,7 @@
     "squid-evm-typegen": "bin/run.js"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "mocha lib/**/*.test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "commander": "^9.0.0",

@@ -27,14 +27,14 @@ migrate:
 
 
 archive:
-	@source .env && npx squid-substrate-archive \
+	@. .env && npx squid-substrate-archive \
 		-e "$${CHAIN_ENDPOINT}" \
 		--out "$${ARCHIVE_DB_URL}" \
 		--types-bundle typesBundle.json
 
 
 explore:
-	@source .env && npx squid-substrate-metadata-explorer \
+	@. .env && npx squid-substrate-metadata-explorer \
 		--chain "$${CHAIN_ENDPOINT}" \
 		--out chainVersions.json
 
