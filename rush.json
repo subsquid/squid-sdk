@@ -571,6 +571,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal-hex",
+      "projectFolder": "util/util-internal-hex",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util/util-internal-http-server",
       "shouldPublish": true,
@@ -585,12 +591,6 @@
     {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
-      "packageName": "@subsquid/util-internal-hex",
-      "projectFolder": "util-internal-hex",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
