@@ -1,6 +1,16 @@
 # Change Log - @subsquid/substrate-evm-processor
 
-This log was last generated on Mon, 14 Mar 2022 18:47:21 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+
+## 0.0.5
+Wed, 20 Apr 2022 22:55:27 GMT
+
+_Version update only_
+
+## 0.0.4
+Fri, 08 Apr 2022 10:15:29 GMT
+
+_Version update only_
 
 ## 0.0.3
 Mon, 14 Mar 2022 18:47:21 GMT

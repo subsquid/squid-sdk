@@ -2,6 +2,29 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/graphql-server_v0.2.0",
+      "date": "Wed, 20 Apr 2022 22:55:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "new features via openreader upgrade"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.5.1` to `^0.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.4` to `^0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.4` to `^0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.5",
       "tag": "@subsquid/graphql-server_v0.1.5",
       "date": "Wed, 23 Feb 2022 11:18:26 GMT",

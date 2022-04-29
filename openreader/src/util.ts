@@ -37,3 +37,8 @@ export function toInt(val: number | string): number {
     assert(!isNaN(i) && isFinite(i))
     return i
 }
+
+
+export function invalidFormat(type: string, value: string): Error {
+    return new TypeError(`Not a ${type}: ${value}`)
+}

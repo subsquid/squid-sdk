@@ -2,6 +2,26 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.6.0",
+      "tag": "@subsquid/openreader_v0.6.0",
+      "date": "Wed, 20 Apr 2022 22:55:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "compatibility with [cockroachDB](https://www.cockroachlabs.com)"
+          },
+          {
+            "comment": "implement `containsInsensitive` string filter"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.4` to `^0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.1",
       "tag": "@subsquid/openreader_v0.5.1",
       "date": "Sun, 27 Mar 2022 11:00:39 GMT",

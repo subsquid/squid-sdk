@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/util-internal-hex",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/util-internal-hex_v0.0.0",
+      "date": "Wed, 20 Apr 2022 22:55:27 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "first release"
+          }
+        ]
+      }
+    }
+  ]
+}

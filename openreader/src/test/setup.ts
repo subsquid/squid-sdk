@@ -1,12 +1,25 @@
+import {assertNotNull} from "@subsquid/util-internal"
 import {Client} from "gql-test-client"
 import {parse} from "graphql"
 import {Client as PgClient, ClientBase, Pool} from "pg"
-import {createPoolConfig} from "../../db"
-import {buildModel, buildSchema} from "../../gql/schema"
-import {ListeningServer, serve} from "../../server"
+import {buildModel, buildSchema} from "../gql/schema"
+import {ListeningServer, serve} from "../server"
 
 
-export const db_config = createPoolConfig()
+export function isCockroach(): boolean {
+    return process.env.DB_TYPE == 'cockroach'
+}
+
+
+export const db_config = {
+    host: 'localhost',
+    port: parseInt(assertNotNull(
+        isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
+    )),
+    user: 'root',
+    password: 'root',
+    database: 'defaultdb'
+}
 
 
 async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {
@@ -31,8 +44,8 @@ export function databaseInit(sql: string[]): Promise<void> {
 
 export function databaseDelete(): Promise<void> {
     return withClient(async client => {
-        await client.query(`DROP SCHEMA IF EXISTS public CASCADE`)
-        await client.query(`CREATE SCHEMA public`)
+        await client.query(`DROP SCHEMA IF EXISTS root CASCADE`)
+        await client.query(`CREATE SCHEMA root`)
     })
 }
 
@@ -53,7 +66,8 @@ export function useServer(schema: string): Client {
         info = await serve({
             db,
             model: buildModel(buildSchema(parse(schema))),
-            port: 0
+            port: 0,
+            dialect: isCockroach() ? 'cockroach' : 'postgres'
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })

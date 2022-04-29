@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {useDatabase, useServer} from "./setup"
 
 
 describe('lists', function () {
@@ -172,8 +172,8 @@ describe('lists', function () {
             `, {
                 lists: [{
                     datetimeArray: [
-                        '2020-01-01T00:00:00.000Z',
-                        '2021-01-01T00:00:00.000Z'
+                        '2020-01-01T00:00:00.000000Z',
+                        '2021-01-01T00:00:00.000000Z'
                     ]
                 }]
             })

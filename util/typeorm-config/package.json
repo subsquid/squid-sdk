@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/typeorm-config",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "TypeORM conventions of a squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

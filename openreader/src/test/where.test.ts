@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {useDatabase, useServer} from "./setup"
 
 describe('AND, OR on entity filters', function () {
     useDatabase([

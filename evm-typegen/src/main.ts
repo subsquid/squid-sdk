@@ -10,13 +10,13 @@ export function run(): void {
 Generates TypeScript definitions for evm log events
 for use within substrate-processor mapping handlers.
     `.trim())
-        .requiredOption('--input <path>', 'path of JSON abi file')
+        .requiredOption('--abi <path>', 'path to a JSON abi file')
         .requiredOption('--output <path>', 'path for output typescript file');
 
     program.parse();
 
     const options = program.opts();
-    const inputPath = options.input;
+    const inputPath = options.abi;
     const outputPath = options.output;
 
     try {
@@ -32,23 +32,21 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     const outputPath = path.parse(outputPathRaw);
 
     if (inputPath.ext !== ".json") {
-        throw new Error("invalid input file extension");
+        throw new Error("invalid abi file extension");
     }
 
     if (outputPath.ext !== ".ts") {
         throw new Error("invalid output file extension");
     }
 
-    const rawABI = JSON.parse(fs.readFileSync(inputPathRaw, { encoding: "utf-8" }));    
+    const rawABI = JSON.parse(fs.readFileSync(inputPathRaw, { encoding: "utf-8" }));
 
     const output = new Output();
 
-    output.line("import ethers from \"ethers\";");
-    output.line("");
-    output.line(`const inputJson = getInputJson();`);
-    output.line("");
-    output.line("const abi = new ethers.utils.Interface(inputJson);");
-    output.line("");
+    output.line("import * as ethers from \"ethers\";");
+    output.line();
+    output.line("export const abi = new ethers.utils.Interface(getJsonAbi());");
+    output.line();
 
     // validate the abi
     const abi = new Interface(rawABI);
@@ -61,15 +59,15 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             signature += event.inputs[0].type;
             eventTypeName += capitalize(event.inputs[0].type);
         }
-    
+
         for (let i=1; i<event.inputs.length; ++i) {
             const input = event.inputs[i];
             signature += `,${input.type}`;
             eventTypeName += capitalize(input.type);
         }
-    
+
         signature += ")";
-    
+
         return {
             signature,
             eventTypeName,
@@ -85,6 +83,13 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         });
         output.line("");
     }
+
+    output.block("export interface EvmEvent", () => {
+        output.line("data: string;");
+        output.line("topics: string[];");
+    });
+
+    output.line();
 
     output.block("export const events =", () => {
         for(const decl of abiEvents) {
@@ -110,20 +115,13 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
         }
     });
 
-    output.line("");
+    output.line();
 
-    output.block("export interface EvmEvent", () => {
-        output.line("data: string;");
-        output.line("topics: string[];");
+    output.block("function getJsonAbi(): any", () => {
+        `return ${JSON.stringify(rawABI, null, 2)}`.split('\n').forEach(line => {
+            output.line(line)
+        });
     });
-
-    output.line("");
-
-    output.block("function getInputJson(): string", () => {
-        output.line(`return \`${JSON.stringify(rawABI, null, 2)}\`;`);
-    });
-    
-    output.line("");
 
     fs.writeFileSync(outputPathRaw, output.toString());
 }

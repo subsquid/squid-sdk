@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "GraphQL server for squid framework",
   "keywords": [
     "graphql",
@@ -21,7 +21,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "make up && sleep 1 && make test && make down || (make down && exit 1)"
+    "test": "make up && sleep 1 && make test test-cockroach && make down || (make down && exit 1)"
   },
   "dependencies": {
     "@graphql-tools/merge": "^8",
@@ -30,6 +30,7 @@
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",
+    "@subsquid/util-internal-hex": "^0.0.0",
     "apollo-server-core": "^3.6.2",
     "apollo-server-express": "^3.6.2",
     "express": "^4.17.2",

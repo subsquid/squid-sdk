@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "0.0.5",
+      "tag": "@subsquid/typeorm-config_v0.0.5",
+      "date": "Wed, 20 Apr 2022 22:55:27 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util\" from `^0.0.4` to `^0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/typeorm-config_v0.0.4",
       "date": "Wed, 02 Feb 2022 11:01:32 GMT",

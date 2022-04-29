@@ -1,5 +1,4 @@
-import { Command, Flags } from '@oclif/core';
-import { cli } from 'cli-ux';
+import { Command, Flags, CliUx } from '@oclif/core';
 import { squidList } from '../../rest-client/routes/squids';
 import { versionList } from '../../rest-client/routes/versions';
 
@@ -28,7 +27,7 @@ export default class Ls extends Command {
         if (squidName) {
             const deployments = await versionList(squidName);
             if (deployments) {
-                cli.table(
+                CliUx.ux.table(
                     deployments,
                     {
                         name: { header: 'version' },
@@ -43,7 +42,7 @@ export default class Ls extends Command {
         } else {
             const squids = await squidList();
             if (squids) {
-                cli.table(
+                CliUx.ux.table(
                     squids,
                     {
                         name: {},

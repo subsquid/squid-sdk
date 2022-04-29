@@ -452,6 +452,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/evm-typegen",
+      "projectFolder": "evm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
       "shouldPublish": true,
@@ -523,12 +529,6 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/evm-typegen",
-      "projectFolder": "evm-typegen",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,
@@ -585,6 +585,12 @@
     {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
+      "packageName": "@subsquid/util-internal-hex",
+      "projectFolder": "util-internal-hex",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },

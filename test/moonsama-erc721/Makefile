@@ -14,6 +14,10 @@ migration:
 	@npx sqd db:create-migration Data
 
 
+typegen:
+	@npx squid-evm-typegen --abi erc721.json --output src/erc721.ts
+
+
 codegen:
 	@npx sqd codegen
 
@@ -26,4 +30,8 @@ down:
 	@docker-compose down
 
 
-.PHONY: process serve migrate migration codegen up down
+build:
+	@npm run build
+
+
+.PHONY: process serve migrate migration codegen typegen up down build

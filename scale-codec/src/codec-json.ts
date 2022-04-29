@@ -1,10 +1,10 @@
 import assert from "assert"
+import {decodeHex} from "@subsquid/util-internal-hex"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
 import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
 import {
     checkSignedInt,
     checkUnsignedInt,
-    decodeHex,
     isObject,
     throwUnexpectedCase,
     toJSON,
@@ -32,7 +32,7 @@ export class JsonCodec {
             case TypeKind.Compact:
                 return decodePrimitive(def.integer, val)
             case TypeKind.BitSequence:
-                return decodeHex(val)
+                return decodeHex(val as string)
             case TypeKind.Array:
                 return this.decodeArray(def, val)
             case TypeKind.Sequence:
@@ -48,7 +48,7 @@ export class JsonCodec {
             case TypeKind.BooleanOption:
                 return decodeBooleanOption(val)
             case TypeKind.Bytes:
-                return decodeHex(val)
+                return decodeHex(val as string)
             case TypeKind.BytesArray:
                 return decodeBinaryArray(def.len, val)
             case TypeKind.DoNotConstruct:
@@ -192,7 +192,7 @@ function decodeBooleanOption(value: unknown): boolean | undefined {
 
 
 export function decodeBinaryArray(len: number, value: unknown): Uint8Array {
-    let buf = decodeHex(value)
+    let buf = decodeHex(value as string)
     assert(buf.length == len)
     return buf
 }

@@ -33,6 +33,7 @@ interface RangeOption {
 }
 
 
+
 interface DataSelection<R extends ContextRequest> {
     data: R
 }
@@ -48,6 +49,9 @@ interface MayBeDataSelection {
 }
 
 
+/**
+ * Provides methods to configure and launch data processing.
+ */
 export class SubstrateProcessor {
     protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: []}
     private blockRange: Range = {from: 0}
@@ -59,13 +63,58 @@ export class SubstrateProcessor {
     private metrics = new Metrics()
     private running = false
 
+    /**
+     * @param name Defines prefix for a name of database schema
+     * under which the processor will keep its state.
+     */
     constructor(private name: string) {}
 
+    /**
+     * Sets blockchain data source.
+     *
+     * Currently, requires both chain node RPC WS endpoint and archive gateway.
+     *
+     * @example
+     * processor.setDataSource({
+     *     chain: 'wss://rpc.polkadot.io',
+     *     archive: 'https://polkadot.indexer.gc.subsquid.io/v4/graphql'
+     * })
+     */
     setDataSource(src: DataSource): void {
         this.assertNotRunning()
         this.src = src
     }
 
+    /**
+     * Sets types bundle.
+     *
+     * Types bundle is only required for blocks which have
+     * metadata version below 14.
+     *
+     * Don't confuse this setting with types bundle from polkadot.js.
+     * Although those two are similar in purpose and structure,
+     * they are not compatible.
+     *
+     * Types bundle can be specified in 3 different ways:
+     *
+     * 1. as a name of a known chain
+     * 2. as a name of a JSON file structured as {@link OldTypesBundle}
+     * 3. as an {@link OldTypesBundle} object
+     *
+     * @example
+     * // known chain
+     * processor.setTypesBundle('kusama')
+     *
+     * // A path to a JSON file resolved relative to `cwd`.
+     * processor.setTypesBundle('typesBundle.json')
+     *
+     * // OldTypesBundle object
+     * processor.setTypesBundle({
+     *     types: {
+     *         Foo: 'u8'
+     *     }
+     * })
+     */
     setTypesBundle(bundle: string | OldTypesBundle): void {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
@@ -75,22 +124,62 @@ export class SubstrateProcessor {
         }
     }
 
+    /**
+     * Limits the range of blocks to be processed.
+     *
+     * When the upper bound is specified,
+     * the processor will terminate with exit code 0 once it reaches it.
+     *
+     * @example
+     * // process only block 100
+     * processor.setBlockRange({
+     *     from: 100,
+     *     to: 100
+     * })
+     */
     setBlockRange(range: Range): void {
         this.assertNotRunning()
         this.blockRange = range
     }
 
+    /**
+     * Sets the maximum number of blocks which can be fetched
+     * from the data source in a single request.
+     *
+     * The default is 100.
+     *
+     * Usually this setting doesn't have any significant impact on the performance.
+     */
     setBatchSize(size: number): void {
         this.assertNotRunning()
         assert(size > 0)
         this.batchSize = size
     }
 
+    /**
+     * Sets the port for a built-in prometheus metrics server.
+     *
+     * By default, the value of `PROMETHEUS_PORT` environment
+     * variable is used. When it is not set,
+     * the processor will pick up an ephemeral port.
+     */
     setPrometheusPort(port: number | string) {
         this.assertNotRunning()
         this.prometheusPort = port
     }
 
+    /**
+     * Sets the isolation level for database transactions
+     * in which data handlers are executed.
+     *
+     * Defaults to `SERIALIZABLE`.
+     *
+     * This setting is for complex scenarios when
+     * there are another database writers beside the processor.
+     *
+     * Note, that altering this setting can easily lead to "hard to debug"
+     * consistency issues.
+     */
     setIsolationLevel(isolationLevel?: IsolationLevel): void {
         this.assertNotRunning()
         this.isolationLevel = isolationLevel
@@ -102,6 +191,27 @@ export class SubstrateProcessor {
             : this.prometheusPort
     }
 
+    /**
+     * Registers a block level data handler which will be executed before
+     * any further processing.
+     *
+     * See {@link BlockHandlerContext} for an API available to the handler.
+     *
+     * Block level handlers affect performance, as they are
+     * triggered for all chain blocks. If no block hooks are defined,
+     * only blocks that'd trigger a handler execution will be fetched,
+     * which is usually a lot faster.
+     *
+     * Relative execution order for multiple pre-block hooks is currently not defined.
+     *
+     * @example
+     * processor.addPreHook(async ctx => {
+     *     console.log(ctx.block.height)
+     * })
+     *
+     * // limit the range of blocks for which pre-block hook will be effective
+     * processor.addPreHook({range: {from: 100000}}, async ctx => {})
+     */
     addPreHook(fn: BlockHandler): void
     addPreHook(options: RangeOption, fn: BlockHandler): void
     addPreHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
@@ -117,6 +227,27 @@ export class SubstrateProcessor {
         this.hooks.pre.push({handler, ...options})
     }
 
+    /**
+     * Registers a block level data handler which will be executed
+     * at the end of processing.
+     *
+     * See {@link BlockHandlerContext} for an API available to the handler.
+     *
+     * Block level handlers affect performance, as they are
+     * triggered for all chain blocks. If no block hooks are defined,
+     * only blocks that'd trigger a handler execution will be fetched,
+     * which is usually a lot faster.
+     *
+     * Relative execution order for multiple post-block hooks is currently not defined.
+     *
+     * @example
+     * processor.addPostHook(async ctx => {
+     *     console.log(ctx.block.height)
+     * })
+     *
+     * // limit the range of blocks for which post-block hook will be effective
+     * processor.addPostHook({range: {from: 100000}}, async ctx => {})
+     */
     addPostHook(fn: BlockHandler): void
     addPostHook(options: RangeOption, fn: BlockHandler): void
     addPostHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
@@ -132,6 +263,28 @@ export class SubstrateProcessor {
         this.hooks.post.push({handler, ...options})
     }
 
+    /**
+     * Registers an event data handler.
+     *
+     * See {@link EventHandlerContext} for an API available to the handler.
+     *
+     * All events are processed sequentially according to the event log of the current block.
+     *
+     * Relative execution order is currently not defined for multiple event handlers
+     * registered for the same event.
+     *
+     * @example
+     * processor.addEventHandler('balances.Transfer', async ctx => {
+     *     assert(ctx.event.name == 'balances.Transfer')
+     * })
+     *
+     * // limit the range of blocks for which event handler will be effective
+     * processor.addEventHandler('balances.Transfer', {
+     *     range: {from: 100000}
+     * }, async ctx => {
+     *     assert(ctx.event.name == 'balances.Transfer')
+     * })
+     */
     addEventHandler(eventName: QualifiedName, fn: EventHandler): void
     addEventHandler(eventName: QualifiedName, options: RangeOption & NoDataSelection, fn: EventHandler): void
     addEventHandler<R>(eventName: QualifiedName, options: RangeOption & DataSelection<R>, fn: EventHandler<R> ): void
@@ -191,6 +344,13 @@ export class SubstrateProcessor {
         this.metrics.setProgress(totalBlocksCount - blocksLeft, time)
     }
 
+    /**
+     * Starts data processing.
+     *
+     * This method assumes full control over the current OS process as
+     * it terminates the entire program in case of error or
+     * at the end of data processing.
+     */
     run(): void {
         if (this.running) return
         this.running = true

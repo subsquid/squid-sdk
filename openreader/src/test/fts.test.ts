@@ -1,10 +1,12 @@
-import {useDatabase, useServer} from "./util/setup"
+import {isCockroach, useDatabase, useServer} from "./setup"
+
 
 function tsvector(columns: string[]) {
     return columns.map(col => `setweight(to_tsvector('english', coalesce(${col}, '')), 'A')`).join(' || ')
 }
 
-describe('full text search', function () {
+
+isCockroach() || describe('full text search', function () {
     useDatabase([
         `create table foo (
             id text primary key, 

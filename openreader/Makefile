@@ -1,5 +1,8 @@
-test: up
+test:
 	npx mocha -r dotenv/config ./dist/test/*.test.js
+
+test-cockroach:
+	@DB_TYPE=cockroach make test
 
 up:
 	@docker-compose up -d 2>&1
@@ -16,4 +19,4 @@ build: clean
 clean:
 	@rm -rf dist
 
-.PHONY: up down logs test build clean
+.PHONY: up down logs test test-cockroach build clean

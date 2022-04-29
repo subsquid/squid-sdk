@@ -1,3 +1,4 @@
+import {decodeHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import {UTF8_DECODER} from "./util"
 
@@ -8,8 +9,7 @@ export class Src {
 
     constructor(buf: Uint8Array | string) {
         if (typeof buf == 'string') {
-            assert(/^0x([a-fA-F0-9]{2})+$/.test(buf))
-            this.buf = Buffer.from(buf.slice(2), 'hex')
+            this.buf = decodeHex(buf)
         } else {
             this.buf = buf
         }

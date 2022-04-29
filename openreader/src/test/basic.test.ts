@@ -1,4 +1,4 @@
-import {useDatabase, useServer} from "./util/setup"
+import {useDatabase, useServer} from "./setup"
 
 
 describe('basic tests', function() {
@@ -44,11 +44,11 @@ describe('basic tests', function() {
     it('can fetch all accounts', function() {
         return client.test(
             `query {
-                accounts {
+                accounts(orderBy: id_ASC) {
                     id
                     wallet
                     balance
-                    history { balance }
+                    history(orderBy: id_ASC) { balance }
                 }
             }`,
             {

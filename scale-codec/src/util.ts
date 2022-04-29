@@ -1,3 +1,4 @@
+import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 
 
@@ -182,26 +183,6 @@ function toJsonObject(val: any): any {
         result[key] = toJSON(val[key])
     }
     return result
-}
-
-
-export function toHex(data: Uint8Array): string {
-    if (Buffer.isBuffer(data)) {
-        return '0x' + data.toString('hex')
-    } else {
-        return '0x' + Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('hex')
-    }
-}
-
-
-export function isHex(value: unknown): value is string {
-    return typeof value == 'string' && /^0x([a-fA-F0-9]{2})*$/.test(value)
-}
-
-
-export function decodeHex(value: unknown): Buffer {
-    assert(isHex(value))
-    return Buffer.from(value.slice(2), "hex")
 }
 
 

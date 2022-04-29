@@ -1,8 +1,7 @@
-import {Command} from "@oclif/core"
+import {CliUx, Command} from "@oclif/core"
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
-import cli from "cli-ux"
 
 
 export default class NewMigration extends Command {
@@ -12,7 +11,7 @@ export default class NewMigration extends Command {
 
     async run(): Promise<void> {
         let {args} = await this.parse(NewMigration)
-        let name: string = args.name ? args.name : await cli.prompt('Enter migration name', {
+        let name: string = args.name ? args.name : await CliUx.ux.prompt('Enter migration name', {
             required: true,
         })
         let cfg = createOrmConfig()

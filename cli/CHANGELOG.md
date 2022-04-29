@@ -1,6 +1,25 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Sun, 27 Mar 2022 11:00:39 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+
+## 0.3.0
+Wed, 20 Apr 2022 22:55:27 GMT
+
+### Minor changes
+
+- introduce archive deployment commands
+
+## 0.2.3
+Fri, 08 Apr 2022 10:44:56 GMT
+
+### Patches
+
+- don't use deprecated cli-ux package
+
+## 0.2.2
+Fri, 08 Apr 2022 10:15:29 GMT
+
+_Version update only_
 
 ## 0.2.1
 Sun, 27 Mar 2022 11:00:39 GMT

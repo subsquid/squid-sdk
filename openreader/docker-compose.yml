@@ -1,12 +1,21 @@
 version: "3.4"
 
 services:
-  db:
+  postgres:
     image: postgres:12
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT_PG}:5432"
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: defaultdb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
     command: ["postgres", "-c", "log_statement=all"]
+
+  cockroach:
+    image: cockroachdb/cockroach:v21.2.9
+    ports:
+      - "${DB_PORT_COCKROACH}:26257"
+    command: [
+       "start-single-node",
+       "--insecure"
+    ]

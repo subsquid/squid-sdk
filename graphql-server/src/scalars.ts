@@ -1,10 +1,10 @@
-import {scalars} from "@subsquid/openreader/dist/scalars"
+import {customScalars} from "@subsquid/openreader/dist/gql/scalars"
 import {GraphQLFloat, GraphQLID, GraphQLInt} from "graphql"
 
 
 export const ID = GraphQLID
 export const Int = GraphQLInt
 export const Float = GraphQLFloat
-export const DateTime = scalars.DateTime.gql
-export const BigInteger = scalars.BigInt.gql
-export const Bytes = scalars.Bytes.gql
+export const DateTime = customScalars.DateTime
+export const BigInteger = customScalars.BigInt
+export const Bytes = customScalars.Bytes

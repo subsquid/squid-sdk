@@ -1,7 +1,8 @@
 import {mergeResolvers} from "@graphql-tools/merge"
 import {createPoolConfig, PoolTransaction} from "@subsquid/openreader/dist/db"
+import {Dialect} from "@subsquid/openreader/dist/dialect"
 import {buildServerSchema} from "@subsquid/openreader/dist/gql/opencrud"
-import {Model} from "@subsquid/openreader/dist/model"
+import type {Model} from "@subsquid/openreader/dist/model"
 import {buildResolvers, ResolverContext} from "@subsquid/openreader/dist/resolver"
 import {listen, ListeningServer, setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
@@ -81,8 +82,8 @@ export class Server {
     @def
     async config(): Promise<ApolloServerExpressConfig> {
         let plugins: PluginDefinition[] = []
-        let typeDefs = [buildServerSchema(this.model())]
-        let resolvers = buildResolvers(this.model())
+        let typeDefs = [buildServerSchema(this.model(), this.dialect())]
+        let resolvers = buildResolvers(this.model(), this.dialect())
 
         let requestCheck = this.customCheck()
         if (requestCheck) {
@@ -191,6 +192,19 @@ export class Server {
         let {createConnection} = await import('typeorm')
         let cfg = createOrmConfig({projectDir: this.dir})
         return createConnection(cfg)
+    }
+
+    dialect(): Dialect {
+        let type = process.env.DB_TYPE
+        if (!type) return 'postgres'
+        switch(type) {
+            case 'cockroach':
+                return 'cockroach'
+            case 'postgres':
+                return 'postgres'
+            default:
+                throw new Error(`Unknown database type passed via DB_TYPE environment variable: ${type}`)
+        }
     }
 
     @def
