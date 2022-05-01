@@ -25,7 +25,6 @@
     "@subsquid/util-internal-code-printer": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-internal-http-server": "^0.0.0",
-    "@subsquid/util-naming": "^0.0.0",
     "@subsquid/util-xxhash": "^0.1.0",
     "blake2b": "^2.1.4",
     "node-fetch": "^2.6.7",
