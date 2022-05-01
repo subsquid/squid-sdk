@@ -62,19 +62,19 @@ export class CallParser {
             children: []
         }
         switch(name) {
-            case 'utility.batch':
-            case 'utility.batch_all': {
+            case 'Utility.batch':
+            case 'Utility.batch_all': {
                 let batch = args as {calls: sub.Call[]}
                 for (let item of batch.calls) {
                     this.unwrapAndCreate(item, call)
                 }
                 break
             }
-            case 'utility.as_derivative':
-            case 'utility.as_sub':
-            case 'utility.as_limited_sub':
-            case 'utility.dispatch_as':
-            case 'proxy.proxy': {
+            case 'Utility.as_derivative':
+            case 'Utility.as_sub':
+            case 'Utility.as_limited_sub':
+            case 'Utility.dispatch_as':
+            case 'Proxy.proxy': {
                 let a = args as {call: sub.Call}
                 this.unwrapAndCreate(a.call, call)
             }
@@ -96,11 +96,11 @@ export class CallParser {
         this.extrinsic.pos = this.takePos()
         let event = this.next()
         switch(event.name) {
-            case 'system.ExtrinsicSuccess':
+            case 'System.ExtrinsicSuccess':
                 this.extrinsic.success = true
                 this.visitCall(call)
                 break
-            case 'system.ExtrinsicFailed':
+            case 'System.ExtrinsicFailed':
                 this.extrinsic.success = false
                 this.skipCall(call, false)
                 while (this.tryNext()) {}
@@ -126,21 +126,21 @@ export class CallParser {
         call.pos = this.takePos()
         call.success = true
         switch(call.name) {
-            case 'utility.batch':
+            case 'Utility.batch':
                 this.visitBatch(call, parent)
                 break
-            case 'utility.batch_all':
+            case 'Utility.batch_all':
                 this.visitBatchAll(call, parent)
                 break
-            case 'utility.dispatch_as':
+            case 'Utility.dispatch_as':
                 this.visitDispatchAs(call, parent)
                 break
-            case 'utility.as_derivative':
-            case 'utility.as_sub':
-            case 'utility.as_limited_sub':
+            case 'Utility.as_derivative':
+            case 'Utility.as_sub':
+            case 'Utility.as_limited_sub':
                 this.visitCall(call.children[0], call)
                 break
-            case 'proxy.proxy':
+            case 'Proxy.proxy':
                 this.visitProxyCall(call, parent)
                 break
             default:
@@ -315,9 +315,9 @@ type EndOfBatch = {
 
 function END_OF_BATCH(event: model.Event): EndOfBatch | undefined {
     switch(event.name) {
-        case 'utility.BatchCompleted':
+        case 'Utility.BatchCompleted':
             return {ok: true, event}
-        case 'utility.BatchInterrupted':
+        case 'Utility.BatchInterrupted':
             let failedItem = Array.isArray(event.args) ? event.args[0] : event.args.index
             return {
                 ok: false,
@@ -331,17 +331,17 @@ function END_OF_BATCH(event: model.Event): EndOfBatch | undefined {
 
 
 function BATCH_ITEM_COMPLETED(event: model.Event): model.Event | undefined {
-    if (event.name == 'utility.ItemCompleted') return event
+    if (event.name == 'Utility.ItemCompleted') return event
 }
 
 
 function BATCH_COMPLETED(event: model.Event): model.Event | undefined {
-    if (event.name == 'utility.BatchCompleted') return event
+    if (event.name == 'Utility.BatchCompleted') return event
 }
 
 
 function DISPATCHED_AS(event: model.Event): {ok: boolean, event: model.Event} | undefined {
-    if (event.name != 'utility.DispatchedAs') return undefined
+    if (event.name != 'Utility.DispatchedAs') return undefined
     let result = 'result' in event.args ? event.args.result : event.args
     switch(result.__kind) {
         case 'Ok':
@@ -355,7 +355,7 @@ function DISPATCHED_AS(event: model.Event): {ok: boolean, event: model.Event} | 
 
 
 function PROXY_EXECUTED(event: model.Event): {ok: boolean, event: model.Event} | undefined {
-    if (event.name != 'proxy.ProxyExecuted') return undefined
+    if (event.name != 'Proxy.ProxyExecuted') return undefined
     let result = 'result' in event.args ? event.args.result : event.args
     switch(result.__kind) {
         case 'Ok':
@@ -370,11 +370,11 @@ function PROXY_EXECUTED(event: model.Event): {ok: boolean, event: model.Event} |
 
 function isFailure(event: model.Event): boolean {
     switch(event.name) {
-        case 'proxy.ProxyExecuted':
+        case 'Proxy.ProxyExecuted':
             return !PROXY_EXECUTED(event)!.ok
-        case 'utility.DispatchedAs':
+        case 'Utility.DispatchedAs':
             return !DISPATCHED_AS(event)!.ok
-        case 'utility.BatchInterrupted':
+        case 'Utility.BatchInterrupted':
             return !END_OF_BATCH(event)!.ok
         default:
             return false

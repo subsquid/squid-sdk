@@ -9,7 +9,6 @@
   "dependencies": {
     "@subsquid/graphql-server": "^0.2.0",
     "@subsquid/substrate-evm-processor": "^0.0.5",
-    "@subsquid/substrate-metadata": "^0.8.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41",

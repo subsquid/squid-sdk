@@ -3,14 +3,14 @@ import {EventContext, Result, deprecateLatest} from './support'
 
 export class BalancesTransferEvent {
   constructor(private ctx: EventContext) {
-    assert(this.ctx.event.name === 'balances.Transfer')
+    assert(this.ctx.event.name === 'Balances.Transfer')
   }
 
   /**
    *  Transfer succeeded. \[from, to, value\]
    */
   get isV1(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
+    return this.ctx._chain.getEventHash('Balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
   }
 
   /**

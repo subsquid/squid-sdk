@@ -3,7 +3,7 @@ import {CallContext, Result, deprecateLatest} from './support'
 
 export class BalancesSetBalanceCall {
   constructor(private ctx: CallContext) {
-    assert(this.ctx.call.name === 'balances.setBalance' || this.ctx.call.name === 'balances.set_balance')
+    assert(this.ctx.call.name === 'balances.setBalance' || this.ctx.call.name === 'Balances.set_balance')
   }
 
   /**
@@ -27,7 +27,7 @@ export class BalancesSetBalanceCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('balances.set_balance') === 'a65ed3500227691ff89565c1bf5a0244c2a05366e34d1ab50167d0c006774edc'
+    return this.ctx._chain.getCallHash('Balances.set_balance') === 'a65ed3500227691ff89565c1bf5a0244c2a05366e34d1ab50167d0c006774edc'
   }
 
   /**
@@ -68,7 +68,7 @@ export class BalancesSetBalanceCall {
 
 export class TimestampSetCall {
   constructor(private ctx: CallContext) {
-    assert(this.ctx.call.name === 'timestamp.set')
+    assert(this.ctx.call.name === 'timestamp.set' || this.ctx.call.name === 'Timestamp.set')
   }
 
   /**
@@ -89,7 +89,7 @@ export class TimestampSetCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('timestamp.set') === '6a8b8ba2be107f0853b674eec0026cc440b314db44d0e2c59b36e353355aed14'
+    return this.ctx._chain.getCallHash('Timestamp.set') === '6a8b8ba2be107f0853b674eec0026cc440b314db44d0e2c59b36e353355aed14'
   }
 
   /**

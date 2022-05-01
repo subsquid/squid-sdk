@@ -40,7 +40,7 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 })
 
 
-processor.addEventHandler('balances.Transfer', async ctx => {
+processor.addEventHandler('Balances.Transfer', async ctx => {
     let [from, to, value] = new BalancesTransferEvent(ctx).asV1
 
     let transfer = new Transfer({
@@ -88,10 +88,10 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
 })
 
 
-processor.addCallHandler('timestamp.set', async ctx => {
+processor.addCallHandler('Timestamp.set', async ctx => {
     let timestamp = new TimestampSetCall(ctx).asV1.now
     if (ctx.block.timestamp !== Number(timestamp)) {
-        throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
+        throw new Error(`Block timestamp ${ctx.block.timestamp} does not match Timestamp.set call argument ${timestamp}`)
     }
     await ctx.store.save(new BlockTimestamp({
         id: ctx.block.hash,

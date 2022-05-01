@@ -2,7 +2,6 @@ import {JsonCodec} from "@subsquid/scale-codec"
 import {Metadata} from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {assertNotNull} from "@subsquid/util-internal"
-import {toCamelCase} from "@subsquid/util-naming"
 import blake2b from "blake2b"
 import {sub} from "./interfaces"
 import {Extrinsic} from "./model"
@@ -74,13 +73,13 @@ export function isPreV14(metadata: Metadata): boolean {
 
 
 /**
- * All blocks have timestamp event except for the genesic block.
+ * All blocks have timestamp event except for the genesis block.
  * This method looks up `timestamp.set` and reads off the block timestamp
  */
 export function getBlockTimestamp(extrinsics: (Extrinsic & {name: string, args: any})[]): number {
     for (let i = 0; i < extrinsics.length; i++) {
         let ex = extrinsics[i]
-        if (ex.name == 'timestamp.set') {
+        if (ex.name == 'Timestamp.set') {
             return ex.args.now
         }
     }
@@ -89,7 +88,7 @@ export function getBlockTimestamp(extrinsics: (Extrinsic & {name: string, args: 
 
 
 export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Registry): {name: string, args: unknown} {
-    let name = toCamelCase(call.__kind) + '.' + call.value.__kind
+    let name = call.__kind + '.' + call.value.__kind
     let args: unknown
     let def = assertNotNull(registry.definitions[name])
     if (def.fields[0]?.name != null) {
@@ -98,11 +97,6 @@ export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Regist
         args = call.value.value
     }
     return {name, args}
-}
-
-
-export function identity<T>(val: T): T {
-    return val
 }
 
 

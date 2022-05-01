@@ -487,7 +487,7 @@ export class SubstrateProcessor {
     }
 
     private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler> {
-        if (event.name != 'evm.Log') return
+        if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
         let contractHandlers = evmLogs[log.args.contract]

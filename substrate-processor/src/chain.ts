@@ -98,7 +98,7 @@ export class Chain {
         this.jsonCodec = new JsonCodec(description.types)
         this.scaleCodec = new ScaleCodec(description.types)
         this.events = new eac.Registry(description.types, description.event)
-        this.calls = new eac.Registry(description.types, description.call, true)
+        this.calls = new eac.Registry(description.types, description.call)
     }
 
     getEventHash(eventName: QualifiedName): string {
