@@ -303,6 +303,19 @@ export class QueryBuilder {
         }
     }
 
+    private JSONToString(value: any) {
+        return JSON.stringify(value)
+    }
+
+    private getJSONExpression(op: string, lhs: string, arg: any): string | undefined {
+        switch(op) {
+            case 'hasKey':
+                return `${lhs} ? ${this.param(arg)}`
+            case 'contains':
+                return `${lhs} @> ${this.param(this.JSONToString(arg))}`
+        }
+    }
+
     private addPropCondition(exps: string[], cursor: Cursor, field: string, op: WhereOp, arg: any): void {
         let propType = cursor.object.properties[field].type
         if (op == 'isNull') {
@@ -318,6 +331,13 @@ export class QueryBuilder {
             case 'scalar':
             case 'enum': {
                 let lhs = cursor.native(field)
+                if (propType.name == 'JSON') {
+                    let expression = this.getJSONExpression(op, lhs, arg)
+                    if (expression) {
+                        exps.push(expression)
+                        break
+                    }
+                }
                 switch(op) {
                     case 'in':
                     case 'not_in': {
@@ -465,9 +485,15 @@ export class QueryBuilder {
                         }
                         break
                     }
-                    case 'list-lookup':
-                        rec[req.alias] = this.toResult(row[req.index], req.children)
+                    case 'list-lookup': {
+                        let rows = row[req.index]
+                        if (rows != null) {
+                            rec[req.alias] = this.toResult(row[req.index], req.children)
+                        } else {
+                            rec[req.alias] = []
+                        }
                         break
+                    }
                     default:
                         throw unsupportedCase((f as any).propType.kind)
                 }

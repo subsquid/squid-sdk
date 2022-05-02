@@ -1,0 +1,56 @@
+type Metadata @entity {
+    id: ID!
+    specName: String!
+    specVersion: Int
+    blockHeight: Int!
+    blockHash: String!
+    hex: String!
+}
+
+type Block @entity {
+    id: ID!
+    height: Int!
+    hash: String!
+    parentHash: String!
+    timestamp: BigInt!
+    spec: Metadata!
+    validator: String
+    events: [Event!]! @derivedFrom(field: "block")
+    calls: [Call!]! @derivedFrom(field: "block")
+    extrinsics: [Extrinsic!]! @derivedFrom(field: "block")
+}
+
+type Call @entity {
+    id: ID!
+    parent: Call
+    block: Block!
+    extrinsic: Extrinsic!
+    success: Boolean!
+    name: String!
+    args: JSON
+    pos: Int!
+}
+
+type Event @entity {
+    id: ID!
+    block: Block!
+    indexInBlock: Int!
+    phase: String!
+    extrinsic: Extrinsic
+    call: Call
+    name: String!
+    args: JSON
+    pos: Int!
+}
+
+type Extrinsic @entity {
+    id: ID!
+    block: Block!
+    indexInBlock: Int!
+    signature: JSON
+    success: Boolean!
+    call: Call!
+    hash: String!
+    pos: Int!
+    calls: [Call!] @derivedFrom(field: "extrinsic")
+}

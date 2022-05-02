@@ -26,6 +26,7 @@ specifiers:
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
+  '@rush-temp/substrate-archive-openreader': file:./projects/substrate-archive-openreader.tgz
   '@rush-temp/substrate-evm-processor': file:./projects/substrate-evm-processor.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
@@ -120,6 +121,7 @@ dependencies:
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz
+  '@rush-temp/substrate-archive-openreader': file:projects/substrate-archive-openreader.tgz
   '@rush-temp/substrate-evm-processor': file:projects/substrate-evm-processor.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
@@ -7003,7 +7005,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-+gPakmbJsU/NdC5928RmutZrcmNqBy3x2Np8cMKTLyzxl93pFVeDS4TmpjOWa2O0YpE0+YPtyVbnKNzIPnY4wA==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-TdCPxdfD0+yUfJflyPjZ2SDZeLV9qho0mu9mB25bcsGSB0LKomvEsSF/ffLIdklR5XbDUEUynSHsa7JImglSLg==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7103,8 +7105,14 @@ packages:
       typescript: 4.5.5
     dev: false
 
+  file:projects/substrate-archive-openreader.tgz:
+    resolution: {integrity: sha512-1j+HG/qNqTjymbw/3UbgoTfDTvno9pDVobYfNiI5bmgMlw8gsNZii5rBBBH0SQIjuVhZwv6qJGrGUXlXbc3mSw==, tarball: file:projects/substrate-archive-openreader.tgz}
+    name: '@rush-temp/substrate-archive-openreader'
+    version: 0.0.0
+    dev: false
+
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-aGhm+MnVK5K2Yy/FdU05WWeZb0Dl7oQRUOdGIuqFjimaY7OWCdkn8d/PHryM0LwLloAg9+1mv9FgIxmsD1xFjA==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-q0u0HGQalzKb5vJBeH+at4dgxjHck+uLICMwhzUn90IJvHx/BAp2Bg/IKLgnVoIbOLc1OgyO5fd8OQ/5EdRTQA==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -7151,7 +7159,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_pg@8.7.3+supports-color@8.1.1:
-    resolution: {integrity: sha512-hSIzVyFcDnjN+WBkmAG3Bbp87rhHoFOOaiQILw+kzFztIqLN2GsgBEd5SxksvyXRboL660bb/NDGzP6Jp++1Mg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-4X8riqdhFu8oIybnw8Z1kyBqA/9Bu++8+29Mdyop1PFRc9OvcY33n0YVgvMZL3R4RHS5KTxESw4CVHDtjS3BnQ==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0

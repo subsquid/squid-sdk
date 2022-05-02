@@ -265,6 +265,11 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
             out.line(`${fieldName}_in: [${graphqlType}!]`)
             out.line(`${fieldName}_not_in: [${graphqlType}!]`)
         }
+
+        if (graphqlType == 'JSON') {
+            out.line(`${fieldName}_contains: ${graphqlType}`)
+            out.line(`${fieldName}_hasKey: ${graphqlType}`)
+        }
     }
 
     function generateUnionType(name: string, union: Union) {

@@ -17,7 +17,8 @@ export type WhereOp =
     'containsNone' |
     'some' |
     'every' |
-    'none'
+    'none' |
+    'hasKey'
 
 
 const ENDINGS = [
@@ -43,7 +44,8 @@ const ENDINGS = [
     'containsNone',
     'some',
     'every',
-    'none'
+    'none',
+    'hasKey',
 ].sort((a, b) => b.length - a.length).map(e => '_' + e)
 
 
