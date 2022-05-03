@@ -19,5 +19,6 @@ common/autoinstallers/*/.npmrc
 # Built js libs
 /*/lib
 /ops/*/lib
+/stores/*/lib
 /test/*/lib
 /util/*/lib

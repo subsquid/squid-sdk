@@ -13,6 +13,7 @@
     "@subsquid/substrate-metadata-explorer": "^0.0.8",
     "@subsquid/substrate-processor": "^0.7.1",
     "@subsquid/substrate-typegen": "^0.4.2",
+    "@subsquid/typeorm-store": "^0.0.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-gql-request": "^0.0.0",
     "@types/node": "^16.11.22",

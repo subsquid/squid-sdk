@@ -1,7 +1,6 @@
 import {Range} from "../util/range"
 import {EventHandlerContext} from "./dataHandlerContext"
 import {ContextRequest} from "./dataSelection"
-import {Store} from "./store"
 import {SubstrateApplyExtrinsicEvent} from "./substrate"
 
 
@@ -34,16 +33,16 @@ export type EvmLogFields<R extends EvmLogDataRequest> = (
 )
 
 
-export type EvmLogHandlerContext<R extends EvmLogDataRequest = {txHash: true, substrate: {event: true}}> = {
+export type EvmLogHandlerContext<S, R extends EvmLogDataRequest = {txHash: true, substrate: {event: true}}> = {
     contractAddress: EvmContractAddress
     topics: string[]
     data: string
-    store: Store
+    store: S
 } & EvmLogFields<R>
 
 
-export type EvmLogHandler<R extends EvmLogDataRequest = {txHash: true, substrate: {event: true}}> = {
-    (ctx: EvmLogHandlerContext<R>): Promise<void>
+export type EvmLogHandler<S, R extends EvmLogDataRequest = {txHash: true, substrate: {event: true}}> = {
+    (ctx: EvmLogHandlerContext<S, R>): Promise<void>
 }
 
 

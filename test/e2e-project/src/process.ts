@@ -1,5 +1,6 @@
 import * as ss58 from "@subsquid/ss58"
 import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {TypeormDatabase} from "@subsquid/typeorm-store"
 import assert from "assert"
 import {loadInitialData} from "./initialData"
 import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
@@ -9,7 +10,7 @@ import {SystemAccountStorage} from "./types/storage"
 import {getDataSource, getOrCreate, waitForGateway} from "./util"
 
 
-const processor = new SubstrateProcessor('test')
+const processor = new SubstrateProcessor(new TypeormDatabase('test'))
 processor.setTypesBundle('typesBundle.json')
 processor.setDataSource(getDataSource())
 

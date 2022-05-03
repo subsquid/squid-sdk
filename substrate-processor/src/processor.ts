@@ -3,11 +3,11 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
-import {ChainManager} from "./chain"
-import {Db, IsolationLevel} from "./db"
-import {Ingest} from "./ingest"
+import {Chain, ChainManager} from "./chain"
+import {BlockData, Ingest} from "./ingest"
 import {BlockHandler, BlockHandlerContext, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
 import {ContextRequest} from "./interfaces/dataSelection"
+import {Database} from "./interfaces/db"
 import {EvmLogEvent, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {Hooks} from "./interfaces/hooks"
 import {SubstrateEvent} from "./interfaces/substrate"
@@ -52,22 +52,17 @@ interface MayBeDataSelection {
 /**
  * Provides methods to configure and launch data processing.
  */
-export class SubstrateProcessor {
+export class SubstrateProcessor<Store> {
     protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
     private src?: DataSource
     private typesBundle?: OldTypesBundle
-    private isolationLevel?: IsolationLevel
     private metrics = new Metrics()
     private running = false
 
-    /**
-     * @param name Defines prefix for a name of database schema
-     * under which the processor will keep its state.
-     */
-    constructor(private name: string) {}
+    constructor(private db: Database<Store>) {}
 
     /**
      * Sets blockchain data source.
@@ -168,23 +163,6 @@ export class SubstrateProcessor {
         this.prometheusPort = port
     }
 
-    /**
-     * Sets the isolation level for database transactions
-     * in which data handlers are executed.
-     *
-     * Defaults to `SERIALIZABLE`.
-     *
-     * This setting is for complex scenarios when
-     * there are another database writers beside the processor.
-     *
-     * Note, that altering this setting can easily lead to "hard to debug"
-     * consistency issues.
-     */
-    setIsolationLevel(isolationLevel?: IsolationLevel): void {
-        this.assertNotRunning()
-        this.isolationLevel = isolationLevel
-    }
-
     private getPrometheusPort(): number | string {
         return this.prometheusPort == null
             ? process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT || 0
@@ -212,11 +190,11 @@ export class SubstrateProcessor {
      * // limit the range of blocks for which pre-block hook will be effective
      * processor.addPreHook({range: {from: 100000}}, async ctx => {})
      */
-    addPreHook(fn: BlockHandler): void
-    addPreHook(options: RangeOption, fn: BlockHandler): void
-    addPreHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
+    addPreHook(fn: BlockHandler<Store>): void
+    addPreHook(options: RangeOption, fn: BlockHandler<Store>): void
+    addPreHook(fnOrOptions: BlockHandler<Store> | RangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
-        let handler: BlockHandler
+        let handler: BlockHandler<Store>
         let options: RangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
@@ -248,11 +226,11 @@ export class SubstrateProcessor {
      * // limit the range of blocks for which post-block hook will be effective
      * processor.addPostHook({range: {from: 100000}}, async ctx => {})
      */
-    addPostHook(fn: BlockHandler): void
-    addPostHook(options: RangeOption, fn: BlockHandler): void
-    addPostHook(fnOrOptions: BlockHandler | RangeOption, fn?: BlockHandler): void {
+    addPostHook(fn: BlockHandler<Store>): void
+    addPostHook(options: RangeOption, fn: BlockHandler<Store>): void
+    addPostHook(fnOrOptions: BlockHandler<Store> | RangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
-        let handler: BlockHandler
+        let handler: BlockHandler<Store>
         let options: RangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
@@ -285,12 +263,12 @@ export class SubstrateProcessor {
      *     assert(ctx.event.name == 'balances.Transfer')
      * })
      */
-    addEventHandler(eventName: QualifiedName, fn: EventHandler): void
-    addEventHandler(eventName: QualifiedName, options: RangeOption & NoDataSelection, fn: EventHandler): void
-    addEventHandler<R>(eventName: QualifiedName, options: RangeOption & DataSelection<R>, fn: EventHandler<R> ): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: RangeOption & MayBeDataSelection | EventHandler, fn?: EventHandler): void {
+    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
+    addEventHandler(eventName: QualifiedName, options: RangeOption & NoDataSelection, fn: EventHandler<Store>): void
+    addEventHandler<R>(eventName: QualifiedName, options: RangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
+    addEventHandler(eventName: QualifiedName, fnOrOptions: RangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
         this.assertNotRunning()
-        let handler: EventHandler
+        let handler: EventHandler<Store>
         let options: RangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions === 'function') {
             handler = fnOrOptions
@@ -305,12 +283,12 @@ export class SubstrateProcessor {
         })
     }
 
-    addCallHandler(callName: QualifiedName, fn: CallHandler): void
-    addCallHandler(callName: QualifiedName, options: RangeOption & NoDataSelection, fn: CallHandler): void
+    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
+    addCallHandler(callName: QualifiedName, options: RangeOption & NoDataSelection, fn: CallHandler<Store>): void
     addCallHandler<R>(callName: QualifiedName, options: RangeOption & DataSelection<R>, fn: CallHandler<R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler | RangeOption & MayBeDataSelection, fn?: CallHandler): void {
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | RangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
-        let handler: CallHandler
+        let handler: CallHandler<Store>
         let options:  RangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
@@ -358,12 +336,7 @@ export class SubstrateProcessor {
     }
 
     private async _run(): Promise<void> {
-        let db = await Db.connect({
-            processorName: this.name,
-            isolationLevel: this.isolationLevel
-        })
-
-        let {height: heightAtStart} = await db.init()
+        let heightAtStart = await this.db.connect()
 
         let blockRange = this.blockRange
         if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
@@ -393,84 +366,31 @@ export class SubstrateProcessor {
 
         await this.process(
             ingest,
-            new ChainManager(client, this.typesBundle),
-            db
+            new ChainManager(client, this.typesBundle)
         )
     }
 
     private async process(
         ingest: Ingest,
-        chainManager: ChainManager,
-        db: Db
+        chainManager: ChainManager
     ): Promise<void> {
         let lastBlock = -1
         for await (let batch of ingest.getBlocks()) {
             let beg = process.hrtime.bigint()
-
             let {handlers, blocks, range} = batch
 
             for (let block of blocks) {
                 assert(lastBlock < block.header.height)
-
                 let chain = await chainManager.getChainForBlock(block.header)
-
-                await db.transact(block.header.height, async store => {
-                    let ctx: BlockHandlerContext = {
-                        _chain: chain,
-                        store,
-                        block: block.header
-                    }
-
-                    for (let pre of handlers.pre) {
-                        await pre(ctx)
-                    }
-
-                    for (let item of block.log) {
-                        switch(item.kind) {
-                            case 'event':
-                                for (let handler of handlers.events[item.event.name]?.handlers || []) {
-                                    await handler({...ctx, event: item.event})
-                                }
-                                for (let handler of this.getEvmLogHandlers(handlers.evmLogs, item.event)) {
-                                    let event = item.event as EvmLogEvent
-                                    await handler({
-                                        store: ctx.store,
-                                        txHash: event.txHash,
-                                        contractAddress: event.args.contract,
-                                        data: event.args.data,
-                                        topics: event.args.topics,
-                                        substrate: {
-                                            _chain: ctx._chain,
-                                            block: ctx.block,
-                                            event
-                                        },
-                                    })
-                                }
-                                break
-                            case 'call':
-                                for (let handler of handlers.calls[item.call.name]?.handlers || []) {
-                                    let {kind, ...data} = item
-                                    await handler({...ctx, ...data})
-                                }
-                                break
-                            default:
-                                throw unexpectedCase()
-                        }
-                    }
-
-                    for (let post of handlers.post) {
-                        await post(ctx)
-                    }
+                await this.db.transact(block.header.height, store => {
+                    return this.processBlock(handlers, chain, store, block)
                 })
-
                 lastBlock = block.header.height
                 this.metrics.setLastProcessedBlock(lastBlock)
             }
 
-            if (lastBlock < range.to) {
-                lastBlock = range.to
-                await db.setHeight(lastBlock)
-            }
+            lastBlock = range.to
+            await this.db.advance(lastBlock)
 
             let end = process.hrtime.bigint()
             this.metrics.batchProcessingTime(beg, end, batch.blocks.length)
@@ -486,7 +406,61 @@ export class SubstrateProcessor {
         }
     }
 
-    private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler> {
+    private async processBlock(
+        handlers: DataHandlers,
+        chain: Chain,
+        store: Store,
+        block: BlockData
+    ): Promise<void> {
+        let ctx: BlockHandlerContext<Store> = {
+            _chain: chain,
+            store,
+            block: block.header
+        }
+
+        for (let pre of handlers.pre) {
+            await pre(ctx)
+        }
+
+        for (let item of block.log) {
+            switch(item.kind) {
+                case 'event':
+                    for (let handler of handlers.events[item.event.name]?.handlers || []) {
+                        await handler({...ctx, event: item.event})
+                    }
+                    for (let handler of this.getEvmLogHandlers(handlers.evmLogs, item.event)) {
+                        let event = item.event as EvmLogEvent
+                        await handler({
+                            store: ctx.store,
+                            txHash: event.txHash,
+                            contractAddress: event.args.contract,
+                            data: event.args.data,
+                            topics: event.args.topics,
+                            substrate: {
+                                _chain: ctx._chain,
+                                block: ctx.block,
+                                event
+                            },
+                        })
+                    }
+                    break
+                case 'call':
+                    for (let handler of handlers.calls[item.call.name]?.handlers || []) {
+                        let {kind, ...data} = item
+                        await handler({...ctx, ...data})
+                    }
+                    break
+                default:
+                    throw unexpectedCase()
+            }
+        }
+
+        for (let post of handlers.post) {
+            await post(ctx)
+        }
+    }
+
+    private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler<any>> {
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 

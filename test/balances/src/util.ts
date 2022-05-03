@@ -1,4 +1,4 @@
-import type {Store} from "@subsquid/substrate-processor"
+import type {Store} from "@subsquid/typeorm-store"
 
 
 export type EntityConstructor<T> = {

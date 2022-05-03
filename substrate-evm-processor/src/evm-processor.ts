@@ -8,12 +8,12 @@ interface NoDataSelection {
 }
 
 
-export class SubstrateEvmProcessor extends SubstrateProcessor {
-    addEvmLogHandler(contractAddress: string, fn: EvmLogHandler): void
-    addEvmLogHandler(contractAddress: string, options: EvmLogSelection & NoDataSelection, fn: EvmLogHandler): void
-    addEvmLogHandler(contractAddress: string, fnOrOptions: EvmLogSelection & NoDataSelection | EvmLogHandler, fn?: EvmLogHandler): void {
+export class SubstrateEvmProcessor<Store> extends SubstrateProcessor<Store> {
+    addEvmLogHandler(contractAddress: string, fn: EvmLogHandler<Store>): void
+    addEvmLogHandler(contractAddress: string, options: EvmLogSelection & NoDataSelection, fn: EvmLogHandler<Store>): void
+    addEvmLogHandler(contractAddress: string, fnOrOptions: EvmLogSelection & NoDataSelection | EvmLogHandler<Store>, fn?: EvmLogHandler<Store>): void {
         this.assertNotRunning()
-        let handler: EvmLogHandler
+        let handler: EvmLogHandler<Store>
         let options: EvmLogSelection & NoDataSelection  = {}
         if (typeof fnOrOptions === 'function') {
             handler = fnOrOptions

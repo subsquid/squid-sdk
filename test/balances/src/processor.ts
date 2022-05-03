@@ -1,10 +1,11 @@
 import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {getTransferEvent} from "./events"
 import {Account, HistoricalBalance} from "./model"
 import {getOrCreate} from "./util"
 
 
-const processor = new SubstrateProcessor('kusama_balances')
+const processor = new SubstrateProcessor(new TypeormDatabase('kusama_balances'))
 
 
 processor.setBatchSize(500)

@@ -1,4 +1,4 @@
-import {Store} from "@subsquid/substrate-processor"
+import type {Store} from "@subsquid/typeorm-store"
 import {
     AdditionalData,
     ComplexEntity,

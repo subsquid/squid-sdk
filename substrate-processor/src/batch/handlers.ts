@@ -11,11 +11,11 @@ interface HandlerList<H> {
 
 
 export interface DataHandlers {
-    pre: BlockHandler[]
-    post: BlockHandler[]
-    events: Record<QualifiedName, HandlerList<EventHandler>>
-    calls: Record<QualifiedName, HandlerList<CallHandler>>
-    evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], data?: EvmLogDataRequest, handler: EvmLogHandler}[]>
+    pre: BlockHandler<any>[]
+    post: BlockHandler<any>[]
+    events: Record<QualifiedName, HandlerList<EventHandler<any>>>
+    calls: Record<QualifiedName, HandlerList<CallHandler<any>>>
+    evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], data?: EvmLogDataRequest, handler: EvmLogHandler<any>}[]>
 }
 
 

@@ -1,10 +1,11 @@
 import {assertNotNull, SubstrateEvmProcessor} from "@subsquid/substrate-evm-processor"
+import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contract, createContractEntity, getContractEntity} from "./contract"
 import * as erc721 from "./erc721"
 import {Owner, Token, Transfer} from "./model"
 
 
-const processor = new SubstrateEvmProcessor('erc721')
+const processor = new SubstrateEvmProcessor(new TypeormDatabase('erc721'))
 
 
 processor.setDataSource({

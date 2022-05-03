@@ -32,6 +32,7 @@ specifiers:
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
   '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
+  '@rush-temp/typeorm-store': file:./projects/typeorm-store.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
   '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
@@ -126,6 +127,7 @@ dependencies:
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_pg@8.7.3+supports-color@8.1.1
+  '@rush-temp/typeorm-store': file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
   '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
@@ -7003,7 +7005,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-+gPakmbJsU/NdC5928RmutZrcmNqBy3x2Np8cMKTLyzxl93pFVeDS4TmpjOWa2O0YpE0+YPtyVbnKNzIPnY4wA==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-TdCPxdfD0+yUfJflyPjZ2SDZeLV9qho0mu9mB25bcsGSB0LKomvEsSF/ffLIdklR5XbDUEUynSHsa7JImglSLg==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7104,7 +7106,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-aGhm+MnVK5K2Yy/FdU05WWeZb0Dl7oQRUOdGIuqFjimaY7OWCdkn8d/PHryM0LwLloAg9+1mv9FgIxmsD1xFjA==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-q0u0HGQalzKb5vJBeH+at4dgxjHck+uLICMwhzUn90IJvHx/BAp2Bg/IKLgnVoIbOLc1OgyO5fd8OQ/5EdRTQA==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -7151,7 +7153,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz_pg@8.7.3+supports-color@8.1.1:
-    resolution: {integrity: sha512-hSIzVyFcDnjN+WBkmAG3Bbp87rhHoFOOaiQILw+kzFztIqLN2GsgBEd5SxksvyXRboL660bb/NDGzP6Jp++1Mg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-4X8riqdhFu8oIybnw8Z1kyBqA/9Bu++8+29Mdyop1PFRc9OvcY33n0YVgvMZL3R4RHS5KTxESw4CVHDtjS3BnQ==, tarball: file:projects/substrate-processor.tgz}
     id: file:projects/substrate-processor.tgz
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
@@ -7202,6 +7204,34 @@ packages:
     resolution: {integrity: sha512-5HIyMJgAePmpG5T+catb3fS56wYOlnALRZoSXm//BjQgB8qVepeI+BpZcqC7w/Z/V9+VeXNQnEZIiw8dGshH8Q==, tarball: file:projects/typeorm-config.tgz}
     id: file:projects/typeorm-config.tgz
     name: '@rush-temp/typeorm-config'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.32
+      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typescript: 4.5.5
+    transitivePeerDependencies:
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1:
+    resolution: {integrity: sha512-xzuRcSzVjJlhjC1bJbUp2HMvA3X8LPcMNQiIUikvFYeOO0L8IOcam6FidzYC7YSk9ZiKy8ERNPRMc7BJxvAJgg==, tarball: file:projects/typeorm-store.tgz}
+    id: file:projects/typeorm-store.tgz
+    name: '@rush-temp/typeorm-store'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.32

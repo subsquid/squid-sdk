@@ -1,4 +1,4 @@
-import {AbortHandle, assertNotNull, def, unexpectedCase, wait} from "@subsquid/util-internal"
+import {AbortHandle, assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
 import fetch from "node-fetch"
@@ -105,14 +105,14 @@ export class Ingest {
                     if (blocks.length) {
                         assert(blocks.length <= this.limit)
                         assert(batch.range.from <= blocks[0].header.height)
-                        assert(rangeEnd(batch.range) >= blocks[blocks.length - 1].header.height)
-                        assert(archiveHeight >= blocks[blocks.length - 1].header.height)
+                        assert(rangeEnd(batch.range) >= last(blocks).header.height)
+                        assert(archiveHeight >= last(blocks).header.height)
                     }
 
                     let from = batch.range.from
                     let to: number
-                    if (blocks.length === this.limit && blocks[blocks.length - 1].header.height < rangeEnd(batch.range)) {
-                        to = blocks[blocks.length - 1].header.height
+                    if (blocks.length === this.limit && last(blocks).header.height < rangeEnd(batch.range)) {
+                        to = last(blocks).header.height
                         batch.range = {from: to + 1, to: batch.range.to}
                     } else if (archiveHeight < rangeEnd(batch.range)) {
                         to = archiveHeight

@@ -1,5 +1,5 @@
-import {EventHandlerContext} from "@subsquid/substrate-processor"
 import {BalancesTransferEvent} from "./types/events"
+import {EventContext} from "./types/support"
 
 
 export interface TransferEvent {
@@ -9,7 +9,7 @@ export interface TransferEvent {
 }
 
 
-export function getTransferEvent(ctx: EventHandlerContext<{event: {name: true, args: true}}>): TransferEvent {
+export function getTransferEvent(ctx: EventContext): TransferEvent {
     let event = new BalancesTransferEvent(ctx)
     if (event.isV1020) {
         let [from, to, amount] = event.asV1020
@@ -18,6 +18,6 @@ export function getTransferEvent(ctx: EventHandlerContext<{event: {name: true, a
         let [from, to, amount] = event.asV1050
         return {from, to, amount}
     } else {
-        return event.asLatest
+        return event.asV9130
     }
 }

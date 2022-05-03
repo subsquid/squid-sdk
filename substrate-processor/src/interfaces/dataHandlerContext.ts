@@ -1,41 +1,40 @@
 import type {Chain} from "../chain"
 import type {ContextFields, ContextRequest} from "./dataSelection"
-import type {Store} from "./store"
 import type {SubstrateBlock} from "./substrate"
 
 
-export interface BlockHandlerContext {
+export interface BlockHandlerContext<S> {
     /**
      * Not yet public description of chain metadata
      * @internal
      */
     _chain: Chain
-    store: Store
+    store: S
     block: SubstrateBlock
 }
 
 
-export interface BlockHandler {
-    (ctx: BlockHandlerContext): Promise<void>
+export interface BlockHandler<S> {
+    (ctx: BlockHandlerContext<S>): Promise<void>
 }
 
 
-export type EventHandlerContext<R extends ContextRequest = {event: true}> = BlockHandlerContext & {
+export type EventHandlerContext<S, R extends ContextRequest = {event: true}> = BlockHandlerContext<S> & {
     event: ContextFields<R>['event']
 }
 
 
-export interface EventHandler<R extends ContextRequest = {event: true}> {
-    (ctx: EventHandlerContext<R>): Promise<void>
+export interface EventHandler<S, R extends ContextRequest = {event: true}> {
+    (ctx: EventHandlerContext<S, R>): Promise<void>
 }
 
 
-export type CallHandlerContext<R extends ContextRequest = {call: true, extrinsic: true}> = BlockHandlerContext & {
+export type CallHandlerContext<S, R extends ContextRequest = {call: true, extrinsic: true}> = BlockHandlerContext<S> & {
     call: ContextFields<R>['call']
     extrinsic: ContextFields<R>['extrinsic']
 }
 
 
-export interface CallHandler<R extends ContextRequest = {call: true, extrinsic: true}> {
-    (ctx: CallHandlerContext<R>): Promise<void>
+export interface CallHandler<S, R extends ContextRequest = {call: true, extrinsic: true}> {
+    (ctx: CallHandlerContext<S, R>): Promise<void>
 }

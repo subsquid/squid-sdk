@@ -6,13 +6,13 @@ import {QualifiedName} from "./substrate"
 
 
 export interface BlockHook {
-    handler: BlockHandler
+    handler: BlockHandler<any>
     range?: Range
 }
 
 
 export interface EventHook {
-    handler: EventHandler
+    handler: EventHandler<any>
     event: QualifiedName
     data?: ContextRequest
     range?: Range
@@ -20,7 +20,7 @@ export interface EventHook {
 
 
 export interface CallHook {
-    handler: CallHandler
+    handler: CallHandler<any>
     call: QualifiedName
     failures?: boolean
     data?: ContextRequest
@@ -29,7 +29,7 @@ export interface CallHook {
 
 
 export interface EvmLogHook {
-    handler: EvmLogHandler
+    handler: EvmLogHandler<any>
     contractAddress: string
     filter?: EvmTopicSet[]
     range?: Range
