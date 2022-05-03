@@ -1,9 +1,7 @@
 {
     "outDir": "../src/karura",
     "chainVersions": "../../data/chain/karura/versions.json",
-    "typesBundle": "karura",
     "events": true,
     "calls": true,
     "storage": true
   }
-  

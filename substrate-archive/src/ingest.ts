@@ -5,6 +5,7 @@ import {
     decodeMetadata,
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
+    isPreV14,
     OldTypes,
     OldTypesBundle
 } from "@subsquid/substrate-metadata"
@@ -15,15 +16,7 @@ import assert from "assert"
 import {CallParser} from "./callParser"
 import {SpecInfo, sub} from "./interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "./model"
-import {
-    blake2bHash,
-    EVENT_STORAGE_KEY,
-    formatId,
-    getBlockTimestamp,
-    isPreV14,
-    splitSpecId,
-    unwrapArguments
-} from "./util"
+import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, splitSpecId, unwrapArguments} from "./util"
 
 
 export interface IngestOptions {
@@ -222,9 +215,6 @@ export class Ingest {
         let client = this.clients[0]
         let height = this.initialBlock == 0 ? 0 : this.initialBlock - 1
         let spec = await this.getSpec(client, height)
-        if (this.typesBundle == null) {
-            this.typesBundle = getOldTypesBundle(splitSpecId(spec.specId)[0])
-        }
         this._specInfo = await this.getSpecInfo(client, spec.blockHash, spec.specId)
         this.chainHeight = await this.getChainHeight(client)
     }
@@ -238,10 +228,12 @@ export class Ingest {
         let metadata = decodeMetadata(rawMetadata)
         let oldTypes: OldTypes | undefined
         if (isPreV14(metadata)) {
-            oldTypes = getTypesFromBundle(
-                assertNotNull(this.typesBundle),
-                splitSpecId(specId)[1]
+            let [specName, specVersion] = splitSpecId(specId)
+            let typesBundle = assertNotNull(
+                this.typesBundle || getOldTypesBundle(specName),
+                `types bundle is required for ${specName} chain`
             )
+            oldTypes = getTypesFromBundle(typesBundle, specVersion)
         }
         let description = getChainDescriptionFromMetadata(metadata, oldTypes)
         return {

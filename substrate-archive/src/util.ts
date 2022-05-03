@@ -49,29 +49,6 @@ export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, '__kind'> 
 }
 
 
-export function isPreV14(metadata: Metadata): boolean {
-    switch(metadata.__kind) {
-        case 'V0':
-        case 'V1':
-        case 'V2':
-        case 'V3':
-        case 'V4':
-        case 'V5':
-        case 'V6':
-        case 'V7':
-        case 'V8':
-        case 'V9':
-        case 'V10':
-        case 'V11':
-        case 'V12':
-        case 'V13':
-            return true
-        default:
-            return false
-    }
-}
-
-
 /**
  * All blocks have timestamp event except for the genesis block.
  * This method looks up `timestamp.set` and reads off the block timestamp

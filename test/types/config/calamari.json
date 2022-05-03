@@ -1,7 +1,6 @@
 {
   "outDir": "../src/calamari",
   "chainVersions": "../../data/chain/calamari/versions.json",
-  "typesBundle": "calamari",
   "events": true,
   "calls": true,
   "storage": true

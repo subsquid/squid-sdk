@@ -6,6 +6,7 @@ import {
     Field,
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
+    isPreV14,
     OldTypes,
     OldTypesBundle,
     QualifiedName,
@@ -71,7 +72,7 @@ export class ChainManager {
     private createChain(rtv: RuntimeVersion, metadataHex: string): Chain {
         let metadata = decodeMetadata(metadataHex)
         let types: OldTypes | undefined
-        if (parseInt(metadata.__kind.slice(1)) < 14) {
+        if (isPreV14(metadata)) {
             let typesBundle = assertNotNull(
                 this.typesBundle || getOldTypesBundle(rtv.specName),
                 `types bundle is required for ${rtv.specName} chain`

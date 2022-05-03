@@ -1,9 +1,7 @@
 {
     "outDir": "../src/quartz",
     "chainVersions": "../../data/chain/quartz/versions.json",
-    "typesBundle": "quartz",
     "events": true,
     "calls": true,
     "storage": true
   }
-  

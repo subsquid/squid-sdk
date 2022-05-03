@@ -1,7 +1,7 @@
 import {
     ChainDescription,
     decodeMetadata,
-    getChainDescriptionFromMetadata,
+    getChainDescriptionFromMetadata, getOldTypesBundle, isPreV14, OldTypes,
     OldTypesBundle,
     QualifiedName,
     StorageItem,
@@ -10,7 +10,7 @@ import {
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {def, last} from "@subsquid/util-internal"
+import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import {Interfaces} from "./ifs"
@@ -279,7 +279,14 @@ export class Typegen {
     chain(): VersionDescription[] {
         return this.options.chainVersions.map(v => {
             let metadata = decodeMetadata(v.metadata)
-            let oldTypes = this.options.typesBundle && getTypesFromBundle(this.options.typesBundle, v.specVersion)
+            let oldTypes: OldTypes | undefined
+            if (isPreV14(metadata)) {
+                let typesBundle = assertNotNull(
+                    this.options.typesBundle || getOldTypesBundle(v.specName),
+                    `types bundle is required for ${v.specName} chain`
+                )
+                oldTypes = getTypesFromBundle(typesBundle, v.specVersion)
+            }
             let d = getChainDescriptionFromMetadata(metadata, oldTypes)
             return {
                 specName: v.specName,

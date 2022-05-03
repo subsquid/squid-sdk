@@ -1,7 +1,6 @@
 {
   "outDir": "../src/darwinia",
   "chainVersions": "../../data/chain/darwinia/versions.json",
-  "typesBundle": "darwinia",
   "events": true,
   "calls": true,
   "storage": true

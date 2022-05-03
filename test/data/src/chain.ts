@@ -228,7 +228,7 @@ export class Chain {
     description(): VersionDescription[] {
         return this.versions().map(v => {
             let metadata = decodeMetadata(v.metadata)
-            let typesBundle = getOldTypesBundle(this.name)
+            let typesBundle = getOldTypesBundle(v.specName)
             let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
             let description = getChainDescriptionFromMetadata(metadata, types)
             return {

@@ -1,9 +1,7 @@
 {
     "outDir": "../src/crust",
     "chainVersions": "../../data/chain/crust/versions.json",
-    "typesBundle": "crust",
     "events": true,
     "calls": true,
     "storage": true
   }
-  

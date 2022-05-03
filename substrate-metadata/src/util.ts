@@ -1,5 +1,6 @@
 import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
+import type {Metadata} from "./interfaces"
 import {Field, Type, TypeKind} from "./types"
 
 
@@ -73,4 +74,27 @@ export function sha256(obj: object | string): string {
     let hash = crypto.createHash('sha256')
     hash.update(content)
     return hash.digest().toString('hex')
+}
+
+
+export function isPreV14(metadata: Metadata): boolean {
+    switch(metadata.__kind) {
+        case 'V0':
+        case 'V1':
+        case 'V2':
+        case 'V3':
+        case 'V4':
+        case 'V5':
+        case 'V6':
+        case 'V7':
+        case 'V8':
+        case 'V9':
+        case 'V10':
+        case 'V11':
+        case 'V12':
+        case 'V13':
+            return true
+        default:
+            return false
+    }
 }

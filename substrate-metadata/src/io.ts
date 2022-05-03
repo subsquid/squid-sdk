@@ -27,14 +27,18 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/shiden').bundle
         case 'crust':
             return require('./old/definitions/crust').bundle
+        case 'shell':
+            return require('./old/definitions/shell').bundle
         case 'statemint':
         case 'statemine':
             return require('./old/definitions/statemint').bundle
         case 'subsocial':
             return require('./old/definitions/subsocial').bundle
         case 'kilt':
+        case 'kilt-spiritnet': // real spec name
             return require('./old/definitions/kilt').bundle
         case 'hydradx':
+        case 'hydra-dx': // real spec name
             return require('./old/definitions/hydradx').bundle
         case 'pioneer':
             return require('./old/definitions/pioneer').bundle
@@ -53,8 +57,10 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'quartz':
             return require('./old/definitions/unique').bundle
         case 'darwinia':
+        case 'Darwinia': // real spec name
             return require('./old/definitions/darwinia').bundle
         case 'kintsugi':
+        case 'kintsugi-parachain': // real spec name
             return require('./old/definitions/kintsugi').bundle
         default:
             return undefined

@@ -1,7 +1,6 @@
 {
   "outDir": "../src/clover",
   "chainVersions": "../../data/chain/clover/versions.json",
-  "typesBundle": "clover",
   "events": true,
   "calls": true,
   "storage": true
