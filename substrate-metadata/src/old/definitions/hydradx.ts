@@ -53,4 +53,7 @@ export const bundle: OldTypesBundle = {
             AccountData: "OrmlAccountData",
         },
     },
-};
+    signedExtensions: {
+        ValidateClaim: 'Null'
+    }
+}

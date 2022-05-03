@@ -6,12 +6,12 @@ import {
     decodeMetadata,
     encodeExtrinsic,
     getChainDescriptionFromMetadata,
-    getOldTypesBundle
+    getOldTypesBundle, Metadata
 } from "@subsquid/substrate-metadata"
 import {SpecVersionWithMetadata} from "@subsquid/substrate-metadata-explorer/lib/types"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def, toHex} from "@subsquid/util-internal"
+import {assertNotNull, def, last, toHex} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
 import expect from "expect"
@@ -245,6 +245,13 @@ export class Chain {
         })
     }
 
+    printMetadata(): void {
+        let metadata = last(this.description()).metadata
+        console.log(
+            JSON.stringify(metadata, null, 2)
+        )
+    }
+
     private async withRpcClient<T>(cb: (client: ResilientRpcClient) => Promise<T>): Promise<T> {
         let client = new ResilientRpcClient(this.info().chain)
         try {
@@ -341,6 +348,7 @@ interface VersionDescription {
     blockNumber: number
     specName: string
     specVersion: number
+    metadata: Metadata
     description: ChainDescription
     codec: ScaleCodec
     jsonCodec: JsonCodec

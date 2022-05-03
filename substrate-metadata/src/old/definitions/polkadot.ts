@@ -81,5 +81,13 @@ export const bundle: OldTypesBundle = {
             minmax: [9110, null],
             types: {}
         }
-    ]
+    ],
+    signedExtensions: {
+        LimitParathreadCommits: 'Null',
+        OnlyStakingAndClaims: 'Null',
+        PrevalidateAttests: 'Null',
+        RestrictFunctionality: 'Null',
+        TransactionCallFilter: 'Null',
+        ValidateDoubleVoteReports: 'Null'
+    }
 }

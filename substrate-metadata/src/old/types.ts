@@ -33,6 +33,7 @@ export interface OldTypesAlias {
 export interface OldTypes {
     types: Record<string, OldTypeDefinition>
     typesAlias?: OldTypesAlias
+    signedExtensions?: Record<string, OldTypeExp>
 }
 
 

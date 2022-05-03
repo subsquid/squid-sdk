@@ -96,4 +96,7 @@ export const bundle: OldTypesBundle = {
             final_weight: 'LBPWeight'
         }
     },
-};
+    signedExtensions: {
+        CurrencyBalanceCheck: 'Null'
+    }
+}

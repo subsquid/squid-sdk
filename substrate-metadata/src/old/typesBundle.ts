@@ -13,6 +13,10 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVers
         typesAlias: {
             ...substrateBundle.typesAlias,
             ...bundle.typesAlias
+        },
+        signedExtensions: {
+            ...substrateBundle.signedExtensions,
+            ...bundle.signedExtensions
         }
     }
 
@@ -23,6 +27,7 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVers
         if (isWithinRange(override.minmax, specVersion)) {
             Object.assign(types.types, override.types)
             Object.assign(types.typesAlias, override.typesAlias)
+            Object.assign(types.signedExtensions, override.signedExtensions)
         }
     }
 

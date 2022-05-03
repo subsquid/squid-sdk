@@ -279,7 +279,7 @@ class FromV14 {
 class FromOld {
     private registry: OldTypeRegistry
 
-    constructor(private metadata: Metadata, oldTypes: OldTypes) {
+    constructor(private metadata: Metadata, private oldTypes: OldTypes) {
         this.registry = new OldTypeRegistry(oldTypes)
         this.defineGenericExtrinsicEra()
         this.defineGenericLookupSource()
@@ -366,6 +366,8 @@ class FromOld {
     }
 
     private getSignedExtensionType(name: string): Ti | undefined {
+        let def = this.oldTypes.signedExtensions?.[name]
+        if (def) return this.registry.use(def)
         switch(name) {
             case 'ChargeTransactionPayment':
                 return this.registry.use('Compact<Balance>')
