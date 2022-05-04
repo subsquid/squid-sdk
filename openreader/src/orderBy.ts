@@ -50,8 +50,10 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
         switch(propType.kind) {
             case 'scalar':
             case 'enum':
-                m.set(key + '_ASC', {[key]: 'ASC'})
-                m.set(key + '_DESC', {[key]: 'DESC'})
+                if (propType.name != 'JSON') {
+                    m.set(key + '_ASC', {[key]: 'ASC'})
+                    m.set(key + '_DESC', {[key]: 'DESC'})
+                }
                 break
             case 'object':
             case 'union':
