@@ -2,6 +2,31 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/graphql-server_v0.3.0",
+      "date": "Thu, 05 May 2022 20:47:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support JSON scalar type"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix error when querying `to-many` relation with no items"
+          },
+          {
+            "comment": "fix error when querying `to-many` relation with no items"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.6.0` to `^0.7.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/graphql-server_v0.2.0",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",

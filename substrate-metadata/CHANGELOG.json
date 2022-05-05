@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.8.3",
+      "tag": "@subsquid/substrate-metadata_v0.8.3",
+      "date": "Thu, 05 May 2022 20:47:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of storage maps with multiple hashers and tuple key"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.8.2",
       "tag": "@subsquid/substrate-metadata_v0.8.2",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",

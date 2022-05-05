@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+
+## 0.7.2
+Thu, 05 May 2022 20:47:14 GMT
+
+### Patches
+
+- use `int4` in status table for cockroach compatibility
 
 ## 0.7.1
 Wed, 20 Apr 2022 22:55:27 GMT

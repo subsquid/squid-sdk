@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.7.0",
+      "tag": "@subsquid/openreader_v0.7.0",
+      "date": "Thu, 05 May 2022 20:47:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support JSON scalar type"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.0",
       "tag": "@subsquid/openreader_v0.6.0",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",
