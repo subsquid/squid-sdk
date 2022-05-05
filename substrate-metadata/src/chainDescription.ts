@@ -152,7 +152,14 @@ class FromV14 {
                         break
                     case 'Map':
                         hashers = e.type.hashers.map(h => h.__kind)
-                        keys = [e.type.key]
+                        if (hashers.length == 1) {
+                            keys = [e.type.key]
+                        } else {
+                            let keyDef = this.types()[e.type.key]
+                            assert(keyDef.kind == TypeKind.Tuple)
+                            assert(keyDef.tuple.length == hashers.length)
+                            keys = keyDef.tuple
+                        }
                         break
                     default:
                         throwUnexpectedCase()
