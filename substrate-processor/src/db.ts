@@ -39,8 +39,8 @@ export class Db {
             await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
             await em.query(`
               CREATE TABLE IF NOT EXISTS ${this.statusSchema}."status" (
-                id int primary key,
-                height int not null
+                id int4 primary key,
+                height int4 not null
               )
             `)
             let status: ProcessingStatus[] = await em.query(
