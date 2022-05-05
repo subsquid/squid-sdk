@@ -370,7 +370,7 @@ export class QueryBuilder {
                         exps.push(`position(lower(${this.param(arg)}) in lower(${lhs})) = 0`)
                         break
                     case 'jsonContains':
-                        exps.push(`${lhs} @> ${this.param(JSON.stringify(arg))}`)
+                        exps.push(`${lhs} @> ${this.param(arg)}`)
                         break
                     case 'jsonHasKey':
                         exps.push(`${lhs} ? ${this.param(arg)}`)

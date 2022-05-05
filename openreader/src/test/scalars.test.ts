@@ -342,11 +342,13 @@ describe('scalars', function() {
                     eq: scalars(where: {json_eq: {key1: "value1"}}) { id }
                     jsonHasKey: scalars(where: {json_jsonHasKey: "key1"}) { id }
                     jsonContains: scalars(where: {json_jsonContains: {key2: "value2"}}) { id }
+                    missingKey: scalars(where: {json_jsonHasKey: {foo: 1}}) { id }
                 }
             `, {
                 eq: [{id: '18'}],
                 jsonHasKey: [{id: '18'}],
                 jsonContains: [{id: '19'}],
+                missingKey: []
             })
         })
     })
