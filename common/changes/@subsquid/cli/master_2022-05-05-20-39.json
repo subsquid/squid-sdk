@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "codegen: support JSON scalars in typeorm data models",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "codegen: map `Int` scalar to `int4` (instead of `integer`) for cockroach compatibility",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

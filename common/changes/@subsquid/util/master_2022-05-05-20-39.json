@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util"
+}

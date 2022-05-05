@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "fix handling of storage maps with multiple hashers and tuple key",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
