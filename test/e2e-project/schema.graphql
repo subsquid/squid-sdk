@@ -45,13 +45,13 @@ type Account @entity {
 }
 
 
-type Miserable @variant {
+type Miserable {
   hates: String!
   loves: [String]!
 }
 
 
-type HappyPoor @variant {
+type HappyPoor {
   isMale: Boolean
 }
 
@@ -59,7 +59,7 @@ type HappyPoor @variant {
 union Poor = HappyPoor | Miserable
 
 
-type MiddleClass @variant {
+type MiddleClass {
   father: Poor
   mother: Poor
 }
@@ -171,11 +171,13 @@ type ScalarRaw @entity {
   id: ID!
   float: Float
   nested: NestedScalars
+  json: JSON
 }
 
 
 type NestedScalars {
   float: Float
+  json: JSON
 }
 
 

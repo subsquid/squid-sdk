@@ -3,7 +3,7 @@ import {useDatabase, useServer} from "./setup"
 describe('typed json fields', function () {
     useDatabase([
         `create table entity (id text primary key, a jsonb)`,
-        `insert into entity (id, a) values ('1', '{"a": "a", "b": {"b": "b", "e": "1"}}'::jsonb)`,
+        `insert into entity (id, a) values ('1', '{"a": "a", "b": {"b": "b", "e": "1"}, "c": [1, 2, 3]}'::jsonb)`,
         `insert into entity (id, a) values ('2', '{"a": "A", "b": {"b": "B", "e": "1"}}'::jsonb)`,
         `insert into entity (id, a) values ('3', '{}'::jsonb)`,
         `insert into entity (id) values ('4')`,
@@ -17,6 +17,7 @@ describe('typed json fields', function () {
         type A {
             a: String
             b: B
+            c: JSON
         }
         
         type B {
@@ -41,6 +42,20 @@ describe('typed json fields', function () {
                 {id: '3', a: {a: null}},
                 {id: '4', a: null}
             ]
+        })
+    })
+
+    it('nested JSON scalar', function () {
+        return client.test(`
+            query {
+                entities(where: {id_eq: "1"}) {
+                    a { c }
+                }
+            }
+        `, {
+            entities: [{
+                a: {c: [1, 2, 3]}
+            }]
         })
     })
 

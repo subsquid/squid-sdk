@@ -1,5 +1,6 @@
 import {Field, ObjectType, Query, Resolver} from "type-graphql"
 import {EntityManager} from "typeorm"
+import {Json} from "../../../../index"
 import {Scalar} from "../model"
 
 
@@ -19,6 +20,9 @@ export class ScalarRow {
 
     @Field()
     bytes?: Buffer
+
+    @Field(() => Json)
+    attributes?: any
 }
 
 

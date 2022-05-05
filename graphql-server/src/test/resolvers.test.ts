@@ -3,8 +3,8 @@ import {useServer} from "./util/server"
 
 describe('resolvers extension', function () {
     useDatabase([
-        `create table scalar (id text primary key, "bool" bool, date timestamptz, big_number numeric, "bytes" bytea)`,
-        `insert into scalar (id, bool, date, big_number, "bytes") values ('1', true, '2021-09-24T00:00:00.000Z', 1000000000000000, decode('aa', 'hex'))`,
+        `create table scalar (id text primary key, "bool" bool, date timestamptz, big_number numeric, "bytes" bytea, attributes jsonb)`,
+        `insert into scalar (id, bool, date, big_number, "bytes", attributes) values ('1', true, '2021-09-24T00:00:00.000Z', 1000000000000000, decode('aa', 'hex'), '[1, 2, 3]'::jsonb)`,
         `create table parent (id text primary key , name text)`,
         `create table child (id text primary key , name text, parent_id text references parent)`,
         `insert into parent (id, name) values ('1', 'hello')`,
@@ -22,6 +22,7 @@ describe('resolvers extension', function () {
                     date
                     bigNumber
                     bytes
+                    attributes
                 }
             }
         `, {
@@ -30,7 +31,8 @@ describe('resolvers extension', function () {
                 bool: true,
                 date: '2021-09-24T00:00:00.000Z',
                 bigNumber: '1000000000000000',
-                bytes: '0xaa'
+                bytes: '0xaa',
+                attributes: [1, 2, 3]
             }]
         })
     })

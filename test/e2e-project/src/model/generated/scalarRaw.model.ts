@@ -16,4 +16,7 @@ export class ScalarRaw {
 
   @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : new NestedScalars(undefined, obj)}, nullable: true})
   nested!: NestedScalars | undefined | null
+
+  @Column_("jsonb", {nullable: true})
+  json!: unknown | undefined | null
 }

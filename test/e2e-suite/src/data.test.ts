@@ -123,13 +123,23 @@ describe('data', function () {
                     float
                     nested {
                         float
+                        json
                     }
+                    json
                 }
             }
         `, {
             scalarRaws: [
-                {float: 0, nested: {float: 0}},
-                {float: 0.7, nested: {float: 0.8}}
+                {
+                    float: 0,
+                    nested: {float: 0, json: [1, 2, 3]},
+                    json: {foo: 1}
+                },
+                {
+                    float: 0.7,
+                    nested: {float: 0.8, json: null},
+                    json: null
+                }
             ]
         })
     })

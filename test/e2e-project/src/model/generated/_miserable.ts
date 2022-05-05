@@ -36,7 +36,7 @@ export class Miserable {
     return {
       isTypeOf: this.isTypeOf,
       hates: this.hates,
-      loves: this.loves.map((val: any) => val),
+      loves: this.loves,
     }
   }
 }

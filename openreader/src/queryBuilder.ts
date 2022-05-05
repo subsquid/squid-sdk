@@ -636,6 +636,8 @@ class Cursor {
                             return `(${this.prefix}->'${propName}')::numeric`
                         case 'Boolean':
                             return `(${this.prefix}->>'${propName}')::bool`
+                        case 'JSON':
+                            return `${this.prefix}->'${propName}'`
                         default:
                             return `${this.prefix}->>'${propName}'`
                     }

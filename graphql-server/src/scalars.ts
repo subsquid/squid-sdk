@@ -8,3 +8,4 @@ export const Float = GraphQLFloat
 export const DateTime = customScalars.DateTime
 export const BigInteger = customScalars.BigInt
 export const Bytes = customScalars.Bytes
+export const Json = customScalars.JSON
