@@ -4,8 +4,18 @@ services:
   db:
     image: postgres:12
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USER}"
       POSTGRES_PASSWORD: postgres
     ports:
       - "${DB_PORT}:5432"
       # command: ["postgres", "-c", "log_statement=all"]
+
+#  cockroach:
+#    image: cockroachdb/cockroach:v21.2.9
+#    ports:
+#      - "${DB_PORT}:26257"
+#    command: [
+#      "start-single-node",
+#      "--insecure"
+#    ]
