@@ -2,7 +2,7 @@ import {useDatabase, useServer} from "./setup"
 
 describe('scalars', function() {
     useDatabase([
-        `create table scalar (id text primary key, "boolean" bool, "bigint" numeric, "string" text, enum text, date_time timestamptz, "bytes" bytea, deep jsonb)`,
+        `create table scalar (id text primary key, "boolean" bool, "bigint" numeric, "string" text, enum text, date_time timestamptz, "bytes" bytea, "json" jsonb, deep jsonb)`,
         `insert into scalar (id, "boolean") values ('1', true)`,
         `insert into scalar (id, "boolean", deep) values ('2', false, '{"boolean": true}'::jsonb)`,
         `insert into scalar (id, "bigint", deep) values ('3', 1000000000000000000000000000000000000, '{"bigint": "1000000000000000000000000000000000000"}'::jsonb)`,
@@ -21,6 +21,8 @@ describe('scalars', function() {
         `insert into scalar (id, "enum") values ('15', 'A')`,
         `insert into scalar (id, "enum") values ('16', 'B')`,
         `insert into scalar (id, "enum") values ('17', 'C')`,
+        `insert into scalar (id, "json") values ('18', '{"key1": "value1"}'::jsonb)`,
+        `insert into scalar (id, "json") values ('19', '{"key2": "value2"}'::jsonb)`,
     ])
 
     const client = useServer(`
@@ -32,6 +34,7 @@ describe('scalars', function() {
             bigint: BigInt
             dateTime: DateTime
             bytes: Bytes
+            json: JSON,
             deep: DeepScalar
         }
         
@@ -313,6 +316,37 @@ describe('scalars', function() {
             `, {
                 eq: [{id: '13'}],
                 deep_eq: [{id: '14'}]
+            })
+        })
+    })
+
+    describe('JSON', function () {
+        it('outputs correctly', function() {
+            return client.test(`
+                query {
+                    scalars(where: {id_in: ["18"]}, orderBy: id_ASC) {
+                        id
+                        json
+                    }
+                }
+            `, {
+                scalars: [
+                    {id: '18', json: {'key1': 'value1'}},
+                ]
+            })
+        })
+
+        it('supports where conditions', function () {
+            return client.test(`
+                query {
+                    eq: scalars(where: {json_eq: {key1: "value1"}}) { id }
+                    jsonHasKey: scalars(where: {json_jsonHasKey: "key1"}) { id }
+                    jsonContains: scalars(where: {json_jsonContains: {key2: "value2"}}) { id }
+                }
+            `, {
+                eq: [{id: '18'}],
+                jsonHasKey: [{id: '18'}],
+                jsonContains: [{id: '19'}],
             })
         })
     })
