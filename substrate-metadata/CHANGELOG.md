@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+
+## 0.8.3
+Thu, 05 May 2022 20:47:14 GMT
+
+### Patches
+
+- fix handling of storage maps with multiple hashers and tuple key
 
 ## 0.8.2
 Wed, 20 Apr 2022 22:55:27 GMT

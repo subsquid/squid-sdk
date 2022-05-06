@@ -18,4 +18,7 @@ export class Scalar {
 
     @Column("bytea")
     bytes?: Buffer
+
+    @Column("jsonb")
+    attributes?: any
 }

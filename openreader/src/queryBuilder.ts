@@ -369,6 +369,12 @@ export class QueryBuilder {
                     case 'not_containsInsensitive':
                         exps.push(`position(lower(${this.param(arg)}) in lower(${lhs})) = 0`)
                         break
+                    case 'jsonContains':
+                        exps.push(`${lhs} @> ${this.param(arg)}`)
+                        break
+                    case 'jsonHasKey':
+                        exps.push(`${lhs} ? ${this.param(arg)}`)
+                        break
                     default: {
                         exps.push(`${lhs} ${whereOpToSqlOperator(op)} ${this.param(arg)}`)
                     }
@@ -465,9 +471,15 @@ export class QueryBuilder {
                         }
                         break
                     }
-                    case 'list-lookup':
-                        rec[req.alias] = this.toResult(row[req.index], req.children)
+                    case 'list-lookup': {
+                        let rows = row[req.index]
+                        if (rows == null) {
+                            rec[req.alias] = []
+                        } else {
+                            rec[req.alias] = this.toResult(row[req.index], req.children)
+                        }
                         break
+                    }
                     default:
                         throw unsupportedCase((f as any).propType.kind)
                 }
@@ -624,6 +636,8 @@ class Cursor {
                             return `(${this.prefix}->'${propName}')::numeric`
                         case 'Boolean':
                             return `(${this.prefix}->>'${propName}')::bool`
+                        case 'JSON':
+                            return `${this.prefix}->'${propName}'`
                         default:
                             return `${this.prefix}->>'${propName}'`
                     }

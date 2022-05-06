@@ -90,7 +90,8 @@ export async function loadInitialData(store: Store): Promise<void> {
         await store.save(new ScalarRaw({
             id: '1',
             float: 0,
-            nested: new NestedScalars({float: 0})
+            nested: new NestedScalars({float: 0, json: [1, 2, 3]}),
+            json: {foo: 1}
         }))
 
         await store.save(new ScalarRaw({

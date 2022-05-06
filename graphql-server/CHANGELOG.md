@@ -1,6 +1,18 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+
+## 0.3.0
+Thu, 05 May 2022 20:47:14 GMT
+
+### Minor changes
+
+- support JSON scalar type
+
+### Patches
+
+- fix error when querying `to-many` relation with no items
+- fix error when querying `to-many` relation with no items
 
 ## 0.2.0
 Wed, 20 Apr 2022 22:55:27 GMT

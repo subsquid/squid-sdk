@@ -172,7 +172,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             case 'String':
                 return 'text'
             case 'Int':
-                return 'integer'
+                return 'int4'
             case 'Float':
                 return 'numeric'
             case 'Boolean':
@@ -183,6 +183,8 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                 return 'numeric'
             case 'Bytes':
                 return 'bytea'
+            case 'JSON':
+                return 'jsonb'
             default:
                 throw unexpectedCase(scalar)
         }
@@ -275,6 +277,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         let convert: string
         switch(prop.type.kind) {
             case 'scalar':
+                if (prop.type.name == 'JSON') return exp
                 convert = `marshal.${prop.type.name.toLowerCase()}.fromJSON(${exp})`
                 break
             case 'enum':
@@ -315,6 +318,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                     case 'Boolean':
                     case 'Int':
                     case 'Float':
+                    case 'JSON':
                         return exp
                     default:
                         convert = `marshal.${prop.type.name.toLowerCase()}.toJSON(${exp})`
@@ -327,12 +331,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             case 'union':
                 convert = exp + '.toJSON()'
                 break
-            case 'list':
-                convert = `${exp}.map((val: any) => ${marshalToJson(
-                    prop.type.item,
-                    'val'
-                )})`
+            case 'list': {
+                let marshal = marshalToJson(prop.type.item, 'val')
+                if (marshal == 'val') return exp
+                convert = `${exp}.map((val: any) => ${marshal})`
                 break
+            }
             default:
                 throw unexpectedCase(prop.type.kind)
         }
@@ -435,6 +439,8 @@ function getScalarJsType(typeName: string): string {
             return 'bigint'
         case 'Bytes':
             return 'Uint8Array'
+        case 'JSON':
+            return 'unknown'
         default:
             throw unexpectedCase(typeName)
     }
