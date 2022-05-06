@@ -18,6 +18,7 @@
    * and then specify those projects in the "additionalProjectsToInclude" list.
    */
   "deploymentProjectNames": [
+    "@subsquid/substrate-archive",
     "e2e-test-suite"
   ],
 
