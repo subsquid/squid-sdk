@@ -209,15 +209,15 @@ export class Typegen {
                                 return `key${idx + 1}`
                             }
                         })
-                        let params = keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')
+                        let params = keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`)
                         let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`]
-                        out.block(`async getAsV${v.chain.specVersion}(${params}): Promise<${returnType}>`, () => {
+                        out.block(`async getAsV${v.chain.specVersion}(${params.join(', ')}): Promise<${returnType}>`, () => {
                             out.line(`assert(this.isV${v.chain.specVersion})`)
                             out.line(`return this.ctx._chain.getStorage(${args.concat(keyNames).join(', ')})`)
                         })
                         if (keyNames.length > 0) {
                             out.line()
-                            out.block(`async queryAsV${v.chain.specVersion}(keys: [${params}][]): Promise<${returnType}[]>`, () => {
+                            out.block(`async queryAsV${v.chain.specVersion}(keys: ${keyTypes.length > 1 ? `[${params.join(', ')}]` : keyTypes[0]}[]): Promise<${returnType}[]>`, () => {
                                 out.line(`assert(this.isV${v.chain.specVersion})`)
                                 out.line(`return this.ctx._chain.queryStorage(${args.concat(`keys`).join(', ')})`)
                             })

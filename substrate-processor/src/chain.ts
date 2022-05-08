@@ -147,9 +147,8 @@ export class Chain {
     async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
         let item = this.getStorageItem(prefix, name)
         assert(item.keys.length === keys.length)
-        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getKeysHash(item, keys)
+        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getKeysHash(item, ...keys)
         let res = await this.client.call('state_getStorageAt', [req, blockHash])
-
         return this.decodeStorageValue(item, res)
     }
 
@@ -158,16 +157,18 @@ export class Chain {
         let query: string[] = []
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
         for (let keys of keysArray){
-            assert(item.keys.length === keys.length)
-            let req = storageHash + this.getKeysHash(item, keys)
-            query.push(req)
+            if (item.keys.length > 1) {
+                assert(item.keys.length === keys.length)
+                query.push(storageHash + this.getKeysHash(item, ...keys))
+            } else {
+                query.push(storageHash + this.getKeysHash(item, keys))
+            }
         }
         let res = await this.client.call('state_queryStorageAt', [query, blockHash])
         let results: any[] = []
         for (let change of res[0].changes){
             results.push(this.decodeStorageValue(item, change[1]))
         }
-
         return results
     }
     
@@ -188,7 +189,7 @@ export class Chain {
         return this.scaleCodec.decodeBinary(item.value, value)
     }
 
-    private getKeysHash(item: StorageItem, keys: any[]) {
+    private getKeysHash(item: StorageItem, ...keys: any[]) {
         let hash = ''
         for (let i = 0; i < keys.length; i++) {
             hash += sto.getKeyHash(
