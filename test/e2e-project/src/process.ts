@@ -104,6 +104,8 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     let aliceAddress = ss58.decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY').bytes
     let aliceAccount = await accounts.getAsV1(aliceAddress)
     assert(aliceAccount.data.free > 0)
+    let aliceAccounts = await accounts.queryAsV1([aliceAddress, aliceAddress])
+    assert(aliceAccounts[0].data.free > 0 && aliceAccounts[1].data.free > 0)
 })
 
 
