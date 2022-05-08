@@ -154,20 +154,29 @@ export class Chain {
 
     async queryStorage(blockHash: string, prefix: string, name: string, keysArray: any[]) {
         let item = this.getStorageItem(prefix, name)
-        let query: string[] = []
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
-        for (let keys of keysArray){
+        let query = new Array(keysArray.length)
+        for (let i = 0; i < keysArray.length; i++){
+            let keys = keysArray[i]
             if (item.keys.length > 1) {
                 assert(item.keys.length === keys.length)
-                query.push(storageHash + this.getKeysHash(item, ...keys))
+                query[i] = storageHash + this.getKeysHash(item, ...keys)
             } else {
-                query.push(storageHash + this.getKeysHash(item, keys))
+                query[i] = storageHash + this.getKeysHash(item, keys)
             }
         }
         let res = await this.client.call('state_queryStorageAt', [query, blockHash])
-        let results: any[] = []
-        for (let change of res[0].changes){
-            results.push(this.decodeStorageValue(item, change[1]))
+        let changes: [string, string][] = res[0].changes
+        let results = new Array(query.length)
+        if (changes.length === results.length) {
+            for (let i = 0; i < results.length; i++) {
+                results[i] = this.decodeStorageValue(item, changes[i][1])
+            }
+        } else {
+            for (let i = 0; i < results.length; i++) {
+                let value = changes.find(change => change[0] === query[i])?.[1]
+                results[i] = value == null ? null : this.decodeStorageValue(item, value)
+            }
         }
         return results
     }
