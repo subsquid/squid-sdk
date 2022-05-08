@@ -165,7 +165,7 @@ export class Chain {
         let res = await this.client.call('state_queryStorageAt', [query, blockHash])
         let results: any[] = []
         for (let change of res[0].changes){
-            results.push(this.scaleCodec.decodeBinary(item.value, change[1]))
+            results.push(this.decodeStorageValue(item, change[1]))
         }
 
         return results
