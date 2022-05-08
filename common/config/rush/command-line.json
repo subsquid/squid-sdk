@@ -15,7 +15,7 @@
       "name": "unify-dependencies",
       "commandKind": "global",
       "summary": "Unify external dependencies across project",
-      "shellCommand": "node tools/workspace/lib/unify.js"
+      "shellCommand": "node ops/workspace/lib/unify.js"
     },
     {
       "name": "e2e",

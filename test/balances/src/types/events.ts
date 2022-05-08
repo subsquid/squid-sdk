@@ -4,14 +4,14 @@ import * as v9130 from './v9130'
 
 export class BalancesTransferEvent {
   constructor(private ctx: EventContext) {
-    assert(this.ctx.event.name === 'balances.Transfer')
+    assert(this.ctx.event.name === 'Balances.Transfer')
   }
 
   /**
    *  Transfer succeeded (from, to, value, fees).
    */
   get isV1020(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '72e6f0d399a72f77551d560f52df25d757e0643d0192b3bc837cbd91b6f36b27'
+    return this.ctx._chain.getEventHash('Balances.Transfer') === '72e6f0d399a72f77551d560f52df25d757e0643d0192b3bc837cbd91b6f36b27'
   }
 
   /**
@@ -26,7 +26,7 @@ export class BalancesTransferEvent {
    *  Transfer succeeded (from, to, value).
    */
   get isV1050(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
+    return this.ctx._chain.getEventHash('Balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
   }
 
   /**
@@ -41,7 +41,7 @@ export class BalancesTransferEvent {
    * Transfer succeeded.
    */
   get isV9130(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '0ffdf35c495114c2d42a8bf6c241483fd5334ca0198662e14480ad040f1e3a66'
+    return this.ctx._chain.getEventHash('Balances.Transfer') === '0ffdf35c495114c2d42a8bf6c241483fd5334ca0198662e14480ad040f1e3a66'
   }
 
   /**

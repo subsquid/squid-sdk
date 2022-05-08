@@ -34,7 +34,7 @@ export interface CallContext {
         getCallHash(name: string): string
         decodeCall(call: Call): any
     }
-    extrinsic: Call
+    call: Call
 }
 
 

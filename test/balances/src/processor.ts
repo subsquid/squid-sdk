@@ -15,7 +15,7 @@ processor.setDataSource({
 })
 
 
-processor.addEventHandler('balances.Transfer', {
+processor.addEventHandler('Balances.Transfer', {
     data: {
         event: {
             name: true,
