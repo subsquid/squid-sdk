@@ -1,6 +1,5 @@
 import {AbortHandle, assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
 import {Batch} from "./batch"
 import * as gw from "./interfaces/gateway"
@@ -41,7 +40,7 @@ export interface IngestMetrics {
 
 
 export interface IngestOptions {
-    archive: string
+    archiveRequest<T>(query: string): Promise<T>
     archivePollIntervalMS?: number
     /**
      * Mutable array of batches to ingest.
@@ -210,7 +209,7 @@ export class Ingest {
         })
         let gql = q.toString()
         // console.log(gql)
-        let response = await this.archiveRequest<{status: {head: number}, batch: gw.BatchBlock[]}>(gql)
+        let response: {status: {head: number}, batch: gw.BatchBlock[]} = await this.options.archiveRequest(gql)
         // console.log(inspect(response, false, 10))
         this.setArchiveHeight(response)
         return response.batch.map(mapGatewayBlock)
@@ -229,7 +228,7 @@ export class Ingest {
     }
 
     async fetchArchiveHeight(): Promise<number> {
-        let res: any = await this.archiveRequest('query { status { head } }')
+        let res: any = await this.options.archiveRequest('query { status { head } }')
         this.setArchiveHeight(res)
         return this.archiveHeight
     }
@@ -238,13 +237,6 @@ export class Ingest {
         let height = res.status.head
         this.archiveHeight = Math.max(this.archiveHeight, height)
         this.options.metrics?.setChainHeight(this.archiveHeight)
-    }
-
-    private async archiveRequest<T>(query: string): Promise<T> {
-        return graphqlRequest({
-            url: this.options.archive,
-            query
-        })
     }
 }
 

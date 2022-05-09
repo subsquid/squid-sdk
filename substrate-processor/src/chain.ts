@@ -27,60 +27,90 @@ import * as sto from "./util/storage"
  */
 interface BlockInfo {
     height: number
-    hash: string
-    parentHash: string
     specId: SpecId
 }
 
 
-interface RuntimeVersion {
+interface SpecMetadata {
+    id: SpecId
     specName: string
     specVersion: number
+    blockHeight: number
+    hex: string
+}
+
+
+export interface ChainManagerOptions {
+    archiveRequest<T>(query: string): Promise<T>
+    getChainClient: () => ResilientRpcClient
+    typesBundle?: OldTypesBundle
 }
 
 
 export class ChainManager {
     private versions = new Map<SpecId, {height: number, chain: Chain}>()
 
-    constructor(
-        private client: ResilientRpcClient,
-        private typesBundle?: OldTypesBundle) {
-    }
+    constructor(private options: ChainManagerOptions) {}
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
         let v = this.versions.get(block.specId)
         if (v != null && v.height < block.height) return v.chain
 
         let height = Math.max(0, block.height - 1)
-        let hash = height > 0 ? block.parentHash : block.hash
-        let rtv: RuntimeVersion = await this.client.call('chain_getRuntimeVersion', [hash])
-        let specId = `${rtv.specName}@${rtv.specVersion}`
+        let specId = await this.getSpecId(height)
         v = this.versions.get(specId)
         if (v == null) {
-            let metadataHex: string = await this.client.call('state_getMetadata', [hash])
+            let meta = await this.getSpecMetadata(specId)
             v = this.versions.get(specId) // perhaps it was fetched
             if (v == null) {
-                let chain = this.createChain(rtv, metadataHex)
-                v = {chain, height}
+                let chain = this.createChain(meta)
+                v = {chain, height: meta.blockHeight}
                 this.versions.set(specId, v)
             }
         }
-        v.height = Math.min(v.height, height)
         return v.chain
     }
 
-    private createChain(rtv: RuntimeVersion, metadataHex: string): Chain {
-        let metadata = decodeMetadata(metadataHex)
+    private createChain(meta: SpecMetadata): Chain {
+        let metadata = decodeMetadata(meta.hex)
         let types: OldTypes | undefined
         if (isPreV14(metadata)) {
             let typesBundle = assertNotNull(
-                this.typesBundle || getOldTypesBundle(rtv.specName),
-                `types bundle is required for ${rtv.specName} chain`
+                this.options.typesBundle || getOldTypesBundle(meta.specName),
+                `types bundle is required for ${meta.specName} chain`
             )
-            types = getTypesFromBundle(typesBundle, rtv.specVersion)
+            types = getTypesFromBundle(typesBundle, meta.specVersion)
         }
         let description = getChainDescriptionFromMetadata(metadata, types)
-        return new Chain(description, this.client)
+        return new Chain(description, () => this.options.getChainClient())
+    }
+
+    private async getSpecId(height: number): Promise<SpecId> {
+        let res: {batch: {header: {specId: string}}[]} = await this.options.archiveRequest(`
+            query {
+                batch(fromBlock: ${height} toBlock: ${height} includeAllBlocks: true limit: 1) {
+                    header {
+                        specId
+                    }
+                }
+            }
+        `)
+        assert(res.batch.length === 1)
+        return res.batch[0].header.specId
+    }
+
+    private getSpecMetadata(specId: SpecId): Promise<SpecMetadata> {
+        return this.options.archiveRequest<{metadataById: SpecMetadata}>(`
+            query {
+                metadataById(id: "${specId}") {
+                    id
+                    specName
+                    specVersion
+                    blockHeight
+                    hex
+                }
+            }
+        `).then(res => res.metadataById)
     }
 }
 
@@ -94,12 +124,16 @@ export class Chain {
 
     constructor(
         public readonly description: ChainDescription,
-        public readonly client: ResilientRpcClient
+        private getClient: () => ResilientRpcClient
     ) {
         this.jsonCodec = new JsonCodec(description.types)
         this.scaleCodec = new ScaleCodec(description.types)
         this.events = new eac.Registry(description.types, description.event)
         this.calls = new eac.Registry(description.types, description.call)
+    }
+
+    get client(): ResilientRpcClient {
+        return this.getClient()
     }
 
     getEventHash(eventName: QualifiedName): string {

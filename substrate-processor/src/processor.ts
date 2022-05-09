@@ -1,6 +1,7 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
+import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {Chain, ChainManager} from "./chain"
@@ -24,7 +25,7 @@ export interface DataSource {
     /**
      * Chain node RPC websocket URL
      */
-    chain: string
+    chain?: string
 }
 
 
@@ -66,8 +67,6 @@ export class SubstrateProcessor<Store> {
 
     /**
      * Sets blockchain data source.
-     *
-     * Currently, requires both chain node RPC WS endpoint and archive gateway.
      *
      * @example
      * processor.setDataSource({
@@ -314,6 +313,33 @@ export class SubstrateProcessor<Store> {
         return createBatches(this.hooks, this.blockRange)
     }
 
+    @def
+    private chainClient(): ResilientRpcClient {
+        let endpoint = this.src?.chain
+        if (endpoint == null) {
+            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
+        }
+        return new ResilientRpcClient(endpoint)
+    }
+
+    @def
+    private archiveRequest(): (query: string) => Promise<any> {
+        const url = this.src?.archive
+        if (url == null) {
+            throw new Error('use .setDataSource() to specify archive url')
+        }
+        return query => graphqlRequest({url, query})
+    }
+
+    @def
+    private chainManager(): ChainManager {
+        return new ChainManager({
+            archiveRequest: this.archiveRequest(),
+            getChainClient: () => this.chainClient(),
+            typesBundle: this.typesBundle
+        })
+    }
+
     private updateProgressMetrics(lastProcessedBlock: number, time?: bigint): void {
         let totalBlocksCount = getBlocksCount(this.wholeRange(), 0, this.metrics.getChainHeight())
         let blocksLeft = getBlocksCount(this.wholeRange(), lastProcessedBlock + 1, this.metrics.getChainHeight())
@@ -349,31 +375,22 @@ export class SubstrateProcessor<Store> {
         }
 
         let ingest = new Ingest({
-            archive: assertNotNull(this.src?.archive, 'use .setDataSource() to specify archive url'),
+            archiveRequest: this.archiveRequest(),
             batches$: createBatches(this.hooks, blockRange),
             batchSize: this.batchSize,
             metrics: this.metrics
         })
-
-        let client = new ResilientRpcClient(
-            assertNotNull(this.src?.chain, 'use .setDataSource() to specify chain RPC endpoint')
-        )
 
         await ingest.fetchArchiveHeight()
         this.updateProgressMetrics(heightAtStart)
         let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
         console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
 
-        await this.process(
-            ingest,
-            new ChainManager(client, this.typesBundle)
-        )
+        return this.process(ingest)
     }
 
-    private async process(
-        ingest: Ingest,
-        chainManager: ChainManager
-    ): Promise<void> {
+    private async process(ingest: Ingest): Promise<void> {
+        let chainManager = this.chainManager()
         let lastBlock = -1
         for await (let batch of ingest.getBlocks()) {
             let beg = process.hrtime.bigint()
