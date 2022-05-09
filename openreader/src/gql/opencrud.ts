@@ -1,6 +1,7 @@
 import {Output, toCamelCase, toPlural} from "@subsquid/util"
 import assert from "assert"
-import {DocumentNode, Kind, parse, print} from "graphql"
+import { GraphQLFieldConfig, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType, GraphQLSchema, GraphQLString, printSchema, ThunkObjMap } from "graphql"
+import {DocumentNode, GraphQLEnumType, GraphQLInputObjectType, Kind, parse, print} from "graphql"
 import type {Dialect} from "../dialect"
 import type {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
 import {getOrderByMapping} from "../orderBy"
@@ -47,6 +48,22 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
     }
 
     out.block('type Query', () => {
+        for (let name in model) {
+            let item = model[name]
+            if (item.kind == 'entity') {
+                out.line(`${toCamelCase(name)}ById(id: ID!): ${name}`)
+                out.line(`${toCamelCase(name)}ByUniqueInput(where: ${name}WhereUniqueInput!): ${name} @deprecated(reason: "Use \`${toCamelCase(name)}ById\`")`)
+                out.line(`${toQueryListField(name)}${manyArguments(name)}: [${name}!]!`)
+                out.line(`${toQueryListField(name)}Connection${connectionArguments(name)}: ${toPlural(name)}Connection!`)
+            }
+            if (item.kind == 'fts') {
+                generateFtsQuery(name, item)
+            }
+        }
+    })
+
+    
+    out.block('type Subscription', () => {
         for (let name in model) {
             let item = model[name]
             if (item.kind == 'entity') {
