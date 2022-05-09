@@ -1,7 +1,7 @@
 import {AbortHandle, assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
+import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
-import fetch from "node-fetch"
 import {Batch} from "./batch"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
@@ -241,24 +241,10 @@ export class Ingest {
     }
 
     private async archiveRequest<T>(query: string): Promise<T> {
-        let response = await fetch(this.options.archive, {
-            method: 'POST',
-            body: JSON.stringify({query}),
-            headers: {
-                'content-type': 'application/json',
-                'accept': 'application/json',
-                'accept-encoding': 'gzip, br'
-            }
+        return graphqlRequest({
+            url: this.options.archive,
+            query
         })
-        if (!response.ok) {
-            let body = await response.text()
-            throw new Error(`Got http ${response.status}${body ? `, body: ${body}` : ''}`)
-        }
-        let result = await response.json()
-        if (result.errors?.length) {
-            throw new Error(`GraphQL error: ${result.errors[0].message}`)
-        }
-        return assertNotNull(result.data) as T
     }
 }
 
