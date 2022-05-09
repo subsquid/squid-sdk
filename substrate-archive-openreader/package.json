@@ -1,0 +1,16 @@
+{
+  "name": "@subsquid/substrate-archive-openreader",
+  "version": "0.0.0",
+  "description": "GraphQL server for substrate-archive",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "files": [
+    "schema.graphql"
+  ],
+  "scripts": {
+    "build": "echo build"
+  },
+  "dependencies": {
+    "@subsquid/openreader": "^0.7.0"
+  }
+}

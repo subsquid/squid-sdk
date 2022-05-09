@@ -26,6 +26,7 @@ specifiers:
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
+  '@rush-temp/substrate-archive-openreader': file:./projects/substrate-archive-openreader.tgz
   '@rush-temp/substrate-evm-processor': file:./projects/substrate-evm-processor.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
@@ -45,6 +46,7 @@ specifiers:
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
+  '@subsquid/openreader': ^0.6.0
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
   '@types/js-yaml': ^4.0.5
@@ -124,6 +126,7 @@ dependencies:
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
   '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz
+  '@rush-temp/substrate-archive-openreader': file:projects/substrate-archive-openreader.tgz_supports-color@8.1.1
   '@rush-temp/substrate-evm-processor': file:projects/substrate-evm-processor.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
@@ -143,6 +146,7 @@ dependencies:
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
+  '@subsquid/openreader': 0.6.0_supports-color@8.1.1
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
   '@types/js-yaml': 4.0.5
@@ -1442,6 +1446,38 @@ packages:
 
   /@subsquid/graphiql-console/0.2.0:
     resolution: {integrity: sha512-Wh2Oxi9JkK79Y728yDEeY7JelcY1cGiQTbzVIRMFLT2tjkkoQ69goAGXdh9QmM/ANAVrHQkBUNJOLd5oAg//oQ==}
+    dev: false
+
+  /@subsquid/openreader/0.6.0_supports-color@8.1.1:
+    resolution: {integrity: sha512-0jpZ2b4O/KgUQnsO3znuqKHanPJpkckUqUvwfULrARgbhFtskV6wFHJbl0hTmIvjXJpDrmYvvlndgVWvknpWNA==}
+    hasBin: true
+    dependencies:
+      '@graphql-tools/merge': 8.2.10_graphql@15.8.0
+      '@graphql-tools/utils': 8.6.9_graphql@15.8.0
+      '@subsquid/graphiql-console': 0.2.0
+      '@subsquid/util': 0.0.5
+      apollo-server-core: 3.7.0_graphql@15.8.0
+      apollo-server-express: 3.7.0_express@4.18.1+graphql@15.8.0
+      express: 4.18.1
+      graphql: 15.8.0
+      graphql-parse-resolve-info: 4.12.0_a935a965d6c3ecdcbd4e559d53f31c9f
+      pg: 8.7.3
+    transitivePeerDependencies:
+      - encoding
+      - pg-native
+      - supports-color
+    dev: false
+
+  /@subsquid/util-internal-hex/0.0.0:
+    resolution: {integrity: sha512-cZ+P9e+kyHRArBroXNBXs1tbROCwx877ETaM4f9M+fbGKqupZU0/IWIwcrOS0tck4evPsaZO7prmLFMSH0/8aQ==}
+    dev: false
+
+  /@subsquid/util/0.0.5:
+    resolution: {integrity: sha512-lsLccBDaALszIl7TbXTR/pnqReRViglqa7tNRWGxpf10+u31/OTW2EGDLkqtHkoUnf6uU2sspu7rHGY4vI4KHQ==}
+    dependencies:
+      '@subsquid/util-internal-hex': 0.0.0
+      camelcase: 6.3.0
+      inflected: 2.1.0
     dev: false
 
   /@substrate/connect-extension-protocol/1.0.0:
@@ -7120,6 +7156,19 @@ packages:
     dependencies:
       '@types/node': 16.11.33
       typescript: 4.5.5
+    dev: false
+
+  file:projects/substrate-archive-openreader.tgz_supports-color@8.1.1:
+    resolution: {integrity: sha512-PZdEkd5JjJCL9FF4uTHX0lD8fiDNT5JP8/k8NFdoDBKwctmXH3eCc3dHGO3DIn9+Z0PtdzxXjMiqnshH0rU4Hg==, tarball: file:projects/substrate-archive-openreader.tgz}
+    id: file:projects/substrate-archive-openreader.tgz
+    name: '@rush-temp/substrate-archive-openreader'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/openreader': 0.6.0_supports-color@8.1.1
+    transitivePeerDependencies:
+      - encoding
+      - pg-native
+      - supports-color
     dev: false
 
   file:projects/substrate-archive.tgz:

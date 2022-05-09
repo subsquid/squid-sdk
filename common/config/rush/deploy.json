@@ -19,6 +19,7 @@
    */
   "deploymentProjectNames": [
     "@subsquid/substrate-archive",
+    "@subsquid/substrate-archive-openreader",
     "e2e-test-suite"
   ],
 

@@ -505,6 +505,12 @@
       "versionPolicyName": "docker-only"
     },
     {
+      "packageName": "@subsquid/substrate-archive-openreader",
+      "projectFolder": "substrate-archive-openreader",
+      "shouldPublish": false,
+      "versionPolicyName": "docker-only"
+    },
+    {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "shouldPublish": true,

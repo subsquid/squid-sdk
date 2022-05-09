@@ -19,3 +19,13 @@ FROM node AS substrate-archive
 COPY --from=substrate-archive-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-archive
 ENTRYPOINT ["node", "/squid/substrate-archive/bin/run.js"]
+
+
+FROM builder AS substrate-archive-openreader-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-archive-openreader
+
+
+FROM node AS substrate-archive-openreader
+COPY --from=substrate-archive-openreader-builder /squid/common/deploy /squid
+WORKDIR /squid/substrate-archive-openreader
+ENTRYPOINT [ "npx", "openreader", "schema.graphql"]
