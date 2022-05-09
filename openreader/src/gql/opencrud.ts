@@ -1,6 +1,6 @@
 import {Output, toCamelCase, toPlural} from "@subsquid/util"
 import assert from "assert"
-import {DocumentNode, parse, print} from "graphql"
+import {DocumentNode, Kind, parse, print} from "graphql"
 import type {Dialect} from "../dialect"
 import type {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
 import {getOrderByMapping} from "../orderBy"
@@ -332,7 +332,7 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
     function generateDescription(description?: string): void {
         if (description) {
             out.line(print({
-                kind: 'StringValue',
+                kind: Kind.STRING,
                 value: description
             }))
         }

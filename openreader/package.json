@@ -24,26 +24,31 @@
     "test": "make up && sleep 1 && make test test-cockroach && make down || (make down && exit 1)"
   },
   "dependencies": {
-    "@graphql-tools/merge": "^8",
-    "@graphql-tools/utils": "^8",
-    "@subsquid/graphiql-console": "^0.2.0",
-    "@subsquid/util": "^0.0.5",
-    "apollo-server-core": "^3.6.2",
-    "apollo-server-express": "^3.6.2",
-    "express": "^4.17.2",
-    "graphql": "^15.8.0",
-    "graphql-parse-resolve-info": "^4.12.0",
-    "pg": "^8.7.3"
+    "@graphql-tools/merge": "8",
+    "@graphql-tools/utils": "8",
+    "@subsquid/graphiql-console": "0.2.0",
+    "@subsquid/util": "0.0.5",
+    "apollo-server-core": "3.6.2",
+    "apollo-server-express": "3.6.2",
+    "express": "4.17.2",
+    "graphql": "16.4.0",
+    "graphql-parse-resolve-info": "4.12.0",
+    "pg": "8.7.3",
+    "@graphql-tools/schema": "8",
+    "graphql-ws": "5.8.1",
+    "ws": "8.6.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.13",
-    "@types/mocha": "^9.1.0",
-    "@types/node": "^16.11.22",
-    "@types/pg": "^8.6.4",
-    "dotenv": "^10.0.0",
-    "expect": "^27.4.6",
-    "gql-test-client": "^0.0.0",
-    "mocha": "^9.2.0",
-    "typescript": "~4.5.5"
+    "ts-node": "10.7.0",
+    "@types/express": "4.17.13",
+    "@types/mocha": "9.1.0",
+    "@types/node": "16.11.22",
+    "@types/pg": "8.6.4",
+    "@types/ws": "8.5.3",
+    "dotenv": "10.0.0",
+    "expect": "27.4.6",
+    "gql-test-client": "0.0.0",
+    "mocha": "9.2.0",
+    "typescript": "4.5.5"
   }
 }

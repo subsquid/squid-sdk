@@ -3,8 +3,7 @@ import {createPoolConfig} from "./db"
 import {serve} from "./server"
 import {loadModel} from "./tools"
 
-
-module.exports = function main() {
+function main() {
     let args = process.argv.slice(2)
 
     if (args.indexOf('--help') >= 0) {
@@ -19,7 +18,7 @@ module.exports = function main() {
 
     let model = loadModel(args[0])
     let db = new Pool(createPoolConfig())
-    let port = process.env.GRAPHQL_SERVER_PORT || 3000
+    let port = parseInt(process.env.GRAPHQL_SERVER_PORT!, 10) || 3000
 
     serve({model, db, port}).then(
         () => {
@@ -49,3 +48,5 @@ Can be configured using the following environment variables:
     GRAPHQL_SERVER_PORT
 `)
 }
+
+export default main

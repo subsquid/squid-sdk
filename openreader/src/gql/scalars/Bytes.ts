@@ -6,16 +6,16 @@ import {invalidFormat} from "../../util"
 export const BytesScalar = new GraphQLScalarType({
     name: 'Bytes',
     description: 'Binary data encoded as a hex string always prefixed with 0x',
-    serialize(value: string | Buffer) {
+    serialize(value) {
         if (typeof value == 'string') {
             if (!isHex(value)) throw invalidFormat('Bytes', value)
             return value.toLowerCase()
         } else {
-            return '0x' + value.toString('hex')
+            return '0x' + (value as Buffer).toString('hex')
         }
     },
-    parseValue(value: string) {
-        return decodeHex(value)
+    parseValue(value) {
+        return decodeHex(value as string)
     },
     parseLiteral(ast) {
         switch(ast.kind) {

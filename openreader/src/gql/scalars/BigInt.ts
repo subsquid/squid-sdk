@@ -2,15 +2,15 @@ import {GraphQLScalarType} from "graphql"
 import {invalidFormat} from "../../util"
 
 
-export const BigIntScalar = new GraphQLScalarType({
+export const BigIntScalar = new GraphQLScalarType<bigint | null, string>({
     name: 'BigInt',
     description: 'Big number integer',
-    serialize(value: number | string | bigint) {
+    serialize(value) {
         return ''+value
     },
-    parseValue(value: string) {
-        if (!isBigInt(value)) throw invalidFormat('BigInt', value)
-        return BigInt(value)
+    parseValue(value) {
+        if (!isBigInt(value as string)) throw invalidFormat('BigInt', value as string)
+        return BigInt(value as bigint)
     },
     parseLiteral(ast) {
         switch(ast.kind) {

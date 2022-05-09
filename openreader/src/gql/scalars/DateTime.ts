@@ -6,16 +6,16 @@ export const DateTimeScalar = new GraphQLScalarType({
     name: 'DateTime',
     description:
         'A date-time string in simplified extended ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)',
-    serialize(value: Date | string) {
+    serialize(value) {
         if (value instanceof Date) {
             return value.toISOString()
         } else {
-            if (!isIsoDateTimeString(value)) throw invalidFormat('DateTime', value)
+            if (!isIsoDateTimeString(value as string)) throw invalidFormat('DateTime', value as string)
             return value
         }
     },
-    parseValue(value: string) {
-        return parseDateTime(value)
+    parseValue(value) {
+        return parseDateTime(value as string)
     },
     parseLiteral(ast) {
         switch(ast.kind) {
