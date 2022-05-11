@@ -1,5 +1,4 @@
 DB="postgres://postgres:postgres@localhost:29387/archive"
-COCKROACH="postgres://root@localhost:30000/defaultdb"
 
 
 kusama:
@@ -19,15 +18,9 @@ kusama:
 
 moonriver:
 	@node lib/main.js --out $(DB) \
-		-e wss://moonriver-rpc.dwellir.com \
-		-e wss://moonriver-rpc.dwellir.com \
-		-e wss://moonriver-rpc.dwellir.com \
-		-e wss://moonriver-rpc.dwellir.com \
 		-e wss://moonriver.api.onfinality.io/public-ws \
 		-e wss://moonriver.api.onfinality.io/public-ws \
 		-e wss://moonriver.api.onfinality.io/public-ws \
-		-e wss://moonriver.api.onfinality.io/public-ws \
-		-e wss://moonriver.api.onfinality.io/public-ws
 		--start-block 344698
 
 
