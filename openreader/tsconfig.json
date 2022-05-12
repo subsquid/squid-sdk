@@ -9,7 +9,10 @@
         "sourceMap": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "noImplicitAny": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
     },
     "include": ["src"],
     "exclude": ["node_modules"]
