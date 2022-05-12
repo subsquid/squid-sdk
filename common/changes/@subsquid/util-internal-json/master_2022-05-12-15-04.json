@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-json",
+      "comment": "first release",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-json"
+}

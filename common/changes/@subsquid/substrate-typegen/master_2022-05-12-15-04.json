@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "support `.getMany...()` queries for storage items",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
