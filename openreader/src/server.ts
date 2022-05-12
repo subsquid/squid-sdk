@@ -1,16 +1,16 @@
-import {ApolloServerPluginDrainHttpServer} from "apollo-server-core"
-import {ApolloServer} from "apollo-server-express"
-import express from "express"
-import type {Pool} from "pg"
-import {PoolTransaction} from "./db"
-import {Dialect} from "./dialect"
-import {buildServerSchema} from "./gql/opencrud"
-import type {Model} from "./model"
-import {buildResolvers} from "./resolver"
-import { createServer } from "http"
 import { makeExecutableSchema } from "@graphql-tools/schema"
+import { ApolloServerPluginDrainHttpServer } from "apollo-server-core"
+import { ApolloServer } from "apollo-server-express"
+import express from "express"
+import { useServer } from 'graphql-ws/lib/use/ws'
+import { createServer } from "http"
+import type { Pool } from "pg"
 import { WebSocketServer } from "ws"
-import { useServer } from 'graphql-ws/lib/use/ws';
+import { PoolTransaction } from "./db"
+import { Dialect } from "./dialect"
+import { buildServerSchema } from "./gql/opencrud"
+import type { Model } from "./model"
+import { buildResolvers } from "./resolver"
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let { model, db } = options;
@@ -26,7 +26,13 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         server: httpServer,
         path: "/graphql",
     });
-    const serverCleanup = useServer({ schema }, wsServer);
+    const serverCleanup = useServer({
+        context: () => ({
+            db,
+            openReaderTransaction: new PoolTransaction(db)
+        }),
+        schema
+    }, wsServer);
 
     const server = new ApolloServer({
         schema,
