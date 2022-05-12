@@ -20,6 +20,11 @@ export class SystemAccountStorage {
     return this.ctx._chain.getStorage(this.ctx.block.hash, 'System', 'Account', key)
   }
 
+  async getManyAsV1(keys: Uint8Array[]): Promise<(v1.AccountInfoWithRefCount)[]> {
+    assert(this.isV1)
+    return this.ctx._chain.queryStorage(this.ctx.block.hash, 'System', 'Account', keys.map(k => [k]))
+  }
+
   /**
    * Checks whether the storage item is defined for the current chain version.
    */

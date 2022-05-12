@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/util-internal-json",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/util-internal-json_v0.0.0",
+      "date": "Thu, 12 May 2022 15:07:10 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "first release"
+          }
+        ]
+      }
+    }
+  ]
+}

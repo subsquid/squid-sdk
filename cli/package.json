@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/cli",
   "description": "squid cli tool",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -62,7 +62,7 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-processor": "^0.7.2",
+    "@subsquid/substrate-processor": "^0.8.0",
     "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
     "@types/js-yaml": "^4.0.5",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+This log was last generated on Thu, 12 May 2022 15:07:10 GMT and should not be manually modified.
+
+## 0.8.0
+Thu, 12 May 2022 15:07:10 GMT
+
+### Minor changes
+
+- support `.getMany...()` queries for storage items
 
 ## 0.7.2
 Thu, 05 May 2022 20:47:14 GMT

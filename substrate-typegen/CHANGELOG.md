@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+This log was last generated on Thu, 12 May 2022 15:07:10 GMT and should not be manually modified.
+
+## 0.5.0
+Thu, 12 May 2022 15:07:10 GMT
+
+### Minor changes
+
+- support `.getMany...()` queries for storage items
 
 ## 0.4.3
 Thu, 05 May 2022 20:47:14 GMT

@@ -183,20 +183,39 @@ export class Chain {
     async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
         let item = this.getStorageItem(prefix, name)
         assert(item.keys.length === keys.length)
-        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
-        for (let i = 0; i < keys.length; i++) {
-            req += sto.getKeyHash(
-                item.hashers[i],
-                this.scaleCodec.encodeToBinary(item.keys[i], keys[i])
-            ).slice(2)
-        }
+        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
         let res = await this.client.call('state_getStorageAt', [req, blockHash])
-        if (res == null) {
+        return this.decodeStorageValue(item, res)
+    }
+
+    async queryStorage(blockHash: string, prefix: string, name: string, keyList: any[][]): Promise<any[]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+        let query = keyList.map(keys => {
+            return storageHash + this.getStorageItemKeysHash(item, keys)
+        })
+        let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            'state_queryStorageAt',
+            [query, blockHash]
+        )
+        assert(res.length == 1)
+        // Response from chain node can't contain key duplicates,
+        // but our query list can, hence the following
+        // value matching procedure
+        let changes = new Map(res[0].changes)
+        return query.map(k => {
+            let v = changes.get(k)
+            return this.decodeStorageValue(item, v)
+        })
+    }
+
+    private decodeStorageValue(item: StorageItem, value: any) {
+        if (value == null) {
             switch(item.modifier) {
                 case 'Optional':
                     return undefined
                 case 'Default':
-                    res = item.fallback
+                    value = item.fallback
                     break
                 case 'Required':
                     throw new Error(`Required storage item not found`)
@@ -204,7 +223,18 @@ export class Chain {
                     throw unexpectedCase(item.modifier)
             }
         }
-        return this.scaleCodec.decodeBinary(item.value, res)
+        return this.scaleCodec.decodeBinary(item.value, value)
+    }
+
+    private getStorageItemKeysHash(item: StorageItem, keys: any[]) {
+        let hash = ''
+        for (let i = 0; i < keys.length; i++) {
+            hash += sto.getKeyHash(
+                item.hashers[i],
+                this.scaleCodec.encodeToBinary(item.keys[i], keys[i])
+            ).slice(2)
+        }
+        return hash
     }
 
     private getStorageItem(prefix: string, name: string): StorageItem {

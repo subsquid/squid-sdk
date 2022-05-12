@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-evm-processor",
   "entries": [
     {
+      "version": "0.0.6",
+      "tag": "@subsquid/substrate-evm-processor_v0.0.6",
+      "date": "Thu, 12 May 2022 15:07:10 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-processor\" from `^0.7.2` to `^0.8.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/substrate-evm-processor_v0.0.5",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",

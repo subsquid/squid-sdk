@@ -200,11 +200,20 @@ export class Typegen {
                                 return `key${idx + 1}`
                             }
                         })
-                        let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`].concat(keyNames)
-                        out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
-                            out.line(`assert(this.is${versionName})`)
-                            out.line(`return this.ctx._chain.getStorage(${args.join(', ')})`)
+
+                        let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`]
+                        out.block(`async getAsV${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                            out.line(`assert(this.isV${versionName})`)
+                            out.line(`return this.ctx._chain.getStorage(${args.concat(keyNames).join(', ')})`)
                         })
+                        if (keyNames.length > 0) {
+                            out.line()
+                            out.block(`async getManyAsV${versionName}(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
+                                out.line(`assert(this.isV${versionName})`)
+                                let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
+                                out.line(`return this.ctx._chain.queryStorage(${args.concat(query).join(', ')})`)
+                            })
+                        }
                     }
                 })
                 out.line()
