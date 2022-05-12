@@ -602,7 +602,7 @@
     },
     {
       "packageName": "@subsquid/util-internal-json",
-      "projectFolder": "util-internal-json",
+      "projectFolder": "util/util-internal-json",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },
