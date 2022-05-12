@@ -147,40 +147,32 @@ export class Chain {
     async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
         let item = this.getStorageItem(prefix, name)
         assert(item.keys.length === keys.length)
-        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getKeysHash(item, ...keys)
+        let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
         let res = await this.client.call('state_getStorageAt', [req, blockHash])
         return this.decodeStorageValue(item, res)
     }
 
-    async queryStorage(blockHash: string, prefix: string, name: string, keysArray: any[]) {
+    async queryStorage(blockHash: string, prefix: string, name: string, keyList: any[][]): Promise<any[]> {
         let item = this.getStorageItem(prefix, name)
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
-        let query = new Array(keysArray.length)
-        for (let i = 0; i < keysArray.length; i++){
-            let keys = keysArray[i]
-            if (item.keys.length > 1) {
-                assert(item.keys.length === keys.length)
-                query[i] = storageHash + this.getKeysHash(item, ...keys)
-            } else {
-                query[i] = storageHash + this.getKeysHash(item, keys)
-            }
-        }
-        let res = await this.client.call('state_queryStorageAt', [query, blockHash])
-        let changes: [string, string][] = res[0].changes
-        let results = new Array(query.length)
-        if (changes.length === results.length) {
-            for (let i = 0; i < results.length; i++) {
-                results[i] = this.decodeStorageValue(item, changes[i][1])
-            }
-        } else {
-            for (let i = 0; i < results.length; i++) {
-                let value = changes.find(change => change[0] === query[i])?.[1]
-                results[i] = value == null ? null : this.decodeStorageValue(item, value)
-            }
-        }
-        return results
+        let query = keyList.map(keys => {
+            return storageHash + this.getStorageItemKeysHash(item, keys)
+        })
+        let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            'state_queryStorageAt',
+            [query, blockHash]
+        )
+        assert(res.length == 1)
+        // Response from chain node can't contain key duplicates,
+        // but our query list can, hence the following
+        // value matching procedure
+        let changes = new Map(res[0].changes)
+        return query.map(k => {
+            let v = changes.get(k)
+            return this.decodeStorageValue(item, v)
+        })
     }
-    
+
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {
@@ -198,7 +190,7 @@ export class Chain {
         return this.scaleCodec.decodeBinary(item.value, value)
     }
 
-    private getKeysHash(item: StorageItem, ...keys: any[]) {
+    private getStorageItemKeysHash(item: StorageItem, keys: any[]) {
         let hash = ''
         for (let i = 0; i < keys.length; i++) {
             hash += sto.getKeyHash(

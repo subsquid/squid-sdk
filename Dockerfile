@@ -42,6 +42,7 @@ ADD test/types/package.json test/types/
 ADD typeorm-config/package.json typeorm-config/
 ADD util/package.json util/
 ADD util-internal-hex/package.json util-internal-hex/
+ADD util-internal-json/package.json util-internal-json/
 ADD util-xxhash/package.json util-xxhash/
 ADD workspace/package.json workspace/
 RUN node common/scripts/install-run-rush.js install
@@ -99,6 +100,8 @@ ADD util/src util/src
 ADD util/tsconfig.json util/
 ADD util-internal-hex/src util-internal-hex/src
 ADD util-internal-hex/tsconfig.json util-internal-hex/
+ADD util-internal-json/src util-internal-json/src
+ADD util-internal-json/tsconfig.json util-internal-json/
 ADD util-xxhash/src util-xxhash/src
 ADD util-xxhash/tsconfig.json util-xxhash/
 ADD workspace/src workspace/src

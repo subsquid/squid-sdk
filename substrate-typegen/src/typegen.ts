@@ -217,9 +217,10 @@ export class Typegen {
                         })
                         if (keyNames.length > 0) {
                             out.line()
-                            out.block(`async queryAsV${v.chain.specVersion}(keys: ${keyTypes.length > 1 ? `[${params.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType} | null)[]>`, () => {
+                            out.block(`async getManyAsV${v.chain.specVersion}(keys: ${keyNames.length > 1 ? `[${params.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
                                 out.line(`assert(this.isV${v.chain.specVersion})`)
-                                out.line(`return this.ctx._chain.queryStorage(${args.concat(`keys`).join(', ')})`)
+                                let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
+                                out.line(`return this.ctx._chain.queryStorage(${args.concat(query).join(', ')})`)
                             })
                         }
                     }
