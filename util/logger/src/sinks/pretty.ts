@@ -1,8 +1,8 @@
+import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import {stderr as stderrColor} from "supports-color"
 import {LogLevel} from "../level"
 import {LogRecord} from "../logger"
-import {toHex} from "./json"
 
 
 export class Printer {

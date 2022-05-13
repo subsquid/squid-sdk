@@ -1,16 +1,9 @@
-import assert from "assert"
 import {decodeHex} from "@subsquid/util-internal-hex"
+import {toJSON} from "@subsquid/util-internal-json"
+import assert from "assert"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
 import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
-import {
-    checkSignedInt,
-    checkUnsignedInt,
-    isObject,
-    throwUnexpectedCase,
-    toJSON,
-    toSignedBigInt,
-    toUnsignedBigInt
-} from "./util"
+import {checkSignedInt, checkUnsignedInt, isObject, throwUnexpectedCase, toSignedBigInt, toUnsignedBigInt} from "./util"
 
 
 export class JsonCodec {

@@ -14,6 +14,14 @@ export function toJSON(val: unknown): any {
                 return val.toISOString()
             } else if (typeof (val as any).toJSON == 'function' && (json = (val as any).toJSON()) !== val) {
                 return toJSON(json)
+            } else if (val instanceof Error) {
+                json = toJsonObject(val)
+                if (val.stack) {
+                    json.stack = val.stack
+                } else {
+                    json.stack = val.toString()
+                }
+                return json
             } else if (Array.isArray(val)) {
                 return toJsonArray(val)
             }  else {

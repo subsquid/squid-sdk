@@ -17,7 +17,8 @@
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^0.0.0"
+    "@subsquid/util-internal-hex": "^0.0.0",
+    "@subsquid/util-internal-json": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",
