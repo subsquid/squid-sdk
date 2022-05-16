@@ -2,7 +2,7 @@ import { makeExecutableSchema } from "@graphql-tools/schema"
 import { ApolloServerPluginDrainHttpServer } from "apollo-server-core"
 import { ApolloServer } from "apollo-server-express"
 import express from "express"
-import { useServer } from 'graphql-ws/lib/use/ws'
+import { useServer } from "graphql-ws/lib/use/ws"
 import { createServer } from "http"
 import type { Pool } from "pg"
 import { WebSocketServer } from "ws"

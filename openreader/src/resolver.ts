@@ -2,14 +2,14 @@ import type { IFieldResolver, IFieldResolverOptions, IResolvers } from "@graphql
 import { toCamelCase } from "@subsquid/util"
 import { UserInputError } from "apollo-server-core"
 import assert from "assert"
-import deepEqual from 'deep-equal'
+import deepEqual from "deep-equal"
 import type { GraphQLResolveInfo } from "graphql"
 import { Pool } from "pg"
 import { Database, PoolTransaction, Transaction } from "./db"
 import type { Dialect } from "./dialect"
 import { customScalars } from "./gql/scalars"
 import type { Entity, JsonObject, Model } from "./model"
-import { ListArgs, QueryBuilder } from "./queryBuilder"
+import { QueryBuilder } from "./queryBuilder"
 import {
     ConnectionArgs as RelayConnectionArgs,
     ConnectionEdge,
@@ -18,7 +18,7 @@ import {
     encodeCursor,
     PageInfo
 } from "./relayConnection"
-import { connectionRequestedFields, ftsRequestedFields, RequestedFields, requestedFields } from "./requestedFields"
+import { connectionRequestedFields, ftsRequestedFields, requestedFields } from "./requestedFields"
 import { ensureArray, toQueryListField, unsupportedCase } from "./util"
 
 
@@ -37,13 +37,6 @@ export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unkno
         let item = model[name]
         switch(item.kind) {
             case 'entity':
-                Subscription[toQueryListField(name)] = {
-                    resolve: (result) => result,
-                    subscribe: async (source, args, context, info) => {
-                        let fields = requestedFields(model, name, info)
-                        return asyncIterable(model, dialect, context.db!, name, args, fields)
-                    }
-                }
                 Query[toQueryListField(name)] = async (source, args, context, info) => {
                     let fields = requestedFields(model, name, info)
                     let db = await context.openReaderTransaction.get()
@@ -115,6 +108,18 @@ export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unkno
         resolvers[name] = fields
     }
 
+    for (const key in resolvers.Query) {
+        // @ts-ignore
+        const resolver: IFieldResolver<unknown, ResolverContext> = resolvers.Query[key]
+        Subscription[key] = {
+            resolve: (data) => data,
+            subscribe: async (source, args, context, info) => {
+                context.openReaderTransaction.get = async () => await new PoolTransaction(context.db!).get()
+                return subscribe(() => resolver(source, args, context, info))
+            }
+        }
+    }
+
     return resolvers
 }
 
@@ -139,28 +144,19 @@ interface ConnectionResponse extends RelayConnectionResponse<any> {
     totalCount?: number
 }
 
-// FIXME test implementation
-async function* asyncIterable(
-    model: Model,
-    dialect: Dialect,
-    db: Pool,
-    name: string,
-    args: ListArgs,
-    fields: RequestedFields
+async function* subscribe(
+    resolve: () => Promise<IFieldResolver<unknown, ResolverContext>>
 ) {
     let prevResult;
     while (true) {
-        let transaction = await new PoolTransaction(db).get()
         await new Promise((resolve) => setTimeout(resolve, 1000))
-        const result = await new QueryBuilder(model, dialect, transaction).executeSelect(name, args, fields)
-        console.log(prevResult, result)
+        const result = await resolve()
         if (deepEqual(prevResult, result))
             continue
         prevResult = result
         yield result
     }
 }
-
 
 async function resolveEntityConnection(
     model: Model,
