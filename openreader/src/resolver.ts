@@ -113,10 +113,8 @@ export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unkno
         const resolver: IFieldResolver<unknown, ResolverContext> = resolvers.Query[key]
         Subscription[key] = {
             resolve: (data) => data,
-            subscribe: async (source, args, context, info) => {
-                context.openReaderTransaction.get = async () => await new PoolTransaction(context.db!).get()
-                return subscribe(() => resolver(source, args, context, info))
-            }
+            subscribe: async (source, args, context, info) =>
+                subscribe(context, (context) => resolver(source, args, context, info))
         }
     }
 
@@ -145,16 +143,21 @@ interface ConnectionResponse extends RelayConnectionResponse<any> {
 }
 
 async function* subscribe(
-    resolve: () => Promise<IFieldResolver<unknown, ResolverContext>>
+    context: ResolverContext,
+    resolve: (context: ResolverContext) => Promise<IFieldResolver<unknown, ResolverContext>>
 ) {
+    let i = 0
     let prevResult;
     while (true) {
+        context.openReaderTransaction.get = async () => await new PoolTransaction(context.db!).get()
+        const result = await resolve(context)
+        if (!deepEqual(prevResult, result)) {
+            prevResult = result
+            yield result
+        }
+        i++
+        console.log(i)
         await new Promise((resolve) => setTimeout(resolve, 1000))
-        const result = await resolve()
-        if (deepEqual(prevResult, result))
-            continue
-        prevResult = result
-        yield result
     }
 }
 
