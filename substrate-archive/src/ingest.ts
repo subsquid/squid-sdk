@@ -1,4 +1,3 @@
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {Codec} from "@subsquid/scale-codec"
 import {
     decodeExtrinsic,
@@ -14,13 +13,14 @@ import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBund
 import {assertNotNull, wait} from "@subsquid/util-internal"
 import assert from "assert"
 import {CallParser} from "./callParser"
+import {Client} from "./client"
 import {SpecInfo, sub} from "./interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "./model"
 import {blake2bHash, EVENT_STORAGE_KEY, formatId, getBlockTimestamp, splitSpecId, unwrapArguments} from "./util"
 
 
 export interface IngestOptions {
-    clients: ResilientRpcClient[]
+    client: Client
     typesBundle?: OldTypesBundle
     startBlock?: number
 }
@@ -33,21 +33,17 @@ export class Ingest {
 
     private initialBlock: number
     private stridesHead: number
-    private clients: ResilientRpcClient[]
-    private idle: ResilientRpcClient[]
+    private client: Client
     private typesBundle?: OldTypesBundle
     private _specInfo?: SpecInfo
     private strides: Promise<RawBlockData[] | Error>[] = []
-    private maxStrides
+    private maxStrides = 10
     private readonly strideSize = 10
     private specs: BlockSpec[] = []
     private chainHeight = 0
 
     private constructor(options: IngestOptions) {
-        assert(options.clients.length > 0, 'no chain client to work with')
-        this.clients = options.clients
-        this.idle = this.clients.slice()
-        this.maxStrides = Math.max(this.clients.length * 10)
+        this.client = options.client
         this.typesBundle = options.typesBundle
         if (options.startBlock) {
             assert(options.startBlock >= 0)
@@ -61,8 +57,10 @@ export class Ingest {
     private async *loop(): AsyncGenerator<BlockData> {
         await this.init()
         while (true) {
-            await this.waitForChain()
-            this.useIdleClients()
+            if (this.strides.length == 0) {
+                await this.waitForChain()
+            }
+            this.scheduleStrides()
             let blocks = await assertNotNull(this.strides.shift())
             if (blocks instanceof Error) throw blocks
             for (let raw of blocks) {
@@ -87,47 +85,32 @@ export class Ingest {
     }
 
     private async waitForChain(): Promise<void> {
-        let client = this.clients[0]
         while (this.chainHeight < this.stridesHead) {
-            this.chainHeight = await this.getChainHeight(client)
+            this.chainHeight = await this.getChainHeight()
             if (this.chainHeight >= this.stridesHead) return
             await wait(1000)
         }
     }
 
-    private useIdleClients(): void {
-        let client: ResilientRpcClient | undefined
-        let vacant = Math.min(
-            this.maxStrides - this.strides.length,
-            Math.ceil((this.chainHeight - this.stridesHead + 1) / this.strideSize)
-        )
-        while (vacant > 0 && (client = this.idle.pop())) {
-            this.fetchLoop(client).catch()
-            vacant -= 1
-        }
-    }
-
-    private async fetchLoop(client: ResilientRpcClient): Promise<void> {
+    private scheduleStrides(): void {
         while (this.strides.length <= this.maxStrides && this.chainHeight >= this.stridesHead) {
             let size = Math.min(this.strideSize, this.chainHeight - this.stridesHead + 1)
             let height = this.stridesHead
             this.stridesHead += size
-            let promise = this.fetchStride(client, height, size).catch(err => err)
+            let promise = this.fetchStride(height, size).catch(err => err)
             this.strides.push(promise)
-            await promise
         }
-        this.idle.push(client)
     }
 
-    private async fetchStride(client: ResilientRpcClient, height: number, size: number): Promise<RawBlockData[]> {
+    private async fetchStride(height: number, size: number): Promise<RawBlockData[]> {
         assert(size > 0)
         let last = height + size - 1
-        let blockHash =  await client.call<string>("chain_getBlockHash", [last])
+        let blockHash =  await this.client.call<string>(height, "chain_getBlockHash", [last])
         let result: RawBlockData[] = new Array(size)
         for (let i = size - 1; i >= 0; i--) {
             let [signedBlock, events] = await Promise.all([
-                client.call<sub.SignedBlock>("chain_getBlock", [blockHash]),
-                client.call<string>("state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
+                this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash]),
+                this.client.call<string>(height, "state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
             ])
             let blockHeight = parseInt(signedBlock.block.header.number)
             assert(blockHeight === height + i)
@@ -212,19 +195,17 @@ export class Ingest {
     }
 
     private async init(): Promise<void> {
-        let client = this.clients[0]
         let height = this.initialBlock == 0 ? 0 : this.initialBlock - 1
-        let spec = await this.getSpec(client, height)
-        this._specInfo = await this.getSpecInfo(client, spec.blockHash, spec.specId)
-        this.chainHeight = await this.getChainHeight(client)
+        let spec = await this.getSpec(height)
+        this._specInfo = await this.getSpecInfo(spec.blockHash, spec.specId)
+        this.chainHeight = await this.getChainHeight()
     }
 
     private async getSpecInfo(
-        client: ResilientRpcClient,
         blockHash: string,
         specId: string
     ): Promise<SpecInfo> {
-        let rawMetadata: string = await client.call("state_getMetadata", [blockHash])
+        let rawMetadata: string = await this.client.call("state_getMetadata", [blockHash])
         let metadata = decodeMetadata(rawMetadata)
         let oldTypes: OldTypes | undefined
         if (isPreV14(metadata)) {
@@ -257,21 +238,20 @@ export class Ingest {
                 return false
             }
         }
-        let client = this.clients[0]
         let h = rec == null ? Math.min(height + 5000, this.chainHeight) : height + Math.floor((rec.blockHeight - height)/2)
         while (rec == null || rec.blockHeight > height) {
-            rec = await this.getSpec(client, h)
+            rec = await this.getSpec(h)
             this.specs.push(rec)
             if (rec.specId == this.specInfo.specId) return false
             h = height + Math.floor((h - height)/2)
         }
-        this._specInfo = await this.getSpecInfo(client, rec.blockHash, rec.specId)
+        this._specInfo = await this.getSpecInfo(rec.blockHash, rec.specId)
         return true
     }
 
-    private async getSpec(client: ResilientRpcClient, height: number): Promise<BlockSpec> {
-        let blockHash = await client.call<string>("chain_getBlockHash", [height])
-        let rt = await client.call<sub.RuntimeVersion>('chain_getRuntimeVersion', [blockHash])
+    private async getSpec(height: number): Promise<BlockSpec> {
+        let blockHash = await this.client.call<string>(height, "chain_getBlockHash", [height])
+        let rt = await this.client.call<sub.RuntimeVersion>(height, 'chain_getRuntimeVersion', [blockHash])
         return {
             blockHeight: height,
             blockHash,
@@ -279,9 +259,9 @@ export class Ingest {
         }
     }
 
-    private async getChainHeight(client: ResilientRpcClient): Promise<number> {
-        let hash = await client.call('chain_getFinalizedHead')
-        let header = await client.call<sub.BlockHeader>('chain_getHeader', [hash])
+    private async getChainHeight(): Promise<number> {
+        let hash = await this.client.call('chain_getFinalizedHead')
+        let header = await this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
         let height = parseInt(header.number)
         assert(Number.isSafeInteger(height))
         return height

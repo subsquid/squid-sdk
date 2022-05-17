@@ -1,5 +1,6 @@
 import {w3cwebsocket as WebSocket} from "websocket"
 import {RpcErrorInfo, RpcResponse} from "./rpc"
+
 const MEGABYTE = 1024 * 1024
 
 
@@ -19,6 +20,8 @@ export class RpcClient {
     private ws: WebSocket
     private connection: Promise<void>
     private error?: Error
+    private _connected = false
+    public onclose?: (err: Error) => void
 
     constructor(private url: string) {
         this.ws = new WebSocket(this.url, undefined, undefined, undefined, undefined, {
@@ -34,6 +37,7 @@ export class RpcClient {
 
         this.connection = new Promise((resolve, reject) => {
             this.ws.onopen = () => {
+                this._connected = true
                 for (let i = 0; i < this.sendQueue.length; i++) {
                     this.ws.send(this.sendQueue[i])
                 }
@@ -50,8 +54,10 @@ export class RpcClient {
                 let err = this.error || new RpcConnectionError('Connection was closed')
                 this.setError(err)
                 reject(err)
+                this.onclose?.(err)
             }
         })
+
         this.connection.catch(err => {})
 
         this.ws.onmessage = event => {
@@ -125,6 +131,10 @@ export class RpcClient {
     connect(): Promise<void> {
         if (this.error) return Promise.reject(this.error)
         return this.connection
+    }
+
+    get isConnected(): boolean {
+        return this._connected && this.error == null
     }
 
     call<T=any>(method: string, params?: unknown[]): Promise<T> {

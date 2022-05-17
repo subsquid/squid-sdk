@@ -8,6 +8,7 @@ import * as fs from "fs"
 import path from "path"
 import * as pg from "pg"
 import {migrate} from "postgres-migrations"
+import {Client} from "./client"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 
@@ -43,8 +44,6 @@ runProgram(async () => {
     let writeSpeed = new Speed()
     let progress = new Progress()
     progress.setInitialValue(startBlock)
-
-    let clients = options.endpoint.map(url => new ResilientRpcClient(url))
 
     let sink: Sink
     if (options.out) {
@@ -89,8 +88,10 @@ runProgram(async () => {
         console.error(`last block: ${progress.getCurrentValue()}, processing: ${Math.round(progress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
+    let client = new Client(options.endpoint)
+
     let blocks = Ingest.getBlocks({
-        clients,
+        client,
         typesBundle,
         startBlock
     })

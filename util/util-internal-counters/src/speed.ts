@@ -3,10 +3,14 @@ import assert from "assert"
 
 export class Speed {
     private window: {time: bigint, value: number}[] = []
+    private tail = 0
     private value = 0
     private time = 0n
     private m?: bigint
-    private windowSize = 50
+
+    constructor(private readonly windowSize = 50) {
+        assert(this.windowSize > 0)
+    }
 
     start(time?: bigint): void {
         this.m = time ?? process.hrtime.bigint()
@@ -19,16 +23,14 @@ export class Speed {
         this.time += time - this.m
         this.m = undefined
         this.value += val
-        this.window.push({time: this.time, value: this.value})
-        if (this.window.length > this.windowSize) {
-            this.window.shift()
-        }
+        this.window[this.tail] = {time: this.time, value: this.value}
+        this.tail = (this.tail + 1) % this.windowSize
     }
 
     speed(): number {
         if (this.window.length < 2) return 0
-        let beg = this.window[0]
-        let end = this.window[this.window.length - 1]
+        let beg = this.window.length < this.windowSize ? this.window[0] : this.window[this.tail]
+        let end = this.window[(this.windowSize + this.tail - 1) % this.windowSize]
         let duration = end.time - beg.time
         let inc = end.value - beg.value
         return inc * 1000_000_000 / Number(duration)

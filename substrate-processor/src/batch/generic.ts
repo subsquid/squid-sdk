@@ -1,5 +1,5 @@
 import {assertNotNull} from "@subsquid/util-internal"
-import {Heap} from "../util/heap"
+import {Heap} from "@subsquid/util-internal-binary-heap"
 import {Range, rangeDifference, rangeIntersection} from "../util/range"
 
 

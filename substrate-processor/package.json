@@ -22,6 +22,7 @@
     "@subsquid/substrate-metadata": "^0.8.3",
     "@subsquid/typeorm-config": "^0.0.5",
     "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-binary-heap": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-internal-gql-request": "^0.0.0",

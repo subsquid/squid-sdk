@@ -559,6 +559,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal-binary-heap",
+      "projectFolder": "util/util-internal-binary-heap",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-internal-code-printer",
       "projectFolder": "util/util-internal-code-printer",
       "shouldPublish": true,

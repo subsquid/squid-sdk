@@ -35,6 +35,7 @@ specifiers:
   '@rush-temp/typeorm-store': file:./projects/typeorm-store.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
+  '@rush-temp/util-internal-binary-heap': file:./projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:./projects/util-internal-gql-request.tgz
@@ -134,6 +135,7 @@ dependencies:
   '@rush-temp/typeorm-store': file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
+  '@rush-temp/util-internal-binary-heap': file:projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:projects/util-internal-gql-request.tgz
@@ -7006,7 +7008,7 @@ packages:
     dev: false
 
   file:projects/logger.tgz:
-    resolution: {integrity: sha512-fdsKoLtyCSlamB439A9cAgDtD/Y8zR2CasUiB9FKClk8d8oKMOuxGw84mvJ50r7OztOP/he+fPeZU6TxS2qcaQ==, tarball: file:projects/logger.tgz}
+    resolution: {integrity: sha512-7JxUGU4tHvtlUzs6V4PgpCtN/tLsJ/veJuJy8zorDV1rO9lPRd7dQOTPprr+spMkL3CbMQ9mkOf57NXykLFIeQ==, tarball: file:projects/logger.tgz}
     name: '@rush-temp/logger'
     version: 0.0.0
     dependencies:
@@ -7092,7 +7094,7 @@ packages:
     dev: false
 
   file:projects/scale-codec.tgz:
-    resolution: {integrity: sha512-RjrUFy+CZmKnQkQmXfocDnvP17Nk47f643eS8srxCA/iiRUX4HSqG1MWA8M4CZkKI7f4YsXHxGCjCSnwNO46kw==, tarball: file:projects/scale-codec.tgz}
+    resolution: {integrity: sha512-S0L1v26LLxvIC6H2fvpQ33H8pX5x3VeBpEIyGfXcGnK04anUkqdnZPQskjopP6mmxHFhZnCuVcOGPuXxI36cxg==, tarball: file:projects/scale-codec.tgz}
     name: '@rush-temp/scale-codec'
     version: 0.0.0
     dependencies:
@@ -7256,6 +7258,12 @@ packages:
     dependencies:
       '@types/node': 16.11.34
       typescript: 4.5.5
+    dev: false
+
+  file:projects/util-internal-binary-heap.tgz:
+    resolution: {integrity: sha512-ySQbSVAEksbM/fIDa9Ze8c5xmo7GoKCaI5ox7AB7vAxFSb0oQ+KQelUdJIzA2I4kWnJ3K7dCbPCZlADICAUO/w==, tarball: file:projects/util-internal-binary-heap.tgz}
+    name: '@rush-temp/util-internal-binary-heap'
+    version: 0.0.0
     dev: false
 
   file:projects/util-internal-code-printer.tgz:
