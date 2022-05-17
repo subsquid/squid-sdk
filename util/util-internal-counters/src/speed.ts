@@ -16,15 +16,17 @@ export class Speed {
         this.m = time ?? process.hrtime.bigint()
     }
 
-    stop(val: number, time?: bigint): void {
+    stop(val: number, time?: bigint): bigint {
         assert(this.m != null, 'mark should be set')
         time = time ?? process.hrtime.bigint()
-        if (time <= this.m) return
-        this.time += time - this.m
+        if (time <= this.m) return 0n
+        let duration = time - this.m
+        this.time += duration
         this.m = undefined
         this.value += val
         this.window[this.tail] = {time: this.time, value: this.value}
         this.tail = (this.tail + 1) % this.windowSize
+        return duration
     }
 
     speed(): number {

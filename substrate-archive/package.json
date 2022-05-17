@@ -19,6 +19,7 @@
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.2",
     "@subsquid/substrate-metadata": "^0.8.2",
+    "@subsquid/logger": "^0.0.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",

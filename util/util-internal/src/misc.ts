@@ -36,13 +36,17 @@ export function last<T>(array: T[]): T {
 }
 
 
-export function runProgram(main: () => Promise<void>): void {
+export function runProgram(main: () => Promise<void>, log?: (err: Error) => void): void {
     main().then(
         () => {
             process.exit(0)
         },
         err => {
-            console.error(err)
+            if (log) {
+                log(err)
+            } else {
+                console.error(err)
+            }
             process.exit(1)
         }
     )

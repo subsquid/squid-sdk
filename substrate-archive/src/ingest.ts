@@ -1,3 +1,4 @@
+import type {Logger} from "@subsquid/logger"
 import {Codec} from "@subsquid/scale-codec"
 import {
     decodeExtrinsic,
@@ -23,6 +24,7 @@ export interface IngestOptions {
     client: Client
     typesBundle?: OldTypesBundle
     startBlock?: number
+    log?: Logger
 }
 
 
@@ -41,6 +43,7 @@ export class Ingest {
     private readonly strideSize = 10
     private specs: BlockSpec[] = []
     private chainHeight = 0
+    private log?: Logger
 
     private constructor(options: IngestOptions) {
         this.client = options.client
@@ -52,6 +55,7 @@ export class Ingest {
             this.initialBlock = 0
         }
         this.stridesHead = this.initialBlock
+        this.log = options.log
     }
 
     private async *loop(): AsyncGenerator<BlockData> {
@@ -199,6 +203,7 @@ export class Ingest {
         let spec = await this.getSpec(height)
         this._specInfo = await this.getSpecInfo(spec.blockHash, spec.specId)
         this.chainHeight = await this.getChainHeight()
+        this.log?.info(`chain height is ${this.chainHeight}`)
     }
 
     private async getSpecInfo(

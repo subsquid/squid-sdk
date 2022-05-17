@@ -1,4 +1,6 @@
+import type {Logger} from "@subsquid/logger"
 import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
+import {last} from "@subsquid/util-internal"
 import {Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 
@@ -19,9 +21,18 @@ export class Client {
     private connections: Connection[]
     private schedulingScheduled = false
 
-    constructor(endpoints: string[]) {
+    constructor(endpoints: string[], private log?: Logger) {
         assert(endpoints.length > 0, 'at least 1 RPC endpoint is required')
-        this.connections = endpoints.map(url => new Connection(url, this.timer, () => this.performScheduling()))
+        this.connections = endpoints.map((url, idx) => {
+            let id = idx + 1
+            return new Connection(
+                id,
+                url,
+                this.timer,
+                () => this.performScheduling(),
+                this.log?.child({endpoint: id, url})
+            )
+        })
     }
 
     call<T=any>(method: string, params?: unknown[]): Promise<T>
@@ -66,7 +77,7 @@ export class Client {
         this.connections.sort((a, b) => {
             return a.waitTime() + a.avgResponseTime() - b.waitTime() - b.avgResponseTime()
         })
-        for (let i = 0; i < this.connections.length; i++) {
+        for (let i = 0; i < this.connections.length && !this.queue.isEmpty(); i++) {
             let con = this.connections[i]
             if (con.waitTime() > 0) continue
             let eta = con.waitTime() + con.avgResponseTime()
@@ -76,8 +87,12 @@ export class Client {
                 n += Math.floor(Math.max(eta - fc.waitTime(), 0) / fc.avgResponseTime())
             }
             let req = this.queue.take(n)
-            if (req == null) return
-            this.execute(con, req)
+            if (req == null && Math.random() < 0.1) {
+                req = this.queue.takeLast()
+            }
+            if (req) {
+                this.execute(con, req)
+            }
         }
     }
 
@@ -112,31 +127,46 @@ class Connection {
     private backoff = [100, 1000, 10000, 30000]
     private busy = false
     private closed = false
+    private counter = 0
 
     constructor(
+        public readonly id: number,
         public readonly url: string,
         private timer: Timer,
-        private onNewConnection: () => void
+        private onNewConnection: () => void,
+        public readonly log?: Logger
     ) {
         this.client = new RpcClient(this.url)
         this.connect()
     }
 
-    call(method: string, params?: unknown[]): Promise<any> {
+    call(method: string, params?: unknown[], order?: number): Promise<any> {
+        this.counter = (this.counter + 1) % 10000
+        this.log?.debug({
+            order,
+            avgResponseTime: Math.round(this.avgResponseTime()),
+            req: this.counter,
+            method
+        }, 'start of call')
         this.busy = true
         this.speed.start(this.timer.time())
         return this.client.call(method, params)
     }
 
     success(): void {
-        this.speed.stop(1, this.timer.time())
+        let duration = this.speed.stop(1, this.timer.time())
         this.connectionErrors = 0
         this.busy = false
+        this.log?.debug({
+            req: this.counter,
+            responseTime: Math.round(Number(duration) / 1000_000)
+        }, 'end of call')
     }
 
     error(): void {
         this.connectionErrors = 0
         this.busy = false
+        this.log?.debug({req: this.counter}, 'end of call')
     }
 
     reset() {
@@ -148,11 +178,15 @@ class Connection {
         this.client.close()
     }
 
-    private reconnect(): void {
+    private reconnect(err: Error): void {
         if (this.closed) return
         let timeout = this.backoff[Math.min(this.connectionErrors, this.backoff.length - 1)]
         this.connectionErrors += 1
         this.busy = false
+        this.log?.warn({
+            err,
+            backoff: timeout
+        })
         setTimeout(() => {
             this.client = new RpcClient(this.url)
             this.connect()
@@ -162,10 +196,11 @@ class Connection {
     private connect(): void {
         this.client.connect().then(
             () => {
-                this.client.onclose = () => this.reconnect()
+                this.log?.info('connected')
+                this.client.onclose = err => this.reconnect(err)
                 this.onNewConnection()
             },
-            () => this.reconnect()
+            err => this.reconnect(err)
         )
     }
 
@@ -219,6 +254,21 @@ class RequestQueue<R extends {priority: number}> {
                 skip -= item.length
             }
         }
+    }
+
+    takeLast(): R | undefined {
+        if (this.items.length == 0) return
+        let item = last(this.items)
+        if (item.length == 1) {
+            this.items.pop()
+            return item[0]
+        } else {
+            return item.pop()
+        }
+    }
+
+    isEmpty(): boolean {
+        return this.items.length == 0
     }
 }
 

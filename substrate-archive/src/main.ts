@@ -1,4 +1,4 @@
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {createLogger} from "@subsquid/logger"
 import {readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {runProgram} from "@subsquid/util-internal"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
@@ -11,6 +11,9 @@ import {migrate} from "postgres-migrations"
 import {Client} from "./client"
 import {Ingest} from "./ingest"
 import {PostgresSink, Sink, WritableSink} from "./sink"
+
+
+const log = createLogger('sqd:substrate-archive')
 
 
 runProgram(async () => {
@@ -52,11 +55,18 @@ runProgram(async () => {
                 connectionString: options.out
             })
             await db.connect()
+            log.info(`connected to ${removeCredentials(options.out)}`)
             await migrate({client: db}, path.resolve(__dirname, '../migrations'), {
-                logger: msg => console.error(msg)
+                logger: msg => log.info(msg)
             })
             let height = await getDbHeight(db)
-            startBlock = Math.max(startBlock, height == null ? 0 : height + 1)
+            if (height == null) {
+                log.info(`starting frob block ${startBlock}`)
+            } else {
+                startBlock = Math.max(startBlock, height + 1)
+                log.info(`continuing from block ${startBlock}`)
+            }
+
             progress.setCurrentValue(startBlock)
             sink = new PostgresSink({
                 db,
@@ -85,21 +95,22 @@ runProgram(async () => {
     every(5000, () => {
         if (!progress.hasNews()) return
         progress.tick()
-        console.error(`last block: ${progress.getCurrentValue()}, processing: ${Math.round(progress.speed())} blocks/sec, writing: ${Math.round(writeSpeed.speed())} blocks/sec`)
+        log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
-    let client = new Client(options.endpoint)
+    let client = new Client(options.endpoint, log.child('rpc'))
 
     let blocks = Ingest.getBlocks({
         client,
         typesBundle,
-        startBlock
+        startBlock,
+        log
     })
 
     for await (let block of blocks) {
         await sink.write(block)
     }
-})
+}, err => log.fatal(err))
 
 
 async function getDbHeight(db: pg.ClientBase): Promise<number | undefined> {
@@ -129,4 +140,12 @@ function every(ms: number, cb: () => void): void {
             process.exit(1)
         }
     }, ms)
+}
+
+
+function removeCredentials(url: string): string {
+    let u = new URL(url)
+    u.username = ''
+    u.password = ''
+    return u.toString()
 }
