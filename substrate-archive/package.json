@@ -22,11 +22,13 @@
     "@subsquid/logger": "^0.0.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
+    "@subsquid/util-internal-prometheus-server": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",
     "blake2b": "^2.1.4",
     "commander": "^9.0.0",
     "pg": "^8.7.3",
-    "postgres-migrations": "^5.3.0"
+    "postgres-migrations": "^5.3.0",
+    "prom-client": "^14.0.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",

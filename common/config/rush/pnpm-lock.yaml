@@ -7125,7 +7125,7 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-iIgjKYZ4RRVkseSdUYBLooZpkz4h9p1r0MFkVedgeWSrtY1Uz8l8WNyB6iTKP31Nf9Yu+Rf78EUnWL/BTKgAWw==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-8ifTSOdxmRG9q1uF8LOxO0VhdNXlPgwnL6YJ1TszjtWrit1GfZgNT8tIXP6yEa2Pu8I0Wii4PTmISWJgddtp4A==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
@@ -7136,6 +7136,7 @@ packages:
       dotenv: 10.0.0
       pg: 8.7.3
       postgres-migrations: 5.3.0
+      prom-client: 14.0.1
     transitivePeerDependencies:
       - pg-native
     dev: false
@@ -7172,7 +7173,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-lU0a5le+msMx41iBHJQBrmjciwI7UFgB0sbPEicTVoN9c30DOBpMk4j3WTMxHiw1sHbL/+wBhCTB/yWzRHsdVQ==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-EJcZYOWyFHIFgcMSB2LaCmjbCoGqWfHzYjbxuuzUup+VcnxnYOtr9JeKZQaMG8rSnh7HoRh6n2vz24Kd73DP9A==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:

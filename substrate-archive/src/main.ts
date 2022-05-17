@@ -10,6 +10,7 @@ import * as pg from "pg"
 import {migrate} from "postgres-migrations"
 import {Client} from "./client"
 import {Ingest} from "./ingest"
+import {Metrics} from "./metrics"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 
 
@@ -30,13 +31,19 @@ runProgram(async () => {
         'A number of blocks to write in one transaction (applies only to postgres sink)',
         positiveInteger
     )
+    program.option(
+        '--prom-port <number>',
+        'Port to use for built-in prometheus metrics server',
+        positiveInteger
+    )
 
     let options = program.parse().opts() as {
         endpoint: string[]
         out?: string
         typesBundle?: string
         startBlock?: number
-        writeBatchSize?: number
+        writeBatchSize?: number,
+        promPort?: number
     }
 
     let typesBundle = options.typesBundle == null
@@ -61,7 +68,7 @@ runProgram(async () => {
             })
             let height = await getDbHeight(db)
             if (height == null) {
-                log.info(`starting frob block ${startBlock}`)
+                log.info(`starting from block ${startBlock}`)
             } else {
                 startBlock = Math.max(startBlock, height + 1)
                 log.info(`continuing from block ${startBlock}`)
@@ -97,6 +104,13 @@ runProgram(async () => {
         progress.tick()
         log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
+
+    let metrics: Metrics | undefined
+    if (options.promPort != null) {
+        metrics = new Metrics()
+        let server = await metrics.serve(options.promPort)
+        log.info(`prometheus server is listening on port ${server.port}`)
+    }
 
     let client = new Client(options.endpoint, log.child('rpc'))
 
