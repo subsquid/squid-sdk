@@ -1,5 +1,5 @@
 import {Progress, Speed} from "@subsquid/util-internal-counters"
-import {createHttpServer, ListeningServer} from "@subsquid/util-internal-http-server"
+import {createPrometheusServer, ListeningServer} from "@subsquid/util-internal-prometheus-server"
 import {collectDefaultMetrics, Gauge, Registry} from "prom-client"
 import type {IngestMetrics} from "./ingest"
 
@@ -117,24 +117,6 @@ export class Metrics implements IngestMetrics {
     }
 
     serve(port: number | string): Promise<ListeningServer> {
-        return createHttpServer(async ctx => {
-            let path = ctx.url.pathname.slice(1).split('/')
-            if (path[0] != 'metrics') return ctx.send(404)
-            let metricName = path[1]
-            if (metricName) {
-                if (this.registry.getSingleMetric(metricName)) {
-                    let value = await this.registry.getSingleMetricAsString(metricName)
-                    return ctx.send(200, value)
-                } else {
-                    return ctx.send(404, 'requested metric not found')
-                }
-            } else if (ctx.url.searchParams.get('json') == 'true') {
-                let value = await this.registry.getMetricsAsJSON()
-                return ctx.send(200, value)
-            } else {
-                let value = await this.registry.metrics()
-                return ctx.send(200, value, this.registry.contentType)
-            }
-        }, port)
+        return createPrometheusServer(this.registry, port)
     }
 }
