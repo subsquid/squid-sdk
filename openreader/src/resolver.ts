@@ -142,25 +142,6 @@ interface ConnectionResponse extends RelayConnectionResponse<any> {
     totalCount?: number
 }
 
-async function* subscribe(
-    context: ResolverContext,
-    resolve: (context: ResolverContext) => Promise<IFieldResolver<unknown, ResolverContext>>
-) {
-    let i = 0
-    let prevResult;
-    while (true) {
-        context.openReaderTransaction.get = async () => await new PoolTransaction(context.db!).get()
-        const result = await resolve(context)
-        if (!deepEqual(prevResult, result)) {
-            prevResult = result
-            yield result
-        }
-        i++
-        console.log(i)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-    }
-}
-
 const subscriber = <Result>(
     context: ResolverContext,
     request: (modifiedContext: typeof context) => Promise<Result>
