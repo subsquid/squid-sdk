@@ -113,8 +113,8 @@ export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unkno
         const resolver: IFieldResolver<unknown, ResolverContext> = resolvers.Query[key]
         Subscription[key] = {
             resolve: (data) => data,
-            subscribe: async (source, args, context, info) =>
-                subscribe(context, (context) => resolver(source, args, context, info))
+            subscribe: (source, args, context, info) =>
+                subscriber(context, (context) => resolver(source, args, context, info))
         }
     }
 
@@ -160,6 +160,57 @@ async function* subscribe(
         await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 }
+
+const subscriber = <Result>(
+    context: ResolverContext,
+    request: (modifiedContext: typeof context) => Promise<Result>
+): Subscriber<Result> => {
+    const modifiedContext = {
+        ...context,
+    }
+    modifiedContext.openReaderTransaction.get = async () => new PoolTransaction(context.db!).get()
+    return {
+        [Symbol.asyncIterator]() {
+            return {
+                timeout: null,
+                currentData: null,
+                active: true,
+                async return() {
+                    if (this.timeout) clearTimeout(this.timeout)
+                    return {
+                        done: true,
+                        value: this.currentData
+                    }
+                },
+                async next() {
+                    while(this.active) {
+                        const nextData = await request(modifiedContext)
+                        console.log(nextData)
+                        if (!deepEqual(this.currentData, nextData)) {
+                            this.currentData = nextData
+                            break
+                        }
+                        await new Promise(resolve => this.timeout = setTimeout(resolve, 1000));
+                    }
+                    return {
+                        done: false,
+                        value: this.currentData
+                    }
+                }
+            }
+        }
+    }
+};
+
+interface Subscriber<T> {
+    [Symbol.asyncIterator]: () => AsyncIterator<T | null> & {
+        active: boolean,
+        timeout: NodeJS.Timeout | null,
+        currentData: T | null
+    }
+}
+
+  
 
 async function resolveEntityConnection(
     model: Model,
