@@ -36,6 +36,11 @@ export function last<T>(array: T[]): T {
 }
 
 
+export function maybeLast<T>(array: T[]): T | undefined {
+    return array.length > 0 ? array[array.length - 1] : undefined
+}
+
+
 export function runProgram(main: () => Promise<void>, log?: (err: Error) => void): void {
     main().then(
         () => {

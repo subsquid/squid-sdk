@@ -1,9 +1,9 @@
 import {QualifiedName} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
-import {SpecInfo, sub} from "./interfaces"
-import * as model from "./model"
-import {unwrapArguments} from "./util"
+import {Spec, sub} from "../interfaces"
+import * as model from "../model"
+import {unwrapArguments} from "../util"
 
 
 interface Call extends model.Call {
@@ -20,7 +20,7 @@ export class CallParser {
     private _extrinsic: model.Extrinsic | undefined
 
     constructor(
-        private specInfo: SpecInfo,
+        private specInfo: Spec,
         private blockHeight: number,
         private blockHash: string,
         private events: model.Event[],

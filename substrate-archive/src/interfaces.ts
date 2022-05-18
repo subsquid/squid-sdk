@@ -8,7 +8,7 @@ import type {
 import type * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 
 
-export interface SpecInfo {
+export interface Spec {
     specId: string
     rawMetadata: string
     description: ChainDescription
