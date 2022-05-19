@@ -121,10 +121,15 @@ export class Client {
 
     private addTimeout(res: Promise<any>): Promise<any> {
         return new Promise((resolve, reject) => {
-            let timeout = setTimeout(() => {
+            let timeout: any = setTimeout(() => {
+                timeout = undefined
                 reject(new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
             }, this.timeoutSeconds * 1000)
-            res.finally(() => clearTimeout(timeout)).then(resolve, reject)
+            res.finally(() => {
+                if (timeout != null) {
+                    clearTimeout(timeout)
+                }
+            }).then(resolve, reject)
         })
     }
 }
