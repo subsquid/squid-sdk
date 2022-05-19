@@ -31,6 +31,8 @@ export interface Extrinsic {
     block_id: string
     index_in_block: number
     signature?: sub.ExtrinsicSignature
+    fee?: bigint
+    tip?: bigint | number
     success: boolean
     call_id: string
     hash: Uint8Array

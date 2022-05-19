@@ -194,8 +194,25 @@ class TypeExpParser {
         return params
     }
 
+    private pointerBytes(): Type | null {
+        if (!this.tok('&')) return null
+        this.tok("'") && this.assertTok('static')
+        this.assertTok('[')
+        this.assertTok('u8')
+        this.assertTok(']')
+        return {
+            kind: 'named',
+            name: 'Vec',
+            params: [{
+                kind: 'named',
+                name: 'u8',
+                params: []
+            }]
+        }
+    }
+
     private anyType(): Type | null {
-        return this.tuple() || this.array() || this.namedType()
+        return this.tuple() || this.array() || this.namedType() || this.pointerBytes()
     }
 
     parse(): Type {

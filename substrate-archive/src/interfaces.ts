@@ -75,4 +75,15 @@ export namespace sub {
         __kind: string
         value: {__kind: string} & any
     }
+
+
+    export interface DispatchInfo {
+        weight: bigint
+        class: {
+            __kind: 'Normal' | 'Operational' | 'Mandatory'
+        }
+        paysFee: boolean | {
+            __kind: 'Yes' | 'No'
+        }
+    }
 }

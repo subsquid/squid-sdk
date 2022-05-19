@@ -245,10 +245,13 @@ export class Chain {
         })
     }
 
-    printMetadata(): void {
-        let metadata = last(this.description()).metadata
+    printMetadata(specVersion?: number): void {
+        let versions = this.description()
+        let v = specVersion == null
+            ? last(versions)
+            : versions.find(v => v.specVersion == specVersion)
         console.log(
-            JSON.stringify(metadata, null, 2)
+            JSON.stringify(v?.metadata, null, 2)
         )
     }
 

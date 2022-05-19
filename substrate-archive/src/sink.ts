@@ -44,6 +44,8 @@ export class PostgresSink implements Sink {
         block_id: {cast: 'text'},
         index_in_block: {cast: 'integer'},
         signature: {map: toJsonString, cast: 'jsonb'},
+        fee: {cast: 'numeric'},
+        tip: {cast: 'numeric'},
         success: {cast: 'bool'},
         call_id: {cast: 'text'},
         hash: {cast: 'text', map: toJSON},

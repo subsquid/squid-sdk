@@ -4,6 +4,7 @@ import assert from "assert"
 import {Spec, sub} from "../interfaces"
 import * as model from "../model"
 import {unwrapArguments} from "../util"
+import type {ExtrinsicExt} from "./block"
 
 
 interface Call extends model.Call {
@@ -24,7 +25,7 @@ export class CallParser {
         private blockHeight: number,
         private blockHash: string,
         private events: model.Event[],
-        private extrinsics: (model.Extrinsic & {name: string, args: any})[],
+        private extrinsics: ExtrinsicExt[],
         private warnings: model.Warning[]
     ) {
         for (let i = 0; i < this.extrinsics.length; i++) {

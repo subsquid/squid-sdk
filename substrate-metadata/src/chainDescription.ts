@@ -28,6 +28,21 @@ export interface ChainDescription {
     eventRecordList: Ti
     signature: Ti
     storage: Storage
+    constants: Constants
+}
+
+
+export interface Constants {
+    [pallet: string]: {
+        [name: string]: Constant
+    }
+}
+
+
+export interface Constant {
+    type: Ti
+    value: Uint8Array
+    docs: string[]
 }
 
 
@@ -61,7 +76,8 @@ class FromV14 {
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
             signature: this.signature(),
-            storage: this.storage()
+            storage: this.storage(),
+            constants: this.constants()
         }
     }
 
@@ -215,6 +231,22 @@ class FromV14 {
     }
 
     @def
+    private constants(): Constants {
+        let constants: Constants = {}
+        this.metadata.pallets.forEach(pallet => {
+            pallet.constants.forEach(c => {
+                let pc = constants[pallet.name] || (constants[pallet.name] = {})
+                pc[c.name] = {
+                    type: c.type,
+                    value: c.value,
+                    docs: c.docs
+                }
+            })
+        })
+        return constants
+    }
+
+    @def
     private types(): Type[] {
         let types: Type[] = this.metadata.lookup.types.map(t => {
             let info = {
@@ -305,6 +337,7 @@ class FromOld {
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
+        let constants = this.constants()
         return {
             types: this.registry.getTypes(),
             call,
@@ -314,7 +347,8 @@ class FromOld {
             eventRecord,
             eventRecordList,
             signature,
-            storage
+            storage,
+            constants
         }
     }
 
@@ -589,6 +623,22 @@ class FromOld {
             storage[mod.storage.prefix] = items
         })
         return storage
+    }
+
+    @def
+    private constants(): Constants {
+        let constants: Constants = {}
+        this.forEachPallet(null, mod => {
+            mod.constants.forEach(c => {
+                let pc = constants[mod.name] || (constants[mod.name] = {})
+                pc[c.name] = {
+                    type: this.registry.use(c.type, mod.name),
+                    value: c.value,
+                    docs: c.docs
+                }
+            })
+        })
+        return constants
     }
 
     private defineOriginCaller(): void {

@@ -32,6 +32,8 @@ CREATE TABLE extrinsic (
     signature jsonb,
     success bool not null,
     call_id varchar(30) not null,
+    fee numeric,
+    tip numeric,
     hash char(66) not null,
     pos integer not null
 );

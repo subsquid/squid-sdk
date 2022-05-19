@@ -3,6 +3,7 @@ import {Spec, sub} from "../interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "../model"
 import {blake2bHash, formatId, getBlockTimestamp, unwrapArguments} from "../util"
 import {CallParser} from "./call"
+import {FeeCalc} from "./feeCalc"
 
 
 export interface RawBlock {
@@ -10,32 +11,49 @@ export interface RawBlock {
     blockHeight: number
     block: sub.Block
     events?: string | null
+    feeMultiplier?: string | null
+}
+
+
+export interface EventExt extends Event {
+    extrinsicIdx?: number
+}
+
+
+export interface ExtrinsicExt extends Extrinsic {
+    name: string
+    args: any
 }
 
 
 export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
     let block_id = formatId(raw.blockHeight, raw.blockHash)
 
-    let events: Event[] = raw.events == null ? [] : spec.scaleCodec.decodeBinary(spec.description.eventRecordList, raw.events)
-        .map((e: sub.EventRecord, idx: number) => {
-            let {name, args} = unwrapArguments(e.event, spec.events)
-            let extrinsic_id: string | undefined
-            if (e.phase.__kind == 'ApplyExtrinsic') {
-                extrinsic_id = formatId(raw.blockHeight, raw.blockHash, e.phase.value)
-            }
-            return {
-                id: formatId(raw.blockHeight, raw.blockHash, idx),
-                block_id,
-                phase: e.phase.__kind,
-                index_in_block: idx,
-                name,
-                args,
-                extrinsic_id,
-                pos: -1
-            }
-        })
+    let events: EventExt[] = raw.events == null
+        ? []
+        : spec.scaleCodec.decodeBinary(spec.description.eventRecordList, raw.events)
+            .map((e: sub.EventRecord, idx: number) => {
+                let {name, args} = unwrapArguments(e.event, spec.events)
+                let extrinsic_id: string | undefined
+                let extrinsicIdx: number | undefined
+                if (e.phase.__kind == "ApplyExtrinsic") {
+                    extrinsicIdx = e.phase.value
+                    extrinsic_id = formatId(raw.blockHeight, raw.blockHash, extrinsicIdx)
+                }
+                return {
+                    id: formatId(raw.blockHeight, raw.blockHash, idx),
+                    block_id,
+                    phase: e.phase.__kind,
+                    index_in_block: idx,
+                    name,
+                    args,
+                    extrinsic_id,
+                    extrinsicIdx,
+                    pos: -1
+                }
+            })
 
-    let extrinsics: (Extrinsic & {name: string, args: unknown})[] = raw.block.extrinsics
+    let extrinsics: ExtrinsicExt[] = raw.block.extrinsics
         .map((hex, idx) => {
             let bytes = Buffer.from(hex.slice(2), 'hex')
             let hash = blake2bHash(bytes, 32)
@@ -47,6 +65,7 @@ export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
                 index_in_block: idx,
                 success: true,
                 signature: ex.signature,
+                tip: ex.signature?.signedExtensions.ChargeTransactionPayment,
                 call_id: '',
                 hash,
                 name,
@@ -54,6 +73,8 @@ export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
                 pos: -1
             }
         })
+
+    setExtrinsicFees(spec, raw, extrinsics, events)
 
     let warnings: Warning[] = []
 
@@ -79,5 +100,26 @@ export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
         events,
         calls,
         warnings
+    }
+}
+
+
+function setExtrinsicFees(spec: Spec, raw: RawBlock, extrinsics: ExtrinsicExt[], events: EventExt[]): void {
+    if (raw.feeMultiplier == null) return
+    let calc = FeeCalc.get(spec, raw.feeMultiplier)
+    if (calc == null) return
+    for (let e of events) {
+        switch(e.name) {
+            case 'System.ExtrinsicSuccess':
+            case 'System.ExtrinsicFailed':
+                let extrinsicIdx = e.extrinsicIdx!
+                let extrinsic = extrinsics[extrinsicIdx]
+                if (extrinsic.signature != null) {
+                    let dispatchInfo = e.args.dispatchInfo as sub.DispatchInfo
+                    let len = raw.block.extrinsics[extrinsicIdx].length / 2 - 1
+                    extrinsic.fee = calc.calcFee(dispatchInfo, len)
+                }
+                break
+        }
     }
 }

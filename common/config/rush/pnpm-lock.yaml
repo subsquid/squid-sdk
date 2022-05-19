@@ -48,6 +48,7 @@ specifiers:
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
+  '@substrate/calc': ^0.2.8
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
   '@types/js-yaml': ^4.0.5
@@ -149,6 +150,7 @@ dependencies:
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
+  '@substrate/calc': 0.2.8
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
   '@types/js-yaml': 4.0.5
@@ -1448,6 +1450,10 @@ packages:
 
   /@subsquid/graphiql-console/0.2.0:
     resolution: {integrity: sha512-Wh2Oxi9JkK79Y728yDEeY7JelcY1cGiQTbzVIRMFLT2tjkkoQ69goAGXdh9QmM/ANAVrHQkBUNJOLd5oAg//oQ==}
+    dev: false
+
+  /@substrate/calc/0.2.8:
+    resolution: {integrity: sha512-1c3mxf35FBeOswduhy0Wil9s4exHahXFo974qa0Ci2AORX8JTxmwhBb10+3Ls9iWoTFwvgOaFr9v1HeRL5tCig==}
     dev: false
 
   /@substrate/connect-extension-protocol/1.0.0:
@@ -7125,10 +7131,11 @@ packages:
     dev: false
 
   file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-8ifTSOdxmRG9q1uF8LOxO0VhdNXlPgwnL6YJ1TszjtWrit1GfZgNT8tIXP6yEa2Pu8I0Wii4PTmISWJgddtp4A==, tarball: file:projects/substrate-archive.tgz}
+    resolution: {integrity: sha512-mXTKKW0vyXivEgpOODiD5Zu2XH6MU5So0ihOF7VRfYbgBd9YJjWJOWqCVR+k4cXyr3AAJ9NFpRqfmoYl9nKgUg==, tarball: file:projects/substrate-archive.tgz}
     name: '@rush-temp/substrate-archive'
     version: 0.0.0
     dependencies:
+      '@substrate/calc': 0.2.8
       '@types/node': 16.11.34
       '@types/pg': 8.6.4
       blake2b: 2.1.4

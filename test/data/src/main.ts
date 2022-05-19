@@ -5,8 +5,10 @@ import {Chain} from "./chain"
 runProgram(async () => {
     let chain = new Chain(process.argv[2])
     switch(process.argv[3]) {
-        case 'print-metadata':
-            return chain.printMetadata()
+        case 'print-metadata': {
+            let specVersion = process.argv[4]
+            return chain.printMetadata(specVersion && parseInt(specVersion) || undefined)
+        }
         case 'select-test-blocks':
             return chain.selectTestBlocks()
         case 'save-blocks':

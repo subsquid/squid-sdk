@@ -16,6 +16,7 @@ import {Client} from "./client"
 import {Spec, sub} from "./interfaces"
 import {BlockData} from "./model"
 import {parseRawBlock, RawBlock} from "./parse/block"
+import {NEXT_FEE_MULTIPLIER_STORAGE_KEY} from "./parse/feeCalc"
 import {Shooter} from "./shooter"
 import {EVENT_STORAGE_KEY, splitSpecId} from "./util"
 
@@ -76,7 +77,7 @@ export class Ingest {
         let prevSpec = await this.specs.get(Math.max(0, raw.blockHeight - 1))
         let block = parseRawBlock(prevSpec, raw)
         let currentSpec = await this.specs.get(raw.blockHeight)
-        if (block.header.height == 0 && currentSpec.specId != prevSpec.specId) {
+        if (raw.blockHeight == 0 || currentSpec.specId != prevSpec.specId) {
             let [spec_name, spec_version] = splitSpecId(currentSpec.specId)
             block.metadata = {
                 id: currentSpec.specId,
@@ -116,9 +117,13 @@ export class Ingest {
         let blockHash =  await this.client.call<string>(height, "chain_getBlockHash", [last])
         let result: RawBlock[] = new Array(size)
         for (let i = size - 1; i >= 0; i--) {
-            let [signedBlock, events] = await Promise.all([
+            let [signedBlock, [events, feeMultiplier]] = await Promise.all([
                 this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash]),
-                this.client.call<string>(height, "state_getStorageAt", [EVENT_STORAGE_KEY, blockHash])
+                this.queryStorageAt(
+                    blockHash,
+                    [EVENT_STORAGE_KEY, NEXT_FEE_MULTIPLIER_STORAGE_KEY],
+                    height
+                )
             ])
             let blockHeight = parseInt(signedBlock.block.header.number)
             assert(blockHeight === height + i)
@@ -126,7 +131,8 @@ export class Ingest {
                 blockHash,
                 blockHeight,
                 block: signedBlock.block,
-                events
+                events,
+                feeMultiplier
             }
             blockHash = signedBlock.block.header.parentHash
         }
@@ -181,6 +187,24 @@ export class Ingest {
         let height = parseInt(header.number)
         assert(Number.isSafeInteger(height))
         return height
+    }
+
+    private async queryStorageAt(blockHash: string, keys: string[], priority: number = 0): Promise<any[]> {
+        if (keys.length == 0) return []
+        let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            'state_queryStorageAt',
+            [keys, blockHash]
+        )
+        assert(res.length == 1)
+        let changes = res[0].changes
+        assert(changes.length == keys.length)
+        let values = new Array(keys.length)
+        for (let i = 0; i < values.length; i++) {
+            let [k, v] = changes[i]
+            assert(k == keys[i])
+            values[i] = v
+        }
+        return values
     }
 }
 
