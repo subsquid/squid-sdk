@@ -20,6 +20,7 @@ export class Client {
     private queue = new RequestQueue<Req>()
     private connections: Connection[]
     private schedulingScheduled = false
+    private timeoutSeconds = 20
 
     constructor(endpoints: string[], private log?: Logger) {
         assert(endpoints.length > 0, 'at least 1 RPC endpoint is required')
@@ -97,7 +98,7 @@ export class Client {
     }
 
     private execute(con: Connection, req: Req): void {
-        con.call(req.method, req.params).then(
+        this.addTimeout(con.call(req.method, req.params)).then(
             res => {
                 this.timer.nextEpoch()
                 con.success()
@@ -116,6 +117,15 @@ export class Client {
                 }
             }
         )
+    }
+
+    private addTimeout(res: Promise<any>): Promise<any> {
+        return new Promise((resolve, reject) => {
+            let timeout = setTimeout(() => {
+                reject(new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
+            }, this.timeoutSeconds * 1000)
+            res.finally(() => clearTimeout(timeout)).then(resolve, reject)
+        })
     }
 }
 
