@@ -146,10 +146,6 @@ const subscriber = <Result>(
     context: ResolverContext,
     request: (modifiedContext: typeof context) => Promise<Result>
 ): Subscriber<Result> => {
-    const modifiedContext = {
-        ...context,
-    }
-    modifiedContext.openReaderTransaction.get = async () => new PoolTransaction(context.db!).get()
     return {
         [Symbol.asyncIterator]() {
             return {
@@ -165,8 +161,11 @@ const subscriber = <Result>(
                 },
                 async next() {
                     while(this.active) {
+                        const modifiedContext = { ...context }
+                        let persistedtransaction = new PoolTransaction(context.db!);
+                        modifiedContext.openReaderTransaction.get = async () => persistedtransaction.get()
                         const nextData = await request(modifiedContext)
-                        console.log(nextData)
+                        persistedtransaction.close()
                         if (!deepEqual(this.currentData, nextData)) {
                             this.currentData = nextData
                             break
