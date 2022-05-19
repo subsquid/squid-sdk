@@ -76,7 +76,7 @@ export class Ingest {
         let prevSpec = await this.specs.get(Math.max(0, raw.blockHeight - 1))
         let block = parseRawBlock(prevSpec, raw)
         let currentSpec = await this.specs.get(raw.blockHeight)
-        if (currentSpec.specId != prevSpec.specId) {
+        if (block.header.height == 0 && currentSpec.specId != prevSpec.specId) {
             let [spec_name, spec_version] = splitSpecId(currentSpec.specId)
             block.metadata = {
                 id: currentSpec.specId,
