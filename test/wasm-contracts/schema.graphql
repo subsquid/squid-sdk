@@ -1,0 +1,6 @@
+type Flip @entity {
+  id: ID!
+  value: Boolean!
+  caller: String!
+  timestamp: BigInt!
+}

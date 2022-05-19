@@ -6,6 +6,7 @@ import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {Chain, ChainManager} from "./chain"
 import {BlockData, Ingest} from "./ingest"
+import {ContractsEventHandler, ContractsEvent} from "./interfaces/contracts"
 import {BlockHandler, BlockHandlerContext, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
 import {ContextRequest} from "./interfaces/dataSelection"
 import {Database} from "./interfaces/db"
@@ -54,7 +55,7 @@ interface MayBeDataSelection {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateProcessor<Store> {
-    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: []}
+    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: [], contractsEvent: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -302,6 +303,26 @@ export class SubstrateProcessor<Store> {
         })
     }
 
+    addContractsEventHandler(contractAddress: string, fn: ContractsEventHandler<Store>): void
+    addContractsEventHandler(contractAddress: string, options: RangeOption & NoDataSelection, fn: ContractsEventHandler<Store>): void
+    addContractsEventHandler<R>(contractAddress: string, options: RangeOption & DataSelection<R>, fn: ContractsEventHandler<R>): void
+    addContractsEventHandler(contractAddress: string, fnOrOptions: ContractsEventHandler<Store> | RangeOption & MayBeDataSelection, fn?: ContractsEventHandler<Store>): void {
+        this.assertNotRunning()
+        let handler: ContractsEventHandler<Store>
+        let options: RangeOption & MayBeDataSelection = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.contractsEvent.push({
+            contractAddress,
+            handler,
+            ...options
+        })
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -460,6 +481,19 @@ export class SubstrateProcessor<Store> {
                             },
                         })
                     }
+                    for (let handler of this.getContractsEventHandlers(handlers.contractsEvents, item.event)) {
+                        let event = item.event as ContractsEvent
+                        await handler({
+                            store: ctx.store,
+                            contractAddress: event.args.contract,
+                            data: event.args.data,
+                            substrate: {
+                                _chain: ctx._chain,
+                                block: ctx.block,
+                                event,
+                            },
+                        })
+                    }
                     break
                 case 'call':
                     for (let handler of handlers.calls[item.call.name]?.handlers || []) {
@@ -503,5 +537,17 @@ export class SubstrateProcessor<Store> {
             }
         }
         return true
+    }
+
+    private *getContractsEventHandlers(contractsEvents: DataHandlers["contractsEvents"], event: SubstrateEvent): Generator<ContractsEventHandler<any>> {
+        if (event.name != 'Contracts.ContractEmitted') return
+        let contractsEvent = event as ContractsEvent
+        
+        let contractHandlers = contractsEvents[contractsEvent.args.contract]
+        if (contractHandlers == null) return
+
+        for (let h of contractHandlers.handlers) {
+            yield h
+        }
     }
 }
