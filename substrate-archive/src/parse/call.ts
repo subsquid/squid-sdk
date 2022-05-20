@@ -1,10 +1,16 @@
-import {QualifiedName} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {Spec, sub} from "../interfaces"
 import * as model from "../model"
-import {unwrapArguments} from "../util"
 import type {ExtrinsicExt} from "./block"
+import {unwrapArguments} from "./util"
+
+
+interface BlockCtx {
+    blockHeight: number
+    blockHash: string
+    spec: Spec
+}
 
 
 interface Call extends model.Call {
@@ -12,62 +18,48 @@ interface Call extends model.Call {
 }
 
 
-export class CallParser {
-    private calls: Call[] = []
-    private callsCounter = 0
-    private pos = 0
-    private eix: number
-    private boundary?: (e: model.Event) => unknown
-    private _extrinsic: model.Extrinsic | undefined
+class CallExtractor {
+    calls: Call[] = []
+    count = 0
+    private idx = 0
+    private _extrinsic?: ExtrinsicExt
 
-    constructor(
-        private specInfo: Spec,
-        private blockHeight: number,
-        private blockHash: string,
-        private events: model.Event[],
-        private extrinsics: ExtrinsicExt[],
-        private warnings: model.Warning[]
-    ) {
-        for (let i = 0; i < this.extrinsics.length; i++) {
-            let ex = this.extrinsics[i]
-            this.extrinsic = ex
-            this.extrinsic.call_id = this.extrinsic.id
-            this.createCall(ex.name, ex.args)
-        }
-        this.eix = this.events.length - 1
-        this.pos += this.events.length + this.extrinsics.length
-        for (let i = this.extrinsics.length - 1; i >= 0; i--) {
-            this.extrinsic = this.extrinsics[i]
-            this.visitExtrinsic(this.calls[i])
-        }
-        assert(this.pos == 0)
+    constructor(private ctx: BlockCtx) {}
+
+    visit(extrinsic: ExtrinsicExt): void {
+        this._extrinsic = extrinsic
+        this.createCall(extrinsic.call)
     }
 
-    private createCall(name: QualifiedName, args: unknown, parent?: Call): void {
+    private createCall(raw: sub.Call, parent?: Call): void {
         let id = this.extrinsic.id
         if (parent) {
-            let idx = this.callsCounter += 1
+            let idx = this.idx += 1
             id += '-' + idx.toString().padStart(6, '0')
         } else {
-            this.callsCounter = 0
+            this.idx = 0
         }
+
+        let {name, args} = unwrapArguments(raw, this.ctx.spec.calls)
+
         let call: Call = {
             id,
             block_id: this.extrinsic.block_id,
             extrinsic_id: this.extrinsic.id,
+            success: false,
             name,
             args,
-            pos: -1,
             parent_id: parent?.id,
-            success: false,
+            pos: -1,
             children: []
         }
+
         switch(name) {
             case 'Utility.batch':
             case 'Utility.batch_all': {
                 let batch = args as {calls: sub.Call[]}
                 for (let item of batch.calls) {
-                    this.unwrapAndCreate(item, call)
+                    this.createCall(item, call)
                 }
                 break
             }
@@ -77,20 +69,60 @@ export class CallParser {
             case 'Utility.dispatch_as':
             case 'Proxy.proxy': {
                 let a = args as {call: sub.Call}
-                this.unwrapAndCreate(a.call, call)
+                this.createCall(a.call, call)
+                break
             }
         }
+
         if (parent) {
             parent.children.push(call)
         } else {
             this.calls.push(call)
         }
-        this.pos += 1
+
+        this.count += 1
     }
 
-    private unwrapAndCreate(call: sub.Call, parent?: Call): void  {
-        let c = unwrapArguments(call, this.specInfo.calls)
-        this.createCall(c.name, c.args, parent)
+    private get extrinsic(): ExtrinsicExt {
+        return assertNotNull(this._extrinsic)
+    }
+
+    private set extrinsic(ex: ExtrinsicExt) {
+        this._extrinsic = ex
+    }
+}
+
+
+function extractCalls(ctx: BlockCtx, extrinsics: ExtrinsicExt[]): {calls: Call[], count: number} {
+    let extractor = new CallExtractor(ctx)
+    for (let ex of extrinsics) {
+        extractor.visit(ex)
+    }
+    return extractor
+}
+
+
+export class CallParser {
+    public readonly warnings: model.Warning[] = []
+    public readonly calls: Call[] = []
+    private pos: number
+    private eix: number
+    private boundary?: (e: model.Event) => unknown
+    private _extrinsic: ExtrinsicExt | undefined
+
+    constructor(
+        private ctx: BlockCtx,
+        private events: model.Event[],
+        private extrinsics: ExtrinsicExt[],
+    ) {
+        let {calls, count} = extractCalls(ctx, extrinsics)
+        this.pos = count + this.events.length + this.extrinsics.length
+        this.eix = this.events.length - 1
+        for (let i = this.extrinsics.length - 1; i >= 0; i--) {
+            this.extrinsic = this.extrinsics[i]
+            this.visitExtrinsic(calls[i])
+        }
+        assert(this.pos == 0)
     }
 
     private visitExtrinsic(call: Call): void {
@@ -114,6 +146,7 @@ export class CallParser {
     private skipCall(call: Call, success: boolean): void {
         call.pos = this.takePos()
         call.success = success
+        this.calls.push(call)
         this.skipCalls(call.children, success)
     }
 
@@ -126,6 +159,7 @@ export class CallParser {
     private visitCall(call: Call, parent?: Call): void {
         call.pos = this.takePos()
         call.success = true
+        this.calls.push(call)
         switch(call.name) {
             case 'Utility.batch':
                 this.visitBatch(call, parent)
@@ -281,25 +315,12 @@ export class CallParser {
         return this.pos -= 1
     }
 
-    private get extrinsic(): model.Extrinsic {
+    private get extrinsic(): ExtrinsicExt {
         return assertNotNull(this._extrinsic)
     }
 
-    private set extrinsic(ex: model.Extrinsic) {
+    private set extrinsic(ex: ExtrinsicExt) {
         this._extrinsic = ex
-    }
-
-    getCalls(): model.Call[] {
-        let calls: model.Call[] = []
-
-        function push(c: Call): void {
-            let {children, ...call} = c
-            calls.push(call)
-            children.forEach(push)
-        }
-
-        this.calls.forEach(push)
-        return calls
     }
 }
 

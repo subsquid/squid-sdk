@@ -1,10 +1,11 @@
 import {decodeExtrinsic} from "@subsquid/substrate-metadata"
-import {toHex} from "@subsquid/util-internal"
+import {def, toHex} from "@subsquid/util-internal"
 import {Spec, sub} from "../interfaces"
-import {BlockData, Event, Extrinsic, Warning} from "../model"
-import {blake2bHash, formatId, getBlockTimestamp, unwrapArguments} from "../util"
+import {Block, BlockData, Call, Event, Extrinsic, Warning} from "../model"
+import {blake2bHash} from "../util"
 import {CallParser} from "./call"
 import {FeeCalc} from "./feeCalc"
+import {formatId, unwrapArguments} from "./util"
 import {Account, getBlockValidator} from "./validator"
 
 
@@ -23,112 +24,170 @@ export interface EventExt extends Event {
 
 
 export interface ExtrinsicExt extends Extrinsic {
-    name: string
-    args: any
+    call: sub.Call
 }
 
 
-export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock): BlockData {
-    let block_id = formatId(raw.blockHeight, raw.blockHash)
+export class BlockParser {
+    constructor(
+        private spec: Spec,
+        private validators: Account[],
+        private raw: RawBlock
+    ) {
+    }
 
-    let events: EventExt[] = raw.events == null
-        ? []
-        : spec.scaleCodec.decodeBinary(spec.description.eventRecordList, raw.events)
-            .map((e: sub.EventRecord, idx: number) => {
-                let {name, args} = unwrapArguments(e.event, spec.events)
-                let extrinsic_id: string | undefined
-                let extrinsicIdx: number | undefined
-                if (e.phase.__kind == "ApplyExtrinsic") {
-                    extrinsicIdx = e.phase.value
-                    extrinsic_id = formatId(raw.blockHeight, raw.blockHash, extrinsicIdx)
-                }
-                return {
-                    id: formatId(raw.blockHeight, raw.blockHash, idx),
-                    block_id,
-                    phase: e.phase.__kind,
-                    index_in_block: idx,
-                    name,
-                    args,
-                    extrinsic_id,
-                    extrinsicIdx,
-                    pos: -1
-                }
-            })
+    @def
+    id(): string {
+        return formatId(this.raw.blockHeight, this.raw.blockHash)
+    }
 
-    let extrinsics: ExtrinsicExt[] = raw.block.extrinsics
-        .map((hex, idx) => {
-            let bytes = Buffer.from(hex.slice(2), 'hex')
-            let hash = blake2bHash(bytes, 32)
-            let ex = decodeExtrinsic(bytes, spec.description, spec.scaleCodec)
-            let {name, args} = unwrapArguments(ex.call, spec.calls)
+    @def
+    header(): Block {
+        return {
+            id: this.id(),
+            height: this.raw.blockHeight,
+            hash: this.raw.blockHash,
+            parent_hash: this.raw.block.header.parentHash,
+            timestamp: new Date(this.timestamp()),
+            validator: this.validator(),
+            spec_id: '' // to be set later
+        }
+    }
+
+    @def
+    validator(): string | undefined {
+        let validator = getBlockValidator(this.digest(), this.validators)
+        if (validator) {
+            return toHex(validator)
+        }
+    }
+
+    @def
+    digest(): sub.DigestItem[] {
+        return this.raw.block.header.digest.logs.map<sub.DigestItem>(item => {
+            return this.spec.scaleCodec.decodeBinary(this.spec.description.digestItem, item)
+        })
+    }
+
+    @def
+    timestamp(): number {
+        let extrinsics = this.extrinsics()
+        for (let i = 0; i < extrinsics.length; i++) {
+            let ex = extrinsics[i]
+            if (ex.call.__kind == 'Timestamp' && ex.call.value.__kind == 'set') {
+                return ex.call.value.now
+            }
+        }
+        return 0
+    }
+
+    @def
+    events(): EventExt[] {
+        if (this.raw.events == null) return []
+        let block_id = this.id()
+        let records: sub.EventRecord[] = this.spec.scaleCodec.decodeBinary(
+            this.spec.description.eventRecordList,
+            this.raw.events
+        )
+        return records.map((rec, idx) => {
+            let {name, args} = unwrapArguments(rec.event, this.spec.events)
+            let extrinsicIdx: number | undefined
+            let extrinsic_id: string | undefined
+            if (rec.phase.__kind == "ApplyExtrinsic") {
+                extrinsicIdx = rec.phase.value
+                extrinsic_id = formatId(this.raw.blockHeight, this.raw.blockHash, extrinsicIdx)
+            }
             return {
-                id: formatId(raw.blockHeight, raw.blockHash, idx),
+                id: formatId(this.raw.blockHeight, this.raw.blockHash, idx),
                 block_id,
+                phase: rec.phase.__kind,
                 index_in_block: idx,
-                success: true,
-                signature: ex.signature,
-                tip: ex.signature?.signedExtensions.ChargeTransactionPayment,
-                call_id: '',
-                hash,
                 name,
                 args,
+                extrinsic_id,
+                extrinsicIdx,
                 pos: -1
             }
         })
+    }
 
-    setExtrinsicFees(spec, raw, extrinsics, events)
+    @def
+    extrinsics(): ExtrinsicExt[] {
+        let block_id = this.id()
+        return this.raw.block.extrinsics.map((hex, idx) => {
+            let id = formatId(this.raw.blockHeight, this.raw.blockHash, idx)
+            let bytes = Buffer.from(hex.slice(2), 'hex')
+            let hash = blake2bHash(bytes, 32)
+            let ex = decodeExtrinsic(bytes, this.spec.description, this.spec.scaleCodec)
+            return {
+                id,
+                block_id,
+                index_in_block: idx,
+                success: true,
+                version: ex.version,
+                signature: ex.signature,
+                call_id: id,
+                call: ex.call,
+                tip: ex.signature?.signedExtensions.ChargeTransactionPayment,
+                hash,
+                pos: -1
+            }
+        })
+    }
 
-    let warnings: Warning[] = []
+    @def
+    setExtrinsicFees(): void {
+        if (this.raw.feeMultiplier == null) return
+        let calc = FeeCalc.get(this.spec, this.raw.feeMultiplier)
+        if (calc == null) return
+        let extrinsics = this.extrinsics()
+        for (let e of this.events()) {
+            switch(e.name) {
+                case 'System.ExtrinsicSuccess':
+                case 'System.ExtrinsicFailed':
+                    let extrinsicIdx = e.extrinsicIdx!
+                    let extrinsic = extrinsics[extrinsicIdx]
+                    if (extrinsic.signature != null) {
+                        let dispatchInfo = e.args.dispatchInfo as sub.DispatchInfo
+                        let len = this.raw.block.extrinsics[extrinsicIdx].length / 2 - 1
+                        extrinsic.fee = calc.calcFee(dispatchInfo, len)
+                    }
+                    break
+            }
+        }
+    }
 
-    let calls = new CallParser(
-        spec,
-        raw.blockHeight,
-        raw.blockHash,
-        events,
-        extrinsics,
-        warnings
-    ).getCalls()
+    @def
+    parseCalls(): CallParser {
+        return new CallParser(
+            {
+                spec: this.spec,
+                blockHeight: this.raw.blockHeight,
+                blockHash: this.raw.blockHash
+            },
+            this.events(),
+            this.extrinsics()
+        )
+    }
 
-    let digest = raw.block.header.digest.logs.map<sub.DigestItem>(item => {
-        return spec.scaleCodec.decodeBinary(spec.description.digestItem, item)
-    })
+    calls(): Call[] {
+        return this.parseCalls().calls
+    }
 
-    let validator = getBlockValidator(digest, validators)
-
-    return  {
-        header: {
-            id: block_id,
-            height: raw.blockHeight,
-            hash: raw.blockHash,
-            parent_hash: raw.block.header.parentHash,
-            timestamp: new Date(getBlockTimestamp(extrinsics)),
-            validator: validator && toHex(validator),
-            spec_id: '' // to be set later
-        },
-        extrinsics,
-        events,
-        calls,
-        warnings
+    warnings(): Warning[] {
+        return this.parseCalls().warnings
     }
 }
 
 
-function setExtrinsicFees(spec: Spec, raw: RawBlock, extrinsics: ExtrinsicExt[], events: EventExt[]): void {
-    if (raw.feeMultiplier == null) return
-    let calc = FeeCalc.get(spec, raw.feeMultiplier)
-    if (calc == null) return
-    for (let e of events) {
-        switch(e.name) {
-            case 'System.ExtrinsicSuccess':
-            case 'System.ExtrinsicFailed':
-                let extrinsicIdx = e.extrinsicIdx!
-                let extrinsic = extrinsics[extrinsicIdx]
-                if (extrinsic.signature != null) {
-                    let dispatchInfo = e.args.dispatchInfo as sub.DispatchInfo
-                    let len = raw.block.extrinsics[extrinsicIdx].length / 2 - 1
-                    extrinsic.fee = calc.calcFee(dispatchInfo, len)
-                }
-                break
-        }
+export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock): BlockData {
+    let bp = new BlockParser(spec, validators, raw)
+    bp.setExtrinsicFees()
+    return  {
+        header: bp.header(),
+        extrinsics: bp.extrinsics(),
+        events: bp.events(),
+        calls: bp.calls(),
+        warnings: bp.warnings()
     }
 }
