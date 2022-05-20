@@ -10,7 +10,7 @@ import {
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, toHex, wait} from "@subsquid/util-internal"
+import {assertNotNull, wait} from "@subsquid/util-internal"
 import assert from "assert"
 import {Client} from "./client"
 import {Spec, sub} from "./interfaces"

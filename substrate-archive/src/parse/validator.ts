@@ -11,8 +11,7 @@ type Rec = [engine: Uint8Array, data: Uint8Array]
 export type Account = Uint8Array
 
 
-export function getBlockValidator(digestLog: sub.DigestItem[], sessionValidators: Account[]): Account | undefined {
-    let account: Account | undefined
+export function getBlockValidator(digestLog: sub.DigestItem[], validators: Account[]): Account | undefined {
     let preRuntime: Rec | undefined
     let consensus: Rec | undefined
     let seal: Rec | undefined
@@ -31,9 +30,9 @@ export function getBlockValidator(digestLog: sub.DigestItem[], sessionValidators
         }
     }
 
-    if (preRuntime && (account = fromRecord(preRuntime, sessionValidators))) return account
-    if (consensus && (account = fromRecord(consensus, sessionValidators))) return account
-    if (seal) return fromRecord(seal, sessionValidators)
+    return preRuntime && fromRecord(preRuntime, validators)
+        || consensus && fromRecord(consensus, validators)
+        || seal && fromRecord(seal, validators)
 }
 
 
