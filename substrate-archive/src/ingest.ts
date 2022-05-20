@@ -75,7 +75,13 @@ export class Ingest {
             let blocks = await assertNotNull(this.strides.shift())
             if (blocks instanceof Error) throw blocks
             for (let raw of blocks) {
-                yield await this.processRawBlock(raw)
+                try {
+                    yield await this.processRawBlock(raw)
+                } catch(e: any) {
+                    e.blockHeight = raw.blockHeight
+                    e.blockHash = raw.blockHash
+                    throw e
+                }
             }
         }
     }

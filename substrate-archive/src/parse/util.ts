@@ -43,3 +43,21 @@ export function unwrapArguments(call: sub.Call | sub.Event, registry: eac.Regist
     }
     return {name, args}
 }
+
+
+export function getDispatchInfoFromExtrinsicSuccess(args: any): sub.DispatchInfo {
+    if (args.dispatchInfo) {
+        return args.dispatchInfo
+    } else {
+        return args
+    }
+}
+
+
+export function getDispatchInfoFromExtrinsicFailed(args: any): sub.DispatchInfo {
+    if (args.dispatchInfo) {
+        return args.dispatchInfo
+    } else {
+        return assertNotNull(args[1])
+    }
+}

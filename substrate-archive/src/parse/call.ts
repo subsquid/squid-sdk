@@ -27,7 +27,7 @@ class CallExtractor {
     constructor(private ctx: BlockCtx) {}
 
     visit(extrinsic: ExtrinsicExt): void {
-        this._extrinsic = extrinsic
+        this.extrinsic = extrinsic
         this.createCall(extrinsic.call)
     }
 

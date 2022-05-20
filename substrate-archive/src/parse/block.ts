@@ -1,11 +1,16 @@
 import {decodeExtrinsic} from "@subsquid/substrate-metadata"
-import {def, toHex} from "@subsquid/util-internal"
+import {assertNotNull, def, toHex} from "@subsquid/util-internal"
 import {Spec, sub} from "../interfaces"
 import {Block, BlockData, Call, Event, Extrinsic, Warning} from "../model"
 import {blake2bHash} from "../util"
 import {CallParser} from "./call"
 import {FeeCalc} from "./feeCalc"
-import {formatId, unwrapArguments} from "./util"
+import {
+    formatId,
+    getDispatchInfoFromExtrinsicFailed,
+    getDispatchInfoFromExtrinsicSuccess,
+    unwrapArguments
+} from "./util"
 import {Account, getBlockValidator} from "./validator"
 
 
@@ -140,21 +145,31 @@ export class BlockParser {
         if (this.raw.feeMultiplier == null) return
         let calc = FeeCalc.get(this.spec, this.raw.feeMultiplier)
         if (calc == null) return
-        let extrinsics = this.extrinsics()
         for (let e of this.events()) {
             switch(e.name) {
                 case 'System.ExtrinsicSuccess':
+                    this.setFee(
+                        calc,
+                        assertNotNull(e.extrinsicIdx),
+                        getDispatchInfoFromExtrinsicSuccess(e.args)
+                    )
+                    break
                 case 'System.ExtrinsicFailed':
-                    let extrinsicIdx = e.extrinsicIdx!
-                    let extrinsic = extrinsics[extrinsicIdx]
-                    if (extrinsic.signature != null) {
-                        let dispatchInfo = e.args.dispatchInfo as sub.DispatchInfo
-                        let len = this.raw.block.extrinsics[extrinsicIdx].length / 2 - 1
-                        extrinsic.fee = calc.calcFee(dispatchInfo, len)
-                    }
+                    this.setFee(
+                        calc,
+                        assertNotNull(e.extrinsicIdx),
+                        getDispatchInfoFromExtrinsicFailed(e.args)
+                    )
                     break
             }
         }
+    }
+
+    private setFee(calc: FeeCalc, extrinsicIdx: number, dispatchInfo: sub.DispatchInfo): void {
+        let extrinsic = this.extrinsics()[extrinsicIdx]
+        if (extrinsic.signature == null) return
+        let len = this.raw.block.extrinsics[extrinsicIdx].length / 2 - 1
+        extrinsic.fee = calc.calcFee(dispatchInfo, len)
     }
 
     @def

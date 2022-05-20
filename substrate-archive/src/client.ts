@@ -211,7 +211,7 @@ class Connection {
     private connect(): void {
         this.client.connect().then(
             () => {
-                this.log?.info('connected')
+                this.log?.debug('connected')
                 this.client.onclose = err => this.reconnect(err)
                 this.onNewConnection()
             },
