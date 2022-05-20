@@ -86,4 +86,36 @@ export namespace sub {
             __kind: 'Yes' | 'No'
         }
     }
+
+
+    export type DigestItem = DigestItem_PreRuntime | DigestItem_Consensus | DigestItem_Seal | DigestItem_Other | DigestItem_RuntimeEnvironmentUpdated
+
+
+    export interface DigestItem_PreRuntime {
+        __kind: 'PreRuntime'
+        value: [Uint8Array, Uint8Array]
+    }
+
+
+    export interface DigestItem_Consensus {
+        __kind: 'Consensus'
+        value: [Uint8Array, Uint8Array]
+    }
+
+
+    export interface DigestItem_Seal {
+        __kind: 'Seal'
+        value: [Uint8Array, Uint8Array]
+    }
+
+
+    export interface DigestItem_Other {
+        __kind: 'Other'
+        value: Uint8Array
+    }
+
+
+    export interface DigestItem_RuntimeEnvironmentUpdated {
+        __kind: 'RuntimeEnvironmentUpdated'
+    }
 }

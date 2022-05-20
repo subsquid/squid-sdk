@@ -4,9 +4,6 @@ import {Spec, sub} from "../interfaces"
 import {splitSpecId} from "../util"
 
 
-export const NEXT_FEE_MULTIPLIER_STORAGE_KEY = '0x3f1467a096bcd71a5b6a0c8155e208103f2edf3bdf381debe331ab7446addfdc'
-
-
 interface BaseWeights {
     Normal: bigint
     Operational: bigint

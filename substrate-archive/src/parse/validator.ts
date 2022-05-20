@@ -1,0 +1,55 @@
+import {Src} from "@subsquid/scale-codec"
+import {sub} from "../interfaces"
+
+
+const BABE_ENGINE = Buffer.from('BABE')
+const AURA_ENGINE = Buffer.from('aura')
+const POW_ENGINE = Buffer.from('pow_')
+
+
+type Rec = [engine: Uint8Array, data: Uint8Array]
+export type Account = Uint8Array
+
+
+export function getBlockValidator(digestLog: sub.DigestItem[], sessionValidators: Account[]): Account | undefined {
+    let account: Account | undefined
+    let preRuntime: Rec | undefined
+    let consensus: Rec | undefined
+    let seal: Rec | undefined
+
+    for (let item of digestLog) {
+        switch(item.__kind) {
+            case 'PreRuntime':
+                preRuntime = item.value
+                break
+            case 'Consensus':
+                consensus = item.value
+                break
+            case 'Seal':
+                seal = item.value
+                break
+        }
+    }
+
+    if (preRuntime && (account = fromRecord(preRuntime, sessionValidators))) return account
+    if (consensus && (account = fromRecord(consensus, sessionValidators))) return account
+    if (seal) return fromRecord(seal, sessionValidators)
+}
+
+
+function fromRecord(rec: Rec, validators: Account[]): Account | undefined {
+    let [engine, data] = rec
+    if (BABE_ENGINE.equals(engine)) {
+        let src = new Src(data)
+        src.u8()
+        let idx = src.u32()
+        return validators[idx]
+    } else if (AURA_ENGINE.equals(engine)) {
+        let src = new Src(data)
+        let slot = src.u64()
+        let idx = Number(slot % BigInt(validators.length))
+        return validators[idx]
+    } else if (POW_ENGINE.equals(engine) && data.length == 20) {
+        return data
+    }
+}

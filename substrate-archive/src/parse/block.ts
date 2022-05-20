@@ -1,9 +1,11 @@
 import {decodeExtrinsic} from "@subsquid/substrate-metadata"
+import {toHex} from "@subsquid/util-internal"
 import {Spec, sub} from "../interfaces"
 import {BlockData, Event, Extrinsic, Warning} from "../model"
 import {blake2bHash, formatId, getBlockTimestamp, unwrapArguments} from "../util"
 import {CallParser} from "./call"
 import {FeeCalc} from "./feeCalc"
+import {Account, getBlockValidator} from "./validator"
 
 
 export interface RawBlock {
@@ -26,7 +28,7 @@ export interface ExtrinsicExt extends Extrinsic {
 }
 
 
-export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
+export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock): BlockData {
     let block_id = formatId(raw.blockHeight, raw.blockHash)
 
     let events: EventExt[] = raw.events == null
@@ -87,6 +89,12 @@ export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
         warnings
     ).getCalls()
 
+    let digest = raw.block.header.digest.logs.map<sub.DigestItem>(item => {
+        return spec.scaleCodec.decodeBinary(spec.description.digestItem, item)
+    })
+
+    let validator = getBlockValidator(digest, validators)
+
     return  {
         header: {
             id: block_id,
@@ -94,6 +102,7 @@ export function parseRawBlock(spec: Spec, raw: RawBlock): BlockData {
             hash: raw.blockHash,
             parent_hash: raw.block.header.parentHash,
             timestamp: new Date(getBlockTimestamp(extrinsics)),
+            validator: validator && toHex(validator),
             spec_id: '' // to be set later
         },
         extrinsics,
