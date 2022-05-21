@@ -76,9 +76,8 @@ class FromV14 {
         let types = this.metadata.lookup.types
         let extrinsic = this.metadata.extrinsic.type
         let params = types[extrinsic].type.params
-        let call = params[1]
-        assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
-        return assertNotNull(call.type)
+        let call = params.find(p => p.name == 'Call')
+        return assertNotNull(call?.type, 'expected to find Call type among extrinsic type parameters')
     }
 
     @def
