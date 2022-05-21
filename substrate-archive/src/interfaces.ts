@@ -118,4 +118,28 @@ export namespace sub {
     export interface DigestItem_RuntimeEnvironmentUpdated {
         __kind: 'RuntimeEnvironmentUpdated'
     }
+
+
+    export interface AccountOrigin {
+        __kind: 'system'
+        value: {
+            __kind: 'Signed'
+            value: Uint8Array
+        }
+    }
+
+    export interface RootOrigin {
+        __kind: 'system'
+        value: {
+            __kind: 'Root'
+        }
+    }
+
+
+    export interface NoneOrigin {
+        __kind: 'system'
+        value: {
+            __kind: 'None'
+        }
+    }
 }

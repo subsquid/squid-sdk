@@ -61,3 +61,44 @@ export function getDispatchInfoFromExtrinsicFailed(args: any): sub.DispatchInfo 
         return assertNotNull(args[1])
     }
 }
+
+
+export function getExtrinsicFailedError(args: any): unknown {
+    if (args.dispatchError) {
+        return args.dispatchError
+    } else {
+        return assertNotNull(args[0])
+    }
+}
+
+
+export function addressOrigin(address: any): sub.AccountOrigin | undefined {
+    if (address.__kind != 'Id') return
+    return {
+        __kind: 'system',
+        value: {
+            __kind: 'Signed',
+            value: address.value
+        }
+    }
+}
+
+
+export function rootOrigin(): sub.RootOrigin {
+    return {
+        __kind: 'system',
+        value: {
+            __kind: 'Root'
+        }
+    }
+}
+
+
+export function noneOrigin(): sub.NoneOrigin {
+    return {
+        __kind: 'system',
+        value: {
+            __kind: 'None'
+        }
+    }
+}

@@ -3,7 +3,8 @@ import assert from "assert"
 import {Spec, sub} from "../interfaces"
 import * as model from "../model"
 import type {ExtrinsicExt} from "./block"
-import {unwrapArguments} from "./util"
+import {getExtrinsicFailedError, noneOrigin, rootOrigin, addressOrigin, unwrapArguments} from "./util"
+import {Account} from "./validator"
 
 
 interface BlockCtx {
@@ -27,11 +28,13 @@ class CallExtractor {
     constructor(private ctx: BlockCtx) {}
 
     visit(extrinsic: ExtrinsicExt): void {
+        let address = extrinsic.signature?.address
+        let origin = address ? addressOrigin(address) : noneOrigin()
         this.extrinsic = extrinsic
-        this.createCall(extrinsic.call)
+        this.createCall(extrinsic.call, undefined, origin)
     }
 
-    private createCall(raw: sub.Call, parent?: Call): void {
+    private createCall(raw: sub.Call, parent: Call | undefined, origin: unknown): void {
         let id = this.extrinsic.id
         if (parent) {
             let idx = this.idx += 1
@@ -47,6 +50,7 @@ class CallExtractor {
             block_id: this.extrinsic.block_id,
             extrinsic_id: this.extrinsic.id,
             success: false,
+            origin,
             name,
             args,
             parent_id: parent?.id,
@@ -56,20 +60,42 @@ class CallExtractor {
 
         switch(name) {
             case 'Utility.batch':
-            case 'Utility.batch_all': {
+            case 'Utility.batch_all':
+            case 'Utility.force_batch': {
                 let batch = args as {calls: sub.Call[]}
                 for (let item of batch.calls) {
-                    this.createCall(item, call)
+                    this.createCall(item, call, origin)
                 }
                 break
             }
-            case 'Utility.as_derivative':
             case 'Utility.as_sub':
             case 'Utility.as_limited_sub':
-            case 'Utility.dispatch_as':
-            case 'Proxy.proxy': {
+            case 'Utility.as_derivative': {
+                // FIXME: compute origin
                 let a = args as {call: sub.Call}
-                this.createCall(a.call, call)
+                this.createCall(a.call, call, undefined)
+                break
+            }
+            case 'Utility.dispatch_as': {
+                let a = args as {call: sub.Call, asOrigin: unknown}
+                this.createCall(a.call, call, a.asOrigin)
+                break
+            }
+            case 'Proxy.proxy':
+            case 'Proxy.proxy_announced': {
+                let a = args as {call: sub.Call, real: Account}
+                this.createCall(a.call, call, addressOrigin(a.real))
+                break
+            }
+            case 'Sudo.sudo':
+            case 'Sudo.sudo_unchecked_weight': {
+                let a = args as {call: sub.Call}
+                this.createCall(a.call, call, rootOrigin())
+                break
+            }
+            case 'Sudo.sudo_as': {
+                let a = args as {call: sub.Call}
+                this.createCall(a.call, call, undefined)
                 break
             }
         }
@@ -134,7 +160,10 @@ export class CallParser {
                 this.visitCall(call)
                 break
             case 'System.ExtrinsicFailed':
+                let err = getExtrinsicFailedError(event.args)
                 this.extrinsic.success = false
+                this.extrinsic.error = err
+                this.setError(call, err)
                 this.skipCall(call, false)
                 while (this.tryNext()) {}
                 break
@@ -167,8 +196,11 @@ export class CallParser {
             case 'Utility.batch_all':
                 this.visitBatchAll(call, parent)
                 break
+            case 'Utility.force_batch':
+                this.visitForceBatch(call, parent)
+                break
             case 'Utility.dispatch_as':
-                this.visitDispatchAs(call, parent)
+                this.visitWrapper(DISPATCHED_AS, call, parent)
                 break
             case 'Utility.as_derivative':
             case 'Utility.as_sub':
@@ -176,23 +208,34 @@ export class CallParser {
                 this.visitCall(call.children[0], call)
                 break
             case 'Proxy.proxy':
-                this.visitProxyCall(call, parent)
+            case 'Proxy.proxy_announced':
+                this.visitWrapper(PROXY_EXECUTED, call, parent)
+                break
+            case 'Sudo.sudo':
+            case 'Sudo.sudo_as':
+            case 'Sudo.sudo_unchecked_weight':
+                this.visitWrapper(END_OF_SUDO, call, parent)
                 break
             default:
                 this.takeEvents(call)
         }
     }
 
-    private visitBatch(call: Call, parent?: Call): void {
+    private visitBatch(batch: Call, parent?: Call): void {
         let end = this.find(parent, END_OF_BATCH)
-        end.event.call_id = call.id
-        this.visitBatchItems(call, end.ok ? call.children.length - 1 : end.failedItem - 1)
+        end.event.call_id = batch.id
+        if (end.ok) {
+            this.visitBatchItems(batch, batch.children.length - 1)
+        } else {
+            this.visitBatchItems(batch, end.failedItem - 1)
+            this.setError(batch.children[end.failedItem], end.error)
+        }
     }
 
-    private visitBatchAll(call: Call, parent?: Call): void {
+    private visitBatchAll(batch: Call, parent?: Call): void {
         let end = this.find(parent, BATCH_COMPLETED)
-        end.call_id = call.id
-        this.visitBatchItems(call, call.children.length - 1)
+        end.call_id = batch.id
+        this.visitBatchItems(batch, batch.children.length - 1)
     }
 
     private visitBatchItems(batch: Call, lastCompletedItem: number) {
@@ -211,9 +254,10 @@ export class CallParser {
             while (event = this.tryNext()) {
                 event.call_id = batch.id
                 if (isFailure(event)) {
-                    let message = `WARNING: batch call ${batch.id} has failed nested calls (linked to event ${event.id}) which will be marked as successful.`
-                    console.error(message)
-                    this.warnings.push({block_id: this.extrinsic.block_id, message})
+                    this.warnings.push({
+                        block_id: this.extrinsic.block_id,
+                        message: `batch call ${batch.id} has failed nested calls (linked to event ${event.id}) which will be marked as successful.`
+                    })
                 }
             }
         } else {
@@ -232,25 +276,48 @@ export class CallParser {
         }
     }
 
-    private visitDispatchAs(call: Call, parent?: Call): void {
-        let result = this.find(parent, DISPATCHED_AS)
+    private visitForceBatch(batch: Call, parent?: Call): void {
+        let completedEvent = this.find(parent, END_OF_FORCE_BATCH)
+        completedEvent.call_id = batch.id
+        for (let i = batch.children.length - 1; i >=0; i--) {
+            let item = batch.children[i]
+            let end = this.find(parent, FORCE_BATCH_ITEM)
+            end.event.call_id = batch.id
+            if (end.ok) {
+                let boundary = this.boundary
+                if (i > 0) {
+                    this.boundary = FORCE_BATCH_ITEM
+                }
+                this.visitCall(item, batch)
+                this.boundary = boundary
+            } else {
+                this.setError(item, end.error)
+                this.skipCall(item, false)
+                this.takeEvents(batch)
+            }
+        }
+    }
+
+    private visitWrapper(end: (event: model.Event) => CallEnd | undefined, call: Call, parent?: Call): void {
+        let result = this.find(parent, end)
         result.event.call_id = call.id
         if (result.ok) {
             this.visitCall(call.children[0], call)
         } else {
+            this.setError(call.children[0], result.error)
             this.skipCall(call.children[0], false)
             this.takeEvents(call)
         }
     }
 
-    private visitProxyCall(call: Call, parent?: Call): void {
-        let result = this.find(parent, PROXY_EXECUTED)
-        result.event.call_id = call.id
-        if (result.ok) {
-            this.visitCall(call.children[0], call)
-        } else {
-            this.skipCall(call.children[0], false)
-            this.takeEvents(call)
+    private setError(call: Call, err: unknown): void {
+        call.error = err
+        switch(call.name) {
+            case 'Utility.as_derivative':
+            case 'Utility.as_sub':
+            case 'Utility.as_limited_sub':
+                call.children[0].error = err
+                break
         }
     }
 
@@ -331,6 +398,7 @@ type EndOfBatch = {
 } | {
     ok: false,
     failedItem: number
+    error: unknown
     event: model.Event
 }
 
@@ -340,12 +408,32 @@ function END_OF_BATCH(event: model.Event): EndOfBatch | undefined {
         case 'Utility.BatchCompleted':
             return {ok: true, event}
         case 'Utility.BatchInterrupted':
-            let failedItem = Array.isArray(event.args) ? event.args[0] : event.args.index
+            let failedItem
+            let error
+            if (Array.isArray(event.args)) {
+                failedItem = event.args[0]
+                error = event.args[1]
+            } else {
+                failedItem = event.args.index
+                error = event.args.error
+            }
             return {
                 ok: false,
                 failedItem,
+                error,
                 event
             }
+        default:
+            return undefined
+    }
+}
+
+
+function END_OF_FORCE_BATCH(event: model.Event): model.Event | undefined {
+    switch(event.name) {
+        case 'Utility.BatchCompleted':
+        case 'Utility.BatchCompletedWithErrors':
+            return event
         default:
             return undefined
     }
@@ -362,28 +450,73 @@ function BATCH_COMPLETED(event: model.Event): model.Event | undefined {
 }
 
 
-function DISPATCHED_AS(event: model.Event): {ok: boolean, event: model.Event} | undefined {
+type CallEnd = {
+    ok: true
+    event: model.Event
+} | {
+    ok: false
+    event: model.Event
+    error: unknown
+}
+
+
+function FORCE_BATCH_ITEM(event: model.Event): CallEnd | undefined {
+    switch(event.name) {
+        case 'Utility.ItemCompleted':
+            return {ok: true, event}
+        case 'Utility.ItemFailed':
+            return {
+                ok: false,
+                event,
+                error: event.args.error
+            }
+    }
+}
+
+
+function DISPATCHED_AS(event: model.Event): CallEnd| undefined {
     if (event.name != 'Utility.DispatchedAs') return undefined
     let result = 'result' in event.args ? event.args.result : event.args
     switch(result.__kind) {
         case 'Ok':
             return {ok: true, event}
         case 'Err':
-            return {ok: false, event}
+            return {ok: false, event, error: result.value}
         default:
             throw unexpectedCase(result.__kind)
     }
 }
 
 
-function PROXY_EXECUTED(event: model.Event): {ok: boolean, event: model.Event} | undefined {
+function PROXY_EXECUTED(event: model.Event): CallEnd | undefined {
     if (event.name != 'Proxy.ProxyExecuted') return undefined
     let result = 'result' in event.args ? event.args.result : event.args
     switch(result.__kind) {
         case 'Ok':
             return {ok: true, event}
         case 'Err':
-            return {ok: false, event}
+            return {ok: false, event, error: result.value}
+        default:
+            throw unexpectedCase(result.__kind)
+    }
+}
+
+
+function END_OF_SUDO(event: model.Event): CallEnd | undefined {
+    if (event.name != 'Sudo.Sudid' && event.name != 'Sudo.SudoAsDone') return undefined
+    switch(event.name) {
+        case "Sudo.Sudid":
+        case "Sudo.SudoAsDone":
+            break
+        default:
+            return
+    }
+    let result = 'sudo_result' in event.args ? event.args.sudo_result : event.args
+    switch(result.__kind) {
+        case 'Ok':
+            return {ok: true, event}
+        case 'Err':
+            return {ok: false, event, error: result.value}
         default:
             throw unexpectedCase(result.__kind)
     }

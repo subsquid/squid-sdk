@@ -30,14 +30,15 @@ export interface Extrinsic {
     id: string
     block_id: string
     index_in_block: number
-    success: boolean
     version: number
     signature?: sub.ExtrinsicSignature
     call_id: string
     fee?: bigint
     tip?: bigint | number
-    hash: Uint8Array
+    success: boolean
+    error?: unknown
     pos: number
+    hash: Uint8Array
 }
 
 
@@ -46,9 +47,11 @@ export interface Call {
     parent_id?: string
     block_id: string
     extrinsic_id: string
-    success: boolean
+    origin?: unknown
     name: string
     args: any
+    success: boolean
+    error?: unknown
     pos: number
 }
 

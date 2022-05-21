@@ -29,14 +29,15 @@ CREATE TABLE extrinsic (
     id char(23) primary key,
     block_id char(16) not null references block on delete cascade,
     index_in_block integer not null,
-    success bool not null,
     version integer not null,
     signature jsonb,
     call_id varchar(30) not null,
     fee numeric,
     tip numeric,
-    hash char(66) not null,
-    pos integer not null
+    success bool not null,
+    error jsonb,
+    pos integer not null,
+    hash char(66) not null
 );
 
 
@@ -48,9 +49,11 @@ CREATE TABLE call (
     parent_id varchar(30) references call,
     block_id char(16) not null references block on delete cascade,
     extrinsic_id char(23) not null references extrinsic on delete cascade,
-    success bool not null,
     name varchar not null,
     args jsonb,
+    success bool not null,
+    error jsonb,
+    origin jsonb,
     pos integer not null
 );
 
