@@ -20,7 +20,7 @@
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.2",
     "@subsquid/scale-codec-json": "^0.1.4",
-    "@subsquid/substrate-metadata": "^0.8.3",
+    "@subsquid/substrate-metadata": "^0.8.4",
     "@subsquid/typeorm-config": "^0.0.5",
     "@subsquid/util": "^0.0.5",
     "@subsquid/util-xxhash": "^0.1.0",
