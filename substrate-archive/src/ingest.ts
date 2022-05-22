@@ -42,7 +42,7 @@ export class Ingest {
 
     private client: Client
     private typesBundle?: OldTypesBundle
-    private maxStrides = 10
+    private maxStrides = 20
     private readonly strideSize = 10
     private log?: Logger
 
@@ -127,28 +127,44 @@ export class Ingest {
 
     private async fetchStride(height: number, size: number): Promise<RawBlock[]> {
         assert(size > 0)
+        let blocks = new Array<sub.Block>(size)
+        let hashes = new Array<string>(size)
+        let storagePromises = new Array<Promise<Error | any[]>>(size)
+
         let last = height + size - 1
         let blockHash =  await this.client.call<string>(height, "chain_getBlockHash", [last])
-        let result: RawBlock[] = new Array(size)
+
         for (let i = size - 1; i >= 0; i--) {
-            let [signedBlock, [events, feeMultiplier]] = await Promise.all([
-                this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash]),
-                this.queryStorageAt(
-                    blockHash,
-                    [EVENT_STORAGE_KEY, NEXT_FEE_MULTIPLIER_STORAGE_KEY],
-                    height
-                )
-            ])
-            let blockHeight = parseInt(signedBlock.block.header.number)
-            assert(blockHeight === height + i)
-            result[i] = {
+            hashes[i] = blockHash
+
+            storagePromises[i] = this.queryStorageAt(
                 blockHash,
-                blockHeight,
-                block: signedBlock.block,
+                [
+                    EVENT_STORAGE_KEY,
+                    NEXT_FEE_MULTIPLIER_STORAGE_KEY
+                ],
+                height + i
+            ).catch((err: Error) => err)
+
+            let block = await this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash])
+            blocks[i] = block.block
+            blockHash = block.block.header.parentHash
+            assert(parseInt(block.block.header.number) === height + i)
+        }
+
+        let storage = await Promise.all(storagePromises)
+        let result = new Array<RawBlock>(size)
+        for (let i = 0; i < size; i++) {
+            let s = storage[i]
+            if (s instanceof Error) throw Error
+            let [events, feeMultiplier] = s
+            result[i] = {
+                blockHeight: height + i,
+                blockHash: hashes[i],
+                block: blocks[i],
                 events,
                 feeMultiplier
             }
-            blockHash = signedBlock.block.header.parentHash
         }
         return result
     }

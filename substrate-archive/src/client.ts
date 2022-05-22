@@ -91,18 +91,18 @@ export class Client {
         })
         for (let i = 0; i < this.connections.length && !this.queue.isEmpty(); i++) {
             let con = this.connections[i]
-            if (con.waitTime() > 0) continue
-            let eta = con.waitTime() + con.avgResponseTime()
+            if (con.capacity == 0) continue
+            let eta = con.avgResponseTime()
             let n = 0
             for (let j = 0; j < i; j++) {
                 let fc = this.connections[j]
-                n += Math.floor(Math.max(eta - fc.waitTime(), 0) / fc.avgResponseTime())
+                n += con.maxCapacity * Math.floor(Math.max(eta - fc.waitTime(), 0) / fc.avgResponseTime())
             }
-            let req = this.queue.take(n)
-            if (req == null && Math.random() < 0.1) {
-                req = this.queue.takeLast()
+            let requests = this.queue.take(n, con.capacity)
+            if (requests.length == 0 && this.queue.isNotEmpty() && Math.random() < 0.1) {
+                requests = this.queue.takeLast()
             }
-            if (req) {
+            for (let req of requests) {
                 this.execute(con, req, n)
             }
         }
@@ -116,24 +116,19 @@ export class Client {
             method: req.method,
             priority: req.priority
         }, 'request')
-        this.addTimeout(con.call(req.method, req.params)).then(
+        this.addTimeout(con.call(req.id, req.method, req.params)).then(
             res => {
                 req.resolve(res)
                 req.promise().finally(() => this.performScheduling())
-                this.timer.nextEpoch()
-                let duration = con.success()
-                con.log?.debug({
-                    req: req.id,
-                    responseTime: Math.round(Number(duration) / 1000_000)
-                }, 'response')
             },
             (err: Error) => {
                 if (err instanceof RpcConnectionError) {
+                    con.log?.debug({req: req.id}, 'connection failure')
                     con.reset(err)
                     this.queue.push(req)
                     this.performScheduling()
                 } else {
-                    con.error()
+                    con.log?.debug({req: req.id}, 'error response')
                     req.reject(err)
                     req.promise().finally(() => this.performScheduling())
                 }
@@ -162,7 +157,8 @@ class Connection {
     private speed = new Speed(500)
     private connectionErrors = 0
     private backoff = [100, 1000, 10000, 30000]
-    private busy = false
+    public readonly maxCapacity = 3
+    private cap = 0
     private closed = false
 
     constructor(
@@ -176,28 +172,38 @@ class Connection {
         this.connect()
     }
 
-    call(method: string, params?: unknown[]): Promise<any> {
-        this.busy = true
-        this.speed.start(this.timer.time())
-        return this.client.call(method, params)
+    get capacity(): number {
+        return this.cap
     }
 
-    success(): bigint {
-        this.connectionErrors = 0
-        this.busy = false
-        return this.speed.stop(1, this.timer.time())
-    }
-
-    error(): void {
-        this.connectionErrors = 0
-        this.busy = false
+    call(id: number, method: string, params?: unknown[]): Promise<any> {
+        this.cap -= 1
+        let beg = this.timer.time()
+        return this.client.call(method, params).then(res => {
+            this.connectionErrors = 0
+            this.cap += 1
+            this.timer.nextEpoch()
+            let duration = this.timer.time() - beg
+            this.speed.push(1, duration)
+            this.log?.debug({
+                req: id,
+                responseTime: Math.round(Number(duration) / 1000_000)
+            }, 'response')
+            return res
+        }, err => {
+            this.connectionErrors = 0
+            this.cap += 1
+            throw err
+        })
     }
 
     reset(err: Error) {
+        this.cap = 0
         this.client.close(err)
     }
 
     close() {
+        this.cap = 0
         this.closed = true
         this.client.close()
     }
@@ -206,7 +212,7 @@ class Connection {
         if (this.closed) return
         let timeout = this.backoff[Math.min(this.connectionErrors, this.backoff.length - 1)]
         this.connectionErrors += 1
-        this.busy = false
+        this.cap = this.maxCapacity
         this.log?.warn({
             err,
             backoff: timeout
@@ -222,6 +228,7 @@ class Connection {
             () => {
                 this.log?.debug('connected')
                 this.client.onclose = err => this.reconnect(err)
+                this.cap = this.maxCapacity
                 this.onNewConnection()
             },
             err => this.reconnect(err)
@@ -235,11 +242,10 @@ class Connection {
     }
 
     waitTime(): number {
-        if (!this.client.isConnected) return 1_000_000
-        if (this.busy) {
-            return this.avgResponseTime() * 2
-        } else {
+        if (this.cap) {
             return 0
+        } else {
+            return this.avgResponseTime() * 1.5
         }
     }
 }
@@ -262,37 +268,42 @@ class RequestQueue<R extends {priority: number}> {
         }
     }
 
-    take(skip: number): R | undefined {
-        for (let i = 0; i < this.items.length; i++) {
+    take(skip: number, count: number): R[] {
+        let requests: R[] = []
+        for (let i = 0; i < this.items.length && count > 0; i++) {
             let item = this.items[i]
             if (skip < item.length) {
-                if (item.length == 1) {
+                let taking = Math.min(count, item.length - skip)
+                if (taking == item.length) {
+                    requests.push(...item)
                     this.items.splice(i, 1)
-                    return item[0]
                 } else {
-                    let val = item[skip]
-                    item.splice(skip, 1)
-                    return val
+                    requests.push(...item.splice(skip, taking))
                 }
+                count -= taking
             } else {
                 skip -= item.length
             }
         }
+        return requests
     }
 
-    takeLast(): R | undefined {
-        if (this.items.length == 0) return
+    takeLast(): R[] {
+        if (this.items.length == 0) return []
         let item = last(this.items)
         if (item.length == 1) {
-            this.items.pop()
-            return item[0]
+            return this.items.pop()!
         } else {
-            return item.pop()
+            return [item.pop()!]
         }
     }
 
     isEmpty(): boolean {
         return this.items.length == 0
+    }
+
+    isNotEmpty(): boolean {
+        return this.items.length > 0
     }
 }
 

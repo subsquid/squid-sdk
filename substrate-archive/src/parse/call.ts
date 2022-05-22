@@ -89,13 +89,13 @@ class CallExtractor {
             }
             case 'Sudo.sudo':
             case 'Sudo.sudo_unchecked_weight': {
-                let a = args as {call: sub.Call}
-                this.createCall(a.call, call, rootOrigin())
+                let a = args as {call: sub.Call, proposal?: undefined} | {call?: undefined, proposal: sub.Call}
+                this.createCall(a.call || a.proposal, call, rootOrigin())
                 break
             }
             case 'Sudo.sudo_as': {
-                let a = args as {call: sub.Call}
-                this.createCall(a.call, call, undefined)
+                let a = args as {call: sub.Call, proposal?: undefined} | {call?: undefined, proposal: sub.Call}
+                this.createCall(a.call || a.proposal, call, undefined)
                 break
             }
         }
@@ -503,13 +503,16 @@ function PROXY_EXECUTED(event: model.Event): CallEnd | undefined {
 
 
 function END_OF_SUDO(event: model.Event): CallEnd | undefined {
-    if (event.name != 'Sudo.Sudid' && event.name != 'Sudo.SudoAsDone') return undefined
     switch(event.name) {
         case "Sudo.Sudid":
         case "Sudo.SudoAsDone":
             break
         default:
             return
+    }
+    if (typeof event.args == 'boolean') return {
+        ok: event.args as any,
+        event
     }
     let result = 'sudo_result' in event.args ? event.args.sudo_result : event.args
     switch(result.__kind) {
