@@ -16,6 +16,12 @@ interface Req {
 }
 
 
+export interface Endpoint {
+    url: string
+    capacity?: number
+}
+
+
 export class Client {
     private timer = new Timer()
     private queue = new RequestQueue<Req>()
@@ -24,16 +30,17 @@ export class Client {
     private timeoutSeconds = 20
     private counter = 0
 
-    constructor(endpoints: string[], private log?: Logger) {
+    constructor(endpoints: Endpoint[], private log?: Logger) {
         assert(endpoints.length > 0, 'at least 1 RPC endpoint is required')
-        this.connections = endpoints.map((url, idx) => {
+        this.connections = endpoints.map((ep, idx) => {
             let id = idx + 1
             return new Connection(
                 id,
-                url,
+                ep.url,
+                ep.capacity || 5,
                 this.timer,
                 () => this.performScheduling(),
-                this.log?.child({endpoint: id, url})
+                this.log?.child({endpoint: id, url: ep.url})
             )
         })
     }
@@ -157,13 +164,13 @@ class Connection {
     private speed = new Speed(500)
     private connectionErrors = 0
     private backoff = [100, 1000, 10000, 30000]
-    public readonly maxCapacity = 3
     private cap = 0
     private closed = false
 
     constructor(
         public readonly id: number,
         public readonly url: string,
+        public readonly maxCapacity: number,
         private timer: Timer,
         private onNewConnection: () => void,
         public readonly log?: Logger
