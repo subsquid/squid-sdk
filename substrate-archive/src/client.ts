@@ -6,6 +6,7 @@ import assert from "assert"
 
 
 interface Req {
+    id: number
     priority: number
     method: string
     params?: unknown[]
@@ -21,6 +22,7 @@ export class Client {
     private connections: Connection[]
     private schedulingScheduled = false
     private timeoutSeconds = 20
+    private counter = 0
 
     constructor(endpoints: string[], private log?: Logger) {
         assert(endpoints.length > 0, 'at least 1 RPC endpoint is required')
@@ -34,6 +36,14 @@ export class Client {
                 this.log?.child({endpoint: id, url})
             )
         })
+    }
+
+    /**
+     * Create request label for debug purposes
+     */
+    private nextRequestId(): number {
+        this.counter = (this.counter + 1) % 10000
+        return this.counter
     }
 
     call<T=any>(method: string, params?: unknown[]): Promise<T>
@@ -53,6 +63,7 @@ export class Client {
         this.schedule()
         let promise = new Promise<T>((resolve, reject) => {
             this.queue.push({
+                id: this.nextRequestId(),
                 priority,
                 method,
                 params,
@@ -92,22 +103,33 @@ export class Client {
                 req = this.queue.takeLast()
             }
             if (req) {
-                this.execute(con, req)
+                this.execute(con, req, n)
             }
         }
     }
 
-    private execute(con: Connection, req: Req): void {
+    private execute(con: Connection, req: Req, order: number): void {
+        con.log?.debug({
+            avgResponseTime: Math.round(con.avgResponseTime()),
+            order,
+            req: req.id,
+            method: req.method,
+            priority: req.priority
+        }, 'request')
         this.addTimeout(con.call(req.method, req.params)).then(
             res => {
-                this.timer.nextEpoch()
-                con.success()
                 req.resolve(res)
                 req.promise().finally(() => this.performScheduling())
+                this.timer.nextEpoch()
+                let duration = con.success()
+                con.log?.debug({
+                    req: req.id,
+                    responseTime: Math.round(Number(duration) / 1000_000)
+                }, 'response')
             },
             (err: Error) => {
                 if (err instanceof RpcConnectionError) {
-                    con.reset()
+                    con.reset(err)
                     this.queue.push(req)
                     this.performScheduling()
                 } else {
@@ -142,7 +164,6 @@ class Connection {
     private backoff = [100, 1000, 10000, 30000]
     private busy = false
     private closed = false
-    private counter = 0
 
     constructor(
         public readonly id: number,
@@ -155,37 +176,25 @@ class Connection {
         this.connect()
     }
 
-    call(method: string, params?: unknown[], order?: number): Promise<any> {
-        this.counter = (this.counter + 1) % 10000
-        this.log?.debug({
-            order,
-            avgResponseTime: Math.round(this.avgResponseTime()),
-            req: this.counter,
-            method
-        }, 'start of call')
+    call(method: string, params?: unknown[]): Promise<any> {
         this.busy = true
         this.speed.start(this.timer.time())
         return this.client.call(method, params)
     }
 
-    success(): void {
-        let duration = this.speed.stop(1, this.timer.time())
+    success(): bigint {
         this.connectionErrors = 0
         this.busy = false
-        this.log?.debug({
-            req: this.counter,
-            responseTime: Math.round(Number(duration) / 1000_000)
-        }, 'end of call')
+        return this.speed.stop(1, this.timer.time())
     }
 
     error(): void {
         this.connectionErrors = 0
         this.busy = false
-        this.log?.debug({req: this.counter}, 'end of call')
     }
 
-    reset() {
-        this.client.close()
+    reset(err: Error) {
+        this.client.close(err)
     }
 
     close() {

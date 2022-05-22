@@ -104,9 +104,9 @@ export class RpcClient {
     }
 
     close(err?: Error): void {
-        if (err) {
-            this.setError(err)
-        }
+        if (this.error) return
+        err = err || new RpcConnectionError('Connection was closed')
+        this.setError(err)
         let code: number | undefined
         if (err instanceof RpcProtocolError) {
             code = err.code
