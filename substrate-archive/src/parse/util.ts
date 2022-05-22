@@ -1,6 +1,7 @@
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {assertNotNull} from "@subsquid/util-internal"
 import {sub} from "../interfaces"
+import type {Account} from "./validator"
 
 
 /**
@@ -72,13 +73,19 @@ export function getExtrinsicFailedError(args: any): unknown {
 }
 
 
-export function addressOrigin(address: any): sub.AccountOrigin | undefined {
-    if (address.__kind != 'Id') return
+export function addressOrigin(address: any): sub.SignedOrigin | undefined {
+    if (address.__kind == 'Id') {
+        return signedOrigin(address.value)
+    }
+}
+
+
+export function signedOrigin(account: Account): sub.SignedOrigin {
     return {
         __kind: 'system',
         value: {
             __kind: 'Signed',
-            value: address.value
+            value: account
         }
     }
 }

@@ -120,7 +120,7 @@ export namespace sub {
     }
 
 
-    export interface AccountOrigin {
+    export interface SignedOrigin {
         __kind: 'system'
         value: {
             __kind: 'Signed'

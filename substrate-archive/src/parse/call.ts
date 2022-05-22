@@ -3,7 +3,7 @@ import assert from "assert"
 import {Spec, sub} from "../interfaces"
 import * as model from "../model"
 import type {ExtrinsicExt} from "./block"
-import {getExtrinsicFailedError, noneOrigin, rootOrigin, addressOrigin, unwrapArguments} from "./util"
+import {addressOrigin, getExtrinsicFailedError, noneOrigin, rootOrigin, signedOrigin, unwrapArguments} from "./util"
 import {Account} from "./validator"
 
 
@@ -84,7 +84,7 @@ class CallExtractor {
             case 'Proxy.proxy':
             case 'Proxy.proxy_announced': {
                 let a = args as {call: sub.Call, real: Account}
-                this.createCall(a.call, call, addressOrigin(a.real))
+                this.createCall(a.call, call, signedOrigin(a.real))
                 break
             }
             case 'Sudo.sudo':

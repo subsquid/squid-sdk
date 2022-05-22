@@ -174,7 +174,7 @@ export class BlockParser {
 
     @def
     parseCalls(): CallParser {
-        return new CallParser(
+        let p = new CallParser(
             {
                 spec: this.spec,
                 blockHeight: this.raw.blockHeight,
@@ -183,6 +183,8 @@ export class BlockParser {
             this.events(),
             this.extrinsics()
         )
+        p.calls.sort((a, b) => a.pos - b.pos)
+        return p
     }
 
     calls(): Call[] {
