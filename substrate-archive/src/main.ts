@@ -143,14 +143,16 @@ runProgram(async () => {
         log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
-    let metrics: Metrics | undefined
+    let client = new Client(endpoints, log.child('rpc'))
+
     if (options.promPort != null) {
-        metrics = new Metrics()
+        let metrics = new Metrics()
+        metrics.addProgress(progress)
+        metrics.addRpcMetrics(client)
+        metrics.addDefaultMetrics()
         let server = await metrics.serve(options.promPort)
         log.info(`prometheus server is listening on port ${server.port}`)
     }
-
-    let client = new Client(endpoints, log.child('rpc'))
 
     let blocks = Ingest.getBlocks({
         client,

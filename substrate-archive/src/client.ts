@@ -5,6 +5,15 @@ import {Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 
 
+export interface RpcConnectionMetrics {
+    id: number
+    url: string
+    avgResponseTimeSeconds: number
+    requestsServed: number
+    connectionErrors: number
+}
+
+
 interface Req {
     id: number
     priority: number
@@ -43,6 +52,10 @@ export class Client {
                 this.log?.child({endpoint: id, url: ep.url})
             )
         })
+    }
+
+    getConnectionMetrics(): RpcConnectionMetrics[] {
+        return this.connections.map(con => con.metrics()).sort((a, b) => a.id - b.id)
     }
 
     /**
@@ -162,7 +175,9 @@ export class Client {
 class Connection {
     private client: RpcClient
     private speed = new Speed(500)
+    private connectionErrorsInRow = 0
     private connectionErrors = 0
+    private served = 0
     private backoff = [100, 1000, 10000, 30000]
     private cap = 0
     private closed = false
@@ -187,7 +202,8 @@ class Connection {
         this.cap -= 1
         let beg = this.timer.time()
         return this.client.call(method, params).then(res => {
-            this.connectionErrors = 0
+            this.served += 1
+            this.connectionErrorsInRow = 0
             this.cap += 1
             this.timer.nextEpoch()
             let duration = this.timer.time() - beg
@@ -198,7 +214,7 @@ class Connection {
             }, 'response')
             return res
         }, err => {
-            this.connectionErrors = 0
+            this.connectionErrorsInRow = 0
             this.cap += 1
             throw err
         })
@@ -217,8 +233,9 @@ class Connection {
 
     private reconnect(err: Error): void {
         if (this.closed) return
-        let timeout = this.backoff[Math.min(this.connectionErrors, this.backoff.length - 1)]
+        let timeout = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
         this.connectionErrors += 1
+        this.connectionErrorsInRow += 1
         this.cap = this.maxCapacity
         this.log?.warn({
             err,
@@ -253,6 +270,18 @@ class Connection {
             return 0
         } else {
             return this.avgResponseTime() * 1.5
+        }
+    }
+
+    metrics(): RpcConnectionMetrics {
+        let speed = this.speed.speed()
+        let avgResponseTimeSeconds = speed ? 1 / speed : 0
+        return {
+            id: this.id,
+            url: this.url,
+            avgResponseTimeSeconds,
+            requestsServed: this.served,
+            connectionErrors: this.connectionErrors
         }
     }
 }
