@@ -1,3 +1,4 @@
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {
@@ -15,7 +16,7 @@ import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
-import {normalizeMetadataTypes} from "./util"
+import {isUnitType, normalizeMetadataTypes} from "./util"
 
 
 export interface ChainDescription {
@@ -86,9 +87,8 @@ class FromV14 {
         let types = this.metadata.lookup.types
         let extrinsic = this.metadata.extrinsic.type
         let params = types[extrinsic].type.params
-        let call = params[1]
-        assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
-        return assertNotNull(call.type)
+        let call = params.find(p => p.name == 'Call')
+        return assertNotNull(call?.type, 'expected to find Call type among extrinsic type parameters')
     }
 
     @def
@@ -144,6 +144,8 @@ class FromV14 {
                     name: ext.identifier,
                     type: ext.type
                 }
+            }).filter(f => {
+                return !isUnitType(getUnwrappedType(types, f.type))
             }),
             path: ['SignedExtensions']
         }

@@ -1,44 +1,36 @@
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
 import type {Metadata} from "./interfaces"
-import {Field, Type, TypeKind} from "./types"
+import {Field, Type, TypeKind, VariantType} from "./types"
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
+    types = introduceOptionType(types)
+    types = removeUnitFieldsFromStructs(types)
+    types = replaceUnitOptionWithBoolean(types)
+    types = normalizeFieldNames(types)
+    return types
+}
+
+
+function introduceOptionType(types: Type[]): Type[] {
     return types.map(type => {
-        switch(type.kind) {
-            case TypeKind.Composite:
-                return  {
-                    ...type,
-                    fields: normalizeFieldNames(type.fields)
-                }
-            case TypeKind.Variant:
-                if (isOptionType(type)) {
-                    return {
-                        kind: TypeKind.Option,
-                        type: type.variants[1].fields[0].type,
-                        docs: type.docs,
-                        path: type.path
-                    }
-                } else {
-                    return {
-                        ...type,
-                        variants: type.variants.map(v => {
-                            return {
-                                ...v,
-                                fields: normalizeFieldNames(v.fields)
-                            }
-                        })
-                    }
-                }
-            default:
-                return type
+        if (isOptionType(type)) {
+            return {
+                kind: TypeKind.Option,
+                type: type.variants[1].fields[0].type,
+                docs: type.docs,
+                path: type.path
+            }
+        } else {
+            return type
         }
     })
 }
 
 
-function isOptionType(type: Type): boolean {
+function isOptionType(type: Type): type is VariantType {
     if (type.kind !== TypeKind.Variant) return false
     if (type.variants.length != 2) return false
     let v0 = type.variants[0]
@@ -53,7 +45,100 @@ function isOptionType(type: Type): boolean {
 }
 
 
-function normalizeFieldNames(fields: Field[]): Field[] {
+function removeUnitFieldsFromStructs(types: Type[]): Type[] {
+    let changed = true
+    while (changed) {
+        changed = false
+        types = types.map(type => {
+            switch(type.kind) {
+                case TypeKind.Composite: {
+                    if (type.fields[0]?.name == null) return type
+                    let fields = type.fields.filter(f => {
+                        let fieldType = getUnwrappedType(types, f.type)
+                        return !isUnitType(fieldType)
+                    })
+                    if (fields.length == type.fields.length) return type
+                    changed = true
+                    return {
+                        ...type,
+                        fields
+                    }
+                }
+                case TypeKind.Variant: {
+                    let variants = type.variants.map(v => {
+                        if (v.fields[0]?.name == null) return v
+                        let fields = v.fields.filter(f => {
+                            let fieldType = getUnwrappedType(types, f.type)
+                            return !isUnitType(fieldType)
+                        })
+                        if (fields.length == v.fields.length) return v
+                        changed = true
+                        return {
+                            ...v,
+                            fields
+                        }
+                    })
+                    return {
+                        ...type,
+                        variants
+                    }
+                }
+                default:
+                    return type
+            }
+        })
+    }
+    return types
+}
+
+
+export function isUnitType(type: Type): boolean {
+    return type.kind == TypeKind.Tuple && type.tuple.length == 0
+}
+
+
+function replaceUnitOptionWithBoolean(types: Type[]): Type[] {
+    return types.map(type => {
+        if (type.kind == TypeKind.Option && isUnitType(getUnwrappedType(types, type.type))) {
+            return {
+                kind: TypeKind.Primitive,
+                primitive: 'Bool',
+                path: type.path,
+                docs: type.docs
+            }
+        } else {
+            return type
+        }
+    })
+}
+
+
+function normalizeFieldNames(types: Type[]): Type[] {
+    return types.map(type => {
+        switch(type.kind) {
+            case TypeKind.Composite:
+                return  {
+                    ...type,
+                    fields: convertToCamelCase(type.fields)
+                }
+            case TypeKind.Variant:
+                return {
+                    ...type,
+                    variants: type.variants.map(v => {
+                        return {
+                            ...v,
+                            fields: convertToCamelCase(v.fields)
+                        }
+                    })
+                }
+            default:
+                return type
+        }
+    })
+}
+
+
+function convertToCamelCase(fields: Field[]): Field[] {
     return fields.map(f => {
         if (f.name) {
             let name = f.name
