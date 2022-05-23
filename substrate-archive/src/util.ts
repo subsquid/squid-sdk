@@ -36,3 +36,31 @@ export function splitSpecId(specId: string): [name: string, version: number] {
         parseInt(m[2])
     ]
 }
+
+
+export function addErrorContext<T extends Error>(err: T, ctx: any): T {
+    let e = err as any
+    for (let key in ctx) {
+        switch(key) {
+            case 'blockHeight':
+            case 'blockHash':
+                if (e.blockHeight == null && e.blockHash == null) {
+                    e.blockHeight = ctx.blockHeight
+                    e.blockHash = ctx.blockHash
+                }
+                break
+            default:
+                if (e[key] == null) {
+                    e[key] = ctx[key]
+                }
+        }
+    }
+    return err
+}
+
+
+export function withErrorContext(ctx: any): (err: Error) => never {
+    return function(err: Error): never {
+        throw addErrorContext(err, ctx)
+    }
+}

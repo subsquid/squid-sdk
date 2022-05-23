@@ -6,7 +6,7 @@ kusama:
 		-e wss://kusama-rpc.polkadot.io \
 		-c 10 \
 		-e wss://kusama-rpc.dwellir.com \
-		-c 30 \
+		-c 10 \
 		-e wss://kusama.api.onfinality.io/public-ws \
 		-c 10 \
 		--prom-port 0 \

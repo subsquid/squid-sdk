@@ -3,6 +3,7 @@ import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
 import {last} from "@subsquid/util-internal"
 import {Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
+import {addErrorContext} from "./util"
 
 
 export interface RpcConnectionMetrics {
@@ -49,7 +50,7 @@ export class Client {
                 ep.capacity || 5,
                 this.timer,
                 () => this.performScheduling(),
-                this.log?.child({endpoint: id, url: ep.url})
+                this.log?.child({connection: id, url: ep.url})
             )
         })
     }
@@ -149,6 +150,12 @@ export class Client {
                     this.performScheduling()
                 } else {
                     con.log?.debug({req: req.id}, 'error response')
+                    err = addErrorContext(err, {
+                        rpcConnection: con.id,
+                        rpcUrl: con.url,
+                        rpcRequestId: req.id,
+                        rpcMethod: req.method
+                    })
                     req.reject(err)
                     req.promise().finally(() => this.performScheduling())
                 }

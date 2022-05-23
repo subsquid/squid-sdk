@@ -19,11 +19,13 @@ import {parseRawBlock, RawBlock} from "./parse/block"
 import {Account} from "./parse/validator"
 import {Shooter} from "./shooter"
 import {
+    addErrorContext,
     EVENT_STORAGE_KEY,
     NEXT_FEE_MULTIPLIER_STORAGE_KEY,
     SESSION_STORAGE_KEY,
     splitSpecId,
-    VALIDATORS_STORAGE_KEY
+    VALIDATORS_STORAGE_KEY,
+    withErrorContext
 } from "./util"
 
 
@@ -78,9 +80,10 @@ export class Ingest {
                 try {
                     yield await this.processRawBlock(raw)
                 } catch(e: any) {
-                    e.blockHeight = raw.blockHeight
-                    e.blockHash = raw.blockHash
-                    throw e
+                    throw addErrorContext(e, {
+                        blockHeight: raw.blockHeight,
+                        blockHash: raw.blockHash
+                    })
                 }
             }
         }
@@ -132,9 +135,15 @@ export class Ingest {
         let storagePromises = new Array<Promise<Error | any[]>>(size)
 
         let last = height + size - 1
-        let blockHash =  await this.client.call<string>(height, "chain_getBlockHash", [last])
+        let blockHash = await this.client
+            .call<string>(height, "chain_getBlockHash", [last])
+            .catch(withErrorContext({
+                blockHeight: last
+            }))
 
         for (let i = size - 1; i >= 0; i--) {
+            let blockHeight = height + i
+
             hashes[i] = blockHash
 
             storagePromises[i] = this.queryStorageAt(
@@ -143,13 +152,24 @@ export class Ingest {
                     EVENT_STORAGE_KEY,
                     NEXT_FEE_MULTIPLIER_STORAGE_KEY
                 ],
-                height + i
-            ).catch((err: Error) => err)
+                blockHeight
+            ).catch((err: Error) => {
+                return addErrorContext(err, {
+                    blockHeight,
+                    blockHash
+                })
+            })
 
-            let block = await this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash])
+            let block = await this.client
+                .call<sub.SignedBlock>(height, "chain_getBlock", [blockHash])
+                .catch(withErrorContext({
+                    blockHeight,
+                    blockHash
+                }))
+
             blocks[i] = block.block
             blockHash = block.block.header.parentHash
-            assert(parseInt(block.block.header.number) === height + i)
+            assert(parseInt(block.block.header.number) === blockHeight)
         }
 
         let storage = await Promise.all(storagePromises)
@@ -172,8 +192,8 @@ export class Ingest {
     private createValidatorsShooter() {
         return new Shooter(
             5000,
-            height => this.getSessionIndex(height),
-            id => this.getValidators(id.blockHash),
+            height => this.getSessionIndex(height).catch(withErrorContext({blockHeight: height})),
+            id => this.getValidators(id.blockHash).catch(withErrorContext({blockHash: id.blockHash})),
             (a, b) => a.index === b.index,
             () => this.chainHeight
         )
@@ -205,8 +225,12 @@ export class Ingest {
     private createSpecsShooter() {
         return new Shooter(
             5000,
-            height => this.getBlockSpecId(height),
-            id => this.fetchSpec(id),
+            height => this.getBlockSpecId(height).catch(withErrorContext({
+                blockHeight: height
+            })),
+            id => this.fetchSpec(id).catch(withErrorContext({
+                blockHash: id.blockHash
+            })),
             (a, b) => a.specId === b.specId,
             () => this.chainHeight
         )
@@ -250,10 +274,14 @@ export class Ingest {
 
     private async getChainHeight(): Promise<number> {
         let hash = await this.client.call('chain_getFinalizedHead')
-        let header = await this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
-        let height = parseInt(header.number)
-        assert(Number.isSafeInteger(height))
-        return height
+        return this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
+            .then(header => {
+                let height = parseInt(header.number)
+                assert(Number.isSafeInteger(height))
+                return height
+            }).catch(withErrorContext({
+                blockHash: hash
+            }))
     }
 
     private async queryStorageAt(blockHash: string, keys: string[], priority: number = 0): Promise<any[]> {
