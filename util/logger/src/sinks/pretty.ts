@@ -9,6 +9,7 @@ export class Printer {
     private prefix?: Prefix
     private visited = new Set()
     private style?: {open: string, close: string}
+    private seenRecursion = false
 
     constructor(private out: (line: string) => void, private hasColor: boolean) {}
 
@@ -66,15 +67,23 @@ export class Printer {
                     if (val.length == 0) {
                         this.line(`${prefix} []`)
                     } else {
+                        if (this.visited.has(val)) {
+                            this.seenRecursion = true
+                            return
+                        } else {
+                            this.visited.add(val)
+                        }
                         this.line(prefix)
                         for (let item of val) {
                             this.property('  -', item)
                         }
+                        this.visited.delete(val)
                     }
                 } else if (val == null) {
                     this.line(`${prefix} null`)
                 } else {
                     if (this.visited.has(val)) {
+                        this.seenRecursion = true
                         return
                     } else {
                         this.visited.add(val)
@@ -91,6 +100,7 @@ export class Printer {
                     if (has) {
                         this.end()
                     }
+                    this.visited.delete(val)
                 }
                 break
         }
@@ -117,12 +127,23 @@ export class Printer {
             }
         }
         this.end()
+        if (this.seenRecursion) {
+            this.reset()
+            this.print({
+                ns: 'sys',
+                time: Date.now(),
+                level: LogLevel.ERROR,
+                msg: 'Previous record contained recursive data.\n' +
+                    'Serialisation of such records is not supported in production.'
+            })
+        }
     }
 
     reset(): void {
         this.visited.clear()
         this.prefix = undefined
         this.style = undefined
+        this.seenRecursion = false
     }
 }
 
