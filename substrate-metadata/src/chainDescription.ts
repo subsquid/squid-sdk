@@ -27,7 +27,7 @@ export interface ChainDescription {
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
-    extrinsicSignature: Ti
+    signature: Ti
     storage: Storage
     constants: Constants
 }
@@ -76,7 +76,7 @@ class FromV14 {
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
-            extrinsicSignature: this.signature(),
+            signature: this.signature(),
             storage: this.storage(),
             constants: this.constants()
         }
@@ -125,7 +125,7 @@ class FromV14 {
     }
 
     @def
-    private extrinsicSignature(): Ti {
+    private signature(): Ti {
         let types = this.types()
 
         let signedExtensionsType: Type = {
@@ -152,7 +152,7 @@ class FromV14 {
                 },
                 {
                     name: "signature",
-                    type: this.signature(),
+                    type: this.extrinsicSignature(),
                 },
                 {
                     name: 'signedExtensions',
@@ -176,7 +176,7 @@ class FromV14 {
     }
 
     @def
-    private signature(): Ti {
+    private extrinsicSignature(): Ti {
         return this.getTypeParameter(this.uncheckedExtrinsic(), 2)
     }
 
@@ -365,7 +365,7 @@ class FromOld {
             event,
             eventRecord,
             eventRecordList,
-            extrinsicSignature: signature,
+            signature,
             storage,
             constants
         }
