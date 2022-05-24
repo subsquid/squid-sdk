@@ -225,17 +225,25 @@ export class Chain {
     }
 
     @def
-    description(): VersionDescription[] {
+    metadata(): SpecVersion[] {
         return this.versions().map(v => {
-            let metadata = decodeMetadata(v.metadata)
-            let typesBundle = getOldTypesBundle(v.specName)
-            let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
-            let description = getChainDescriptionFromMetadata(metadata, types)
             return {
                 blockNumber: v.blockNumber,
                 specName: v.specName,
                 specVersion: v.specVersion,
-                metadata,
+                metadata: decodeMetadata(v.metadata)
+            }
+        })
+    }
+
+    @def
+    description(): VersionDescription[] {
+        return this.metadata().map(v => {
+            let typesBundle = getOldTypesBundle(v.specName)
+            let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
+            let description = getChainDescriptionFromMetadata(v.metadata, types)
+            return {
+                ...v,
                 description,
                 codec: new ScaleCodec(description.types),
                 jsonCodec: new JsonCodec(description.types),
@@ -246,7 +254,7 @@ export class Chain {
     }
 
     printMetadata(specVersion?: number): void {
-        let versions = this.description()
+        let versions = this.metadata()
         let v = specVersion == null
             ? last(versions)
             : versions.find(v => v.specVersion == specVersion)
@@ -347,11 +355,15 @@ export class Chain {
 }
 
 
-interface VersionDescription {
+interface SpecVersion {
     blockNumber: number
     specName: string
     specVersion: number
     metadata: Metadata
+}
+
+
+interface VersionDescription extends SpecVersion {
     description: ChainDescription
     codec: ScaleCodec
     jsonCodec: JsonCodec

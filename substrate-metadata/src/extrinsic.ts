@@ -34,7 +34,7 @@ export function decodeExtrinsic(
     assert(version == 4, 'unsupported extrinsic version')
 
     if (signed) {
-        let signature = codec.decode(chainDescription.signature, src)
+        let signature = codec.decode(chainDescription.extrinsicSignature, src)
         let call = codec.decode(chainDescription.call, src)
         return {
             version: 4,
@@ -66,7 +66,7 @@ export function encodeExtrinsic(
 
     sink.u8(meta)
     if (extrinsic.signature) {
-        codec.encode(chainDescription.signature, extrinsic.signature, sink)
+        codec.encode(chainDescription.extrinsicSignature, extrinsic.signature, sink)
     }
     codec.encode(chainDescription.call, extrinsic.call, sink)
 
@@ -94,7 +94,7 @@ function encodeToSink(
 
     sink.u8(meta)
     if (extrinsic.signature) {
-        codec.encode(chainDescription.signature, extrinsic.signature, sink)
+        codec.encode(chainDescription.extrinsicSignature, extrinsic.signature, sink)
     }
     codec.encode(chainDescription.call, extrinsic.call, sink)
 }

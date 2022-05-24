@@ -1,5 +1,5 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
+import {assertNotNull, def, last, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {
     EventMetadataV9,
@@ -27,7 +27,7 @@ export interface ChainDescription {
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
-    signature: Ti
+    extrinsicSignature: Ti
     storage: Storage
     constants: Constants
 }
@@ -76,19 +76,10 @@ class FromV14 {
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
-            signature: this.signature(),
+            extrinsicSignature: this.signature(),
             storage: this.storage(),
             constants: this.constants()
         }
-    }
-
-    @def
-    private call(): Ti {
-        let types = this.metadata.lookup.types
-        let extrinsic = this.metadata.extrinsic.type
-        let params = types[extrinsic].type.params
-        let call = params.find(p => p.name == 'Call')
-        return assertNotNull(call?.type, 'expected to find Call type among extrinsic type parameters')
     }
 
     @def
@@ -134,7 +125,7 @@ class FromV14 {
     }
 
     @def
-    private signature(): Ti {
+    private extrinsicSignature(): Ti {
         let types = this.types()
 
         let signedExtensionsType: Type = {
@@ -157,11 +148,11 @@ class FromV14 {
             fields: [
                 {
                     name: "address",
-                    type: this.getTypeParameter(this.metadata.extrinsic.type, 0),
+                    type: this.address(),
                 },
                 {
                     name: "signature",
-                    type: this.getTypeParameter(this.metadata.extrinsic.type, 2),
+                    type: this.signature(),
                 },
                 {
                     name: 'signedExtensions',
@@ -172,6 +163,32 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    @def
+    private address(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 0)
+    }
+
+    @def
+    private call(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 1)
+    }
+
+    @def
+    private signature(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 2)
+    }
+
+    @def
+    private uncheckedExtrinsic(): Ti {
+        for (let i = 0; i < this.metadata.lookup.types.length; i++) {
+            let def = this.metadata.lookup.types[i].type
+            if (def.path[0] == 'sp_runtime' && last(def.path) == 'UncheckedExtrinsic') {
+                return i
+            }
+        }
+        throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
     }
 
     private getTypeParameter(ti: Ti, idx: number): Ti {
@@ -348,7 +365,7 @@ class FromOld {
             event,
             eventRecord,
             eventRecordList,
-            signature,
+            extrinsicSignature: signature,
             storage,
             constants
         }
