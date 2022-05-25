@@ -12,10 +12,11 @@ RUN cd cli && npx oclif manifest
 
 
 FROM builder AS substrate-ingest-builder
-RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-archive
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-ingest
 
 
 FROM node AS substrate-ingest
 COPY --from=substrate-ingest-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-ingest
-ENTRYPOINT ["node", "/squid/substrate-ingest/bin/run.js"]
+EXPOSE 9090
+ENTRYPOINT ["node", "/squid/substrate-ingest/bin/run.js", "--prom-port", "9090"]
