@@ -25,8 +25,8 @@ specifiers:
   '@rush-temp/scale-codec': file:./projects/scale-codec.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
-  '@rush-temp/substrate-archive': file:./projects/substrate-archive.tgz
   '@rush-temp/substrate-evm-processor': file:./projects/substrate-evm-processor.tgz
+  '@rush-temp/substrate-ingest': file:./projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
@@ -127,8 +127,8 @@ dependencies:
   '@rush-temp/scale-codec': file:projects/scale-codec.tgz
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
-  '@rush-temp/substrate-archive': file:projects/substrate-archive.tgz
   '@rush-temp/substrate-evm-processor': file:projects/substrate-evm-processor.tgz
+  '@rush-temp/substrate-ingest': file:projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz
@@ -6897,7 +6897,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-hAsoLBeT65AV5/2tTjp1pG6zQN9CiYGrBSTsalb/o6yriig2jken4k14xRAiNynvl9DFp6XZsbGEm4iVHJVaPw==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-iiZ9+QHaAkEhlYyTHeZTSgsRmMs7X4wn61hgZw2VXJs2azrchEit8ket+ICtCbDIhGRtCMe2FcL7iQDDwgMaqQ==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7130,9 +7130,18 @@ packages:
       typescript: 4.5.5
     dev: false
 
-  file:projects/substrate-archive.tgz:
-    resolution: {integrity: sha512-mXTKKW0vyXivEgpOODiD5Zu2XH6MU5So0ihOF7VRfYbgBd9YJjWJOWqCVR+k4cXyr3AAJ9NFpRqfmoYl9nKgUg==, tarball: file:projects/substrate-archive.tgz}
-    name: '@rush-temp/substrate-archive'
+  file:projects/substrate-evm-processor.tgz:
+    resolution: {integrity: sha512-GuGnbN/Esefbp8nTCAwPv3716StPefNliZeHuAQCOZPxWDbRzV65V2GC9US3bpu7GvEPL//X7Py0KVXv7F3w6Q==, tarball: file:projects/substrate-evm-processor.tgz}
+    name: '@rush-temp/substrate-evm-processor'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.34
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/substrate-ingest.tgz:
+    resolution: {integrity: sha512-Ih5L5teLgi2C2C5bf/ygT7RvZmKAtZSrSQrLD31rl7NUoXBHqMK5tqdNZWtmBaZE+B3g8Yu5YEfP2kQv/TY23A==, tarball: file:projects/substrate-ingest.tgz}
+    name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
       '@substrate/calc': 0.2.8
@@ -7146,15 +7155,6 @@ packages:
       prom-client: 14.0.1
     transitivePeerDependencies:
       - pg-native
-    dev: false
-
-  file:projects/substrate-evm-processor.tgz:
-    resolution: {integrity: sha512-GuGnbN/Esefbp8nTCAwPv3716StPefNliZeHuAQCOZPxWDbRzV65V2GC9US3bpu7GvEPL//X7Py0KVXv7F3w6Q==, tarball: file:projects/substrate-evm-processor.tgz}
-    name: '@rush-temp/substrate-evm-processor'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 16.11.34
-      typescript: 4.5.5
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
@@ -7234,7 +7234,7 @@ packages:
     dev: false
 
   file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1:
-    resolution: {integrity: sha512-zjgykW7vybg3AYnjo3gCPIYk0M3lksULqKb/cvjWySTMdsEdJ3KcKJbGw8LAXHNzaZhxMuGSVlbo6mSwtKqmSQ==, tarball: file:projects/typeorm-store.tgz}
+    resolution: {integrity: sha512-i6G7uMbq+2aemnltFWYdDRFcjjGdlB12G+rM2Vd8allCufMjS91MPiW9gKP5DFaKISbNOQySCq0UutJaHcc2Hg==, tarball: file:projects/typeorm-store.tgz}
     id: file:projects/typeorm-store.tgz
     name: '@rush-temp/typeorm-store'
     version: 0.0.0

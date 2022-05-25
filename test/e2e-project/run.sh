@@ -6,7 +6,7 @@ trap 'terminate' EXIT; terminate() {
    wait
 }
 
-make archive &
+make ingest &
 make process &
 make serve &
 

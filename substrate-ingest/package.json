@@ -1,11 +1,11 @@
 {
-  "name": "@subsquid/substrate-archive",
-  "description": "Data indexer for substrate chains",
+  "name": "@subsquid/substrate-ingest",
+  "description": "Data fetcher for substrate chains",
   "version": "0.0.0",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "bin": {
-    "squid-substrate-archive": "./bin/run.js"
+    "squid-substrate-ingest": "./bin/run.js"
   },
   "files": [
     "bin",

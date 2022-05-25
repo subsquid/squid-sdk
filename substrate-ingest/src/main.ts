@@ -14,7 +14,7 @@ import {Metrics} from "./metrics"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 
 
-const log = createLogger('sqd:substrate-archive')
+const log = createLogger('sqd:substrate-ingest')
 
 
 runProgram(async () => {

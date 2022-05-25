@@ -28,8 +28,8 @@ migrate:
 	@npx sqd db:migrate
 
 
-archive:
-	@source .env && npx squid-substrate-archive \
+ingest:
+	@source .env && npx squid-substrate-ingest \
 		-e "$${CHAIN_ENDPOINT}" \
 		--out "$${ARCHIVE_DB_URL}" \
 		--types-bundle typesBundle.json

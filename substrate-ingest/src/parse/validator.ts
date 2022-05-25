@@ -46,8 +46,10 @@ function fromRecord(rec: Rec, validators: Account[]): Account | undefined {
     } else if (AURA_ENGINE.equals(engine)) {
         let src = new Src(data)
         let slot = src.u64()
-        let idx = Number(slot % BigInt(validators.length))
-        return validators[idx]
+        if (validators.length) {
+            let idx = Number(slot % BigInt(validators.length))
+            return validators[idx]
+        }
     } else if (POW_ENGINE.equals(engine) && data.length == 20) {
         return data
     }

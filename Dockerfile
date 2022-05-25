@@ -11,11 +11,11 @@ RUN node common/scripts/install-run-rush.js build
 RUN cd cli && npx oclif manifest
 
 
-FROM builder AS substrate-archive-builder
+FROM builder AS substrate-ingest-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-archive
 
 
-FROM node AS substrate-archive
-COPY --from=substrate-archive-builder /squid/common/deploy /squid
-WORKDIR /squid/substrate-archive
-ENTRYPOINT ["node", "/squid/substrate-archive/bin/run.js"]
+FROM node AS substrate-ingest
+COPY --from=substrate-ingest-builder /squid/common/deploy /squid
+WORKDIR /squid/substrate-ingest
+ENTRYPOINT ["node", "/squid/substrate-ingest/bin/run.js"]
