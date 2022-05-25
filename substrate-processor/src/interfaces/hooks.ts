@@ -1,7 +1,6 @@
 import {Range} from "../util/range"
-import {BlockHandler, CallHandler, EventHandler} from "./dataHandlerContext"
+import {BlockHandler, CallHandler, EventHandler, EvmLogHandler, EvmTopicSet} from "./dataHandlers"
 import {ContextRequest} from "./dataSelection"
-import {EvmLogHandler, EvmTopicSet} from "./evm"
 import {QualifiedName} from "./substrate"
 
 
@@ -32,6 +31,7 @@ export interface EvmLogHook {
     handler: EvmLogHandler<any>
     contractAddress: string
     filter?: EvmTopicSet[]
+    data?: ContextRequest
     range?: Range
 }
 

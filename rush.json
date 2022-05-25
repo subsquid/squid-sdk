@@ -523,12 +523,6 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/substrate-evm-processor",
-      "projectFolder": "substrate-evm-processor",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
       "shouldPublish": true,

@@ -1,4 +1,4 @@
-import {assertNotNull} from "@subsquid/substrate-evm-processor"
+import {assertNotNull} from "@subsquid/substrate-processor"
 import type {Store} from "@subsquid/typeorm-store"
 import {ethers} from "ethers"
 import * as erc721 from "./erc721"

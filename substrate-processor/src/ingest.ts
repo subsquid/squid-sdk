@@ -173,17 +173,9 @@ export class Ingest {
 
         args.evmLogs = Object.entries(hs.evmLogs).flatMap(([contract, hs]) => {
             return hs.map(h => {
-                let data: any | undefined
-                if (h.data) {
-                    data = {
-                        txHash: h.data.txHash,
-                        substrate: toGatewayFields(h.data.substrate, CONTEXT_NESTING_SHAPE)
-                    }
-                }
                 return {
                     contract,
-                    filter: h.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
-                    data
+                    filter: h.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f])
                 }
             })
         })
