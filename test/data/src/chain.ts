@@ -1,5 +1,5 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, JsonCodec, Src} from "@subsquid/scale-codec"
 import {
     ChainDescription,
     decodeExtrinsic,
@@ -156,6 +156,14 @@ export class Chain {
                 blockNumber: b.blockNumber,
                 extrinsics
             }
+        }).flatMap(b => {
+            return b.extrinsics.map((extrinsic, idx) => {
+                return {
+                    blockNumber: b.blockNumber,
+                    idx,
+                    extrinsic
+                }
+            })
         })
 
         let original = this.blocks().map(b => {
@@ -163,19 +171,26 @@ export class Chain {
                 blockNumber: b.blockNumber,
                 extrinsics: b.extrinsics
             }
+        }).flatMap(b => {
+            return b.extrinsics.map((extrinsic, idx) => {
+                return {
+                    blockNumber: b.blockNumber,
+                    idx,
+                    extrinsic
+                }
+            })
         })
 
         for (let i = 0; i < encoded.length; i++) {
-            // try {
+            try {
                 expect(encoded[i]).toEqual(original[i])
-            // } catch(e) {
-            //     let b = encoded[i]
-            //     let d = this.getVersion(b.blockNumber)
-            //     let extrinsics = b.extrinsics.map(hex => {
-            //         return decodeExtrinsic(hex, d.description, d.codec)
-            //     })
-            //     expect({blockNumber: b.blockNumber, extrinsics}).toEqual(decoded[i])
-            // }
+            } catch(e) { // FIXME SQD-749
+                let b = original[i]
+                let d = this.getVersion(b.blockNumber)
+                let fromEncoded = decodeExtrinsic(encoded[i].extrinsic, d.description, d.codec)
+                let fromOriginal = decodeExtrinsic(b.extrinsic, d.description, d.codec)
+                expect(fromEncoded).toEqual(fromOriginal)
+            }
         }
     }
 
