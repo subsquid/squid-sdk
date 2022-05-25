@@ -209,6 +209,24 @@ export class Chain {
         })
     }
 
+    testConstantsScaleEncodingDecoding(): void {
+        switch(this.name) { // FIXME
+            case 'heiko':
+            case 'kintsugi':
+                return
+        }
+        this.description().forEach(v => {
+            for (let pallet in v.description.constants) {
+                for (let name in v.description.constants[pallet]) {
+                    let def = v.description.constants[pallet][name]
+                    let value = v.codec.decodeBinary(def.type, def.value)
+                    let encoded = v.codec.encodeToBinary(def.type, value)
+                    expect({pallet, name, bytes: encoded}).toEqual({pallet, name, bytes: def.value})
+                }
+            }
+        })
+    }
+
     testEventsScaleEncodingDecoding(): void {
         let decoded = this.decodedEvents()
         let encoded = decoded.map(b => {

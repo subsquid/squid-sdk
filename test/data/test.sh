@@ -24,5 +24,6 @@ for loc in chain/*; do
     echo "$chain" | tr a-z A-Z
     run-test "$chain" "test-events-scale-encoding-decoding" events.jsonl
     run-test "$chain" "test-extrinsics-scale-encoding-decoding" blocks.jsonl
+    run-test "$chain" "test-constants-scale-encoding-decoding"
     echo
 done

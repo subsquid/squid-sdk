@@ -98,5 +98,16 @@ export const bundle: OldTypesBundle = {
     },
     signedExtensions: {
         CurrencyBalanceCheck: 'Null'
-    }
+    },
+    versions: [
+        {
+            minmax: [16, 16],
+            types: {
+                MultiLocation: "MultiLocationV0",
+                MultiAsset: "MultiAssetV0",
+                Xcm: "XcmV0",
+                XcmOrder: "XcmOrderV0"
+            }
+        }
+    ]
 }
