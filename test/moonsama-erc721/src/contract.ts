@@ -8,7 +8,7 @@ import {Contract} from "./model"
 export const contract = new ethers.Contract(
     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
     erc721.abi,
-    new ethers.providers.WebSocketProvider(assertNotNull(process.env.CHAIN_NODE))
+    new ethers.providers.WebSocketProvider('wss://moonriver-rpc.dwellir.com')
 )
 
 

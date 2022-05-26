@@ -152,7 +152,7 @@ export class Ingest {
 
         let args: gw.BatchRequest = {
             fromBlock: from,
-            toBlock: to + 1,
+            toBlock: to,
             limit: this.limit,
             includeAllBlocks
         }

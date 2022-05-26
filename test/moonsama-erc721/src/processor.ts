@@ -9,8 +9,7 @@ const processor = new SubstrateProcessor(new TypeormDatabase('erc721'))
 
 
 processor.setDataSource({
-    chain: assertNotNull(process.env.CHAIN_NODE),
-    archive: assertNotNull(process.env.ARCHIVE)
+    archive: 'https://moonriver.archive.subsquid.io/graphql'
 })
 
 
