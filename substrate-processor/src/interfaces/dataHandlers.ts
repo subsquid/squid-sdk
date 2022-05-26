@@ -1,6 +1,13 @@
 import type {Chain} from "../chain"
 import {Range} from "../util/range"
-import type {CallFields, ContextRequest, EventFields, EvmLogFields, ExtrinsicFields} from "./dataSelection"
+import type {
+    CallFields,
+    ContextRequest,
+    ContractsContractEmittedFields,
+    EventFields,
+    EvmLogFields,
+    ExtrinsicFields
+} from "./dataSelection"
 import type {SubstrateBlock} from "./substrate"
 
 
@@ -65,3 +72,13 @@ export interface EvmLogOptions extends BlockRangeOption {
 
 
 export type EvmTopicSet = string | null | undefined | string[]
+
+
+export type ContractsContractEmittedHandlerContext<S, R extends ContextRequest = {event: true}> = BlockHandlerContext<S> & {
+    event: ContractsContractEmittedFields<R>
+}
+
+
+export interface ContractsContractEmittedHandler<S, R extends ContextRequest = {event: true}> {
+    (ctx: ContractsContractEmittedHandlerContext<S, R>): Promise<void>
+}

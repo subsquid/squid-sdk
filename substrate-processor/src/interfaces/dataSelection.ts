@@ -1,4 +1,5 @@
 import type {
+    ContractsContractEmittedEvent,
     EvmLogEvent,
     SubstrateCall,
     SubstrateEvent,
@@ -25,7 +26,7 @@ type Select<T, R extends Req<T>> = {
 
 type CallScalars = Omit<SubstrateCall, 'parent'>
 type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
-type EventScalars = Omit<SubstrateEvent, "call" | 'extrinsic'>
+type EventScalars<T=SubstrateEvent> = Omit<T, "call" | 'extrinsic'>
 
 
 type CallRequest = PlainReq<CallScalars> & {
@@ -84,7 +85,7 @@ export type ExtrinsicFields<R extends ContextRequest> = R['extrinsic'] extends t
         : undefined
 
 
-type _ApplyExtrinsicFields<R extends EventRequest> = Select<EventScalars, R> & (
+type _ApplyExtrinsicFields<R extends EventRequest> = (
     R['call'] extends true
         ? {call: SubstrateCall, phase: 'ApplyExtrinsic'}
         : R['call'] extends CallRequest
@@ -109,8 +110,9 @@ type _EventFields<R extends EventRequest> =
                     ? {phase: 'Initialization' | 'Finalization'}
                     : {}
         )
-    ) |
-    _ApplyExtrinsicFields<R>
+    ) | (
+        Select<EventScalars, R> & _ApplyExtrinsicFields<R>
+    )
 
 
 export type EventFields<R extends ContextRequest> = R['event'] extends true
@@ -124,5 +126,12 @@ export type EventFields<R extends ContextRequest> = R['event'] extends true
 export type EvmLogFields<R extends ContextRequest> = R['event'] extends true
     ? EvmLogEvent
     : R['event'] extends EventRequest
-        ? _ApplyExtrinsicFields<R> & Select<{evmTxHash: string}, R['event']>
+        ? _ApplyExtrinsicFields<R['event']> & Select<EventScalars<EvmLogEvent>, R['event']>
+        : undefined
+
+
+export type ContractsContractEmittedFields<R extends ContextRequest> = R['event'] extends true
+    ? ContractsContractEmittedEvent
+    : R['event'] extends EventRequest
+        ? _ApplyExtrinsicFields<R['event']> & Select<EventScalars<ContractsContractEmittedEvent>, R['event']>
         : undefined

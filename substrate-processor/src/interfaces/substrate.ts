@@ -155,3 +155,12 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
         data: string
     }
 }
+
+
+export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Contracts.ContractEmitted',
+    args: {
+        contract: string,
+        data: string,
+    }
+}

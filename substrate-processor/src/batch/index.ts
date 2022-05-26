@@ -35,7 +35,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 calls: {},
                 evmLogs: {},
-                contractsEvents: {},
+                contractsContractEmitted: {},
             }
         })
     })
@@ -51,7 +51,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 calls: {},
                 evmLogs: {},
-                contractsEvents: {},
+                contractsContractEmitted: {},
             }
         })
     })
@@ -69,7 +69,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 },
                 calls: {},
                 evmLogs: {},
-                contractsEvents: {},
+                contractsContractEmitted: {},
             }
         })
     })
@@ -87,7 +87,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                     [hook.call]: {data: hook.data, handlers: [hook.handler]}
                 },
                 evmLogs: {},
-                contractsEvents: {},
+                contractsContractEmitted: {},
             }
         })
     })
@@ -108,12 +108,12 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                         handler: hook.handler
                     }]
                 },
-                contractsEvents: {},
+                contractsContractEmitted: {},
             }
         })
     })
 
-    hooks.contractsEvent.forEach(hook => {
+    hooks.contractsContractEmitted.forEach(hook => {
         let range = getRange(hook)
         if (!range) return
         batches.push({
@@ -124,7 +124,7 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
                 events: {},
                 calls: {},
                 evmLogs: {},
-                contractsEvents: {
+                contractsContractEmitted: {
                     [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
                 }
             }

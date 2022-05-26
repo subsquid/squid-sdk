@@ -180,7 +180,7 @@ export class Ingest {
             })
         })
 
-        args.contractsEvents = Object.entries(hs.contractsEvents).map(([contract, options]) => {
+        args.contractsEvents = Object.entries(hs.contractsContractEmitted).map(([contract, options]) => {
             return {
                 contract,
                 data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
