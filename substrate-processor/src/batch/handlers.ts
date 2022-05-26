@@ -1,5 +1,7 @@
 import {BlockHandler, CallHandler, EventHandler, EvmLogHandler, EvmTopicSet} from "../interfaces/dataHandlers"
 import {ContextRequest} from "../interfaces/dataSelection"
+import {EvmContractAddress, EvmLogDataRequest, EvmLogHandler, EvmTopicSet} from "../interfaces/evm"
+import {ContractAddress, ContractsEventHandler} from "../interfaces/contracts"
 import {QualifiedName} from "../interfaces/substrate"
 
 
@@ -17,6 +19,7 @@ export interface DataHandlers {
     post: BlockHandler<any>[]
     events: Record<QualifiedName, HandlerList<EventHandler<any>>>
     calls: Record<QualifiedName, HandlerList<CallHandler<any>>>
+    contractsEvents: Record<ContractAddress, HandlerList<ContractsEventHandler<any>>>
     evmLogs: Record<EvmContractAddress, {filter?: EvmTopicSet[], data?: ContextRequest, handler: EvmLogHandler<any>}[]>
 }
 
@@ -28,6 +31,7 @@ export function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandler
         events: mergeMaps(a.events, b.events, mergeHandlerLists),
         calls: mergeMaps(a.calls, b.calls, mergeHandlerLists),
         evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb)),
+        contractsEvents: mergeMaps(a.contractsEvents, b.contractsEvents, mergeHandlerLists)
     }
 }
 

@@ -56,7 +56,7 @@ interface MayBeDataSelection {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateProcessor<Store> {
-    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: []}
+    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: [], contractsEvent: []}
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -304,6 +304,7 @@ export class SubstrateProcessor<Store> {
         })
     }
 
+
     addEvmLogHandler(
         contractAddress: string,
         fn: EvmLogHandler<Store>
@@ -332,11 +333,21 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
+
         this.hooks.evmLog.push({
             handler,
             contractAddress,
             ...options
         })
+    }
+    
+    addContractsEventHandler(contractAddress: string, fn: ContractsEventHandler<Store>): void
+    addContractsEventHandler(contractAddress: string, options: RangeOption & NoDataSelection, fn: ContractsEventHandler<Store>): void
+    addContractsEventHandler<R>(contractAddress: string, options: RangeOption & DataSelection<R>, fn: ContractsEventHandler<R>): void
+    addContractsEventHandler(contractAddress: string, fnOrOptions: ContractsEventHandler<Store> | RangeOption & MayBeDataSelection, fn?: ContractsEventHandler<Store>): void {
+        this.assertNotRunning()
+        let handler: ContractsEventHandler<Store>
+        let options: RangeOption & MayBeDataSelection = {}
     }
 
     protected assertNotRunning(): void {
@@ -489,6 +500,19 @@ export class SubstrateProcessor<Store> {
                             event
                         })
                     }
+                    for (let handler of this.getContractsEventHandlers(handlers.contractsEvents, item.event)) {
+                        let event = item.event as ContractsEvent
+                        await handler({
+                            store: ctx.store,
+                            contractAddress: event.args.contract,
+                            data: event.args.data,
+                            substrate: {
+                                _chain: ctx._chain,
+                                block: ctx.block,
+                                event,
+                            },
+                        })
+                    }
                     break
                 case 'call':
                     for (let handler of handlers.calls[item.call.name]?.handlers || []) {
@@ -532,5 +556,17 @@ export class SubstrateProcessor<Store> {
             }
         }
         return true
+    }
+
+    private *getContractsEventHandlers(contractsEvents: DataHandlers["contractsEvents"], event: SubstrateEvent): Generator<ContractsEventHandler<any>> {
+        if (event.name != 'Contracts.ContractEmitted') return
+        let contractsEvent = event as ContractsEvent
+        
+        let contractHandlers = contractsEvents[contractsEvent.args.contract]
+        if (contractHandlers == null) return
+
+        for (let h of contractHandlers.handlers) {
+            yield h
+        }
     }
 }

@@ -9,6 +9,7 @@ export interface BatchRequest {
     events?: ObjectRequest[]
     calls?: ObjectRequest[]
     evmLogs?: EvmLogRequest[]
+    contractsEvents?: ContractsEventRequest[]
 }
 
 
@@ -21,6 +22,12 @@ export interface ObjectRequest {
 export interface EvmLogRequest {
     contract: string
     filter?: string[][]
+    data?: any
+}
+
+
+export interface ContractsEventRequest {
+    contract: string
     data?: any
 }
 

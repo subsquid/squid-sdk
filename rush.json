@@ -652,6 +652,11 @@
       "packageName": "types-test",
       "projectFolder": "test/types",
       "shouldPublish": false
+    },
+    {
+      "packageName": "wasm-contracts",
+      "projectFolder": "test/wasm-contracts",
+      "shouldPublish": false
     }
   ]
 }

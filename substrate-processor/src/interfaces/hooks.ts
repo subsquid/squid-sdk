@@ -1,6 +1,7 @@
 import {Range} from "../util/range"
 import {BlockHandler, CallHandler, EventHandler, EvmLogHandler, EvmTopicSet} from "./dataHandlers"
 import {ContextRequest} from "./dataSelection"
+import {ContractsEventHandler, ContractAddress} from "./contracts"
 import {QualifiedName} from "./substrate"
 
 
@@ -36,10 +37,19 @@ export interface EvmLogHook {
 }
 
 
+export interface ContractsEvent {
+    handler: ContractsEventHandler<any>,
+    contractAddress: ContractAddress
+    data?: ContextRequest
+    range?: Range
+}
+
+
 export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
+    contractsEvent: ContractsEvent[]
 }
