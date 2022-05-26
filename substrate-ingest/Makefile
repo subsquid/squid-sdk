@@ -23,6 +23,13 @@ moonriver:
 		--start-block 0
 
 
+karura:
+	@node lib/main.js --out $(DB) \
+		-e wss://karura.api.onfinality.io/public-ws \
+		-e wss://karura-rpc.dwellir.com \
+		-e wss://karura.polkawallet.io \
+		--write-batch-size 20
+
 up:
 	@docker-compose up -d
 
