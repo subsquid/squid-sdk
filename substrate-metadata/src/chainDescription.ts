@@ -1,4 +1,5 @@
-import {assertNotNull, def, unexpectedCase} from "@subsquid/util-internal"
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
+import {assertNotNull, def, last, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {
     EventMetadataV9,
@@ -15,7 +16,7 @@ import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
-import {normalizeMetadataTypes} from "./util"
+import {isUnitType, normalizeMetadataTypes} from "./util"
 
 
 export interface ChainDescription {
@@ -82,16 +83,6 @@ class FromV14 {
     }
 
     @def
-    private call(): Ti {
-        let types = this.metadata.lookup.types
-        let extrinsic = this.metadata.extrinsic.type
-        let params = types[extrinsic].type.params
-        let call = params[1]
-        assert(call?.name === 'Call', 'expected Call as a second type parameter of extrinsic type')
-        return assertNotNull(call.type)
-    }
-
-    @def
     private digest(): Ti {
         return this.getStorageItem('System', 'Digest').value
     }
@@ -144,6 +135,8 @@ class FromV14 {
                     name: ext.identifier,
                     type: ext.type
                 }
+            }).filter(f => {
+                return !isUnitType(getUnwrappedType(types, f.type))
             }),
             path: ['SignedExtensions']
         }
@@ -155,11 +148,11 @@ class FromV14 {
             fields: [
                 {
                     name: "address",
-                    type: this.getTypeParameter(this.metadata.extrinsic.type, 0),
+                    type: this.address(),
                 },
                 {
                     name: "signature",
-                    type: this.getTypeParameter(this.metadata.extrinsic.type, 2),
+                    type: this.extrinsicSignature(),
                 },
                 {
                     name: 'signedExtensions',
@@ -170,6 +163,32 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    @def
+    private address(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 0)
+    }
+
+    @def
+    private call(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 1)
+    }
+
+    @def
+    private extrinsicSignature(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 2)
+    }
+
+    @def
+    private uncheckedExtrinsic(): Ti {
+        for (let i = 0; i < this.metadata.lookup.types.length; i++) {
+            let def = this.metadata.lookup.types[i].type
+            if (def.path[0] == 'sp_runtime' && last(def.path) == 'UncheckedExtrinsic') {
+                return i
+            }
+        }
+        throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
     }
 
     private getTypeParameter(ti: Ti, idx: number): Ti {

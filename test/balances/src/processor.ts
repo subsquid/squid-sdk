@@ -10,7 +10,7 @@ const processor = new SubstrateProcessor(new TypeormDatabase('kusama_balances'))
 
 processor.setBatchSize(500)
 processor.setDataSource({
-    archive: 'https://kusama.archive.gc.subsquid.io/graphql'
+    archive: 'https://kusama.archive.subsquid.io/graphql'
 })
 
 

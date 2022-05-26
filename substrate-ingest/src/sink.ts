@@ -43,13 +43,15 @@ export class PostgresSink implements Sink {
         id: {cast: 'text'},
         block_id: {cast: 'text'},
         index_in_block: {cast: 'integer'},
+        version: {cast: 'integer'},
         signature: {map: toJsonString, cast: 'jsonb'},
+        call_id: {cast: 'text'},
         fee: {cast: 'numeric'},
         tip: {cast: 'numeric'},
         success: {cast: 'bool'},
-        call_id: {cast: 'text'},
-        hash: {cast: 'text', map: toJSON},
-        pos: {cast: 'int'}
+        error: {map: toJsonString, cast: 'jsonb'},
+        pos: {cast: 'int'},
+        hash: {cast: 'text', map: toJSON}
     })
 
     private callInsert = new Insert<Call>('call', {
@@ -57,9 +59,11 @@ export class PostgresSink implements Sink {
         parent_id: {cast: 'text'},
         block_id: {cast: 'text'},
         extrinsic_id: {cast: 'text'},
-        success: {cast: 'bool'},
+        origin: {map: toJsonString, cast: 'jsonb'},
         name: {cast: 'text'},
         args: {map: toJsonString, cast: 'jsonb'},
+        success: {cast: 'bool'},
+        error: {map: toJsonString, cast: 'jsonb'},
         pos: {cast: 'int'}
     })
 

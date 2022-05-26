@@ -21,12 +21,16 @@ export class Speed {
         time = time ?? process.hrtime.bigint()
         if (time <= this.m) return 0n
         let duration = time - this.m
+        this.push(val, duration)
+        return duration
+    }
+
+    push(val: number, duration: bigint): void {
         this.time += duration
         this.m = undefined
         this.value += val
         this.window[this.tail] = {time: this.time, value: this.value}
         this.tail = (this.tail + 1) % this.windowSize
-        return duration
     }
 
     speed(): number {

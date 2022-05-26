@@ -19,5 +19,7 @@ runProgram(async () => {
             return chain.testEventsScaleEncodingDecoding()
         case 'test-extrinsics-scale-encoding-decoding':
             return chain.testExtrinsicsScaleEncodingDecoding()
+        case 'test-constants-scale-encoding-decoding':
+            return chain.testConstantsScaleEncodingDecoding()
     }
 })

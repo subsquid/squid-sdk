@@ -3313,7 +3313,7 @@ export const types = {
   },
   "WeightPerClass": {
     "baseExtrinsic": "Weight",
-    "maxExtrinsic": "Weight",
+    "maxExtrinsic": "Option<Weight>",
     "maxTotal": "Option<Weight>",
     "reserved": "Option<Weight>"
   },

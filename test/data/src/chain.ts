@@ -1,5 +1,5 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, JsonCodec, Src} from "@subsquid/scale-codec"
 import {
     ChainDescription,
     decodeExtrinsic,
@@ -156,6 +156,14 @@ export class Chain {
                 blockNumber: b.blockNumber,
                 extrinsics
             }
+        }).flatMap(b => {
+            return b.extrinsics.map((extrinsic, idx) => {
+                return {
+                    blockNumber: b.blockNumber,
+                    idx,
+                    extrinsic
+                }
+            })
         })
 
         let original = this.blocks().map(b => {
@@ -163,19 +171,26 @@ export class Chain {
                 blockNumber: b.blockNumber,
                 extrinsics: b.extrinsics
             }
+        }).flatMap(b => {
+            return b.extrinsics.map((extrinsic, idx) => {
+                return {
+                    blockNumber: b.blockNumber,
+                    idx,
+                    extrinsic
+                }
+            })
         })
 
         for (let i = 0; i < encoded.length; i++) {
-            // try {
+            try {
                 expect(encoded[i]).toEqual(original[i])
-            // } catch(e) {
-            //     let b = encoded[i]
-            //     let d = this.getVersion(b.blockNumber)
-            //     let extrinsics = b.extrinsics.map(hex => {
-            //         return decodeExtrinsic(hex, d.description, d.codec)
-            //     })
-            //     expect({blockNumber: b.blockNumber, extrinsics}).toEqual(decoded[i])
-            // }
+            } catch(e) { // FIXME SQD-749
+                let b = original[i]
+                let d = this.getVersion(b.blockNumber)
+                let fromEncoded = decodeExtrinsic(encoded[i].extrinsic, d.description, d.codec)
+                let fromOriginal = decodeExtrinsic(b.extrinsic, d.description, d.codec)
+                expect(fromEncoded).toEqual(fromOriginal)
+            }
         }
     }
 
@@ -190,6 +205,24 @@ export class Chain {
             return {
                 blockNumber: b.blockNumber,
                 extrinsics
+            }
+        })
+    }
+
+    testConstantsScaleEncodingDecoding(): void {
+        switch(this.name) { // FIXME
+            case 'heiko':
+            case 'kintsugi':
+                return
+        }
+        this.description().forEach(v => {
+            for (let pallet in v.description.constants) {
+                for (let name in v.description.constants[pallet]) {
+                    let def = v.description.constants[pallet][name]
+                    let value = v.codec.decodeBinary(def.type, def.value)
+                    let encoded = v.codec.encodeToBinary(def.type, value)
+                    expect({pallet, name, bytes: encoded}).toEqual({pallet, name, bytes: def.value})
+                }
             }
         })
     }
@@ -225,17 +258,25 @@ export class Chain {
     }
 
     @def
-    description(): VersionDescription[] {
+    metadata(): SpecVersion[] {
         return this.versions().map(v => {
-            let metadata = decodeMetadata(v.metadata)
-            let typesBundle = getOldTypesBundle(v.specName)
-            let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
-            let description = getChainDescriptionFromMetadata(metadata, types)
             return {
                 blockNumber: v.blockNumber,
                 specName: v.specName,
                 specVersion: v.specVersion,
-                metadata,
+                metadata: decodeMetadata(v.metadata)
+            }
+        })
+    }
+
+    @def
+    description(): VersionDescription[] {
+        return this.metadata().map(v => {
+            let typesBundle = getOldTypesBundle(v.specName)
+            let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
+            let description = getChainDescriptionFromMetadata(v.metadata, types)
+            return {
+                ...v,
                 description,
                 codec: new ScaleCodec(description.types),
                 jsonCodec: new JsonCodec(description.types),
@@ -246,7 +287,7 @@ export class Chain {
     }
 
     printMetadata(specVersion?: number): void {
-        let versions = this.description()
+        let versions = this.metadata()
         let v = specVersion == null
             ? last(versions)
             : versions.find(v => v.specVersion == specVersion)
@@ -347,11 +388,15 @@ export class Chain {
 }
 
 
-interface VersionDescription {
+interface SpecVersion {
     blockNumber: number
     specName: string
     specVersion: number
     metadata: Metadata
+}
+
+
+interface VersionDescription extends SpecVersion {
     description: ChainDescription
     codec: ScaleCodec
     jsonCodec: JsonCodec

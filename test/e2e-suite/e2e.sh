@@ -13,7 +13,7 @@ make init || exit 1
 
 set -m
 
-make archive &
+make ingest &
 ARCHIVE_PID=$!
 
 make process &

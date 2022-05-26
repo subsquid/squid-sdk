@@ -93,18 +93,19 @@ export type SubstrateEvent =
 
 export interface SubstrateExtrinsic {
     id: string
-    version: number
-    /**
-     * Blake2b 128-bit hash of the raw extrinsic
-     */
-    hash: string
     /**
      * Ordinal index in the extrinsics array of the current block
      */
     indexInBlock: number
-    call: SubstrateCall
+    version: number
     signature?: SubstrateExtrinsicSignature
+    call: SubstrateCall
     success: boolean
+    error?: any
+    /**
+     * Blake2b 128-bit hash of the raw extrinsic
+     */
+    hash: string
     /**
      * Extrinsic position in a joint list of events, calls and extrinsics,
      * which determines data handlers execution order.
@@ -127,11 +128,30 @@ export interface SubstrateCall {
      * JSON encoded call arguments
      */
     args: any
-    success: boolean
     parent?: SubstrateCall
+    origin?: any
+    success: boolean
     /**
-     * Call position in a joint list of events, calls and extrinsics,
+     * Call error.
+     *
+     * Absence of error doesn't imply that call was executed successfully,
+     * check {@link success} property for that.
+     */
+    error?: any
+    /**
+     * Position of the call in a joint list of events, calls and extrinsics,
      * which determines data handlers execution order.
      */
     pos: number
+}
+
+
+export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Evm.Log'
+    evmTxHash: string
+    args: {
+        contract: string
+        topics: string[]
+        data: string
+    }
 }

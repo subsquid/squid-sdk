@@ -14,7 +14,7 @@ import {Metrics} from "./metrics"
 import {PostgresSink, Sink, WritableSink} from "./sink"
 
 
-const log = createLogger('sqd:substrate-archive')
+const log = createLogger('sqd:substrate-ingest')
 
 
 runProgram(async () => {
@@ -22,7 +22,8 @@ runProgram(async () => {
 
     program.description('Data dumper for substrate based chains')
 
-    program.option('-e, --endpoint <url...>', 'WS rpc endpoint')
+    program.requiredOption('-e, --endpoint <url...>', 'WS rpc endpoint')
+    program.option('-c, --endpoint-capacity <number...>', 'Maximum number of pending requests allowed for endpoint')
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
     program.option('--out <sink>', 'Name of a file or postgres connection string')
     program.option('--start-block <number>', 'Height of the block from which to start processing', positiveInteger)
@@ -39,12 +40,49 @@ runProgram(async () => {
 
     let options = program.parse().opts() as {
         endpoint: string[]
+        endpointCapacity: string[]
         out?: string
         typesBundle?: string
         startBlock?: number
         writeBatchSize?: number,
         promPort?: number
     }
+
+    let capacities = (options.endpointCapacity || []).map(s => {
+        try {
+            let cap = parseInt(s)
+            assert(Number.isSafeInteger(cap))
+            assert(cap > 0)
+            return cap
+        } catch(e: any) {
+            log.fatal(`Expected positive integer for endpoint capacity, but got: ${s}`)
+            process.exit(1)
+        }
+    })
+
+    let endpoints = (options.endpoint || []).map((url, idx) => {
+        let u: URL
+        try {
+            u = new URL(url)
+        } catch(e: any) {
+            log.fatal(`Invalid endpoint url: ${url}`)
+            process.exit(1)
+        }
+        switch(u.protocol) {
+            case 'ws:':
+            case 'wss:':
+                break
+            default:
+                log.fatal(`Invalid endpoint url: ${url}. Only ws: and wss: protocols are supported.`)
+                process.exit(1)
+        }
+
+        let cap = idx < capacities.length
+            ? capacities[idx]
+            : capacities[capacities.length - 1] || 3
+
+        return {url, capacity: cap}
+    })
 
     let typesBundle = options.typesBundle == null
         ? undefined
@@ -105,14 +143,16 @@ runProgram(async () => {
         log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
-    let metrics: Metrics | undefined
+    let client = new Client(endpoints, log.child('rpc'))
+
     if (options.promPort != null) {
-        metrics = new Metrics()
+        let metrics = new Metrics()
+        metrics.addProgress(progress)
+        metrics.addRpcMetrics(client)
+        metrics.addDefaultMetrics()
         let server = await metrics.serve(options.promPort)
         log.info(`prometheus server is listening on port ${server.port}`)
     }
-
-    let client = new Client(options.endpoint, log.child('rpc'))
 
     let blocks = Ingest.getBlocks({
         client,

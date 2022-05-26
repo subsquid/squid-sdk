@@ -1,5 +1,5 @@
 import type {Logger} from "@subsquid/logger"
-import {Codec} from "@subsquid/scale-codec"
+import {Codec, HexSink, Src} from "@subsquid/scale-codec"
 import {
     decodeMetadata,
     getChainDescriptionFromMetadata,
@@ -16,9 +16,17 @@ import {Client} from "./client"
 import {Spec, sub} from "./interfaces"
 import {BlockData} from "./model"
 import {parseRawBlock, RawBlock} from "./parse/block"
-import {NEXT_FEE_MULTIPLIER_STORAGE_KEY} from "./parse/feeCalc"
+import {Account} from "./parse/validator"
 import {Shooter} from "./shooter"
-import {EVENT_STORAGE_KEY, splitSpecId} from "./util"
+import {
+    addErrorContext,
+    EVENT_STORAGE_KEY,
+    NEXT_FEE_MULTIPLIER_STORAGE_KEY,
+    SESSION_STORAGE_KEY,
+    splitSpecId,
+    VALIDATORS_STORAGE_KEY,
+    withErrorContext
+} from "./util"
 
 
 export interface IngestOptions {
@@ -36,7 +44,7 @@ export class Ingest {
 
     private client: Client
     private typesBundle?: OldTypesBundle
-    private maxStrides = 10
+    private maxStrides = 20
     private readonly strideSize = 10
     private log?: Logger
 
@@ -44,6 +52,7 @@ export class Ingest {
     private strides: Promise<RawBlock[] | Error>[] = []
     private chainHeight = 0
     private specs = this.createSpecsShooter()
+    private validators = this.createValidatorsShooter()
 
     private constructor(options: IngestOptions) {
         this.client = options.client
@@ -68,14 +77,22 @@ export class Ingest {
             let blocks = await assertNotNull(this.strides.shift())
             if (blocks instanceof Error) throw blocks
             for (let raw of blocks) {
-                yield await this.processRawBlock(raw)
+                try {
+                    yield await this.processRawBlock(raw)
+                } catch(e: any) {
+                    throw addErrorContext(e, {
+                        blockHeight: raw.blockHeight,
+                        blockHash: raw.blockHash
+                    })
+                }
             }
         }
     }
 
     private async processRawBlock(raw: RawBlock): Promise<BlockData> {
         let prevSpec = await this.specs.get(Math.max(0, raw.blockHeight - 1))
-        let block = parseRawBlock(prevSpec, raw)
+        let validators = await this.validators.get(raw.blockHeight)
+        let block = parseRawBlock(prevSpec, validators, raw)
         let currentSpec = await this.specs.get(raw.blockHeight)
         if (raw.blockHeight == 0 || currentSpec.specId != prevSpec.specId) {
             let [spec_name, spec_version] = splitSpecId(currentSpec.specId)
@@ -113,37 +130,107 @@ export class Ingest {
 
     private async fetchStride(height: number, size: number): Promise<RawBlock[]> {
         assert(size > 0)
+        let blocks = new Array<sub.Block>(size)
+        let hashes = new Array<string>(size)
+        let storagePromises = new Array<Promise<Error | any[]>>(size)
+
         let last = height + size - 1
-        let blockHash =  await this.client.call<string>(height, "chain_getBlockHash", [last])
-        let result: RawBlock[] = new Array(size)
+        let blockHash = await this.client
+            .call<string>(height, "chain_getBlockHash", [last])
+            .catch(withErrorContext({
+                blockHeight: last
+            }))
+
         for (let i = size - 1; i >= 0; i--) {
-            let [signedBlock, [events, feeMultiplier]] = await Promise.all([
-                this.client.call<sub.SignedBlock>(height, "chain_getBlock", [blockHash]),
-                this.queryStorageAt(
-                    blockHash,
-                    [EVENT_STORAGE_KEY, NEXT_FEE_MULTIPLIER_STORAGE_KEY],
-                    height
-                )
-            ])
-            let blockHeight = parseInt(signedBlock.block.header.number)
-            assert(blockHeight === height + i)
-            result[i] = {
+            let blockHeight = height + i
+
+            hashes[i] = blockHash
+
+            storagePromises[i] = this.queryStorageAt(
                 blockHash,
-                blockHeight,
-                block: signedBlock.block,
+                [
+                    EVENT_STORAGE_KEY,
+                    NEXT_FEE_MULTIPLIER_STORAGE_KEY
+                ],
+                blockHeight
+            ).catch((err: Error) => {
+                return addErrorContext(err, {
+                    blockHeight,
+                    blockHash
+                })
+            })
+
+            let block = await this.client
+                .call<sub.SignedBlock>(height, "chain_getBlock", [blockHash])
+                .catch(withErrorContext({
+                    blockHeight,
+                    blockHash
+                }))
+
+            blocks[i] = block.block
+            blockHash = block.block.header.parentHash
+            assert(parseInt(block.block.header.number) === blockHeight)
+        }
+
+        let storage = await Promise.all(storagePromises)
+        let result = new Array<RawBlock>(size)
+        for (let i = 0; i < size; i++) {
+            let s = storage[i]
+            if (s instanceof Error) throw Error
+            let [events, feeMultiplier] = s
+            result[i] = {
+                blockHeight: height + i,
+                blockHash: hashes[i],
+                block: blocks[i],
                 events,
                 feeMultiplier
             }
-            blockHash = signedBlock.block.header.parentHash
         }
         return result
+    }
+
+    private createValidatorsShooter() {
+        return new Shooter(
+            5000,
+            height => this.getSessionIndex(height).catch(withErrorContext({blockHeight: height})),
+            id => this.getValidators(id.blockHash).catch(withErrorContext({blockHash: id.blockHash})),
+            (a, b) => a.index === b.index,
+            () => this.chainHeight
+        )
+    }
+
+    private async getValidators(blockHash: string): Promise<Account[]> {
+        let raw = await this.client.call('state_getStorage', [VALIDATORS_STORAGE_KEY, blockHash])
+        if (raw == null) return []
+        let src = new Src(raw)
+        let len = src.compactLength()
+        let sink = new HexSink()
+        sink.compact(len)
+        let prefix = sink.toHex()
+        let addressSize = (raw.length - prefix.length) / (2 * len)
+        assert(Number.isSafeInteger(addressSize))
+        let validators = new Array(len)
+        for (let i = 0; i < len; i++) {
+            validators[i] = src.bytes(addressSize)
+        }
+        return validators
+    }
+
+    private async getSessionIndex(height: number): Promise<SessionId> {
+        let blockHash = await this.getBlockHash(height)
+        let index = await this.client.call('state_getStorage', [SESSION_STORAGE_KEY, blockHash])
+        return {blockHash, index}
     }
 
     private createSpecsShooter() {
         return new Shooter(
             5000,
-            height => this.getBlockSpecId(height),
-            id => this.fetchSpec(id),
+            height => this.getBlockSpecId(height).catch(withErrorContext({
+                blockHeight: height
+            })),
+            id => this.fetchSpec(id).catch(withErrorContext({
+                blockHash: id.blockHash
+            })),
             (a, b) => a.specId === b.specId,
             () => this.chainHeight
         )
@@ -173,7 +260,7 @@ export class Ingest {
     }
 
     private async getBlockSpecId(height: number): Promise<BlockSpecId> {
-        let blockHash = await this.client.call<string>(height, "chain_getBlockHash", [height])
+        let blockHash = await this.getBlockHash(height)
         let rt = await this.client.call<sub.RuntimeVersion>(height, 'chain_getRuntimeVersion', [blockHash])
         return {
             blockHash,
@@ -181,17 +268,26 @@ export class Ingest {
         }
     }
 
+    private getBlockHash(height: number): Promise<string> {
+        return this.client.call<string>(height, "chain_getBlockHash", [height])
+    }
+
     private async getChainHeight(): Promise<number> {
         let hash = await this.client.call('chain_getFinalizedHead')
-        let header = await this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
-        let height = parseInt(header.number)
-        assert(Number.isSafeInteger(height))
-        return height
+        return this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
+            .then(header => {
+                let height = parseInt(header.number)
+                assert(Number.isSafeInteger(height))
+                return height
+            }).catch(withErrorContext({
+                blockHash: hash
+            }))
     }
 
     private async queryStorageAt(blockHash: string, keys: string[], priority: number = 0): Promise<any[]> {
         if (keys.length == 0) return []
         let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            priority,
             'state_queryStorageAt',
             [keys, blockHash]
         )
@@ -212,4 +308,10 @@ export class Ingest {
 interface BlockSpecId {
     blockHash: string
     specId: string
+}
+
+
+interface SessionId {
+    blockHash: string
+    index: unknown
 }

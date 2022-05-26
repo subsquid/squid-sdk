@@ -15,31 +15,37 @@ CREATE TABLE block (
     hash char(66) not null,
     parent_hash char(66) not null,
     timestamp timestamptz not null,
-    spec_id text not null references metadata,
-    validator varchar
+    validator varchar,
+    spec_id text not null
 );
 
 
 CREATE INDEX IDX_block__height ON block(height);
 CREATE INDEX IDX_block__hash ON block(hash);
 CREATE INDEX IDX_block__timestamp ON block(timestamp);
+CREATE INDEX IDX_block__validator ON block(validator);
 
 
 CREATE TABLE extrinsic (
     id char(23) primary key,
     block_id char(16) not null references block on delete cascade,
     index_in_block integer not null,
+    version integer not null,
     signature jsonb,
-    success bool not null,
     call_id varchar(30) not null,
     fee numeric,
     tip numeric,
-    hash char(66) not null,
-    pos integer not null
+    success bool not null,
+    error jsonb,
+    pos integer not null,
+    hash char(66) not null
 );
 
 
 CREATE INDEX IDX_extrinsic__block__index ON extrinsic(block_id, index_in_block);
+CREATE INDEX IDX_extrinsic__hash ON extrinsic(hash);
+CREATE INDEX IDX_extrinsic__call ON extrinsic(call_id);
+CREATE INDEX IDX_extrinsic__signature ON extrinsic USING GIN (signature);
 
 
 CREATE TABLE call (
@@ -47,9 +53,11 @@ CREATE TABLE call (
     parent_id varchar(30) references call,
     block_id char(16) not null references block on delete cascade,
     extrinsic_id char(23) not null references extrinsic on delete cascade,
-    success bool not null,
     name varchar not null,
     args jsonb,
+    success bool not null,
+    error jsonb,
+    origin jsonb,
     pos integer not null
 );
 
@@ -57,6 +65,7 @@ CREATE TABLE call (
 CREATE INDEX IDX_call__name__block ON call(name, block_id);
 CREATE INDEX IDX_call__extrinsic__index ON call(extrinsic_id);
 CREATE INDEX IDX_call__parent ON call(parent_id);
+CREATE INDEX IDX_call__block ON call(block_id);
 
 
 CREATE TABLE event (

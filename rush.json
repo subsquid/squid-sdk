@@ -499,10 +499,10 @@
       "versionPolicyName": "public"
     },
     {
-      "packageName": "@subsquid/substrate-archive",
-      "projectFolder": "substrate-archive",
-      "shouldPublish": false,
-      "versionPolicyName": "docker-only"
+      "packageName": "@subsquid/substrate-ingest",
+      "projectFolder": "substrate-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
@@ -519,12 +519,6 @@
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
-      "packageName": "@subsquid/substrate-evm-processor",
-      "projectFolder": "substrate-evm-processor",
       "shouldPublish": true,
       "versionPolicyName": "public"
     },

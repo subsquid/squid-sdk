@@ -6,13 +6,20 @@ import assert from "assert"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {Chain, ChainManager} from "./chain"
 import {BlockData, Ingest} from "./ingest"
-import {ContractsEventHandler, ContractsEvent} from "./interfaces/contracts"
-import {BlockHandler, BlockHandlerContext, CallHandler, EventHandler} from "./interfaces/dataHandlerContext"
+import {
+    BlockHandler,
+    BlockHandlerContext,
+    BlockRangeOption,
+    CallHandler,
+    EventHandler,
+    EvmLogHandler,
+    EvmLogOptions,
+    EvmTopicSet
+} from "./interfaces/dataHandlers"
 import {ContextRequest} from "./interfaces/dataSelection"
 import {Database} from "./interfaces/db"
-import {EvmLogEvent, EvmLogHandler, EvmTopicSet} from "./interfaces/evm"
 import {Hooks} from "./interfaces/hooks"
-import {SubstrateEvent} from "./interfaces/substrate"
+import {EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
 import {Metrics} from "./metrics"
 import {timeInterval} from "./util/misc"
 import {Range} from "./util/range"
@@ -20,7 +27,7 @@ import {Range} from "./util/range"
 
 export interface DataSource {
     /**
-     * Archive endpoint URL
+     * Subsquid substrate archive endpoint URL
      */
     archive: string
     /**
@@ -28,12 +35,6 @@ export interface DataSource {
      */
     chain?: string
 }
-
-
-interface RangeOption {
-    range?: Range
-}
-
 
 
 interface DataSelection<R extends ContextRequest> {
@@ -191,11 +192,11 @@ export class SubstrateProcessor<Store> {
      * processor.addPreHook({range: {from: 100000}}, async ctx => {})
      */
     addPreHook(fn: BlockHandler<Store>): void
-    addPreHook(options: RangeOption, fn: BlockHandler<Store>): void
-    addPreHook(fnOrOptions: BlockHandler<Store> | RangeOption, fn?: BlockHandler<Store>): void {
+    addPreHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
-        let options: RangeOption = {}
+        let options: BlockRangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -227,11 +228,11 @@ export class SubstrateProcessor<Store> {
      * processor.addPostHook({range: {from: 100000}}, async ctx => {})
      */
     addPostHook(fn: BlockHandler<Store>): void
-    addPostHook(options: RangeOption, fn: BlockHandler<Store>): void
-    addPostHook(fnOrOptions: BlockHandler<Store> | RangeOption, fn?: BlockHandler<Store>): void {
+    addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
+    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
-        let options: RangeOption = {}
+        let options: BlockRangeOption = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -264,12 +265,12 @@ export class SubstrateProcessor<Store> {
      * })
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
-    addEventHandler(eventName: QualifiedName, options: RangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R>(eventName: QualifiedName, options: RangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: RangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
+    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
+    addEventHandler<R>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
+    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
         this.assertNotRunning()
         let handler: EventHandler<Store>
-        let options: RangeOption & MayBeDataSelection = {}
+        let options: BlockRangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions === 'function') {
             handler = fnOrOptions
         } else {
@@ -284,12 +285,12 @@ export class SubstrateProcessor<Store> {
     }
 
     addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
-    addCallHandler(callName: QualifiedName, options: RangeOption & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R>(callName: QualifiedName, options: RangeOption & DataSelection<R>, fn: CallHandler<R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | RangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
+    addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
+    addCallHandler<R>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options:  RangeOption & MayBeDataSelection = {}
+        let options:  BlockRangeOption & MayBeDataSelection = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -303,6 +304,43 @@ export class SubstrateProcessor<Store> {
         })
     }
 
+
+    addEvmLogHandler(
+        contractAddress: string,
+        fn: EvmLogHandler<Store>
+    ): void
+    addEvmLogHandler(
+        contractAddress: string,
+        options: EvmLogOptions & NoDataSelection,
+        fn: EvmLogHandler<Store>
+    ): void
+    addEvmLogHandler<R extends ContextRequest>(
+        contractAddress: string,
+        options: EvmLogOptions & DataSelection<R>,
+        fn: EvmLogHandler<Store, R>
+    ): void
+    addEvmLogHandler(
+        contractAddress: string,
+        fnOrOptions: EvmLogOptions & MayBeDataSelection | EvmLogHandler<Store>,
+        fn?: EvmLogHandler<Store>
+    ): void {
+        this.assertNotRunning()
+        let handler: EvmLogHandler<Store>
+        let options:  EvmLogOptions= {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+
+        this.hooks.evmLog.push({
+            handler,
+            contractAddress,
+            ...options
+        })
+    }
+    
     addContractsEventHandler(contractAddress: string, fn: ContractsEventHandler<Store>): void
     addContractsEventHandler(contractAddress: string, options: RangeOption & NoDataSelection, fn: ContractsEventHandler<Store>): void
     addContractsEventHandler<R>(contractAddress: string, options: RangeOption & DataSelection<R>, fn: ContractsEventHandler<R>): void
@@ -310,17 +348,6 @@ export class SubstrateProcessor<Store> {
         this.assertNotRunning()
         let handler: ContractsEventHandler<Store>
         let options: RangeOption & MayBeDataSelection = {}
-        if (typeof fnOrOptions == 'function') {
-            handler = fnOrOptions
-        } else {
-            handler = assertNotNull(fn)
-            options = {...fnOrOptions}
-        }
-        this.hooks.contractsEvent.push({
-            contractAddress,
-            handler,
-            ...options
-        })
     }
 
     protected assertNotRunning(): void {
@@ -469,16 +496,8 @@ export class SubstrateProcessor<Store> {
                     for (let handler of this.getEvmLogHandlers(handlers.evmLogs, item.event)) {
                         let event = item.event as EvmLogEvent
                         await handler({
-                            store: ctx.store,
-                            txHash: event.txHash,
-                            contractAddress: event.args.contract,
-                            data: event.args.data,
-                            topics: event.args.topics,
-                            substrate: {
-                                _chain: ctx._chain,
-                                block: ctx.block,
-                                event
-                            },
+                            ...ctx,
+                            event
                         })
                     }
                     for (let handler of this.getContractsEventHandlers(handlers.contractsEvents, item.event)) {

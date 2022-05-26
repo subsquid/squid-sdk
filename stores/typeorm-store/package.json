@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/typeorm-config": "^0.0.5",
-    "@subsquid/util-internal": "0.0.0"
+    "@subsquid/util-internal": "^0.0.0"
   },
   "peerDependencies": {
     "typeorm": "^0.2.41"

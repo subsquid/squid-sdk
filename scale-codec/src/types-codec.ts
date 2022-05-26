@@ -168,12 +168,13 @@ export function getCodecType(types: Type[], ti: Ti): CodecType {
             } else {
                 return def
             }
-        case TypeKind.Option:
-            if (isPrimitive('Bool', types, def.type)) {
-                return {kind: TypeKind.BooleanOption}
-            } else {
-                return def
-            }
+        // https://github.com/substrate-developer-hub/substrate-docs/issues/1061
+        // case TypeKind.Option:
+        //     if (isPrimitive('Bool', types, def.type)) {
+        //         return {kind: TypeKind.BooleanOption}
+        //     } else {
+        //         return def
+        //     }
         case TypeKind.Compact: {
             let type = getUnwrappedType(types, def.type)
             switch(type.kind) {
