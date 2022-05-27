@@ -150,7 +150,7 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
     name: 'Evm.Log'
     evmTxHash: string
     args: {
-        contract: string
+        address: string
         topics: string[]
         data: string
     }

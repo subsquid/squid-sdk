@@ -554,7 +554,7 @@ export class SubstrateProcessor<Store> {
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractHandlers = evmLogs[log.args.contract]
+        let contractHandlers = evmLogs[log.args.address]
         if (contractHandlers == null) return
 
         for (let h of contractHandlers) {
