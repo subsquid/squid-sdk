@@ -42,6 +42,8 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 
 
 processor.addEventHandler('Balances.Transfer', async ctx => {
+    assert(ctx.event.call?.origin != null, 'origin must be defined')
+
     let [from, to, value] = new BalancesTransferEvent(ctx).asV1
 
     let transfer = new Transfer({

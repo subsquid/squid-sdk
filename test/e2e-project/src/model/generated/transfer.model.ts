@@ -36,7 +36,7 @@ export class Transfer {
   @Column_("text", {nullable: true})
   comment!: string | undefined | null
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   block!: number
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})

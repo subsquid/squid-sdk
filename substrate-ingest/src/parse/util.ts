@@ -74,6 +74,9 @@ export function getExtrinsicFailedError(args: any): unknown {
 
 
 export function addressOrigin(address: any): sub.SignedOrigin | undefined {
+    if (address instanceof Uint8Array) {
+        return signedOrigin(address)
+    }
     if (address.__kind == 'Id') {
         return signedOrigin(address.value)
     }
