@@ -13,6 +13,7 @@ processor.setDataSource({
     archive: 'https://kusama.archive.subsquid.io/graphql'
 })
 
+processor.setBlockRange({from: 0, to: 10_000_000})
 
 processor.addEventHandler('Balances.Transfer', {
     data: {

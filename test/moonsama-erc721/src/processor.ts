@@ -1,4 +1,4 @@
-import {assertNotNull, SubstrateProcessor} from "@subsquid/substrate-processor"
+import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contract, createContractEntity, getContractEntity} from "./contract"
 import * as erc721 from "./erc721"

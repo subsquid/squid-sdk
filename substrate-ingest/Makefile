@@ -30,6 +30,15 @@ karura:
 		-e wss://karura.polkawallet.io \
 		--write-batch-size 20
 
+
+astar:
+	@node lib/main.js --out $(DB) \
+		-e wss://astar.api.onfinality.io/public-ws \
+		-e wss://astar-rpc.dwellir.com \
+		--write-batch-size 20 \
+		--start-block 214823
+
+
 up:
 	@docker-compose up -d
 
@@ -38,4 +47,4 @@ down:
 	@docker-compose down
 
 
-.PHONY: up down kusama moonriver
+.PHONY: up down kusama moonriver karura astar
