@@ -8,6 +8,14 @@ const debug = Debug('index-builder:helper')
 
 export async function createDBConnection(): Promise<Connection> {
   const _config = config()
+ debug(`DB config: ${JSON.stringify({
+    name:_config.name,
+    database:_config.database,
+    host:_config.host,
+    port:_config.port,
+    entities:_config.entities,
+    namingStrategy:_config.namingStrategy
+  }, null, 2)}`)
   return createConnection(_config)
 }
 
