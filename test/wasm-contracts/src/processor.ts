@@ -1,6 +1,5 @@
-import {SubstrateProcessor} from "@subsquid/substrate-processor"
+import {SubstrateProcessor, assertNotNull} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
-import {assertNotNull} from "@subsquid/util-internal"
 import {Flip} from "./model"
 import {Abi} from "@polkadot/api-contract"
 import flipperMetadata from "./metadata.json"
@@ -16,13 +15,13 @@ processor.setDataSource({
 })
 
 
-processor.addContractsEventHandler(
+processor.addContractsContractEmittedHandler(
     "0xde8f2aa373e804aa57dd18b16de1249477375e205ec6c8a8bb129a5c4067a81c",
     async ctx => {
-        let { event, block } = ctx.substrate;
+        let { event, block } = ctx;
 
         let abi = new Abi(flipperMetadata)
-        let bytes = Buffer.from(ctx.data.slice(2), 'hex')
+        let bytes = Buffer.from(ctx.event.args.data.slice(2), 'hex')
         let decoded = abi.decodeEvent(bytes)
         let value = decoded.args[0].toHuman();
         assert(typeof value == 'boolean')
