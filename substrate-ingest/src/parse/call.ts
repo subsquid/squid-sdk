@@ -514,7 +514,7 @@ function END_OF_SUDO(event: model.Event): CallEnd | undefined {
         ok: event.args as any,
         event
     }
-    let result = 'sudoResult' in event.args ? event.args.sudo_result : event.args
+    let result = 'sudoResult' in event.args ? event.args.sudoResult : event.args
     switch(result.__kind) {
         case 'Ok':
             return {ok: true, event}
