@@ -289,8 +289,15 @@ function mapGatewayBlock(block: gw.BatchBlock): BlockData {
     })
 
     let extrinsics = createObjects<gw.Extrinsic, SubstrateExtrinsic>(block.extrinsics || [], go => {
-        let {callId, ...extrinsic} = go
-        return extrinsic
+        let {callId, fee, tip, ...rest} = go
+        let extrinsic: Partial<SubstrateExtrinsic> = rest
+        if (fee != null) {
+            extrinsic.fee = BigInt(fee)
+        }
+        if (tip != null) {
+            extrinsic.tip = BigInt(tip)
+        }
+        return extrinsic as SubstrateExtrinsic
     })
 
     let log: LogItem[] = []

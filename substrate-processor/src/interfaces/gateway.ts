@@ -68,6 +68,8 @@ export interface Extrinsic {
     indexInBlock?: number
     callId?: string
     signature?: SubstrateExtrinsicSignature
+    fee?: string
+    tip?: string
     success?: boolean
     hash?: string
     pos: number

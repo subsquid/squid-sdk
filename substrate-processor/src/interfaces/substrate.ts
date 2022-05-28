@@ -100,6 +100,8 @@ export interface SubstrateExtrinsic {
     version: number
     signature?: SubstrateExtrinsicSignature
     call: SubstrateCall
+    fee?: bigint
+    tip?: bigint
     success: boolean
     error?: any
     /**
