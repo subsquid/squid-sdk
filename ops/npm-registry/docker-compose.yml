@@ -4,6 +4,6 @@ services:
   npm-registry:
     image: verdaccio/verdaccio:5
     ports:
-      - "14873:4873"
+      - "4873:4873"
     volumes:
       - ./conf:/verdaccio/conf

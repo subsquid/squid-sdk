@@ -19,5 +19,5 @@
 
 always-auth=true
 registry=https://registry.npmjs.org/
-//localhost:14873/:_authToken=foo
+//localhost:4873/:_authToken=foo
 # //registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}
