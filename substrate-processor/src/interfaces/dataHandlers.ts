@@ -1,5 +1,6 @@
+import type {Logger} from "@subsquid/logger"
 import type {Chain} from "../chain"
-import {Range} from "../util/range"
+import type {Range} from "../util/range"
 import type {
     CallFields,
     ContextRequest,
@@ -17,6 +18,7 @@ export interface BlockHandlerContext<S> {
      * @internal
      */
     _chain: Chain
+    log: Logger
     store: S
     block: SubstrateBlock
 }

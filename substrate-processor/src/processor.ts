@@ -522,7 +522,12 @@ export class SubstrateProcessor<Store> {
                 let chain = await chainManager.getChainForBlock(block.header)
                 await this.db.transact(block.header.height, store => {
                     return this.processBlock(handlers, chain, store, block)
-                })
+                }).catch(
+                    withErrorContext({
+                        blockHeight: block.header.height,
+                        blockHash: block.header.hash
+                    })
+                )
                 lastBlock = block.header.height
                 this.metrics.setLastProcessedBlock(lastBlock)
             }
@@ -551,41 +556,79 @@ export class SubstrateProcessor<Store> {
         store: Store,
         block: BlockData
     ): Promise<void> {
+        let blockLog = this.log.child('mapping', {
+            blockHeight: block.header.height,
+            blockHash: block.header.hash
+        })
+
         let ctx: BlockHandlerContext<Store> = {
             _chain: chain,
+            log: blockLog.child({hook: 'pre'}),
             store,
             block: block.header
         }
 
         for (let pre of handlers.pre) {
+            ctx.log.debug('begin')
             await pre(ctx)
+            ctx.log.debug('end')
         }
 
         for (let item of block.log) {
             switch(item.kind) {
                 case 'event':
                     for (let handler of handlers.events[item.event.name]?.handlers || []) {
-                        await handler({...ctx, event: item.event})
+                        let log = blockLog.child({
+                            hook: 'event',
+                            eventName: item.event.name,
+                            eventId: item.event.id
+                        })
+                        log.debug('begin')
+                        await handler({...ctx, log, event: item.event})
+                        log.debug('end')
                     }
                     for (let handler of this.getEvmLogHandlers(handlers.evmLogs, item.event)) {
                         let event = item.event as EvmLogEvent
+                        let log = blockLog.child({
+                            hook: 'evm-log',
+                            contractAddress: event.args.address,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
                         await handler({
                             ...ctx,
+                            log,
                             event
                         })
+                        log.debug('end')
                     }
                     for (let handler of this.getContractEmittedHandlers(handlers, item.event)) {
                         let event = item.event as ContractsContractEmittedEvent
+                        let log = blockLog.child({
+                            hook: 'contract-emitted',
+                            contractAddress: event.args.contract,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
                         await handler({
                             ...ctx,
+                            log,
                             event
                         })
+                        log.debug('end')
                     }
                     break
                 case 'call':
                     for (let handler of handlers.calls[item.call.name]?.handlers || []) {
+                        let log = blockLog.child({
+                            hook: 'call',
+                            callName: item.call.name,
+                            callId: item.call.id
+                        })
                         let {kind, ...data} = item
-                        await handler({...ctx, ...data})
+                        log.debug('begin')
+                        await handler({...ctx, log, ...data})
+                        log.debug('end')
                     }
                     break
                 default:
@@ -593,8 +636,12 @@ export class SubstrateProcessor<Store> {
             }
         }
 
+        ctx.log = blockLog.child({hook: 'post'})
+
         for (let post of handlers.post) {
+            ctx.log.debug('begin')
             await post(ctx)
+            ctx.log.debug('end')
         }
     }
 
