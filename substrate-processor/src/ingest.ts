@@ -1,7 +1,7 @@
 import {assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
-import type {Batch} from "./batch"
+import type {Batch, DataHandlers} from "./batch"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {printGqlArguments} from "./util/gql"
@@ -25,11 +25,12 @@ export interface BlockData {
 }
 
 
-export interface DataBatch extends Batch {
+export interface DataBatch {
     /**
      * This is roughly the range of scanned blocks
      */
     range: {from: number, to: number}
+    handlers: DataHandlers
     blocks: BlockData[]
 }
 
@@ -87,6 +88,7 @@ export class Ingest {
             } = {
                 batchRange: batch.range
             }
+
             let promise = this.waitForHeight(batch.range.from)
                 .then(async archiveHeight => {
                     ctx.archiveHeight = archiveHeight
@@ -109,7 +111,7 @@ export class Ingest {
                     assert(response.status.head >= archiveHeight)
                     this.setArchiveHeight(response)
 
-                    let blocks = response.batch.map(mapGatewayBlock)
+                    let blocks = response.batch.map(mapGatewayBlock).sort((a, b) => a.header.height - b.header.height)
                     if (blocks.length) {
                         assert(blocks.length <= this.limit)
                         assert(batch.range.from <= blocks[0].header.height)
