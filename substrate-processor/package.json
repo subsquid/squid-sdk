@@ -17,6 +17,7 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
+    "@subsquid/logger": "^0.0.0",
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.2",
     "@subsquid/substrate-metadata": "^0.8.3",

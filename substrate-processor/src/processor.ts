@@ -1,3 +1,4 @@
+import {createLogger} from "@subsquid/logger"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
@@ -22,7 +23,7 @@ import {Database} from "./interfaces/db"
 import {Hooks} from "./interfaces/hooks"
 import {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
 import {Metrics} from "./metrics"
-import {timeInterval} from "./util/misc"
+import {timeInterval, withErrorContext} from "./util/misc"
 import {Range} from "./util/range"
 
 
@@ -65,6 +66,7 @@ export class SubstrateProcessor<Store> {
     private typesBundle?: OldTypesBundle
     private metrics = new Metrics()
     private running = false
+    private log = createLogger('sqd:processor')
 
     constructor(private db: Database<Store>) {}
 
@@ -398,11 +400,49 @@ export class SubstrateProcessor<Store> {
 
     @def
     private archiveRequest(): (query: string) => Promise<any> {
-        const url = this.src?.archive
-        if (url == null) {
+        const archiveUrl = this.src?.archive
+        if (archiveUrl == null) {
             throw new Error('use .setDataSource() to specify archive url')
         }
-        return query => graphqlRequest({url, query})
+
+        let log = this.log.child('archive-request', {archiveUrl})
+        let counter = 0
+
+        return async archiveQuery => {
+            let archiveRequestId = counter
+            counter = (counter + 1) % 1000
+
+            log.debug({
+                archiveRequestId,
+                archiveQuery
+            }, 'request')
+
+            let response = await graphqlRequest({
+                url: archiveUrl,
+                query: archiveQuery,
+                timeout: 60_000,
+                retry: {
+                    log(err, errorsInRow, backoff) {
+                        log.warn({
+                            archiveRequestId,
+                            archiveQuery,
+                            backoff,
+                            reason: err.message
+                        }, 'retry')
+                    }
+                }
+            }).catch(
+                withErrorContext({archiveUrl, archiveRequestId, archiveQuery})
+            )
+
+            log.debug({
+                archiveUrl,
+                archiveRequestId,
+                archiveResponse: log.isTrace() ? response : undefined
+            }, 'response')
+
+            return response
+        }
     }
 
     @def
@@ -432,14 +472,19 @@ export class SubstrateProcessor<Store> {
     run(): void {
         if (this.running) return
         this.running = true
-        runProgram(() => this._run())
+        runProgram(() => this._run(), err => this.log.fatal(err))
     }
 
     private async _run(): Promise<void> {
         let heightAtStart = await this.db.connect()
+        if (heightAtStart >= 0) {
+            this.log.info(`last processed block was ${heightAtStart}`)
+        }
 
         let blockRange = this.blockRange
         if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
+            this.log.info(`processing range is [${blockRange.from}, ${blockRange.to}]`)
+            this.log.info('nothing to do')
             return
         } else {
             blockRange = {
@@ -448,9 +493,11 @@ export class SubstrateProcessor<Store> {
             }
         }
 
+        this.log.info(`processing blocks from ${blockRange.from}${blockRange.to == null ? '' : ' to ' + blockRange.to}`)
+
         let ingest = new Ingest({
             archiveRequest: this.archiveRequest(),
-            batches$: createBatches(this.hooks, blockRange),
+            batches: createBatches(this.hooks, blockRange),
             batchSize: this.batchSize,
             metrics: this.metrics
         })
@@ -458,7 +505,7 @@ export class SubstrateProcessor<Store> {
         await ingest.fetchArchiveHeight()
         this.updateProgressMetrics(heightAtStart)
         let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
-        console.log(`Prometheus metrics are served at port ${prometheusServer.port}`)
+        this.log.info(`prometheus metrics are served at port ${prometheusServer.port}`)
 
         return this.process(ingest)
     }
@@ -487,8 +534,9 @@ export class SubstrateProcessor<Store> {
             this.metrics.batchProcessingTime(beg, end, batch.blocks.length)
             this.updateProgressMetrics(lastBlock, end)
 
-            console.log(
-                `Last block: ${lastBlock}, ` +
+            this.log.info(
+                `last block: ${lastBlock}, ` +
+                `speed: ${Math.round(this.metrics.getSyncSpeed())} blocks/sec, ` +
                 `mapping: ${Math.round(this.metrics.getMappingSpeed())} blocks/sec, ` +
                 `ingest: ${Math.round(this.metrics.getIngestSpeed())} blocks/sec, ` +
                 `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}, ` +

@@ -96,6 +96,10 @@ export class Metrics implements IngestMetrics {
         this.ingestSpeed.stop(fetchedBlocksCount, end)
     }
 
+    getSyncSpeed(): number {
+        return this.blockProgress.speed()
+    }
+
     getSyncEtaSeconds(): number {
         return this.blockProgress.eta()
     }

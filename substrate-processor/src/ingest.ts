@@ -1,12 +1,12 @@
-import {AbortHandle, assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
+import {assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
-import { inspect } from "util"
-import {Batch} from "./batch"
+import type {Batch} from "./batch"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {printGqlArguments} from "./util/gql"
-import {rangeEnd} from "./util/range"
+import {addErrorContext, withErrorContext} from "./util/misc"
+import {Range, rangeEnd} from "./util/range"
 
 
 export type LogItem = {
@@ -43,65 +43,73 @@ export interface IngestMetrics {
 export interface IngestOptions {
     archiveRequest<T>(query: string): Promise<T>
     archivePollIntervalMS?: number
-    /**
-     * Mutable array of batches to ingest.
-     *
-     * Ingest will shift elements and modify the range of a head batch.
-     */
-    batches$: Batch[]
+    batches: Batch[]
     batchSize: number
     metrics?: IngestMetrics
 }
 
 
 export class Ingest {
-    private _abort = new AbortHandle()
     private archiveHeight = -1
     private readonly limit: number // maximum number of blocks in a single batch
     private readonly batches: Batch[]
     private readonly maxQueueSize = 3
     private queue: Promise<DataBatch>[] = []
-    private fetchLoopRunning = false
+    private fetchLoopIsStopped = true
 
     constructor(private options: IngestOptions) {
-        this.batches = options.batches$
+        this.batches = options.batches.slice()
         this.limit = this.options.batchSize
         assert(this.limit > 0)
-    }
-
-    close(): void {
-        this._abort.abort()
     }
 
     @def
     async *getBlocks(): AsyncGenerator<DataBatch> {
         while (this.batches.length) {
-            this.startFetchLoop()
+            if (this.fetchLoopIsStopped) {
+                this.fetchLoop().catch()
+            }
             yield await assertNotNull(this.queue[0])
             this.queue.shift()
         }
     }
 
-    private startFetchLoop(): void {
-        this._abort.assertNotAborted()
-        if (this.fetchLoopRunning) return
-        this.fetchLoopRunning = true
-        this.fetchLoop().finally(() => this.fetchLoopRunning = false)
-    }
-
     private async fetchLoop(): Promise<void> {
+        assert(this.fetchLoopIsStopped)
+        this.fetchLoopIsStopped = false
         while (this.batches.length && this.queue.length < this.maxQueueSize) {
             let batch = this.batches[0]
+            let ctx: {
+                batchRange: Range,
+                batchBlocksFetched?: number
+                archiveHeight?: number
+                archiveQuery?: string,
+            } = {
+                batchRange: batch.range
+            }
             let promise = this.waitForHeight(batch.range.from)
                 .then(async archiveHeight => {
+                    ctx.archiveHeight = archiveHeight
+                    ctx.archiveQuery = this.buildBatchQuery(batch, archiveHeight)
+
                     let metrics = this.options.metrics
                     let beg = metrics && process.hrtime.bigint()
-                    let blocks = await this.batchFetch(batch, archiveHeight)
+
+                    let response: {
+                        status: {head: number},
+                        batch: gw.BatchBlock[]
+                    } = await this.options.archiveRequest(ctx.archiveQuery)
+
+                    ctx.batchBlocksFetched = response.batch.length
                     if (metrics) {
                         let end = process.hrtime.bigint()
-                        metrics.batchRequestTime(beg!, end, blocks.length)
+                        metrics.batchRequestTime(beg!, end, ctx.batchBlocksFetched)
                     }
 
+                    assert(response.status.head >= archiveHeight)
+                    this.setArchiveHeight(response)
+
+                    let blocks = response.batch.map(mapGatewayBlock)
                     if (blocks.length) {
                         assert(blocks.length <= this.limit)
                         assert(batch.range.from <= blocks[0].header.height)
@@ -113,10 +121,16 @@ export class Ingest {
                     let to: number
                     if (blocks.length === this.limit && last(blocks).header.height < rangeEnd(batch.range)) {
                         to = last(blocks).header.height
-                        batch.range = {from: to + 1, to: batch.range.to}
+                        this.batches[0] = {
+                            range: {from: to + 1, to: batch.range.to},
+                            handlers: batch.handlers
+                        }
                     } else if (archiveHeight < rangeEnd(batch.range)) {
                         to = archiveHeight
-                        batch.range = {from: to + 1, to: batch.range.to}
+                        this.batches[0] = {
+                            range: {from: to + 1, to: batch.range.to},
+                            handlers: batch.handlers
+                        }
                     } else {
                         to = assertNotNull(batch.range.to)
                         this.batches.shift()
@@ -127,7 +141,7 @@ export class Ingest {
                         range: {from, to},
                         handlers: batch.handlers
                     }
-                })
+                }).catch(withErrorContext(ctx))
 
             this.queue.push(promise)
 
@@ -137,13 +151,13 @@ export class Ingest {
             })
 
             if (result instanceof Error) {
-                this._abort.abort(result)
                 return
             }
         }
+        this.fetchLoopIsStopped = true
     }
 
-    private async batchFetch(batch: Batch, archiveHeight: number): Promise<BlockData[]> {
+    private buildBatchQuery(batch: Batch, archiveHeight: number): string {
         let from = batch.range.from
         let to = Math.min(archiveHeight, rangeEnd(batch.range))
         assert(from <= to)
@@ -207,12 +221,7 @@ export class Ingest {
                 q.line('extrinsics')
             })
         })
-        let gql = q.toString()
-        // console.log(gql)
-        let response: {status: {head: number}, batch: gw.BatchBlock[]} = await this.options.archiveRequest(gql)
-        // console.log(inspect(response, false, 10))
-        this.setArchiveHeight(response)
-        return response.batch.map(mapGatewayBlock)
+        return q.toString()
     }
 
     private async waitForHeight(minimumHeight: number): Promise<number> {
@@ -221,7 +230,7 @@ export class Ingest {
             if (this.archiveHeight >= minimumHeight) {
                 return this.archiveHeight
             } else {
-                await wait(this.options.archivePollIntervalMS || 5000, this._abort)
+                await wait(this.options.archivePollIntervalMS || 5000)
             }
         }
         return this.archiveHeight
@@ -274,6 +283,18 @@ function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any
 
 
 function mapGatewayBlock(block: gw.BatchBlock): BlockData {
+    try {
+        return tryMapGatewayBlock(block)
+    } catch(e: any) {
+        throw addErrorContext(e, {
+            blockHeight: block.header.height,
+            blockHash: block.header.hash
+        })
+    }
+}
+
+
+function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
     block.calls = block.calls || []
     block.events = block.events || []
     block.extrinsics = block.extrinsics || []
