@@ -20,7 +20,7 @@ moonriver:
 		-e wss://moonriver-rpc.dwellir.com \
 		-e wss://wss.api.moonriver.moonbeam.network/ \
 		--write-batch-size 20 \
-		--start-block 0
+		--start-block 600000
 
 
 karura:

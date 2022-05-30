@@ -1,3 +1,4 @@
+import {toHex} from "@subsquid/util-internal"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"
@@ -16,6 +17,11 @@ export interface PostgresSinkOptions {
     batchSize?: number
     speed?: Speed
     progress?: Progress
+}
+
+
+interface IndexedEvent extends Event {
+    contract?: string
 }
 
 
@@ -67,7 +73,7 @@ export class PostgresSink implements Sink {
         pos: {cast: 'int'}
     })
 
-    private eventInsert = new Insert<Event>('event', {
+    private eventInsert = new Insert<IndexedEvent>('event', {
         id: {cast: 'text'},
         block_id: {cast: 'text'},
         index_in_block: {cast: 'int'},
@@ -76,7 +82,8 @@ export class PostgresSink implements Sink {
         call_id: {cast: 'text'},
         name: {cast: 'text'},
         args: {map: toJsonString, cast: 'jsonb'},
-        pos: {cast: 'int'}
+        pos: {cast: 'int'},
+        contract: {cast: 'text'}
     })
 
     private warningInsert = new Insert<Warning>('warning', {
@@ -103,12 +110,29 @@ export class PostgresSink implements Sink {
         this.headerInsert.add(block.header)
         this.extrinsicInsert.addMany(block.extrinsics)
         this.callInsert.addMany(block.calls)
-        this.eventInsert.addMany(block.events)
+        this.insertEvents(block.events)
         if (block.warnings) {
             this.warningInsert.addMany(block.warnings)
         }
         if (block.last || this.headerInsert.size >= this.batchSize) {
             await this.submit()
+        }
+    }
+
+    private insertEvents(events: Event[]): void {
+        for (let event of events) {
+            this.eventInsert.add(this.mapEvent(event))
+        }
+    }
+
+    private mapEvent(event: Event): IndexedEvent {
+        switch(event.name) {
+            case 'EVM.Log':
+                return {...event, contract: toHex(event.args.address)}
+            case 'Contracts.ContractEmitted':
+                return {...event, contract: toHex(event.args.contract)}
+            default:
+                return event
         }
     }
 
