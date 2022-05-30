@@ -32,12 +32,7 @@ export interface DataBatch {
     range: {from: number, to: number}
     handlers: DataHandlers
     blocks: BlockData[]
-}
-
-
-export interface IngestMetrics {
-    setChainHeight(height: number): void
-    batchRequestTime(start: bigint, end: bigint, fetchedBlocksCount: number): void
+    fetchTime: bigint
 }
 
 
@@ -46,7 +41,6 @@ export interface IngestOptions {
     archivePollIntervalMS?: number
     batches: Batch[]
     batchSize: number
-    metrics?: IngestMetrics
 }
 
 
@@ -94,19 +88,16 @@ export class Ingest {
                     ctx.archiveHeight = archiveHeight
                     ctx.archiveQuery = this.buildBatchQuery(batch, archiveHeight)
 
-                    let metrics = this.options.metrics
-                    let beg = metrics && process.hrtime.bigint()
+                    let fetchStart = process.hrtime.bigint()
 
                     let response: {
                         status: {head: number},
                         batch: gw.BatchBlock[]
                     } = await this.options.archiveRequest(ctx.archiveQuery)
 
+                    let fetchTime = process.hrtime.bigint() - fetchStart
+
                     ctx.batchBlocksFetched = response.batch.length
-                    if (metrics) {
-                        let end = process.hrtime.bigint()
-                        metrics.batchRequestTime(beg!, end, ctx.batchBlocksFetched)
-                    }
 
                     assert(response.status.head >= archiveHeight)
                     this.setArchiveHeight(response)
@@ -141,7 +132,8 @@ export class Ingest {
                     return {
                         blocks,
                         range: {from, to},
-                        handlers: batch.handlers
+                        handlers: batch.handlers,
+                        fetchTime
                     }
                 }).catch(withErrorContext(ctx))
 
@@ -247,7 +239,10 @@ export class Ingest {
     private setArchiveHeight(res: {status: {head: number}}): void {
         let height = res.status.head
         this.archiveHeight = Math.max(this.archiveHeight, height)
-        this.options.metrics?.setChainHeight(this.archiveHeight)
+    }
+
+    getLatestKnownArchiveHeight(): number {
+        return this.archiveHeight
     }
 }
 

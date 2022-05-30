@@ -405,6 +405,8 @@ export class SubstrateProcessor<Store> {
             throw new Error('use .setDataSource() to specify archive url')
         }
 
+        let errorsCounter = this.metrics.archiveHttpErrorsCounter.labels(archiveUrl)
+        let errorsInRowGauge = this.metrics.archiveHttpErrorsInRowGauge.labels(archiveUrl)
         let log = this.log.child('archive-request', {archiveUrl})
         let counter = 0
 
@@ -423,6 +425,8 @@ export class SubstrateProcessor<Store> {
                 timeout: 60_000,
                 retry: {
                     log(err, errorsInRow, backoff) {
+                        errorsCounter.inc()
+                        errorsInRowGauge.set(errorsInRow)
                         log.warn({
                             archiveRequestId,
                             archiveQuery,
@@ -435,6 +439,7 @@ export class SubstrateProcessor<Store> {
                 withErrorContext({archiveUrl, archiveRequestId, archiveQuery})
             )
 
+            errorsInRowGauge.set(0)
             log.debug({
                 archiveUrl,
                 archiveRequestId,
@@ -452,14 +457,6 @@ export class SubstrateProcessor<Store> {
             getChainClient: () => this.chainClient(),
             typesBundle: this.typesBundle
         })
-    }
-
-    private updateProgressMetrics(lastProcessedBlock: number, time?: bigint): void {
-        let totalBlocksCount = getBlocksCount(this.wholeRange(), 0, this.metrics.getChainHeight())
-        let blocksLeft = getBlocksCount(this.wholeRange(), lastProcessedBlock + 1, this.metrics.getChainHeight())
-        this.metrics.setLastProcessedBlock(lastProcessedBlock)
-        this.metrics.setTotalNumberOfBlocks(totalBlocksCount)
-        this.metrics.setProgress(totalBlocksCount - blocksLeft, time)
     }
 
     /**
@@ -498,12 +495,15 @@ export class SubstrateProcessor<Store> {
         let ingest = new Ingest({
             archiveRequest: this.archiveRequest(),
             batches: createBatches(this.hooks, blockRange),
-            batchSize: this.batchSize,
-            metrics: this.metrics
+            batchSize: this.batchSize
         })
 
-        await ingest.fetchArchiveHeight()
-        this.updateProgressMetrics(heightAtStart)
+        this.metrics.updateProgress(
+            await ingest.fetchArchiveHeight(),
+            getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
+            getBlocksCount(this.wholeRange(), heightAtStart + 1, ingest.getLatestKnownArchiveHeight()),
+        )
+
         let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
         this.log.info(`prometheus metrics are served at port ${prometheusServer.port}`)
 
@@ -536,8 +536,20 @@ export class SubstrateProcessor<Store> {
             await this.db.advance(lastBlock)
 
             let end = process.hrtime.bigint()
-            this.metrics.batchProcessingTime(beg, end, batch.blocks.length)
-            this.updateProgressMetrics(lastBlock, end)
+
+            this.metrics.updateProgress(
+                ingest.getLatestKnownArchiveHeight(),
+                getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
+                getBlocksCount(this.wholeRange(), lastBlock + 1, ingest.getLatestKnownArchiveHeight()),
+                end
+            )
+
+            this.metrics.registerBatch(
+                batch.blocks.length,
+                batch.fetchTime,
+                beg,
+                end
+            )
 
             this.log.info(
                 `last block: ${lastBlock}, ` +

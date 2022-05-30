@@ -1,13 +1,12 @@
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {createPrometheusServer, ListeningServer} from "@subsquid/util-internal-prometheus-server"
-import {collectDefaultMetrics, Gauge, Registry} from "prom-client"
-import type {IngestMetrics} from "./ingest"
+import {collectDefaultMetrics, Counter, Gauge, Registry} from "prom-client"
 
 
-export class Metrics implements IngestMetrics {
+export class Metrics {
     private chainHeight = -1
-    private ingestSpeed = new Speed()
-    private mappingSpeed = new Speed()
+    private ingestSpeed = new Speed(10)
+    private mappingSpeed = new Speed(10)
     private blockProgress = new Progress()
     private registry = new Registry()
 
@@ -30,7 +29,6 @@ export class Metrics implements IngestMetrics {
         name: 'sqd_processor_mapping_blocks_per_second',
         help: 'Mapping performance',
         registers: [this.registry],
-        aggregator: 'average',
         collect: this.collect(() => this.mappingSpeed.speed())
     })
 
@@ -38,7 +36,6 @@ export class Metrics implements IngestMetrics {
         name: 'sqd_processor_ingest_blocks_per_second',
         help: 'Data fetching speed',
         registers: [this.registry],
-        aggregator: 'average',
         collect: this.collect(() => this.ingestSpeed.speed())
     })
 
@@ -55,6 +52,22 @@ export class Metrics implements IngestMetrics {
         registers: [this.registry],
         aggregator: 'max',
         collect: this.collect(() => this.blockProgress.ratio())
+    })
+
+    public readonly archiveHttpErrorsCounter = new Counter({
+        name: 'sqd_processor_archive_http_errors',
+        help: 'Number of archive http connection errors',
+        registers: [this.registry],
+        aggregator: 'sum',
+        labelNames: ['archive']
+    })
+
+    public readonly archiveHttpErrorsInRowGauge = new Gauge({
+        name: 'sqd_processor_archive_http_errors_in_row',
+        help: 'Number of archive http connection errors happened in row, without single successful request',
+        registers: [this.registry],
+        aggregator: 'sum',
+        labelNames: ['archive']
     })
 
     private collect(fn: () => number) {
@@ -78,22 +91,25 @@ export class Metrics implements IngestMetrics {
         this.chainHeight = height
     }
 
-    setProgress(blocksProcessedSoFar: number, time?: bigint): void {
-        this.blockProgress.setCurrentValue(blocksProcessedSoFar, time)
+    updateProgress(
+        chainHeight: number,
+        estimatedTotalBlocksCount: number,
+        estimatedBlocksLeft: number,
+        time?: bigint
+    ): void {
+        this.setChainHeight(chainHeight)
+        this.blockProgress.setTargetValue(estimatedTotalBlocksCount)
+        this.blockProgress.setCurrentValue(estimatedTotalBlocksCount - estimatedBlocksLeft, time)
     }
 
-    setTotalNumberOfBlocks(blocksCount: number): void {
-        this.blockProgress.setTargetValue(blocksCount)
-    }
-
-    batchProcessingTime(start: bigint, end: bigint, processedBlocksCount: number): void {
-        this.mappingSpeed.start(start)
-        this.mappingSpeed.stop(processedBlocksCount, end)
-    }
-
-    batchRequestTime(start: bigint, end: bigint, fetchedBlocksCount: number) {
-        this.ingestSpeed.start(start)
-        this.ingestSpeed.stop(fetchedBlocksCount, end)
+    registerBatch(
+        batchSize: number,
+        batchFetchTime: bigint,
+        batchMappingStartTime: bigint,
+        batchMappingEndTime: bigint,
+    ): void {
+        this.ingestSpeed.push(batchSize, batchFetchTime)
+        this.mappingSpeed.push(batchSize, batchMappingEndTime - batchMappingStartTime)
     }
 
     getSyncSpeed(): number {
@@ -114,10 +130,6 @@ export class Metrics implements IngestMetrics {
 
     getMappingSpeed(): number {
         return this.mappingSpeed.speed()
-    }
-
-    getChainHeight(): number {
-        return this.chainHeight
     }
 
     serve(port: number | string): Promise<ListeningServer> {

@@ -10,8 +10,8 @@ kusama:
 		-e wss://kusama.api.onfinality.io/public-ws \
 		-c 10 \
 		--prom-port 0 \
-		--write-batch-size 10 \
-		--start-block 10000000
+		--write-batch-size 30 \
+		--start-block 0
 
 
 moonriver:
