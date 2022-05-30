@@ -245,9 +245,9 @@ class Connection {
         this.connectionErrorsInRow += 1
         this.cap = this.maxCapacity
         this.log?.warn({
-            err,
-            backoff: timeout
-        })
+            backoff: timeout,
+            reason: err.toString()
+        }, 'connection error')
         setTimeout(() => {
             this.client = new RpcClient(this.url)
             this.connect()
