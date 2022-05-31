@@ -4,6 +4,7 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
+import * as process from "process"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {Chain, ChainManager} from "./chain"
 import {BlockData, Ingest} from "./ingest"
@@ -391,11 +392,55 @@ export class SubstrateProcessor<Store> {
 
     @def
     private chainClient(): ResilientRpcClient {
-        let endpoint = this.src?.chain
-        if (endpoint == null) {
+        if (this.src?.chain == null) {
             throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
         }
-        return new ResilientRpcClient(endpoint)
+
+        let url = this.src.chain
+        let log = this.log.child('chain-rpc', {url})
+        let metrics = this.metrics
+        let counter = 0
+
+        class ChainClient extends ResilientRpcClient {
+            constructor() {
+                super({
+                    url,
+                    onRetry(err, errorsInRow, backoff) {
+                        metrics.registerChainRpcRetry(url, errorsInRow)
+                        log.warn({
+                            backoff,
+                            reason: err.message
+                        }, 'connection error')
+                    }
+                })
+            }
+
+            async call<T=any>(method: string, params?: unknown[]): Promise<T> {
+                let id = counter
+                counter = (counter + 1) % 10000
+                log.debug({
+                    req: id,
+                    method,
+                    params
+                }, 'request')
+                let beg = process.hrtime.bigint()
+                let result = await super.call(method, params).catch(withErrorContext({
+                    rpcUrl: url,
+                    rpcRequestId: id,
+                    rpcMethod: method
+                }))
+                let end = process.hrtime.bigint()
+                let duration = end - beg
+                metrics.registerChainRpcResponse(url, method, duration)
+                log.debug({
+                    req: id,
+                    responseTime: Math.round(Number(duration) / 1000_000)
+                }, 'response')
+                return result
+            }
+        }
+
+        return new ChainClient()
     }
 
     @def
@@ -405,8 +450,6 @@ export class SubstrateProcessor<Store> {
             throw new Error('use .setDataSource() to specify archive url')
         }
 
-        let errorsCounter = this.metrics.archiveHttpErrorsCounter.labels(archiveUrl)
-        let errorsInRowGauge = this.metrics.archiveHttpErrorsInRowGauge.labels(archiveUrl)
         let log = this.log.child('archive-request', {archiveUrl})
         let counter = 0
 
@@ -424,9 +467,8 @@ export class SubstrateProcessor<Store> {
                 query: archiveQuery,
                 timeout: 60_000,
                 retry: {
-                    log(err, errorsInRow, backoff) {
-                        errorsCounter.inc()
-                        errorsInRowGauge.set(errorsInRow)
+                    log: (err, errorsInRow, backoff) => {
+                        this.metrics.registerArchiveRetry(archiveUrl, errorsInRow)
                         log.warn({
                             archiveRequestId,
                             archiveQuery,
@@ -439,7 +481,7 @@ export class SubstrateProcessor<Store> {
                 withErrorContext({archiveUrl, archiveRequestId, archiveQuery})
             )
 
-            errorsInRowGauge.set(0)
+            this.metrics.registerArchiveResponse(archiveUrl)
             log.debug({
                 archiveUrl,
                 archiveRequestId,

@@ -26,7 +26,7 @@ export interface ExploreOptions {
 
 
 export async function explore(options: ExploreOptions): Promise<void> {
-    let client = new ResilientRpcClient(options.chain)
+    let client = new ResilientRpcClient({url: options.chain, maxRetries: 3})
     try {
         let chain = new Chain(client)
         let archive = options.archive ? new Archive(options.archive, chain) : undefined

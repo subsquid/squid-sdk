@@ -297,7 +297,7 @@ export class Chain {
     }
 
     private async withRpcClient<T>(cb: (client: ResilientRpcClient) => Promise<T>): Promise<T> {
-        let client = new ResilientRpcClient(this.info().chain)
+        let client = new ResilientRpcClient({url: this.info().chain, maxRetries: 3})
         try {
             return await cb(client)
         } finally {
