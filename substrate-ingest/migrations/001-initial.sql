@@ -23,6 +23,7 @@ CREATE TABLE block (
 CREATE INDEX IDX_block__height ON block(height);
 CREATE INDEX IDX_block__hash ON block(hash);
 CREATE INDEX IDX_block__timestamp ON block(timestamp);
+CREATE INDEX IDX_block__validator ON block(validator);
 
 
 CREATE TABLE extrinsic (
@@ -42,6 +43,9 @@ CREATE TABLE extrinsic (
 
 
 CREATE INDEX IDX_extrinsic__block__index ON extrinsic(block_id, index_in_block);
+CREATE INDEX IDX_extrinsic__call ON extrinsic(call_id);
+CREATE INDEX IDX_extrinsic__hash ON extrinsic(hash);
+CREATE INDEX IDX_extrinsic__signature ON extrinsic USING GIN (signature);
 
 
 CREATE TABLE call (
@@ -61,6 +65,7 @@ CREATE TABLE call (
 CREATE INDEX IDX_call__name__block ON call(name, block_id);
 CREATE INDEX IDX_call__extrinsic__index ON call(extrinsic_id);
 CREATE INDEX IDX_call__parent ON call(parent_id);
+CREATE INDEX IDX_call__block ON call(block_id);
 
 
 CREATE TABLE event (
@@ -72,11 +77,13 @@ CREATE TABLE event (
     call_id varchar(30) references call,
     name varchar not null,
     args jsonb,
-    pos integer not null
+    pos integer not null,
+    contract varchar
 );
 
 
 CREATE INDEX IDX_event__name__block ON event(name, block_id);
+CREATE INDEX IDX_event__contract__block ON event(contract, block_id);
 CREATE INDEX IDX_event__block__index ON event(block_id, index_in_block);
 CREATE INDEX IDX_event__extrinsic ON event(extrinsic_id);
 CREATE INDEX IDX_event__call ON event(call_id);
