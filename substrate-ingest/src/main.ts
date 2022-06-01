@@ -90,8 +90,11 @@ runProgram(async () => {
 
     let startBlock = options.startBlock || 0
     let writeSpeed = new Speed()
-    let progress = new Progress()
-    progress.setInitialValue(startBlock)
+    let progress = new Progress({
+        initialValue: startBlock,
+        windowSize: 60,
+        windowGranularitySeconds: 1
+    })
 
     let sink: Sink
     if (options.out) {
@@ -139,7 +142,6 @@ runProgram(async () => {
 
     every(5000, () => {
         if (!progress.hasNews()) return
-        progress.tick()
         log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 

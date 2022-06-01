@@ -1,60 +1,79 @@
 import assert from "assert"
 
 
+export interface ProgressOptions {
+    initialValue?: number
+    targetValue?: number
+    windowSize?: number
+    windowGranularitySeconds?: number
+}
+
+
 export class Progress {
+    private size: number
+    private granularity: bigint
     private window: {time: bigint, value: number}[] = []
-    private value = 0
-    private targetValue?: number
+    private tail = 0
     private initialValue?: number
-    private windowSize = 50
-    private windowGranularity = 10_000_000_000n // 10 seconds
+    private targetValue?: number
     private _hasNews = false
 
-    setTargetValue(val: number): void {
-        this.targetValue = val
+    constructor(options?: ProgressOptions) {
+        let windowSize = options?.windowSize ?? 50
+        let windowGranularitySeconds = options?.windowGranularitySeconds ?? 0
+        assert(windowSize > 1)
+        assert(windowGranularitySeconds >= 0)
+        this.size = windowSize + 1
+        this.granularity = BigInt(windowGranularitySeconds) * 1_000_000_000n
+        this.initialValue = options?.initialValue
+        this.targetValue = options?.targetValue
     }
 
-    setInitialValue(val: number): void {
-        this.initialValue = val
+    setInitialValue(value: number): void {
+        this.initialValue = value
     }
 
-    setCurrentValue(val: number, time?: bigint): void {
-        this.value = Math.max(this.value, val)
-        this.tick(time)
+    setTargetValue(value: number): void {
+        this.targetValue = value
+    }
+
+    setCurrentValue(value: number, time?: bigint): void {
+        time = time ?? process.hrtime.bigint()
+
+        if (this.window.length == 0) {
+            this.window[0] = {value, time}
+            this.tail = 1
+            return
+        }
+
+        let last = this.last()
+        value = Math.max(value, last.value)
+        if (time <= last.time) {
+            last.value = value
+        } else if (this.window.length > 1 && time <= last.time + this.granularity) {
+            last.value = value
+        } else {
+            this.window[this.tail] = {value, time}
+            this.tail = (this.tail + 1) % this.size
+        }
         this._hasNews = true
+    }
+
+    private last(): {value: number, time: bigint} {
+        assert(this.window.length > 0)
+        return this.window[(this.size + this.tail - 1) % this.size]
     }
 
     getCurrentValue(): number {
-        return this.value
-    }
-
-    inc(val: number, time?: bigint): void {
-        assert(val > 0)
-        this.value += val
-        this.tick(time)
-        this._hasNews = true
-    }
-
-    tick(time?: bigint): void {
-        time = time ?? process.hrtime.bigint()
-        let last = this.window[this.window.length - 1] || {time, value: this.value}
-        time = last.time > time ? last.time : time
-        if (this.window.length > 2 && time - this.window[this.window.length - 2].time < this.windowGranularity) {
-            last.time = time
-            last.value = this.value
-        } else {
-            this.window.push({time, value: this.value})
-        }
-        if (this.window.length > this.windowSize) {
-            this.window.shift()
-        }
+        assert(this.window.length > 0, 'no current value available')
+        return this.last().value
     }
 
     speed(): number {
         this._hasNews = false
         if (this.window.length < 2) return 0
-        let beg = this.window[0]
-        let end = this.window[this.window.length - 1]
+        let beg = this.window.length < this.size ? this.window[0] : this.window[this.tail]
+        let end = this.last()
         let duration = end.time - beg.time
         let inc = end.value - beg.value
         return inc * 1000_000_000 / Number(duration)
@@ -63,16 +82,20 @@ export class Progress {
     eta(): number {
         this._hasNews = false
         if (this.targetValue == null) return 0
-        let left = this.targetValue - Math.min(this.targetValue, this.value)
-        return left / this.speed()
+        let speed = this.speed()
+        if (speed == 0) return 0
+        let last = this.last()
+        let left = this.targetValue - Math.min(this.targetValue, last.value)
+        return left / speed
     }
 
     ratio(): number {
         this._hasNews = false
-        if (this.targetValue == null || this.initialValue == null) return 0
+        if (this.targetValue == null || this.initialValue == null || this.window.length == 1) return 0
         let distance = Math.max(this.targetValue, this.initialValue) - this.initialValue
-        let pos = Math.max(this.value, this.initialValue) - this.initialValue
-        return pos == 0 ? 0 : pos/distance
+        if (distance <= 0) return 1
+        let pos = Math.max(this.getCurrentValue(), this.initialValue) - this.initialValue
+        return Math.min(pos, distance) / distance
     }
 
     hasNews(): boolean {

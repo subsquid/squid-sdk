@@ -6,13 +6,17 @@ export class ProgressReporter {
     private reportTimeout?: any
 
     constructor(total: number) {
-        this.progress = new Progress()
-        this.progress.setInitialValue(0)
-        this.progress.setTargetValue(total)
+        this.progress = new Progress({
+            initialValue: 0,
+            targetValue: total,
+            windowSize: 60,
+            windowGranularitySeconds: 1
+        })
+        this.progress.setCurrentValue(0)
     }
 
     tick(): void {
-        this.progress.inc(1)
+        this.progress.setCurrentValue(this.progress.getCurrentValue() + 1)
         if (this.reportTimeout == null) {
             this.scheduleReport()
         }

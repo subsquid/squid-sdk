@@ -5,10 +5,10 @@ import {collectDefaultMetrics, Counter, Gauge, Registry} from "prom-client"
 
 export class Metrics {
     private chainHeight = -1
-    private ingestSpeed = new Speed(10)
-    private mappingSpeed = new Speed(10)
-    private blockProgress = new Progress()
-    private rpcSpeed = new Speed(100)
+    private ingestSpeed = new Speed({windowSize: 10})
+    private mappingSpeed = new Speed({windowSize: 10})
+    private blockProgress = new Progress({initialValue: 0})
+    private rpcSpeed = new Speed({windowSize: 60, windowGranularitySeconds: 1})
     private registry = new Registry()
 
     private lastBlockGauge = new Gauge({
@@ -107,7 +107,6 @@ export class Metrics {
         collectDefaultMetrics({register: this.registry})
         this.setLastProcessedBlock(-1)
         this.setChainHeight(-1)
-        this.blockProgress.setInitialValue(0)
     }
 
     setLastProcessedBlock(height: number): void {
@@ -131,12 +130,13 @@ export class Metrics {
 
     registerBatch(
         batchSize: number,
-        batchFetchTime: bigint,
+        batchFetchStartTime: bigint,
+        batchFetchEndTime: bigint,
         batchMappingStartTime: bigint,
         batchMappingEndTime: bigint,
     ): void {
-        this.ingestSpeed.push(batchSize, batchFetchTime)
-        this.mappingSpeed.push(batchSize, batchMappingEndTime - batchMappingStartTime)
+        this.ingestSpeed.push(batchSize, batchFetchStartTime, batchFetchEndTime)
+        this.mappingSpeed.push(batchSize, batchMappingStartTime, batchMappingEndTime)
     }
 
     registerArchiveRetry(url: string, errorsInRow: number): void {
@@ -153,9 +153,9 @@ export class Metrics {
         this.chainRpcErrorsInRowGauge.set({url}, errorsInRow)
     }
 
-    registerChainRpcResponse(url: string, method: string, duration: bigint): void {
+    registerChainRpcResponse(url: string, method: string, beg: bigint, end: bigint): void {
         this.chainRpcErrorsInRowGauge.set({url}, 0)
-        this.rpcSpeed.push(1, duration)
+        this.rpcSpeed.push(1, beg, end)
     }
 
     getSyncSpeed(): number {

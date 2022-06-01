@@ -431,7 +431,7 @@ export class SubstrateProcessor<Store> {
                 }))
                 let end = process.hrtime.bigint()
                 let duration = end - beg
-                metrics.registerChainRpcResponse(url, method, duration)
+                metrics.registerChainRpcResponse(url, method, beg, end)
                 log.debug({
                     req: id,
                     responseTime: Math.round(Number(duration) / 1000_000)
@@ -556,7 +556,7 @@ export class SubstrateProcessor<Store> {
         let chainManager = this.chainManager()
         let lastBlock = -1
         for await (let batch of ingest.getBlocks()) {
-            let beg = process.hrtime.bigint()
+            let mappingStartTime = process.hrtime.bigint()
             let {handlers, blocks, range} = batch
 
             for (let block of blocks) {
@@ -577,20 +577,21 @@ export class SubstrateProcessor<Store> {
             lastBlock = range.to
             await this.db.advance(lastBlock)
 
-            let end = process.hrtime.bigint()
+            let mappingEndTime = process.hrtime.bigint()
 
             this.metrics.updateProgress(
                 ingest.getLatestKnownArchiveHeight(),
                 getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
                 getBlocksCount(this.wholeRange(), lastBlock + 1, ingest.getLatestKnownArchiveHeight()),
-                end
+                mappingEndTime
             )
 
             this.metrics.registerBatch(
                 batch.blocks.length,
-                batch.fetchTime,
-                beg,
-                end
+                batch.fetchStartTime,
+                batch.fetchEndTime,
+                mappingStartTime,
+                mappingEndTime
             )
 
             this.log.info(

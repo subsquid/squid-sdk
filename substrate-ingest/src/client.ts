@@ -181,7 +181,7 @@ export class Client {
 
 class Connection {
     private client: RpcClient
-    private speed = new Speed(500)
+    private speed = new Speed({windowSize: 500})
     private connectionErrorsInRow = 0
     private connectionErrors = 0
     private served = 0
@@ -213,11 +213,11 @@ class Connection {
             this.connectionErrorsInRow = 0
             this.cap += 1
             this.timer.nextEpoch()
-            let duration = this.timer.time() - beg
-            this.speed.push(1, duration)
+            let end = this.timer.time()
+            this.speed.push(1, beg, end)
             this.log?.debug({
                 req: id,
-                responseTime: Math.round(Number(duration) / 1000_000)
+                responseTime: Math.round(Number(end - beg) / 1000_000)
             }, 'response')
             return res
         }, err => {

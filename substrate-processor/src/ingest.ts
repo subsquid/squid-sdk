@@ -32,7 +32,8 @@ export interface DataBatch {
     range: {from: number, to: number}
     handlers: DataHandlers
     blocks: BlockData[]
-    fetchTime: bigint
+    fetchStartTime: bigint
+    fetchEndTime: bigint
 }
 
 
@@ -88,14 +89,14 @@ export class Ingest {
                     ctx.archiveHeight = archiveHeight
                     ctx.archiveQuery = this.buildBatchQuery(batch, archiveHeight)
 
-                    let fetchStart = process.hrtime.bigint()
+                    let fetchStartTime = process.hrtime.bigint()
 
                     let response: {
                         status: {head: number},
                         batch: gw.BatchBlock[]
                     } = await this.options.archiveRequest(ctx.archiveQuery)
 
-                    let fetchTime = process.hrtime.bigint() - fetchStart
+                    let fetchEndTime = process.hrtime.bigint()
 
                     ctx.batchBlocksFetched = response.batch.length
 
@@ -133,7 +134,8 @@ export class Ingest {
                         blocks,
                         range: {from, to},
                         handlers: batch.handlers,
-                        fetchTime
+                        fetchStartTime,
+                        fetchEndTime
                     }
                 }).catch(withErrorContext(ctx))
 

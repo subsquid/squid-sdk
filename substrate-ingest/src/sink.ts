@@ -115,7 +115,7 @@ export class PostgresSink implements Sink {
             this.warningInsert.addMany(block.warnings)
         }
         if (block.last || this.headerInsert.size >= this.batchSize) {
-            await this.submit()
+            await this.submit(block.header.height)
         }
     }
 
@@ -136,9 +136,9 @@ export class PostgresSink implements Sink {
         }
     }
 
-    private async submit(): Promise<void> {
-        let size = this.headerInsert.size
+    private async submit(lastBlock: number): Promise<void> {
         this.speed?.start()
+        let size = this.headerInsert.size
         let metadataInsert = this.metadataInsert.take()
         let headerInsert = this.headerInsert.take()
         let extrinsicInsert = this.extrinsicInsert.take()
@@ -156,7 +156,7 @@ export class PostgresSink implements Sink {
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()
             this.speed?.stop(size, time)
-            this.progress?.inc(size, time)
+            this.progress?.setCurrentValue(lastBlock, time)
         }
     }
 
@@ -277,8 +277,13 @@ export class WritableSink implements Sink {
     }
 
     close(): void {
+        this.error = this.error || new Error('Closed')
         this.writable.off('error', this.onError)
         this.writable.off('drain', this.onDrain)
+        if (this.drainHandle) {
+            this.drainHandle.reject(this.error)
+            this.drainHandle = undefined
+        }
     }
 
     async write(block: BlockData): Promise<void> {
@@ -289,10 +294,10 @@ export class WritableSink implements Sink {
         if (wait) {
             await this.drain()
         }
-        if (this.speed || this.writable) {
+        if (this.speed || this.progress) {
             let time = process.hrtime.bigint()
             this.speed?.stop(1, time)
-            this.progress?.inc(1, time)
+            this.progress?.setCurrentValue(block.header.height, time)
         }
     }
 
@@ -311,11 +316,7 @@ export class WritableSink implements Sink {
     }
 
     private onError = (err: Error) => {
-        this.close()
         this.error = err
-        if (this.drainHandle) {
-            this.drainHandle.reject(err)
-            this.drainHandle = undefined
-        }
+        this.close()
     }
 }
