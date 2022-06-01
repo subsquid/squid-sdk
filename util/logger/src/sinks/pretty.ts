@@ -91,8 +91,12 @@ export class Printer {
                     let has = false
                     for (let key in val) {
                         if (!has) {
-                            this.line(prefix)
-                            this.begin(' ')
+                            if (prefix == '  -') {
+                                this.begin(prefix)
+                            } else {
+                                this.line(prefix)
+                                this.begin(' ')
+                            }
                         }
                         has = true
                         this.property(key + ':', (val as any)[key])
