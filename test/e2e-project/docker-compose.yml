@@ -26,14 +26,14 @@ services:
     ]
 
   gateway:
-    image: tmcgroul/archive-gateway:19
+    image: tmcgroul/archive-gateway:22
     depends_on:
       - archive-db
+    command: [
+       "--database-url", "postgres://root@archive-db:26257/defaultdb",
+       "--database-max-connections", "5"
+    ]
     environment:
-      DATABASE_URL: postgres://root@archive-db:26257/defaultdb
-      DATABASE_MAX_CONNECTIONS: 5
-      DATABASE_TYPE: cockroach
       RUST_LOG: actix_web=info,actix_server=info
-      EVM_SUPPORT: "false"
     ports:
       - "${ARCHIVE_PORT}:8000"

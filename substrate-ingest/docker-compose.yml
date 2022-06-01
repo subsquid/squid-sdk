@@ -10,16 +10,3 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
 #    command: ["postgres", "-c", "log_statement=all"]
-
-  gateway:
-    image: tmcgroul/archive-gateway:15
-    depends_on:
-      - db
-    environment:
-      DATABASE_TYPE: postgres
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASS}@db:5432/${DB_NAME}
-      DATABASE_MAX_CONNECTIONS: 5
-      RUST_LOG: actix_web=info,actix_server=info
-      EVM_SUPPORT: "true"
-    ports:
-      - "${GW_PORT}:8000"
