@@ -37,7 +37,6 @@ export class Client {
     private queue = new RequestQueue<Req>()
     private connections: Connection[]
     private schedulingScheduled = false
-    private timeoutSeconds = 20
     private counter = 0
 
     constructor(endpoints: Endpoint[], private log?: Logger) {
@@ -50,6 +49,7 @@ export class Client {
                 ep.capacity || 5,
                 this.timer,
                 () => this.performScheduling(),
+                20,
                 this.log?.child({connection: id, url: ep.url})
             )
         })
@@ -130,51 +130,21 @@ export class Client {
     }
 
     private execute(con: Connection, req: Req, order: number): void {
-        con.log?.debug({
-            avgResponseTime: Math.round(con.avgResponseTime()),
-            order,
-            req: req.id,
-            method: req.method,
-            priority: req.priority
-        }, 'request')
-        this.addTimeout(con.call(req.id, req.method, req.params)).then(
+        con.call(req, order).then(
             res => {
                 req.resolve(res)
                 req.promise().finally(() => this.performScheduling())
             },
             (err: Error) => {
                 if (err instanceof RpcConnectionError) {
-                    con.log?.debug({req: req.id}, 'connection failure')
-                    con.reset(err)
                     this.queue.push(req)
                     this.performScheduling()
                 } else {
-                    con.log?.debug({req: req.id}, 'error response')
-                    err = addErrorContext(err, {
-                        rpcConnection: con.id,
-                        rpcUrl: con.url,
-                        rpcRequestId: req.id,
-                        rpcMethod: req.method
-                    })
                     req.reject(err)
                     req.promise().finally(() => this.performScheduling())
                 }
             }
         )
-    }
-
-    private addTimeout(res: Promise<any>): Promise<any> {
-        return new Promise((resolve, reject) => {
-            let timeout: any = setTimeout(() => {
-                timeout = undefined
-                reject(new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
-            }, this.timeoutSeconds * 1000)
-            res.finally(() => {
-                if (timeout != null) {
-                    clearTimeout(timeout)
-                }
-            }).then(resolve, reject)
-        })
     }
 }
 
@@ -195,6 +165,7 @@ class Connection {
         public readonly maxCapacity: number,
         private timer: Timer,
         private onNewConnection: () => void,
+        private timeoutSeconds: number,
         public readonly log?: Logger
     ) {
         this.client = new RpcClient(this.url)
@@ -205,10 +176,18 @@ class Connection {
         return this.cap
     }
 
-    call(id: number, method: string, params?: unknown[]): Promise<any> {
+    call(req: Req, order?: number): Promise<any> {
+        this.log?.debug({
+            avgResponseTime: Math.round(this.avgResponseTime()),
+            order,
+            req: req.id,
+            method: req.method,
+            priority: req.priority
+        }, 'request')
         this.cap -= 1
         let beg = this.timer.time()
-        return this.client.call(method, params).then(res => {
+        let epoch = this.connectionErrors
+        return this.addTimeout(this.client.call(req.method, req.params)).then(res => {
             this.served += 1
             this.connectionErrorsInRow = 0
             this.cap += 1
@@ -216,20 +195,45 @@ class Connection {
             let end = this.timer.time()
             this.speed.push(1, beg, end)
             this.log?.debug({
-                req: id,
+                req: req.id,
                 responseTime: Math.round(Number(end - beg) / 1000_000)
             }, 'response')
             return res
         }, err => {
-            this.connectionErrorsInRow = 0
-            this.cap += 1
+            if (err instanceof RpcConnectionError) {
+                this.log?.debug({req: req.id}, 'connection failure')
+                if (epoch == this.connectionErrors) {
+                    this.cap = 0
+                    this.client.close(err)
+                }
+            } else {
+                this.log?.debug({req: req.id}, 'error response')
+                this.connectionErrorsInRow = 0
+                this.cap += 1
+                err = addErrorContext(err, {
+                    rpcConnection: this.id,
+                    rpcUrl: this.url,
+                    rpcRequestId: req.id,
+                    rpcMethod: req.method
+                })
+            }
             throw err
         })
     }
 
-    reset(err: Error) {
-        this.cap = 0
-        this.client.close(err)
+    private addTimeout(res: Promise<any>): Promise<any> {
+        if (this.timeoutSeconds == 0) return res
+        return new Promise((resolve, reject) => {
+            let timeout: any = setTimeout(() => {
+                timeout = undefined
+                reject(new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
+            }, this.timeoutSeconds * 1000)
+            res.finally(() => {
+                if (timeout != null) {
+                    clearTimeout(timeout)
+                }
+            }).then(resolve, reject)
+        })
     }
 
     close() {
@@ -243,7 +247,6 @@ class Connection {
         let timeout = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
         this.connectionErrors += 1
         this.connectionErrorsInRow += 1
-        this.cap = this.maxCapacity
         this.log?.warn({
             backoff: timeout,
             reason: err.message
