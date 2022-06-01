@@ -9,7 +9,13 @@ import type {
     EvmLogFields,
     ExtrinsicFields
 } from "./dataSelection"
-import type {SubstrateBlock} from "./substrate"
+import type {SubstrateBlock, QualifiedName} from "./substrate"
+
+
+export type Wildcard = '*'
+
+
+export type HandlerName = QualifiedName | Wildcard
 
 
 export interface BlockHandlerContext<S> {

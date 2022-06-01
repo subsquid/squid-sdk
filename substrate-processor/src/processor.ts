@@ -1,6 +1,6 @@
 import {createLogger} from "@subsquid/logger"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
@@ -12,6 +12,7 @@ import {
     BlockHandler,
     BlockHandlerContext,
     BlockRangeOption,
+    HandlerName,
     CallHandler,
     ContractsContractEmittedHandler,
     EventHandler,
@@ -22,7 +23,12 @@ import {
 import {ContextRequest} from "./interfaces/dataSelection"
 import {Database} from "./interfaces/db"
 import {Hooks} from "./interfaces/hooks"
-import {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
+import {
+    ContractsContractEmittedEvent,
+    EvmLogEvent,
+    SubstrateEvent,
+    SubstrateCall
+} from "./interfaces/substrate"
 import {Metrics} from "./metrics"
 import {timeInterval, withErrorContext} from "./util/misc"
 import {Range} from "./util/range"
@@ -268,10 +274,10 @@ export class SubstrateProcessor<Store> {
      *     assert(ctx.event.name == 'balances.Transfer')
      * })
      */
-    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
-    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
+    addEventHandler(eventName: HandlerName, fn: EventHandler<Store>): void
+    addEventHandler(eventName: HandlerName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
+    addEventHandler<R>(eventName: HandlerName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
+    addEventHandler(eventName: HandlerName, fnOrOptions: BlockRangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
         this.assertNotRunning()
         let handler: EventHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection = {}
@@ -288,10 +294,10 @@ export class SubstrateProcessor<Store> {
         })
     }
 
-    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
-    addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
+    addCallHandler(callName: HandlerName, fn: CallHandler<Store>): void
+    addCallHandler(callName: HandlerName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
+    addCallHandler<R>(callName: HandlerName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
+    addCallHandler(callName: HandlerName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
         let handler: CallHandler<Store>
         let options:  BlockRangeOption & MayBeDataSelection = {}
@@ -632,7 +638,7 @@ export class SubstrateProcessor<Store> {
         for (let item of block.log) {
             switch(item.kind) {
                 case 'event':
-                    for (let handler of handlers.events[item.event.name]?.handlers || []) {
+                    for (let handler of this.getEventHandlers(handlers, item.event)) {
                         let log = blockLog.child({
                             hook: 'event',
                             eventName: item.event.name,
@@ -674,7 +680,7 @@ export class SubstrateProcessor<Store> {
                     }
                     break
                 case 'call':
-                    for (let handler of handlers.calls[item.call.name]?.handlers || []) {
+                    for (let handler of this.getCallHandlers(handlers, item.call)) {
                         let log = blockLog.child({
                             hook: 'call',
                             callName: item.call.name,
@@ -697,6 +703,24 @@ export class SubstrateProcessor<Store> {
             ctx.log.debug('begin')
             await post(ctx)
             ctx.log.debug('end')
+        }
+    }
+
+    private *getCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandler<any>> {
+        for (let h of handlers.calls[call.name]?.handlers || []) {
+            yield h
+        }
+        for (let h of handlers.calls['*']?.handlers || []) {
+            yield h
+        }
+    }
+
+    private *getEventHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<EventHandler<any>> {
+        for (let h of handlers.events[event.name]?.handlers || []) {
+            yield h
+        }
+        for (let h of handlers.events['*']?.handlers || []) {
+            yield h
         }
     }
 
