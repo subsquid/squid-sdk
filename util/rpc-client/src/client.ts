@@ -51,7 +51,7 @@ export class RpcClient {
             }
 
             this.ws.onclose = () => {
-                let err = this.error || new RpcConnectionError('Connection was closed')
+                let err = this.error || new RpcConnectionError('Connection terminated')
                 this.setError(err)
                 reject(err)
                 this.onclose?.(err)
