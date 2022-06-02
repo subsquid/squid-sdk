@@ -1,2 +1,2 @@
 export * from "./database"
-export {Store, EntityClass} from "./store"
+export {EntityClass, FindManyOptions, FindOneOptions, Store} from "./store"

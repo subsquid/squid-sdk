@@ -5,8 +5,8 @@ import {collectDefaultMetrics, Counter, Gauge, Registry} from "prom-client"
 
 export class Metrics {
     private chainHeight = -1
-    private ingestSpeed = new Speed({windowSize: 10})
-    private mappingSpeed = new Speed({windowSize: 10})
+    private ingestSpeed = new Speed({windowSize: 5})
+    private mappingSpeed = new Speed({windowSize: 5})
     private blockProgress = new Progress({initialValue: 0})
     private rpcSpeed = new Speed({windowSize: 60, windowGranularitySeconds: 1})
     private registry = new Registry()

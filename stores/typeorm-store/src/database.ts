@@ -1,7 +1,7 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
-import {Connection, createConnection} from "typeorm"
+import {Connection, createConnection, EntityManager} from "typeorm"
 import {Store} from "./store"
 import {createTransaction, Tx} from "./tx"
 
@@ -14,11 +14,11 @@ export interface TypeormDatabaseOptions {
 }
 
 
-export class TypeormDatabase {
-    private statusSchema: string
-    private isolationLevel: IsolationLevel
-    private con?: Connection
-    private lastCommitted = -1
+class BaseDatabase<S> {
+    protected statusSchema: string
+    protected isolationLevel: IsolationLevel
+    protected con?: Connection
+    protected lastCommitted = -1
 
     constructor(name: string, options?: TypeormDatabaseOptions) {
         this.statusSchema = `${name}_status`
@@ -67,7 +67,7 @@ export class TypeormDatabase {
         }
     }
 
-    async transact(height: number, cb: (store: Store) => Promise<void>): Promise<void> {
+    async transact(height: number, cb: (store: S) => Promise<void>): Promise<void> {
         let retries = 3
         while (true) {
             try {
@@ -82,7 +82,23 @@ export class TypeormDatabase {
         }
     }
 
-    private async runTransaction(height: number, cb: (store: Store) => Promise<void>): Promise<void> {
+    protected async runTransaction(height: number, cb: (store: S) => Promise<void>): Promise<void> {
+        throw new Error('Not implemented')
+    }
+
+    protected async updateHeight(em: EntityManager, height: number): Promise<void> {
+        return em.query(
+            `UPDATE ${this.statusSchema}.status SET height = $1 WHERE id = 0 AND height < $1`,
+            [height]
+        ).then(result => {
+            // console.log(result)
+        })
+    }
+}
+
+
+export class TypeormDatabase extends BaseDatabase<Store> {
+    protected async runTransaction(height: number, cb: (store: Store) => Promise<void>): Promise<void> {
         let tx: Promise<Tx> | undefined
         let open = true
 
@@ -113,15 +129,7 @@ export class TypeormDatabase {
         let con = assertNotNull(this.con, 'not connected')
         let tx = await createTransaction(con, this.isolationLevel)
         try {
-            await tx.em.query(
-                `UPDATE ${this.statusSchema}.status SET height = $1 WHERE id = 0 AND height < $1`,
-                [height]
-            )
-            // if (status[0].height >= height) {
-            //     throw new Error(
-            //         `Seems like multiple concurrent processors are running. Wanted to commit block ${height}, but block ${height} was already committed.`
-            //     )
-            // }
+            await this.updateHeight(tx.em, height)
             return tx
         } catch(e: any) {
             await tx.rollback().catch(err => null)
@@ -133,5 +141,22 @@ export class TypeormDatabase {
         if (this.lastCommitted == height) return
         let tx = await this.createTx(height)
         await tx.commit()
+    }
+}
+
+
+export class FullTypeormDatabase extends BaseDatabase<EntityManager> {
+    protected async runTransaction(height: number, cb: (store: EntityManager) => Promise<void>): Promise<void> {
+        let con = assertNotNull(this.con, 'not connected')
+        await con.transaction(this.isolationLevel, async em => {
+            await this.updateHeight(em, height)
+            await cb(em)
+        })
+        this.lastCommitted = height
+    }
+
+    async advance(height: number): Promise<void> {
+        if (this.lastCommitted == height) return
+        return this.runTransaction(height, async () => {})
     }
 }

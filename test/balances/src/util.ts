@@ -1,4 +1,4 @@
-import type {Store, EntityClass} from "@subsquid/typeorm-store"
+import type {EntityClass, Store} from "@subsquid/typeorm-store"
 
 
 export async function getOrCreate<T extends {id: string}>(
@@ -7,7 +7,7 @@ export async function getOrCreate<T extends {id: string}>(
     id: string
 ): Promise<T> {
 
-    let e = await store.get<T>(entityClass, id)
+    let e = await store.findOne<T>(entityClass, id)
 
     if (e == null) {
         e = new entityClass()
