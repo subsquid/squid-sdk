@@ -112,12 +112,14 @@ export class Client {
         })
         for (let i = 0; i < this.connections.length && !this.queue.isEmpty(); i++) {
             let con = this.connections[i]
-            if (con.capacity == 0) continue
+            if (!(con.isConnected && con.capacity > 0)) continue
             let eta = con.avgResponseTime()
             let n = 0
             for (let j = 0; j < i; j++) {
                 let fc = this.connections[j]
-                n += con.maxCapacity * Math.floor(Math.max(eta - fc.waitTime(), 0) / fc.avgResponseTime())
+                if (fc.isConnected) {
+                    n += fc.maxCapacity * Math.floor(Math.max(eta - fc.waitTime(), 0) / fc.avgResponseTime())
+                }
             }
             let requests = this.queue.take(n, con.capacity)
             if (requests.length == 0 && this.queue.isNotEmpty() && Math.random() < 0.1) {
@@ -174,12 +176,16 @@ class Connection {
         this.connect()
     }
 
+    get isConnected(): boolean {
+        return this.client.isConnected
+    }
+
     get capacity(): number {
-        return this.client.isConnected ? this.cap : 0
+        return this.cap
     }
 
     call(req: Req, order?: number): Promise<any> {
-        if (this.capacity <= 0) return Promise.reject(new Error('Client has no capacity to handle this request'))
+        if (!this.isConnected) return Promise.reject(new Error('Client is not connected'))
         this.log?.debug({
             avgResponseTime: Math.round(this.avgResponseTime()),
             order,
@@ -278,7 +284,7 @@ class Connection {
     }
 
     waitTime(): number {
-        if (this.capacity > 0) {
+        if (this.capacity > 0 && this.isConnected) {
             return 0
         } else {
             return this.avgResponseTime() * 1.5
