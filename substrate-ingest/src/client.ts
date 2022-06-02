@@ -158,6 +158,7 @@ class Connection {
     private backoff = [100, 1000, 10000, 30000]
     private cap = 0
     private closed = false
+    private epoch = 0
 
     constructor(
         public readonly id: number,
@@ -168,15 +169,17 @@ class Connection {
         private timeoutSeconds: number,
         public readonly log?: Logger
     ) {
+        this.cap = this.maxCapacity
         this.client = new RpcClient(this.url)
         this.connect()
     }
 
     get capacity(): number {
-        return this.cap
+        return this.client.isConnected ? this.cap : 0
     }
 
     call(req: Req, order?: number): Promise<any> {
+        if (this.capacity <= 0) return Promise.reject(new Error('Client has no capacity to handle this request'))
         this.log?.debug({
             avgResponseTime: Math.round(this.avgResponseTime()),
             order,
@@ -184,13 +187,13 @@ class Connection {
             method: req.method,
             priority: req.priority
         }, 'request')
-        this.cap -= 1
         let beg = this.timer.time()
-        let epoch = this.connectionErrors
+        let epoch = this.epoch
+        this.cap -= 1
         return this.addTimeout(this.client.call(req.method, req.params)).then(res => {
+            this.cap += 1
             this.served += 1
             this.connectionErrorsInRow = 0
-            this.cap += 1
             this.timer.nextEpoch()
             let end = this.timer.time()
             this.speed.push(1, beg, end)
@@ -200,16 +203,16 @@ class Connection {
             }, 'response')
             return res
         }, err => {
+            this.cap += 1
             if (err instanceof RpcConnectionError) {
                 this.log?.debug({req: req.id}, 'connection failure')
-                if (epoch == this.connectionErrors) {
-                    this.cap = 0
+                if (epoch == this.epoch) {
+                    this.epoch += 1
                     this.client.close(err)
                 }
             } else {
                 this.log?.debug({req: req.id}, 'error response')
                 this.connectionErrorsInRow = 0
-                this.cap += 1
                 err = addErrorContext(err, {
                     rpcConnection: this.id,
                     rpcUrl: this.url,
@@ -237,7 +240,6 @@ class Connection {
     }
 
     close() {
-        this.cap = 0
         this.closed = true
         this.client.close()
     }
@@ -247,6 +249,7 @@ class Connection {
         let timeout = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
         this.connectionErrors += 1
         this.connectionErrorsInRow += 1
+        this.epoch += 1
         this.log?.warn({
             backoff: timeout,
             reason: err.message
@@ -262,7 +265,6 @@ class Connection {
             () => {
                 this.log?.debug('connected')
                 this.client.onclose = err => this.reconnect(err)
-                this.cap = this.maxCapacity
                 this.onNewConnection()
             },
             err => this.reconnect(err)
