@@ -90,8 +90,13 @@ class BaseDatabase<S> {
         return em.query(
             `UPDATE ${this.statusSchema}.status SET height = $1 WHERE id = 0 AND height < $1`,
             [height]
-        ).then(result => {
-            // console.log(result)
+        ).then((result: [data: any[], rowsChanged: number]) => {
+            let rowsChanged = result[1]
+            assert.strictEqual(
+                rowsChanged,
+                1,
+                'status table was updated by foreign process, make sure no other processor is running'
+            )
         })
     }
 }
