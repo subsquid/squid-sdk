@@ -278,7 +278,7 @@ class Connection {
     }
 
     waitTime(): number {
-        if (this.cap) {
+        if (this.capacity > 0) {
             return 0
         } else {
             return this.avgResponseTime() * 1.5
