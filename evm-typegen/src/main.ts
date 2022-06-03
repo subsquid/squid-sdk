@@ -51,19 +51,27 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     // validate the abi
     const abi = new Interface(rawABI);
 
+    const typeNames: { [key: string]: number } = {};
+
     const abiEvents: Array<AbiEvent> = Object.values(abi.events).map((event: EventFragment): AbiEvent => {
         let signature = `${event.name}(`;
         let eventTypeName = `${event.name}`;
 
+        if(typeNames[event.name]) {
+            eventTypeName += typeNames[event.name].toString();
+            typeNames[event.name]++;
+        } else {
+            eventTypeName += "0";
+            typeNames[event.name] = 1;
+        }
+
         if(event.inputs.length > 0) {
             signature += event.inputs[0].type;
-            eventTypeName += capitalize(event.inputs[0].type);
         }
 
         for (let i=1; i<event.inputs.length; ++i) {
             const input = event.inputs[i];
             signature += `,${input.type}`;
-            eventTypeName += capitalize(input.type);
         }
 
         signature += ")";
@@ -148,11 +156,11 @@ function getType(param: ParamType, flexible?: boolean): string {
         return 'ethers.BigNumber';
     }
 
-    if (param.type === "array") {
+    if (param.baseType === "array") {
         return "Array<" + getType(param.arrayChildren) + ">";
     }
 
-    if (param.type === "tuple") {
+    if (param.baseType === "tuple") {
         let struct = param.components.map((p, i) => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
         return "{ " + struct.join(", ") + " }";
     }
