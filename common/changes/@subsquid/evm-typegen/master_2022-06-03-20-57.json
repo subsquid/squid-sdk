@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "handle array types specified as x[]",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "change event name generation scheme as a temp workaround ",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

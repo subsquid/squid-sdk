@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "fix link in readme",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
