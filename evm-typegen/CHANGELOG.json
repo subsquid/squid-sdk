@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-typegen_v0.1.0",
+      "date": "Fri, 03 Jun 2022 21:02:03 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "handle array types specified as x[]"
+          },
+          {
+            "comment": "change event name generation scheme as a temp workaround "
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/evm-typegen_v0.0.1",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",
