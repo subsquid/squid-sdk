@@ -1,4 +1,4 @@
-import {
+import type {
     BlockHandler,
     CallHandler,
     ContractsContractEmittedHandler,
@@ -6,26 +6,25 @@ import {
     EvmLogHandler,
     EvmTopicSet
 } from "../interfaces/dataHandlers"
-import {ContextRequest} from "../interfaces/dataSelection"
-import {QualifiedName} from "../interfaces/substrate"
-
-
-interface HandlerList<H> {
-    data?: ContextRequest
-    handlers: H[]
-}
+import {CallContextRequest, EventContextRequest} from "../interfaces/dataSelection"
+import type {QualifiedName} from "../interfaces/substrate"
 
 
 type ContractAddress = string
 
 
+interface HandlerList<H, R = any> {
+    data?: R
+    handlers: H[]
+}
+
 
 export interface DataHandlers {
     pre: BlockHandler<any>[]
     post: BlockHandler<any>[]
-    events: Record<QualifiedName, HandlerList<EventHandler<any>>>
-    calls: Record<QualifiedName, HandlerList<CallHandler<any>>>
-    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: ContextRequest, handler: EvmLogHandler<any>}[]>
+    events: Record<QualifiedName, HandlerList<EventHandler<any>, EventContextRequest>>
+    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallContextRequest>>
+    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventContextRequest, handler: EvmLogHandler<any>}[]>
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>>
 }
 
@@ -53,7 +52,7 @@ export function mergeHandlerLists<H>(
 }
 
 
-export function mergeContextRequests(a?: ContextRequest, b?: ContextRequest): ContextRequest | undefined {
+export function mergeContextRequests(a?: any, b?: any): any | undefined {
     if (a == null || b == null) return undefined
 
     function merge(fa: any, fb: any): any {

@@ -8,7 +8,7 @@ import * as process from "process"
 import {createBatches, DataHandlers, getBlocksCount} from "./batch"
 import {Chain, ChainManager} from "./chain"
 import {BlockData, Ingest} from "./ingest"
-import {
+import type {
     BlockHandler,
     BlockHandlerContext,
     BlockRangeOption,
@@ -19,10 +19,10 @@ import {
     EvmLogOptions,
     EvmTopicSet
 } from "./interfaces/dataHandlers"
-import {ContextRequest} from "./interfaces/dataSelection"
-import {Database} from "./interfaces/db"
-import {Hooks} from "./interfaces/hooks"
-import {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
+import {CallContextRequest, EventContextRequest} from "./interfaces/dataSelection"
+import type {Database} from "./interfaces/db"
+import type {Hooks} from "./interfaces/hooks"
+import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
 import {Metrics} from "./metrics"
 import {timeInterval, withErrorContext} from "./util/misc"
 import {Range} from "./util/range"
@@ -40,7 +40,7 @@ export interface DataSource {
 }
 
 
-interface DataSelection<R extends ContextRequest> {
+interface DataSelection<R> {
     data: R
 }
 
@@ -51,7 +51,7 @@ interface NoDataSelection {
 
 
 interface MayBeDataSelection {
-    data?: ContextRequest
+    data?: any
 }
 
 
@@ -270,7 +270,7 @@ export class SubstrateProcessor<Store> {
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
+    addEventHandler<R extends EventContextRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
     addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
         this.assertNotRunning()
         let handler: EventHandler<Store>
@@ -290,7 +290,7 @@ export class SubstrateProcessor<Store> {
 
     addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
     addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
+    addCallHandler<R extends CallContextRequest>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
     addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
         let handler: CallHandler<Store>
@@ -318,7 +318,7 @@ export class SubstrateProcessor<Store> {
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
     ): void
-    addEvmLogHandler<R extends ContextRequest>(
+    addEvmLogHandler<R extends EventContextRequest>(
         contractAddress: string,
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
@@ -353,7 +353,7 @@ export class SubstrateProcessor<Store> {
         options: BlockRangeOption & NoDataSelection,
         fn: ContractsContractEmittedHandler<Store>
     ): void
-    addContractsContractEmittedHandler<R>(
+    addContractsContractEmittedHandler<R extends EventContextRequest>(
         contractAddress: string,
         options: BlockRangeOption & DataSelection<R>,
         fn: ContractsContractEmittedHandler<Store, R>
