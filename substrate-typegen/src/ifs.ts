@@ -1,24 +1,23 @@
 import {CodecStructType, getCodecType} from "@subsquid/scale-codec/lib/types-codec"
-import {ChainDescription, Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
+import {Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
-import {assignNames, needsName} from "./names"
+import {needsName} from "./names"
 import {asResultType, toNativePrimitive} from "./util"
 
 
 export class Interfaces {
-    private types: Type[]
-    private nameAssignment: Map<Ti, string>
     private assignedNames: Set<string>
     private generated: (string | undefined)[]
     private generatedNames = new Set<string>()
     private queue: ((out: Output) => void)[] = []
 
-    constructor(description: ChainDescription) {
-        this.types = description.types
-        this.nameAssignment = assignNames(description)
+    constructor(
+        private types: Type[],
+        private nameAssignment: Map<Ti, string>
+    ) {
         this.assignedNames = new Set(this.nameAssignment.values())
         this.generated = new Array(this.types.length)
     }

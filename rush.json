@@ -475,6 +475,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "ops-xcm-typegen",
+      "projectFolder": "ops/xcm-typegen",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "shouldPublish": true,

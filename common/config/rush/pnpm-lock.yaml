@@ -22,6 +22,7 @@ specifiers:
   '@rush-temp/logger': file:./projects/logger.tgz
   '@rush-temp/moonsama-erc721': file:./projects/moonsama-erc721.tgz
   '@rush-temp/openreader': file:./projects/openreader.tgz
+  '@rush-temp/ops-xcm-typegen': file:./projects/ops-xcm-typegen.tgz
   '@rush-temp/rpc-client': file:./projects/rpc-client.tgz
   '@rush-temp/scale-codec': file:./projects/scale-codec.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
@@ -125,6 +126,7 @@ dependencies:
   '@rush-temp/logger': file:projects/logger.tgz
   '@rush-temp/moonsama-erc721': file:projects/moonsama-erc721.tgz_supports-color@8.1.1
   '@rush-temp/openreader': file:projects/openreader.tgz_supports-color@8.1.1
+  '@rush-temp/ops-xcm-typegen': file:projects/ops-xcm-typegen.tgz
   '@rush-temp/rpc-client': file:projects/rpc-client.tgz
   '@rush-temp/scale-codec': file:projects/scale-codec.tgz
   '@rush-temp/ss58': file:projects/ss58.tgz
@@ -7504,6 +7506,15 @@ packages:
       - supports-color
     dev: false
 
+  file:projects/ops-xcm-typegen.tgz:
+    resolution: {integrity: sha512-+gksA1KQ+jPrXgBIkl70jUKdrnSl1VHoDDafxKRshp19F/iHDQWRaVMi4ypgTL/7T0O0FbSI5NwQYsELVN1mvw==, tarball: file:projects/ops-xcm-typegen.tgz}
+    name: '@rush-temp/ops-xcm-typegen'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.34
+      typescript: 4.5.5
+    dev: false
+
   file:projects/rpc-client.tgz:
     resolution: {integrity: sha512-scuTE6dd1s4Nh1sCj5gtS56wlataTp+R13gUCgo/KQmhcvLPCK1lK1POttwI8UZ8xcuOX8ggqJrrebOOtT03Fw==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
@@ -7585,7 +7596,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-EJcZYOWyFHIFgcMSB2LaCmjbCoGqWfHzYjbxuuzUup+VcnxnYOtr9JeKZQaMG8rSnh7HoRh6n2vz24Kd73DP9A==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-Gg4T14GOnH+QgTyiy8FBTlwfJxvvafbgH0Tkd6BUrKNTUD+sScLjGnDvdHeK0rXirXZCcVEksH0XasFvA3KfKw==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:

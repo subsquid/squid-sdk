@@ -14,14 +14,7 @@ processor.setDataSource({
 })
 
 
-processor.addEventHandler('Balances.Transfer', {
-    data: {
-        event: {
-            name: true,
-            args: true
-        }
-    }
-} as const, async ctx => {
+processor.addEventHandler('Balances.Transfer', async ctx => {
     let transfer = getTransferEvent(ctx)
     let timestamp = BigInt(new Date(ctx.block.timestamp).valueOf())
 

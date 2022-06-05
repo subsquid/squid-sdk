@@ -39,14 +39,16 @@ export class OldTypeRegistry {
         let seen = new Set<Ti>()
 
         function replace(ti: Ti): Type {
-            let type = types[ti]
-            if (type.kind != -1) return type
+            let a = types[ti]
+            if (a.kind != -1) return a
             if (seen.has(ti)) {
-                throw new Error(`Cycle of non-constructable types involving ${type.name}`)
+                throw new Error(`Cycle of non-constructable types involving ${a.name}`)
             } else {
                 seen.add(ti)
             }
-            return types[ti] = replace(type.alias)
+            let type = {...replace(a.alias)}
+            type.path = [a.name]
+            return types[ti] = type
         }
 
         for (let ti = 0; ti < types.length; ti++) {

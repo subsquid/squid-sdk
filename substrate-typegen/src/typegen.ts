@@ -1,7 +1,10 @@
 import {
     ChainDescription,
     decodeMetadata,
-    getChainDescriptionFromMetadata, getOldTypesBundle, isPreV14, OldTypes,
+    getChainDescriptionFromMetadata,
+    getOldTypesBundle,
+    isPreV14,
+    OldTypes,
     OldTypesBundle,
     QualifiedName,
     StorageItem,
@@ -14,6 +17,7 @@ import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import {Interfaces} from "./ifs"
+import {assignNames} from "./names"
 import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
 
 
@@ -312,7 +316,7 @@ export class Typegen {
     getInterface(version: VersionDescription): Interfaces {
         let ifs = this.interfaces.get(version)
         if (ifs) return ifs
-        ifs = new Interfaces(version.description)
+        ifs = new Interfaces(version.description.types, assignNames(version.description))
         this.interfaces.set(version, ifs)
         return ifs
     }
