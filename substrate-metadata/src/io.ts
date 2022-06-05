@@ -25,6 +25,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/astar').bundle
         case 'shiden':
             return require('./old/definitions/shiden').bundle
+        case 'shibuya':
+            return require('./old/definitions/shibuya').bundle
         case 'crust':
             return require('./old/definitions/crust').bundle
         case 'shell':
