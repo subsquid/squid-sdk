@@ -105,6 +105,12 @@ const getUniversalRootType = (
       for (const [name, entity] of entities) {
         fields[`${toCamelCase(name)}ById`] = {
           type: typeMap.get(name)!,
+          args: {
+            id: {
+              description: 'Entity primary ID',
+              type: new GraphQLNonNull(GraphQLID)
+            }
+          },
           resolve: () => ({ id: "test", wallet: "kek" }),
           ...isSubscription && {
             subscribe: subscribeToString
