@@ -2,18 +2,19 @@ import type {Logger} from "@subsquid/logger"
 import type {Chain} from "../chain"
 import type {Range} from "../util/range"
 import type {
-    CallContextRequest,
-    CallFields,
-    ContractsContractEmittedFields,
-    EventContextRequest,
-    EventFields,
-    EvmLogFields,
-    ExtrinsicFields
+    BlockDataRequest, BlockItems,
+    CallData,
+    CallDataRequest,
+    ContractsContractEmittedEventData,
+    EventData,
+    EventDataRequest,
+    EvmLogEventData,
+    WithProp
 } from "./dataSelection"
 import type {SubstrateBlock} from "./substrate"
 
 
-export interface BlockHandlerContext<S> {
+export interface CommonHandlerContext<S> {
     /**
      * Not yet public description of chain metadata
      * @internal
@@ -25,38 +26,38 @@ export interface BlockHandlerContext<S> {
 }
 
 
-export interface BlockHandler<S> {
-    (ctx: BlockHandlerContext<S>): Promise<void>
+export type BlockHandlerContext<S, R extends BlockDataRequest = {}>
+    = CommonHandlerContext<S> & WithProp<'items', BlockItems<R['items']>>
+
+
+export interface BlockHandler<S, R extends BlockDataRequest = {}> {
+    (ctx: BlockHandlerContext<S, R>): Promise<void>
 }
 
 
-export type EventHandlerContext<S, R extends EventContextRequest = {event: true}> = BlockHandlerContext<S> & {
-    event: EventFields<R>
-}
+export type EventHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R>
 
 
-export interface EventHandler<S, R extends EventContextRequest = {event: true}> {
+export interface EventHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: EventHandlerContext<S, R>): Promise<void>
 }
 
 
-export type CallHandlerContext<S, R extends CallContextRequest = {call: true, extrinsic: true}> = BlockHandlerContext<S> & {
-    call: CallFields<R>
-    extrinsic: ExtrinsicFields<R>
-}
+export type CallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
+    = CommonHandlerContext<S> & CallData<R>
 
 
-export interface CallHandler<S, R extends CallContextRequest = {call: true, extrinsic: true}> {
+export interface CallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
     (ctx: CallHandlerContext<S, R>): Promise<void>
 }
 
 
-export type EvmLogHandlerContext<S, R extends EventContextRequest = {event: true}> = BlockHandlerContext<S> & {
-    event: EvmLogFields<R>
-}
+export type EvmLogHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EvmLogEventData<R>
 
 
-export interface EvmLogHandler<S, R extends EventContextRequest = {event: true}> {
+export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: EvmLogHandlerContext<S,  R>): Promise<void>
 }
 
@@ -77,11 +78,10 @@ export interface EvmLogOptions extends BlockRangeOption {
 export type EvmTopicSet = string | null | undefined | string[]
 
 
-export type ContractsContractEmittedHandlerContext<S, R extends EventContextRequest = {event: true}> = BlockHandlerContext<S> & {
-    event: ContractsContractEmittedFields<R>
-}
+export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & ContractsContractEmittedEventData<R>
 
 
-export interface ContractsContractEmittedHandler<S, R extends EventContextRequest = {event: true}> {
+export interface ContractsContractEmittedHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: ContractsContractEmittedHandlerContext<S, R>): Promise<void>
 }

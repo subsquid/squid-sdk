@@ -20,7 +20,12 @@ type PlainReq<T> = {
 
 
 type Select<T, R extends Req<T>> = {
-    [P in keyof T as R[P] extends true ? P : P extends 'id' | 'pos' ? P : never]: T[P]
+    [P in keyof T as R[P] extends true ? P : P extends 'id' | 'pos' | 'name' ? P : never]: T[P]
+}
+
+
+export type WithProp<K extends string, V> = [V] extends [never] ? {} : {
+    [k in K]: V
 }
 
 
@@ -29,82 +34,67 @@ type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 
 
-type CallRequest = PlainReq<CallScalars> & {
+export type CallRequest = PlainReq<CallScalars> & {
     parent?: PlainReq<SubstrateCall> | boolean
 }
 
 
-type ExtrinsicRequest = PlainReq<ExtrinsicScalars> & {
+export type ExtrinsicRequest = PlainReq<ExtrinsicScalars> & {
     call?: CallRequest | boolean
 }
 
 
-type EventRequest = PlainReq<EventScalars> & {
+export type EventRequest = PlainReq<EventScalars> & {
     call?: CallRequest | boolean
     extrinsic?: ExtrinsicRequest | boolean
     evmTxHash?: boolean
 }
 
 
-type _CallFields<R extends CallRequest> = Select<CallScalars, R> & (
+type CallFields<R extends CallRequest> = Select<CallScalars, R> & (
     R['parent'] extends true
-        ? {parent?: _CallFields<R>}
+        ? {parent?: CallFields<R>}
         : R['parent'] extends PlainReq<SubstrateCall>
-            ? {parent?: _CallFields<R['parent']>}
+            ? {parent?: CallFields<R['parent']>}
             : {}
 )
 
 
-export interface CallContextRequest {
-    call?: CallRequest | boolean
-    extrinsic?: ExtrinsicRequest | boolean
-}
-
-
-export type CallFields<R extends CallContextRequest> = R['call'] extends true
+export type CallType<R> = R extends true
     ? SubstrateCall
-    : R['call'] extends CallRequest
-        ? _CallFields<R['call']>
-        : undefined
+    : R extends CallRequest ? CallFields<R> : never
 
 
-type _ExtrinsicFields<R extends ExtrinsicRequest> = Select<ExtrinsicScalars, R> & (
+type ExtrinsicFields<R extends ExtrinsicRequest> = Select<ExtrinsicScalars, R> & (
     R['call'] extends true
         ? {call: SubstrateCall}
         : R['call'] extends CallRequest
-            ? {call: _CallFields<R['call']>}
+            ? {call: CallFields<R['call']>}
             : {}
 )
 
 
-export interface ExtrinsicContextRequest {
-    extrinsic?: ExtrinsicRequest | boolean
-}
-
-
-export type ExtrinsicFields<R extends ExtrinsicContextRequest> = R['extrinsic'] extends true
+export type ExtrinsicType<R> = R extends true
     ? SubstrateExtrinsic
-    : R['extrinsic'] extends ExtrinsicRequest
-        ? _ExtrinsicFields<R['extrinsic']>
-        : undefined
+    : R extends ExtrinsicRequest ? ExtrinsicFields<R> : never
 
 
-type _ApplyExtrinsicFields<R extends EventRequest> = (
+type ApplyExtrinsicFields<R extends EventRequest> = (
     R['call'] extends true
         ? {call: SubstrateCall, phase: 'ApplyExtrinsic'}
         : R['call'] extends CallRequest
-            ? {call: _CallFields<R['call']>, phase: 'ApplyExtrinsic'}
+            ? {call: CallFields<R['call']>, phase: 'ApplyExtrinsic'}
             : {}
 ) & (
     R['extrinsic'] extends true
         ? {extrinsic: SubstrateExtrinsic, phase: 'ApplyExtrinsic'}
         : R['extrinsic'] extends ExtrinsicRequest
-            ? {extrinsic: _ExtrinsicFields<R['extrinsic']>, phase: 'ApplyExtrinsic'}
+            ? {extrinsic: ExtrinsicFields<R['extrinsic']>, phase: 'ApplyExtrinsic'}
             : {}
 )
 
 
-type _EventFields<R extends EventRequest> =
+type EventFields<R extends EventRequest> =
     (
         Select<SubstrateInitializationEvent | SubstrateFinalizationEvent, R> &
         {extrinsic?: undefined, call?: undefined} & (
@@ -115,31 +105,127 @@ type _EventFields<R extends EventRequest> =
                     : {}
         )
     ) | (
-        Select<EventScalars, R> & _ApplyExtrinsicFields<R>
+        Select<EventScalars, R> & ApplyExtrinsicFields<R>
     )
 
 
-export interface EventContextRequest {
-    event?: EventRequest | boolean
+export type EventType<R> = R extends true
+    ? SubstrateEvent
+    : R extends EventRequest ? EventFields<R> : never
+
+
+export type EvmLogEventType<R> = R extends true
+    ? EvmLogEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<EvmLogEvent>, R>
+        : never
+
+
+export type ContractsContractEmittedEventType<R> = R extends true
+    ? ContractsContractEmittedEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<ContractsContractEmittedEvent>, R>
+        : never
+
+
+export interface EventDataRequest {
+    event?: boolean | EventRequest
 }
 
 
-export type EventFields<R extends EventContextRequest> = R['event'] extends true
-    ? SubstrateEvent
-    : R['event'] extends EventRequest
-        ? _EventFields<R['event']>
-        : undefined
+export type EventData<R extends EventDataRequest = {event: true}>
+    = WithProp<'event', EventType<R['event']>>
 
 
-export type EvmLogFields<R extends EventContextRequest> = R['event'] extends true
-    ? EvmLogEvent
-    : R['event'] extends EventRequest
-        ? _ApplyExtrinsicFields<R['event']> & Select<EventScalars<EvmLogEvent>, R['event']>
-        : undefined
+export type EvmLogEventData<R extends EventDataRequest = {event: true}>
+    = WithProp<'event', EvmLogEventType<R['event']>>
 
 
-export type ContractsContractEmittedFields<R extends EventContextRequest> = R['event'] extends true
-    ? ContractsContractEmittedEvent
-    : R['event'] extends EventRequest
-        ? _ApplyExtrinsicFields<R['event']> & Select<EventScalars<ContractsContractEmittedEvent>, R['event']>
-        : undefined
+export type ContractsContractEmittedEventData<R extends EventDataRequest = {event: true}>
+    = WithProp<'event', ContractsContractEmittedEventType<R['event']>>
+
+
+export interface CallDataRequest {
+    call?: boolean | CallRequest
+    extrinsic?: boolean | ExtrinsicRequest
+}
+
+
+export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}> =
+    WithProp<"call", CallType<R["call"]>> &
+    WithProp<"extrinsic", ExtrinsicType<R["extrinsic"]>>
+
+
+type SetName<T, N> = Omit<T, "name"> & {name: N}
+type SetItemName<T, P, N> = P extends keyof T
+    ? Omit<T, P> & {[p in P]: SetName<T[P], N>}
+    : never
+
+
+type WithKind<K, T> = {kind: K} & {
+    [P in keyof T]: T[P]
+}
+
+
+type BlockEventsRequest = {
+    [name in string]?: boolean | {event: EventRequest}
+}
+
+
+type BlockEventData<R extends BlockEventsRequest> = {
+    [N in keyof R]: SetItemName<
+        R[N] extends true
+            ? EventData
+            : R[N] extends {} ? EventData<R[N]> : never,
+        'event',
+        N
+    >
+}[keyof R]
+
+
+type BlockEventItem<R> = WithKind<
+    'event',
+    R extends true ? EventData : R extends BlockEventsRequest ? BlockEventData<R> : never
+>
+
+
+type BlockCallsRequest = {
+    [name in string]?: boolean | {call?: boolean | CallRequest, extrinsic?: boolean | ExtrinsicRequest}
+}
+
+
+type BlockCallData<R extends BlockCallsRequest> = {
+    [N in keyof R]: SetItemName<
+        R[N] extends true
+            ? CallData
+            : R[N] extends CallDataRequest
+                ? CallData<R[N]>
+                : never,
+        'call',
+        N
+    >
+}
+
+
+type BlockCallItem<R> = WithKind<
+    'call',
+    R extends true ? CallData : R extends BlockCallsRequest ? BlockCallData<R> : never
+>
+
+
+export interface BlockItemRequest {
+    events?: boolean | BlockEventsRequest
+    calls?: boolean | BlockCallsRequest
+}
+
+
+export type BlockItems<R> = R extends true
+    ? (BlockEventItem<true> & BlockCallItem<true>)[]
+    : R extends BlockItemRequest
+        ? (BlockEventItem<R['events']> & BlockCallItem<R['calls']>)[]
+        : never
+
+
+export interface BlockDataRequest {
+    items?: boolean | BlockItemRequest
+}

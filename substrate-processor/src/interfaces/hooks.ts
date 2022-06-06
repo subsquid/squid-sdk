@@ -7,7 +7,7 @@ import {
     EvmLogHandler,
     EvmTopicSet
 } from "./dataHandlers"
-import {CallContextRequest, EventContextRequest} from "./dataSelection"
+import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
 
 
@@ -20,7 +20,7 @@ export interface BlockHook {
 export interface EventHook {
     handler: EventHandler<any>
     event: QualifiedName
-    data?: EventContextRequest
+    data?: EventDataRequest
     range?: Range
 }
 
@@ -29,7 +29,7 @@ export interface CallHook {
     handler: CallHandler<any>
     call: QualifiedName
     failures?: boolean
-    data?: CallContextRequest
+    data?: CallDataRequest
     range?: Range
 }
 
@@ -38,7 +38,7 @@ export interface EvmLogHook {
     handler: EvmLogHandler<any>
     contractAddress: string
     filter?: EvmTopicSet[]
-    data?: EventContextRequest
+    data?: EventDataRequest
     range?: Range
 }
 
@@ -46,7 +46,7 @@ export interface EvmLogHook {
 export interface ContractsContractEmittedHook {
     handler: ContractsContractEmittedHandler<any>,
     contractAddress: string
-    data?: EventContextRequest
+    data?: EventDataRequest
     range?: Range
 }
 

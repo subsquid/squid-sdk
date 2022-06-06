@@ -13,13 +13,14 @@ import type {
     BlockHandlerContext,
     BlockRangeOption,
     CallHandler,
+    CommonHandlerContext,
     ContractsContractEmittedHandler,
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
     EvmTopicSet
 } from "./interfaces/dataHandlers"
-import {CallContextRequest, EventContextRequest} from "./interfaces/dataSelection"
+import {BlockDataRequest, CallDataRequest, EventDataRequest} from "./interfaces/dataSelection"
 import type {Database} from "./interfaces/db"
 import type {Hooks} from "./interfaces/hooks"
 import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
@@ -196,7 +197,8 @@ export class SubstrateProcessor<Store> {
      * processor.addPreHook({range: {from: 100000}}, async ctx => {})
      */
     addPreHook(fn: BlockHandler<Store>): void
-    addPreHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
+    addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): void
+    addPreHook<R extends BlockDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
     addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
@@ -270,7 +272,7 @@ export class SubstrateProcessor<Store> {
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R extends EventContextRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
     addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection | EventHandler<Store>, fn?: EventHandler<Store>): void {
         this.assertNotRunning()
         let handler: EventHandler<Store>
@@ -290,7 +292,7 @@ export class SubstrateProcessor<Store> {
 
     addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
     addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R extends CallContextRequest>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
+    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
     addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
         let handler: CallHandler<Store>
@@ -318,7 +320,7 @@ export class SubstrateProcessor<Store> {
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
     ): void
-    addEvmLogHandler<R extends EventContextRequest>(
+    addEvmLogHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
@@ -353,7 +355,7 @@ export class SubstrateProcessor<Store> {
         options: BlockRangeOption & NoDataSelection,
         fn: ContractsContractEmittedHandler<Store>
     ): void
-    addContractsContractEmittedHandler<R extends EventContextRequest>(
+    addContractsContractEmittedHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: BlockRangeOption & DataSelection<R>,
         fn: ContractsContractEmittedHandler<Store, R>
@@ -616,7 +618,7 @@ export class SubstrateProcessor<Store> {
             blockHash: block.header.hash
         })
 
-        let ctx: BlockHandlerContext<Store> = {
+        let ctx: CommonHandlerContext<Store> = {
             _chain: chain,
             log: blockLog.child({hook: 'pre'}),
             store,

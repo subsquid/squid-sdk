@@ -1,12 +1,11 @@
 import type {
-    BlockHandler,
+    BlockHandler, CallDataRequest,
     CallHandler,
-    ContractsContractEmittedHandler,
+    ContractsContractEmittedHandler, EventDataRequest,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet
 } from "../interfaces/dataHandlers"
-import {CallContextRequest, EventContextRequest} from "../interfaces/dataSelection"
 import type {QualifiedName} from "../interfaces/substrate"
 
 
@@ -22,9 +21,9 @@ interface HandlerList<H, R = any> {
 export interface DataHandlers {
     pre: BlockHandler<any>[]
     post: BlockHandler<any>[]
-    events: Record<QualifiedName, HandlerList<EventHandler<any>, EventContextRequest>>
-    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallContextRequest>>
-    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventContextRequest, handler: EvmLogHandler<any>}[]>
+    events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>>
+    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>>
+    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]>
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>>
 }
 
