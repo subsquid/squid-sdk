@@ -2,7 +2,8 @@ import type {Logger} from "@subsquid/logger"
 import type {Chain} from "../chain"
 import type {Range} from "../util/range"
 import type {
-    BlockDataRequest, BlockItems,
+    BlockDataRequest,
+    BlockItems,
     CallData,
     CallDataRequest,
     ContractsContractEmittedEventData,

@@ -1,4 +1,5 @@
 import assert from "assert"
+import {RequestListener} from "http"
 import * as http from "http"
 import stoppable from "stoppable"
 
@@ -59,7 +60,7 @@ export interface RequestHandler {
 
 
 export function createHttpServer(handler: RequestHandler, port?: number | string): Promise<ListeningServer> {
-    let server = stoppable(http.createServer(async (req, res) => {
+    return createNodeHttpServer(async (req, res) => {
         let ctx = new HttpContext(req as HttpRequest, res)
         try {
             await handler(ctx)
@@ -70,7 +71,12 @@ export function createHttpServer(handler: RequestHandler, port?: number | string
                 ctx.send(500, err.stack)
             }
         }
-    }), 1000)
+    }, port)
+}
+
+
+export function createNodeHttpServer(handler: RequestListener, port?: number | string): Promise<ListeningServer> {
+    let server = stoppable(http.createServer(handler), 1000)
 
     function close(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -97,5 +103,19 @@ export function createHttpServer(handler: RequestHandler, port?: number | string
                 })
             }
         })
+    })
+}
+
+
+export function waitForInterruption(server: ListeningServer): Promise<void> {
+    return new Promise((resolve, reject) => {
+        function terminate() {
+            process.off('SIGINT', terminate)
+            process.off('SIGTERM', terminate)
+            server.close().then(resolve, reject)
+        }
+
+        process.on('SIGINT', terminate)
+        process.on('SIGTERM', terminate)
     })
 }

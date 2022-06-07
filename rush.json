@@ -534,6 +534,11 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "chain-status-service",
+      "projectFolder": "util/chain-status-service",
+      "shouldPublish": false,
+    },
+    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,

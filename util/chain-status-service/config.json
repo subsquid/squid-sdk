@@ -1,0 +1,21 @@
+{
+  "astar": [
+    "wss://astar.api.onfinality.io/public-ws",
+    "wss://astar-rpc.dwellir.com"
+  ],
+  "karura": [
+    "wss://karura.api.onfinality.io/public-ws",
+    "wss://karura-rpc.dwellir.com",
+    "wss://karura.polkawallet.io"
+  ],
+  "kusama": [
+    "wss://kusama-rpc.polkadot.io",
+    "wss://kusama-rpc.dwellir.com",
+    "wss://kusama.api.onfinality.io/public-ws"
+  ],
+  "moonriver": [
+    "wss://moonriver.api.onfinality.io/public-ws",
+    "wss://moonriver-rpc.dwellir.com",
+    "wss://wss.api.moonriver.moonbeam.network"
+  ]
+}

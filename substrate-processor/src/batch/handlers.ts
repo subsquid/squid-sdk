@@ -1,11 +1,12 @@
 import type {
-    BlockHandler, CallDataRequest,
+    BlockHandler,
     CallHandler,
-    ContractsContractEmittedHandler, EventDataRequest,
+    ContractsContractEmittedHandler,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet
 } from "../interfaces/dataHandlers"
+import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 import type {QualifiedName} from "../interfaces/substrate"
 
 

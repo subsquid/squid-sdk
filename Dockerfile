@@ -20,3 +20,14 @@ COPY --from=substrate-ingest-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-ingest
 EXPOSE 9090
 ENTRYPOINT ["node", "/squid/substrate-ingest/bin/run.js", "--prom-port", "9090"]
+
+
+FROM builder AS chain-status-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
+
+
+FROM node AS chain-status-service
+COPY --from=chain-status-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/util/chain-status-service/lib/main.js"]
+CMD ["/squid/util/chain-status-service/config.json"]
+EXPOSE 3000
