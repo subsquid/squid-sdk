@@ -77,8 +77,10 @@ export function addressOrigin(address: any): sub.SignedOrigin | undefined {
     if (address instanceof Uint8Array) {
         return signedOrigin(address)
     }
-    if (address.__kind == 'Id') {
-        return signedOrigin(address.value)
+    switch(address.__kind) {
+        case 'Id':
+        case 'AccountId': // LookupSource as an address on early kusama blocks
+            return signedOrigin(address.value)
     }
 }
 
