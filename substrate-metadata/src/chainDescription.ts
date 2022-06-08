@@ -664,6 +664,7 @@ class FromOld {
         this.registry.define('OriginCaller', () => {
             let variants: Variant[] = []
             this.forEachPallet(null, (mod, index) => {
+                let name = mod.name
                 let type: string
                 switch(mod.name) {
                     case 'Authority':
@@ -676,6 +677,7 @@ class FromOld {
                         break
                     case 'System':
                         type = 'SystemOrigin'
+                        name = 'system'
                         break
                     case 'Xcm':
                     case 'XcmPallet':

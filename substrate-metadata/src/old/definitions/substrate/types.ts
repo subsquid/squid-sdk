@@ -2420,11 +2420,6 @@ export const types = {
   "Moment": "UInt<64, Moment>",
   "OpaqueCall": "Bytes",
   "Origin": "DoNotConstruct<Origin>",
-  "OriginCaller": {
-    "_enum": {
-      "System": "SystemOrigin"
-    }
-  },
   "PalletId": "LockIdentifier",
   "PalletsOrigin": "OriginCaller",
   "PalletVersion": {
