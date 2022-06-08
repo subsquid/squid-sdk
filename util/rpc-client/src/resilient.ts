@@ -1,5 +1,5 @@
 import assert from "assert"
-import {RpcClient, RpcConnectionError} from "./client"
+import {RpcClient, RpcConnectionError, RpcError} from "./client"
 
 
 export interface ResilientRpcClientOptions {
@@ -29,7 +29,7 @@ export class ResilientRpcClient {
                 this.errors = 0
                 return result
             } catch(e: unknown) {
-                if (e instanceof RpcConnectionError) {
+                if (isRetryableError(e)) {
                     if (this.client === epoch) {
                         client.close(e)
                         this.reconnect(e)
@@ -50,6 +50,9 @@ export class ResilientRpcClient {
             throw err
         }
         let backoff = this.backoff[Math.min(this.errors, this.backoff.length) - 1]
+        if (isRateLimitError(err)) {
+            backoff += backoff * 2 + 5000
+        }
         this.client = new Promise(resolve => {
             setTimeout(() => {
                 resolve(new RpcClient(this.options.url))
@@ -83,4 +86,14 @@ export class ResilientRpcClient {
         this.client = Promise.reject(err || new Error('Closed'))
         this.client.catch(() => {})
     }
+}
+
+
+export function isRateLimitError(err: unknown): boolean {
+    return err instanceof RpcError && /rate limit/i.test(err.message)
+}
+
+
+export function isRetryableError(err: unknown): err is Error {
+    return err instanceof RpcConnectionError || isRateLimitError(err)
 }

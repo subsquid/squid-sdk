@@ -1,5 +1,6 @@
 import type {Logger} from "@subsquid/logger"
-import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
+import {RpcClient, RpcConnectionError, RpcError} from "@subsquid/rpc-client"
+import {isRateLimitError, isRetryableError} from "@subsquid/rpc-client/lib/resilient"
 import {last} from "@subsquid/util-internal"
 import {Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
@@ -138,7 +139,7 @@ export class Client {
                 req.promise().finally(() => this.performScheduling())
             },
             (err: Error) => {
-                if (err instanceof RpcConnectionError) {
+                if (isRetryableError(err)) {
                     this.queue.push(req)
                     this.performScheduling()
                 } else {
@@ -210,7 +211,7 @@ class Connection {
             return res
         }, err => {
             this.cap += 1
-            if (err instanceof RpcConnectionError) {
+            if (isRetryableError(err)) {
                 this.log?.debug({req: req.id}, 'connection failure')
                 if (epoch == this.epoch) {
                     this.epoch += 1
@@ -252,18 +253,21 @@ class Connection {
 
     private reconnect(err: Error): void {
         if (this.closed) return
-        let timeout = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
+        let backoff = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
         this.connectionErrors += 1
         this.connectionErrorsInRow += 1
         this.epoch += 1
+        if (isRateLimitError(err)) {
+            backoff = backoff * 2 + 5000
+        }
         this.log?.warn({
-            backoff: timeout,
+            backoff,
             reason: err.message
         }, 'connection error')
         setTimeout(() => {
             this.client = new RpcClient(this.url)
             this.connect()
-        }, timeout)
+        }, backoff)
     }
 
     private connect(): void {
