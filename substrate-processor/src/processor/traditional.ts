@@ -5,9 +5,9 @@ import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-int
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
 import * as process from "process"
-import {createBatches, DataHandlers, getBlocksCount} from "./batch"
-import {Chain, ChainManager} from "./chain"
-import {BlockData, Ingest} from "./ingest"
+import {createBatches, DataHandlers, getBlocksCount} from "../batch"
+import {Chain, ChainManager} from "../chain"
+import {BlockData, Ingest} from "../ingest"
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -19,14 +19,14 @@ import type {
     EvmLogHandler,
     EvmLogOptions,
     EvmTopicSet
-} from "./interfaces/dataHandlers"
-import {BlockDataRequest, CallDataRequest, EventDataRequest} from "./interfaces/dataSelection"
-import type {Database} from "./interfaces/db"
-import type {Hooks} from "./interfaces/hooks"
-import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "./interfaces/substrate"
-import {Metrics} from "./metrics"
-import {timeInterval, withErrorContext} from "./util/misc"
-import {Range} from "./util/range"
+} from "../interfaces/dataHandlers"
+import type {BlockDataRequest, CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
+import type {Database} from "../interfaces/db"
+import type {Hooks} from "../interfaces/hooks"
+import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "../interfaces/substrate"
+import {Metrics} from "../metrics"
+import {timeInterval, withErrorContext} from "../util/misc"
+import {Range} from "../util/range"
 
 
 export interface DataSource {
@@ -629,11 +629,11 @@ export class SubstrateProcessor<Store> {
 
         for (let pre of handlers.pre.handlers) {
             ctx.log.debug('begin')
-            await pre({...ctx, items: block.log})
+            await pre({...ctx, items: block.items})
             ctx.log.debug('end')
         }
 
-        for (let item of block.log) {
+        for (let item of block.items) {
             switch(item.kind) {
                 case 'event':
                     for (let handler of handlers.events[item.event.name]?.handlers || []) {
@@ -699,7 +699,7 @@ export class SubstrateProcessor<Store> {
 
         for (let post of handlers.post.handlers) {
             ctx.log.debug('begin')
-            await post({...ctx, items: block.log})
+            await post({...ctx, items: block.items})
             ctx.log.debug('end')
         }
     }

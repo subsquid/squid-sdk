@@ -158,7 +158,7 @@ export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}> 
 
 type SetName<T, N> = Omit<T, "name"> & {name: N}
 type SetItemName<T, P, N> = P extends keyof T
-    ? Omit<T, P> & {[p in P]: SetName<T[P], N>}
+    ? Omit<T, P> & {[p in P]: SetName<T[P], N>} & {name: N}
     : never
 
 
@@ -167,7 +167,7 @@ type WithKind<K, T> = {kind: K} & {
 }
 
 
-type BlockEventItem<Name, R = false> = WithKind<
+export type BlockEventItem<Name, R = false> = WithKind<
     "event",
     SetItemName<
         R extends true ? EventData : R extends EventDataRequest ? EventData<R> : EventData<{event: {}}>,
@@ -198,7 +198,7 @@ type BlockCallsRequest = {
 }
 
 
-type BlockCallItem<Name, R = false> = WithKind<
+export type BlockCallItem<Name, R = false> = WithKind<
     "call",
     SetItemName<
         R extends true ? CallData : R extends CallDataRequest ? CallData<R> : CallData<{call: {}}>,

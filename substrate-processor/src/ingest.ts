@@ -10,19 +10,21 @@ import {addErrorContext, withErrorContext} from "./util/misc"
 import {Range, rangeEnd} from "./util/range"
 
 
-export type LogItem = {
+export type Item = {
     kind: 'call'
+    name: string
     call: SubstrateCall
     extrinsic: SubstrateExtrinsic
 } | {
     kind: 'event'
+    name: string
     event: SubstrateEvent
 }
 
 
 export interface BlockData {
     header: SubstrateBlock
-    log: LogItem[]
+    items: Item[]
 }
 
 
@@ -320,7 +322,7 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
         return extrinsic as SubstrateExtrinsic
     })
 
-    let log: LogItem[] = []
+    let items: Item[] = []
 
     for (let go of block.events) {
         let event = assertNotNull(events.get(go.id)) as SubstrateEvent
@@ -330,8 +332,9 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
         if (go.callId) {
             event.call = assertNotNull(calls.get(go.callId)) as SubstrateCall
         }
-        log.push({
+        items.push({
             kind: 'event',
+            name: event.name,
             event
         })
     }
@@ -341,14 +344,15 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
         if (go.parentId) {
             call.parent = assertNotNull(calls.get(go.parentId)) as SubstrateCall
         }
-        let item: Partial<LogItem> = {
+        let item: Partial<Item> = {
             kind: 'call',
+            name: call.name,
             call
         }
         if (go.extrinsicId) {
             item.extrinsic = assertNotNull(extrinsics.get(go.extrinsicId)) as SubstrateExtrinsic
         }
-        log.push(item as LogItem)
+        items.push(item as Item)
     }
 
     for (let go of block.extrinsics) {
@@ -358,13 +362,13 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
         }
     }
 
-    log.sort((a, b) => getPos(a) - getPos(b))
+    items.sort((a, b) => getPos(a) - getPos(b))
 
     let {timestamp, ...hdr} = block.header
 
     return {
         header: {...hdr, timestamp: new Date(timestamp).valueOf()},
-        log
+        items: items
     }
 }
 
@@ -382,7 +386,7 @@ function createObjects<S, T extends {id: string}>(src: S[], f: (s: S) => Partial
 type PartialObj<T> = Partial<T> & {id: string, pos: number}
 
 
-function getPos(item: LogItem): number {
+function getPos(item: Item): number {
     switch(item.kind) {
         case 'call':
             return item.call.pos
