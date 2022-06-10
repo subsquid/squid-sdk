@@ -26,7 +26,7 @@ services:
     ]
 
   gateway:
-    image: tmcgroul/archive-gateway:22
+    image: tmcgroul/archive-gateway:27
     depends_on:
       - archive-db
     command: [

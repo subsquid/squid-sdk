@@ -14,52 +14,6 @@ processor.setDataSource({
 })
 
 
-// processor.addPreHook({
-//     data: {
-//         items: {
-//             events: {
-//                 'Balances.Transfer': {
-//                     event: {args: true}
-//                 }
-//             }
-//         }
-//     }
-// } as const, async ctx => {
-//     for (let item of ctx.items) {
-//         if (item.kind != 'event' || item.event.name !== 'Balances.Transfer') continue
-//         let transfer = getTransferEvent({_chain: ctx._chain, event: item.event})
-//
-//         let timestamp = BigInt(new Date(ctx.block.timestamp).valueOf())
-//
-//         let fromAcc = await getOrCreate(ctx.store, Account, toHex(transfer.from))
-//         fromAcc.wallet = fromAcc.id
-//         fromAcc.balance = fromAcc.balance || 0n
-//         fromAcc.balance -= transfer.amount
-//         await ctx.store.save(fromAcc)
-//
-//         const toAcc = await getOrCreate(ctx.store, Account, toHex(transfer.to))
-//         toAcc.wallet = toAcc.id
-//         toAcc.balance = toAcc.balance || 0n
-//         toAcc.balance += transfer.amount
-//         await ctx.store.save(toAcc)
-//
-//         await ctx.store.insert(new HistoricalBalance({
-//             id: item.event.id + '-to',
-//             account: fromAcc,
-//             balance: fromAcc.balance,
-//             timestamp
-//         }))
-//
-//         await ctx.store.insert(new HistoricalBalance({
-//             id: item.event.id + '-from',
-//             account: toAcc,
-//             balance: toAcc.balance,
-//             timestamp
-//         }))
-//     }
-// })
-
-
 processor.addEventHandler('Balances.Transfer', {
     data: {
         event: {args: true}

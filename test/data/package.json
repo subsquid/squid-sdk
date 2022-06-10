@@ -13,6 +13,7 @@
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-internal-gql-request": "^0.0.0",
+    "@subsquid/util-internal-hex": "^0.0.0",
     "@subsquid/util-naming": "^0.0.0",
     "@types/node": "^16.11.22",
     "@types/pg": "8.6.4",

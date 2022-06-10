@@ -1,5 +1,6 @@
 import {decodeExtrinsic} from "@subsquid/substrate-metadata"
-import {assertNotNull, def, toHex} from "@subsquid/util-internal"
+import {assertNotNull, def} from "@subsquid/util-internal"
+import {toHex} from "@subsquid/util-internal-hex"
 import {Spec, sub} from "../interfaces"
 import {Block, BlockData, Call, Event, Extrinsic, Warning} from "../model"
 import {blake2bHash} from "../util"

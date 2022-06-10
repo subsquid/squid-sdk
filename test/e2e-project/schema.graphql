@@ -191,3 +191,10 @@ type SelfReferencedEntity @entity {
 type SelfReferencedObject {
   ref: SelfReferencedObject
 }
+
+
+type Transaction @entity {
+  id: ID!
+  name: String!
+  sender: String!
+}

@@ -1,18 +1,20 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec, Src} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
 import {
     ChainDescription,
     decodeExtrinsic,
     decodeMetadata,
     encodeExtrinsic,
     getChainDescriptionFromMetadata,
-    getOldTypesBundle, Metadata
+    getOldTypesBundle,
+    Metadata
 } from "@subsquid/substrate-metadata"
 import {SpecVersionWithMetadata} from "@subsquid/substrate-metadata-explorer/lib/types"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def, last, toHex} from "@subsquid/util-internal"
+import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
+import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import expect from "expect"
 import * as fs from "fs"

@@ -1,5 +1,5 @@
 import {decodeAddress} from "@polkadot/keyring"
-import {toHex} from "@subsquid/util-internal"
+import {toHex} from "@subsquid/util-internal-hex"
 import expect from "expect"
 import {chain, gql, transfer, waitForHeight} from "./setup"
 
@@ -116,4 +116,30 @@ describe('transfer tests', function () {
             }
         })
     })
+
+    it('block-level mappings', function() {
+        return gql.test(`
+            query {
+                transactions(
+                    where: {
+                        id_gt: "${blockId(secondTransfer)}"
+                        id_lt: "${blockId(secondTransfer + 1)}"
+                    }
+                ) {
+                    name
+                    sender
+                }
+            }
+        `, {
+            transactions: [{
+                name: 'Balances.transfer',
+                sender: ALICE
+            }]
+        })
+    })
 })
+
+
+function blockId(height: number): string {
+    return height.toString().padStart(10, '0')
+}

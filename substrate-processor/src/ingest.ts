@@ -171,14 +171,14 @@ export class Ingest {
         args.events = Object.entries(getEvents(hs)).map(([name, data]) => {
             return {
                 name,
-                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+                data: data === true ? undefined : toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
         args.calls = Object.entries(getCalls(hs)).map(([name, data]) => {
             return {
                 name,
-                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+                data: data === true ? undefined : toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 

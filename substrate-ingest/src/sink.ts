@@ -1,4 +1,4 @@
-import {toHex} from "@subsquid/util-internal"
+import {toHex} from "@subsquid/util-internal-hex"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"

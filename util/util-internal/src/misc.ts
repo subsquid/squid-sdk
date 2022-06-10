@@ -16,15 +16,6 @@ export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
 }
 
 
-export function toHex(data: Uint8Array): string {
-    if (Buffer.isBuffer(data)) {
-        return '0x' + data.toString('hex')
-    } else {
-        return '0x' + Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('hex')
-    }
-}
-
-
 export function unexpectedCase(val?: unknown): Error {
     return new Error(val ? `Unexpected case: ${val}` : `Unexpected case`)
 }
