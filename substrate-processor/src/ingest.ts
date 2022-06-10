@@ -2,6 +2,7 @@ import {assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-int
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
 import type {Batch, DataHandlers} from "./batch"
+import {shallFetchAllBlocks, getCalls, getEvents} from "./batch/handlers"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {printGqlArguments} from "./util/gql"
@@ -159,26 +160,25 @@ export class Ingest {
         assert(from <= to)
 
         let hs = batch.handlers
-        let includeAllBlocks = hs.pre.length > 0 || hs.post.length > 0
 
         let args: gw.BatchRequest = {
             fromBlock: from,
             toBlock: to,
             limit: this.limit,
-            includeAllBlocks
+            includeAllBlocks: shallFetchAllBlocks(hs)
         }
 
-        args.events = Object.entries(hs.events).map(([name, options]) => {
+        args.events = Object.entries(getEvents(hs)).map(([name, data]) => {
             return {
                 name,
-                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
-        args.calls = Object.entries(hs.calls).map(([name, options]) => {
+        args.calls = Object.entries(getCalls(hs)).map(([name, data]) => {
             return {
                 name,
-                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 

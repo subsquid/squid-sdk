@@ -235,6 +235,7 @@ export class SubstrateProcessor<Store> {
      */
     addPostHook(fn: BlockHandler<Store>): void
     addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
+    addPostHook<R extends BlockDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
     addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
@@ -620,14 +621,15 @@ export class SubstrateProcessor<Store> {
 
         let ctx: CommonHandlerContext<Store> = {
             _chain: chain,
+            nonce: {},
             log: blockLog.child({hook: 'pre'}),
             store,
             block: block.header
         }
 
-        for (let pre of handlers.pre) {
+        for (let pre of handlers.pre.handlers) {
             ctx.log.debug('begin')
-            await pre(ctx)
+            await pre({...ctx, items: block.log})
             ctx.log.debug('end')
         }
 
@@ -695,9 +697,9 @@ export class SubstrateProcessor<Store> {
 
         ctx.log = blockLog.child({hook: 'post'})
 
-        for (let post of handlers.post) {
+        for (let post of handlers.post.handlers) {
             ctx.log.debug('begin')
-            await post(ctx)
+            await post({...ctx, items: block.log})
             ctx.log.debug('end')
         }
     }

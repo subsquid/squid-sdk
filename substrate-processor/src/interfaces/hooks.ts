@@ -7,13 +7,14 @@ import {
     EvmLogHandler,
     EvmTopicSet
 } from "./dataHandlers"
-import {CallDataRequest, EventDataRequest} from "./dataSelection"
+import {BlockDataRequest, CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
 
 
 export interface BlockHook {
     handler: BlockHandler<any>
     range?: Range
+    data?: BlockDataRequest
 }
 
 

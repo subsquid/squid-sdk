@@ -30,8 +30,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [hook.handler],
-                post: [],
+                pre: {handlers: [hook.handler], data: hook.data},
+                post: {handlers: []},
                 events: {},
                 calls: {},
                 evmLogs: {},
@@ -46,8 +46,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [],
-                post: [hook.handler],
+                pre: {handlers: []},
+                post: {handlers: [hook.handler], data: hook.data},
                 events: {},
                 calls: {},
                 evmLogs: {},
@@ -62,8 +62,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [],
-                post: [],
+                pre: {handlers: []},
+                post: {handlers: []},
                 events: {
                     [hook.event]: {data: hook.data, handlers: [hook.handler]}
                 },
@@ -80,8 +80,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [],
-                post: [],
+                pre: {handlers: []},
+                post: {handlers: []},
                 events: {},
                 calls: {
                     [hook.call]: {data: hook.data, handlers: [hook.handler]}
@@ -98,8 +98,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [],
-                post: [],
+                pre: {handlers: []},
+                post:{handlers: []},
                 events: {},
                 calls: {},
                 evmLogs: {
@@ -119,8 +119,8 @@ export function createBatches(hooks: Hooks, blockRange?: Range): Batch[] {
         batches.push({
             range,
             handlers: {
-                pre: [],
-                post: [],
+                pre: {handlers: []},
+                post: {handlers: []},
                 events: {},
                 calls: {},
                 evmLogs: {},

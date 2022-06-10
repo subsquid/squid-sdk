@@ -167,65 +167,80 @@ type WithKind<K, T> = {kind: K} & {
 }
 
 
+type BlockEventItem<Name, R = false> = WithKind<
+    "event",
+    SetItemName<
+        R extends true ? EventData : R extends EventDataRequest ? EventData<R> : EventData<{event: {}}>,
+        'event',
+        Name
+    >
+>
+
+
 type BlockEventsRequest = {
     [name in string]?: boolean | {event: EventRequest}
 }
 
 
-type BlockEventData<R extends BlockEventsRequest> = {
-    [N in keyof R]: SetItemName<
-        R[N] extends true
-            ? EventData
-            : R[N] extends {} ? EventData<R[N]> : never,
-        'event',
-        N
-    >
-}[keyof R]
-
-
-type BlockEventItem<R> = WithKind<
-    'event',
-    R extends true ? EventData : R extends BlockEventsRequest ? BlockEventData<R> : never
->
+type BlockEventItemType<R> = R extends true
+    ? BlockEventItem<string, true>
+    : R extends BlockEventsRequest
+        ? ["*"] extends [keyof R]
+            ? [keyof R] extends ["*"]
+                ? BlockEventItem<string, R["*"]>
+                : { [N in keyof R]: BlockEventItem<N, R[N]> }[keyof R]
+            : { [N in keyof R]: BlockEventItem<N, R[N]> }[keyof R] | BlockEventItem<"*">
+        : BlockEventItem<string>
 
 
 type BlockCallsRequest = {
-    [name in string]?: boolean | {call?: boolean | CallRequest, extrinsic?: boolean | ExtrinsicRequest}
+    [name in string]?: boolean | CallDataRequest
 }
 
 
-type BlockCallData<R extends BlockCallsRequest> = {
-    [N in keyof R]: SetItemName<
-        R[N] extends true
-            ? CallData
-            : R[N] extends CallDataRequest
-                ? CallData<R[N]>
-                : never,
-        'call',
-        N
+type BlockCallItem<Name, R = false> = WithKind<
+    "call",
+    SetItemName<
+        R extends true ? CallData : R extends CallDataRequest ? CallData<R> : CallData<{call: {}}>,
+        "call",
+        Name
     >
-}
-
-
-type BlockCallItem<R> = WithKind<
-    'call',
-    R extends true ? CallData : R extends BlockCallsRequest ? BlockCallData<R> : never
 >
 
 
-export interface BlockItemRequest {
+type BlockCallItemType<R> = R extends true
+    ? BlockCallItem<string, true>
+    : R extends BlockCallsRequest
+        ? ["*"] extends [keyof R]
+            ? [keyof R] extends ["*"]
+                ? BlockCallItem<string, R["*"]>
+                : { [N in keyof R]: BlockCallItem<N, R[N]> }[keyof R]
+            : { [N in keyof R]: BlockCallItem<N, R[N]> }[keyof R] | BlockCallItem<"*">
+        : BlockCallItem<string>
+
+
+interface BlockItemRequest {
     events?: boolean | BlockEventsRequest
     calls?: boolean | BlockCallsRequest
 }
 
 
-export type BlockItems<R> = R extends true
-    ? (BlockEventItem<true> & BlockCallItem<true>)[]
+type BlockItem<R> = R extends true
+    ? BlockEventItemType<true> | BlockCallItemType<true>
     : R extends BlockItemRequest
-        ? (BlockEventItem<R['events']> & BlockCallItem<R['calls']>)[]
-        : never
+        ? BlockEventItemType<R['events']> | BlockCallItemType<['calls']>
+        : BlockEventItemType<false> | BlockCallItemType<false>
 
 
 export interface BlockDataRequest {
+    includeAllBlocks?: boolean
     items?: boolean | BlockItemRequest
 }
+
+
+export type BlockDataType<R extends BlockDataRequest = {}> = {
+    items: BlockItem<R["items"]>[]
+}
+
+
+

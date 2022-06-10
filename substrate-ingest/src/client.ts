@@ -1,5 +1,5 @@
 import type {Logger} from "@subsquid/logger"
-import {RpcClient, RpcConnectionError, RpcError} from "@subsquid/rpc-client"
+import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
 import {isRateLimitError, isRetryableError} from "@subsquid/rpc-client/lib/resilient"
 import {last} from "@subsquid/util-internal"
 import {Speed} from "@subsquid/util-internal-counters"

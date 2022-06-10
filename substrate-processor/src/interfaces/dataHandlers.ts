@@ -3,14 +3,13 @@ import type {Chain} from "../chain"
 import type {Range} from "../util/range"
 import type {
     BlockDataRequest,
-    BlockItems,
+    BlockDataType,
     CallData,
     CallDataRequest,
     ContractsContractEmittedEventData,
     EventData,
     EventDataRequest,
-    EvmLogEventData,
-    WithProp
+    EvmLogEventData
 } from "./dataSelection"
 import type {SubstrateBlock} from "./substrate"
 
@@ -21,6 +20,7 @@ export interface CommonHandlerContext<S> {
      * @internal
      */
     _chain: Chain
+    nonce: object
     log: Logger
     store: S
     block: SubstrateBlock
@@ -28,7 +28,7 @@ export interface CommonHandlerContext<S> {
 
 
 export type BlockHandlerContext<S, R extends BlockDataRequest = {}>
-    = CommonHandlerContext<S> & WithProp<'items', BlockItems<R['items']>>
+    = CommonHandlerContext<S> & BlockDataType<R>
 
 
 export interface BlockHandler<S, R extends BlockDataRequest = {}> {
