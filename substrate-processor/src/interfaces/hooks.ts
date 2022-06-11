@@ -1,5 +1,6 @@
 import {Range} from "../util/range"
 import {
+    BlockHandlerDataRequest,
     BlockHandler,
     CallHandler,
     ContractsContractEmittedHandler,
@@ -7,14 +8,14 @@ import {
     EvmLogHandler,
     EvmTopicSet
 } from "./dataHandlers"
-import {BlockDataRequest, CallDataRequest, EventDataRequest} from "./dataSelection"
+import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
 
 
 export interface BlockHook {
     handler: BlockHandler<any>
     range?: Range
-    data?: BlockDataRequest
+    data?: BlockHandlerDataRequest
 }
 
 

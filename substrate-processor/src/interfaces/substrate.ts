@@ -149,7 +149,7 @@ export interface SubstrateCall {
 
 
 export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
-    name: 'Evm.Log'
+    name: 'EVM.Log'
     evmTxHash: string
     args: {
         address: string

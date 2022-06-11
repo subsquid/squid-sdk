@@ -109,23 +109,31 @@ type EventFields<R extends EventRequest> =
     )
 
 
-export type EventType<R> = R extends true
+type CommonEventType<R> = R extends true
     ? SubstrateEvent
     : R extends EventRequest ? EventFields<R> : never
 
 
-export type EvmLogEventType<R> = R extends true
+type EvmLogEventType<R> = R extends true
     ? EvmLogEvent
     : R extends EventRequest
         ? ApplyExtrinsicFields<R> & Select<EventScalars<EvmLogEvent>, R>
         : never
 
 
-export type ContractsContractEmittedEventType<R> = R extends true
+type ContractsContractEmittedEventType<R> = R extends true
     ? ContractsContractEmittedEvent
     : R extends EventRequest
         ? ApplyExtrinsicFields<R> & Select<EventScalars<ContractsContractEmittedEvent>, R>
         : never
+
+
+export type EventType<R, N = string> =
+    N extends 'Contracts.ContractEmitted'
+        ? ContractsContractEmittedEventType<R>
+        : N extends 'EVM.Log'
+            ? EvmLogEventType<R>
+            : CommonEventType<R>
 
 
 export interface EventDataRequest {
@@ -133,16 +141,8 @@ export interface EventDataRequest {
 }
 
 
-export type EventData<R extends EventDataRequest = {event: true}>
-    = WithProp<'event', EventType<R['event']>>
-
-
-export type EvmLogEventData<R extends EventDataRequest = {event: true}>
-    = WithProp<'event', EvmLogEventType<R['event']>>
-
-
-export type ContractsContractEmittedEventData<R extends EventDataRequest = {event: true}>
-    = WithProp<'event', ContractsContractEmittedEventType<R['event']>>
+export type EventData<R extends EventDataRequest = {event: true}, N = string>
+    = WithProp<'event', EventType<R['event'], N>>
 
 
 export interface CallDataRequest {
@@ -167,80 +167,36 @@ type WithKind<K, T> = {kind: K} & {
 }
 
 
-export type BlockEventItem<Name, R = false> = WithKind<
+export type EventItem<N, R = false> = WithKind<
     "event",
     SetItemName<
-        R extends true ? EventData : R extends EventDataRequest ? EventData<R> : EventData<{event: {}}>,
+        R extends true ? EventData<{event: true}, N> : R extends EventDataRequest ? EventData<R, N> : EventData<{event: {}}, N>,
         'event',
-        Name
+        N
     >
 >
 
 
-type BlockEventsRequest = {
-    [name in string]?: boolean | {event: EventRequest}
-}
-
-
-type BlockEventItemType<R> = R extends true
-    ? BlockEventItem<string, true>
-    : R extends BlockEventsRequest
-        ? ["*"] extends [keyof R]
-            ? [keyof R] extends ["*"]
-                ? BlockEventItem<string, R["*"]>
-                : { [N in keyof R]: BlockEventItem<N, R[N]> }[keyof R]
-            : { [N in keyof R]: BlockEventItem<N, R[N]> }[keyof R] | BlockEventItem<"*">
-        : BlockEventItem<string>
-
-
-type BlockCallsRequest = {
-    [name in string]?: boolean | CallDataRequest
-}
-
-
-export type BlockCallItem<Name, R = false> = WithKind<
+export type CallItem<Name, R = false> = WithKind<
     "call",
     SetItemName<
         R extends true ? CallData : R extends CallDataRequest ? CallData<R> : CallData<{call: {}}>,
         "call",
         Name
+        >
     >
->
 
 
-type BlockCallItemType<R> = R extends true
-    ? BlockCallItem<string, true>
-    : R extends BlockCallsRequest
-        ? ["*"] extends [keyof R]
-            ? [keyof R] extends ["*"]
-                ? BlockCallItem<string, R["*"]>
-                : { [N in keyof R]: BlockCallItem<N, R[N]> }[keyof R]
-            : { [N in keyof R]: BlockCallItem<N, R[N]> }[keyof R] | BlockCallItem<"*">
-        : BlockCallItem<string>
-
-
-interface BlockItemRequest {
-    events?: boolean | BlockEventsRequest
-    calls?: boolean | BlockCallsRequest
+export interface DataSelection<R> {
+    data: R
 }
 
 
-type BlockItem<R> = R extends true
-    ? BlockEventItemType<true> | BlockCallItemType<true>
-    : R extends BlockItemRequest
-        ? BlockEventItemType<R['events']> | BlockCallItemType<['calls']>
-        : BlockEventItemType<false> | BlockCallItemType<false>
-
-
-export interface BlockDataRequest {
-    includeAllBlocks?: boolean
-    items?: boolean | BlockItemRequest
+export interface NoDataSelection {
+    data?: undefined
 }
 
 
-export type BlockDataType<R extends BlockDataRequest = {}> = {
-    items: BlockItem<R["items"]>[]
+export interface MayBeDataSelection<R> {
+    data?: R
 }
-
-
-

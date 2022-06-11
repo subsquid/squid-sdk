@@ -1,4 +1,5 @@
 import type {
+    BlockHandlerDataRequest,
     BlockHandler,
     CallHandler,
     ContractsContractEmittedHandler,
@@ -6,7 +7,7 @@ import type {
     EvmLogHandler,
     EvmTopicSet
 } from "../interfaces/dataHandlers"
-import type {BlockDataRequest, CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
+import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 import type {QualifiedName} from "../interfaces/substrate"
 
 
@@ -20,8 +21,8 @@ interface HandlerList<H, R = any> {
 
 
 export interface DataHandlers {
-    pre: HandlerList<BlockHandler<any>, BlockDataRequest>
-    post: HandlerList<BlockHandler<any>, BlockDataRequest>
+    pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
+    post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>>
     calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>>
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]>
@@ -42,9 +43,9 @@ export function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandler
 
 
 function mergeBlockHandlerLists(
-    a: HandlerList<BlockHandler<any>, BlockDataRequest>,
-    b: HandlerList<BlockHandler<any>, BlockDataRequest>
-): HandlerList<BlockHandler<any>, BlockDataRequest> {
+    a: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>,
+    b: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
+): HandlerList<BlockHandler<any>, BlockHandlerDataRequest> {
     let includeAllBlocks =
         a.data == null ||
         b.data == null ||
@@ -113,7 +114,7 @@ export function getEvents(handlers: DataHandlers): Record<string, EventDataReque
         add(name, hs.data || true)
     })
 
-    function addBlock(req?: BlockDataRequest): void {
+    function addBlock(req?: BlockHandlerDataRequest): void {
         if (!req) return
         if (req === true || req.items === true) return add('*', true)
         if (!req.items || !req.items.events) return
@@ -154,7 +155,7 @@ export function getCalls(handlers: DataHandlers): Record<string, CallDataRequest
         add(name, hs.data || true)
     })
 
-    function addBlock(req?: BlockDataRequest): void {
+    function addBlock(req?: BlockHandlerDataRequest): void {
         if (!req) return
         if (req === true || req.items === true) return add('*', true)
         if (!req.items || !req.items.calls) return

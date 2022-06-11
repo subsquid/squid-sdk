@@ -1,8 +1,16 @@
 import {Logger} from "@subsquid/logger"
 import {Chain} from "../chain"
-import {BlockRangeOption} from "../interfaces/dataHandlers"
-import {BlockCallItem, BlockEventItem, CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
-import {Database} from "../interfaces/db"
+import type {BlockRangeOption, EvmLogOptions} from "../interfaces/dataHandlers"
+import type {
+    CallItem,
+    EventItem,
+    CallDataRequest,
+    DataSelection,
+    EventDataRequest,
+    MayBeDataSelection,
+    NoDataSelection
+} from "../interfaces/dataSelection"
+import type {Database} from "../interfaces/db"
 import type {SubstrateBlock} from "../interfaces/substrate"
 
 
@@ -21,44 +29,74 @@ export interface BatchBlock<Item> {
 }
 
 
-interface DataSelection<R> {
-    data: R
-}
-
-
-interface NoDataSelection {
-    data?: undefined
-}
-
-
-export class SubstrateBatchProcessor<Item = BlockEventItem<'*'> | BlockCallItem<"*">> {
+export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     addEvent<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
-    ): SubstrateBatchProcessor<Item | BlockEventItem<N, true>>
+    ): SubstrateBatchProcessor<Item | EventItem<N, true>>
+
     addEvent<N extends string, R extends EventDataRequest>(
         name: N,
         options: BlockRangeOption & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | BlockEventItem<N, R>>
-    addEvent(name: string, options?: BlockRangeOption): SubstrateBatchProcessor<any> {
+    ): SubstrateBatchProcessor<Item | EventItem<N, R>>
+
+    addEvent(
+        name: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
         return this
     }
 
     addCall<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
-    ): SubstrateBatchProcessor<Item | BlockCallItem<N, true>>
+    ): SubstrateBatchProcessor<Item | CallItem<N, true>>
+
     addCall<N extends string, R extends CallDataRequest>(
         name: N,
         options: BlockRangeOption & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | BlockCallItem<N, R>>
+    ): SubstrateBatchProcessor<Item | CallItem<N, R>>
+
     addCall<N extends string, R extends CallDataRequest>(
         name: N,
-        options: BlockRangeOption
+        options?: BlockRangeOption & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         return this
     }
 
+    addEvmLog(
+        contractAddress: string,
+        options?: EvmLogOptions & NoDataSelection
+    ): SubstrateBatchProcessor<Item | EventItem<"EVM.Log", true>>
+
+    addEvmLog<R extends EventDataRequest>(
+        contractAddress: string,
+        options: EvmLogOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<Item | EventItem<"EVM.Log", R>>
+
+    addEvmLog(
+        contractAddress: string,
+        options?: EvmLogOptions & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        return this
+    }
+
+    addContractsContractEmitted(
+        contractAddress: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<Item | EventItem<"Contracts.ContractEmitted", true>>
+
+    addContractsContractEmitted<R extends EventDataRequest>(
+        contractAddress: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<Item | EventItem<"Contracts.ContractEmitted", R>>
+
+    addContractsContractEmitted(
+        contractAddress: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        return this
+    }
 
     run<Store>(db: Database<Store>, mapper: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
 
@@ -69,6 +107,7 @@ export class SubstrateBatchProcessor<Item = BlockEventItem<'*'> | BlockCallItem<
 new SubstrateBatchProcessor()
     .addEvent('Balances.Transfer', {data: {event: {args: true}}} as const)
     .addCall('Balances.transfer', {data: {extrinsic: true, call: {args: true}}} as const)
+    .addEvmLog('0xaaa', {filter: ['0xaaaa']})
     .run(null as any, async ctx => {
         for (let block of ctx.blocks) {
             for (let item of block.items) {
@@ -80,6 +119,7 @@ new SubstrateBatchProcessor()
                     console.log(item.extrinsic)
                     // console.log(item.extrinsic.signature)
                 }
+
             }
         }
     })

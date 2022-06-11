@@ -1,17 +1,16 @@
-import type {Logger} from "@subsquid/logger"
-import type {Chain} from "../chain"
-import type {Range} from "../util/range"
-import type {
-    BlockDataRequest,
-    BlockDataType,
+import {Logger} from "@subsquid/logger"
+import {Chain} from "../chain"
+import {Range} from "../util/range"
+import {
     CallData,
     CallDataRequest,
-    ContractsContractEmittedEventData,
+    CallItem,
     EventData,
     EventDataRequest,
-    EvmLogEventData
+    EventItem,
+    EventRequest
 } from "./dataSelection"
-import type {SubstrateBlock} from "./substrate"
+import {SubstrateBlock} from "./substrate"
 
 
 export interface CommonHandlerContext<S> {
@@ -20,18 +19,70 @@ export interface CommonHandlerContext<S> {
      * @internal
      */
     _chain: Chain
-    nonce: object
+    tx: object
     log: Logger
     store: S
     block: SubstrateBlock
 }
 
 
-export type BlockHandlerContext<S, R extends BlockDataRequest = {}>
-    = CommonHandlerContext<S> & BlockDataType<R>
+type BlockEventsRequest = {
+    [name in string]?: boolean | {event: EventRequest}
+}
 
 
-export interface BlockHandler<S, R extends BlockDataRequest = {}> {
+type BlockEventItem<R> = R extends true
+    ? EventItem<string, true>
+    : R extends BlockEventsRequest
+        ? ["*"] extends [keyof R]
+            ? [keyof R] extends ["*"]
+                ? EventItem<string, R["*"]>
+                : { [N in keyof R]: EventItem<N, R[N]> }[keyof R]
+            : { [N in keyof R]: EventItem<N, R[N]> }[keyof R] | EventItem<"*">
+        : EventItem<string>
+
+
+type BlockCallsRequest = {
+    [name in string]?: boolean | CallDataRequest
+}
+
+
+type BlockCallItem<R> = R extends true
+    ? CallItem<string, true>
+    : R extends BlockCallsRequest
+        ? ["*"] extends [keyof R]
+            ? [keyof R] extends ["*"]
+                ? CallItem<string, R["*"]>
+                : { [N in keyof R]: CallItem<N, R[N]> }[keyof R]
+            : { [N in keyof R]: CallItem<N, R[N]> }[keyof R] | CallItem<"*">
+        : CallItem<string>
+
+
+interface BlockItemRequest {
+    events?: boolean | BlockEventsRequest
+    calls?: boolean | BlockCallsRequest
+}
+
+
+type BlockItem<R> = R extends true
+    ? BlockEventItem<true> | BlockCallItem<true>
+    : R extends BlockItemRequest
+        ? BlockEventItem<R['events']> | BlockCallItem<['calls']>
+        : BlockEventItem<false> | BlockCallItem<false>
+
+
+export interface BlockHandlerDataRequest {
+    includeAllBlocks?: boolean
+    items?: boolean | BlockItemRequest
+}
+
+
+export type BlockHandlerContext<S, R extends BlockHandlerDataRequest = {}> = CommonHandlerContext<S> & {
+    items: BlockItem<R["items"]>[]
+}
+
+
+export interface BlockHandler<S, R extends BlockHandlerDataRequest = {}> {
     (ctx: BlockHandlerContext<S, R>): Promise<void>
 }
 
@@ -55,7 +106,7 @@ export interface CallHandler<S, R extends CallDataRequest = {call: true, extrins
 
 
 export type EvmLogHandlerContext<S, R extends EventDataRequest = {event: true}>
-    = CommonHandlerContext<S> & EvmLogEventData<R>
+    = CommonHandlerContext<S> & EventData<R, 'EVM.Log'>
 
 
 export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
@@ -80,7 +131,7 @@ export type EvmTopicSet = string | null | undefined | string[]
 
 
 export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest = {event: true}>
-    = CommonHandlerContext<S> & ContractsContractEmittedEventData<R>
+    = CommonHandlerContext<S> & EventData<R, 'Contracts.ContractEmitted'>
 
 
 export interface ContractsContractEmittedHandler<S, R extends EventDataRequest = {event: true}> {
