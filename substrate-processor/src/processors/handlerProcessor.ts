@@ -4,7 +4,7 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
-import {Batch, getBlocksCount, mergeBatches} from "../batch/generic"
+import {Batch, boundByRange, getBlocksCount, mergeBatches} from "../batch/generic"
 import {DataHandlers} from "../batch/handlers"
 import {Chain, ChainManager} from "../chain"
 import {BlockData, Ingest} from "../ingest"
@@ -383,17 +383,12 @@ export class SubstrateProcessor<Store> {
     private createBatches(blockRange: Range) {
         let batches: Batch<DataHandlers>[] = []
 
-        function getRange(hook: { range?: Range }): Range | undefined {
-            let range: Range | undefined = hook.range || {from: 0}
-            if (blockRange) {
-                range = rangeIntersection(range, blockRange)
-            }
-            return range
+        function getRange(hook: { range?: Range }): Range{
+            return hook.range || {from: 0}
         }
 
         this.hooks.pre.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.pre = {handlers: [hook.handler], data: hook.data}
             batches.push({range, request})
@@ -401,7 +396,6 @@ export class SubstrateProcessor<Store> {
 
         this.hooks.post.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.post = {handlers: [hook.handler], data: hook.data}
             batches.push({range, request})
@@ -409,7 +403,6 @@ export class SubstrateProcessor<Store> {
 
         this.hooks.event.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.events = {
                 [hook.event]: {data: hook.data, handlers: [hook.handler]}
@@ -419,7 +412,6 @@ export class SubstrateProcessor<Store> {
 
         this.hooks.call.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.calls = {
                 [hook.call]: {data: hook.data, handlers: [hook.handler]}
@@ -429,7 +421,6 @@ export class SubstrateProcessor<Store> {
 
         this.hooks.evmLog.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.evmLogs = {
                 [hook.contractAddress]: [{
@@ -442,13 +433,14 @@ export class SubstrateProcessor<Store> {
 
         this.hooks.contractsContractEmitted.forEach(hook => {
             let range = getRange(hook)
-            if (!range) return
             let request = new DataHandlers()
             request.contractsContractEmitted = {
                 [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
             }
             batches.push({range, request})
         })
+
+        batches = boundByRange(batches, blockRange)
 
         return mergeBatches(batches, (a, b) => a.merge(b))
     }

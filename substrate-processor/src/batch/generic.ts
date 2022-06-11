@@ -44,6 +44,19 @@ export function mergeBatches<R>(batches: Batch<R>[], mergeRequests: (r1: R, r2: 
 }
 
 
+export function boundByRange<R>(batches: Batch<R>[], range?: Range): Batch<R>[] {
+    if (range == null) return batches
+    let result: Batch<R>[] = []
+    for (let b of batches) {
+        let i = rangeIntersection(range, b.range)
+        if (i) {
+            result.push({range: i, request: b.request})
+        }
+    }
+    return result
+}
+
+
 export function getBlocksCount(batches: {range: Range}[], from: number, to: number): number {
     let count = 0
     for (let i = 0; i < batches.length; i++) {
