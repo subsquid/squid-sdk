@@ -60,7 +60,7 @@ export class Store {
                 if (e.length == 0) return
                 entityClass = e[0].constructor as any
                 for (let i = 1; i < e.length; i++) {
-                    assert(entityClass === e[i], 'mass saving allowed only for entities of the same class')
+                    assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
                 }
             } else {
                 entityClass = e.constructor as any

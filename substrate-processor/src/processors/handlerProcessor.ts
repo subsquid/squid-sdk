@@ -4,7 +4,7 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
-import {Batch, boundByRange, getBlocksCount, mergeBatches} from "../batch/generic"
+import {Batch, applyRangeBound, getBlocksCount, mergeBatches} from "../batch/generic"
 import {DataHandlers} from "../batch/handlers"
 import {Chain, ChainManager} from "../chain"
 import {BlockData, Ingest} from "../ingest"
@@ -440,7 +440,7 @@ export class SubstrateProcessor<Store> {
             batches.push({range, request})
         })
 
-        batches = boundByRange(batches, blockRange)
+        batches = applyRangeBound(batches, blockRange)
 
         return mergeBatches(batches, (a, b) => a.merge(b))
     }

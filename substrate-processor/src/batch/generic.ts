@@ -44,7 +44,7 @@ export function mergeBatches<R>(batches: Batch<R>[], mergeRequests: (r1: R, r2: 
 }
 
 
-export function boundByRange<R>(batches: Batch<R>[], range?: Range): Batch<R>[] {
+export function applyRangeBound<R>(batches: Batch<R>[], range?: Range): Batch<R>[] {
     if (range == null) return batches
     let result: Batch<R>[] = []
     for (let b of batches) {
