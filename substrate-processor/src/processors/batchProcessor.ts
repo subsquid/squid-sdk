@@ -16,7 +16,7 @@ import type {SubstrateBlock} from "../interfaces/substrate"
 
 export interface BatchContext<Store, Item> {
     _chain: Chain
-    nonce: object
+    tx: object
     log: Logger
     store: Store
     blocks: BatchBlock<Item>[]

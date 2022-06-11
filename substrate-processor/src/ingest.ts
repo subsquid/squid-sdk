@@ -1,8 +1,8 @@
 import {assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import assert from "assert"
-import type {Batch, DataHandlers} from "./batch"
-import {shallFetchAllBlocks, getCalls, getEvents} from "./batch/handlers"
+import type {Batch} from "./batch/generic"
+import {BatchRequest} from "./batch/request"
 import * as gw from "./interfaces/gateway"
 import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
 import {printGqlArguments} from "./util/gql"
@@ -28,42 +28,42 @@ export interface BlockData {
 }
 
 
-export interface DataBatch {
+export interface DataBatch<R> {
     /**
      * This is roughly the range of scanned blocks
      */
     range: {from: number, to: number}
-    handlers: DataHandlers
+    request: R
     blocks: BlockData[]
     fetchStartTime: bigint
     fetchEndTime: bigint
 }
 
 
-export interface IngestOptions {
+export interface IngestOptions<R> {
     archiveRequest<T>(query: string): Promise<T>
     archivePollIntervalMS?: number
-    batches: Batch[]
+    batches: Batch<R>[]
     batchSize: number
 }
 
 
-export class Ingest {
+export class Ingest<R extends BatchRequest> {
     private archiveHeight = -1
     private readonly limit: number // maximum number of blocks in a single batch
-    private readonly batches: Batch[]
+    private readonly batches: Batch<R>[]
     private readonly maxQueueSize = 3
-    private queue: Promise<DataBatch>[] = []
+    private queue: Promise<DataBatch<R>>[] = []
     private fetchLoopIsStopped = true
 
-    constructor(private options: IngestOptions) {
+    constructor(private options: IngestOptions<R>) {
         this.batches = options.batches.slice()
         this.limit = this.options.batchSize
         assert(this.limit > 0)
     }
 
     @def
-    async *getBlocks(): AsyncGenerator<DataBatch> {
+    async *getBlocks(): AsyncGenerator<DataBatch<R>> {
         while (this.batches.length) {
             if (this.fetchLoopIsStopped) {
                 this.fetchLoop().catch()
@@ -120,13 +120,13 @@ export class Ingest {
                         to = last(blocks).header.height
                         this.batches[0] = {
                             range: {from: to + 1, to: batch.range.to},
-                            handlers: batch.handlers
+                            request: batch.request
                         }
                     } else if (archiveHeight < rangeEnd(batch.range)) {
                         to = archiveHeight
                         this.batches[0] = {
                             range: {from: to + 1, to: batch.range.to},
-                            handlers: batch.handlers
+                            request: batch.request
                         }
                     } else {
                         to = assertNotNull(batch.range.to)
@@ -136,7 +136,7 @@ export class Ingest {
                     return {
                         blocks,
                         range: {from, to},
-                        handlers: batch.handlers,
+                        request: batch.request,
                         fetchStartTime,
                         fetchEndTime
                     }
@@ -156,47 +156,46 @@ export class Ingest {
         this.fetchLoopIsStopped = true
     }
 
-    private buildBatchQuery(batch: Batch, archiveHeight: number): string {
+    private buildBatchQuery(batch: Batch<R>, archiveHeight: number): string {
         let from = batch.range.from
         let to = Math.min(archiveHeight, rangeEnd(batch.range))
         assert(from <= to)
 
-        let hs = batch.handlers
+        let req = batch.request
 
         let args: gw.BatchRequest = {
             fromBlock: from,
             toBlock: to,
             limit: this.limit,
-            includeAllBlocks: shallFetchAllBlocks(hs)
+            includeAllBlocks: req.getIncludeAllBlocks()
         }
 
-        args.events = Object.entries(getEvents(hs)).map(([name, data]) => {
+        args.events = req.getEvents().map(({name, data}) => {
             return {
                 name,
-                data: data === true ? undefined : toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
-        args.calls = Object.entries(getCalls(hs)).map(([name, data]) => {
+        args.calls = req.getCalls().map(({name, data}) => {
             return {
                 name,
-                data: data === true ? undefined : toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
-        args.evmLogs = Object.entries(hs.evmLogs).flatMap(([contract, hs]) => {
-            return hs.map(h => {
-                return {
-                    contract,
-                    filter: h.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f])
-                }
-            })
-        })
-
-        args.contractsEvents = Object.entries(hs.contractsContractEmitted).map(([contract, options]) => {
+        args.evmLogs = req.getEvmLogs().map(({contract, filter, data}) => {
             return {
                 contract,
-                data: toGatewayFields(options.data, CONTEXT_NESTING_SHAPE)
+                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                data: toGatewayFields(data)
+            }
+        })
+
+        args.contractsEvents = req.getContractsEvents().map(({contract, data}) => {
+            return {
+                contract,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 

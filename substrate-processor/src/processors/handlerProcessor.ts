@@ -4,14 +4,14 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
-import * as process from "process"
-import {createBatches, DataHandlers, getBlocksCount} from "../batch"
+import {Batch, getBlocksCount, mergeBatches} from "../batch/generic"
+import {DataHandlers} from "../batch/handlers"
 import {Chain, ChainManager} from "../chain"
 import {BlockData, Ingest} from "../ingest"
 import type {
-    BlockHandlerDataRequest,
     BlockHandler,
     BlockHandlerContext,
+    BlockHandlerDataRequest,
     BlockRangeOption,
     CallHandler,
     CommonHandlerContext,
@@ -33,7 +33,7 @@ import type {Hooks} from "../interfaces/hooks"
 import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "../interfaces/substrate"
 import {Metrics} from "../metrics"
 import {timeInterval, withErrorContext} from "../util/misc"
-import {Range} from "../util/range"
+import {Range, rangeIntersection} from "../util/range"
 
 
 export interface DataSource {
@@ -380,9 +380,82 @@ export class SubstrateProcessor<Store> {
         }
     }
 
+    private createBatches(blockRange: Range) {
+        let batches: Batch<DataHandlers>[] = []
+
+        function getRange(hook: { range?: Range }): Range | undefined {
+            let range: Range | undefined = hook.range || {from: 0}
+            if (blockRange) {
+                range = rangeIntersection(range, blockRange)
+            }
+            return range
+        }
+
+        this.hooks.pre.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.pre = {handlers: [hook.handler], data: hook.data}
+            batches.push({range, request})
+        })
+
+        this.hooks.post.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.post = {handlers: [hook.handler], data: hook.data}
+            batches.push({range, request})
+        })
+
+        this.hooks.event.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.events = {
+                [hook.event]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.call.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.calls = {
+                [hook.call]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.evmLog.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.evmLogs = {
+                [hook.contractAddress]: [{
+                    filter: hook.filter,
+                    handler: hook.handler
+                }]
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.contractsContractEmitted.forEach(hook => {
+            let range = getRange(hook)
+            if (!range) return
+            let request = new DataHandlers()
+            request.contractsContractEmitted = {
+                [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        return mergeBatches(batches, (a, b) => a.merge(b))
+    }
+
     @def
     private wholeRange(): {range: Range}[] {
-        return createBatches(this.hooks, this.blockRange)
+        return this.createBatches(this.blockRange)
     }
 
     @def
@@ -531,7 +604,7 @@ export class SubstrateProcessor<Store> {
 
         let ingest = new Ingest({
             archiveRequest: this.archiveRequest(),
-            batches: createBatches(this.hooks, blockRange),
+            batches: this.createBatches(blockRange),
             batchSize: this.batchSize
         })
 
@@ -547,18 +620,18 @@ export class SubstrateProcessor<Store> {
         return this.process(ingest)
     }
 
-    private async process(ingest: Ingest): Promise<void> {
+    private async process(ingest: Ingest<DataHandlers>): Promise<void> {
         let chainManager = this.chainManager()
         let lastBlock = -1
         for await (let batch of ingest.getBlocks()) {
             let mappingStartTime = process.hrtime.bigint()
-            let {handlers, blocks, range} = batch
+            let {request, blocks, range} = batch
 
             for (let block of blocks) {
                 assert(lastBlock < block.header.height)
                 let chain = await chainManager.getChainForBlock(block.header)
                 await this.db.transact(block.header.height, store => {
-                    return this.processBlock(handlers, chain, store, block)
+                    return this.processBlock(request, chain, store, block)
                 }).catch(
                     withErrorContext({
                         blockHeight: block.header.height,

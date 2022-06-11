@@ -3,22 +3,22 @@ import {Heap} from "@subsquid/util-internal-binary-heap"
 import {Range, rangeDifference, rangeIntersection} from "../util/range"
 
 
-export interface Batch<H> {
+export interface Batch<R> {
     range: Range
-    handlers: H
+    request: R
 }
 
 
-export function mergeBatches<H>(batches: Batch<H>[], mergeHandlers: (h1: H, h2: H) => H): Batch<H>[] {
+export function mergeBatches<R>(batches: Batch<R>[], mergeRequests: (r1: R, r2: R) => R): Batch<R>[] {
     if (batches.length <= 1) return batches
 
-    let union: Batch<H>[] = []
-    let heap = new Heap<Batch<H>>((a, b) => a.range.from - b.range.from)
+    let union: Batch<R>[] = []
+    let heap = new Heap<Batch<R>>((a, b) => a.range.from - b.range.from)
 
     heap.init(batches.slice())
 
     let top = assertNotNull(heap.pop())
-    let batch: Batch<H> | undefined
+    let batch: Batch<R> | undefined
     while (batch = heap.peek()) {
         let i = rangeIntersection(top.range, batch.range)
         if (i == null) {
@@ -27,14 +27,14 @@ export function mergeBatches<H>(batches: Batch<H>[], mergeHandlers: (h1: H, h2: 
         } else {
             heap.pop()
             rangeDifference(top.range, i).forEach(range => {
-                heap.push({range, handlers: top.handlers})
+                heap.push({range, request: top.request})
             })
             rangeDifference(batch.range, i).forEach(range => {
-                heap.push({range, handlers: batch!.handlers})
+                heap.push({range, request: batch!.request})
             })
             heap.push({
                 range: i,
-                handlers: mergeHandlers(top.handlers, batch.handlers)
+                request: mergeRequests(top.request, batch.request)
             })
             top = assertNotNull(heap.pop())
         }

@@ -27,18 +27,18 @@ const aRange = fc.oneof(aClosedRange, aOpenRange, aPointRange)
 const aOptionalRange = fc.option(aRange, {freq: 10, nil: undefined})
 
 
-interface Handler {
+interface Req {
     id: number
     range: Range
 }
 
 
-const aBatch: Arbitrary<Batch<Handler[]>[]> = fc.array(aOptionalRange).map(ranges => {
+const aBatch: Arbitrary<Batch<Req[]>[]> = fc.array(aOptionalRange).map(ranges => {
     return ranges.map((maybeRange, id) => {
         let range = maybeRange || {from: 0}
         return {
             range,
-            handlers: [
+            request: [
                 {id, range}
             ]
         }
@@ -47,7 +47,7 @@ const aBatch: Arbitrary<Batch<Handler[]>[]> = fc.array(aOptionalRange).map(range
 
 
 function assertion(
-    test: (merged: Batch<Handler[]>[], original: Batch<Handler[]>[]) => void | boolean,
+    test: (merged: Batch<Req[]>[], original: Batch<Req[]>[]) => void | boolean,
     params?: fc.Parameters<unknown>
 ): void {
     let prop = fc.property(aBatch, original => {
@@ -81,18 +81,18 @@ describe("generic batching", function() {
     it('each handler is never called outside of its range', function() {
         assertion(batches => {
             return batches.every(b => {
-                return b.handlers.every(h => {
+                return b.request.every(h => {
                     return rangeContains(h.range, b.range)
                 })
             })
         })
     })
 
-    it('the entire range of each handler is covered', function() {
+    it('the entire range of each request is covered', function() {
         assertion((merged, original) => {
-            let uncovered = new Map(original.flatMap(b => b.handlers).map(h => [h.id, h.range]))
+            let uncovered = new Map(original.flatMap(b => b.request).map(h => [h.id, h.range]))
             merged.forEach(b => {
-                b.handlers.forEach(h => {
+                b.request.forEach(h => {
                     let uncoveredRange = assertNotNull(uncovered.get(h.id))
                     let diff = rangeDifference(uncoveredRange, b.range)
                     if (diff.length == 0) {

@@ -1,6 +1,6 @@
 import type {
-    BlockHandlerDataRequest,
     BlockHandler,
+    BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
     EventHandler,
@@ -9,35 +9,154 @@ import type {
 } from "../interfaces/dataHandlers"
 import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 import type {QualifiedName} from "../interfaces/substrate"
+import type {BatchRequest} from "./request"
 
 
 type ContractAddress = string
 
 
 interface HandlerList<H, R = any> {
-    data?: R
     handlers: H[]
+    data?: R
 }
 
 
-export interface DataHandlers {
-    pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
-    post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
-    events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>>
-    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>>
-    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]>
-    contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>>
-}
+export class DataHandlers implements BatchRequest {
+    pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: []}
+    post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: []}
+    events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
+    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>> = {}
+    evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
+    contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
 
+    merge(other: DataHandlers): DataHandlers {
+        let res = new DataHandlers()
+        res.pre = mergeBlockHandlerLists(this.pre, other.pre)
+        res.post = mergeBlockHandlerLists(this.post, other.post)
+        res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
+        res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
+        res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
+        res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
+        return res
+    }
 
-export function mergeDataHandlers(a: DataHandlers, b: DataHandlers): DataHandlers {
-    return {
-        pre: mergeBlockHandlerLists(a.pre, b.pre),
-        post: mergeBlockHandlerLists(a.post, b.post),
-        events: mergeMaps(a.events, b.events, mergeItemHandlerLists),
-        calls: mergeMaps(a.calls, b.calls, mergeItemHandlerLists),
-        evmLogs: mergeMaps(a.evmLogs, b.evmLogs, (ha, hb) => ha.concat(hb)),
-        contractsContractEmitted: mergeMaps(a.contractsContractEmitted, b.contractsContractEmitted, mergeItemHandlerLists)
+    getIncludeAllBlocks(): boolean {
+        return includeAllBlocks(this.pre) || includeAllBlocks(this.post)
+    }
+
+    getEvents() {
+        let all: Record<string, EventDataRequest | true> = {}
+
+        function add(name: string, data: EventDataRequest | true): void {
+            let current = all[name]
+            if (current) {
+                all[name] = mergeRequests(current as any, data as any || true)
+            } else {
+                all[name] = data
+            }
+        }
+
+        Object.entries(this.events).forEach(([name, hs]) => {
+            if (hs.handlers.length > 0) {
+                add(name, hs.data || true)
+            }
+        })
+
+        function addBlock(req?: BlockHandlerDataRequest): void {
+            if (!req) return
+            if (req === true || req.items === true) return add('*', true)
+            if (!req.items || !req.items.events) return
+            if (req.items.events === true) return add('*', true)
+            for (let name in req.items.events) {
+                let r = req.items.events[name]
+                if (r) {
+                    add(name, r)
+                }
+            }
+        }
+
+        if (this.pre.handlers.length > 0) {
+            addBlock(this.pre.data)
+        }
+
+        if (this.post.handlers.length > 0) {
+            addBlock(this.post.data)
+        }
+
+        return Object.entries(all).map(([name, data]) => {
+            return {
+                name,
+                data: data === true ? undefined : data
+            }
+        })
+    }
+
+    getCalls() {
+        let all: Record<string, CallDataRequest | true>  = {}
+
+        function add(name: string, data: CallDataRequest | true): void {
+            let current = all[name]
+            if (current) {
+                all[name] = mergeRequests(current as any, data as any || true)
+            } else {
+                all[name] = data
+            }
+        }
+
+        Object.entries(this.calls).forEach(([name, hs]) => {
+            if (hs.handlers.length > 0) {
+                add(name, hs.data || true)
+            }
+        })
+
+        function addBlock(req?: BlockHandlerDataRequest): void {
+            if (!req) return
+            if (req === true || req.items === true) return add('*', true)
+            if (!req.items || !req.items.calls) return
+            if (req.items.calls === true) return add('*', true)
+            for (let name in req.items.calls) {
+                let r = req.items.calls[name]
+                if (r) {
+                    add(name, r)
+                }
+            }
+        }
+
+        if (this.pre.handlers.length > 0) {
+            addBlock(this.pre.data)
+        }
+
+        if (this.post.handlers.length > 0) {
+            addBlock(this.post.data)
+        }
+
+        return Object.entries(all).map(([name, data]) => {
+            return {
+                name,
+                data: data === true ? undefined : data
+            }
+        })
+    }
+
+    getEvmLogs() {
+        return Object.entries(this.evmLogs).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                return {
+                    contract,
+                    filter: h.filter,
+                    data: h.data
+                }
+            })
+        })
+    }
+
+    getContractsEvents() {
+        return Object.entries(this.contractsContractEmitted).map(([contract, {data}]) => {
+            return {
+                contract,
+                data
+            }
+        })
     }
 }
 
@@ -98,94 +217,7 @@ function mergeMaps<T>(a: Record<string, T>, b: Record<string, T>, mergeItems: (a
 }
 
 
-export function getEvents(handlers: DataHandlers): Record<string, EventDataRequest | true> {
-    let all: Record<string, EventDataRequest | true> = {}
-
-    function add(name: string, data: EventDataRequest | true): void {
-        let current = all[name]
-        if (current) {
-            all[name] = mergeRequests(current as any, data as any || true)
-        } else {
-            all[name] = data
-        }
-    }
-
-    Object.entries(handlers.events).forEach(([name, hs]) => {
-        add(name, hs.data || true)
-    })
-
-    function addBlock(req?: BlockHandlerDataRequest): void {
-        if (!req) return
-        if (req === true || req.items === true) return add('*', true)
-        if (!req.items || !req.items.events) return
-        if (req.items.events === true) return add('*', true)
-        for (let name in req.items.events) {
-            let r = req.items.events[name]
-            if (r) {
-                add(name, r)
-            }
-        }
-    }
-
-    if (handlers.pre.handlers.length > 0) {
-        addBlock(handlers.pre.data)
-    }
-
-    if (handlers.post.handlers.length > 0) {
-        addBlock(handlers.post.data)
-    }
-
-    return all
-}
-
-
-export function getCalls(handlers: DataHandlers): Record<string, CallDataRequest | true> {
-    let all: Record<string, CallDataRequest | true>  = {}
-
-    function add(name: string, data: CallDataRequest | true): void {
-        let current = all[name]
-        if (current) {
-            all[name] = mergeRequests(current as any, data as any || true)
-        } else {
-            all[name] = data
-        }
-    }
-
-    Object.entries(handlers.calls).forEach(([name, hs]) => {
-        add(name, hs.data || true)
-    })
-
-    function addBlock(req?: BlockHandlerDataRequest): void {
-        if (!req) return
-        if (req === true || req.items === true) return add('*', true)
-        if (!req.items || !req.items.calls) return
-        if (req.items.calls === true) return add('*', true)
-        for (let name in req.items.calls) {
-            let r = req.items.calls[name]
-            if (r) {
-                add(name, r)
-            }
-        }
-    }
-
-    if (handlers.pre.handlers.length > 0) {
-        addBlock(handlers.pre.data)
-    }
-
-    if (handlers.post.handlers.length > 0) {
-        addBlock(handlers.post.data)
-    }
-
-    return all
-}
-
-
-export function shallFetchAllBlocks(handlers: DataHandlers): boolean {
-    return _allBlocks(handlers.pre) || _allBlocks(handlers.post)
-}
-
-
-function _allBlocks(hs: DataHandlers['pre']): boolean {
+function includeAllBlocks(hs: DataHandlers['pre']): boolean {
     if (hs.handlers.length == 0) return false
     return hs.data == null || !!hs.data.includeAllBlocks
 }
