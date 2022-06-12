@@ -1,13 +1,11 @@
-import {createLogger} from "@subsquid/logger"
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {createLogger, Logger} from "@subsquid/logger"
 import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import assert from "assert"
-import {Batch, applyRangeBound, getBlocksCount, mergeBatches} from "../batch/generic"
+import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {DataHandlers} from "../batch/handlers"
-import {Chain, ChainManager} from "../chain"
-import {BlockData, Ingest} from "../ingest"
+import type {Chain} from "../chain"
+import type {BlockData} from "../ingest"
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -31,9 +29,9 @@ import type {
 import type {Database} from "../interfaces/db"
 import type {Hooks} from "../interfaces/hooks"
 import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "../interfaces/substrate"
-import {Metrics} from "../metrics"
-import {timeInterval, withErrorContext} from "../util/misc"
-import {Range, rangeIntersection} from "../util/range"
+import {withErrorContext} from "../util/misc"
+import type {Range} from "../util/range"
+import {Options, Runner} from "./runner"
 
 
 export interface DataSource {
@@ -58,9 +56,7 @@ export class SubstrateProcessor<Store> {
     private prometheusPort?: number | string
     private src?: DataSource
     private typesBundle?: OldTypesBundle
-    private metrics = new Metrics()
     private running = false
-    private log = createLogger('sqd:processor')
 
     constructor(private db: Database<Store>) {}
 
@@ -159,12 +155,6 @@ export class SubstrateProcessor<Store> {
     setPrometheusPort(port: number | string) {
         this.assertNotRunning()
         this.prometheusPort = port
-    }
-
-    private getPrometheusPort(): number | string {
-        return this.prometheusPort == null
-            ? process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT || 0
-            : this.prometheusPort
     }
 
     /**
@@ -446,119 +436,43 @@ export class SubstrateProcessor<Store> {
     }
 
     @def
-    private wholeRange(): {range: Range}[] {
-        return this.createBatches(this.blockRange)
+    private getLogger(): Logger {
+        return createLogger('sqd:processor')
     }
 
     @def
-    private chainClient(): ResilientRpcClient {
-        if (this.src?.chain == null) {
-            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
+    private getOptions(): Options {
+        return {
+            blockRange: this.blockRange,
+            prometheusPort: this.prometheusPort,
+            batchSize: this.batchSize
         }
-
-        let url = this.src.chain
-        let log = this.log.child('chain-rpc', {url})
-        let metrics = this.metrics
-        let counter = 0
-
-        class ChainClient extends ResilientRpcClient {
-            constructor() {
-                super({
-                    url,
-                    onRetry(err, errorsInRow, backoff) {
-                        metrics.registerChainRpcRetry(url, errorsInRow)
-                        log.warn({
-                            backoff,
-                            reason: err.message
-                        }, 'connection error')
-                    }
-                })
-            }
-
-            async call<T=any>(method: string, params?: unknown[]): Promise<T> {
-                let id = counter
-                counter = (counter + 1) % 10000
-                log.debug({
-                    req: id,
-                    method,
-                    params
-                }, 'request')
-                let beg = process.hrtime.bigint()
-                let result = await super.call(method, params).catch(withErrorContext({
-                    rpcUrl: url,
-                    rpcRequestId: id,
-                    rpcMethod: method
-                }))
-                let end = process.hrtime.bigint()
-                let duration = end - beg
-                metrics.registerChainRpcResponse(url, method, beg, end)
-                log.debug({
-                    req: id,
-                    responseTime: Math.round(Number(duration) / 1000_000)
-                }, 'response')
-                return result
-            }
-        }
-
-        return new ChainClient()
     }
 
-    @def
-    private archiveRequest(): (query: string) => Promise<any> {
-        const archiveUrl = this.src?.archive
-        if (archiveUrl == null) {
+    private getDatabase() {
+        return this.db
+    }
+
+    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
+        let bundle = this.typesBundle || getOldTypesBundle(specName)
+        if (bundle) return bundle
+        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+    }
+
+    private getArchiveEndpoint(): string {
+        let url = this.src?.archive
+        if (url == null) {
             throw new Error('use .setDataSource() to specify archive url')
         }
-
-        let log = this.log.child('archive-request', {archiveUrl})
-        let counter = 0
-
-        return async archiveQuery => {
-            let archiveRequestId = counter
-            counter = (counter + 1) % 1000
-
-            log.debug({
-                archiveRequestId,
-                archiveQuery
-            }, 'request')
-
-            let response = await graphqlRequest({
-                url: archiveUrl,
-                query: archiveQuery,
-                timeout: 60_000,
-                retry: {
-                    log: (err, errorsInRow, backoff) => {
-                        this.metrics.registerArchiveRetry(archiveUrl, errorsInRow)
-                        log.warn({
-                            archiveRequestId,
-                            archiveQuery,
-                            backoff,
-                            reason: err.message
-                        }, 'retry')
-                    }
-                }
-            }).catch(
-                withErrorContext({archiveUrl, archiveRequestId, archiveQuery})
-            )
-
-            this.metrics.registerArchiveResponse(archiveUrl)
-            log.debug({
-                archiveUrl,
-                archiveRequestId,
-                archiveResponse: log.isTrace() ? response : undefined
-            }, 'response')
-
-            return response
-        }
+        return url
     }
 
-    @def
-    private chainManager(): ChainManager {
-        return new ChainManager({
-            archiveRequest: this.archiveRequest(),
-            getChainClient: () => this.chainClient(),
-            typesBundle: this.typesBundle
-        })
+    private getChainEndpoint(): string {
+        let url = this.src?.chain
+        if (url == null) {
+            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
+        }
+        return url
     }
 
     /**
@@ -571,112 +485,43 @@ export class SubstrateProcessor<Store> {
     run(): void {
         if (this.running) return
         this.running = true
-        runProgram(() => this._run(), err => this.log.fatal(err))
-    }
-
-    private async _run(): Promise<void> {
-        let heightAtStart = await this.db.connect()
-        if (heightAtStart >= 0) {
-            this.log.info(`last processed block was ${heightAtStart}`)
-        }
-
-        let blockRange = this.blockRange
-        if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
-            this.log.info(`processing range is [${blockRange.from}, ${blockRange.to}]`)
-            this.log.info('nothing to do')
-            return
-        } else {
-            blockRange = {
-                from: Math.max(heightAtStart + 1, blockRange.from),
-                to: blockRange.to
-            }
-        }
-
-        this.log.info(`processing blocks from ${blockRange.from}${blockRange.to == null ? '' : ' to ' + blockRange.to}`)
-
-        let ingest = new Ingest({
-            archiveRequest: this.archiveRequest(),
-            batches: this.createBatches(blockRange),
-            batchSize: this.batchSize
+        runProgram(async () => {
+            return new HandlerRunner(this as any).run()
+        }, err => {
+            this.getLogger().fatal(err)
         })
-
-        this.metrics.updateProgress(
-            await ingest.fetchArchiveHeight(),
-            getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
-            getBlocksCount(this.wholeRange(), heightAtStart + 1, ingest.getLatestKnownArchiveHeight()),
-        )
-
-        let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
-        this.log.info(`prometheus metrics are served at port ${prometheusServer.port}`)
-
-        return this.process(ingest)
     }
+}
 
-    private async process(ingest: Ingest<DataHandlers>): Promise<void> {
-        let chainManager = this.chainManager()
-        let lastBlock = -1
-        for await (let batch of ingest.getBlocks()) {
-            let mappingStartTime = process.hrtime.bigint()
-            let {request, blocks, range} = batch
 
-            for (let block of blocks) {
-                assert(lastBlock < block.header.height)
-                let chain = await chainManager.getChainForBlock(block.header)
-                await this.db.transact(block.header.height, store => {
-                    return this.processBlock(request, chain, store, block)
-                }).catch(
-                    withErrorContext({
-                        blockHeight: block.header.height,
-                        blockHash: block.header.hash
-                    })
-                )
-                lastBlock = block.header.height
-                this.metrics.setLastProcessedBlock(lastBlock)
-            }
-
-            lastBlock = range.to
-            await this.db.advance(lastBlock)
-
-            let mappingEndTime = process.hrtime.bigint()
-
-            this.metrics.updateProgress(
-                ingest.getLatestKnownArchiveHeight(),
-                getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
-                getBlocksCount(this.wholeRange(), lastBlock + 1, ingest.getLatestKnownArchiveHeight()),
-                mappingEndTime
+class HandlerRunner<S> extends Runner<S, DataHandlers>{
+    protected async processBatch(handlers: DataHandlers, chain: Chain, blocks: BlockData[]): Promise<void> {
+        for (let block of blocks) {
+            assert(this.lastBlock < block.header.height)
+            await this.config.getDatabase().transact(block.header.height, store => {
+                return this.processBlock(handlers, chain, store, block)
+            }).catch(
+                withErrorContext({
+                    blockHeight: block.header.height,
+                    blockHash: block.header.hash
+                })
             )
-
-            this.metrics.registerBatch(
-                batch.blocks.length,
-                batch.fetchStartTime,
-                batch.fetchEndTime,
-                mappingStartTime,
-                mappingEndTime
-            )
-
-            this.log.info(
-                `last block: ${lastBlock}, ` +
-                `speed: ${Math.round(this.metrics.getSyncSpeed())} blocks/sec, ` +
-                `mapping: ${Math.round(this.metrics.getMappingSpeed())} blocks/sec, ` +
-                `ingest: ${Math.round(this.metrics.getIngestSpeed())} blocks/sec, ` +
-                `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}, ` +
-                `progress: ${Math.round(this.metrics.getSyncRatio() * 100)}%`
-            )
+            this.lastBlock = block.header.height
         }
     }
 
     private async processBlock(
         handlers: DataHandlers,
         chain: Chain,
-        store: Store,
+        store: S,
         block: BlockData
     ): Promise<void> {
-        let blockLog = this.log.child('mapping', {
+        let blockLog = this.config.getLogger().child('mapping', {
             blockHeight: block.header.height,
             blockHash: block.header.hash
         })
 
-        let ctx: CommonHandlerContext<Store> = {
+        let ctx: CommonHandlerContext<S> = {
             _chain: chain,
             tx: {},
             log: blockLog.child({hook: 'pre'}),

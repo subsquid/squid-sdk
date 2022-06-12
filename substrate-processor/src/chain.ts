@@ -43,7 +43,7 @@ interface SpecMetadata {
 export interface ChainManagerOptions {
     archiveRequest<T>(query: string): Promise<T>
     getChainClient: () => ResilientRpcClient
-    typesBundle?: OldTypesBundle
+    getTypesBundle: (meta: SpecMetadata) => OldTypesBundle
 }
 
 
@@ -75,10 +75,7 @@ export class ChainManager {
         let metadata = decodeMetadata(meta.hex)
         let types: OldTypes | undefined
         if (isPreV14(metadata)) {
-            let typesBundle = assertNotNull(
-                this.options.typesBundle || getOldTypesBundle(meta.specName),
-                `types bundle is required for ${meta.specName} chain`
-            )
+            let typesBundle = this.options.getTypesBundle(meta)
             types = getTypesFromBundle(typesBundle, meta.specVersion)
         }
         let description = getChainDescriptionFromMetadata(metadata, types)
