@@ -167,7 +167,7 @@ export class Ingest<R extends BatchRequest> {
             fromBlock: from,
             toBlock: to,
             limit: this.limit,
-            includeAllBlocks: req.getIncludeAllBlocks() ? true : undefined
+            includeAllBlocks: req.getIncludeAllBlocks()
         }
 
         args.events = req.getEvents().map(({name, data}) => {
