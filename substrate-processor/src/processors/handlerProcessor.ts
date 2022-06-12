@@ -191,10 +191,10 @@ export class SubstrateProcessor<Store> {
     addPreHook(fn: BlockHandler<Store>): void
     addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): void
     addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
-        let options: BlockRangeOption = {}
+        let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -228,10 +228,10 @@ export class SubstrateProcessor<Store> {
     addPostHook(fn: BlockHandler<Store>): void
     addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
     addPostHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption, fn?: BlockHandler<Store>): void {
+    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): void {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
-        let options: BlockRangeOption = {}
+        let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {

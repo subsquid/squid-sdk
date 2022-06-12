@@ -22,8 +22,8 @@ interface HandlerList<H, R = any> {
 
 
 export class DataHandlers implements BatchRequest {
-    pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: []}
-    post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: []}
+    pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
+    post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
@@ -165,13 +165,20 @@ function mergeBlockHandlerLists(
     a: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>,
     b: HandlerList<BlockHandler<any>, BlockHandlerDataRequest>
 ): HandlerList<BlockHandler<any>, BlockHandlerDataRequest> {
+    if (a.handlers.length == 0) return b
+    if (b.handlers.length == 0) return a
+
     let includeAllBlocks =
         a.data == null ||
         b.data == null ||
         !!a.data.includeAllBlocks ||
         !!b.data.includeAllBlocks
+
     return {
-        data: {includeAllBlocks, items: mergeRequests(a.data?.items as any, b.data?.items as any)},
+        data: {
+            includeAllBlocks,
+            items: mergeRequests(a.data?.items as any, b.data?.items as any)
+        },
         handlers: a.handlers.concat(b.handlers)
     }
 }

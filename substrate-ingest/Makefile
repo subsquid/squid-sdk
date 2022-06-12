@@ -39,6 +39,14 @@ astar:
 		--start-block 214823
 
 
+shibuya:
+	@node lib/main.js --out $(DB) \
+		-e wss://rpc.shibuya.astar.network/ \
+		-e wss://shibuya-rpc.dwellir.com/ \
+		--write-batch-size 20 \
+		--start-block 816402
+
+
 up:
 	@docker-compose up -d
 
@@ -47,4 +55,4 @@ down:
 	@docker-compose down
 
 
-.PHONY: up down kusama moonriver karura astar
+.PHONY: up down kusama moonriver karura astar shibuya
