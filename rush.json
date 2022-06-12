@@ -536,7 +536,19 @@
     {
       "packageName": "chain-status-service",
       "projectFolder": "util/chain-status-service",
-      "shouldPublish": false,
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@subsquid/wasm-typegen",
+      "projectFolder": "wasm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
+      "packageName": "@subsquid/wasm-decoder",
+      "projectFolder": "wasm-decoder",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
     },
     {
       "packageName": "@subsquid/logger",
@@ -664,8 +676,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "wasm-contracts",
-      "projectFolder": "test/wasm-contracts",
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
       "shouldPublish": false
     }
   ]

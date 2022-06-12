@@ -1,0 +1,26 @@
+{
+  "name": "@subsquid/wasm-typegen",
+  "version": "0.0.1",
+  "description": "CLI for generating typescript types and decode implementations for wasm contracts",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "bin": {
+    "squid-wasm-typegen": "bin/run.js"
+  },
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "commander": "^9.0.0",
+    "@subsquid/util-internal-code-printer": "^0.0.0",
+    "@subsquid/substrate-typegen": "^0.5.0",
+    "@subsquid/wasm-decoder": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22"
+  }
+}

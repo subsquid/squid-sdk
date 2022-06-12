@@ -1,0 +1,26 @@
+{
+  "name": "@subsquid/wasm-decoder",
+  "version": "0.0.1",
+  "description": "A library for decoding wasm runtime events",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
+  },
+  "dependencies": {
+    "@subsquid/scale-codec": "^0.4.2",
+    "@subsquid/substrate-metadata": "^0.8.3",
+    "@subsquid/util-internal-hex": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "@types/mocha": "^9.1.1",
+    "mocha": "^9.2.2",
+    "typescript": "~4.5.5"
+  }
+}

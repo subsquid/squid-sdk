@@ -6,7 +6,7 @@
     "rootDir": "src",
     "strict": true,
     "resolveJsonModule": true,
-    "declaration": false,
+    "declaration": true,
     "sourceMap": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,

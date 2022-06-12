@@ -1,0 +1,8 @@
+type Transfer @entity {
+  id: ID!
+  from: String
+  to: String
+  value: BigInt!
+  timestamp: Int!
+  block: Int!
+}

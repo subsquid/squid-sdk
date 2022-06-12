@@ -1,15 +1,16 @@
 {
-  "name": "wasm-contracts",
+  "name": "shibuya-erc20",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@polkadot/api-contract": "^8.5.1",
     "@subsquid/graphql-server": "^0.3.0",
     "@subsquid/substrate-processor": "^0.8.0",
     "@subsquid/typeorm-store": "^0.0.0",
+    "@subsquid/wasm-decoder": "^0.0.1",
+    "@subsquid/wasm-typegen": "^0.0.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41"
