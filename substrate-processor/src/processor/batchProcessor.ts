@@ -1,17 +1,26 @@
-import {Logger} from "@subsquid/logger"
+import {createLogger, Logger} from "@subsquid/logger"
+import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {runProgram} from "@subsquid/util-internal"
+import assert from "assert"
+import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
+import {PlainBatchRequest} from "../batch/request"
 import {Chain} from "../chain"
+import {BlockData} from "../ingest"
 import type {BlockRangeOption, EvmLogOptions} from "../interfaces/dataHandlers"
 import type {
-    CallItem,
-    EventItem,
     CallDataRequest,
+    CallItem,
     DataSelection,
     EventDataRequest,
+    EventItem,
     MayBeDataSelection,
     NoDataSelection
 } from "../interfaces/dataSelection"
 import type {Database} from "../interfaces/db"
 import type {SubstrateBlock} from "../interfaces/substrate"
+import {Range} from "../util/range"
+import {DataSource} from "./handlerProcessor"
+import {Config, Options, Runner} from "./runner"
 
 
 export interface BatchContext<Store, Item> {
@@ -30,6 +39,33 @@ export interface BatchBlock<Item> {
 
 
 export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
+    private batches: Batch<PlainBatchRequest>[] = []
+    private options: Options = {}
+    private src?: DataSource
+    private typesBundle?: OldTypesBundle
+
+    private copy(): SubstrateBatchProcessor<Item> {
+        let copy = new SubstrateBatchProcessor<Item>()
+        copy.batches = this.batches
+        copy.options = this.options
+        copy.src = this.src
+        copy.typesBundle = this.typesBundle
+        return copy
+    }
+
+    private setOption<K extends keyof Options>(name: K, value: Options[K]): SubstrateBatchProcessor<Item> {
+        let next = this.copy()
+        next.options = {...this.options, [name]: value}
+        return next
+    }
+
+    private add(request: PlainBatchRequest, range?: Range): SubstrateBatchProcessor<any> {
+        let batch = {range: range || {from: 0}, request}
+        let next = this.copy()
+        next.batches = this.batches.concat([batch])
+        return next
+    }
+
     addEvent<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
@@ -44,7 +80,9 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         name: string,
         options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
-        return this
+        let req = new PlainBatchRequest()
+        req.events.push({name, data: options?.data})
+        return this.add(req, options?.range)
     }
 
     addCall<N extends string>(
@@ -61,7 +99,9 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         name: N,
         options?: BlockRangeOption & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
-        return this
+        let req = new PlainBatchRequest()
+        req.calls.push({name, data: options?.data})
+        return this.add(req, options?.range)
     }
 
     addEvmLog(
@@ -78,7 +118,13 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         contractAddress: string,
         options?: EvmLogOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
-        return this
+        let req = new PlainBatchRequest()
+        req.evmLogs.push({
+            contract: contractAddress,
+            filter: options?.filter,
+            data: options?.data
+        })
+        return this.add(req, options?.range)
     }
 
     addContractsContractEmitted(
@@ -95,31 +141,115 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         contractAddress: string,
         options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
-        return this
+        let req = new PlainBatchRequest()
+        req.contractsEvents.push({
+            contract: contractAddress,
+            data: options?.data
+        })
+        return this.add(req, options?.range)
+    }
+
+    includeAllBlocks(range?: Range): SubstrateBatchProcessor<Item> {
+        let req = new PlainBatchRequest()
+        req.includeAllBlocks = true
+        return this.add(req)
+    }
+
+    setPrometheusPort(port: number | string): SubstrateBatchProcessor<Item> {
+        return this.setOption('prometheusPort', port)
+    }
+
+    setBlockRange(range?: Range): SubstrateBatchProcessor<Item> {
+        return this.setOption('blockRange', range)
+    }
+
+    setBatchSize(size: number): SubstrateBatchProcessor<Item> {
+        assert(size > 0)
+        return this.setOption('batchSize', size)
+    }
+
+    setDataSource(src: DataSource): SubstrateBatchProcessor<Item> {
+        let next = this.copy()
+        next.src = src
+        return next
+    }
+
+    setTypesBundle(bundle: string | OldTypesBundle): SubstrateBatchProcessor<Item> {
+        let next = this.copy()
+        if (typeof bundle == 'string') {
+            next.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
+        } else {
+            next.typesBundle = bundle
+        }
+        return next
+    }
+
+    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
+        let bundle = this.typesBundle || getOldTypesBundle(specName)
+        if (bundle) return bundle
+        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+    }
+
+    private getArchiveEndpoint(): string {
+        let url = this.src?.archive
+        if (url == null) {
+            throw new Error('use .setDataSource() to specify archive url')
+        }
+        return url
+    }
+
+    private getChainEndpoint(): string {
+        let url = this.src?.chain
+        if (url == null) {
+            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
+        }
+        return url
     }
 
     run<Store>(db: Database<Store>, mapper: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
+        let logger = createLogger('sqd:processor')
 
+        runProgram(async () => {
+            let batches = mergeBatches(this.batches, (a, b) => a.merge(b))
+
+            let config: Config<Store, PlainBatchRequest> = {
+                getDatabase: () => db,
+                getArchiveEndpoint: () => this.getArchiveEndpoint(),
+                getChainEndpoint: () => this.getChainEndpoint(),
+                getTypesBundle: this.getTypesBundle.bind(this),
+                getLogger: () => logger,
+                getOptions: () => this.options,
+                createBatches(blockRange: Range): Batch<PlainBatchRequest>[] {
+                    return applyRangeBound(batches, blockRange)
+                }
+            }
+
+            return new BatchRunner(mapper, config).run()
+        }, err => logger.fatal(err))
     }
 }
 
 
-new SubstrateBatchProcessor()
-    .addEvent('Balances.Transfer', {data: {event: {args: true}}} as const)
-    .addCall('Balances.transfer', {data: {extrinsic: true, call: {args: true}}} as const)
-    .addEvmLog('0xaaa', {filter: ['0xaaaa']})
-    .run(null as any, async ctx => {
-        for (let block of ctx.blocks) {
-            for (let item of block.items) {
-                if (item.name == 'Balances.Transfer') {
-                    console.log(item.event.args)
-                }
+class BatchRunner<S, I> extends Runner<S, PlainBatchRequest> {
+    constructor(
+        private mapper: (ctx: BatchContext<S, I>) => Promise<void>,
+        config: Config<S, PlainBatchRequest>
+    ) {
+        super(config)
+    }
 
-                if (item.name == 'Balances.transfer') {
-                    console.log(item.extrinsic)
-                    // console.log(item.extrinsic.signature)
-                }
-
-            }
-        }
-    })
+    protected async processBatch(request: PlainBatchRequest, chain: Chain, blocks: BlockData[]): Promise<void> {
+        // FIXME everything
+        if (blocks.length == 0) return
+        let height = blocks[0].header.height
+        return this.config.getDatabase().transact(height, store => {
+            return this.mapper({
+                _chain: chain,
+                tx: {},
+                log: this.config.getLogger().child('mapping'),
+                store,
+                blocks: blocks as any,
+            })
+        })
+    }
+}
