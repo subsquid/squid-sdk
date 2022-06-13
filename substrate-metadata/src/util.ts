@@ -1,4 +1,5 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
+import {last} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
 import type {Metadata} from "./interfaces"
@@ -6,10 +7,36 @@ import {Field, Type, TypeKind, VariantType} from "./types"
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
+    types = fixWrapperKeepOpaqueTypes(types)
     types = introduceOptionType(types)
     types = removeUnitFieldsFromStructs(types)
     types = replaceUnitOptionWithBoolean(types)
     types = normalizeFieldNames(types)
+    return types
+}
+
+
+function fixWrapperKeepOpaqueTypes(types: Type[]): Type[] {
+    let u8 = types.length
+    let replaced = false
+    types = types.map(type => {
+        if (!type.path?.length) return type
+        if (last(type.path) != 'WrapperKeepOpaque') return type
+        if (type.kind != TypeKind.Composite) return type
+        if (type.fields.length != 2) return type
+        if (types[type.fields[0].type].kind != TypeKind.Compact) return type
+        replaced = true
+        return {
+            kind: TypeKind.Sequence,
+            type: u8
+        }
+    })
+    if (replaced) {
+        types.push({
+            kind: TypeKind.Primitive,
+            primitive: 'U8'
+        })
+    }
     return types
 }
 
