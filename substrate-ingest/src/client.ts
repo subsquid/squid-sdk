@@ -1,4 +1,5 @@
 import type {Logger} from "@subsquid/logger"
+import {LogLevel} from "@subsquid/logger"
 import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
 import {isRateLimitError, isRetryableError} from "@subsquid/rpc-client/lib/resilient"
 import {last} from "@subsquid/util-internal"
@@ -251,16 +252,27 @@ class Connection {
         this.client.close()
     }
 
-    private reconnect(err: Error): void {
+    private reconnect(err: Error, socketClosed?: boolean): void {
         if (this.closed) return
-        let backoff = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
-        this.connectionErrors += 1
-        this.connectionErrorsInRow += 1
-        this.epoch += 1
-        if (isRateLimitError(err)) {
-            backoff = backoff * 2 + 5000
+        let backoff: number
+        let level: LogLevel
+        if (socketClosed && this.cap == this.maxCapacity) {
+            // Client was idle
+            // Because chain nodes regularly close idle connections,
+            // let's not count such case as connection error
+            level = LogLevel.DEBUG
+            backoff = this.backoff[0]
+        } else {
+            level = LogLevel.WARN
+            backoff = this.backoff[Math.min(this.connectionErrorsInRow, this.backoff.length - 1)]
+            this.connectionErrors += 1
+            this.connectionErrorsInRow += 1
+            if (isRateLimitError(err)) {
+                backoff = backoff * 2 + 5000
+            }
         }
-        this.log?.warn({
+        this.epoch += 1
+        this.log?.write(level, {
             backoff,
             reason: err.message
         }, 'connection error')
@@ -274,7 +286,7 @@ class Connection {
         this.client.connect().then(
             () => {
                 this.log?.debug('connected')
-                this.client.onclose = err => this.reconnect(err)
+                this.client.onclose = err => this.reconnect(err, true)
                 this.onNewConnection()
             },
             err => this.reconnect(err)
