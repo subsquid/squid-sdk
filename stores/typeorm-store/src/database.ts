@@ -67,11 +67,11 @@ class BaseDatabase<S> {
         }
     }
 
-    async transact(height: number, cb: (store: S) => Promise<void>): Promise<void> {
+    async transact(from: number, to: number, cb: (store: S) => Promise<void>): Promise<void> {
         let retries = 3
         while (true) {
             try {
-                return await this.runTransaction(height, cb)
+                return await this.runTransaction(from, to, cb)
             } catch(e: any) {
                 if (e.code == '40001' && retries) {
                     retries -= 1
@@ -82,14 +82,14 @@ class BaseDatabase<S> {
         }
     }
 
-    protected async runTransaction(height: number, cb: (store: S) => Promise<void>): Promise<void> {
+    protected async runTransaction(from: number, to: number, cb: (store: S) => Promise<void>): Promise<void> {
         throw new Error('Not implemented')
     }
 
-    protected async updateHeight(em: EntityManager, height: number): Promise<void> {
+    protected async updateHeight(em: EntityManager, from: number, to: number): Promise<void> {
         return em.query(
-            `UPDATE ${this.statusSchema}.status SET height = $1 WHERE id = 0 AND height < $1`,
-            [height]
+            `UPDATE ${this.statusSchema}.status SET height = $2 WHERE id = 0 AND height < $1`,
+            [from, to]
         ).then((result: [data: any[], rowsChanged: number]) => {
             let rowsChanged = result[1]
             assert.strictEqual(
@@ -103,13 +103,13 @@ class BaseDatabase<S> {
 
 
 export class TypeormDatabase extends BaseDatabase<Store> {
-    protected async runTransaction(height: number, cb: (store: Store) => Promise<void>): Promise<void> {
+    protected async runTransaction(from: number, to: number, cb: (store: Store) => Promise<void>): Promise<void> {
         let tx: Promise<Tx> | undefined
         let open = true
 
         let store = new Store(() => {
             assert(open, `Transaction was already closed`)
-            tx = tx || this.createTx(height)
+            tx = tx || this.createTx(from, to)
             return tx.then(tx => tx.em)
         })
 
@@ -126,15 +126,15 @@ export class TypeormDatabase extends BaseDatabase<Store> {
         open = false
         if (tx) {
             await tx.then(t => t.commit())
-            this.lastCommitted = height
+            this.lastCommitted = to
         }
     }
 
-    private async createTx(height: number): Promise<Tx> {
+    private async createTx(from: number, to: number): Promise<Tx> {
         let con = assertNotNull(this.con, 'not connected')
         let tx = await createTransaction(con, this.isolationLevel)
         try {
-            await this.updateHeight(tx.em, height)
+            await this.updateHeight(tx.em, from, to)
             return tx
         } catch(e: any) {
             await tx.rollback().catch(err => null)
@@ -144,24 +144,24 @@ export class TypeormDatabase extends BaseDatabase<Store> {
 
     async advance(height: number): Promise<void> {
         if (this.lastCommitted == height) return
-        let tx = await this.createTx(height)
+        let tx = await this.createTx(height, height)
         await tx.commit()
     }
 }
 
 
 export class FullTypeormDatabase extends BaseDatabase<EntityManager> {
-    protected async runTransaction(height: number, cb: (store: EntityManager) => Promise<void>): Promise<void> {
+    protected async runTransaction(from: number, to: number, cb: (store: EntityManager) => Promise<void>): Promise<void> {
         let con = assertNotNull(this.con, 'not connected')
         await con.transaction(this.isolationLevel, async em => {
-            await this.updateHeight(em, height)
+            await this.updateHeight(em, from, to)
             await cb(em)
         })
-        this.lastCommitted = height
+        this.lastCommitted = to
     }
 
     async advance(height: number): Promise<void> {
         if (this.lastCommitted == height) return
-        return this.runTransaction(height, async () => {})
+        return this.runTransaction(height, height, async () => {})
     }
 }

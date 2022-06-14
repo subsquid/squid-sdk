@@ -495,10 +495,11 @@ export class SubstrateProcessor<Store> {
 
 
 class HandlerRunner<S> extends Runner<S, DataHandlers>{
-    protected async processBatch(handlers: DataHandlers, chain: Chain, blocks: BlockData[]): Promise<void> {
+    async processBatch(handlers: DataHandlers, chain: Chain, blocks: BlockData[]): Promise<void> {
         for (let block of blocks) {
             assert(this.lastBlock < block.header.height)
-            await this.config.getDatabase().transact(block.header.height, store => {
+            let height = block.header.height
+            await this.config.getDatabase().transact(height, height, store => {
                 return this.processBlock(handlers, chain, store, block)
             }).catch(
                 withErrorContext({

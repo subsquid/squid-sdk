@@ -198,7 +198,7 @@ export class Runner<S, R extends BatchRequest> {
         return this.process(ingest)
     }
 
-    protected async process(ingest: Ingest<R>): Promise<void> {
+    private async process(ingest: Ingest<R>): Promise<void> {
         for await (let batch of ingest.getBlocks()) {
             let packs = await this.splitBySpec(batch)
             let mappingStartTime = process.hrtime.bigint()
@@ -269,7 +269,7 @@ export class Runner<S, R extends BatchRequest> {
         return result
     }
 
-    protected async processBatch(request: R, chain: Chain, blocks: BlockData[]): Promise<void> {
+    async processBatch(request: R, chain: Chain, blocks: BlockData[]): Promise<void> {
 
     }
 

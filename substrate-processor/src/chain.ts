@@ -5,7 +5,6 @@ import {
     decodeMetadata,
     Field,
     getChainDescriptionFromMetadata,
-    getOldTypesBundle,
     isPreV14,
     OldTypes,
     OldTypesBundle,

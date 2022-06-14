@@ -84,7 +84,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {${fix}Context, Result, deprecateLatest} from './support'`)
+        out.line(`import {Chain, ChainContext, ${fix}Context, ${fix}, Result} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(name => {
             let versions = items.get(name)!
@@ -92,12 +92,19 @@ export class Typegen {
             let className = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}`)) + fix
             out.line()
             out.block(`export class ${className}`, () => {
-                out.block(`constructor(private ctx: ${fix}Context)`, () => {
-                    out.line(`assert(this.ctx.${ctx}.name === '${name}')`)
+                out.line(`private readonly _chain: Chain`)
+                out.line(`private readonly ${ctx}: ${fix}`)
+                out.line()
+                out.line(`constructor(ctx: ${fix}Context)`)
+                out.line(`constructor(ctx: ChainContext, ${ctx}: ${fix})`)
+                out.block(`constructor(ctx: ${fix}Context, ${ctx}?: ${fix})`, () => {
+                    out.line(`${ctx} = ${ctx} || ctx.${ctx}`)
+                    out.line(`assert(${ctx}.name === '${name}')`)
+                    out.line(`this._chain = ctx._chain`)
+                    out.line(`this.${ctx} = ${ctx}`)
                 })
                 versions.forEach((v, idx) => {
                     let versionName = this.getVersionName(v.chain)
-                    let isLatest = versions.length === idx + 1
                     let ifs = this.getInterface(v.chain)
                     let unqualifiedTypeExp: string
                     if (v.def.fields[0]?.name == null) {
@@ -110,26 +117,14 @@ export class Typegen {
                     out.blockComment(v.def.docs)
                     out.block(`get is${versionName}(): boolean`, () => {
                         let hash = v.chain[kind].getHash(name)
-                        out.line(`return this.ctx._chain.get${fix}Hash('${name}') === '${hash}'`)
+                        out.line(`return this._chain.get${fix}Hash('${name}') === '${hash}'`)
                     })
                     out.line()
                     out.blockComment(v.def.docs)
                     out.block(`get as${versionName}(): ${typeExp}`, () => {
                         out.line(`assert(this.is${versionName})`)
-                        out.line(`return this.ctx._chain.decode${fix}(this.ctx.${ctx})`)
+                        out.line(`return this._chain.decode${fix}(this.${ctx})`)
                     })
-                    if (isLatest) {
-                        out.line()
-                        out.block(`get isLatest(): boolean`, () => {
-                            out.line(`deprecateLatest()`)
-                            out.line(`return this.is${versionName}`)
-                        })
-                        out.line()
-                        out.block(`get asLatest(): ${typeExp}`, () => {
-                            out.line(`deprecateLatest()`)
-                            out.line(`return this.as${versionName}`)
-                        })
-                    }
                 })
             })
         })
@@ -165,14 +160,23 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {StorageContext, Result} from './support'`)
+        out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
             out.line()
             out.block(`export class ${prefix}${name}Storage`, () => {
-                out.line(`constructor(private ctx: StorageContext) {}`)
+                out.line(`private readonly _chain: Chain`)
+                out.line(`private readonly blockHash: string`)
+                out.line()
+                out.line(`constructor(ctx: BlockContext)`)
+                out.line(`constructor(ctx: ChainContext, block: Block)`)
+                out.block(`constructor(ctx: BlockContext, block?: Block)`, () => {
+                    out.line(`block = block || ctx.block`)
+                    out.line(`this.blockHash = block.hash`)
+                    out.line(`this._chain = ctx._chain`)
+                })
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
@@ -183,7 +187,7 @@ export class Typegen {
                     out.line()
                     out.blockComment(v.def.docs)
                     out.block(`get is${versionName}()`, () => {
-                        out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
+                        out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
                     })
 
                     if (isEmptyVariant(v.chain.description.types[v.def.value])) {
@@ -205,17 +209,17 @@ export class Typegen {
                             }
                         })
 
-                        let args = ['this.ctx.block.hash', `'${prefix}'`, `'${name}'`]
+                        let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
                         out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
                             out.line(`assert(this.is${versionName})`)
-                            out.line(`return this.ctx._chain.getStorage(${args.concat(keyNames).join(', ')})`)
+                            out.line(`return this._chain.getStorage(${args.concat(keyNames).join(', ')})`)
                         })
                         if (keyNames.length > 0) {
                             out.line()
                             out.block(`async getManyAs${versionName}(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
                                 out.line(`assert(this.is${versionName})`)
                                 let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
-                                out.line(`return this.ctx._chain.queryStorage(${args.concat(query).join(', ')})`)
+                                out.line(`return this._chain.queryStorage(${args.concat(query).join(', ')})`)
                             })
                         }
                     }
@@ -225,7 +229,7 @@ export class Typegen {
                     'Checks whether the storage item is defined for the current chain version.'
                 ])
                 out.block(`get isExists(): boolean`, () => {
-                    out.line(`return this.ctx._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
+                    out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
                 })
             })
         })

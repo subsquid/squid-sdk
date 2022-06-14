@@ -1,6 +1,6 @@
 import {createLogger, Logger} from "@subsquid/logger"
 import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {runProgram} from "@subsquid/util-internal"
+import {last, runProgram} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
@@ -21,6 +21,10 @@ import type {SubstrateBlock} from "../interfaces/substrate"
 import {Range} from "../util/range"
 import {DataSource} from "./handlerProcessor"
 import {Config, Options, Runner} from "./runner"
+
+
+export type BatchProcessorItem<T> =
+    T extends SubstrateBatchProcessor<infer I> ? I : never
 
 
 export interface BatchContext<Store, Item> {
@@ -224,32 +228,24 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
                 }
             }
 
-            return new BatchRunner(mapper, config).run()
+            let runner = new Runner(config)
+
+            runner.processBatch = async function(request: PlainBatchRequest, chain: Chain, blocks: BlockData[]) {
+                if (blocks.length == 0) return
+                let from = blocks[0].header.height
+                let to = last(blocks).header.height
+                return db.transact(from, to, store => {
+                    return mapper({
+                        _chain: chain,
+                        tx: {},
+                        log: logger.child('mapping'),
+                        store,
+                        blocks: blocks as any,
+                    })
+                })
+            }
+
+            return runner.run()
         }, err => logger.fatal(err))
-    }
-}
-
-
-class BatchRunner<S, I> extends Runner<S, PlainBatchRequest> {
-    constructor(
-        private mapper: (ctx: BatchContext<S, I>) => Promise<void>,
-        config: Config<S, PlainBatchRequest>
-    ) {
-        super(config)
-    }
-
-    protected async processBatch(request: PlainBatchRequest, chain: Chain, blocks: BlockData[]): Promise<void> {
-        // FIXME everything
-        if (blocks.length == 0) return
-        let height = blocks[0].header.height
-        return this.config.getDatabase().transact(height, store => {
-            return this.mapper({
-                _chain: chain,
-                tx: {},
-                log: this.config.getLogger().child('mapping'),
-                store,
-                blocks: blocks as any,
-            })
-        })
     }
 }
