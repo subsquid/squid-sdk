@@ -1,6 +1,6 @@
 {
     "outDir": "../src/kilt",
-    "chainVersions": "../../data/chain/kilt/versions.json",
+    "specVersions": "../../data/chain/kilt/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

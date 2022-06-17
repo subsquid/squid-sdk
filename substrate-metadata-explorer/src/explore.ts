@@ -1,119 +1,79 @@
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {Logger} from "@subsquid/logger"
 import {last} from "@subsquid/util-internal"
-import * as fs from "fs"
-import {Archive} from "./archive"
-import {findSpecVersions} from "./binarySearch"
-import {Chain} from "./chain"
-import type {SpecVersionWithMetadata} from "./types"
+import {Out} from "./out"
+import {SpecVersion, SpecVersionRecord} from "./specVersion"
 
 
-export interface ExploreOptions {
-    /**
-     * WS rpc endpoint of a chain node
-     */
-    chain: string
-    /**
-     * Substrate archive url to speed-up exploration
-     */
-    archive?: string
-    /**
-     * Output file to save results in.
-     *
-     * Existing file will be augmented with new spec versions, if any.
-     */
-    out: string
+export interface ExploreApi {
+    getVersionRecords(fromBlock?: number): Promise<SpecVersionRecord[]>
+    getVersionRecord(blockNumber: number): Promise<SpecVersionRecord | undefined>
+    getSingleVersionRecord(): Promise<SpecVersionRecord | undefined>
+    getVersion(rec: SpecVersionRecord): Promise<SpecVersion>
 }
 
 
-export async function explore(options: ExploreOptions): Promise<void> {
-    let client = new ResilientRpcClient({url: options.chain, maxRetries: 3})
-    try {
-        let chain = new Chain(client)
-        let archive = options.archive ? new Archive(options.archive, chain) : undefined
-        await doExploration(options.out, chain, archive)
-    } finally {
-        client.close()
+export async function explore(api: ExploreApi, out: Out, log?: Logger): Promise<void> {
+    let knownVersions = out.knownVersions()
+    if (knownVersions.length > 0) {
+        log?.info('output file already has explored versions')
     }
-}
 
-
-async function doExploration(
-    out: string,
-    chain: Chain,
-    archive?: Archive
-): Promise<void> {
-    let api = archive || chain
-    let fromBlock = 0
-    let chainHeight = await api.getHeight()
-
-    let knownVersions = read(out)
-    if (knownVersions.length) {
-        let genesis = knownVersions[0]
-        if (genesis.blockNumber == 0) {
-            let currentGenesis = await chain.getSpecVersion(0)
-            if (currentGenesis.blockHash != genesis.blockHash) {
-                console.log(`output file has explored versions, but for different chain`)
-                console.log(`will do exploration from scratch`)
-                knownVersions = []
-            } else {
-                fromBlock = last(knownVersions).blockNumber
-                if (chainHeight <= fromBlock) {
-                    console.log(`output file has explored versions up to block ${fromBlock}, but the height of the source is ${chainHeight}`)
-                    console.log(`nothing to explore`)
-                    return
-                }
-                console.log(`output file has explored versions`)
-                console.log(`will start from block ${fromBlock} and augment the file`)
-                if (knownVersions[0].specName == null) {
-                    // we've got an old file
-                    // fill in the specName
-                    for (let i = 0; i < knownVersions.length; i++) {
-                        let {specName, ...rest} = knownVersions[i]
-                        knownVersions[i] = {
-                            specName: currentGenesis.specName,
-                            ...rest
-                        }
-                    }
-                }
-            }
+    let matched = 0
+    for (let known of knownVersions) {
+        log?.info(`checking ${known.specName}@${known.specVersion} block ${known.blockNumber} against current chain`)
+        let current = await api.getVersionRecord(known.blockNumber)
+        if (known.blockHash === current?.blockHash) {
+            matched += 1
         } else {
-            console.log(`output file has explored versions, but genesis block is absent`)
-            console.log(`will do exploration from scratch`)
-            knownVersions = []
+            log?.info('record mismatch')
+            break
         }
     }
 
-    let newVersions = await findSpecVersions({
-        firstBlock: fromBlock,
-        lastBlock: chainHeight,
-        fetch(heights) {
-            return api.getSpecVersions(heights)
-        },
-        log(msg) {
-            console.log(msg)
+    let newVersions: SpecVersionRecord[]
+    if (matched > 0) {
+        if (matched != knownVersions.length) {
+            for (let t of knownVersions.slice(matched)) {
+                log?.info(`removing ${t.specName}@${t.specVersion} block ${t.blockNumber})`)
+            }
+            knownVersions = knownVersions.slice(0, matched)
+            out.write(knownVersions)
         }
-    })
-
-    if (knownVersions.length) {
-        newVersions = newVersions.slice(1)
+        let lastKnown = last(knownVersions)
+        log?.info(`exploring chain from block ${lastKnown.blockNumber}`)
+        newVersions = (await api.getVersionRecords(lastKnown.blockNumber)).slice(1)
+        log?.info(`${newVersions.length} new version${newVersions.length == 1 ? '' : 's'} found`)
+    } else if (knownVersions.length == 0) {
+        log?.info(`exploring chain from block 0`)
+        newVersions = await api.getVersionRecords()
+        log?.info(`${newVersions.length} version${newVersions.length == 1 ? '' : 's'} found`)
+    } else {
+        // Let's assume it is an exploration of local dev runtime.
+        // It has single spec version.
+        // It's spec version number is strictly greater, than that of a production chain,
+        // or it has a different spec name.
+        // It is also possible, that last known version has the same spec id.
+        // In such case we assume, that last known version is related to prev local runtime and erase it.
+        let lastKnown = last(knownVersions)
+        let newVersion = await api.getSingleVersionRecord()
+        if (
+            newVersion == null ||
+            (newVersion.specName == lastKnown.specName && lastKnown.specVersion > newVersion.specVersion)
+        ) {
+            throw new Error(`Output file already contains data for a different chain, don't know how to proceed.`)
+        }
+        if (newVersion.specName == lastKnown.specName && newVersion.specVersion == lastKnown.specVersion) {
+            log?.info(`replacing metadata for ${lastKnown.specName}@${lastKnown.specVersion}, assuming it came from dev runtime`)
+            knownVersions = knownVersions.slice()
+            knownVersions.pop()
+            out.write(knownVersions)
+        }
+        newVersions = [newVersion]
     }
 
-    for (let v of newVersions) {
-        console.log(`fetching metadata for ${v.specName}@${v.specVersion}`)
-        let metadata = await chain.getMetadata(v.blockHash)
-        knownVersions.push({
-            ...v,
-            metadata
-        })
+    for (let rec of newVersions) {
+        let v = await api.getVersion(rec)
+        out.append([v])
+        log?.info(`saved ${rec.specName}@${rec.specVersion} block ${rec.blockNumber}`)
     }
-
-    fs.writeFileSync(out, JSON.stringify(knownVersions, null, 2))
-}
-
-
-function read(file: string): SpecVersionWithMetadata[] {
-    if (!fs.existsSync(file)) return []
-    let json = fs.readFileSync(file, 'utf-8')
-    let versions: SpecVersionWithMetadata[] = JSON.parse(json)
-    return versions.sort((a, b) => a.blockNumber - b.blockNumber)
 }

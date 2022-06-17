@@ -1,6 +1,6 @@
 {
   "outDir": "../src/clover",
-  "chainVersions": "../../data/chain/clover/versions.json",
+  "specVersions": "../../data/chain/clover/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

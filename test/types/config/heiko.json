@@ -1,6 +1,6 @@
 {
   "outDir": "../src/heiko",
-  "chainVersions": "../../data/chain/heiko/versions.json",
+  "specVersions": "../../data/chain/heiko/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

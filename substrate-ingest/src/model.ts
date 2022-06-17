@@ -1,4 +1,4 @@
-import type {QualifiedName, SpecVersion} from "@subsquid/substrate-metadata"
+import type {QualifiedName} from "@subsquid/substrate-metadata"
 import type {sub} from "./interfaces"
 
 
@@ -59,7 +59,7 @@ export interface Call {
 export interface Metadata {
     id: string
     spec_name: string
-    spec_version: SpecVersion
+    spec_version: number
     block_height: number
     block_hash: string
     hex: string

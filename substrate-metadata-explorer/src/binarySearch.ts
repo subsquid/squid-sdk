@@ -1,20 +1,20 @@
-import type {Log, SpecVersion} from "./types"
+import {SpecVersionRecord} from "./specVersion"
 
 
 export interface SearchOptions {
     firstBlock: number
     lastBlock: number
-    fetch: (heights: number[]) => Promise<SpecVersion[]>
-    log?: Log
+    fetch: (heights: number[]) => Promise<SpecVersionRecord[]>
+    progress?: (info: {step: number, versions: number}) => void
 }
 
 
-export async function findSpecVersions(options: SearchOptions): Promise<SpecVersion[]> {
-    let {fetch, log} = options
-    let queue: [beg: SpecVersion, end: SpecVersion][] = []
-    let versions = new Map<string, SpecVersion>()
+export async function findSpecVersions(options: SearchOptions): Promise<SpecVersionRecord[]> {
+    let {fetch, progress} = options
+    let queue: [beg: SpecVersionRecord, end: SpecVersionRecord][] = []
+    let versions = new Map<string, SpecVersionRecord>()
 
-    function add(v: SpecVersion): void {
+    function add(v: SpecVersionRecord): void {
         versions.set(`${v.specName}@${v.specVersion}`, v)
     }
 
@@ -32,7 +32,7 @@ export async function findSpecVersions(options: SearchOptions): Promise<SpecVers
         queue = queue.slice(20)
 
         step += 1
-        log?.(`step: ${step}, versions known so far: ${versions.size}`)
+        progress?.({step, versions: versions.size})
 
         let heights = batch.map(([b, e]) => b.blockNumber + Math.floor((e.blockNumber - b.blockNumber) / 2))
         let newVersions = await fetch(heights)
@@ -54,6 +54,6 @@ export async function findSpecVersions(options: SearchOptions): Promise<SpecVers
 }
 
 
-function equalSpecs(a: SpecVersion, b: SpecVersion): boolean {
+function equalSpecs(a: SpecVersionRecord, b: SpecVersionRecord): boolean {
     return a.specName == b.specName && a.specVersion == b.specVersion
 }

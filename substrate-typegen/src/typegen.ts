@@ -10,10 +10,11 @@ import {
     StorageItem,
     Type
 } from "@subsquid/substrate-metadata"
+import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull, def, last} from "@subsquid/util-internal"
+import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import {Interfaces} from "./ifs"
@@ -21,18 +22,9 @@ import {assignNames} from "./names"
 import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
 
 
-export interface ChainVersion {
-    specName: string
-    specVersion: number
-    blockNumber: number
-    blockHash: string
-    metadata: string
-}
-
-
 export interface TypegenOptions {
     outDir: string
-    chainVersions: ChainVersion[]
+    specVersions: SpecVersion[]
     typesBundle?: OldTypesBundle
     events?: string[] | boolean
     calls?: string[] | boolean
@@ -103,7 +95,7 @@ export class Typegen {
                     out.line(`this._chain = ctx._chain`)
                     out.line(`this.${ctx} = ${ctx}`)
                 })
-                versions.forEach((v, idx) => {
+                versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
                     let ifs = this.getInterface(v.chain)
                     let unqualifiedTypeExp: string
@@ -260,10 +252,9 @@ export class Typegen {
 
         items.forEach((versions, name) => {
             if (requested == null || requested.has(name)) {
-                versions.sort((a, b) => a.chain.blockNumber - b.chain.blockNumber)
                 let unique: Item<T>[] = []
                 versions.forEach(v => {
-                    let prev = unique.length ? unique[unique.length - 1] : undefined
+                    let prev = maybeLast(unique)
                     if (prev && hash(v.chain, name) === hash(prev.chain, name)) {
                     } else {
                         unique.push(v)
@@ -294,7 +285,7 @@ export class Typegen {
 
     @def
     chain(): VersionDescription[] {
-        return this.options.chainVersions.map(v => {
+        return this.options.specVersions.map(v => {
             let metadata = decodeMetadata(v.metadata)
             let oldTypes: OldTypes | undefined
             if (isPreV14(metadata)) {
@@ -314,7 +305,7 @@ export class Typegen {
                 calls: new eac.Registry(d.types, d.call),
                 description: d
             }
-        }).sort((a, b) => a.blockNumber - b.blockNumber)
+        })
     }
 
     getInterface(version: VersionDescription): Interfaces {

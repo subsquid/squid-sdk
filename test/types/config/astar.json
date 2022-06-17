@@ -1,6 +1,6 @@
 {
     "outDir": "../src/astar",
-    "chainVersions": "../../data/chain/astar/versions.json",
+    "specVersions": "../../data/chain/astar/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

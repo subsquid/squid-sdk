@@ -2,8 +2,7 @@ import type {Codec as ScaleCodec} from "@subsquid/scale-codec"
 import type {
     ChainDescription,
     Extrinsic as _Extrinsic,
-    ExtrinsicSignature as _ExtrinsicSignature,
-    SpecVersion
+    ExtrinsicSignature as _ExtrinsicSignature
 } from "@subsquid/substrate-metadata"
 import type * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 
@@ -41,7 +40,7 @@ export namespace sub {
 
     export interface RuntimeVersion {
         specName: string
-        specVersion: SpecVersion
+        specVersion: number
     }
 
 

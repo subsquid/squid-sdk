@@ -1,6 +1,6 @@
 {
     "outDir": "../src/basilisk",
-    "chainVersions": "../../data/chain/basilisk/versions.json",
+    "specVersions": "../../data/chain/basilisk/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

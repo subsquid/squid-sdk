@@ -623,6 +623,12 @@
       "versionPolicyName": "public"
     },
     {
+      "packageName": "@subsquid/util-internal-read-lines",
+      "projectFolder": "util/util-internal-read-lines",
+      "shouldPublish": true,
+      "versionPolicyName": "public"
+    },
+    {
       "packageName": "@subsquid/util-xxhash",
       "projectFolder": "util/util-xxhash",
       "shouldPublish": true,

@@ -6,15 +6,15 @@ import {
     decodeMetadata,
     encodeExtrinsic,
     getChainDescriptionFromMetadata,
-    getOldTypesBundle,
-    Metadata
+    getOldTypesBundle
 } from "@subsquid/substrate-metadata"
-import {SpecVersionWithMetadata} from "@subsquid/substrate-metadata-explorer/lib/types"
+import {readSpecVersions, SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import {toHex} from "@subsquid/util-internal-hex"
+import {readLines} from "@subsquid/util-internal-read-lines"
 import assert from "assert"
 import expect from "expect"
 import * as fs from "fs"
@@ -32,8 +32,8 @@ export class Chain {
     }
 
     @def
-    versions(): SpecVersionWithMetadata[] {
-        return this.read('versions.json')
+    versions(): SpecVersion[] {
+        return readSpecVersions(this.item('versions.json'))
     }
 
     async selectTestBlocks(): Promise<void> {
@@ -260,23 +260,12 @@ export class Chain {
     }
 
     @def
-    metadata(): SpecVersion[] {
-        return this.versions().map(v => {
-            return {
-                blockNumber: v.blockNumber,
-                specName: v.specName,
-                specVersion: v.specVersion,
-                metadata: decodeMetadata(v.metadata)
-            }
-        })
-    }
-
-    @def
     description(): VersionDescription[] {
-        return this.metadata().map(v => {
+        return this.versions().map(v => {
+            let metadata = decodeMetadata(v.metadata)
             let typesBundle = getOldTypesBundle(v.specName)
             let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
-            let description = getChainDescriptionFromMetadata(v.metadata, types)
+            let description = getChainDescriptionFromMetadata(metadata, types)
             return {
                 ...v,
                 description,
@@ -289,13 +278,14 @@ export class Chain {
     }
 
     printMetadata(specVersion?: number): void {
-        let versions = this.metadata()
+        let versions = this.versions()
         let v = specVersion == null
             ? last(versions)
             : versions.find(v => v.specVersion == specVersion)
-        console.log(
-            JSON.stringify(v?.metadata, null, 2)
-        )
+        if (v) {
+            let metadata = decodeMetadata(v.metadata)
+            console.log(JSON.stringify(metadata, null, 2))
+        }
     }
 
     private async withRpcClient<T>(cb: (client: ResilientRpcClient) => Promise<T>): Promise<T> {
@@ -342,13 +332,9 @@ export class Chain {
 
     private readLines<T>(name: string): T[] {
         if (!this.exists(name)) return []
-        let lines = this.readFile(name).split('\n')
         let out: T[] = []
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i].trim()
-            if (line) {
-                out.push(JSON.parse(line))
-            }
+        for (let line of readLines(this.item(name))) {
+            out.push(JSON.parse(line))
         }
         return out
     }
@@ -387,14 +373,6 @@ export class Chain {
     private readFile(name: string): string {
         return fs.readFileSync(this.item(name), 'utf-8')
     }
-}
-
-
-interface SpecVersion {
-    blockNumber: number
-    specName: string
-    specVersion: number
-    metadata: Metadata
 }
 
 

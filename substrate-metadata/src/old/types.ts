@@ -37,8 +37,7 @@ export interface OldTypes {
 }
 
 
-export type SpecVersion = number
-export type SpecVersionRange = [minInclusive: SpecVersion | null, maxInclusive: SpecVersion | null]
+export type SpecVersionRange = [minInclusive: number | null, maxInclusive: number | null]
 
 
 export interface OldTypesWithSpecVersionRange extends OldTypes {

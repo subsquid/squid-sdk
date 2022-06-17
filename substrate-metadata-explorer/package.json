@@ -19,9 +19,12 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/logger": "^0.0.0",
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-gql-request": "^0.0.0",
+    "@subsquid/util-internal-read-lines": "^0.0.0",
+    "ajv": "^8.9.0",
     "commander": "^9.0.0"
   },
   "devDependencies": {

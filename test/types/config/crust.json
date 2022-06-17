@@ -1,6 +1,6 @@
 {
     "outDir": "../src/crust",
-    "chainVersions": "../../data/chain/crust/versions.json",
+    "specVersions": "../../data/chain/crust/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

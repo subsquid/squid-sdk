@@ -1,6 +1,6 @@
 {
     "outDir": "../src/subsocial",
-    "chainVersions": "../../data/chain/subsocial/versions.json",
+    "specVersions": "../../data/chain/subsocial/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

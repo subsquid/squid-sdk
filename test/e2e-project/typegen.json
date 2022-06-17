@@ -1,6 +1,6 @@
 {
   "outDir": "src/types",
-  "chainVersions": "chainVersions.json",
+  "specVersions": "chainSpecVersions.jsonl",
   "typesBundle": "typesBundle.json",
   "events": [
     "Balances.Transfer"

@@ -1,3 +1,2 @@
 */*.jsonl filter=lfs diff=lfs merge=lfs -text
-*/versions.json filter=lfs diff=lfs merge=lfs -text
 */block-numbers.json filter=lfs diff=lfs merge=lfs -text

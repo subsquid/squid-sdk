@@ -1,6 +1,6 @@
 {
   "outDir": "../src/bifrost",
-  "chainVersions": "../../data/chain/bifrost/versions.json",
+  "specVersions": "../../data/chain/bifrost/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

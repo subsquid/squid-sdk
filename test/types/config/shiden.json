@@ -1,6 +1,6 @@
 {
     "outDir": "../src/shiden",
-    "chainVersions": "../../data/chain/shiden/versions.json",
+    "specVersions": "../../data/chain/shiden/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

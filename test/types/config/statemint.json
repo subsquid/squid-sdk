@@ -1,6 +1,6 @@
 {
     "outDir": "../src/statemint",
-    "chainVersions": "../../data/chain/statemint/versions.json",
+    "specVersions": "../../data/chain/statemint/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true

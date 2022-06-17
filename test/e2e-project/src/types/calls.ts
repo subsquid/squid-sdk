@@ -1,9 +1,18 @@
 import assert from 'assert'
-import {CallContext, Result, deprecateLatest} from './support'
+import {Chain, ChainContext, CallContext, Call, Result} from './support'
+import * as v1 from './v1'
 
 export class BalancesSetBalanceCall {
-  constructor(private ctx: CallContext) {
-    assert(this.ctx.call.name === 'balances.setBalance' || this.ctx.call.name === 'Balances.set_balance')
+  private readonly _chain: Chain
+  private readonly call: Call
+
+  constructor(ctx: CallContext)
+  constructor(ctx: ChainContext, call: Call)
+  constructor(ctx: CallContext, call?: Call) {
+    call = call || ctx.call
+    assert(call.name === 'Balances.set_balance')
+    this._chain = ctx._chain
+    this.call = call
   }
 
   /**
@@ -27,7 +36,7 @@ export class BalancesSetBalanceCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('Balances.set_balance') === 'a65ed3500227691ff89565c1bf5a0244c2a05366e34d1ab50167d0c006774edc'
+    return this._chain.getCallHash('Balances.set_balance') === 'a65ed3500227691ff89565c1bf5a0244c2a05366e34d1ab50167d0c006774edc'
   }
 
   /**
@@ -50,25 +59,23 @@ export class BalancesSetBalanceCall {
    *  - DB Weight: 1 Read, 1 Write to `who`
    *  # </weight>
    */
-  get asV1(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
+  get asV1(): {who: v1.LookupSource, newFree: bigint, newReserved: bigint} {
     assert(this.isV1)
-    return this.ctx._chain.decodeCall(this.ctx.call)
-  }
-
-  get isLatest(): boolean {
-    deprecateLatest()
-    return this.isV1
-  }
-
-  get asLatest(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
-    deprecateLatest()
-    return this.asV1
+    return this._chain.decodeCall(this.call)
   }
 }
 
 export class TimestampSetCall {
-  constructor(private ctx: CallContext) {
-    assert(this.ctx.call.name === 'timestamp.set' || this.ctx.call.name === 'Timestamp.set')
+  private readonly _chain: Chain
+  private readonly call: Call
+
+  constructor(ctx: CallContext)
+  constructor(ctx: ChainContext, call: Call)
+  constructor(ctx: CallContext, call?: Call) {
+    call = call || ctx.call
+    assert(call.name === 'Timestamp.set')
+    this._chain = ctx._chain
+    this.call = call
   }
 
   /**
@@ -89,7 +96,7 @@ export class TimestampSetCall {
    *  # </weight>
    */
   get isV1(): boolean {
-    return this.ctx._chain.getCallHash('Timestamp.set') === '6a8b8ba2be107f0853b674eec0026cc440b314db44d0e2c59b36e353355aed14'
+    return this._chain.getCallHash('Timestamp.set') === '6a8b8ba2be107f0853b674eec0026cc440b314db44d0e2c59b36e353355aed14'
   }
 
   /**
@@ -111,16 +118,6 @@ export class TimestampSetCall {
    */
   get asV1(): {now: bigint} {
     assert(this.isV1)
-    return this.ctx._chain.decodeCall(this.ctx.call)
-  }
-
-  get isLatest(): boolean {
-    deprecateLatest()
-    return this.isV1
-  }
-
-  get asLatest(): {now: bigint} {
-    deprecateLatest()
-    return this.asV1
+    return this._chain.decodeCall(this.call)
   }
 }

@@ -38,7 +38,7 @@ ingest:
 explore:
 	@source .env && npx squid-substrate-metadata-explorer \
 		--chain "$${CHAIN_ENDPOINT}" \
-		--out chainVersions.json
+		--out chainSpecVersions.jsonl
 
 
 up:
