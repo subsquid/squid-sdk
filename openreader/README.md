@@ -1,6 +1,6 @@
 # OpenReader
 
-GraphQL server for squid framework. Given [data schema](https://docs.subsquid.io/schema-spec) 
+GraphQL server for squid framework. Given [data schema](https://docs.subsquid.io/reference/openreader-schema) 
 and compatible Postgres database it serves "read part" of [OpenCRUD spec](https://www.opencrud.org).
 
 ## Usage

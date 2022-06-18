@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "0.8.4",
+      "tag": "@subsquid/substrate-metadata_v0.8.4",
+      "date": "Sat, 21 May 2022 17:32:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix call type determination for karura network"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.8.3",
       "tag": "@subsquid/substrate-metadata_v0.8.3",
       "date": "Thu, 05 May 2022 20:47:14 GMT",

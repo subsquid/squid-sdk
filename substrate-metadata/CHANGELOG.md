@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+This log was last generated on Sat, 21 May 2022 17:32:43 GMT and should not be manually modified.
+
+## 0.8.4
+Sat, 21 May 2022 17:32:43 GMT
+
+### Patches
+
+- fix call type determination for karura network
 
 ## 0.8.3
 Thu, 05 May 2022 20:47:14 GMT

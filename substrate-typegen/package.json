@@ -22,7 +22,7 @@
   "dependencies": {
     "@subsquid/logger": "^0.0.0",
     "@subsquid/scale-codec": "^0.4.2",
-    "@subsquid/substrate-metadata": "^0.8.3",
+    "@subsquid/substrate-metadata": "^0.8.4",
     "@subsquid/substrate-metadata-explorer": "^0.0.8",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.0",

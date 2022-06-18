@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "0.7.1",
+      "tag": "@subsquid/openreader_v0.7.1",
+      "date": "Fri, 03 Jun 2022 21:02:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix link in readme"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.7.0",
       "tag": "@subsquid/openreader_v0.7.0",
       "date": "Thu, 05 May 2022 20:47:14 GMT",

@@ -1,6 +1,6 @@
 # Subsquid, an ETL framework for building blockchain APIs
 
-[Subsquid](https://subsquid.io/) is a query node framework for Substrate-based blockchains. In very simple terms, Subsquid can be thought of as an ETL tool, with a GraphQL server included.
+[Subsquid](https://subsquid.io/) is a query node framework for Substrate-based blockchains. In straightforward terms, Subsquid can be thought of as an ETL tool, with a GraphQL server included.
 
 Subsquid's [multi-layer approach](https://docs.subsquid.io/key-concepts/architecture) aims to pre-process and decode raw chain data and store it for easier access by query nodes, providing increased performance over direct RPC calls.
 
@@ -41,7 +41,7 @@ To start using the framework and understand its versatility, clone or fork our [
 ### Documentation
 
 For more information about the project, visit our [documentation page](docs.subsquid.io).
-If you find any inconsistencies in the documentation (spelling mistakes, missing things, passages that are not easy to understand), please report it on our [documentation repositoriy](https://github.com/subsquid/docs).
+If you find any inconsistencies in the documentation (spelling mistakes, missing things, passages that are not easy to understand), please report it on our [documentation repository](https://github.com/subsquid/docs).
 
 ## Contributing
 

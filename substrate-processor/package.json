@@ -20,7 +20,7 @@
     "@subsquid/logger": "^0.0.0",
     "@subsquid/rpc-client": "^0.1.5",
     "@subsquid/scale-codec": "^0.4.2",
-    "@subsquid/substrate-metadata": "^0.8.3",
+    "@subsquid/substrate-metadata": "^0.8.4",
     "@subsquid/typeorm-config": "^0.0.5",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
