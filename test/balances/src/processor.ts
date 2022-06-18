@@ -57,7 +57,7 @@ processor.run(new TypeormDatabase(), async ctx => {
     }
 
     await ctx.store.save(Array.from(accounts.values()))
-    await ctx.store.save(history)
+    await ctx.store.insert(history)
 })
 
 

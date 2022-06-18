@@ -69,8 +69,22 @@ export class Store {
         })
     }
 
-    insert<Entity extends object>(e: Entity): Promise<void> {
-        return this.em().then(em => em.insert(e.constructor, e)).then()
+    insert<Entity extends object>(entity: Entity): Promise<void>
+    insert<Entity extends object>(entities: Entity[]): Promise<void>
+    insert<Entity extends object>(e: Entity | Entity[]): Promise<void> {
+        return this.em().then(em => {
+            let entityClass: EntityClass<Entity>
+            if (Array.isArray(e)) {
+                if (e.length == 0) return
+                entityClass = e[0].constructor as any
+                for (let i = 1; i < e.length; i++) {
+                    assert(entityClass === e[i].constructor, 'mass insertion allowed only for entities of the same class')
+                }
+            } else {
+                entityClass = e.constructor as any
+            }
+            return em.insert(entityClass, e).then()
+        })
     }
 
     remove<Entity>(entity: Entity): Promise<void>
