@@ -8,7 +8,7 @@ import {PackageJson} from "type-fest"
 
 
 type PkgJson = PackageJson.PackageJsonStandard
-type Deps = Record<string, string>
+type Deps = Partial<Record<string, string>>
 
 
 interface Pkg {
@@ -46,13 +46,13 @@ export class Workspace {
     async update(majorBumpSet?: Set<string>): Promise<void> {
         let versions = this.unifiedDependencies()
         for (let name in versions) {
-            let current = pure(versions[name])
+            let current = pure(versions[name]!)
             let latest = majorBumpSet?.has(name)
                 ? await latestVersion(name)
                 : await latestVersion(name, {version: '^'+current})
             if (current != latest) {
                 console.log(`updated ${name}\t${current} -> ${latest}`)
-                versions[name] = prefix(versions[name]) + latest
+                versions[name] = prefix(versions[name]!) + latest
             }
         }
     }
@@ -92,13 +92,14 @@ export class Workspace {
             }
             for (let key in all) {
                 if (packages.has(key)) continue
-                let version = all[key]
+                let version = all[key]!
                 let sv = semver.clean(pure(version))
                 if (sv == null) continue
-                if (deps[key]) {
-                    let current = pure(deps[key])
+                let dep = deps[key]!
+                if (dep) {
+                    let current = pure(dep)
                     let v = semver.gte(sv, current) ? sv : current
-                    let p = combinePrefix(prefix(version), prefix(deps[key]))
+                    let p = combinePrefix(prefix(version), prefix(dep))
                     deps[key] = p + v
                 } else {
                     deps[key] = version
