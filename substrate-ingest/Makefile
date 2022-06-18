@@ -23,6 +23,13 @@ moonriver:
 		--start-block 600000
 
 
+moonbeam:
+	@node lib/main.js --out $(DB) \
+		-e wss://moonbeam.api.onfinality.io/public-ws \
+		--write-batch-size 20 \
+		--start-block 610238
+
+
 karura:
 	@node lib/main.js --out $(DB) \
 		-e wss://karura.api.onfinality.io/public-ws \
@@ -55,4 +62,4 @@ down:
 	@docker-compose down
 
 
-.PHONY: up down kusama moonriver karura astar shibuya
+.PHONY: up down kusama moonriver moonbeam karura astar shibuya
