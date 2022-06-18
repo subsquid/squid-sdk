@@ -6,7 +6,7 @@ import flipperMetadata from "./metadata.json"
 import assert from "assert"
 
 
-const processor = new SubstrateProcessor(new TypeormDatabase('wasm_contracts'))
+const processor = new SubstrateProcessor(new TypeormDatabase())
 
 
 processor.setDataSource({

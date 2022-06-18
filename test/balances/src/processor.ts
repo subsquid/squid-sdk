@@ -19,7 +19,7 @@ type Item = BatchProcessorItem<typeof processor>
 type Ctx = BatchContext<Store, Item>
 
 
-processor.run(new TypeormDatabase("kusama_balances"), async ctx => {
+processor.run(new TypeormDatabase(), async ctx => {
     let transfers = getTransfers(ctx)
 
     let accountIds = new Set<string>()

@@ -11,7 +11,7 @@ import {SystemAccountStorage} from "./types/storage"
 import {getDataSource, getOrCreate, waitForGateway} from "./util"
 
 
-const processor = new SubstrateProcessor(new TypeormDatabase('test'))
+const processor = new SubstrateProcessor(new TypeormDatabase())
 processor.setTypesBundle('typesBundle.json')
 processor.setDataSource(getDataSource())
 

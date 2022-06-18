@@ -10,6 +10,7 @@ export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE REA
 
 
 export interface TypeormDatabaseOptions {
+    stateSchema?: string
     isolationLevel?: IsolationLevel
 }
 
@@ -20,8 +21,8 @@ class BaseDatabase<S> {
     protected con?: Connection
     protected lastCommitted = -1
 
-    constructor(name: string, options?: TypeormDatabaseOptions) {
-        this.statusSchema = `${name}_status`
+    constructor(options?: TypeormDatabaseOptions) {
+        this.statusSchema = options?.stateSchema ? `"${options.stateSchema}"` : 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
     }
 

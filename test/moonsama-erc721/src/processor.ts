@@ -5,7 +5,7 @@ import * as erc721 from "./erc721"
 import {Owner, Token, Transfer} from "./model"
 
 
-const processor = new SubstrateProcessor(new TypeormDatabase('erc721'))
+const processor = new SubstrateProcessor(new TypeormDatabase())
 
 
 processor.setDataSource({
