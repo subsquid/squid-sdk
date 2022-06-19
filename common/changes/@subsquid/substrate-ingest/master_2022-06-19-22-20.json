@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "fix access config in `package.json`",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
