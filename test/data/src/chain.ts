@@ -33,7 +33,7 @@ export class Chain {
 
     @def
     versions(): SpecVersion[] {
-        return readSpecVersions(this.item('versions.json'))
+        return readSpecVersions(this.item('versions.jsonl'))
     }
 
     async selectTestBlocks(): Promise<void> {
