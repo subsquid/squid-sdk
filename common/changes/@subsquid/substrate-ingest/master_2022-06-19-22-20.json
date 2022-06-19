@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/substrate-ingest",
       "comment": "fix access config in `package.json`",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/substrate-ingest"
