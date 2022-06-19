@@ -62,7 +62,7 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-processor": "^1.0.0",
+    "@subsquid/substrate-processor": "^1.0.1",
     "@types/node": "^16.11.22",
     "@types/node-fetch": "^2.5.12",
     "@types/js-yaml": "^4.0.5",

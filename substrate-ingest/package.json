@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/substrate-ingest",
   "description": "Data fetcher for substrate chains",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "bin": {
@@ -17,9 +17,9 @@
   },
   "dependencies": {
     "@subsquid/rpc-client": "^1.0.0",
-    "@subsquid/scale-codec": "^1.0.0",
+    "@subsquid/scale-codec": "^1.0.1",
     "@subsquid/substrate-metadata": "^1.0.0",
-    "@subsquid/logger": "^0.0.0",
+    "@subsquid/logger": "^0.0.1",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.0",
     "@subsquid/util-internal-hex": "^0.0.0",
