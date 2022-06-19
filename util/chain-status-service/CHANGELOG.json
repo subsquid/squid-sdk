@@ -1,0 +1,22 @@
+{
+  "name": "chain-status-service",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "chain-status-service_v0.0.1",
+      "date": "Sun, 19 Jun 2022 21:26:31 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Initial release"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^0.1.5` to `^1.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

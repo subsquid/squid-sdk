@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Wed, 20 Apr 2022 22:55:27 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.4.2
 Wed, 20 Apr 2022 22:55:27 GMT

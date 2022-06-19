@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.0",
+      "date": "Sun, 19 Jun 2022 21:26:31 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce FireSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^0.1.5` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.8",
       "tag": "@subsquid/substrate-metadata-explorer_v0.0.8",
       "date": "Wed, 20 Apr 2022 22:55:27 GMT",

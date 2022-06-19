@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.1.5
 Wed, 02 Mar 2022 18:11:28 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Fri, 03 Jun 2022 21:02:03 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.7.1
 Fri, 03 Jun 2022 21:02:03 GMT

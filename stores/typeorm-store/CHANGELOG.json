@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/typeorm-store",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/typeorm-store_v0.0.1",
+      "date": "Sun, 19 Jun 2022 21:26:31 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Introduce FireSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.5` to `^1.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

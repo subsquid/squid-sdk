@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Sat, 21 May 2022 17:32:43 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.8.4
 Sat, 21 May 2022 17:32:43 GMT

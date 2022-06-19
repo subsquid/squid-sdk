@@ -2,6 +2,26 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/graphql-server_v1.0.0",
+      "date": "Sun, 19 Jun 2022 21:26:31 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce FireSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^0.7.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^0.0.5` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/graphql-server_v0.3.0",
       "date": "Thu, 05 May 2022 20:47:14 GMT",

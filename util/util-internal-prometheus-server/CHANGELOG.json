@@ -1,0 +1,11 @@
+{
+  "name": "@subsquid/util-internal-prometheus-server",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/util-internal-prometheus-server_v0.0.0",
+      "date": "Sun, 19 Jun 2022 21:26:31 GMT",
+      "comments": {}
+    }
+  ]
+}

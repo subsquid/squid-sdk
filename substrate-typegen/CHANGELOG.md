@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Thu, 12 May 2022 15:07:10 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.5.0
 Thu, 12 May 2022 15:07:10 GMT

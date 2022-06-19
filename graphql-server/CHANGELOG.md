@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Thu, 05 May 2022 20:47:14 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+
+## 1.0.0
+Sun, 19 Jun 2022 21:26:31 GMT
+
+### Breaking changes
+
+- Introduce FireSquid
 
 ## 0.3.0
 Thu, 05 May 2022 20:47:14 GMT
