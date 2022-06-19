@@ -54,36 +54,38 @@ export class Store {
     save<Entity extends object>(entity: Entity): Promise<void>
     save<Entity extends object>(entities: Entity[]): Promise<void>
     save<Entity extends object>(e: Entity | Entity[]): Promise<void> {
-        return this.em().then(em => {
-            let entityClass: EntityClass<Entity>
+        return this.em().then(async em => {
             if (Array.isArray(e)) {
                 if (e.length == 0) return
-                entityClass = e[0].constructor as any
+                let entityClass = e[0].constructor as EntityClass<Entity>
                 for (let i = 1; i < e.length; i++) {
                     assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
                 }
+                for (let b of splitIntoBatches(e, 1000)) {
+                    await em.upsert(entityClass, b, ['id'])
+                }
             } else {
-                entityClass = e.constructor as any
+                await em.upsert(e.constructor as EntityClass<Entity>, e, ['id'])
             }
-            return em.upsert(entityClass, e, ['id']).then()
         })
     }
 
     insert<Entity extends object>(entity: Entity): Promise<void>
     insert<Entity extends object>(entities: Entity[]): Promise<void>
     insert<Entity extends object>(e: Entity | Entity[]): Promise<void> {
-        return this.em().then(em => {
-            let entityClass: EntityClass<Entity>
+        return this.em().then(async em => {
             if (Array.isArray(e)) {
                 if (e.length == 0) return
-                entityClass = e[0].constructor as any
+                let entityClass = e[0].constructor as EntityClass<Entity>
                 for (let i = 1; i < e.length; i++) {
-                    assert(entityClass === e[i].constructor, 'mass insertion allowed only for entities of the same class')
+                    assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
+                }
+                for (let b of splitIntoBatches(e, 1000)) {
+                    await em.insert(entityClass, b)
                 }
             } else {
-                entityClass = e.constructor as any
+                await em.insert(e.constructor as EntityClass<Entity>, e)
             }
-            return em.insert(entityClass, e).then()
         })
     }
 
@@ -132,5 +134,19 @@ export class Store {
         } else {
             return this.findOne(entityClass, optionsOrId)
         }
+    }
+}
+
+
+function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
+    if (list.length <= maxBatchSize) {
+        yield list
+    } else {
+        let offset = 0
+        while (list.length - offset > maxBatchSize) {
+            yield list.slice(offset, offset + maxBatchSize)
+            offset += maxBatchSize
+        }
+        yield list.slice(offset)
     }
 }
