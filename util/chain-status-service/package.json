@@ -1,6 +1,6 @@
 {
   "name": "chain-status-service",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Chain status service",
   "license": "GPL-3.0-or-later",
@@ -14,7 +14,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.5",
+    "@subsquid/rpc-client": "^1.0.0",
     "@subsquid/logger": "^0.0.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-http-server": "^0.0.0",

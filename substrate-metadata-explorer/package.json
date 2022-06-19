@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "Spec version explorer for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^0.0.0",
-    "@subsquid/rpc-client": "^0.1.5",
+    "@subsquid/rpc-client": "^1.0.0",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-gql-request": "^0.0.0",
     "@subsquid/util-internal-read-lines": "^0.0.0",
