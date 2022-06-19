@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-json",
-      "comment": "",
-      "type": "none"
+      "comment": "serialize `.stack` property of `Error`",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/util-internal-json"
