@@ -5,6 +5,7 @@ import { getCreds } from '../../creds';
 
 export default class Remove extends Command {
     static description = 'Delete an archive';
+    static hidden = true
     static args = [
         {
             name: 'name',

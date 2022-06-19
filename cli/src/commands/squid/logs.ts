@@ -1,142 +1,170 @@
-import {  Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
 import chalk from 'chalk';
-import queryString from 'query-string';
-import * as fetch from 'node-fetch';
+import { LogEntry, LogLevel, LogPayload, versionHistoryLogs, versionTailLogs } from '../../api';
+import { CliCommand } from '../../command';
+import { prompt } from 'inquirer';
+import { createInterface } from 'readline';
 
-import { parseNameAndVersion } from '../../utils';
-import { baseUrl } from '../../rest-client/baseUrl';
-import { getCreds } from '../../creds';
-import { request } from '../../rest-client/request';
-
-export enum Level {
-    Error = 'ERROR',
-    Debug = 'DEBUG',
-    Info = 'INFO',
-    Notice = 'NOTICE',
-    Warning = 'WARNING',
-}
-type Payload = string | Record<string, unknown>
-
-type Log = {
-    timestamp: string
-    level: Level
-    payload: Payload
-}
-
-type LogsResponse = {
-    logs: Log[];
-    nextPage: string;
-};
-
-function getLevel(level: Level) {
+function getLevel(level: LogLevel) {
     switch (level) {
-        case Level.Debug:
+        case LogLevel.Debug:
             return chalk.gray(level)
-        case Level.Info:
-        case Level.Notice:
+        case LogLevel.Info:
+        case LogLevel.Notice:
             return chalk.cyan(level)
-        case Level.Warning:
+        case LogLevel.Warning:
             return chalk.yellow(level)
-        case Level.Error:
+        case LogLevel.Error:
             return chalk.red(level)
     }
 }
 
-function getPayload(payload: Payload ) {
+function streamLines(body: NodeJS.ReadableStream, cb: (line: string) => void): void {
+    const rl = createInterface({
+        input: body,
+        crlfDelay: Infinity
+    })
+
+
+
+    rl.on('line', cb)
+}
+
+function getPayload(payload: LogPayload) {
     if (typeof payload === 'string') {
        return payload || ''
     }
 
     const { message, ...rest } = payload;
     const res = [message];
-    // on empty message or additional data we log it
+
+    // log if message is empty or some additional data exists
     if(!message || Object.keys(rest).length !== 0) {
         res.push(chalk.dim(JSON.stringify(rest)))
     }
     return res.filter(v => Boolean(v)).join(' ')
 }
 
-export default class Logs extends Command {
-    static description = 'Getting logs about version';
+type LogResult = {
+    hasLogs: boolean,
+    nextPage: string | null
+}
+
+export default class Logs extends CliCommand {
+    static description = 'Fetch Squid logs';
     static args = [
         {
-            name: 'nameAndVersion',
-            description: 'name@version',
+            name: 'name',
+            description: 'Squid name',
             required: true,
         },
     ];
 
     static flags = {
-        follow: Flags.boolean({
-            char: 'f',
-            description: 'will continue streaming the new logs',
+        versionName: Flags.string({
+            name: 'version',
+            char: 'v',
+            description: `Version name`,
+            required: false,
+            default: 'prod'
+        }),
+        pageSize: Flags.integer({
+            char: 'p',
+            description: 'Logs page size',
+            required: false,
+            default: 100,
+            exclusive: ['tail']
+        }),
+        tail: Flags.boolean({
+            char: 't',
+            description: 'Tail',
             required: false,
             default: false,
         }),
     };
 
     async run(): Promise<void> {
-        const { flags, args } = await this.parse(Logs);
-        const nameAndVersion = args.nameAndVersion;
-        const { squidName, versionName } = parseNameAndVersion(
-            nameAndVersion,
-            this
-        );
-        const follow = flags.follow;
+        const { flags: { tail, pageSize, versionName }, args: { name } } = await this.parse(Logs);
+        const from = new Date(Date.now() - 24 * 60 * 60000);
 
         this.log('Fetching logs...')
 
-        if (follow) {
-            const apiUrl = `${baseUrl}/client/squid/${squidName}/versions/${versionName}/logs/tail`;
-            const params = queryString.stringify({
+        if (tail) {
+            await this.fetchLogs(name, versionName, {
+                limit: 30,
+                from,
+                reverse: true
+            })
 
-            });
+            const stream = await versionTailLogs(name, versionName);
+            await new Promise((resolve, reject) => {
+                streamLines(stream, (line) => {
+                    if (line.length === 0) return
 
-            // FIXME refactor request
-            // using not wrapped fetch fro better streaming (.clone in wrap breaks body stream)
-            const response = await fetch.default(`${apiUrl}?${params}`, {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `token ${getCreds()}`,
-                },
-            });
+                    try {
+                        const entries: LogEntry[] = JSON.parse(line)
 
-            response.body.on('data', (data) => {
-                const dataString = data.toString();
-                if (dataString.length > 0) {
-                    this.prettyPrint(JSON.parse(dataString))
-                }
-            });
-        } else {
-            const apiUrl = `${baseUrl}/client/squid/${squidName}/versions/${versionName}/logs/history`;
-            const params = queryString.stringify({
+                        entries.forEach(e => {
+                            this.prettyPrint(e)
+                        })
+                    } catch (e) {
+                        reject(e)
+                    }
+                })
 
-            });
+                stream.on('error', reject)
+            })
 
-            // FIXME refactor request
-            // using not wrapped fetch fro better streaming (.clone in wrap breaks body stream)
-            const response = await request(`${apiUrl}?${params}`, {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `token ${getCreds()}`,
-                },
-            });
+            return
+        }
 
-            const responseBody: LogsResponse = await response.json();
-            if (responseBody.logs.length === 0) {
+        let cursor = undefined
+        do {
+            const { hasLogs, nextPage }: LogResult = await this.fetchLogs(name, versionName, {
+                limit: pageSize,
+                from,
+                nextPage: cursor
+            })
+            if (!hasLogs) {
                 this.log('No logs found');
                 return;
             }
 
-            responseBody.logs.map(l => {
-                this.prettyPrint(l)
-            });
-        }
+            if (nextPage) {
+                const { more } = await prompt({
+                    name: 'more',
+                    type: 'input',
+                    message: `type "it" to fetch more logs...`,
+                })
+                if (more !== 'it') {
+                    return;
+                }
+            }
+
+            cursor = nextPage
+        } while (cursor)
     }
 
-    prettyPrint(log: Log) {
+    async fetchLogs(squidName: string, versionName : string, { reverse, ...query }: {
+        limit: number,
+        from: Date,
+        nextPage?: string,
+        orderBy?: string,
+        reverse?: boolean
+    }): Promise<LogResult> {
+        let { logs, nextPage } = await versionHistoryLogs(squidName, versionName, query);
+        if (reverse) {
+            logs = logs.reverse()
+        }
+        logs.forEach(l => {
+            this.prettyPrint(l)
+        });
+
+        return { hasLogs: logs.length > 0,  nextPage }
+    }
+
+
+    prettyPrint(log: LogEntry) {
         this.log(`${chalk.dim(log.timestamp)} ${getLevel(log.level)} ${getPayload(log.payload)}`);
     }
 }

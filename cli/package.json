@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "sqd": "./bin/run.js"
+    "sqd": "./bin/run"
   },
   "files": [
     "bin",
@@ -30,15 +30,13 @@
       },
       "squid": {
         "description": "Squid management commands (SaaS)"
-      },
-      "archive": {
-        "description": "Squid archive commands (SaaS)"
       }
     }
   },
   "homepage": "https://www.subsquid.io/",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "dev": "./bin/dev"
   },
   "dependencies": {
     "@oclif/core": "^1.3.0",
@@ -51,7 +49,9 @@
     "@subsquid/util-naming": "^0.0.0",
     "chalk": "^4.1.2",
     "cli-select": "^1.1.2",
+    "cli-table3": "^0.6.2",
     "dotenv": "^10.0.0",
+    "inquirer": "^8.2.4",
     "oclif": "^2.4.3",
     "node-fetch": "^2.6.7",
     "pg": "^8.7.3",
@@ -64,6 +64,7 @@
   "devDependencies": {
     "@subsquid/substrate-processor": "^1.0.1",
     "@types/node": "^16.11.22",
+    "@types/inquirer": "^8.2.1",
     "@types/node-fetch": "^2.5.12",
     "@types/js-yaml": "^4.0.5",
     "typescript": "~4.5.5"

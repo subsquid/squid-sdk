@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "Support Squid new SAAS API",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

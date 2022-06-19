@@ -6,46 +6,65 @@ import {
 import { homedir } from 'os';
 import { resolve } from 'path';
 
-export const configDirectory = resolve(homedir(), '.hydra-cli');
+export const configDirectory = resolve(homedir(), '.subsquid-cli');
 export const configFilePath = resolve(configDirectory, 'config.json');
 
 export const defaultApiUrl = 'https://saas.infra.gc.subsquid.io/api';
 
+export type Config = {
+    apiUrl: string
+    credentials: string
+}
 
-function writeDefaultConfigData() {
-
-    const defaultConfigData = {
+function writeDefaultConfigData(): Config {
+    const defaultConfigData: Config = {
         apiUrl: defaultApiUrl,
         credentials: 'empty'
     };
 
+    writeConfig(defaultConfigData)
+
+    return defaultConfigData
+}
+
+function writeConfig(data: Config) {
     writeFileSync(
-        configFilePath,
-        JSON.stringify(defaultConfigData),
-        {
-            flag: 'w',
-            encoding: 'utf8',
-        }
+      configFilePath,
+      JSON.stringify(data),
     );
 }
 
-export function normalizeDefaults(): void {
+function normalizeDefaults(): Config {
     if (!existsSync(configFilePath)) {
         if (!existsSync(configDirectory)) {
             mkdirSync(configDirectory);
         }
-        writeDefaultConfigData();
-        return;
+
+        return writeDefaultConfigData();;
     }
-    let config;
+
     try {
-        config = JSON.parse(readFileSync(configFilePath, 'utf8'));
+        return JSON.parse(readFileSync(configFilePath, 'utf8'));
     } catch (e) {
-        writeDefaultConfigData();
+       return writeDefaultConfigData();
     }
 }
 
-export function getConfigField(name: string): any {
-    normalizeDefaults();
-    return JSON.parse(readFileSync(configFilePath, 'utf8'))[name];
+export function setConfig({ credentials, apiUrl }: Partial<Config> & Pick<Config, 'credentials'>): Config {
+    const config = normalizeDefaults();
+
+    config.credentials = credentials;
+
+    if (apiUrl) {
+        config.apiUrl = apiUrl;
+    }
+
+    writeConfig(config);
+
+    return config
 }
+
+export function getConfig(): Config {
+    return normalizeDefaults();
+}
+
