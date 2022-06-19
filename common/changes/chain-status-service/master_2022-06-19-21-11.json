@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "Initial release",
+      "type": "none"
+    }
+  ],
+  "packageName": "chain-status-service"
+}
