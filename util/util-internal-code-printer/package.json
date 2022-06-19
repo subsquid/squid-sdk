@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/util-internal-code-printer",
+  "version": "0.0.0",
+  "description": "Naive code printer for bracket languages",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

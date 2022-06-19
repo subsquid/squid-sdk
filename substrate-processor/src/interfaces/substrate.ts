@@ -1,195 +1,168 @@
-import type {SpecVersion} from "@subsquid/substrate-metadata"
+export type QualifiedName = string
 
 
-export interface SubstrateRuntimeVersion {
-    specName: string
-    specVersion: SpecVersion
-}
+/**
+ * Runtime spec id formatted as `<spec_name>@<spec_version>`
+ */
+export type SpecId = string
 
 
 export interface SubstrateBlock {
     /**
-     * Unique block id, following the format <block height>-<first hex digits of the hash>
+     * Unique block id, following the format `<block height>-<first hex digits of the hash>`
      */
     id: string
-
-    /**
-     * Current block hash
-     */
-    hash: string
-
     /**
      * Block height
      */
     height: number
-
     /**
-     * Block timestamp as set by timestamp.now()
+     * Current block hash
      */
-    timestamp: number
-
+    hash: string
     /**
      * Hash of the parent block
      */
     parentHash: string
-
     /**
-     * State Merkle root
+     * Block timestamp as set by `timestamp.now()`
      */
-    stateRoot: string
-
+    timestamp: number
     /**
-     * Extrinsics Merkle root
+     * Runtime spec id formatted as `{spec_name}@{spec_version}`
      */
-    extrinsicsRoot: string
-
+    specId: SpecId
     /**
-     * Substrate runtime version
-     */
-    runtimeVersion: SubstrateRuntimeVersion
-
-    /**
-     * Raw JSON with last runtime upgrade information
-     */
-    lastRuntimeUpgrade: unknown
-
-    /**
-     * Hex string representing the block validator
+     * Account address of block validator
      */
     validator?: string
-
-    /**
-     * An array with basic event information
-     */
-    events: EventInfo[]
-
-    /**
-     * An array with basic extrinsic information
-     */
-    extrinsics: ExtrinsicInfo[]
 }
 
 
-export type QualifiedName = string
-
-export interface EventInfo {
-    id: string
-    name: QualifiedName
-    extrinsic: QualifiedName
-    extrinsicId: string
-}
-
-export interface ExtrinsicInfo {
-    id: string
-    name: QualifiedName
-}
-
-
-export interface SubstrateEvent {
+interface EventBase {
     /**
      * Event id, in the form <blockNumber>-<index>
      */
     id: string
     /**
-     * Event name, in the form section.method
+     * Event name
      */
     name: QualifiedName
-    /**
-     * Event method (as defined in the runtime metadata)
-     */
-    method: string
-    /**
-     * Event section
-     */
-    section?: string
-    /**
-     * Array of raw JSON object with event parameters
-     */
-    params: EventParam[]
     /**
      * Ordinal index in the event array of the current block
      */
     indexInBlock: number
     /**
-     * Block height it appeared in
+     * JSON encoded event arguments
      */
-    blockNumber: number
+    args: any
     /**
-     * If it was emitted in the ApplyExtrinsic phase, the underlying extrinsic information
+     * Event position in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
      */
-    extrinsic?: SubstrateExtrinsic
-    /**
-     * Timestamp of the block, as set by call timestamp.now()
-     */
-    blockTimestamp: number
-
+    pos: number
 }
 
 
-/**
- * Interface representing the raw extrinsic data fetch from the block
- */
+export interface SubstrateInitializationEvent extends EventBase {
+    phase: 'Initialization'
+    extrinsic?: undefined
+    call?: undefined
+}
+
+
+export interface SubstrateApplyExtrinsicEvent extends EventBase {
+    phase: 'ApplyExtrinsic'
+    extrinsic: SubstrateExtrinsic
+    call: SubstrateCall
+}
+
+
+export interface SubstrateFinalizationEvent extends EventBase {
+    phase: 'Finalization'
+    extrinsic?: undefined
+    call?: undefined
+}
+
+
+export type SubstrateEvent =
+    SubstrateInitializationEvent |
+    SubstrateApplyExtrinsicEvent |
+    SubstrateFinalizationEvent
+
+
 export interface SubstrateExtrinsic {
-    /**
-     * extrinsic id
-     */
     id: string
     /**
-     * extrinsic name (`${section}.${method}`)
-     */
-    name: QualifiedName
-    /**
-     * extrinsic method
-     */
-    method: string
-    /**
-     * extrinsic section
-     */
-    section: string
-    /**
-     * extrinsic version information
-     */
-    versionInfo?: string
-    /**
-     * Raw JSON with extrinsic era
-     */
-    era?: unknown
-    /**
-     * Hex string representing the extrinsic signer
-     */
-    signer: string
-    /**
-     * Hex string with the signature
-     */
-    signature?: string
-    /**
-     * An array of raw JSON with extrinsic arguments
-     */
-    args: ExtrinsicArg[]
-    /**
-     * Hex string of the extrinsic hash
-     */
-    hash?: string
-    /**
-     * Extrinsic tip
-     */
-    tip: bigint
-    /**
-     * Ordinal index in the event array of the current block
+     * Ordinal index in the extrinsics array of the current block
      */
     indexInBlock: number
+    version: number
+    signature?: SubstrateExtrinsicSignature
+    call: SubstrateCall
+    fee?: bigint
+    tip?: bigint
+    success: boolean
+    error?: any
+    /**
+     * Blake2b 128-bit hash of the raw extrinsic
+     */
+    hash: string
+    /**
+     * Extrinsic position in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
+     */
+    pos: number
 }
 
 
-export interface EventParam {
-    type: string
-    name: string
-    value: unknown
+export interface SubstrateExtrinsicSignature {
+    address: any
+    signature: any
+    signedExtensions: any
 }
 
 
-export interface ExtrinsicArg {
-    type: string
-    name: string
-    value: unknown
+export interface SubstrateCall {
+    id: string
+    name: QualifiedName
+    /**
+     * JSON encoded call arguments
+     */
+    args: any
+    parent?: SubstrateCall
+    origin?: any
+    success: boolean
+    /**
+     * Call error.
+     *
+     * Absence of error doesn't imply that call was executed successfully,
+     * check {@link success} property for that.
+     */
+    error?: any
+    /**
+     * Position of the call in a joint list of events, calls and extrinsics,
+     * which determines data handlers execution order.
+     */
+    pos: number
+}
+
+
+export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'EVM.Log'
+    evmTxHash: string
+    args: {
+        address: string
+        topics: string[]
+        data: string
+    }
+}
+
+
+export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Contracts.ContractEmitted',
+    args: {
+        contract: string,
+        data: string,
+    }
 }

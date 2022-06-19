@@ -1,34 +1,43 @@
 import assert from 'assert'
-import {StorageContext, Result} from './support'
+import {Block, Chain, ChainContext, BlockContext, Result} from './support'
 import * as v1 from './v1'
 
 export class SystemAccountStorage {
-  constructor(private ctx: StorageContext) {}
+  private readonly _chain: Chain
+  private readonly blockHash: string
+
+  constructor(ctx: BlockContext)
+  constructor(ctx: ChainContext, block: Block)
+  constructor(ctx: BlockContext, block?: Block) {
+    block = block || ctx.block
+    this.blockHash = block.hash
+    this._chain = ctx._chain
+  }
 
   /**
    *  The full account information for a particular account ID.
    */
   get isV1() {
-    return this.ctx._chain.getStorageItemTypeHash('System', 'Account') === 'eb40f1d91f26d72e29c60e034d53a72b9b529014c7e108f422d8ad5f03f0c902'
+    return this._chain.getStorageItemTypeHash('System', 'Account') === 'eb40f1d91f26d72e29c60e034d53a72b9b529014c7e108f422d8ad5f03f0c902'
   }
 
   /**
    *  The full account information for a particular account ID.
    */
-  async getAsV1(key: Uint8Array): Promise<v1.AccountInfoWithRefCount> {
+  async getAsV1(key: v1.AccountId): Promise<v1.AccountInfo> {
     assert(this.isV1)
-    return this.ctx._chain.getStorage(this.ctx.block.hash, 'System', 'Account', key)
+    return this._chain.getStorage(this.blockHash, 'System', 'Account', key)
   }
 
-  async getManyAsV1(keys: Uint8Array[]): Promise<(v1.AccountInfoWithRefCount)[]> {
+  async getManyAsV1(keys: v1.AccountId[]): Promise<(v1.AccountInfo)[]> {
     assert(this.isV1)
-    return this.ctx._chain.queryStorage(this.ctx.block.hash, 'System', 'Account', keys.map(k => [k]))
+    return this._chain.queryStorage(this.blockHash, 'System', 'Account', keys.map(k => [k]))
   }
 
   /**
    * Checks whether the storage item is defined for the current chain version.
    */
   get isExists(): boolean {
-    return this.ctx._chain.getStorageItemTypeHash('System', 'Account') != null
+    return this._chain.getStorageItemTypeHash('System', 'Account') != null
   }
 }

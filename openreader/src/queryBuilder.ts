@@ -1,4 +1,4 @@
-import {toSnakeCase} from "@subsquid/util"
+import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Database} from "./db"
 import type {Dialect} from "./dialect"

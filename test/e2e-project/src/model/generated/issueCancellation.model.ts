@@ -15,6 +15,6 @@ export class IssueCancellation {
   @JoinColumn_()
   issue!: Issue
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   block!: number
 }

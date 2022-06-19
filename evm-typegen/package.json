@@ -21,7 +21,7 @@
   "dependencies": {
     "commander": "^9.0.0",
     "@ethersproject/abi": "^5.5.0",
-    "@subsquid/util": "^0.0.5"
+    "@subsquid/util-internal-code-printer": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",

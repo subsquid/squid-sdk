@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "Introduce FireSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

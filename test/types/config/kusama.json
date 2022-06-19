@@ -1,7 +1,6 @@
 {
   "outDir": "../src/kusama",
-  "chainVersions": "../../data/chain/kusama/versions.json",
-  "typesBundle": "kusama",
+  "specVersions": "../../data/chain/kusama/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

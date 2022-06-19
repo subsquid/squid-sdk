@@ -1,0 +1,22 @@
+{
+  "name": "wasm-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@polkadot/api-contract": "^8.5.1",
+    "@subsquid/graphql-server": "^0.3.0",
+    "@subsquid/substrate-processor": "^0.8.0",
+    "@subsquid/typeorm-store": "^0.0.0",
+    "dotenv": "^10.0.0",
+    "pg": "^8.7.3",
+    "typeorm": "^0.2.41"
+  },
+  "devDependencies": {
+    "@subsquid/cli": "^0.4.1",
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

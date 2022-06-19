@@ -1,13 +1,13 @@
 {
   "outDir": "src/types",
-  "chainVersions": "chainVersions.json",
-  "typesBundle": "./typesBundle.json",
+  "specVersions": "chainSpecVersions.jsonl",
+  "typesBundle": "typesBundle.json",
   "events": [
-    "balances.Transfer"
+    "Balances.Transfer"
   ],
   "calls": [
-    "timestamp.set",
-    "balances.set_balance"
+    "Timestamp.set",
+    "Balances.set_balance"
   ],
   "storage": [
     "System.Account"

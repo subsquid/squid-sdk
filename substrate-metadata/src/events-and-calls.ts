@@ -1,5 +1,4 @@
 import {Ti} from "@subsquid/scale-codec"
-import {toCamelCase} from "@subsquid/util"
 import assert from "assert"
 import {QualifiedName, Type, TypeKind, Variant} from "./types"
 import {getTypeHash} from "./types-hashing"
@@ -15,22 +14,17 @@ export class Registry {
     public readonly definitions: Record<QualifiedName, Definition> = {}
     private hashes: Record<QualifiedName, string> = {}
 
-    constructor(private types: Type[], ti: Ti, camelCaseName?: boolean) {
+    constructor(private types: Type[], ti: Ti) {
         let pallets = types[ti]
         assert(pallets.kind == TypeKind.Variant)
         pallets.variants.forEach(pallet => {
-            let section = toCamelCase(pallet.name)
             assert(pallet.fields.length == 1)
             let palletType = types[pallet.fields[0].type]
             assert(palletType.kind == TypeKind.Variant)
             palletType.variants.forEach(def => {
-                let e = {
+                this.definitions[`${pallet.name}.${def.name}`] = {
                     ...def,
                     pallet: pallet.name
-                }
-                this.definitions[`${section}.${def.name}`] = e
-                if (camelCaseName) {
-                    this.definitions[`${section}.${toCamelCase(def.name)}`] = e
                 }
             })
         })

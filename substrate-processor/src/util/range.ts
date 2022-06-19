@@ -47,3 +47,8 @@ export function rangeDifference(a: Range, b: Range): Range[] {
 export function rangeEnd(range: Range): number {
     return range.to ?? Infinity
 }
+
+
+export function rangeContains(big: Range, small: Range): boolean {
+    return big.from <= small.from && (big.to == null || big.to >= (small.to ?? Infinity))
+}

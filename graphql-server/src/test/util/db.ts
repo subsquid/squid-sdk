@@ -1,4 +1,4 @@
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import {Client as PgClient, ClientBase} from "pg"
 
 

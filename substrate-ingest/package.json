@@ -1,0 +1,40 @@
+{
+  "name": "@subsquid/substrate-ingest",
+  "description": "Data fetcher for substrate chains",
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "bin": {
+    "squid-substrate-ingest": "./bin/run.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/rpc-client": "^0.1.5",
+    "@subsquid/scale-codec": "^0.4.2",
+    "@subsquid/substrate-metadata": "^0.8.3",
+    "@subsquid/logger": "^0.0.0",
+    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-counters": "^0.0.0",
+    "@subsquid/util-internal-hex": "^0.0.0",
+    "@subsquid/util-internal-prometheus-server": "^0.0.0",
+    "@subsquid/util-naming": "^0.0.0",
+    "@substrate/calc": "^0.2.8",
+    "blake2b": "^2.1.4",
+    "commander": "^9.0.0",
+    "pg": "^8.7.3",
+    "postgres-migrations": "^5.3.0",
+    "prom-client": "^14.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "@types/pg": "8.6.4",
+    "dotenv": "^10.0.0"
+  }
+}

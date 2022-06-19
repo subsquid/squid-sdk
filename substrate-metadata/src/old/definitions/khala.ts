@@ -242,5 +242,8 @@ export const bundle: OldTypesBundle = {
                 "ChainId": "u8"
             }
         }
-    ]
+    ],
+    signedExtensions: {
+        CheckMqSequence: 'Null'
+    }
 }

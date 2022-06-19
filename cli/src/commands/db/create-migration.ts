@@ -1,7 +1,8 @@
-import { CliUx, Command } from '@oclif/core';
+import {CliUx, Command} from "@oclif/core"
 import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull, OutDir} from "@subsquid/util"
-import * as dotenv from 'dotenv'
+import {assertNotNull} from "@subsquid/util-internal"
+import {OutDir} from "@subsquid/util-internal-code-printer"
+import * as dotenv from "dotenv"
 import {ConnectionOptions, createConnection} from "typeorm"
 import {Query} from "typeorm/driver/Query"
 import {SqlInMemory} from "typeorm/driver/SqlInMemory"

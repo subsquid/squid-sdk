@@ -1,4 +1,4 @@
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import {Client} from "gql-test-client"
 import {parse} from "graphql"
 import {Client as PgClient, ClientBase, Pool} from "pg"

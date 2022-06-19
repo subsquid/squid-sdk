@@ -1,25 +1,22 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec} from "@subsquid/scale-codec"
-import {Codec as JsonCodec} from "@subsquid/scale-codec-json"
-import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
+import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
 import {
     ChainDescription,
     decodeMetadata,
     Field,
     getChainDescriptionFromMetadata,
-    getOldTypesBundle,
+    isPreV14,
     OldTypes,
     OldTypesBundle,
     QualifiedName,
-    SpecVersion,
     StorageItem
 } from "@subsquid/substrate-metadata"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
-import type {SubstrateRuntimeVersion} from "./interfaces/substrate"
+import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
 
 
@@ -29,57 +26,87 @@ import * as sto from "./util/storage"
  */
 interface BlockInfo {
     height: number
-    hash: string
-    parentHash: string
-    runtimeVersion: SpecVersion | SubstrateRuntimeVersion
+    specId: SpecId
+}
+
+
+interface SpecMetadata {
+    id: SpecId
+    specName: string
+    specVersion: number
+    blockHeight: number
+    hex: string
+}
+
+
+export interface ChainManagerOptions {
+    archiveRequest<T>(query: string): Promise<T>
+    getChainClient: () => ResilientRpcClient
+    getTypesBundle: (meta: SpecMetadata) => OldTypesBundle
 }
 
 
 export class ChainManager {
-    private versions = new Map<SpecVersion, {height: number, chain: Chain}>()
+    private versions = new Map<SpecId, {height: number, chain: Chain}>()
 
-    constructor(
-        private client: ResilientRpcClient,
-        private typesBundle?: OldTypesBundle) {
-    }
+    constructor(private options: ChainManagerOptions) {}
 
     async getChainForBlock(block: BlockInfo): Promise<Chain> {
-        let specVersion = typeof block.runtimeVersion == 'number'
-            ? block.runtimeVersion
-            : block.runtimeVersion.specVersion
-
-        let v = this.versions.get(specVersion)
+        let v = this.versions.get(block.specId)
         if (v != null && v.height < block.height) return v.chain
 
         let height = Math.max(0, block.height - 1)
-        let hash = height > 0 ? block.parentHash : block.hash
-        let rtv: SubstrateRuntimeVersion = await this.client.call('chain_getRuntimeVersion', [hash])
-        v = this.versions.get(rtv.specVersion)
+        let specId = await this.getSpecId(height)
+        v = this.versions.get(specId)
         if (v == null) {
-            let metadataHex: string = await this.client.call('state_getMetadata', [hash])
-            v = this.versions.get(rtv.specVersion) // perhaps it was fetched
+            let meta = await this.getSpecMetadata(specId)
+            v = this.versions.get(specId) // perhaps it was fetched
             if (v == null) {
-                let chain = this.createChain(rtv, metadataHex)
-                v = {chain, height}
-                this.versions.set(rtv.specVersion, v)
+                let chain = this.createChain(meta)
+                v = {chain, height: meta.blockHeight}
+                this.versions.set(specId, v)
             }
         }
-        v.height = Math.min(v.height, height)
         return v.chain
     }
 
-    private createChain(rtv: SubstrateRuntimeVersion, metadataHex: string): Chain {
-        let metadata = decodeMetadata(metadataHex)
+    private createChain(meta: SpecMetadata): Chain {
+        let metadata = decodeMetadata(meta.hex)
         let types: OldTypes | undefined
-        if (parseInt(metadata.__kind.slice(1)) < 14) {
-            let typesBundle = assertNotNull(
-                this.typesBundle || getOldTypesBundle(rtv.specName),
-                `types bundle is required for ${rtv.specName} chain`
-            )
-            types = getTypesFromBundle(typesBundle, rtv.specVersion)
+        if (isPreV14(metadata)) {
+            let typesBundle = this.options.getTypesBundle(meta)
+            types = getTypesFromBundle(typesBundle, meta.specVersion)
         }
         let description = getChainDescriptionFromMetadata(metadata, types)
-        return new Chain(description, this.client)
+        return new Chain(description, () => this.options.getChainClient())
+    }
+
+    private async getSpecId(height: number): Promise<SpecId> {
+        let res: {batch: {header: {specId: string}}[]} = await this.options.archiveRequest(`
+            query {
+                batch(fromBlock: ${height} toBlock: ${height} includeAllBlocks: true limit: 1) {
+                    header {
+                        specId
+                    }
+                }
+            }
+        `)
+        assert(res.batch.length === 1)
+        return res.batch[0].header.specId
+    }
+
+    private getSpecMetadata(specId: SpecId): Promise<SpecMetadata> {
+        return this.options.archiveRequest<{metadataById: SpecMetadata}>(`
+            query {
+                metadataById(id: "${specId}") {
+                    id
+                    specName
+                    specVersion
+                    blockHeight
+                    hex
+                }
+            }
+        `).then(res => res.metadataById)
     }
 }
 
@@ -93,12 +120,16 @@ export class Chain {
 
     constructor(
         public readonly description: ChainDescription,
-        private client: ResilientRpcClient
+        private getClient: () => ResilientRpcClient
     ) {
         this.jsonCodec = new JsonCodec(description.types)
         this.scaleCodec = new ScaleCodec(description.types)
         this.events = new eac.Registry(description.types, description.event)
-        this.calls = new eac.Registry(description.types, description.call, true)
+        this.calls = new eac.Registry(description.types, description.call)
+    }
+
+    get client(): ResilientRpcClient {
+        return this.getClient()
     }
 
     getEventHash(eventName: QualifiedName): string {
@@ -109,36 +140,37 @@ export class Chain {
         return this.calls.getHash(callName)
     }
 
-    decodeEvent(event: {name: string, params: {value: unknown}[]}): any {
+    decodeEvent(event: {name: string, args: any}): any {
         let def = this.events.get(event.name)
-        return this.decode(def, event.params)
+        return this.decode(def, event.args)
     }
 
-    decodeCall(call: {name: string, args: {value: unknown}[]}): any {
+    decodeCall(call: {name: string, args: any}): any {
         let def = this.calls.get(call.name)
         return this.decode(def, call.args)
     }
 
-    private decode(def: eac.Definition, args: {value: unknown}[]): any {
+    private decode(def: eac.Definition, args: any): any {
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeTuple(def.fields, args)
+        assert(args != null && typeof args == 'object', 'invalid args')
         let result: any = {}
         for (let i = 0; i < def.fields.length; i++) {
             let f = def.fields[i]
             let name = assertNotNull(f.name)
-            result[name] = this.jsonCodec.decode(f.type, args[i].value)
+            result[name] = this.jsonCodec.decode(f.type, args[name])
         }
         return result
     }
 
-    private decodeTuple(fields: Field[], values: {value: unknown}[]): any {
+    private decodeTuple(fields: Field[], args: unknown): any {
         if (fields.length == 1) {
-            return this.jsonCodec.decode(fields[0].type, values[0].value)
+            return this.jsonCodec.decode(fields[0].type, args)
         } else {
-            assert(fields.length == values.length, 'invalid event data')
+            assert(Array.isArray(args) && fields.length == args.length, 'invalid args')
             let result: any[] = new Array(fields.length)
             for (let i = 0; i < fields.length; i++) {
-                result[i] = this.jsonCodec.decode(fields[i].type, values[i].value)
+                result[i] = this.jsonCodec.decode(fields[i].type, args[i])
             }
             return result
         }
@@ -184,7 +216,7 @@ export class Chain {
                 case 'Required':
                     throw new Error(`Required storage item not found`)
                 default:
-                    throwUnexpectedCase(item.modifier)
+                    throw unexpectedCase(item.modifier)
             }
         }
         return this.scaleCodec.decodeBinary(item.value, value)

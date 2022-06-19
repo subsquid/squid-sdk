@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "Introduce FireSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}

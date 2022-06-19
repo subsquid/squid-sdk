@@ -1,7 +1,6 @@
 {
   "outDir": "../src/khala",
-  "chainVersions": "../../data/chain/khala/versions.json",
-  "typesBundle": "khala",
+  "specVersions": "../../data/chain/khala/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

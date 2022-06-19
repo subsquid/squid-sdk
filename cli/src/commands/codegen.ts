@@ -1,9 +1,9 @@
-import {Command} from '@oclif/core'
-import {loadModel} from '@subsquid/openreader/dist/tools'
-import {OutDir, resolveGraphqlSchema} from '@subsquid/util'
-import * as fs from 'fs'
-import {generateOrmModels} from '../codegen'
-import {generateFtsMigrations} from '../fts'
+import {Command} from "@oclif/core"
+import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
+import {OutDir} from "@subsquid/util-internal-code-printer"
+import * as fs from "fs"
+import {generateOrmModels} from "../codegen"
+import {generateFtsMigrations} from "../fts"
 
 
 export default class Codegen extends Command {

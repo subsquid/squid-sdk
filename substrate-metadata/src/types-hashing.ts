@@ -1,4 +1,4 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {Ti, Type, TypeKind, TypeRegistry} from "./types"
 import {sha256} from "./util"
@@ -107,7 +107,7 @@ export class TypeHasher {
                 let hash = this.cache[ti]
                 if (hash) return hash
             }
-            // Otherwise perform a regular Tarjan's visit as nothing happened.
+            // Otherwise, perform a regular Tarjan's visit as nothing happened.
         }
         node = {
             index: this.index,

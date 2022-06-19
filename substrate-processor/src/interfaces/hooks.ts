@@ -1,34 +1,54 @@
 import {Range} from "../util/range"
-import {EvmLogHandler, EvmTopicSet} from "./evm"
-import {BlockHandler, EventHandler, ExtrinsicHandler} from "./handlerContext"
+import {
+    BlockHandlerDataRequest,
+    BlockHandler,
+    CallHandler,
+    ContractsContractEmittedHandler,
+    EventHandler,
+    EvmLogHandler,
+    EvmTopicSet
+} from "./dataHandlers"
+import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
 
 
 export interface BlockHook {
-    handler: BlockHandler
+    handler: BlockHandler<any>
     range?: Range
+    data?: BlockHandlerDataRequest
 }
 
 
 export interface EventHook {
-    handler: EventHandler
+    handler: EventHandler<any>
     event: QualifiedName
+    data?: EventDataRequest
     range?: Range
 }
 
 
-export interface ExtrinsicHook {
-    handler: ExtrinsicHandler
-    event: QualifiedName
-    extrinsic: QualifiedName
+export interface CallHook {
+    handler: CallHandler<any>
+    call: QualifiedName
+    failures?: boolean
+    data?: CallDataRequest
     range?: Range
 }
 
 
 export interface EvmLogHook {
-    handler: EvmLogHandler
+    handler: EvmLogHandler<any>
     contractAddress: string
     filter?: EvmTopicSet[]
+    data?: EventDataRequest
+    range?: Range
+}
+
+
+export interface ContractsContractEmittedHook {
+    handler: ContractsContractEmittedHandler<any>,
+    contractAddress: string
+    data?: EventDataRequest
     range?: Range
 }
 
@@ -37,6 +57,7 @@ export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
     event: EventHook[]
-    extrinsic: ExtrinsicHook[]
+    call: CallHook[]
     evmLog: EvmLogHook[]
+    contractsContractEmitted: ContractsContractEmittedHook[]
 }

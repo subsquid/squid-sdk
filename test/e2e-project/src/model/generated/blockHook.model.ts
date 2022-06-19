@@ -14,7 +14,7 @@ export class BlockHook {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   blockNumber!: number
 
   @Column_("varchar", {length: 4, nullable: false})

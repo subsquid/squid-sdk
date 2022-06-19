@@ -33,11 +33,11 @@ export interface OldTypesAlias {
 export interface OldTypes {
     types: Record<string, OldTypeDefinition>
     typesAlias?: OldTypesAlias
+    signedExtensions?: Record<string, OldTypeExp>
 }
 
 
-export type SpecVersion = number
-export type SpecVersionRange = [minInclusive: SpecVersion | null, maxInclusive: SpecVersion | null]
+export type SpecVersionRange = [minInclusive: number | null, maxInclusive: number | null]
 
 
 export interface OldTypesWithSpecVersionRange extends OldTypes {

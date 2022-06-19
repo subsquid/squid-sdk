@@ -2,7 +2,7 @@ import { program } from "commander";
 import process from "process";
 import path from "path";
 import fs from "fs";
-import { Output } from "@subsquid/util";
+import { Output } from "@subsquid/util-internal-code-printer";
 import { EventFragment, Interface, ParamType } from "@ethersproject/abi";
 
 export function run(): void {

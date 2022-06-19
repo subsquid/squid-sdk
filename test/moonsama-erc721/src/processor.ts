@@ -1,15 +1,15 @@
-import {assertNotNull, SubstrateEvmProcessor} from "@subsquid/substrate-evm-processor"
+import {SubstrateProcessor} from "@subsquid/substrate-processor"
+import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contract, createContractEntity, getContractEntity} from "./contract"
 import * as erc721 from "./erc721"
 import {Owner, Token, Transfer} from "./model"
 
 
-const processor = new SubstrateEvmProcessor('erc721')
+const processor = new SubstrateProcessor(new TypeormDatabase())
 
 
 processor.setDataSource({
-    chain: assertNotNull(process.env.CHAIN_NODE),
-    archive: assertNotNull(process.env.ARCHIVE)
+    archive: 'https://moonriver.archive.subsquid.io/graphql'
 })
 
 
@@ -26,7 +26,7 @@ processor.addEvmLogHandler(
         ]
     },
     async ctx => {
-        let transfer = erc721.events['Transfer(address,address,uint256)'].decode(ctx)
+        let transfer = erc721.events['Transfer(address,address,uint256)'].decode(ctx.event.args)
 
         let from = await ctx.store.get(Owner, transfer.from)
         if (from == null) {
@@ -55,13 +55,13 @@ processor.addEvmLogHandler(
         }
 
         await ctx.store.save(new Transfer({
-            id: ctx.txHash,
+            id: ctx.event.evmTxHash,
             token,
             from,
             to,
-            timestamp: BigInt(ctx.substrate.block.timestamp),
-            block: ctx.substrate.block.height,
-            transactionHash: ctx.txHash
+            timestamp: BigInt(ctx.block.timestamp),
+            block: ctx.block.height,
+            transactionHash: ctx.event.evmTxHash
         }))
     }
 )

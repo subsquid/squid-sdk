@@ -1,36 +1,54 @@
-import {OldTypesBundleError} from "@subsquid/substrate-metadata"
+import {createLogger} from "@subsquid/logger"
+import {getOldTypesBundle, OldTypesBundle, OldTypesBundleError, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {ArchiveApi} from "@subsquid/substrate-metadata-explorer/lib/archiveApi"
+import {readSpecVersions, SpecFileError, SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
+import {runProgram} from "@subsquid/util-internal"
 import {Command} from "commander"
-import * as process from "process"
 import {ConfigError, readConfig} from "./config"
 import {Typegen} from "./typegen"
 
 
-export function run(): void {
+const log = createLogger('sqd:substrate-typegen')
+
+
+runProgram(async () => {
     let program = new Command()
 
     program.description(`
-Generates TypeScript definitions for chain events and extrinsics
-for use within substrate-processor mapping handlers.
+Generates TypeScript classes for events, calls and storage items
     `.trim())
 
     program.argument('config', 'JSON file with options')
 
     let configFile = program.parse().args[0]
+    let config = readConfig(configFile)
 
-    try {
-        let config = readConfig(configFile)
-        Typegen.generate(config)
-    } catch(e: any) {
-        printError(e)
-        process.exit(1)
+    let typesBundle: OldTypesBundle | undefined
+    if (config.typesBundle) {
+        typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle)
     }
-}
 
-
-function printError(err: Error) {
-    if (err instanceof ConfigError || err instanceof OldTypesBundleError) {
-        console.error(`error: ${err.message}`)
+    let specVersions: SpecVersion[]
+    if (/^https?:\/\//.test(config.specVersions)) {
+        log.info(`downloading spec versions from ${config.specVersions}`)
+        specVersions = await new ArchiveApi(config.specVersions, log.child('archive')).fetchVersions()
     } else {
-        console.error(err)
+        specVersions = readSpecVersions(config.specVersions)
     }
-}
+
+    Typegen.generate({
+        outDir: config.outDir,
+        specVersions,
+        typesBundle,
+        events: config.events,
+        calls: config.calls,
+        storage: config.storage
+    })
+
+}, err => {
+    if (err instanceof ConfigError || err instanceof OldTypesBundleError || err instanceof SpecFileError) {
+        log.fatal(err.message)
+    } else {
+        log.fatal(err)
+    }
+})

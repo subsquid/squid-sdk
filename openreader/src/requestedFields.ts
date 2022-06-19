@@ -1,4 +1,4 @@
-import {toPlural} from "@subsquid/util"
+import {toPlural} from "@subsquid/util-naming"
 import {UserInputError} from "apollo-server-core"
 import assert from "assert"
 import {GraphQLResolveInfo, GraphQLSchema} from "graphql"

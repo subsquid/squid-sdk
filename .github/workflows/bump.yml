@@ -1,6 +1,14 @@
 name: bump
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: release tag
+        required: true
+        type: choice
+        options:
+          - next
+          - latest
 
 jobs:
   bump:
@@ -10,16 +18,21 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
       - name: configure git
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+
       - name: create local release branch
-        run: git fetch origin release:release
+        run: git fetch origin ${{ github.event.inputs.tag }}:release
+
       - name: check change files
         run: node common/scripts/install-run-rush.js change --verify --target-branch release
+
       - name: bump versions
         run: node common/scripts/install-run-rush.js version --bump --target-branch release
+
       - name: merge back release branch
         run: |
           git checkout "${GITHUB_REF##*/}"

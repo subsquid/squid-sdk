@@ -13,7 +13,7 @@ export class BlockTimestamp {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   blockNumber!: number
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})

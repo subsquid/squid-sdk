@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.57.1",
+  "rushVersion": "5.74.0",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "6.24.4",
+  "pnpmVersion": "6.32.22",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -449,127 +449,191 @@
       "packageName": "@subsquid/cli",
       "projectFolder": "cli",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql-server",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/rpc-client",
-      "projectFolder": "rpc-client",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
+      "packageName": "workspace",
+      "projectFolder": "ops/workspace",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "ops-xcm-typegen",
+      "projectFolder": "ops/xcm-typegen",
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "scale-codec",
       "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
-      "packageName": "@subsquid/scale-codec-json",
-      "projectFolder": "scale-codec-json",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ss58",
       "projectFolder": "ss58",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ss58-codec",
       "projectFolder": "ss58-codec",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-archive",
-      "projectFolder": "substrate-archive",
-      "shouldPublish": false,
-      "versionPolicyName": "docker-only"
+      "packageName": "@subsquid/typeorm-store",
+      "projectFolder": "stores/typeorm-store",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-archive-status-service",
-      "projectFolder": "substrate-archive-status-service",
-      "shouldPublish": false,
-      "versionPolicyName": "docker-only"
+      "packageName": "@subsquid/substrate-ingest",
+      "projectFolder": "substrate-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate-metadata",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
       "projectFolder": "substrate-metadata-explorer",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
       "shouldPublish": true,
-      "versionPolicyName": "public"
-    },
-    {
-      "packageName": "@subsquid/substrate-evm-processor",
-      "projectFolder": "substrate-evm-processor",
-      "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "chain-status-service",
+      "projectFolder": "util/chain-status-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/logger",
+      "projectFolder": "util/logger",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "projectFolder": "util/rpc-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/typeorm-config",
-      "projectFolder": "typeorm-config",
+      "projectFolder": "util/typeorm-config",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util",
-      "projectFolder": "util",
+      "packageName": "@subsquid/util-internal",
+      "projectFolder": "util/util-internal",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-binary-heap",
+      "projectFolder": "util/util-internal-binary-heap",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-code-printer",
+      "projectFolder": "util/util-internal-code-printer",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-counters",
+      "projectFolder": "util/util-internal-counters",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-gql-request",
+      "projectFolder": "util/util-internal-gql-request",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/util-internal-hex",
-      "projectFolder": "util-internal-hex",
+      "projectFolder": "util/util-internal-hex",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-http-server",
+      "projectFolder": "util/util-internal-http-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-service-manager",
+      "projectFolder": "util/util-internal-service-manager",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-naming",
+      "projectFolder": "util/util-naming",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/util-internal-json",
-      "projectFolder": "util-internal-json",
+      "projectFolder": "util/util-internal-json",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-prometheus-server",
+      "projectFolder": "util/util-internal-prometheus-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-read-lines",
+      "projectFolder": "util/util-internal-read-lines",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/util-xxhash",
-      "projectFolder": "util-xxhash",
+      "projectFolder": "util/util-xxhash",
       "shouldPublish": true,
-      "versionPolicyName": "public"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "balances",
@@ -607,8 +671,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "workspace",
-      "projectFolder": "workspace",
+      "packageName": "wasm-contracts",
+      "projectFolder": "test/wasm-contracts",
       "shouldPublish": false
     }
   ]

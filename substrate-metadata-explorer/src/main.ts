@@ -1,76 +1,64 @@
+import {createLogger} from "@subsquid/logger"
+import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {runProgram} from "@subsquid/util-internal"
 import {Command, InvalidOptionArgumentError} from "commander"
-import * as fs from "fs"
 import * as process from "process"
-import {exploreChainVersions} from "./index"
-import {ChainVersion} from "./types"
+import {ArchiveApi} from "./archiveApi"
+import {ChainApi} from "./chainApi"
+import {explore, ExploreApi} from "./explore"
+import {Out} from "./out"
 
 
-export function run() {
+const log = createLogger('sqd:substrate-metadata-explorer')
+
+
+runProgram(async () => {
     let program = new Command()
 
     program.description(`
-Explores chain spec versions.
+Finds all chain spec versions and stores its metadata in JSON lines file.
 
-It scans the chain and finds all blocks where new spec version was introduced.
-The result of exploration is saved in a json file:
+Either WebSocket chain node RPC endpoint or squid archive can serve as a data source.
 
-[
-    {
-        "specVersion": 1,
-        "blockNumber": 10,
-        "blockHash": "0x..",
-        "metadata": "0x.."
-    },
-    ...
-]
-
-If the output file already exists, exploration will start from the last known block.
-The resulting file will be updated with new data.
+If the output file already exists, it will not start from scratch, 
+but rather try to augment it.
 `.trim())
 
     program.usage('squid-substrate-metadata-explorer --chain <ws://> --out <file> [options]')
-    program.requiredOption('--chain <ws://>', 'chain rpc endpoint', urlOptionValidator(['ws:', 'wss:']))
     program.requiredOption('--out <file>', 'output file')
-    program.option(
-        '--archive <url>',
-        'squid substrate archive (significantly speedups exploration)',
-        urlOptionValidator(['http:', 'https:'])
-    )
+    program.option('--archive <url>', 'squid substrate archive', urlOptionValidator(['http:', 'https:']))
+    program.option('--chain <ws://>', 'chain rpc endpoint', urlOptionValidator(['ws:', 'wss:']))
 
     let options = program.parse().opts() as {
-        chain: string
         out: string
+        chain?: string
         archive?: string
     }
 
-    let fromBlock = 0
-    let initialData: ChainVersion[] | undefined
-    if (fs.existsSync(options.out)) {
-        initialData = JSON.parse(fs.readFileSync(options.out, 'utf-8'))
-        initialData?.sort((a, b) => a.blockNumber - b.blockNumber)
-    }
-    if (initialData?.length) {
-        fromBlock = initialData[initialData.length - 1].blockNumber
-        console.log(`output file has explored versions, will continue from there and augment the file`)
+    let api: ExploreApi
+    let out = new Out(options.out)
+    if (out.isJson()) {
+        log.warn(`JSON lines (.jsonl) format is recommended instead of .json, but output file is set to ${options.out}`)
     }
 
-    if (fromBlock > 0) {
-        console.log(`starting from block: ${fromBlock}`)
-    }
-
-    exploreChainVersions({
-        chainEndpoint: options.chain,
-        archiveEndpoint: options.archive,
-        fromBlock,
-        log: msg => console.log(msg)
-    }).then(versions => {
-        let data = initialData ? initialData.concat(versions.slice(1)) :  versions
-        fs.writeFileSync(options.out, JSON.stringify(data, null, 2))
-    }).catch(err => {
-        console.error(err)
+    if (options.archive) {
+        api = new ArchiveApi(options.archive, log)
+    } else if (options.chain) {
+        let client = new ResilientRpcClient({
+            url: options.chain,
+            maxRetries: 3,
+            onRetry(err, errorsInRow, backoff) {
+                log.warn({reason: err.message, backoff}, 'RPC retry')
+            }
+        })
+        api = new ChainApi(client, log)
+    } else {
+        log.fatal('either --archive or --chain option is required')
         process.exit(1)
-    })
-}
+    }
+
+    await explore(api, out, log)
+}, err => log.fatal(err))
 
 
 function urlOptionValidator(protocol?: string[]): (s: string) => string {

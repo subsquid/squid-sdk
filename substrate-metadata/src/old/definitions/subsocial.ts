@@ -685,4 +685,7 @@ export const bundle: OldTypesBundle = {
             },
         },
     ],
+    signedExtensions: {
+        EnsureAllowedToClaimTokens: 'Null'
+    }
 };

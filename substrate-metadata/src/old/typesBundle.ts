@@ -1,9 +1,9 @@
 import {types as metadataDefinitions} from "./definitions/metadata"
 import {substrateBundle} from "./definitions/substrate"
-import type {OldTypes, OldTypesBundle, SpecVersion, SpecVersionRange} from "./types"
+import type {OldTypes, OldTypesBundle, SpecVersionRange} from "./types"
 
 
-export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVersion): OldTypes {
+export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes {
     let types: OldTypes = {
         types: {
             ...metadataDefinitions as any,
@@ -13,6 +13,10 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVers
         typesAlias: {
             ...substrateBundle.typesAlias,
             ...bundle.typesAlias
+        },
+        signedExtensions: {
+            ...substrateBundle.signedExtensions,
+            ...bundle.signedExtensions
         }
     }
 
@@ -23,6 +27,7 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVers
         if (isWithinRange(override.minmax, specVersion)) {
             Object.assign(types.types, override.types)
             Object.assign(types.typesAlias, override.typesAlias)
+            Object.assign(types.signedExtensions, override.signedExtensions)
         }
     }
 
@@ -30,7 +35,7 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: SpecVers
 }
 
 
-function isWithinRange(range: SpecVersionRange, version: SpecVersion): boolean {
+function isWithinRange(range: SpecVersionRange, version: number): boolean {
     let beg = range[0] ?? 0
     let end = range[1] ?? Infinity
     return beg <= version && version <= end

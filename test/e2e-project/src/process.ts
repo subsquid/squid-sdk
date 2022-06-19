@@ -1,29 +1,19 @@
 import * as ss58 from "@subsquid/ss58"
-import {SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {decodeHex, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import {TypeormDatabase} from "@subsquid/typeorm-store"
+import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
-import * as process from "process"
 import {loadInitialData} from "./initialData"
-import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transfer} from "./model"
+import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transaction, Transfer} from "./model"
 import {TimestampSetCall} from "./types/calls"
 import {BalancesTransferEvent} from "./types/events"
 import {SystemAccountStorage} from "./types/storage"
-import {getOrCreate} from "./util"
+import {getDataSource, getOrCreate, waitForGateway} from "./util"
 
 
-const processor = new SubstrateProcessor('test')
-
-
+const processor = new SubstrateProcessor(new TypeormDatabase())
 processor.setTypesBundle('typesBundle.json')
-
-
-if (process.env.ARCHIVE_ENDPOINT && process.env.CHAIN_ENDPOINT) {
-    processor.setDataSource({
-        archive: process.env.ARCHIVE_ENDPOINT,
-        chain: process.env.CHAIN_ENDPOINT
-    })
-} else {
-    throw new Error('ARCHIVE_ENDPOINT and CHAIN_ENDPOINT must be set')
-}
+processor.setDataSource(getDataSource())
 
 
 processor.addPreHook({range: {from: 0, to: 0}}, ctx => loadInitialData(ctx.store))
@@ -52,23 +42,18 @@ processor.addPostHook({range: {from: 2, to: 3}}, async ctx => {
 })
 
 
-processor.addEventHandler('balances.Transfer', async ctx => {
-    let [from, to, value] = new BalancesTransferEvent(ctx).asV1
+processor.addEventHandler('Balances.Transfer', async ctx => {
+    assert(ctx.event.call?.origin != null, 'origin must be defined')
 
-    let blockEvent = ctx.block.events.find(e => e.name === 'balances.Transfer')
-    assert(blockEvent != null, 'should find event among block events')
-    assert.strictEqual(blockEvent.extrinsic, 'balances.transfer')
-    assert.strictEqual(blockEvent.extrinsicId, ctx.extrinsic!.id)
-    assert(ctx.block.timestamp != null, 'block.timestamp must be set')
-    assert(ctx.block.timestamp === ctx.event.blockTimestamp, 'event.blockTimestamp must be set to block.timestamp')
+    let [from, to, value] = new BalancesTransferEvent(ctx).asV1
 
     let transfer = new Transfer({
         id: ctx.event.id,
         from,
         to,
         value,
-        tip: ctx.extrinsic?.tip ?? 0n,
-        extrinsicId: ctx.extrinsic?.id,
+        tip: 0n,
+        extrinsicId: ctx.event.extrinsic?.id,
         insertedAt: new Date(ctx.block.timestamp),
         block: ctx.block.height,
         timestamp: BigInt(ctx.block.timestamp),
@@ -112,10 +97,10 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
 })
 
 
-processor.addExtrinsicHandler('timestamp.set', async ctx => {
+processor.addCallHandler('Timestamp.set', async ctx => {
     let timestamp = new TimestampSetCall(ctx).asV1.now
     if (ctx.block.timestamp !== Number(timestamp)) {
-        throw new Error(`Block timestamp ${ctx.block.timestamp} does not match timestamp.set call argument ${timestamp}`)
+        throw new Error(`Block timestamp ${ctx.block.timestamp} does not match Timestamp.set call argument ${timestamp}`)
     }
     await ctx.store.save(new BlockTimestamp({
         id: ctx.block.hash,
@@ -125,4 +110,33 @@ processor.addExtrinsicHandler('timestamp.set', async ctx => {
 })
 
 
-processor.run()
+processor.addPostHook({
+    data: {
+        items: {
+            events: {
+                'System.ExtrinsicSuccess': {
+                    event: {extrinsic: {signature: true, call: {name: true}}}
+                }
+            }
+        }
+    }
+} as const, async ctx => {
+    for (let item of ctx.items) {
+        if (item.kind != 'event' || item.event.name != 'System.ExtrinsicSuccess') continue
+        let extrinsic = assertNotNull(item.event.extrinsic)
+        if (extrinsic.signature == null) continue
+        ctx.store.insert(new Transaction({
+            id: extrinsic.id,
+            name: extrinsic.call.name,
+            sender: ss58.codec(42).encode(decodeHex(extrinsic.signature.address))
+        }))
+    }
+})
+
+
+waitForGateway().then(() => {
+    processor.run()
+}, err => {
+    console.error(err)
+    process.exit(1)
+})

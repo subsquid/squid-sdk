@@ -1,0 +1,25 @@
+storage: ../storage
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+
+packages:
+  "@subsquid/archive-registry":
+    access: $all
+    proxy: npmjs
+
+  "@subsquid/graphiql-console":
+    access: $all
+    proxy: npmjs
+
+  "@subsquid/*":
+    access: $anonymous
+    publish: $anonymous
+
+  "@*/*":
+    access: $all
+    proxy: npmjs
+
+  "**":
+    access: $all
+    proxy: npmjs

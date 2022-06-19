@@ -1,0 +1,165 @@
+import {def} from "@subsquid/util-internal"
+import fs from "fs"
+import latestVersion from "latest-version"
+import * as path from "path"
+import * as JSONC from "jsonc-parser"
+import * as semver from "semver"
+import {PackageJson} from "type-fest"
+
+
+type PkgJson = PackageJson.PackageJsonStandard
+type Deps = Partial<Record<string, string>>
+
+
+interface Pkg {
+    json: PkgJson
+    loc: string
+    changed?: boolean
+}
+
+
+interface RushProject {
+    packageName: string
+    projectFolder: string
+}
+
+
+interface Rush {
+    projects: RushProject[]
+}
+
+
+export class Workspace {
+    constructor(private dir: string) {}
+
+    save(): void {
+        this.packages().forEach(def => {
+            if (!def.changed) return
+            this.write(
+                path.join(def.loc, 'package.json'),
+                def.json
+            )
+            def.changed = false
+        })
+    }
+
+    async update(majorBumpSet?: Set<string>): Promise<void> {
+        let versions = this.unifiedDependencies()
+        for (let name in versions) {
+            let current = pure(versions[name]!)
+            let latest = majorBumpSet?.has(name)
+                ? await latestVersion(name)
+                : await latestVersion(name, {version: '^'+current})
+            if (current != latest) {
+                console.log(`updated ${name}\t${current} -> ${latest}`)
+                versions[name] = prefix(versions[name]!) + latest
+            }
+        }
+    }
+
+    unify(): void {
+        let versions = this.unifiedDependencies()
+        this.packages().forEach((def, name) => {
+            const set = (deps?: Deps) => {
+                for (let key in deps) {
+                    let current = deps[key]
+                    let latest = versions[key]
+                    if (latest && current != latest) {
+                        deps[key] = latest
+                        console.log(`changed ${name}\t${key}\t${current} -> ${latest}`)
+                        def.changed = true
+                    }
+                }
+            }
+
+            set(def.json.dependencies)
+            set(def.json.peerDependencies)
+            set(def.json.optionalDependencies)
+            set(def.json.devDependencies)
+        })
+    }
+
+    @def
+    private unifiedDependencies(): Deps {
+        let deps: Deps = {}
+        let packages = this.packages()
+        packages.forEach((def, name) => {
+            let all = {
+                ...def.json.devDependencies,
+                ...def.json.optionalDependencies,
+                ...def.json.peerDependencies,
+                ...def.json.dependencies
+            }
+            for (let key in all) {
+                if (packages.has(key)) continue
+                let version = all[key]!
+                let sv = semver.clean(pure(version))
+                if (sv == null) continue
+                let dep = deps[key]!
+                if (dep) {
+                    let current = pure(dep)
+                    let v = semver.gte(sv, current) ? sv : current
+                    let p = combinePrefix(prefix(version), prefix(dep))
+                    deps[key] = p + v
+                } else {
+                    deps[key] = version
+                }
+            }
+        })
+        return deps
+    }
+
+    @def
+    private packages(): Map<string, Pkg> {
+        let packages = new Map<string, Pkg>()
+        let rush: Rush = this.read('rush.json')
+        rush.projects.forEach(project => {
+            let loc = project.projectFolder
+            let json: PkgJson = this.read(path.join(loc, 'package.json'))
+            packages.set(project.packageName, {
+                loc,
+                json
+            })
+        })
+        return packages
+    }
+
+    private read<T>(file: string): T {
+        let content = fs.readFileSync(this.path(file), 'utf-8')
+        let errors: JSONC.ParseError[] = []
+        let json = JSONC.parse(content, errors, {
+            allowEmptyContent: true,
+            allowTrailingComma: true
+        })
+        if (errors.length > 0) {
+            throw new Error(`Failed to parse ${file}, error code: ${errors[0].error}`)
+        }
+        return json
+    }
+
+    private write(file: string, obj: unknown): void {
+        let json = JSON.stringify(obj, null, 2)
+        fs.writeFileSync(this.path(file), json)
+    }
+
+    private path(file: string): string {
+        return path.resolve(this.dir, file)
+    }
+}
+
+
+function combinePrefix(p1: string, p2: string): string {
+    if (!p1 || !p2) return ''
+    if (p1 == '~' || p2 == '~') return '~'
+    return '^'
+}
+
+
+function prefix(version: string): string {
+    return version[0] == '^' || version[0] == '~' ? version[0] : ''
+}
+
+
+function pure(version: string): string {
+    return prefix(version) ? version.slice(1) : version
+}

@@ -1,9 +1,7 @@
 {
     "outDir": "../src/hydradx",
-    "chainVersions": "../../data/chain/hydradx/versions.json",
-    "typesBundle": "hydradx",
+    "specVersions": "../../data/chain/hydradx/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true
   }
-  

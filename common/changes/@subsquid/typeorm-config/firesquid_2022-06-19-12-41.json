@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "Introduce FireSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}

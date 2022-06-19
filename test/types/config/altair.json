@@ -1,7 +1,6 @@
 {
   "outDir": "../src/altair",
-  "chainVersions": "../../data/chain/altair/versions.json",
-  "typesBundle": "altair",
+  "specVersions": "../../data/chain/altair/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

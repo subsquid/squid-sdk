@@ -1,5 +1,6 @@
 import type {FTS_Query, Model} from '@subsquid/openreader/dist/model'
-import {OutDir, toSnakeCase} from '@subsquid/util'
+import {OutDir} from '@subsquid/util-internal-code-printer'
+import {toSnakeCase} from "@subsquid/util-naming"
 
 const TS = 64060578000000
 

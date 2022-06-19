@@ -1,9 +1,7 @@
 {
     "outDir": "../src/basilisk",
-    "chainVersions": "../../data/chain/basilisk/versions.json",
-    "typesBundle": "basilisk",
+    "specVersions": "../../data/chain/basilisk/versions.jsonl",
     "events": true,
     "calls": true,
     "storage": true
   }
-  

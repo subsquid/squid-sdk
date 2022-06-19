@@ -1,5 +1,5 @@
-import {throwUnexpectedCase} from "@subsquid/scale-codec/lib/util"
-import {assertNotNull, def, unexpectedCase} from "@subsquid/util"
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
+import {assertNotNull, def, last, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {
     EventMetadataV9,
@@ -16,17 +16,34 @@ import {OldTypeRegistry} from "./old/typeRegistry"
 import {OldTypes} from "./old/types"
 import {Storage, StorageHasher, StorageItem} from "./storage"
 import {Field, Ti, Type, TypeKind, Variant} from "./types"
-import {getTypeByPath, normalizeMetadataTypes} from "./util"
+import {isUnitType, normalizeMetadataTypes} from "./util"
 
 
 export interface ChainDescription {
     types: Type[]
     call: Ti
-    // signature: Ti
+    digest: Ti
+    digestItem: Ti
     event: Ti
     eventRecord: Ti
     eventRecordList: Ti
+    signature: Ti
     storage: Storage
+    constants: Constants
+}
+
+
+export interface Constants {
+    [pallet: string]: {
+        [name: string]: Constant
+    }
+}
+
+
+export interface Constant {
+    type: Ti
+    value: Uint8Array
+    docs: string[]
 }
 
 
@@ -54,12 +71,34 @@ class FromV14 {
         return {
             types: this.types(),
             call: this.call(),
-            // signature: this.signature(),
+            digest: this.digest(),
+            digestItem: this.digestItem(),
             event: this.event(),
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
-            storage: this.storage()
+            signature: this.signature(),
+            storage: this.storage(),
+            constants: this.constants()
         }
+    }
+
+    @def
+    private digest(): Ti {
+        return this.getStorageItem('System', 'Digest').value
+    }
+
+    @def
+    private digestItem(): Ti {
+        let digest = this.types()[this.digest()]
+        assert(digest.kind == TypeKind.Composite)
+        for (let field of digest.fields) {
+            if (field.name == 'logs') {
+                let seq = this.types()[field.type]
+                assert(seq.kind == TypeKind.Sequence)
+                return seq.type
+            }
+        }
+        assert(false, `Can't extract DigestItem from Digest`)
     }
 
     @def
@@ -72,28 +111,17 @@ class FromV14 {
     }
 
     @def
-    private call(): Ti {
-        let types = this.metadata.lookup.types
-        let extrinsic = this.metadata.extrinsic.type
-        let params = types[extrinsic].type.params
-        let call = params.find(p => p.name == 'Call')
-        return assertNotNull(call?.type, 'expected to find Call type among extrinsic type parameters')
+    private eventRecord(): Ti {
+        let types = this.types()
+        let eventRecordList = this.eventRecordList()
+        let seq = types[eventRecordList]
+        assert(seq.kind == TypeKind.Sequence)
+        return seq.type
     }
 
     @def
     private eventRecordList(): Ti {
-        let types = this.types()
-        let eventRecord = this.eventRecord()
-        let list = types.findIndex(type => type.kind == TypeKind.Sequence && type.type == eventRecord)
-        if (list < 0) {
-            list = types.push({kind: TypeKind.Sequence, type: eventRecord}) - 1
-        }
-        return list
-    }
-
-    @def
-    private eventRecord(): Ti {
-        return getTypeByPath(this.types(), ['frame_system', 'EventRecord'])
+        return this.getStorageItem('System', 'Events').value
     }
 
     @def
@@ -107,6 +135,8 @@ class FromV14 {
                     name: ext.identifier,
                     type: ext.type
                 }
+            }).filter(f => {
+                return !isUnitType(getUnwrappedType(types, f.type))
             }),
             path: ['SignedExtensions']
         }
@@ -118,11 +148,11 @@ class FromV14 {
             fields: [
                 {
                     name: "address",
-                    type: getTypeByPath(types, ["sp_runtime", "multiaddress", "MultiAddress"]),
+                    type: this.address(),
                 },
                 {
                     name: "signature",
-                    type: getTypeByPath(types, ["sp_runtime", "MultiSignature"]),
+                    type: this.extrinsicSignature(),
                 },
                 {
                     name: 'signedExtensions',
@@ -133,6 +163,49 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    @def
+    private address(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 0)
+    }
+
+    @def
+    private call(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 1)
+    }
+
+    @def
+    private extrinsicSignature(): Ti {
+        return this.getTypeParameter(this.uncheckedExtrinsic(), 2)
+    }
+
+    @def
+    private uncheckedExtrinsic(): Ti {
+        for (let i = 0; i < this.metadata.lookup.types.length; i++) {
+            let def = this.metadata.lookup.types[i].type
+            if (def.path[0] == 'sp_runtime' && last(def.path) == 'UncheckedExtrinsic') {
+                return i
+            }
+        }
+        throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
+    }
+
+    private getTypeParameter(ti: Ti, idx: number): Ti {
+        let def = this.metadata.lookup.types[ti]
+        if (def.type.params.length <= idx) {
+            let name = def.type.path.length ? def.type.path.join('::') : ''+ti
+            throw new Error(
+                `Type ${name} should have at least ${idx + 1} type parameter${idx > 0 ? 's' : ''}`
+            )
+        }
+        return assertNotNull(def.type.params[idx].type)
+    }
+
+    private getStorageItem(prefix: string, name: string): StorageItem {
+        let storage = this.storage()
+        let item = storage[prefix]?.[name]
+        return assertNotNull(item, `Can't find ${prefix}.${name} storage item`)
     }
 
     @def
@@ -161,7 +234,7 @@ class FromV14 {
                         }
                         break
                     default:
-                        throwUnexpectedCase()
+                        throw unexpectedCase()
                 }
                 items[e.name] = {
                     modifier: e.modifier.__kind,
@@ -174,6 +247,22 @@ class FromV14 {
             })
         })
         return storage
+    }
+
+    @def
+    private constants(): Constants {
+        let constants: Constants = {}
+        this.metadata.pallets.forEach(pallet => {
+            pallet.constants.forEach(c => {
+                let pc = constants[pallet.name] || (constants[pallet.name] = {})
+                pc[c.name] = {
+                    type: c.type,
+                    value: c.value,
+                    docs: c.docs
+                }
+            })
+        })
+        return constants
     }
 
     @def
@@ -248,7 +337,7 @@ class FromV14 {
 class FromOld {
     private registry: OldTypeRegistry
 
-    constructor(private metadata: Metadata, oldTypes: OldTypes) {
+    constructor(private metadata: Metadata, private oldTypes: OldTypes) {
         this.registry = new OldTypeRegistry(oldTypes)
         this.defineGenericExtrinsicEra()
         this.defineGenericLookupSource()
@@ -259,20 +348,26 @@ class FromOld {
     }
 
     convert(): ChainDescription {
-        // let signature = this.signature()
+        let signature = this.registry.use('GenericSignature')
         let call = this.registry.use('GenericCall')
+        let digest = this.registry.use('Digest')
+        let digestItem = this.registry.use('DigestItem')
         let event = this.registry.use('GenericEvent')
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
+        let constants = this.constants()
         return {
             types: this.registry.getTypes(),
-            // signature,
             call,
+            digest,
+            digestItem,
             event,
             eventRecord,
             eventRecordList,
-            storage
+            signature,
+            storage,
+            constants
         }
     }
 
@@ -331,6 +426,8 @@ class FromOld {
     }
 
     private getSignedExtensionType(name: string): Ti | undefined {
+        let def = this.oldTypes.signedExtensions?.[name]
+        if (def) return this.registry.use(def)
         switch(name) {
             case 'ChargeTransactionPayment':
                 return this.registry.use('Compact<Balance>')
@@ -531,7 +628,7 @@ class FromOld {
                         keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
                         break
                     default:
-                        throwUnexpectedCase()
+                        throw unexpectedCase()
                 }
                 items[e.name] = {
                     modifier: e.modifier.__kind,
@@ -547,10 +644,27 @@ class FromOld {
         return storage
     }
 
+    @def
+    private constants(): Constants {
+        let constants: Constants = {}
+        this.forEachPallet(null, mod => {
+            mod.constants.forEach(c => {
+                let pc = constants[mod.name] || (constants[mod.name] = {})
+                pc[c.name] = {
+                    type: this.registry.use(c.type, mod.name),
+                    value: c.value,
+                    docs: c.docs
+                }
+            })
+        })
+        return constants
+    }
+
     private defineOriginCaller(): void {
         this.registry.define('OriginCaller', () => {
             let variants: Variant[] = []
             this.forEachPallet(null, (mod, index) => {
+                let name = mod.name
                 let type: string
                 switch(mod.name) {
                     case 'Authority':
@@ -563,6 +677,7 @@ class FromOld {
                         break
                     case 'System':
                         type = 'SystemOrigin'
+                        name = 'system'
                         break
                     case 'Xcm':
                     case 'XcmPallet':

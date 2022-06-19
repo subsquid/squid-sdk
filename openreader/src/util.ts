@@ -1,4 +1,4 @@
-import {toCamelCase, toPlural, toSnakeCase} from "@subsquid/util"
+import {toCamelCase, toPlural, toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
 
 

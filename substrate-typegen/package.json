@@ -20,9 +20,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/logger": "^0.0.0",
     "@subsquid/scale-codec": "^0.4.2",
     "@subsquid/substrate-metadata": "^0.8.4",
-    "@subsquid/util": "^0.0.5",
+    "@subsquid/substrate-metadata-explorer": "^0.0.8",
+    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-code-printer": "^0.0.0",
+    "@subsquid/util-internal-gql-request": "^0.0.0",
+    "@subsquid/util-internal-read-lines": "^0.0.0",
+    "@subsquid/util-naming": "^0.0.0",
     "ajv": "^8.9.0",
     "commander": "^9.0.0"
   },

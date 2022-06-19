@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/util-internal-read-lines",
+  "version": "0.0.0",
+  "description": "Synchronous iterator over text file lines",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/lines.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

@@ -11,13 +11,11 @@
 [
   {
     "definitionName": "individualVersion",
-    "policyName": "public",
-    "lockedMajor": 0
+    "policyName": "npm"
   },
   {
     "definitionName": "individualVersion",
-    "policyName": "docker-only",
-    "lockedMajor": 0
+    "policyName": "docker"
   }
   // {
   //   /**

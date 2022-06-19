@@ -22,13 +22,6 @@ typegen:
 	@npx squid-substrate-typegen typegen.json
 
 
-explore:
-	@npx squid-substrate-metadata-explorer \
-		--chain wss://kusama-rpc.polkadot.io \
-		--archive https://kusama.indexer.gc.subsquid.io/v4/graphql \
-		--out chainVersions.json
-
-
 up:
 	@docker-compose up -d
 

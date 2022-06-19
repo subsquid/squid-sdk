@@ -1,4 +1,4 @@
-import {decodeHex, isHex} from "@subsquid/util"
+import {decodeHex, isHex} from "@subsquid/util-internal-hex"
 import {GraphQLScalarType} from "graphql"
 import {invalidFormat} from "../../util"
 

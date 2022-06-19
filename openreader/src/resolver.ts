@@ -1,5 +1,5 @@
 import type {IFieldResolver, IResolvers} from "@graphql-tools/utils"
-import {toCamelCase} from "@subsquid/util"
+import {toCamelCase} from "@subsquid/util-naming"
 import {UserInputError} from "apollo-server-core"
 import assert from "assert"
 import type {GraphQLResolveInfo} from "graphql"

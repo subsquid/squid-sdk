@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "Introduce FireSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

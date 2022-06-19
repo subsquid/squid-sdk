@@ -1,94 +1,112 @@
-import {EventHandlerContext, Store, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
+import * as ss58 from "@subsquid/ss58"
+import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
+import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {Account, HistoricalBalance} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
 
-const processor = new SubstrateProcessor('kusama_balances')
+const processor = new SubstrateBatchProcessor()
+    .setBatchSize(500)
+    .setDataSource({
+        archive: 'https://kusama.archive.subsquid.io/graphql'
+    })
+    .addEvent('Balances.Transfer', {
+        data: {event: {args: true}}
+    } as const)
 
 
-processor.setBatchSize(500)
-processor.setDataSource({
-    archive: 'https://kusama.indexer.gc.subsquid.io/v4/graphql',
-    chain: 'wss://kusama-rpc.polkadot.io'
+type Item = BatchProcessorItem<typeof processor>
+type Ctx = BatchContext<Store, Item>
+
+
+processor.run(new TypeormDatabase(), async ctx => {
+    let transfers = getTransfers(ctx)
+
+    let accountIds = new Set<string>()
+    for (let t of transfers) {
+        accountIds.add(t.from)
+        accountIds.add(t.to)
+    }
+
+    let accounts = await ctx.store.findByIds(Account, Array.from(accountIds)).then(accounts => {
+        return new Map(accounts.map(a => [a.id, a]))
+    })
+
+    let history: HistoricalBalance[] = []
+
+    for (let t of transfers) {
+        let from = getAccount(accounts, t.from)
+        let to = getAccount(accounts, t.to)
+
+        from.balance -= t.amount
+        to.balance += t.amount
+
+        history.push(new HistoricalBalance({
+            id: t.id + "-from",
+            account: from,
+            balance: from.balance,
+            timestamp: t.timestamp
+        }))
+
+        history.push(new HistoricalBalance({
+            id: t.id + "-to",
+            account: to,
+            balance: to.balance,
+            timestamp: t.timestamp
+        }))
+    }
+
+    await ctx.store.save(Array.from(accounts.values()))
+    await ctx.store.insert(history)
 })
-
-
-processor.addEventHandler('balances.Transfer', async ctx => {
-    let transfer = getTransferEvent(ctx)
-    let tip = ctx.extrinsic?.tip || 0n
-
-    let fromAcc = await getOrCreate(ctx.store, Account, toHex(transfer.from))
-    fromAcc.wallet = fromAcc.id
-    fromAcc.balance = fromAcc.balance || 0n
-    fromAcc.balance -= transfer.amount
-    fromAcc.balance -= tip
-    await ctx.store.save(fromAcc)
-
-    const toAcc = await getOrCreate(ctx.store, Account, toHex(transfer.to))
-    toAcc.wallet = toAcc.id
-    toAcc.balance = toAcc.balance || 0n
-    toAcc.balance += transfer.amount
-    await ctx.store.save(toAcc)
-
-    await ctx.store.save(new HistoricalBalance({
-        id: ctx.event.id + '-to',
-        account: fromAcc,
-        balance: fromAcc.balance,
-        timestamp: BigInt(ctx.block.timestamp)
-    }))
-
-    await ctx.store.save(new HistoricalBalance({
-        id: ctx.event.id + '-from',
-        account: toAcc,
-        balance: toAcc.balance,
-        timestamp: BigInt(ctx.block.timestamp)
-    }))
-})
-
-
-processor.run()
 
 
 interface TransferEvent {
-    from: Uint8Array
-    to: Uint8Array
-    amount: bigint
-}
-
-
-function getTransferEvent(ctx: EventHandlerContext): TransferEvent {
-    let event = new BalancesTransferEvent(ctx)
-    if (event.isV1020) {
-        let [from, to, amount] = event.asV1020
-        return {from, to, amount}
-    } else if (event.isV1050) {
-        let [from, to, amount] = event.asV1050
-        return {from, to, amount}
-    } else {
-        return event.asLatest
-    }
-}
-
-
-async function getOrCreate<T extends {id: string}>(
-    store: Store,
-    entityConstructor: EntityConstructor<T>,
     id: string
-): Promise<T> {
-
-    let e = await store.get<T>(entityConstructor, {
-        where: { id },
-    })
-
-    if (e == null) {
-        e = new entityConstructor()
-        e.id = id
-    }
-
-    return e
+    from: string
+    to: string
+    amount: bigint
+    timestamp: bigint
 }
 
 
-type EntityConstructor<T> = {
-    new (...args: any[]): T
+function getTransfers(ctx: Ctx): TransferEvent[] {
+    let transfers: TransferEvent[] = []
+    for (let block of ctx.blocks) {
+        for (let item of block.items) {
+            if (item.name == "Balances.Transfer") {
+                let e = new BalancesTransferEvent(ctx, item.event)
+                let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
+                if (e.isV1020) {
+                    let [from, to, amount, fee] = e.asV1020
+                    rec = {from, to, amount}
+                } else if (e.isV1050) {
+                    let [from, to, amount] = e.asV1050
+                    rec = {from, to, amount}
+                } else {
+                    rec = e.asV9130
+                }
+                transfers.push({
+                    id: item.event.id,
+                    from: ss58.codec('kusama').encode(rec.from),
+                    to: ss58.codec('kusama').encode(rec.to),
+                    amount: rec.amount,
+                    timestamp: BigInt(block.header.timestamp)
+                })
+            }
+        }
+    }
+    return transfers
+}
+
+
+function getAccount(m: Map<string, Account>, id: string): Account {
+    let acc = m.get(id)
+    if (acc == null) {
+        acc = new Account()
+        acc.id = id
+        acc.balance = 0n
+        m.set(id, acc)
+    }
+    return acc
 }

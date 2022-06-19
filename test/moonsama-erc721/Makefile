@@ -30,4 +30,8 @@ down:
 	@docker-compose down
 
 
-.PHONY: process serve migrate migration codegen typegen up down
+build:
+	@npm run build
+
+
+.PHONY: process serve migrate migration codegen typegen up down build

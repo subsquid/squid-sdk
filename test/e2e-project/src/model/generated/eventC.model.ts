@@ -14,13 +14,13 @@ export class EventC {
   @Column_("text", {nullable: true})
   inExtrinsic!: string | undefined | null
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   inBlock!: number
 
   @Column_("varchar", {length: 10, nullable: false})
   network!: Network
 
-  @Column_("integer", {nullable: false})
+  @Column_("int4", {nullable: false})
   indexInBlock!: number
 
   @Column_("text", {nullable: false})

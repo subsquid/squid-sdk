@@ -1,7 +1,7 @@
 import {ApiPromise, WsProvider} from "@polkadot/api"
 import {createTestKeyring} from "@polkadot/keyring"
 import {Header} from "@polkadot/types/interfaces/runtime"
-import {assertNotNull} from "@subsquid/util"
+import {assertNotNull} from "@subsquid/util-internal"
 import {Client} from "gql-test-client"
 import fetch from "node-fetch"
 import * as process from "process"
@@ -105,4 +105,4 @@ async function start(timeout: number): Promise<void> {
 }
 
 
-start(80).catch(() => {})
+start(10).catch(() => {})

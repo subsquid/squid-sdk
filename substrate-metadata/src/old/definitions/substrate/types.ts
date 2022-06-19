@@ -2420,11 +2420,6 @@ export const types = {
   "Moment": "UInt<64, Moment>",
   "OpaqueCall": "Bytes",
   "Origin": "DoNotConstruct<Origin>",
-  "OriginCaller": {
-    "_enum": {
-      "System": "SystemOrigin"
-    }
-  },
   "PalletId": "LockIdentifier",
   "PalletsOrigin": "OriginCaller",
   "PalletVersion": {
@@ -3313,7 +3308,7 @@ export const types = {
   },
   "WeightPerClass": {
     "baseExtrinsic": "Weight",
-    "maxExtrinsic": "Weight",
+    "maxExtrinsic": "Option<Weight>",
     "maxTotal": "Option<Weight>",
     "reserved": "Option<Weight>"
   },

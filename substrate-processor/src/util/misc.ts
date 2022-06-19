@@ -7,7 +7,7 @@ export function unique<T>(items: Iterable<T>): T[] {
 
 export function timeInterval(seconds: number): string {
     if (seconds < 60) {
-        return seconds + 's'
+        return Math.round(seconds) + 's'
     }
     let minutes = Math.ceil(seconds/60)
     if (minutes < 60) {
@@ -19,9 +19,29 @@ export function timeInterval(seconds: number): string {
 }
 
 
-export function hasProperties(obj?: object | null): boolean {
-    for (let key in obj) {
-        return true
+export function addErrorContext<T extends Error>(err: T, ctx: any): T {
+    let e = err as any
+    for (let key in ctx) {
+        switch(key) {
+            case 'blockHeight':
+            case 'blockHash':
+                if (e.blockHeight == null && e.blockHash == null) {
+                    e.blockHeight = ctx.blockHeight
+                    e.blockHash = ctx.blockHash
+                }
+                break
+            default:
+                if (e[key] == null) {
+                    e[key] = ctx[key]
+                }
+        }
     }
-    return false
+    return err
+}
+
+
+export function withErrorContext(ctx: any): (err: Error) => never {
+    return function(err: Error): never {
+        throw addErrorContext(err, ctx)
+    }
 }

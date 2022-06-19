@@ -1,0 +1,27 @@
+{
+  "name": "@subsquid/util-naming",
+  "version": "0.0.0",
+  "description": "Naming conventions for squid framework",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/naming.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "camelcase": "^6.3.0",
+    "inflected": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/inflected": "^1.1.29",
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

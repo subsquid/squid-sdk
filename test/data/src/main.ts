@@ -1,29 +1,25 @@
+import {runProgram} from "@subsquid/util-internal"
 import {Chain} from "./chain"
 
 
-async function main(): Promise<void> {
+runProgram(async () => {
     let chain = new Chain(process.argv[2])
     switch(process.argv[3]) {
+        case 'print-metadata': {
+            let specVersion = process.argv[4]
+            return chain.printMetadata(specVersion && parseInt(specVersion) || undefined)
+        }
+        case 'select-test-blocks':
+            return chain.selectTestBlocks()
+        case 'save-blocks':
+            return chain.saveBlocks()
         case 'save-events':
             return chain.saveEvents()
         case 'test-events-scale-encoding-decoding':
             return chain.testEventsScaleEncodingDecoding()
-        case 'test-compare-events-with-polka':
-            return chain.testCompareEventsWithPolka()
-        case 'select-test-blocks':
-            return chain.selectTestBlocks()
-        case 'select-test-blocks-from-db':
-            return chain.selectTestBlocksFromDb()
+        case 'test-extrinsics-scale-encoding-decoding':
+            return chain.testExtrinsicsScaleEncodingDecoding()
+        case 'test-constants-scale-encoding-decoding':
+            return chain.testConstantsScaleEncodingDecoding()
     }
-}
-
-
-main().then(
-    () => {
-        process.exit(0)
-    },
-    err => {
-        console.error(err)
-        process.exit(1)
-    }
-)
+})

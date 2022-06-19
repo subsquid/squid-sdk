@@ -419,4 +419,8 @@ export const bundle: OldTypesBundle = {
             types: {},
         },
     ],
+    signedExtensions: {
+        CheckEthereumRelayHeaderHash: 'Null',
+        CheckEthereumRelayHeaderParcel: 'Null'
+    }
 };

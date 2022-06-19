@@ -1,7 +1,6 @@
 {
   "outDir": "../src/heiko",
-  "chainVersions": "../../data/chain/heiko/versions.json",
-  "typesBundle": "heiko",
+  "specVersions": "../../data/chain/heiko/versions.jsonl",
   "events": true,
   "calls": true,
   "storage": true

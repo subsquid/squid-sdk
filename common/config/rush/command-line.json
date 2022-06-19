@@ -15,19 +15,13 @@
       "name": "unify-dependencies",
       "commandKind": "global",
       "summary": "Unify external dependencies across project",
-      "shellCommand": "node workspace/lib/unify.js"
-    },
-    {
-      "name": "add-change",
-      "commandKind": "global",
-      "summary": "Create change file for a package",
-      "shellCommand": "node workspace/lib/change.js"
+      "shellCommand": "node ops/workspace/lib/unify.js"
     },
     {
       "name": "e2e",
       "commandKind": "global",
       "summary": "run e2e test suite",
-      "shellCommand": "cd test/e2e-suite && ./run.sh"
+      "shellCommand": "test/e2e-suite/e2e.sh"
     },
     {
       "name": "test",
@@ -55,50 +49,6 @@
       "longName": "--dry",
       "description": "do not perform real changes",
       "associatedCommands": ["unify-dependencies"]
-    },
-    {
-      "parameterKind": "string",
-      "argumentName": "DIR",
-      "longName": "--package",
-      "shortName": "-p",
-      "description": "package directory (must be relative to workspace root)",
-      "required": true,
-      "associatedCommands": ["add-change"]
-    },
-    {
-      "parameterKind": "choice",
-      "longName": "--type",
-      "shortName": "-t",
-      "description": "type of change",
-      "alternatives": [
-        {
-          "name": "major",
-          "description": "leads to a major version bump"
-        },
-        {
-          "name": "minor",
-          "description": "leads to a minor version bump"
-        },
-        {
-          "name": "patch",
-          "description": "leads to a patch version bump"
-        },
-        {
-          "name": "none",
-          "description": "doesn't lead to a version bump"
-        }
-      ],
-      "required": true,
-      "associatedCommands": ["add-change"]
-    },
-    {
-      "parameterKind": "string",
-      "argumentName": "TEXT",
-      "longName": "--message",
-      "shortName": "-m",
-      "description": "change description",
-      "required": true,
-      "associatedCommands": ["add-change"]
     }
   ]
 }
