@@ -4,6 +4,9 @@
   "version": "0.0.2",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "squid-substrate-ingest": "./bin/run.js"
   },
