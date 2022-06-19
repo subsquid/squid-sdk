@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/substrate-ingest_v0.0.3",
+      "date": "Sun, 19 Jun 2022 22:37:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix access config in `package.json`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/substrate-ingest_v0.0.2",
       "date": "Sun, 19 Jun 2022 21:47:17 GMT",
