@@ -94,8 +94,12 @@ class CallExtractor {
                 break
             }
             case 'Sudo.sudo_as': {
-                let a = args as {call: sub.Call, proposal?: undefined, who: any} | {call?: undefined, proposal: sub.Call}
-                this.createCall(a.call || a.proposal, call, undefined)
+                let a = args as {call: sub.Call, who: any, proposal?: undefined} | {call?: undefined, who: any, proposal: sub.Call}
+                let origin: sub.SignedOrigin | undefined
+                if (a.who?.__kind === 'AccountId' && a.who?.value instanceof Uint8Array) {
+                    origin = signedOrigin(a.who.value)
+                }
+                this.createCall(a.call || a.proposal, call, origin)
                 break
             }
         }
