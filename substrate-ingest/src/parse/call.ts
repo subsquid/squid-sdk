@@ -94,7 +94,7 @@ class CallExtractor {
                 break
             }
             case 'Sudo.sudo_as': {
-                let a = args as {call: sub.Call, proposal?: undefined} | {call?: undefined, proposal: sub.Call}
+                let a = args as {call: sub.Call, proposal?: undefined, who: any} | {call?: undefined, proposal: sub.Call}
                 this.createCall(a.call || a.proposal, call, undefined)
                 break
             }
