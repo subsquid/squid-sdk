@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/substrate-ingest_v0.0.4",
+      "date": "Mon, 20 Jun 2022 16:20:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix origin of `Sudo.sudo_as` call"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/substrate-ingest_v0.0.3",
       "date": "Sun, 19 Jun 2022 22:37:34 GMT",
