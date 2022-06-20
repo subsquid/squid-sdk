@@ -15,7 +15,7 @@ export class ResilientRpcClient {
         let epoch = this.client
         let client = await this.client
         try {
-            let result = await client.call(method, params)
+            let result = await addTimeout(client.call(method, params))
             this.errors = 0
             return result
         } catch(e: unknown) {
@@ -54,4 +54,22 @@ export class ResilientRpcClient {
             // handle error, so that node doesn't warn you that something is unhandled
         })
     }
+}
+
+
+function addTimeout<T>(res: Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+        let seconds = 30
+
+        let timer: any = setTimeout(() => {
+            timer = undefined
+            reject(new RpcConnectionError(`Request timed out in ${seconds} seconds`))
+        }, seconds * 1000)
+
+        res.finally(() => {
+            if (timer != null) {
+                clearTimeout(timer)
+            }
+        }).then(resolve, reject)
+    })
 }
