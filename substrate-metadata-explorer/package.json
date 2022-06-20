@@ -19,7 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^0.1.5",
+    "@subsquid/rpc-client": "^0.1.6",
     "commander": "^9.0.0",
     "node-fetch": "^2.6.7"
   },
