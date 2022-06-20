@@ -110,7 +110,7 @@ export class Workspace {
     }
 
     @def
-    private packages(): Map<string, Pkg> {
+    packages(): Map<string, Pkg> {
         let packages = new Map<string, Pkg>()
         let rush: Rush = this.read('rush.json')
         rush.projects.forEach(project => {
