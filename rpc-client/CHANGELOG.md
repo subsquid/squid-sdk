@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Wed, 02 Mar 2022 18:11:28 GMT and should not be manually modified.
+This log was last generated on Mon, 20 Jun 2022 14:08:21 GMT and should not be manually modified.
+
+## 0.1.6
+Mon, 20 Jun 2022 14:08:21 GMT
+
+### Patches
+
+- add fixed 30 seconds response timeout to `ResilientRpcClient`
 
 ## 0.1.5
 Wed, 02 Mar 2022 18:11:28 GMT
