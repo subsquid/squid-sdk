@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: release
+          ref: release/v0
 
       - name: Configure git user
         run: |
