@@ -1,14 +1,6 @@
 name: release
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: release tag
-        required: true
-        type: choice
-        options:
-          - next
-          - latest
 
 jobs:
   release:
@@ -17,7 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: release/firesquid
+          fetch-depth: 0
 
       - name: Configure git user
         run: |
@@ -45,6 +38,4 @@ jobs:
           cd cli && npx oclif manifest
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch $TAG --publish --tag $TAG
-        env:
-          TAG: ${{ github.event.inputs.tag }}
+        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/firesquid --publish --tag next

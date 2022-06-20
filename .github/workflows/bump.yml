@@ -1,14 +1,6 @@
 name: bump
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: release tag
-        required: true
-        type: choice
-        options:
-          - next
-          - latest
 
 jobs:
   bump:
@@ -25,14 +17,14 @@ jobs:
           git config --global user.email 'github-actions@github.com'
 
       - name: check change files
-        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/${{ github.event.inputs.tag }}
+        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/release/firesquid
 
       - name: bump versions
-        run: node common/scripts/install-run-rush.js version --bump --target-branch ${{ github.event.inputs.tag }}
+        run: node common/scripts/install-run-rush.js version --bump --target-branch release/firesquid
 
       - name: merge back release branch
         run: |
           git checkout "${GITHUB_REF##*/}"
-          git fetch origin ${{ github.event.inputs.tag }}:release_
-          git merge release_
+          git fetch origin release/firesquid
+          git merge release/firesquid
           git push origin "${GITHUB_REF##*/}"
