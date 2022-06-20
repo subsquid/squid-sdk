@@ -1,11 +1,6 @@
 name: release
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: release tag (next, latest)
-        required: false
-        default: latest
 
 jobs:
   release:
@@ -42,6 +37,4 @@ jobs:
           cd cli && npx oclif manifest
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --include-all --version-policy public --target-branch release --publish --tag $TAG
-        env:
-          TAG: ${{ github.event.inputs.tag }}
+        run: node common/scripts/install-run-rush.js publish --include-all --version-policy public --target-branch release/v0 --publish --tag latest

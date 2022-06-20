@@ -14,14 +14,18 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+
       - name: create local release branch
-        run: git fetch origin release:release
+        run: git fetch origin release/v0:release/v0
+
       - name: check change files
-        run: node common/scripts/install-run-rush.js change --verify --target-branch release
+        run: node common/scripts/install-run-rush.js change --verify --target-branch release/v0
+
       - name: bump versions
-        run: node common/scripts/install-run-rush.js version --bump --target-branch release
+        run: node common/scripts/install-run-rush.js version --bump --target-branch release/v0
+
       - name: merge back release branch
         run: |
           git checkout "${GITHUB_REF##*/}"
-          git merge release
+          git merge release/v0
           git push origin "${GITHUB_REF##*/}"
