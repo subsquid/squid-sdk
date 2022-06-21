@@ -36,6 +36,8 @@ export interface TransactionFieldSelection {
 }
 
 export interface LogFieldSelection {
+    block: BlockFieldSelection;
+    tx: TransactionFieldSelection;
 	address?: boolean;
 	blockHash?: boolean;
 	blockNumber?: boolean;
@@ -48,6 +50,4 @@ export interface LogFieldSelection {
 	topic3?: boolean;
 	transactionHash?: boolean;
 	transactionIndex?: boolean;
-	tx: boolean;
-	block: boolean;
 }

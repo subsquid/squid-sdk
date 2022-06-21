@@ -123,13 +123,17 @@ export class EthProcessor<Store> {
 			const hook = this.hooks.evmLog[0];
 
 			const req = {
-				from_block: start,
-				to_block: end,
+				fromBlock: start,
+				toBlock: end,
 				address: hook.contractAddress,
-				returnFields: hook.fieldSelection,
+				fieldSelection: hook.fieldSelection,
 			};
 
-			const { data: logs } = await axios.post(`${archiveEndpoint}/status`, req);
+			const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req, {
+                headers: {
+                    "Accept-Encoding": "gzip"
+                }
+            });
 		
 			for(const rawLog of logs) {
 				const log = logFromRaw(rawLog);
@@ -155,9 +159,22 @@ export class EthProcessor<Store> {
 }
 
 function logFromRaw(raw: any): Log {
+    let tx: any = {};
+    let block: any = {};
+    let log: any = {};
+
+    for(const key of Object.keys(raw)) {
+        if(key.startsWith("log")) {
+            log[key.substring(4)] = raw[key];
+        } else if(key.startsWith("tx")) {
+            tx[key.substring(3)] = raw[key];
+        }  else if(key.startsWith("block")) {
+            block[key.substring(5)] = raw[key];
+        }
+    }
+
 	return {
-		tx: {},
-		block: {},
+		tx, block, ...log
 	}
 }
 
