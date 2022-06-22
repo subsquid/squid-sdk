@@ -35,6 +35,7 @@ specifiers:
   '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
   '@rush-temp/typeorm-codegen': file:./projects/typeorm-codegen.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
+  '@rush-temp/typeorm-migration': file:./projects/typeorm-migration.tgz
   '@rush-temp/typeorm-store': file:./projects/typeorm-store.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
@@ -143,6 +144,7 @@ dependencies:
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
   '@rush-temp/typeorm-codegen': file:projects/typeorm-codegen.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_pg@8.7.3+supports-color@8.1.1
+  '@rush-temp/typeorm-migration': file:projects/typeorm-migration.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/typeorm-store': file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
@@ -7455,7 +7457,7 @@ packages:
     dev: false
 
   file:projects/cli.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-FKYy29Qp/UKqLCMnDQpaIAqttqKR6ywWvAeLuFS3V7lXpwPmmiBUqIeypRsjaGTI7KtSA63upprg/6wtxGUScw==, tarball: file:projects/cli.tgz}
+    resolution: {integrity: sha512-Uch7Woild1X910VROewN3rERV/k3xA9E/ggLWRqoEA4imAHefDf8U/YiagIaQeJKENLk46yepZIK5Q6j32LqcQ==, tarball: file:projects/cli.tgz}
     id: file:projects/cli.tgz
     name: '@rush-temp/cli'
     version: 0.0.0
@@ -7516,7 +7518,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-HT0YUfifcAOz/Tyks3pt4ZBq8HQqKTI/OsGSlGOg0g2PTpDWDASXOK65jiJOWvsE4qjShAVeGm/IfXCbdHUQdg==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-KF6CUI5+R4cHsANIhKooysnl6CRE14fbRRzIQ+XMi9yVdh8iPthakJiQXfOudFme2dze3j1h198aQtgGgvtA0A==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7845,6 +7847,36 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.41
+      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typescript: 4.5.5
+    transitivePeerDependencies:
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/typeorm-migration.tgz_pg@8.7.3+supports-color@8.1.1:
+    resolution: {integrity: sha512-5zyTbFOzEysZDrtemZLQOV11C/9uBeCH0F10KFQtJ1RIealJSjt8OmyI9V/w/ZHnSNMufzUu8v+/QyO2o8v7Rw==, tarball: file:projects/typeorm-migration.tgz}
+    id: file:projects/typeorm-migration.tgz
+    name: '@rush-temp/typeorm-migration'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.41
+      commander: 9.3.0
+      dotenv: 10.0.0
       typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
       typescript: 4.5.5
     transitivePeerDependencies:

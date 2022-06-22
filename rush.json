@@ -540,6 +540,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/typeorm-migration",
+      "projectFolder": "typeorm-migration",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "chain-status-service",
       "projectFolder": "util/chain-status-service",
       "shouldPublish": true,

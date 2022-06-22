@@ -1,0 +1,39 @@
+{
+  "name": "@subsquid/typeorm-migration",
+  "description": "TypeORM based migration tool for squids",
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "squid-typeorm-migration": "bin/squid-typeorm-migration.js",
+    "squid-typeorm-migration-apply": "bin/squid-typeorm-migration-apply.js",
+    "squid-typeorm-migration-create": "bin/squid-typeorm-migration-create.js",
+    "squid-typeorm-migration-generate": "bin/squid-typeorm-migration-generate.js",
+    "squid-typeorm-migration-revert": "bin/squid-typeorm-migration-revert.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/typeorm-config": "^1.0.0",
+    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/util-internal-code-printer": "^0.0.0",
+    "commander": "^9.0.0",
+    "dotenv": "^10.0.0"
+  },
+  "peerDependencies": {
+    "typeorm": "^0.2.41"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "typescript": "~4.5.5"
+  }
+}

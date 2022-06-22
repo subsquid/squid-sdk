@@ -9,15 +9,16 @@
     "@subsquid/graphql-server": "^1.0.0",
     "@subsquid/ss58": "^0.1.0",
     "@subsquid/substrate-processor": "^1.0.1",
+    "@subsquid/typeorm-migration": "^0.0.0",
     "@subsquid/typeorm-store": "^0.0.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
-    "@subsquid/cli": "^1.0.1",
     "@subsquid/substrate-metadata-explorer": "^1.0.1",
     "@subsquid/substrate-typegen": "^1.0.1",
+    "@subsquid/typeorm-codegen": "^0.0.0",
     "@types/node": "^16.11.22",
     "typescript": "~4.5.5"
   }

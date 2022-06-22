@@ -7,11 +7,11 @@ serve:
 
 
 migrate:
-	@npx sqd db:migrate
+	@npx squid-typeorm-migration apply
 
 
 migration:
-	@npx sqd db:create-migration Data
+	@npx squid-typeorm-migration generate
 
 
 typegen:

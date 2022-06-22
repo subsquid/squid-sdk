@@ -20,12 +20,12 @@ typegen:
 	@npx squid-substrate-typegen typegen.json
 
 
-migration:
-	@npx sqd db:create-migration Data
-
-
 migrate:
-	@npx sqd db:migrate
+	@npx squid-typeorm-migration apply
+
+
+migration:
+	@npx squid-typeorm-migration generate
 
 
 ingest:
