@@ -13,7 +13,6 @@ type File = { name: string, url: string } | { name: string, data: string }
 
 async function processFiles(files: File[], basePath: string) {
     return Promise.all(files.map(async (file) => {
-        console.log(file)
         if ('data' in file) {
             return file;
         }
@@ -38,6 +37,7 @@ type Manifest = {
 
 export default class Deploy extends Command {
     static description = 'Deploy an archive';
+    static hidden = true
     static args = [
         {
             name: 'name',

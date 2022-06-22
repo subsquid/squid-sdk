@@ -1,3 +1,3 @@
-import { getConfigField } from "../config";
+import { getConfig } from "../config";
 
-export const baseUrl = getConfigField('apiUrl');
+export const baseUrl = getConfig().apiUrl;
