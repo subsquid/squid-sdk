@@ -125,7 +125,7 @@ processor.addPostHook({
         if (item.kind != 'event' || item.event.name != 'System.ExtrinsicSuccess') continue
         let extrinsic = assertNotNull(item.event.extrinsic)
         if (extrinsic.signature == null) continue
-        ctx.store.insert(new Transaction({
+        await ctx.store.insert(new Transaction({
             id: extrinsic.id,
             name: extrinsic.call.name,
             sender: ss58.codec(42).encode(decodeHex(extrinsic.signature.address))
