@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/cli_v1.0.1",
+      "date": "Wed, 22 Jun 2022 00:49:09 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Support Squid new SAAS API"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/cli_v1.0.0",
       "date": "Sun, 19 Jun 2022 21:26:31 GMT",

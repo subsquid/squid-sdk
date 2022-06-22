@@ -1,6 +1,13 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Sun, 19 Jun 2022 21:26:31 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Jun 2022 00:49:09 GMT and should not be manually modified.
+
+## 1.0.1
+Wed, 22 Jun 2022 00:49:09 GMT
+
+### Patches
+
+- Support Squid new SAAS API
 
 ## 1.0.0
 Sun, 19 Jun 2022 21:26:31 GMT

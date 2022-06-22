@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Mon, 20 Jun 2022 16:20:18 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Jun 2022 00:49:09 GMT and should not be manually modified.
+
+## 0.0.5
+Wed, 22 Jun 2022 00:49:09 GMT
+
+### Patches
+
+- fix origin of sudo_as inside call for AccountId case, this time for real :)
 
 ## 0.0.4
 Mon, 20 Jun 2022 16:20:18 GMT
