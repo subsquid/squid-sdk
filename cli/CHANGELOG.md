@@ -1,6 +1,13 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Wed, 22 Jun 2022 00:49:09 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Jun 2022 13:18:45 GMT and should not be manually modified.
+
+## 1.1.0
+Wed, 22 Jun 2022 13:18:45 GMT
+
+### Minor changes
+
+- move `db` and `codegen` commands into separate packages
 
 ## 1.0.1
 Wed, 22 Jun 2022 00:49:09 GMT

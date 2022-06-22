@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-processor_v1.1.0",
+      "date": "Wed, 22 Jun 2022 13:18:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "improve inline docs"
+          },
+          {
+            "comment": "tweak processing status log message"
+          },
+          {
+            "comment": "fix storage multi-key requests, when list of keys is empty"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "export `BatchProcessorEventItem<T>`, `BatchProcessorCallItem<T>`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/substrate-processor_v1.0.1",
       "date": "Sun, 19 Jun 2022 21:47:17 GMT",

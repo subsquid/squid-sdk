@@ -1,6 +1,19 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 19 Jun 2022 21:47:17 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Jun 2022 13:18:45 GMT and should not be manually modified.
+
+## 1.1.0
+Wed, 22 Jun 2022 13:18:45 GMT
+
+### Minor changes
+
+- export `BatchProcessorEventItem<T>`, `BatchProcessorCallItem<T>`
+
+### Patches
+
+- improve inline docs
+- tweak processing status log message
+- fix storage multi-key requests, when list of keys is empty
 
 ## 1.0.1
 Sun, 19 Jun 2022 21:47:17 GMT
