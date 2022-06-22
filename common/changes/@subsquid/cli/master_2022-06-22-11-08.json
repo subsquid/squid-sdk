@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "move `db` and `codegen` commands into separate packages",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}
