@@ -23,8 +23,9 @@ import {DataSource} from "./handlerProcessor"
 import {Config, Options, Runner} from "./runner"
 
 
-export type BatchProcessorItem<T> =
-    T extends SubstrateBatchProcessor<infer I> ? I : never
+export type BatchProcessorItem<T> = T extends SubstrateBatchProcessor<infer I> ? I : never
+export type BatchProcessorEventItem<T> = Extract<BatchProcessorItem<T>, {kind: 'event'}>
+export type BatchProcessorCallItem<T> = Extract<BatchProcessorItem<T>, {kind: 'call'}>
 
 
 export interface BatchContext<Store, Item> {
