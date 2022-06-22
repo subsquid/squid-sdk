@@ -43,6 +43,17 @@ export interface BatchBlock<Item> {
 }
 
 
+/**
+ * Provides methods to configure and launch data processing.
+ *
+ * Unlike {@link SubstrateProcessor}, `SubstrateBatchProcessor` can have
+ * only one data handler, which accepts a list of blocks to map.
+ *
+ * This gives an opportunity to reduce the number of round-trips
+ * to database or chain nodes, thus providing much better performance.
+ *
+ * All configuration methods return new processor instance with modified settings.
+ */
 export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     private batches: Batch<PlainBatchRequest>[] = []
     private options: Options = {}
