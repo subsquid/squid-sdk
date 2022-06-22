@@ -2,7 +2,9 @@ import type {FTS_Query, Model} from '@subsquid/openreader/dist/model'
 import {OutDir} from '@subsquid/util-internal-code-printer'
 import {toSnakeCase} from "@subsquid/util-naming"
 
+
 const TS = 64060578000000
+
 
 export function generateFtsMigrations(model: Model, dir: OutDir): void {
     for (const name in model) {
@@ -12,6 +14,7 @@ export function generateFtsMigrations(model: Model, dir: OutDir): void {
         }
     }
 }
+
 
 function generateMigration(name: string, query: FTS_Query, dir: OutDir): void {
     const out = dir.file(`${name}.search.js`)

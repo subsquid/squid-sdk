@@ -534,6 +534,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/typeorm-codegen",
+      "projectFolder": "typeorm-codegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "chain-status-service",
       "projectFolder": "util/chain-status-service",
       "shouldPublish": true,

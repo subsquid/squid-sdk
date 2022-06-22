@@ -33,6 +33,7 @@ specifiers:
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:./projects/substrate-processor.tgz
   '@rush-temp/substrate-typegen': file:./projects/substrate-typegen.tgz
+  '@rush-temp/typeorm-codegen': file:./projects/typeorm-codegen.tgz
   '@rush-temp/typeorm-config': file:./projects/typeorm-config.tgz
   '@rush-temp/typeorm-store': file:./projects/typeorm-store.tgz
   '@rush-temp/types-test': file:./projects/types-test.tgz
@@ -140,6 +141,7 @@ dependencies:
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
+  '@rush-temp/typeorm-codegen': file:projects/typeorm-codegen.tgz
   '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/typeorm-store': file:projects/typeorm-store.tgz_pg@8.7.3+supports-color@8.1.1
   '@rush-temp/types-test': file:projects/types-test.tgz
@@ -7410,7 +7412,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-1qTB7zuef0Z862l8qaDeox7PDVJo33GNk9krbU9Z2enubnbbbXS8TlJRgNV74Ln52gIGKaKBvGqyHxBKQZdFhw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-Dj1blGPJHe0yIaTVUOp5ASL8m+s9cVt3qZDoRdxeXDGspUP6e9qHRe4bcbEWfcpgbFmS2Q/2DdzK0P3kbhUCCg==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7514,7 +7516,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-C/NwT/wFslkYcLsomY9xjstGCd7+tLHa4Ea02Zrtp+nbFYKSKjodWF4m2vKW6/rwtpqY21+F+M8z1y7iWbCRpw==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-HT0YUfifcAOz/Tyks3pt4ZBq8HQqKTI/OsGSlGOg0g2PTpDWDASXOK65jiJOWvsE4qjShAVeGm/IfXCbdHUQdg==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7647,7 +7649,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-3P6iTyk5/1FwIhco4pknDyBebnX7h8V7ETABlUhdvKI2P8ZTpvnSsEGLztA3AeSX60ypHD0M/w4jKqUk5c/B+Q==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-GWNx/RnGbaSjzgJzmnTP2toilA/LZadyxTLlZ8prir19Cs6agmxInzXbtZ8JSDdyAUHR4PXFqWHBYiLB6zgf/w==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7822,6 +7824,16 @@ packages:
     dependencies:
       '@types/node': 16.11.41
       ajv: 8.11.0
+      commander: 9.3.0
+      typescript: 4.5.5
+    dev: false
+
+  file:projects/typeorm-codegen.tgz:
+    resolution: {integrity: sha512-g5lWZqaOXjLg8oky4A+S8tefSWn8wNDDNXOSyb4apxVxW+veCCeeEyvItCCEbuo6ZeGDjYZLWr4vczjisqI5yQ==, tarball: file:projects/typeorm-codegen.tgz}
+    name: '@rush-temp/typeorm-codegen'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.41
       commander: 9.3.0
       typescript: 4.5.5
     dev: false
@@ -8019,7 +8031,7 @@ packages:
     dev: false
 
   file:projects/wasm-contracts.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-vSm6LveTQoc6340/x9wu2Uh1x73yn+MTR/gxgBPHdIsEX/2+Pde0etEGvd7M9cRfYMIYwjYeMNf4raaY5fYU+A==, tarball: file:projects/wasm-contracts.tgz}
+    resolution: {integrity: sha512-uQO7kwOGhxHY6pgBCUSoAkJG+9R72rS31pDF/55hJggcRvEIArAvzu457h0TajXvLlq8qlTN4SxAYXi65AQxGQ==, tarball: file:projects/wasm-contracts.tgz}
     id: file:projects/wasm-contracts.tgz
     name: '@rush-temp/wasm-contracts'
     version: 0.0.0

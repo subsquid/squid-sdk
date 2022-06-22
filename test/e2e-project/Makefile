@@ -13,7 +13,7 @@ build:
 
 
 codegen:
-	@npx sqd codegen
+	@npx squid-typeorm-codegen
 
 
 typegen:
