@@ -185,6 +185,7 @@ export class Chain {
     }
 
     async queryStorage(blockHash: string, prefix: string, name: string, keyList: any[][]): Promise<any[]> {
+        if (keyList.length == 0) return []
         let item = this.getStorageItem(prefix, name)
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
         let query = keyList.map(keys => {
