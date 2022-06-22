@@ -78,6 +78,13 @@ export interface BlockHandlerDataRequest {
 
 
 export type BlockHandlerContext<S, R extends BlockHandlerDataRequest = {}> = CommonHandlerContext<S> & {
+    /**
+     * A unified log of events and calls.
+     *
+     * All events deposited within a call are placed
+     * before the call. All child calls are placed before the parent call.
+     * List of block events is a subsequence of unified log.
+     */
     items: BlockItem<R["items"]>[]
 }
 

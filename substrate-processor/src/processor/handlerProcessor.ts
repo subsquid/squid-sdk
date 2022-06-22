@@ -78,7 +78,8 @@ export class SubstrateProcessor<Store> {
      * Sets types bundle.
      *
      * Types bundle is only required for blocks which have
-     * metadata version below 14.
+     * metadata version below 14 and only if we don't have built-in
+     * support for the chain in question.
      *
      * Don't confuse this setting with types bundle from polkadot.js.
      * Although those two are similar in purpose and structure,
@@ -163,20 +164,61 @@ export class SubstrateProcessor<Store> {
      *
      * See {@link BlockHandlerContext} for an API available to the handler.
      *
-     * Block level handlers affect performance, as they are
-     * triggered for all chain blocks. If no block hooks are defined,
-     * only blocks that'd trigger a handler execution will be fetched,
-     * which is usually a lot faster.
+     * Like event and call handlers block level handler can request a specific
+     * set of data to be fetched by the processor, but unlike them,
+     * it is triggered for all fetched blocks.
+     *
+     * When data selection option is not specified,
+     * block handler will be triggered for all chain blocks, those
+     * causing the processor to fetch all of them.
+     * This behaviour can be modified via {@link BlockHandlerDataRequest.includeAllBlocks | .data.includeAllBlocks} option.
      *
      * Relative execution order for multiple pre-block hooks is currently not defined.
      *
      * @example
+     * // print heights of all chain blocks
      * processor.addPreHook(async ctx => {
      *     console.log(ctx.block.height)
      * })
      *
-     * // limit the range of blocks for which pre-block hook will be effective
-     * processor.addPreHook({range: {from: 100000}}, async ctx => {})
+     * // print heights of all blocks starting from block 100000
+     * processor.addPreHook({range: {from: 100000}}, async ctx => {
+     *     console.log(ctx.block.height)
+     * })
+     *
+     * // print all `Balances.Transfer` events
+     * processor.addPreHook({
+     *     data: {
+     *         items: {
+     *             events: {
+     *                 'Balances.Transfer': {args: true}
+     *             }
+     *         }
+     *     }
+     * } as const, async ctx => {
+     *     ctx.items.forEach(item => {
+     *         if (item.name === 'Balances.Transfer') {
+     *             console.log(item.event.args)
+     *         }
+     *     })
+     * })
+     *
+     * // print names of all events
+     * processor.addPreHook({
+     *     data: {
+     *        items: {
+     *             events: {
+     *                 '*': {}
+     *             }
+     *         }
+     *     }
+     * } as const, async ctx => {
+     *     ctx.items.forEach(item => {
+     *         if (item.kind == 'event) {
+     *             console.log(item.event.name)
+     *         }
+     *     })
+     * })
      */
     addPreHook(fn: BlockHandler<Store>): void
     addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): void
@@ -200,20 +242,59 @@ export class SubstrateProcessor<Store> {
      *
      * See {@link BlockHandlerContext} for an API available to the handler.
      *
-     * Block level handlers affect performance, as they are
-     * triggered for all chain blocks. If no block hooks are defined,
-     * only blocks that'd trigger a handler execution will be fetched,
-     * which is usually a lot faster.
+     * Like event and call handlers, block level handler can request a specific
+     * set of data to be fetched by the processor, but unlike them,
+     * it is triggered for all fetched blocks.
      *
-     * Relative execution order for multiple post-block hooks is currently not defined.
+     * When data selection option is not specified,
+     * block handler will be triggered for all chain blocks, those
+     * causing the processor to fetch all of them.
+     * This behaviour can be modified via {@link BlockHandlerDataRequest.includeAllBlocks | .data.includeAllBlocks} option.
      *
      * @example
+     * // print heights of all chain blocks
      * processor.addPostHook(async ctx => {
      *     console.log(ctx.block.height)
      * })
      *
-     * // limit the range of blocks for which post-block hook will be effective
-     * processor.addPostHook({range: {from: 100000}}, async ctx => {})
+     * // print heights of all blocks starting from block 100000
+     * processor.addPostHook({range: {from: 100000}}, async ctx => {
+     *     console.log(ctx.block.height)
+     * })
+     *
+     * // print all `Balances.Transfer` events
+     * processor.addPostHook({
+     *     data: {
+     *         items: {
+     *             events: {
+     *                 'Balances.Transfer': {args: true}
+     *             }
+     *         }
+     *     }
+     * } as const, async ctx => {
+     *     ctx.items.forEach(item => {
+     *         if (item.name === 'Balances.Transfer') {
+     *             console.log(item.event.args)
+     *         }
+     *     })
+     * })
+     *
+     * // print names of all events
+     * processor.addPostHook({
+     *     data: {
+     *        items: {
+     *             events: {
+     *                 '*': {}
+     *             }
+     *         }
+     *     }
+     * } as const, async ctx => {
+     *     ctx.items.forEach(item => {
+     *         if (item.kind == 'event) {
+     *             console.log(item.event.name)
+     *         }
+     *     })
+     * })
      */
     addPostHook(fn: BlockHandler<Store>): void
     addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
@@ -236,22 +317,32 @@ export class SubstrateProcessor<Store> {
      *
      * See {@link EventHandlerContext} for an API available to the handler.
      *
-     * All events are processed sequentially according to the event log of the current block.
+     * All calls are processed sequentially according to their position in unified
+     * log of events and calls. All events deposited within a call are placed
+     * before the call. All child calls are placed before the parent call.
+     * List of block events is a subsequence of unified log.
      *
      * Relative execution order is currently not defined for multiple event handlers
      * registered for the same event.
      *
      * @example
-     * processor.addEventHandler('balances.Transfer', async ctx => {
-     *     assert(ctx.event.name == 'balances.Transfer')
+     * processor.addEventHandler('Balances.Transfer', async ctx => {
+     *     assert(ctx.event.name == 'Balances.Transfer')
      * })
      *
      * // limit the range of blocks for which event handler will be effective
-     * processor.addEventHandler('balances.Transfer', {
+     * processor.addEventHandler('Balances.Transfer', {
      *     range: {from: 100000}
      * }, async ctx => {
-     *     assert(ctx.event.name == 'balances.Transfer')
+     *     assert(ctx.event.name == 'Balances.Transfer')
      * })
+     *
+     * // request only subset of event data for faster ingestion times
+     * processor.addEventHandler('Balances.Transfer', {
+     *     data: {
+     *         event: {args: true}
+     *     }
+     * } as const, async ctx => {})
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
@@ -273,6 +364,39 @@ export class SubstrateProcessor<Store> {
         })
     }
 
+    /**
+     * Registers a call data handler.
+     *
+     * See {@link CallHandlerContext} for an API available to the handler.
+     *
+     * All calls are processed sequentially according to their position in unified
+     * log of events and calls. All events deposited within a call are placed
+     * before the call. All child calls are placed before the parent call.
+     * List of block events is a subsequence of unified log.
+     *
+     * Relative execution order is currently not defined for multiple call handlers
+     * registered for the same call.
+     *
+     * @example
+     * processor.addCallHandler('Balances.transfer', async ctx => {
+     *     assert(ctx.event.name == 'Balances.transfer')
+     * })
+     *
+     * // limit the range of blocks for which event handler will be effective
+     * processor.addCallHandler('Balances.transfer', {
+     *     range: {from: 100000}
+     * }, async ctx => {
+     *     assert(ctx.event.name == 'Balances.transfer')
+     * })
+     *
+     * // request only subset of event data for faster ingestion times
+     * processor.addCallHandler('Balances.transfer', {
+     *     data: {
+     *         call: {args: true},
+     *         extrinsic: {signature: true}
+     *     }
+     * } as const, async ctx => {})
+     */
     addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
     addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
     addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
@@ -293,7 +417,19 @@ export class SubstrateProcessor<Store> {
         })
     }
 
-
+    /**
+     * Registers `EVM.Log` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link EvmLogEvent | event type} and selects
+     * events by evm log contract address and topics.
+     *
+     * @example
+     * // process ERC721 transfers from Moonsama contract
+     * processor.addEvmLogHandler('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * }, async ctx => {})
+     */
     addEvmLogHandler(
         contractAddress: string,
         fn: EvmLogHandler<Store>
@@ -329,6 +465,13 @@ export class SubstrateProcessor<Store> {
         })
     }
 
+    /**
+     * Registers `Contracts.ContractEmitted` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link ContractsContractEmittedEvent | event type} and selects
+     * events by contract address.
+     */
     addContractsContractEmittedHandler(
         contractAddress: string,
         fn: ContractsContractEmittedHandler<Store>
