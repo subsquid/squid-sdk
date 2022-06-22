@@ -1,23 +1,11 @@
 import { Flags } from '@oclif/core';
 import chalk from 'chalk';
-import { LogEntry, LogLevel, LogPayload, versionHistoryLogs, versionTailLogs } from '../../api';
+
+import { getSquid, LogEntry, versionHistoryLogs, versionTailLogs } from '../../api';
 import { CliCommand } from '../../command';
 import { prompt } from 'inquirer';
 import { createInterface } from 'readline';
-
-function getLevel(level: LogLevel) {
-    switch (level) {
-        case LogLevel.Debug:
-            return chalk.gray(level)
-        case LogLevel.Info:
-        case LogLevel.Notice:
-            return chalk.cyan(level)
-        case LogLevel.Warning:
-            return chalk.yellow(level)
-        case LogLevel.Error:
-            return chalk.red(level)
-    }
-}
+import { pretty } from '../../logs';
 
 function streamLines(body: NodeJS.ReadableStream, cb: (line: string) => void): void {
     const rl = createInterface({
@@ -25,29 +13,34 @@ function streamLines(body: NodeJS.ReadableStream, cb: (line: string) => void): v
         crlfDelay: Infinity
     })
 
-
-
     rl.on('line', cb)
-}
-
-function getPayload(payload: LogPayload) {
-    if (typeof payload === 'string') {
-       return payload || ''
-    }
-
-    const { message, ...rest } = payload;
-    const res = [message];
-
-    // log if message is empty or some additional data exists
-    if(!message || Object.keys(rest).length !== 0) {
-        res.push(chalk.dim(JSON.stringify(rest)))
-    }
-    return res.filter(v => Boolean(v)).join(' ')
 }
 
 type LogResult = {
     hasLogs: boolean,
     nextPage: string | null
+}
+
+async function selectVersion(name: string) {
+    const squid = await getSquid(name);
+
+    if (squid.versions.length === 1) {
+        return squid.versions[0].name
+    }
+
+    const { action } = await prompt([{
+        name: 'action',
+        message: `Select version`,
+        type: 'list',
+        choices: [
+            ...squid.versions.map(({name, alias}) => ({
+                name: `${alias || name} version ${alias ? chalk.dim(`(${name})`) : ''}`,
+                value: name
+            }))
+        ],
+    }])
+
+    return action
 }
 
 export default class Logs extends CliCommand {
@@ -62,41 +55,47 @@ export default class Logs extends CliCommand {
 
     static flags = {
         versionName: Flags.string({
-            name: 'version',
             char: 'v',
-            description: `Version name`,
+            summary: `Version name`,
             required: false,
-            default: 'prod'
+        }),
+        container: Flags.string({
+            char: 'c',
+            summary: `Container name`,
+            required: false,
+            multiple: true
         }),
         pageSize: Flags.integer({
             char: 'p',
-            description: 'Logs page size',
+            summary: 'Logs page size',
             required: false,
             default: 100,
             exclusive: ['tail']
         }),
         tail: Flags.boolean({
             char: 't',
-            description: 'Tail',
+            summary: 'Tail',
             required: false,
             default: false,
         }),
     };
 
     async run(): Promise<void> {
-        const { flags: { tail, pageSize, versionName }, args: { name } } = await this.parse(Logs);
+        let { flags: { tail, pageSize, versionName, container }, args: { name } } = await this.parse(Logs);
         const from = new Date(Date.now() - 24 * 60 * 60000);
+
+        const version: string = versionName || await selectVersion(name)
 
         this.log('Fetching logs...')
 
         if (tail) {
-            await this.fetchLogs(name, versionName, {
+            await this.fetchLogs(name, version, {
                 limit: 30,
                 from,
-                reverse: true
+                reverse: true,
+                container,
             })
-
-            const stream = await versionTailLogs(name, versionName);
+            const stream = await versionTailLogs(name, version);
             await new Promise((resolve, reject) => {
                 streamLines(stream, (line) => {
                     if (line.length === 0) return
@@ -104,9 +103,9 @@ export default class Logs extends CliCommand {
                     try {
                         const entries: LogEntry[] = JSON.parse(line)
 
-                        entries.forEach(e => {
-                            this.prettyPrint(e)
-                        })
+                        pretty(entries).forEach(l => {
+                            this.log(l)
+                        });
                     } catch (e) {
                         reject(e)
                     }
@@ -120,10 +119,11 @@ export default class Logs extends CliCommand {
 
         let cursor = undefined
         do {
-            const { hasLogs, nextPage }: LogResult = await this.fetchLogs(name, versionName, {
+            const { hasLogs, nextPage }: LogResult = await this.fetchLogs(name, version, {
                 limit: pageSize,
                 from,
-                nextPage: cursor
+                nextPage: cursor,
+                container,
             })
             if (!hasLogs) {
                 this.log('No logs found');
@@ -145,9 +145,10 @@ export default class Logs extends CliCommand {
         } while (cursor)
     }
 
-    async fetchLogs(squidName: string, versionName : string, { reverse, ...query }: {
+    async fetchLogs(squidName: string, versionName: string, { reverse, ...query }: {
         limit: number,
         from: Date,
+        container: string[],
         nextPage?: string,
         orderBy?: string,
         reverse?: boolean
@@ -156,15 +157,10 @@ export default class Logs extends CliCommand {
         if (reverse) {
             logs = logs.reverse()
         }
-        logs.forEach(l => {
-            this.prettyPrint(l)
+        pretty(logs).forEach(l => {
+            this.log(l)
         });
 
         return { hasLogs: logs.length > 0,  nextPage }
-    }
-
-
-    prettyPrint(log: LogEntry) {
-        this.log(`${chalk.dim(log.timestamp)} ${getLevel(log.level)} ${getPayload(log.payload)}`);
     }
 }

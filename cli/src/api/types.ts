@@ -57,7 +57,6 @@ export type ManifestResponse = {
   squid: SquidResponse
 }
 
-
 export enum LogLevel {
   Error = 'ERROR',
   Debug = 'DEBUG',
@@ -69,6 +68,7 @@ export type LogPayload = string | Record<string, unknown>
 
 export type LogEntry = {
   timestamp: string
+  container: string
   level: LogLevel
   payload: LogPayload
 }

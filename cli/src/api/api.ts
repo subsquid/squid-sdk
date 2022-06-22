@@ -18,7 +18,7 @@ export async function api<T = any>(
   { method, path, data, query, responseType = 'json' } : {
     method: 'get' |'post' | 'put' | 'delete'
     path: string,
-    query?: Record<string, string | boolean | number | undefined>,
+    query?: Record<string, string | string[] | boolean | number | undefined>,
     data?: unknown
     responseType?: 'json' | 'stream'
   }
@@ -48,7 +48,6 @@ export async function api<T = any>(
     headers,
     body: data ? JSON.stringify(data) : undefined,
   });
-
 
   let body
   try {
