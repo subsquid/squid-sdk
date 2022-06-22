@@ -221,6 +221,7 @@ export class Runner<S, R extends BatchRequest> {
 
             this.metrics.registerBatch(
                 batch.blocks.length,
+                getItemsCount(batch.blocks),
                 batch.fetchStartTime,
                 batch.fetchEndTime,
                 mappingStartTime,
@@ -228,12 +229,12 @@ export class Runner<S, R extends BatchRequest> {
             )
 
             this.config.getLogger().info(
-                `last block: ${this.lastBlock}, ` +
-                `speed: ${Math.round(this.metrics.getSyncSpeed())} blocks/sec, ` +
+                `${this.lastBlock} / ${this.metrics.getChainHeight()}, ` +
+                `rate: ${Math.round(this.metrics.getSyncSpeed())} blocks/sec, ` +
                 `mapping: ${Math.round(this.metrics.getMappingSpeed())} blocks/sec, ` +
+                `${Math.round(this.metrics.getMappingItemSpeed())} items/sec, ` +
                 `ingest: ${Math.round(this.metrics.getIngestSpeed())} blocks/sec, ` +
-                `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}, ` +
-                `progress: ${Math.round(this.metrics.getSyncRatio() * 100)}%`
+                `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}`
             )
         }
     }
@@ -283,3 +284,12 @@ export class Runner<S, R extends BatchRequest> {
 
 
 type Pack = {chain: Chain, blocks: BlockData[]}
+
+
+function getItemsCount(blocks: BlockData[]): number {
+    let count = 1
+    for (let i = 0; i < blocks.length; i++) {
+        count += blocks[i].items.length
+    }
+    return count
+}

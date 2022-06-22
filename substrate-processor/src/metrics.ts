@@ -7,6 +7,7 @@ export class Metrics {
     private chainHeight = -1
     private ingestSpeed = new Speed({windowSize: 5})
     private mappingSpeed = new Speed({windowSize: 5})
+    private mappingItemSpeed = new Speed({windowSize: 5})
     private blockProgress = new Progress({initialValue: 0})
     private rpcSpeed = new Speed({windowSize: 60, windowGranularitySeconds: 1})
     private registry = new Registry()
@@ -130,6 +131,7 @@ export class Metrics {
 
     registerBatch(
         batchSize: number,
+        batchItemSize: number,
         batchFetchStartTime: bigint,
         batchFetchEndTime: bigint,
         batchMappingStartTime: bigint,
@@ -137,6 +139,7 @@ export class Metrics {
     ): void {
         this.ingestSpeed.push(batchSize, batchFetchStartTime, batchFetchEndTime)
         this.mappingSpeed.push(batchSize, batchMappingStartTime, batchMappingEndTime)
+        this.mappingItemSpeed.push(batchItemSize, batchMappingStartTime, batchMappingEndTime)
     }
 
     registerArchiveRetry(url: string, errorsInRow: number): void {
@@ -158,6 +161,10 @@ export class Metrics {
         this.rpcSpeed.push(1, beg, end)
     }
 
+    getChainHeight(): number {
+        return this.chainHeight
+    }
+
     getSyncSpeed(): number {
         return this.blockProgress.speed()
     }
@@ -176,6 +183,10 @@ export class Metrics {
 
     getMappingSpeed(): number {
         return this.mappingSpeed.speed()
+    }
+
+    getMappingItemSpeed(): number {
+        return this.mappingItemSpeed.speed()
     }
 
     serve(port: number | string): Promise<ListeningServer> {
