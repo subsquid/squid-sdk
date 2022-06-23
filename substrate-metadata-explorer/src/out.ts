@@ -27,7 +27,8 @@ export class Out {
 
     append(versions: SpecVersion[]): void {
         if (this.isJson()) {
-            this.write(this.knownVersions().concat(versions))
+            let current = this.exists() ? readSpecVersions(this.file) : []
+            this.write(current.concat(versions))
         } else {
             for (let v of versions) {
                 fs.appendFileSync(this.file, JSON.stringify(v) + '\n')
