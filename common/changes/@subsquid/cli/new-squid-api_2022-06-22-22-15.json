@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/cli",
       "comment": "add container filter to logs command",
-      "type": "patch"
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/cli"
