@@ -8,11 +8,11 @@
     "access": "public"
   },
   "bin": {
-    "squid-typeorm-migration": "bin/squid-typeorm-migration.js",
-    "squid-typeorm-migration-apply": "bin/squid-typeorm-migration-apply.js",
-    "squid-typeorm-migration-create": "bin/squid-typeorm-migration-create.js",
-    "squid-typeorm-migration-generate": "bin/squid-typeorm-migration-generate.js",
-    "squid-typeorm-migration-revert": "bin/squid-typeorm-migration-revert.js"
+    "squid-typeorm-migration": "bin/squid-typeorm-migration",
+    "squid-typeorm-migration-apply": "bin/squid-typeorm-migration-apply",
+    "squid-typeorm-migration-create": "bin/squid-typeorm-migration-create",
+    "squid-typeorm-migration-generate": "bin/squid-typeorm-migration-generate",
+    "squid-typeorm-migration-revert": "bin/squid-typeorm-migration-revert"
   },
   "files": [
     "bin",
