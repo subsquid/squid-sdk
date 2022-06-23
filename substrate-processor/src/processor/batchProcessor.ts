@@ -23,14 +23,27 @@ import {DataSource} from "./handlerProcessor"
 import {Config, Options, Runner} from "./runner"
 
 
+/**
+ * A helper to get the resulting type of block item
+ *
+ * @example
+ * const processor = new SubstrateBatchProcessor()
+ *  .addEvent('Balances.Transfer')
+ *  .addEvent('Balances.Deposit')
+ *
+ * type BlockItem = BatchProcessorItem<typeof processor>
+ */
 export type BatchProcessorItem<T> = T extends SubstrateBatchProcessor<infer I> ? I : never
 export type BatchProcessorEventItem<T> = Extract<BatchProcessorItem<T>, {kind: 'event'}>
 export type BatchProcessorCallItem<T> = Extract<BatchProcessorItem<T>, {kind: 'call'}>
 
 
 export interface BatchContext<Store, Item> {
+    /**
+     * Not yet public description of chain metadata
+     * @internal
+     */
     _chain: Chain
-    tx: object
     log: Logger
     store: Store
     blocks: BatchBlock<Item>[]
@@ -38,6 +51,9 @@ export interface BatchContext<Store, Item> {
 
 
 export interface BatchBlock<Item> {
+    /**
+     * Block header
+     */
     header: SubstrateBlock
     /**
      * A unified log of events and calls.
@@ -56,7 +72,7 @@ export interface BatchBlock<Item> {
  * Unlike {@link SubstrateProcessor}, `SubstrateBatchProcessor` can have
  * only one data handler, which accepts a list of blocks.
  *
- * This gives an opportunity to reduce the number of round-trips
+ * This gives mapping developers an opportunity to reduce number of round-trips
  * both to database and chain nodes,
  * thus providing much better performance.
  *
@@ -162,11 +178,11 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
      * Request the processor to fetch calls of a given name.
      *
      * @example
-     * // print all `Balances.transfer` calls
+     * // print successful `Balances.transfer` calls
      * process.addCall('Balances.transfer').run(db, async ctx => {
      *     for (let block of ctx.blocks) {
      *         for (let item of block.items) {
-     *             if (item.name == 'Balances.transfer') {
+     *             if (item.name == 'Balances.transfer' && item.call.successful) {
      *                 console.log(item.call.id)
      *             }
      *         }
@@ -174,10 +190,10 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
      * })
      *
      * // same as above, but restrict the set of fetched fields
-     * process.addCall('Balances.Transfer', {data: {call: {}}}).run(db, async ctx => {
+     * process.addCall('Balances.Transfer', {data: {call: {successful: true}}}).run(db, async ctx => {
      *     for (let block of ctx.blocks) {
      *         for (let item of block.items) {
-     *             if (item.name == 'Balances.transfer') {
+     *             if (item.name == 'Balances.transfer' && item.call.successful) {
      *                 console.log(item.call.id)
      *             }
      *         }
@@ -229,7 +245,7 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     /**
      * Similar to {@link .addEvent},
      * but requests `EVM.Log` events belonging to particular contract
-     * with an option to filter by topic.
+     * with an option to filter them by topic.
      *
      * @example
      * // request ERC721 transfers from Moonsama contract
@@ -449,7 +465,6 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
                 return db.transact(from, to, store => {
                     return handler({
                         _chain: chain,
-                        tx: {},
                         log: logger.child('mapping'),
                         store,
                         blocks: blocks as any,

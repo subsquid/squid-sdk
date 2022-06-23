@@ -671,7 +671,6 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
 
         let ctx: CommonHandlerContext<S> = {
             _chain: chain,
-            tx: {},
             log: blockLog.child({hook: 'pre'}),
             store,
             block: block.header

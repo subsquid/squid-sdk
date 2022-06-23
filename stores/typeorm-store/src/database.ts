@@ -103,6 +103,21 @@ class BaseDatabase<S> {
 }
 
 
+/**
+ * Provides restrictive and lazy version of TypeORM EntityManager
+ * to data handlers.
+ *
+ * Lazy means, no database transaction is opened until
+ * real database operation was requested by some data handler,
+ * which allows more efficient data filtering within handlers.
+ *
+ * `TypeormDatabase` supports only primitive DML operations
+ * without cascades, relations and other ORM goodies in return
+ * for performance and exciting new features yet to be implemented :).
+ *
+ * Instances of this class should be considered to be completely opaque
+ * by squid framework users.
+ */
 export class TypeormDatabase extends BaseDatabase<Store> {
     protected async runTransaction(from: number, to: number, cb: (store: Store) => Promise<void>): Promise<void> {
         let tx: Promise<Tx> | undefined
@@ -151,6 +166,14 @@ export class TypeormDatabase extends BaseDatabase<Store> {
 }
 
 
+/**
+ * Provides full TypeORM {@link EntityManager} to data handlers.
+ *
+ * Prefer using {@link TypeormDatabase} instead of this class when possible.
+ *
+ * Instances of this class should be considered to be completely opaque
+ * by squid framework users.
+ */
 export class FullTypeormDatabase extends BaseDatabase<EntityManager> {
     protected async runTransaction(from: number, to: number, cb: (store: EntityManager) => Promise<void>): Promise<void> {
         let con = assertNotNull(this.con, 'not connected')

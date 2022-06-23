@@ -19,7 +19,6 @@ export interface CommonHandlerContext<S> {
      * @internal
      */
     _chain: Chain
-    tx: object
     log: Logger
     store: S
     block: SubstrateBlock
