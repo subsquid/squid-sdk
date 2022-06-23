@@ -9,7 +9,7 @@
     "@polkadot/api-contract": "^8.5.1",
     "@subsquid/graphql-server": "^1.0.0",
     "@subsquid/substrate-processor": "^1.1.0",
-    "@subsquid/typeorm-migration": "^0.0.0",
+    "@subsquid/typeorm-migration": "^0.0.1",
     "@subsquid/typeorm-store": "^0.0.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",

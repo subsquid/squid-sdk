@@ -10,7 +10,7 @@
     "@subsquid/graphql-server": "^1.0.0",
     "@subsquid/substrate-processor": "^1.1.0",
     "@subsquid/typeorm-store": "^0.0.1",
-    "@subsquid/typeorm-migration": "^0.0.0",
+    "@subsquid/typeorm-migration": "^0.0.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.2.41",
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "^1.0.0",
-    "@subsquid/substrate-metadata-explorer": "^1.0.1",
+    "@subsquid/substrate-metadata-explorer": "^1.0.2",
     "@subsquid/substrate-typegen": "^1.0.1",
     "@subsquid/typeorm-codegen": "^0.0.0",
     "@types/node": "^16.11.22",
