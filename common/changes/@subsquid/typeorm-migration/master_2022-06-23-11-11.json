@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-migration",
+      "comment": "fix launch issues on Windows",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-migration"
+}
