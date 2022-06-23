@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/typeorm-codegen_v0.0.1",
+      "date": "Thu, 23 Jun 2022 16:29:54 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add missing shebang"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/typeorm-codegen_v0.0.0",
       "date": "Wed, 22 Jun 2022 13:18:45 GMT",
