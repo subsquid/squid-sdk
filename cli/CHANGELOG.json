@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/cli_v1.2.0",
+      "date": "Thu, 23 Jun 2022 11:15:03 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add container filter to logs command"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/cli_v1.1.0",
       "date": "Wed, 22 Jun 2022 13:18:45 GMT",

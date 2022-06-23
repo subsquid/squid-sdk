@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Sun, 19 Jun 2022 21:47:17 GMT and should not be manually modified.
+This log was last generated on Thu, 23 Jun 2022 11:15:03 GMT and should not be manually modified.
+
+## 1.0.2
+Thu, 23 Jun 2022 11:15:03 GMT
+
+### Patches
+
+- fix: explorer saves only last version into `.json` file
 
 ## 1.0.1
 Sun, 19 Jun 2022 21:47:17 GMT

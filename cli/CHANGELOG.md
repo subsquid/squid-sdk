@@ -1,6 +1,13 @@
 # Change Log - @subsquid/cli
 
-This log was last generated on Wed, 22 Jun 2022 13:18:45 GMT and should not be manually modified.
+This log was last generated on Thu, 23 Jun 2022 11:15:03 GMT and should not be manually modified.
+
+## 1.2.0
+Thu, 23 Jun 2022 11:15:03 GMT
+
+### Minor changes
+
+- add container filter to logs command
 
 ## 1.1.0
 Wed, 22 Jun 2022 13:18:45 GMT

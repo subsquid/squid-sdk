@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-migration",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/typeorm-migration_v0.0.1",
+      "date": "Thu, 23 Jun 2022 11:15:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix launch issues on Windows"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/typeorm-migration_v0.0.0",
       "date": "Wed, 22 Jun 2022 13:18:45 GMT",

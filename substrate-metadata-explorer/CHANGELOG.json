@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "1.0.2",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.2",
+      "date": "Thu, 23 Jun 2022 11:15:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix: explorer saves only last version into `.json` file"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/substrate-metadata-explorer_v1.0.1",
       "date": "Sun, 19 Jun 2022 21:47:17 GMT",
