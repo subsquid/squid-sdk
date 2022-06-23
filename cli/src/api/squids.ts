@@ -44,26 +44,24 @@ export async function deleteSquidVersion(squidName: string, versionName: string)
   return body.payload
 }
 
-export async function versionHistoryLogs(squidName: string, versionName: string, { limit,  from, nextPage, orderBy } : {
+export async function versionHistoryLogs(squidName: string, versionName: string, query : {
   limit: number
   from: Date
   nextPage?: string
   orderBy?: string,
+  container?: string[],
 }): Promise<LogsResponse> {
   const { body } = await api<HttpResponse<LogsResponse>>( {
     method: 'get',
     path: `/client/squids/${squidName}/versions/${versionName}/logs/history`,
     query: {
-      limit,
-      from: from.toISOString(),
-      nextPage,
-      orderBy,
+      ...query,
+      from: query.from.toISOString(),
     }
   });
 
   return body.payload || { logs: [], nextPage: null }
 }
-
 
 export async function versionTailLogs(squidName: string, versionName: string) {
   const { body } = await api<NodeJS.ReadableStream>( {
@@ -78,5 +76,3 @@ export async function versionTailLogs(squidName: string, versionName: string) {
 
   return body
 }
-
-
