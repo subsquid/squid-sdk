@@ -39,6 +39,13 @@ export interface BatchContext<Store, Item> {
 
 export interface BatchBlock<Item> {
     header: SubstrateBlock
+    /**
+     * A unified log of events and calls.
+     *
+     * All events deposited within a call are placed
+     * before the call. All child calls are placed before the parent call.
+     * List of block events is a subsequence of unified log.
+     */
     items: Item[]
 }
 
@@ -47,12 +54,13 @@ export interface BatchBlock<Item> {
  * Provides methods to configure and launch data processing.
  *
  * Unlike {@link SubstrateProcessor}, `SubstrateBatchProcessor` can have
- * only one data handler, which accepts a list of blocks to map.
+ * only one data handler, which accepts a list of blocks.
  *
  * This gives an opportunity to reduce the number of round-trips
- * to database or chain nodes, thus providing much better performance.
+ * both to database and chain nodes,
+ * thus providing much better performance.
  *
- * All configuration methods return new processor instance with modified settings.
+ * All configuration methods return a new processor instance.
  */
 export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     private batches: Batch<PlainBatchRequest>[] = []
@@ -82,6 +90,44 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return next
     }
 
+    /**
+     * Request the processor to fetch events of a given name.
+     *
+     * @example
+     * // print all transfers
+     * process.addEvent('Balances.Transfer').run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.Transfer') {
+     *                 console.log(item.event.id)
+     *             }
+     *         }
+     *     }
+     * })
+     *
+     * // same as above, but restrict the set of fetched fields
+     * process.addEvent('Balances.Transfer', {data: {event: {}}}).run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.Transfer') {
+     *                 console.log(item.event.id)
+     *             }
+     *         }
+     *     }
+     * })
+     *
+     * // print transfers from blocks 0..1000
+     * process.addEvent('Balances.Transfer', {range: {from: 0, to: 1000}}).run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         if (block.header.height > 1000) return
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.Transfer') {
+     *                 console.log(item.event.id)
+     *             }
+     *         }
+     *     }
+     * })
+     */
     addEvent<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
