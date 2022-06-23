@@ -127,6 +127,17 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
      *         }
      *     }
      * })
+     *
+     * // print all events
+     * process.addEvent('*').run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.kind == 'event') {
+     *                 console.log(item.event.id)
+     *             }
+     *         }
+     *     }
+     * })
      */
     addEvent<N extends string>(
         name: N,
@@ -147,6 +158,55 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return this.add(req, options?.range)
     }
 
+    /**
+     * Request the processor to fetch calls of a given name.
+     *
+     * @example
+     * // print all `Balances.transfer` calls
+     * process.addCall('Balances.transfer').run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.transfer') {
+     *                 console.log(item.call.id)
+     *             }
+     *         }
+     *     }
+     * })
+     *
+     * // same as above, but restrict the set of fetched fields
+     * process.addCall('Balances.Transfer', {data: {call: {}}}).run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.transfer') {
+     *                 console.log(item.call.id)
+     *             }
+     *         }
+     *     }
+     * })
+     *
+     * // print transfers from blocks 0..1000
+     * process.addCall('Balances.transfer', {range: {from: 0, to: 1000}}).run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         if (block.header.height > 1000) return
+     *         for (let item of block.items) {
+     *             if (item.name == 'Balances.transfer') {
+     *                 console.log(item.call.id)
+     *             }
+     *         }
+     *     }
+     * })
+     *
+     * // print all calls
+     * process.addCall('*').run(db, async ctx => {
+     *     for (let block of ctx.blocks) {
+     *         for (let item of block.items) {
+     *             if (item.kind == 'call') {
+     *                 console.log(item.call.id)
+     *             }
+     *         }
+     *     }
+     * })
+     */
     addCall<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
@@ -166,6 +226,17 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return this.add(req, options?.range)
     }
 
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `EVM.Log` events belonging to particular contract
+     * with an option to filter by topic.
+     *
+     * @example
+     * // request ERC721 transfers from Moonsama contract
+     * processor.addEvmLog('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * })
+     */
     addEvmLog(
         contractAddress: string,
         options?: EvmLogOptions & NoDataSelection
@@ -189,6 +260,10 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return this.add(req, options?.range)
     }
 
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Contracts.ContractEmitted` events belonging to particular contract.
+     */
     addContractsContractEmitted(
         contractAddress: string,
         options?: BlockRangeOption & NoDataSelection
@@ -211,31 +286,98 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return this.add(req, options?.range)
     }
 
+    /**
+     * By default, the processor will fetch only blocks
+     * which contain requested items. This method
+     * modifies such behaviour to fetch all chain blocks.
+     *
+     * Optionally a range of blocks can be specified
+     * for which the setting should be effective.
+     */
     includeAllBlocks(range?: Range): SubstrateBatchProcessor<Item> {
         let req = new PlainBatchRequest()
         req.includeAllBlocks = true
         return this.add(req)
     }
 
+    /**
+     * Sets the port for a built-in prometheus metrics server.
+     *
+     * By default, the value of `PROMETHEUS_PORT` environment
+     * variable is used. When it is not set,
+     * the processor will pick up an ephemeral port.
+     */
     setPrometheusPort(port: number | string): SubstrateBatchProcessor<Item> {
         return this.setOption('prometheusPort', port)
     }
 
+    /**
+     * Limits the range of blocks to be processed.
+     *
+     * When the upper bound is specified,
+     * the processor will terminate with exit code 0 once it reaches it.
+     */
     setBlockRange(range?: Range): SubstrateBatchProcessor<Item> {
         return this.setOption('blockRange', range)
     }
 
+    /**
+     * Sets the maximum number of blocks which can be fetched
+     * from the data source in a single request.
+     *
+     * The default is 100.
+     */
     setBatchSize(size: number): SubstrateBatchProcessor<Item> {
         assert(size > 0)
         return this.setOption('batchSize', size)
     }
 
+    /**
+     * Sets blockchain data source.
+     *
+     * @example
+     * processor.setDataSource({
+     *     chain: 'wss://rpc.polkadot.io',
+     *     archive: 'https://polkadot.archive.subsquid.io/graphql'
+     * })
+     */
     setDataSource(src: DataSource): SubstrateBatchProcessor<Item> {
         let next = this.copy()
         next.src = src
         return next
     }
 
+    /**
+     * Sets types bundle.
+     *
+     * Types bundle is only required for blocks which have
+     * metadata version below 14 and only if we don't have built-in
+     * support for the chain in question.
+     *
+     * Don't confuse this setting with types bundle from polkadot.js.
+     * Although those two are similar in purpose and structure,
+     * they are not compatible.
+     *
+     * Types bundle can be specified in 3 different ways:
+     *
+     * 1. as a name of a known chain
+     * 2. as a name of a JSON file structured as {@link OldTypesBundle}
+     * 3. as an {@link OldTypesBundle} object
+     *
+     * @example
+     * // known chain
+     * processor.setTypesBundle('kusama')
+     *
+     * // A path to a JSON file resolved relative to `cwd`.
+     * processor.setTypesBundle('typesBundle.json')
+     *
+     * // OldTypesBundle object
+     * processor.setTypesBundle({
+     *     types: {
+     *         Foo: 'u8'
+     *     }
+     * })
+     */
     setTypesBundle(bundle: string | OldTypesBundle): SubstrateBatchProcessor<Item> {
         let next = this.copy()
         if (typeof bundle == 'string') {
@@ -268,7 +410,19 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
         return url
     }
 
-    run<Store>(db: Database<Store>, mapper: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
+    /**
+     * Run data processing.
+     *
+     * This method assumes full control over the current OS process as
+     * it terminates the entire program in case of error or
+     * at the end of data processing.
+     *
+     * @param db - database is responsible for providing storage to data handlers
+     * and persisting mapping progress and status.
+     *
+     * @param handler - The data handler, see {@link BatchContext} for an API available to the handler.
+     */
+    run<Store>(db: Database<Store>, handler: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
         let logger = createLogger('sqd:processor')
 
         runProgram(async () => {
@@ -293,7 +447,7 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
                 let from = blocks[0].header.height
                 let to = last(blocks).header.height
                 return db.transact(from, to, store => {
-                    return mapper({
+                    return handler({
                         _chain: chain,
                         tx: {},
                         log: logger.child('mapping'),
