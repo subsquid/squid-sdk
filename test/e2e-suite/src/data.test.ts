@@ -124,6 +124,7 @@ describe('data', function () {
                     nested {
                         float
                         json
+                        enumInJson
                     }
                     json
                 }
@@ -132,12 +133,12 @@ describe('data', function () {
             scalarRaws: [
                 {
                     float: 0,
-                    nested: {float: 0, json: [1, 2, 3]},
+                    nested: {float: 0, json: [1, 2, 3], enumInJson: 'A'},
                     json: {foo: 1}
                 },
                 {
                     float: 0.7,
-                    nested: {float: 0.8, json: null},
+                    nested: {float: 0.8, json: null, enumInJson: null},
                     json: null
                 }
             ]

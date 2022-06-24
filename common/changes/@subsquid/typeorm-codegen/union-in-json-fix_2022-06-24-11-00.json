@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "fix enum in typed json object issue",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}
