@@ -1,5 +1,5 @@
-import {Database, Transaction} from "@subsquid/openreader/dist/db"
-import type {Connection, EntityManager} from "typeorm"
+import type {Database, Transaction} from "@subsquid/openreader/dist/db"
+import type {DataSource, EntityManager} from "typeorm"
 
 
 export class EMDatabase implements Database {
@@ -40,7 +40,7 @@ export class TypeormTransaction implements Transaction {
     private tx: Promise<Tx> | undefined
     private closed = false
 
-    constructor(private con: Connection) {}
+    constructor(private con: DataSource) {}
 
     async get(): Promise<Database> {
         let tx = await this.getTx()
@@ -72,6 +72,6 @@ export class TypeormTransaction implements Transaction {
 
     close(): void {
         this.closed = true
-        this.tx?.then(tx => tx.close()).catch(err => null)
+        this.tx?.then(tx => tx.close()).catch(() => {})
     }
 }

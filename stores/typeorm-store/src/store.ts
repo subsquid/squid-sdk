@@ -1,7 +1,6 @@
 import assert from "assert"
-import type {EntityManager, FindConditions} from "typeorm"
-import {EntityFieldsNames} from "typeorm/common/EntityFieldsNames"
-import {ObjectLiteral} from "typeorm/common/ObjectLiteral"
+import type {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from "typeorm"
+import {EntityTarget} from "typeorm/common/EntityTarget"
 
 
 export interface EntityClass<T> {
@@ -27,17 +26,15 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: FindConditions<Entity>[] | FindConditions<Entity> | ObjectLiteral | string;
+    where?: FindOptionsWhere<Entity>[] | FindOptionsWhere<Entity>
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: string[];
+    relations?: FindOptionsRelations<Entity>;
     /**
      * Order, in which entities should be ordered.
      */
-    order?: {
-        [P in EntityFieldsNames<Entity>]?: "ASC" | "DESC" | 1 | -1;
-    }
+    order?: FindOptionsOrder<Entity>
 }
 
 
@@ -137,42 +134,41 @@ export class Store {
         })
     }
 
-    count<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<number>
-    count<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<number>
-    count<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>): Promise<number>
-    count(entityClass: any, options?: any): Promise<number> {
+    count<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<number> {
         return this.em().then(em => em.count(entityClass, options))
     }
 
-    find<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<E[]>
-    find<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>): Promise<E[]>
-    find(entityClass: any, options?: any): Promise<any[]> {
+    countBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<number> {
+        return this.em().then(em => em.countBy(entityClass, where))
+    }
+
+    find<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<E[]> {
         return this.em().then(em => em.find(entityClass, options))
     }
 
-    findByIds<E extends Entity>(entityClass: EntityClass<E>, ids: string[], options?: FindManyOptions<E>): Promise<E[]>
-    findByIds<E extends Entity>(entityClass: EntityClass<E>, ids: string[], conditions?: FindConditions<E>): Promise<E[]>
-    findByIds(entityClass: any, ids: any[], options?: any): Promise<any[]> {
-        return this.em().then(em => em.findByIds(entityClass, ids, options))
+    findBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E[]> {
+        return this.em().then(em => em.findBy(entityClass, where))
     }
 
-    findOne<E extends Entity>(entityClass: EntityClass<E>, id?: string, options?: FindOneOptions<E>): Promise<E | undefined>
-    findOne<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<E | undefined>
-    findOne<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>, options?: FindOneOptions<E>): Promise<E | undefined>
-    findOne(entityClass: any, conditions?: any, options?: any): Promise<any | undefined> {
-        return this.em().then(em => em.findOne(entityClass, conditions, options))
+    findOne<E extends Entity>(entityClass: EntityClass<E>, options: FindOneOptions<E>): Promise<E | undefined> {
+        return this.em().then(em => em.findOne(entityClass, options)).then(noNull)
     }
 
-    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, id?: string, options?: FindOneOptions<E>): Promise<E>
-    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<E>
-    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>, options?: FindOneOptions<E>): Promise<E>
-    findOneOrFail(entityClass: any, conditions?: any, options?: any): Promise<any | undefined> {
-        return this.em().then(em => em.findOneOrFail(entityClass, conditions, options))
+    findOneBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E | undefined> {
+        return this.em().then(em => em.findOneBy(entityClass, where)).then(noNull)
     }
 
-    get<E extends Entity>(entityClass: EntityClass<E>, optionsOrId?: FindOneOptions<E> | string): Promise<E | undefined> {
-        if (typeof optionsOrId == 'string') { // please compiler
-            return this.findOne(entityClass, optionsOrId)
+    findOneOrFail<E extends Entity>(entityClass: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
+        return this.em().then(em => em.findOneOrFail(entityClass, options))
+    }
+
+    findOneByOrFail<E extends Entity>(entityClass: EntityTarget<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E> {
+        return this.em().then(em => em.findOneByOrFail(entityClass, where))
+    }
+
+    get<E extends Entity>(entityClass: EntityClass<E>, optionsOrId: FindOneOptions<E> | string): Promise<E | undefined> {
+        if (typeof optionsOrId == 'string') {
+            return this.findOneBy(entityClass, {id: optionsOrId} as any)
         } else {
             return this.findOne(entityClass, optionsOrId)
         }
@@ -191,4 +187,9 @@ function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
         }
         yield list.slice(offset)
     }
+}
+
+
+function noNull<T>(val: null | undefined | T): T | undefined {
+    return val == null ? undefined : val
 }

@@ -1,7 +1,7 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
-import {Connection, createConnection, EntityManager} from "typeorm"
+import {DataSource, EntityManager} from "typeorm"
 import {Store} from "./store"
 import {createTransaction, Tx} from "./tx"
 
@@ -18,7 +18,7 @@ export interface TypeormDatabaseOptions {
 class BaseDatabase<S> {
     protected statusSchema: string
     protected isolationLevel: IsolationLevel
-    protected con?: Connection
+    protected con?: DataSource
     protected lastCommitted = -1
 
     constructor(options?: TypeormDatabaseOptions) {
@@ -31,7 +31,8 @@ class BaseDatabase<S> {
             throw new Error('Already connected')
         }
         let cfg = createOrmConfig()
-        let con = await createConnection(cfg)
+        let con = new DataSource(cfg)
+        await con.initialize()
         try {
             let height = await con.transaction('SERIALIZABLE', async em => {
                 await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
@@ -54,7 +55,7 @@ class BaseDatabase<S> {
             this.con = con
             return height
         } catch(e: any) {
-            await con.close().catch(err => {}) // ignore error
+            await con.destroy().catch(() => {}) // ignore error
             throw e
         }
     }
@@ -64,7 +65,7 @@ class BaseDatabase<S> {
         this.con = undefined
         this.lastCommitted = -1
         if (con) {
-            await con.close()
+            await con.destroy()
         }
     }
 
@@ -152,7 +153,7 @@ export class TypeormDatabase extends BaseDatabase<Store> {
             await this.updateHeight(tx.em, from, to)
             return tx
         } catch(e: any) {
-            await tx.rollback().catch(err => null)
+            await tx.rollback().catch(() => {})
             throw e
         }
     }

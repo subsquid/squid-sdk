@@ -7,9 +7,7 @@ export async function getOrCreate<T extends Entity>(
     id: string,
     store: Store
 ): Promise<T> {
-    let entity: T | undefined = await store.get<T>(constructor, {
-        where: {id},
-    })
+    let entity: T | undefined = await store.get<T>(constructor, id)
     if (entity === undefined) {
         entity = new constructor({id})
     }

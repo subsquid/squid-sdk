@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "typeorm upgrade from `0.2.x` to `0.3.6`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

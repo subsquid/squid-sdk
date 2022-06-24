@@ -1,9 +1,9 @@
-import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull, runProgram} from "@subsquid/util-internal"
+import {createOrmConfig, MIGRATIONS_DIR} from "@subsquid/typeorm-config"
+import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
 import {program} from "commander"
 import * as dotenv from "dotenv"
-import {ConnectionOptions, createConnection} from "typeorm"
+import {DataSource} from "typeorm"
 import {Query} from "typeorm/driver/Query"
 import {SqlInMemory} from "typeorm/driver/SqlInMemory"
 
@@ -16,20 +16,21 @@ runProgram(async () => {
 
     dotenv.config()
 
-    let cfg: ConnectionOptions = {
+    let connection = new DataSource({
         ...createOrmConfig(),
         synchronize: false,
         migrationsRun: false,
         dropSchema: false,
         logging: false
-    }
+    })
+
+    await connection.initialize()
 
     let commands: SqlInMemory
-    let connection = await createConnection(cfg)
     try {
         commands = await connection.driver.createSchemaBuilder().log()
     } finally {
-        await connection.close().catch(err => null)
+        await connection.destroy().catch(() => null)
     }
 
     if (commands.upQueries.length == 0) {
@@ -37,7 +38,7 @@ runProgram(async () => {
         process.exit(1)
     }
 
-    let dir = new OutDir(assertNotNull(cfg.cli?.migrationsDir))
+    let dir = new OutDir(MIGRATIONS_DIR)
     let timestamp = Date.now()
     let out = dir.file(`${timestamp}-${name}.js`)
     out.block(`module.exports = class ${name}${timestamp}`, () => {

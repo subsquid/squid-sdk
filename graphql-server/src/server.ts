@@ -15,7 +15,7 @@ import * as http from "http"
 import * as path from "path"
 import {Pool} from "pg"
 import * as process from "process"
-import type {Connection} from "typeorm"
+import type {DataSource} from "typeorm"
 import {createCheckPlugin, RequestCheckFunction} from "./check"
 import type {CustomResolvers} from "./resolvers"
 import {TypeormTransaction} from "./typeorm"
@@ -23,7 +23,7 @@ import {TypeormTransaction} from "./typeorm"
 
 export class Server {
     private dir: string
-    private db?: Pool | Connection
+    private db?: Pool | DataSource
 
     constructor(dir?: string) {
         this.dir = path.resolve(dir || process.cwd())
@@ -187,11 +187,13 @@ export class Server {
     }
 
     @def
-    async typeormConnection(): Promise<Connection> {
+    async typeormConnection(): Promise<DataSource> {
         let {createOrmConfig} = await import('@subsquid/typeorm-config')
-        let {createConnection} = await import('typeorm')
+        let {DataSource} = await import('typeorm')
         let cfg = createOrmConfig({projectDir: this.dir})
-        return createConnection(cfg)
+        let con = new DataSource(cfg)
+        await con.initialize()
+        return con
     }
 
     dialect(): Dialect {

@@ -102,7 +102,7 @@ specifiers:
   stoppable: ^1.1.0
   supports-color: ^8.1.1
   type-fest: ^2.14.0
-  typeorm: ^0.2.45
+  typeorm: ^0.3.6
   typescript: ~4.7.4
   websocket: ^1.0.34
   xxhash-wasm: ^1.0.1
@@ -210,7 +210,7 @@ dependencies:
   stoppable: 1.1.0
   supports-color: 8.1.1
   type-fest: 2.14.0
-  typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+  typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
   typescript: 4.7.4
   websocket: 1.0.34_supports-color@8.1.1
   xxhash-wasm: 1.0.1
@@ -7497,7 +7497,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-esPH0D9m62ZBAxCJBCbzeZ9WrPF5c0BzCzeSrZo8iiWAf04OUGN32Gd2nCmxYKXM7Qziq6HJWu5Oaxw98vQIIw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-h+rFguzuRVU88xWPqhqnvibtvvJvkINvVMi0ZOPtyoPLt7VzWuqtZMVN5ApJy/rr/ckF2QtfRd00uaqM8HP8bw==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7505,9 +7505,10 @@ packages:
       '@types/node': 16.11.41
       dotenv: 10.0.0
       pg: 8.7.3
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - hdb-pool
@@ -7522,6 +7523,7 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
@@ -7587,7 +7589,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-l7k1f3R3I99U36vQl/PjYUKD/BcfH83yR0IrWUPdFQAOyU97Une0Bq/5nr1I+1yhuLeKTPWHCuGjdNex9JfM4Q==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-RxyWHUmsMqTwYhj58WGmXK5mDQb5y6WQvjpGQlX7BRkiClh4S6QTH1nwJo8xfRj6unIW943W7U3wRNcsnM6e0A==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7595,9 +7597,10 @@ packages:
       '@types/node': 16.11.41
       dotenv: 10.0.0
       pg: 8.7.3
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - hdb-pool
@@ -7612,6 +7615,7 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
@@ -7722,7 +7726,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-GgzKxz9dqtdPMkn3KybtaW/AAyv1ihYEyZ79BcNrtn1rcX4zg5/dlhRdMVZFiM/FI8XTYgKKPq8qbV+vw6GELg==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-X/qnmoTP1/gOYTT0BbsQ71tEGLroR/UEFmOeupFoM5tuhIvFL3DywNVlH+S1yQoA+whpnyxqnAcuJuDtgG45ZA==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7731,9 +7735,10 @@ packages:
       dotenv: 10.0.0
       ethers: 5.6.9
       pg: 8.7.3
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - bufferutil
@@ -7749,6 +7754,7 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
       - utf-8-validate
     dev: false
@@ -7912,15 +7918,16 @@ packages:
     dev: false
 
   file:projects/typeorm-config.tgz_pg@8.7.3+supports-color@8.1.1:
-    resolution: {integrity: sha512-Rq6hPapjL8VcHRocYomY9d4m18NqJHwGGuNOF6zdexsOYFygWXeUmKXnfD/pX0fMxMJHjAWjHmSo8rXWRzyAaQ==, tarball: file:projects/typeorm-config.tgz}
+    resolution: {integrity: sha512-5sH6Vdbcyq4C9lKhV6Eiol1TCwf1LhqjHjImOLiHTuBSRyRHhg8ExGdTVcxlrYxP+JNRR4DwvaiZMjq5vJsgMA==, tarball: file:projects/typeorm-config.tgz}
     id: file:projects/typeorm-config.tgz
     name: '@rush-temp/typeorm-config'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.41
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - hdb-pool
@@ -7936,11 +7943,12 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
   file:projects/typeorm-migration.tgz_pg@8.7.3+supports-color@8.1.1:
-    resolution: {integrity: sha512-HRziGXvUfS1l/gwxVHXE2XiQfWQz/vkwRvBg8pPTlD5AeGckgEOljdbJGvmMs5GhL+SVClc3wyqeAHz5ck0PeA==, tarball: file:projects/typeorm-migration.tgz}
+    resolution: {integrity: sha512-IbWCxPWC+T4EGU35zKHnlemZSaBlxYPgGnY4NuwAX1ERTrgDc6Q7er75RLH+z/e+gxZmvyJsXhHcq+GhHCTqEQ==, tarball: file:projects/typeorm-migration.tgz}
     id: file:projects/typeorm-migration.tgz
     name: '@rush-temp/typeorm-migration'
     version: 0.0.0
@@ -7948,9 +7956,10 @@ packages:
       '@types/node': 16.11.41
       commander: 9.3.0
       dotenv: 10.0.0
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - hdb-pool
@@ -7966,11 +7975,12 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
   file:projects/typeorm-store.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-wiD2niSX2pynGI0TopxAuLurGx5ne38z3yjGt93leM4y4UCbDAgqqVUtIwIYXH6acTi48yZ1AdcWUYRb/K5Ujg==, tarball: file:projects/typeorm-store.tgz}
+    resolution: {integrity: sha512-EqkcIKG5cTFmcWkRatmtMhVhuzDns7EIl0YukBy+nuodwjmNYQUjwXexKS4sJHZFRAncJ5j4G81nCA5NOtXC5Q==, tarball: file:projects/typeorm-store.tgz}
     id: file:projects/typeorm-store.tgz
     name: '@rush-temp/typeorm-store'
     version: 0.0.0
@@ -7981,9 +7991,10 @@ packages:
       expect: 27.5.1
       mocha: 9.2.2
       pg: 8.7.3
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - hdb-pool
@@ -7998,6 +8009,7 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
@@ -8138,7 +8150,7 @@ packages:
     dev: false
 
   file:projects/wasm-contracts.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-eds2s+2wmiSrsGunrtQlTeuItWTmN88VDvljN3a04nrnIRQeFPHVlhxPrXEpE1odP3sRCA8wMJWKLKpYhz5DjA==, tarball: file:projects/wasm-contracts.tgz}
+    resolution: {integrity: sha512-p7/z+K67sjFuKiEG5JcD0laOfWLagEbh9MnaoTPm0RsQZ0ARPCISy0C5U5n16QVoAfRNKEVpV5nvSKyr96mX+Q==, tarball: file:projects/wasm-contracts.tgz}
     id: file:projects/wasm-contracts.tgz
     name: '@rush-temp/wasm-contracts'
     version: 0.0.0
@@ -8147,9 +8159,10 @@ packages:
       '@types/node': 16.11.41
       dotenv: 10.0.0
       pg: 8.7.3
-      typeorm: 0.2.45_pg@8.7.3+supports-color@8.1.1
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
+      - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
       - encoding
@@ -8165,6 +8178,7 @@ packages:
       - sql.js
       - sqlite3
       - supports-color
+      - ts-node
       - typeorm-aurora-data-api-driver
     dev: false
 
