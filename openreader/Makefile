@@ -1,5 +1,5 @@
 test:
-	npx mocha -r dotenv/config ./dist/test/*.test.js
+	npx mocha -r dotenv/config ./dist/test/*.test.js --exit
 
 test-cockroach:
 	@DB_TYPE=cockroach make test

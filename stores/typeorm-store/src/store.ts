@@ -85,7 +85,7 @@ export class Store {
     }
 
     /**
-     * Inserts a given entity or entities into the database. 
+     * Inserts a given entity or entities into the database.
      * Does not check if the entity(s) exist in the database and will fail if a duplicate is inserted.
      *
      * Executes a primitive INSERT operation without cascades, relations, etc.
@@ -126,9 +126,7 @@ export class Store {
                     for (let i = 1; i < e.length; i++) {
                         assert(entityClass === e[i].constructor, 'mass deletion allowed only for entities of the same class')
                     }
-                    for (let b of splitIntoBatches(e, 10000)) {
-                        await em.delete(entityClass, b.map(e => e.id))
-                    }
+                    await em.delete(entityClass, e.map(i => i.id))
                 } else {
                     let entity = e as E
                     await em.delete(entity.constructor, entity.id)
