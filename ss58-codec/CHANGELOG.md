@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ss58-codec
 
-This log was last generated on Mon, 07 Feb 2022 15:16:41 GMT and should not be manually modified.
+This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+
+## 0.1.1
+Fri, 24 Jun 2022 22:07:05 GMT
+
+### Patches
+
+- upgrade dependencies
 
 ## 0.1.0
 Mon, 07 Feb 2022 15:16:41 GMT

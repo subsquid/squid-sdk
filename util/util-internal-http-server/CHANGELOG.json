@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-http-server",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-http-server_v0.0.1",
+      "date": "Fri, 24 Jun 2022 22:07:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-http-server_v0.0.0",
       "date": "Sun, 19 Jun 2022 21:26:31 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/cli_v1.2.1",
+      "date": "Fri, 24 Jun 2022 22:07:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/cli_v1.2.0",
       "date": "Thu, 23 Jun 2022 11:15:03 GMT",
