@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "upgrade dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

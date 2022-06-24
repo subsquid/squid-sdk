@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-json",
+      "comment": "upgrade dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-json"
+}

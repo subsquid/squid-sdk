@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "upgrade dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

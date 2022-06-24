@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-counters",
+      "comment": "upgrade dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-counters"
+}

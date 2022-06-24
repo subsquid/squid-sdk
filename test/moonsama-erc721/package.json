@@ -13,15 +13,15 @@
     "@subsquid/typeorm-migration": "^0.0.1",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
-    "typeorm": "^0.2.41",
-    "ethers": "^5.6.3"
+    "typeorm": "^0.2.45",
+    "ethers": "^5.6.9"
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "^1.0.0",
     "@subsquid/substrate-metadata-explorer": "^1.0.2",
     "@subsquid/substrate-typegen": "^1.0.1",
     "@subsquid/typeorm-codegen": "^0.0.1",
-    "@types/node": "^16.11.22",
-    "typescript": "~4.5.5"
+    "@types/node": "^16.11.41",
+    "typescript": "~4.7.4"
   }
 }

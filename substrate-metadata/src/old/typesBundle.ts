@@ -26,8 +26,8 @@ export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number):
         let override = bundle.versions[i]
         if (isWithinRange(override.minmax, specVersion)) {
             Object.assign(types.types, override.types)
-            Object.assign(types.typesAlias, override.typesAlias)
-            Object.assign(types.signedExtensions, override.signedExtensions)
+            Object.assign(types.typesAlias!, override.typesAlias)
+            Object.assign(types.signedExtensions!, override.signedExtensions)
         }
     }
 

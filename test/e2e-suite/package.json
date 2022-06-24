@@ -6,9 +6,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@polkadot/api": "^7.12.1",
-    "@polkadot/types": "^7.12.1",
-    "@polkadot/keyring": "^8.5.1",
+    "@polkadot/api": "^7.15.1",
+    "@polkadot/types": "^7.15.1",
+    "@polkadot/keyring": "^8.7.1",
     "@subsquid/util-internal": "^0.0.0",
     "@subsquid/util-internal-hex": "^0.0.0",
     "dotenv": "^10.0.0",
@@ -18,9 +18,9 @@
     "expect": "^27.5.1"
   },
   "devDependencies": {
-    "@types/node": "^16.11.22",
-    "@types/node-fetch": "^2.5.12",
+    "@types/node": "^16.11.41",
+    "@types/node-fetch": "^2.6.2",
     "@types/mocha": "^9.1.1",
-    "typescript": "~4.5.5"
+    "typescript": "~4.7.4"
   }
 }
