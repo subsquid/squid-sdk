@@ -85,7 +85,8 @@ export class Store {
     }
 
     /**
-     * Inserts a given entity or entities into the database.
+     * Inserts a given entity or entities into the database. 
+     * Does not check if the entity(s) exist in the database and will fail if a duplicate is inserted.
      *
      * Executes a primitive INSERT operation without cascades, relations, etc.
      */
@@ -109,7 +110,7 @@ export class Store {
     }
 
     /**
-     * Deletes given entity or entities from the database.
+     * Deletes a given entity or entities from the database.
      *
      * Unlike {@link EntityManager.remove} executes a primitive DELETE query without cascades, relations, etc.
      */
