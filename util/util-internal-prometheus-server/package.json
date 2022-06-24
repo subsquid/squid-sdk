@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-prometheus-server",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Little opinionated prometheus server for squid tools",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal-http-server": "^0.0.0"
+    "@subsquid/util-internal-http-server": "^0.0.1"
   },
   "peerDependencies": {
     "prom-client": "^14.0.1"

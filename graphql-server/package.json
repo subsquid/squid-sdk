@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/graphql-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "GraphQL server for squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -23,9 +23,9 @@
   "dependencies": {
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
-    "@subsquid/openreader": "^1.0.0",
-    "@subsquid/typeorm-config": "^1.0.0",
-    "@subsquid/util-internal": "^0.0.0",
+    "@subsquid/openreader": "^1.0.1",
+    "@subsquid/typeorm-config": "^1.1.0",
+    "@subsquid/util-internal": "^0.0.1",
     "apollo-server-core": "^3.9.0",
     "apollo-server-express": "^3.9.0",
     "dotenv": "^10.0.0",

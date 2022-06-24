@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-service-manager",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Utility for applications consisting of multiple closable resources or control loops",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^0.0.0"
+    "@subsquid/util-internal": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",
