@@ -1,4 +1,4 @@
-# Subsquid, an ETL framework for building blockchain APIs
+# Subsquid: ETL framework for Web3
 
 [Subsquid](https://subsquid.io/) is a query node framework for Substrate-based blockchains. In straightforward terms, Subsquid can be thought of as an ETL tool, with a GraphQL server included.
 

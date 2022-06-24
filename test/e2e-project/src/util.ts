@@ -1,8 +1,8 @@
-import type {Store} from "@subsquid/typeorm-store"
+import type {Entity, Store} from "@subsquid/typeorm-store"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 
 
-export async function getOrCreate<T>(
+export async function getOrCreate<T extends Entity>(
     constructor: { new(props?: { id?: string }): T },
     id: string,
     store: Store

@@ -9,6 +9,11 @@ export interface EntityClass<T> {
 }
 
 
+export interface Entity {
+    id: string
+}
+
+
 /**
  * Defines a special criteria to find specific entity.
  */
@@ -48,87 +53,126 @@ export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
 }
 
 
+/**
+ * Restricted version of TypeORM entity manager for squid data handlers.
+ */
 export class Store {
     constructor(private em: () => Promise<EntityManager>) {}
 
-    save<Entity extends object>(entity: Entity): Promise<void>
-    save<Entity extends object>(entities: Entity[]): Promise<void>
-    save<Entity extends object>(e: Entity | Entity[]): Promise<void> {
+    /**
+     * Saves a given entity or entities into the database.
+     *
+     * Unlike {@link EntityManager.save} it always
+     * executes a primitive operation without cascades, relations, etc.
+     */
+    save<E extends Entity>(entity: E): Promise<void>
+    save<E extends Entity>(entities: E[]): Promise<void>
+    save<E extends Entity>(e: E | E[]): Promise<void> {
         return this.em().then(async em => {
             if (Array.isArray(e)) {
                 if (e.length == 0) return
-                let entityClass = e[0].constructor as EntityClass<Entity>
+                let entityClass = e[0].constructor as EntityClass<E>
                 for (let i = 1; i < e.length; i++) {
                     assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
                 }
                 for (let b of splitIntoBatches(e, 1000)) {
-                    await em.upsert(entityClass, b, ['id'])
+                    await em.upsert(entityClass, b as any, ['id'])
                 }
             } else {
-                await em.upsert(e.constructor as EntityClass<Entity>, e, ['id'])
+                await em.upsert(e.constructor as EntityClass<E>, e as any, ['id'])
             }
         })
     }
 
-    insert<Entity extends object>(entity: Entity): Promise<void>
-    insert<Entity extends object>(entities: Entity[]): Promise<void>
-    insert<Entity extends object>(e: Entity | Entity[]): Promise<void> {
+    /**
+     * Inserts a given entity or entities into the database. 
+     * Does not check if the entity(s) exist in the database and will fail if a duplicate is inserted.
+     *
+     * Executes a primitive INSERT operation without cascades, relations, etc.
+     */
+    insert<E extends Entity>(entity: E): Promise<void>
+    insert<E extends Entity>(entities: E[]): Promise<void>
+    insert<E extends Entity>(e: E | E[]): Promise<void> {
         return this.em().then(async em => {
             if (Array.isArray(e)) {
                 if (e.length == 0) return
-                let entityClass = e[0].constructor as EntityClass<Entity>
+                let entityClass = e[0].constructor as EntityClass<E>
                 for (let i = 1; i < e.length; i++) {
                     assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
                 }
                 for (let b of splitIntoBatches(e, 1000)) {
-                    await em.insert(entityClass, b)
+                    await em.insert(entityClass, b as any)
                 }
             } else {
-                await em.insert(e.constructor as EntityClass<Entity>, e)
+                await em.insert(e.constructor as EntityClass<E>, e as any)
             }
         })
     }
 
-    remove<Entity>(entity: Entity): Promise<void>
-    remove<Entity>(entities: Entity[]): Promise<void>
-    remove<Entity>(e: Entity | Entity[]): Promise<void>{
-        return this.em().then(em => em.remove(e).then())
+    /**
+     * Deletes a given entity or entities from the database.
+     *
+     * Unlike {@link EntityManager.remove} executes a primitive DELETE query without cascades, relations, etc.
+     */
+    remove<E extends Entity>(entity: E): Promise<void>
+    remove<E extends Entity>(entities: E[]): Promise<void>
+    remove<E extends Entity>(entityClass: EntityClass<E>, id: string | string[]): Promise<void>
+    remove<E extends Entity>(e: E | E[] | EntityClass<E>, id?: string | string[]): Promise<void>{
+        return this.em().then(async em => {
+            if (id == null) {
+                if (Array.isArray(e)) {
+                    if (e.length == 0) return
+                    let entityClass = e[0].constructor as EntityClass<E>
+                    for (let i = 1; i < e.length; i++) {
+                        assert(entityClass === e[i].constructor, 'mass deletion allowed only for entities of the same class')
+                    }
+                    for (let b of splitIntoBatches(e, 10000)) {
+                        await em.delete(entityClass, b.map(e => e.id))
+                    }
+                } else {
+                    let entity = e as E
+                    await em.delete(entity.constructor, entity.id)
+                }
+            } else {
+                await em.delete(e as EntityClass<E>, id)
+            }
+        })
     }
 
-    count<Entity>(entityClass: EntityClass<Entity>, options?: FindOneOptions<Entity>): Promise<number>
-    count<Entity>(entityClass: EntityClass<Entity>, options?: FindManyOptions<Entity>): Promise<number>
-    count<Entity>(entityClass: EntityClass<Entity>, conditions?: FindConditions<Entity>): Promise<number>
+    count<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<number>
+    count<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<number>
+    count<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>): Promise<number>
     count(entityClass: any, options?: any): Promise<number> {
         return this.em().then(em => em.count(entityClass, options))
     }
 
-    find<Entity>(entityClass: EntityClass<Entity>, options?: FindManyOptions<Entity>): Promise<Entity[]>
-    find<Entity>(entityClass: EntityClass<Entity>, conditions?: FindConditions<Entity>): Promise<Entity[]>
+    find<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<E[]>
+    find<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>): Promise<E[]>
     find(entityClass: any, options?: any): Promise<any[]> {
         return this.em().then(em => em.find(entityClass, options))
     }
 
-    findByIds<Entity>(entityClass: EntityClass<Entity>, ids: string[], options?: FindManyOptions<Entity>): Promise<Entity[]>
-    findByIds<Entity>(entityClass: EntityClass<Entity>, ids: string[], conditions?: FindConditions<Entity>): Promise<Entity[]>
+    findByIds<E extends Entity>(entityClass: EntityClass<E>, ids: string[], options?: FindManyOptions<E>): Promise<E[]>
+    findByIds<E extends Entity>(entityClass: EntityClass<E>, ids: string[], conditions?: FindConditions<E>): Promise<E[]>
     findByIds(entityClass: any, ids: any[], options?: any): Promise<any[]> {
         return this.em().then(em => em.findByIds(entityClass, ids, options))
     }
 
-    findOne<Entity>(entityClass: EntityClass<Entity>, id?: string, options?: FindOneOptions<Entity>): Promise<Entity | undefined>
-    findOne<Entity>(entityClass: EntityClass<Entity>, options?: FindOneOptions<Entity>): Promise<Entity | undefined>
-    findOne<Entity>(entityClass: EntityClass<Entity>, conditions?: FindConditions<Entity>, options?: FindOneOptions<Entity>): Promise<Entity | undefined>
+    findOne<E extends Entity>(entityClass: EntityClass<E>, id?: string, options?: FindOneOptions<E>): Promise<E | undefined>
+    findOne<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<E | undefined>
+    findOne<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>, options?: FindOneOptions<E>): Promise<E | undefined>
     findOne(entityClass: any, conditions?: any, options?: any): Promise<any | undefined> {
         return this.em().then(em => em.findOne(entityClass, conditions, options))
     }
 
-    findOneOrFail<Entity>(entityClass: EntityClass<Entity>, id?: string, options?: FindOneOptions<Entity>): Promise<Entity>
-    findOneOrFail<Entity>(entityClass: EntityClass<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>
-    findOneOrFail<Entity>(entityClass: EntityClass<Entity>, conditions?: FindConditions<Entity>, options?: FindOneOptions<Entity>): Promise<Entity>
+    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, id?: string, options?: FindOneOptions<E>): Promise<E>
+    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, options?: FindOneOptions<E>): Promise<E>
+    findOneOrFail<E extends Entity>(entityClass: EntityClass<E>, conditions?: FindConditions<E>, options?: FindOneOptions<E>): Promise<E>
     findOneOrFail(entityClass: any, conditions?: any, options?: any): Promise<any | undefined> {
         return this.em().then(em => em.findOneOrFail(entityClass, conditions, options))
     }
 
-    get<Entity>(entityClass: EntityClass<Entity>, optionsOrId?: FindOneOptions<Entity> | string): Promise<Entity | undefined> {
+    get<E extends Entity>(entityClass: EntityClass<E>, optionsOrId?: FindOneOptions<E> | string): Promise<E | undefined> {
         if (typeof optionsOrId == 'string') { // please compiler
             return this.findOne(entityClass, optionsOrId)
         } else {
