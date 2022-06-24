@@ -34,6 +34,11 @@ export default class Release extends Command {
             description: 'description',
             required: false,
         }),
+        verbose: Flags.boolean({
+            char: 'v',
+            description: 'verbose',
+            required: false,
+        }),
     };
 
     async run(): Promise<void> {
@@ -73,7 +78,8 @@ export default class Release extends Command {
             squidName,
             versionName,
             result?.version.deploymentUrl || '',
-            this
+            this,
+          { verbose: flags.verbose }
         );
         this.log('✔️ Done!');
     }

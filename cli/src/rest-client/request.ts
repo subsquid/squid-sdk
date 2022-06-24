@@ -28,7 +28,7 @@ export async function request(
           chalk.cyan(response.status),
           chalk.dim(JSON.stringify({ headers: response.headers }))
         );
-        if (body) {
+        if (responseBody) {
             console.log(chalk.dim(JSON.stringify(responseBody, null ,2)));
         }
     }

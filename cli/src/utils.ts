@@ -1,5 +1,6 @@
 import { Command, CliUx } from '@oclif/core';
 import cliSelect from 'cli-select';
+import { dim, yellow } from 'chalk';
 import {
     DefaultLogFields,
     LogOptions,
@@ -19,25 +20,46 @@ export async function pollDeployPipelines(
     squidName: string,
     versionName: string,
     deploymentUrl: string,
-    command: Command
+    command: Command,
+    { verbose = false }: { verbose?: boolean } = {}
 ): Promise<void> {
     let inProgress = true;
     let lastStatus;
+
     while (inProgress) {
         const pipeline = await getDeployPipeline(squidName, versionName);
+
+        let isLogPrinted = false;
+        const traceDebug = `
+      ------
+      Please report to t.me/HydraDevs 
+      ${dim('Squid:')} ${squidName}
+      ${dim('Version:')} ${versionName}
+      ${dim('Deploy:')} ${pipeline?.id}
+      `
+
         if (pipeline) {
             if (pipeline.status !== lastStatus) {
                 lastStatus = pipeline.status;
                 CliUx.ux.action.stop('✔️');
             }
+
+            const printDebug = () => {
+                if (verbose && !isLogPrinted) {
+                    command.log(dim([...pipeline.logs, pipeline.comment].filter(v => v).join('\n')))
+                    isLogPrinted = true
+                }
+            }
+
             switch (pipeline?.status) {
                 case DeployPipelineStatusEnum.CREATED:
                     CliUx.ux.action.start('◷ Preparing your squid');
                     if (pipeline.isErrorOccurred) {
+                        printDebug()
                         command.error(
                             buildPipelineErrorMessage(
                                 `❌ An error occurred during building process`,
-                                pipeline.comment
+                              traceDebug
                             )
                         );
                     }
@@ -45,10 +67,11 @@ export async function pollDeployPipelines(
                 case DeployPipelineStatusEnum.IMAGE_BUILDING:
                     CliUx.ux.action.start('◷ Building your squid');
                     if (pipeline.isErrorOccurred) {
+                        printDebug()
                         command.error(
                             buildPipelineErrorMessage(
                                 `❌ An error occurred during building process`,
-                                pipeline.comment
+                              traceDebug
                             )
                         );
                     }
@@ -56,10 +79,11 @@ export async function pollDeployPipelines(
                 case DeployPipelineStatusEnum.IMAGE_PUSHING:
                     CliUx.ux.action.start('◷ Publishing your squid');
                     if (pipeline.isErrorOccurred) {
+                        printDebug()
                         command.error(
                             buildPipelineErrorMessage(
                                 `❌ An error occurred during pushing process`,
-                                pipeline.comment
+                              traceDebug
                             )
                         );
                     }
@@ -67,21 +91,26 @@ export async function pollDeployPipelines(
                 case DeployPipelineStatusEnum.DEPLOYING:
                     CliUx.ux.action.start('◷ Almost ready');
                     if (pipeline.isErrorOccurred) {
+                        printDebug()
                         command.error(
                             buildPipelineErrorMessage(
                                 `❌ An error occurred during deploying process`,
-                                pipeline.comment
+                              traceDebug
                             )
                         );
                     }
                     break;
                 case DeployPipelineStatusEnum.OK:
+                    printDebug()
+
                     command.log(
                         `◷ Your squid almost ready and will be accessible on ${deploymentUrl}`
                     );
                     inProgress = false;
+
                     break;
                 default:
+                    printDebug()
                     command.error(
                         '❌ An error occurred. Unexpected status of pipeline.'
                     );

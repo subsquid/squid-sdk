@@ -34,7 +34,12 @@ export default class Update extends Command {
             description: 'perform a hard reset (db wipeout)',
             required: false,
             default: false
-        })
+        }),
+        verbose: Flags.boolean({
+            char: 'v',
+            description: 'verbose',
+            required: false,
+        }),
     };
 
     async run(): Promise<void> {
@@ -73,7 +78,8 @@ export default class Update extends Command {
             squidName,
             versionName,
             result?.deploymentUrl || '',
-            this
+            this,
+          { verbose: flags.verbose }
         );
         this.log('✔️ Done!');
     }
