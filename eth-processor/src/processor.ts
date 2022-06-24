@@ -1,11 +1,11 @@
 import {createLogger, Logger} from "@subsquid/logger"
-import {assertNotNull, def, runProgram} from "@subsquid/util-internal"
+import {def, runProgram} from "@subsquid/util-internal"
 import assert from "assert"
-import axios from "axios"
-import { Log, Block, Transaction } from "./eth"
+import { Log } from "./eth"
 import { LogFieldSelection } from "./fieldSelection"
+import { Runner } from "./runner"
 
-export class EthProcessor<Store> {
+export class Processor<Store> {
 	protected hooks: { evmLog: Array<EvmLogHandlerEntry<Store>> }
 	private blockRange: Range
 	private batchSize: number
@@ -86,64 +86,33 @@ export class EthProcessor<Store> {
     }
 
     @def
-    private getLogger(): Logger {
-        return createLogger('sqd:processor')
+    public getLogger(): Logger {
+        return createLogger('eth:processor')
     }
 
-    private getDatabase() {
+    public getDatabase() {
         return this.db
     }
 
-    private getArchiveEndpoint(): string {
+    public getArchiveEndpoint(): string {
         let url = this.src?.archive
         if (url == null) {
             throw new Error('use .setDataSource() to specify archive url')
         }
         return url
     }
-    
-    private async runImpl(): Promise<void> {
-		const db = this.getDatabase();
-		const archiveEndpoint = this.getArchiveEndpoint();
 
-		await db.connect()
+    public getBlockRange(): Range {
+        return this.blockRange
+    }
 
-		const from: number = this.blockRange.from;
-		let to: number;
-		if (this.blockRange.to) {
-			to = this.blockRange.to;
-		} else {
-			const status = await axios.get(`${archiveEndpoint}/status`);
-			to = status.data.number
-		}
-		
-		for (let start=from; start<to; start += this.batchSize) {
-			const end = start + this.batchSize > to ? to : start + this.batchSize;
+    public getBatchSize(): number {
+        return this.batchSize
+    }
 
-			const hook = this.hooks.evmLog[0];
-
-			const req = {
-				fromBlock: start,
-				toBlock: end,
-				address: hook.contractAddress,
-				fieldSelection: hook.fieldSelection,
-			};
-
-			const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req, {
-                headers: {
-                    "Accept-Encoding": "gzip"
-                }
-            });
-		
-			for(const rawLog of logs) {
-				const log = logFromRaw(rawLog);
-				await hook.handler({
-					db: this.db,
-					log,
-				})
-			}
-		}
-	}
+    public getHooks(): Hooks<Store> {
+        return this.hooks
+    }
 
     run(): void {
     	if(this.running) {
@@ -151,31 +120,11 @@ export class EthProcessor<Store> {
     	}
     	this.running = true
     	runProgram(async () => {
-    		await this.runImpl()
+    		await new Runner(this).run()
     	}, err => {
     		this.getLogger().fatal(err)
     	})
     }
-}
-
-function logFromRaw(raw: any): Log {
-    let tx: any = {};
-    let block: any = {};
-    let log: any = {};
-
-    for(const key of Object.keys(raw)) {
-        if(key.startsWith("log")) {
-            log[key.substring(4)] = raw[key];
-        } else if(key.startsWith("tx")) {
-            tx[key.substring(3)] = raw[key];
-        }  else if(key.startsWith("block")) {
-            block[key.substring(5)] = raw[key];
-        }
-    }
-
-	return {
-		tx, block, ...log
-	}
 }
 
 export interface Range {
@@ -214,4 +163,8 @@ export interface EvmLogHandler<Store> {
 export interface EvmLogHandlerContext<Store> {
 	db: Database<Store>,
 	log: Log,
+}
+
+export interface Hooks<Store> {
+    evmLog: Array<EvmLogHandlerEntry<Store>>
 }

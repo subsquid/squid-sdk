@@ -671,6 +671,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "ethereum-name-service",
+      "projectFolder": "test/ethereum-name-service",
+      "shouldPublish": false
+    },
+    {
       "packageName": "types-test",
       "projectFolder": "test/types",
       "shouldPublish": false
