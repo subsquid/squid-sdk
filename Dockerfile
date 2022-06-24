@@ -31,3 +31,14 @@ COPY --from=chain-status-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/util/chain-status-service/lib/main.js"]
 CMD ["/squid/util/chain-status-service/config.json"]
 EXPOSE 3000
+
+
+FROM builder AS substrate-explorer-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-explorer
+
+
+FROM node AS substrate-explorer
+COPY --from=substrate-explorer-builder /squid/common/deploy /squid
+WORKDIR /squid/substrate-explorer
+ENTRYPOINT [ "npx", "openreader", "schema.graphql"]
+EXPOSE 3000

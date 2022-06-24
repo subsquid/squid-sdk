@@ -1,2 +1,2 @@
 
-require('./dist/main')()
+require('../dist/main')()
