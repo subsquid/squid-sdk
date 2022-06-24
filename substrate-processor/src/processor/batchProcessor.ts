@@ -72,7 +72,7 @@ export interface BatchBlock<Item> {
  * Unlike {@link SubstrateProcessor}, `SubstrateBatchProcessor` can have
  * only one data handler, which accepts a list of blocks.
  *
- * This gives mapping developers an opportunity to reduce number of round-trips
+ * This gives mapping developers an opportunity to reduce the number of round-trips
  * both to database and chain nodes,
  * thus providing much better performance.
  *

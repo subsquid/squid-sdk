@@ -19,7 +19,13 @@ export interface CommonHandlerContext<S> {
      * @internal
      */
     _chain: Chain
+    
+    /**
+     * A built-in logger to be used in mapping handlers. Supports trace, debug, warn, error, fatal 
+     * levels.
+     */
     log: Logger
+    
     store: S
     block: SubstrateBlock
 }
