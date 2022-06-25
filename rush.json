@@ -513,7 +513,7 @@
       "packageName": "@subsquid/substrate-explorer",
       "projectFolder": "substrate-explorer",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
