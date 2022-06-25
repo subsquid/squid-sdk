@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add shebang to `openreader(1)`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
