@@ -10,7 +10,8 @@ which should be pointed at postgres or cockroach database
 created by [subsquid/substrate-ingest](https://github.com/subsquid/squid/tree/master/substrate-ingest).
 
 Below is an example [docker-compose](https://docs.docker.com/compose/compose-file/) 
-file with a full setup including data ingestion service.
+file with a full setup including data ingestion service. 
+Navigate to http://localhost:3000/graphql after start.
 
 ```yaml
 services:
@@ -44,5 +45,3 @@ services:
       "--out", "postgres://archive:hello@db:5432/polkadot_archive"
     ]
 ```
-
-After launching the above configuration open the browser and navigate to http://localhost:3000/graphql.
