@@ -200,7 +200,7 @@ class Insert<E> {
             let cols = names.map(name => {
                 let cast = mapping[name].cast
                 if (cast == 'jsonb') { // Cockroach workaround
-                    return name + '::jsonb'
+                    return name.toString() + '::jsonb'
                 } else {
                     return name
                 }

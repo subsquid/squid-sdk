@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-json",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Extended JSON serialisation for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,10 +16,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^0.0.0"
+    "@subsquid/util-internal-hex": "^0.0.1"
   },
   "devDependencies": {
-    "@types/node": "^16.11.22",
-    "typescript": "~4.5.5"
+    "@types/node": "^16.11.41",
+    "typescript": "~4.7.4"
   }
 }

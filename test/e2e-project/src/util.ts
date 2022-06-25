@@ -1,15 +1,13 @@
-import type {Store} from "@subsquid/typeorm-store"
+import type {Entity, Store} from "@subsquid/typeorm-store"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 
 
-export async function getOrCreate<T>(
+export async function getOrCreate<T extends Entity>(
     constructor: { new(props?: { id?: string }): T },
     id: string,
     store: Store
 ): Promise<T> {
-    let entity: T | undefined = await store.get<T>(constructor, {
-        where: {id},
-    })
+    let entity: T | undefined = await store.get<T>(constructor, id)
     if (entity === undefined) {
         entity = new constructor({id})
     }

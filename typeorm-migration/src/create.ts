@@ -1,5 +1,5 @@
-import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull, runProgram} from "@subsquid/util-internal"
+import {MIGRATIONS_DIR} from "@subsquid/typeorm-config"
+import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
 import {program} from "commander"
 
@@ -10,8 +10,7 @@ runProgram(async () => {
 
     let {name} = program.parse().opts() as {name: string}
 
-    let cfg = createOrmConfig()
-    let dir = new OutDir(assertNotNull(cfg.cli?.migrationsDir))
+    let dir = new OutDir(MIGRATIONS_DIR)
     let timestamp = Date.now()
     let out = dir.file(`${timestamp}-${name}.js`)
     out.block(`module.exports = class ${name}${timestamp}`, () => {

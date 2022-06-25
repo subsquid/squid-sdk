@@ -178,6 +178,14 @@ type ScalarRaw @entity {
 type NestedScalars {
   float: Float
   json: JSON
+  enumInJson: EnumInJson
+}
+
+
+enum EnumInJson {
+  A
+  B
+  C
 }
 
 

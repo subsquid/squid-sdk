@@ -2,6 +2,35 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "1.0.3",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.3",
+      "date": "Fri, 24 Jun 2022 22:07:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^1.0.0` to `^1.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-gql-request\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-read-lines\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/substrate-metadata-explorer_v1.0.2",
       "date": "Thu, 23 Jun 2022 11:15:03 GMT",

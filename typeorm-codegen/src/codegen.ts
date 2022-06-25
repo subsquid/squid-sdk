@@ -281,6 +281,8 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                 convert = `marshal.${prop.type.name.toLowerCase()}.fromJSON(${exp})`
                 break
             case 'enum':
+                convert = `marshal.enumFromJson(${exp}, ${prop.type.name})`
+                break
             case 'fk':
                 convert = `marshal.string.fromJSON(${exp})`
                 break

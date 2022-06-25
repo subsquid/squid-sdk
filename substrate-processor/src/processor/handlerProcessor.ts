@@ -58,6 +58,10 @@ export class SubstrateProcessor<Store> {
     private typesBundle?: OldTypesBundle
     private running = false
 
+    /**
+     * @param db - database is responsible for providing storage to data handlers
+     * and persisting mapping progress and status.
+     */
     constructor(private db: Database<Store>) {}
 
     /**
@@ -667,7 +671,6 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
 
         let ctx: CommonHandlerContext<S> = {
             _chain: chain,
-            tx: {},
             log: blockLog.child({hook: 'pre'}),
             store,
             block: block.header

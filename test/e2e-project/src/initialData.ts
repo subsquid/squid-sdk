@@ -2,6 +2,7 @@ import type {Store} from "@subsquid/typeorm-store"
 import {
     AdditionalData,
     ComplexEntity,
+    EnumInJson,
     EventA,
     EventB,
     EventC,
@@ -9,8 +10,10 @@ import {
     HappyPoor,
     Issue,
     IssueCancellation,
-    IssuePayment, NestedScalars,
-    Network, ScalarRaw,
+    IssuePayment,
+    NestedScalars,
+    Network,
+    ScalarRaw,
     SystemEvent
 } from "./model"
 
@@ -90,7 +93,7 @@ export async function loadInitialData(store: Store): Promise<void> {
         await store.save(new ScalarRaw({
             id: '1',
             float: 0,
-            nested: new NestedScalars({float: 0, json: [1, 2, 3]}),
+            nested: new NestedScalars({float: 0, json: [1, 2, 3], enumInJson: EnumInJson.A}),
             json: {foo: 1}
         }))
 

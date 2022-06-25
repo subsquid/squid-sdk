@@ -2,7 +2,7 @@ import {createOrmConfig} from "@subsquid/typeorm-config"
 import {runProgram} from "@subsquid/util-internal"
 import {program} from "commander"
 import * as dotenv from "dotenv"
-import {ConnectionOptions, createConnection} from "typeorm"
+import {DataSource} from "typeorm"
 
 
 runProgram(async () => {
@@ -10,19 +10,20 @@ runProgram(async () => {
 
     dotenv.config()
 
-    let cfg: ConnectionOptions = {
+    let connection = new DataSource({
         ...createOrmConfig(),
         subscribers: [],
         synchronize: false,
         migrationsRun: false,
         dropSchema: false,
         logging: ["query", "error", "schema"],
-    }
+    })
 
-    let connection = await createConnection(cfg)
+    await connection.initialize()
+
     try {
         await connection.runMigrations({transaction: 'all'})
     } finally {
-        await connection.close().catch(err => null)
+        await connection.destroy().catch(() => null)
     }
 })

@@ -6,20 +6,20 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^1.0.0",
-    "@subsquid/scale-codec": "^1.0.1",
-    "@subsquid/substrate-metadata": "^1.0.0",
-    "@subsquid/substrate-metadata-explorer": "^1.0.2",
-    "@subsquid/util-internal": "^0.0.0",
-    "@subsquid/util-internal-counters": "^0.0.0",
-    "@subsquid/util-internal-gql-request": "^0.0.0",
-    "@subsquid/util-internal-hex": "^0.0.0",
-    "@subsquid/util-internal-read-lines": "^0.0.0",
-    "@subsquid/util-naming": "^0.0.0",
-    "@types/node": "^16.11.22",
-    "@types/pg": "8.6.4",
+    "@subsquid/rpc-client": "^1.0.1",
+    "@subsquid/scale-codec": "^1.0.2",
+    "@subsquid/substrate-metadata": "^1.0.1",
+    "@subsquid/substrate-metadata-explorer": "^1.0.3",
+    "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal-counters": "^0.0.1",
+    "@subsquid/util-internal-gql-request": "^0.0.1",
+    "@subsquid/util-internal-hex": "^0.0.1",
+    "@subsquid/util-internal-read-lines": "^0.0.1",
+    "@subsquid/util-naming": "^0.0.1",
+    "@types/node": "^16.11.41",
+    "@types/pg": "8.6.5",
     "expect": "^27.5.1",
     "pg": "^8.7.3",
-    "typescript": "~4.5.5"
+    "typescript": "~4.7.4"
   }
 }

@@ -1,6 +1,7 @@
 import * as ss58 from "@subsquid/ss58"
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
+import {In} from "typeorm"
 import {Account, HistoricalBalance} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
@@ -28,7 +29,7 @@ processor.run(new TypeormDatabase(), async ctx => {
         accountIds.add(t.to)
     }
 
-    let accounts = await ctx.store.findByIds(Account, Array.from(accountIds)).then(accounts => {
+    let accounts = await ctx.store.findBy(Account, {id: In(Array.from(accountIds))}).then(accounts => {
         return new Map(accounts.map(a => [a.id, a]))
     })
 

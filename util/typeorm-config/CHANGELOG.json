@@ -2,6 +2,28 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/typeorm-config_v1.1.0",
+      "date": "Fri, 24 Jun 2022 22:07:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "typeorm upgrade from `0.2.x` to `0.3.6`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/typeorm-config_v1.0.0",
       "date": "Sun, 19 Jun 2022 21:26:31 GMT",
