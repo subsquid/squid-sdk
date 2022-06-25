@@ -1,5 +1,6 @@
 import {Pool} from "pg"
 import {createPoolConfig} from "./db"
+import {Dialect} from "./dialect"
 import {serve} from "./server"
 import {loadModel} from "./tools"
 
@@ -20,8 +21,9 @@ module.exports = function main() {
     let model = loadModel(args[0])
     let db = new Pool(createPoolConfig())
     let port = process.env.GRAPHQL_SERVER_PORT || 3000
+    let dialect: Dialect = process.env.DB_TYPE == 'cockroach' ? 'cockroach' : 'postgres'
 
-    serve({model, db, port}).then(
+    serve({model, db, port, dialect}).then(
         () => {
             console.log('OpenReader is listening on port ' + port)
         },

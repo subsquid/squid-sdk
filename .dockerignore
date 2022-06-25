@@ -4,12 +4,11 @@
 /*/lib/
 /test/*/lib
 /util/*/lib
-/tools/*/lib
+/ops/*/lib
 /openreader/dist/
 
 # Large files not needed in docker containers
 /test/data/chain
-/test/balances/chainVersions.json
 
 # Rush temporary files
 /common/deploy/
@@ -21,6 +20,10 @@
 .git
 .idea
 *.log
+
+
+# READMEs and docs
+*.md
 
 # Ignore Dockerfile, so that we can work on it without full rebuild each time
 Dockerfile

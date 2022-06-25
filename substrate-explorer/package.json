@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/substrate-explorer",
-  "version": "1.0.0",
-  "description": "GraphQL server for substrate-ingest",
+  "version": "0.0.0",
+  "description": "Block explorer GraphQL API for subsquid substrate archive",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "files": [
@@ -11,6 +11,6 @@
     "build": ""
   },
   "dependencies": {
-    "@subsquid/openreader": "^1.0.0"
+    "@subsquid/openreader": "^1.0.1"
   }
 }
