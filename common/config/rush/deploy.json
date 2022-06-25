@@ -19,6 +19,7 @@
    */
   "deploymentProjectNames": [
     "@subsquid/substrate-ingest",
+    "@subsquid/substrate-explorer",
     "chain-status-service",
     "e2e-test-suite"
   ],
