@@ -28,3 +28,4 @@
 # Ignore Dockerfile, so that we can work on it without full rebuild each time
 Dockerfile
 docker-compose.yml
+/ops/docker-publish.sh
