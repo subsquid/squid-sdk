@@ -23,7 +23,7 @@
   "dependencies": {
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
-    "@subsquid/openreader": "^1.0.1",
+    "@subsquid/openreader": "^1.0.2",
     "@subsquid/typeorm-config": "^1.1.0",
     "@subsquid/util-internal": "^0.0.1",
     "apollo-server-core": "^3.9.0",
