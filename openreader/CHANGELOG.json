@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "1.0.2",
+      "tag": "@subsquid/openreader_v1.0.2",
+      "date": "Sun, 26 Jun 2022 21:17:38 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add shebang to executable"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/openreader_v1.0.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

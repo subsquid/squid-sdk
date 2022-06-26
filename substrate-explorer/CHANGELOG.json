@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/substrate-explorer",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/substrate-explorer_v0.0.0",
+      "date": "Sun, 26 Jun 2022 21:17:38 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    }
+  ]
+}
