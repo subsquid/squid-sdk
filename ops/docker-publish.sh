@@ -13,6 +13,7 @@ function publish() {
     git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
 
     docker buildx build . --platform "linux/amd64,linux/arm64" \
+        --push \
         --target "$img" \
         --label "org.opencontainers.image.url=https://github.com/subsquid/squid/tree/$(git rev-parse HEAD)/${pkg_path}" \
         -t "subsquid/$img:$pkg_version" \
