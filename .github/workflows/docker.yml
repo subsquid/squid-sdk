@@ -20,20 +20,20 @@ jobs:
       - name: Docker login
         uses: docker/login-action@v1
         with:
-          username: eldar
-          password: ${{ secrets.EG_DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Build
-        run: "docker build . --target $TARGET -t eldar/$TARGET:$TAG"
+        run: "docker build . --target $TARGET -t subsquid/$TARGET:$TAG"
         env:
           TARGET: ${{ github.event.inputs.target }}
           TAG: ${{ github.event.inputs.tag }}
 
       - name: Publish
-        run: "docker push eldar/$TARGET:$TAG"
+        run: "docker push subsquid/$TARGET:$TAG"
         env:
           TARGET: ${{ github.event.inputs.target }}
           TAG: ${{ github.event.inputs.tag }}
