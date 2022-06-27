@@ -10,7 +10,7 @@
     "@subsquid/ss58": "^0.1.1",
     "@subsquid/substrate-ingest": "^0.0.6",
     "@subsquid/substrate-metadata-explorer": "^1.0.3",
-    "@subsquid/substrate-processor": "^1.1.1",
+    "@subsquid/substrate-processor": "^1.2.0",
     "@subsquid/substrate-typegen": "^1.0.2",
     "@subsquid/typeorm-codegen": "^0.0.2",
     "@subsquid/typeorm-migration": "^0.1.0",
