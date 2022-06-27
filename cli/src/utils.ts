@@ -58,8 +58,8 @@ export async function pollDeployPipelines(
                         printDebug()
                         command.error(
                             buildPipelineErrorMessage(
-                                `❌ An error occurred during building process`,
-                              traceDebug
+                                `❌ An error occurred while building the squid`,
+                                pipeline.comment
                             )
                         );
                     }
@@ -70,8 +70,8 @@ export async function pollDeployPipelines(
                         printDebug()
                         command.error(
                             buildPipelineErrorMessage(
-                                `❌ An error occurred during building process`,
-                              traceDebug
+                                `❌ An error occurred while building the squid`,
+                                pipeline.comment
                             )
                         );
                     }
@@ -82,8 +82,8 @@ export async function pollDeployPipelines(
                         printDebug()
                         command.error(
                             buildPipelineErrorMessage(
-                                `❌ An error occurred during pushing process`,
-                              traceDebug
+                                `❌ An error occurred while publishing the squid`,
+                                pipeline.comment
                             )
                         );
                     }
@@ -94,8 +94,8 @@ export async function pollDeployPipelines(
                         printDebug()
                         command.error(
                             buildPipelineErrorMessage(
-                                `❌ An error occurred during deploying process`,
-                              traceDebug
+                                `❌ An error occurred while deploying the squid`,
+                                pipeline.comment
                             )
                         );
                     }
@@ -104,7 +104,7 @@ export async function pollDeployPipelines(
                     printDebug()
 
                     command.log(
-                        `◷ Your squid almost ready and will be accessible on ${deploymentUrl}`
+                        `◷ Deployed succesfully! Your squid will be shortly available at ${deploymentUrl}`
                     );
                     inProgress = false;
 
@@ -112,7 +112,7 @@ export async function pollDeployPipelines(
                 default:
                     printDebug()
                     command.error(
-                        '❌ An error occurred. Unexpected status of pipeline.'
+                        '❌ An unexpected error occurred. Please report to Discord https://discord.gg/KRvRcBdhEE or SquidDevs https://t.me/HydraDevs'
                     );
             }
         }
