@@ -19,13 +19,13 @@ export interface CommonHandlerContext<S> {
      * @internal
      */
     _chain: Chain
-    
+
     /**
-     * A built-in logger to be used in mapping handlers. Supports trace, debug, warn, error, fatal 
+     * A built-in logger to be used in mapping handlers. Supports trace, debug, warn, error, fatal
      * levels.
      */
     log: Logger
-    
+
     store: S
     block: SubstrateBlock
 }
@@ -128,6 +128,15 @@ export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
 
 export interface BlockRangeOption {
     range?: Range
+}
+
+
+export interface CallHandlerOptions extends BlockRangeOption {
+    /**
+     * By default, the call handler will be triggered only for successful calls.
+     * This option allows to trigger the handler for all calls.
+     */
+    triggerForFailedCalls?: boolean
 }
 
 

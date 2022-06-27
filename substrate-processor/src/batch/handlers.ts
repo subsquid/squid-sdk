@@ -21,11 +21,17 @@ interface HandlerList<H, R = any> {
 }
 
 
+interface CallHandlerEntry {
+    handler: CallHandler<any>
+    triggerForFailedCalls?: boolean
+}
+
+
 export class DataHandlers implements BatchRequest {
     pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
     post: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
-    calls: Record<QualifiedName, HandlerList<CallHandler<any>, CallDataRequest>> = {}
+    calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
 

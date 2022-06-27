@@ -30,7 +30,7 @@ export interface EventHook {
 export interface CallHook {
     handler: CallHandler<any>
     call: QualifiedName
-    failures?: boolean
+    triggerForFailedCalls?: boolean
     data?: CallDataRequest
     range?: Range
 }

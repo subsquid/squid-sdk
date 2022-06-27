@@ -12,6 +12,7 @@ import type {
     BlockHandlerDataRequest,
     BlockRangeOption,
     CallHandler,
+    CallHandlerOptions,
     CommonHandlerContext,
     ContractsContractEmittedHandler,
     EventHandler,
@@ -373,6 +374,9 @@ export class SubstrateProcessor<Store> {
      *
      * See {@link CallHandlerContext} for an API available to the handler.
      *
+     * Note, that by default, only successful calls will be handled.
+     * This can be overwritten via `.triggerForFailedCalls` option.
+     *
      * All calls are processed sequentially according to their position in unified
      * log of events and calls. All events deposited within a call are placed
      * before the call. All child calls are placed before the parent call.
@@ -393,7 +397,7 @@ export class SubstrateProcessor<Store> {
      *     assert(ctx.event.name == 'Balances.transfer')
      * })
      *
-     * // request only subset of event data for faster ingestion times
+     * // request only subset of call data for faster ingestion times
      * processor.addCallHandler('Balances.transfer', {
      *     data: {
      *         call: {args: true},
@@ -402,12 +406,12 @@ export class SubstrateProcessor<Store> {
      * } as const, async ctx => {})
      */
     addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
-    addCallHandler(callName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: CallHandler<Store, R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | BlockRangeOption & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): void {
+    addCallHandler(callName: QualifiedName, options: CallHandlerOptions & NoDataSelection, fn: CallHandler<Store>): void
+    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: CallHandlerOptions & DataSelection<R>, fn: CallHandler<Store, R>): void
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): void {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options:  BlockRangeOption & MayBeDataSelection<CallDataRequest> = {}
+        let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -551,7 +555,13 @@ export class SubstrateProcessor<Store> {
             let range = getRange(hook)
             let request = new DataHandlers()
             request.calls = {
-                [hook.call]: {data: hook.data, handlers: [hook.handler]}
+                [hook.call]: {
+                    data: hook.data,
+                    handlers: [{
+                        handler: hook.handler,
+                        triggerForFailedCalls: hook.triggerForFailedCalls
+                    }]
+                }
             }
             batches.push({range, request})
         })
@@ -728,15 +738,17 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                     break
                 case 'call':
                     for (let handler of handlers.calls[item.call.name]?.handlers || []) {
-                        let log = blockLog.child({
-                            hook: 'call',
-                            callName: item.call.name,
-                            callId: item.call.id
-                        })
-                        let {kind, ...data} = item
-                        log.debug('begin')
-                        await handler({...ctx, log, ...data})
-                        log.debug('end')
+                        if (item.call.success || handler.triggerForFailedCalls) {
+                            let log = blockLog.child({
+                                hook: 'call',
+                                callName: item.call.name,
+                                callId: item.call.id
+                            })
+                            let {kind, ...data} = item
+                            log.debug('begin')
+                            await handler.handler({...ctx, log, ...data})
+                            log.debug('end')
+                        }
                     }
                     break
                 default:
