@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/cli",
+      "comment": "add `squid:logs` command",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/cli"
+}
