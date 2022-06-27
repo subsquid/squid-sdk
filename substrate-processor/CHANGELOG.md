@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Mon, 27 Jun 2022 12:07:48 GMT and should not be manually modified.
+
+## 1.2.0
+Mon, 27 Jun 2022 12:07:48 GMT
+
+### Minor changes
+
+- handle only successful calls by default in `SubstrateProcessor.addCallHandler()`
 
 ## 1.1.1
 Fri, 24 Jun 2022 22:07:05 GMT
