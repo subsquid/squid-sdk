@@ -49,3 +49,9 @@ export function getConfigField(name: string): any {
     normalizeDefaults();
     return JSON.parse(readFileSync(configFilePath, 'utf8'))[name];
 }
+
+
+export function getConfig(): any {
+    normalizeDefaults();
+    return JSON.parse(readFileSync(configFilePath, 'utf8'));
+}

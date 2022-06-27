@@ -4,13 +4,16 @@ import { request } from '../request';
 import queryString from 'query-string';
 
 export type DeployPipelineResponse = {
+    id: string;
     squidName: string;
     version: string;
     status: DeployPipelineStatusEnum;
     isErrorOccurred: boolean;
+    logs: string[];
     comment: string;
     clientId: number;
     updatedAt: number;
+    createdAt: number;
 };
 
 export enum DeployPipelineStatusEnum {

@@ -5,7 +5,6 @@ import * as fs from 'fs'
 import {generateOrmModels} from '../codegen'
 import {generateFtsMigrations} from '../fts'
 
-
 export default class Codegen extends Command {
     static description = 'Analyze graphql schema and generate ORM model files'
 

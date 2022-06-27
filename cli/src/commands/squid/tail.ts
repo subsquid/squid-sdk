@@ -4,6 +4,7 @@ import { parseNameAndVersion } from '../../utils';
 
 export default class Tail extends Command {
     static description = 'Getting logs about version';
+    static hidden = true;
     static args = [
         {
             name: 'nameAndVersion',
