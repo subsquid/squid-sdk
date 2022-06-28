@@ -61,7 +61,7 @@ export default class Update extends Command {
                           : ''
                   }`;
         }
-        this.log(`🦑 Releasing the Squid at ${deployUrl}`);
+        this.log(`🦑 Releasing the squid at ${deployUrl}`);
         const result = await update(
             squidName,
             versionName,

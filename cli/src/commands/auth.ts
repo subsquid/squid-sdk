@@ -3,12 +3,12 @@ import { setCreds } from '../creds';
 import { me as identifyMe } from '../rest-client';
 
 export default class Auth extends Command {
-    static description = `Authenticate for saas management`;
+    static description = `Authenticate to deploy and manage squids 🦑`;
 
     static flags = {
         key: Flags.string({
             char: 'k',
-            description: 'Obtained access key for CLI',
+            description: 'Aquarium deployment key. Log in to https://app.subsquid.io to create or update your key.',
             required: true,
         }),
     };

@@ -14,7 +14,7 @@ const options: Partial<SimpleGitOptions> = {
 const git: SimpleGit = simpleGit(options);
 
 export default class Release extends Command {
-    static description = 'Create a new Squid version';
+    static description = 'Create a new squid version';
     static args = [
         {
             name: 'nameAndVersion',
@@ -61,7 +61,7 @@ export default class Release extends Command {
                           : ''
                   }`;
         }
-        this.log(`🦑 Releasing the Squid at ${deployUrl}`);
+        this.log(`🦑 Releasing the squid at ${deployUrl}`);
         const result = await release(
             squidName,
             versionName,
