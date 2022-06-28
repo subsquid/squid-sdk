@@ -21,7 +21,7 @@ function parseDate(str: string): Date {
 }
 
 export default class Logs extends CliCommand {
-    static description = 'Fetch Squid logs';
+    static description = 'Fetch squid logs';
     static args = [
         {
             name: 'name',

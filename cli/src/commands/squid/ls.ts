@@ -3,7 +3,7 @@ import { squidList } from '../../rest-client/routes/squids';
 import { versionList } from '../../rest-client/routes/versions';
 
 export default class Ls extends Command {
-    static description = 'Squid or versions list';
+    static description = 'List squids and squid versions';
 
     static flags = {
         name: Flags.string({
