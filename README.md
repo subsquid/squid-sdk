@@ -6,12 +6,26 @@ to ingest, transform and present blockchain data.
 Our current focus is on [substrate](https://substrate.io) based chains,
 with support for ethereum ecosystem coming next.
 
-Subsquid framework consists of several key components:
+## Overview
 
-* [substrate-ingest](substrate-ingest) - responsible for ingestion of blockchain data and 
-persisting it in a slightly normalized and decoded form.
-* archive - 
-* [substrate-processor](substrate-processor)
+Subsquid framework consists of several key components.
+
+### Archive
+
+Archive is a set of services formed by [substrate-ingest](substrate-ingest),
+[substrate-gateway](https://github.com/subsquid/archive-gateway), postgres compatible database
+and optionally [substrate-explorer](substrate-explorer), which together
+
+1. ingest blockchain data
+2. decode and persist it in normalized form
+3. make it available for further processing and exploration.
+
+Compared to direct RPC access to chain nodes, 
+archive gives an ability to fetch data in a more granular fashion and from multiple blocks at once.
+
+### substrate-processor
+
+### substrate-typegen
 
 ## Developer community
 
