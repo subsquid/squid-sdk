@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "0.5.1",
+      "tag": "@subsquid/cli_v0.5.1",
+      "date": "Tue, 28 Jun 2022 18:37:46 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "meaningful error messages and command naming"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.0",
       "tag": "@subsquid/cli_v0.5.0",
       "date": "Mon, 27 Jun 2022 20:38:17 GMT",
