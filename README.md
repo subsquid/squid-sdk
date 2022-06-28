@@ -20,12 +20,27 @@ and optionally [substrate-explorer](substrate-explorer), which together
 2. decode and persist it in normalized form
 3. make it available for further processing and exploration.
 
-Compared to direct RPC access to chain nodes, 
-archive gives an ability to fetch data in a more granular fashion and from multiple blocks at once.
+Compared to chain node RPC, 
+archive allows to access data in a more granular fashion and from multiple blocks at once.
 
 ### substrate-processor
 
+[substrate-processor](substrate-processor) fetches the data from archive and executes
+user-defined mapping code against it.
+
 ### substrate-typegen
+
+[substrate-typegen(1)](substrate-typegen) can generate facade TypeScript classes
+for substrate events, calls and storage items, allowing to work with chain data
+in a fully typesafe, runtime upgrades aware fashion.
+
+### Postgres
+
+Although `substrate-processor` is designed to work with any database or without
+database at all, a special attention was given to the case, 
+when postgres compatible database is used as the target destination for chain data.
+
+
 
 ## Developer community
 
