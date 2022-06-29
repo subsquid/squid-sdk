@@ -23,38 +23,52 @@ and optionally [substrate-explorer](substrate-explorer), which together
 Compared to chain node RPC, 
 archive allows to access data in a more granular fashion and from multiple blocks at once.
 
-### substrate-processor
+### Processor
 
 [substrate-processor](substrate-processor) fetches the data from archive and executes
 user-defined mapping code against it.
 
-### substrate-typegen
+### Typegen
 
 [substrate-typegen(1)](substrate-typegen) can generate facade TypeScript classes
 for substrate events, calls and storage items, allowing to work with chain data
-in a fully typesafe, runtime upgrades aware fashion.
+in a fully typesafe and runtime upgrades aware fashion.
 
 ### Postgres
 
 Although `substrate-processor` is designed to work with any database or without
 database at all, a special attention was given to the case, 
-when postgres compatible database is used as the target destination for chain data.
+when postgres compatible database is used as the target destination for the chain data.
 
+For such case, subsquid framework suggests the-graph like dev flow:
 
+1. Define the target database schema using GraphQL and a number of custom directives
+2. Generate [TypeORM](https://typeorm.io) entity classes with [typeorm-codegen](typeorm-codegen)
+3. Generate and apply database migrations with [typeorm-migration](typeorm-migration)
+4. Use powerful and extensible [GraphQL server](graphql-server) to serve produced data right away.
+
+### Squid
+
+_Squids_ - this is how we call ETL projects built with subsquid framework.
+
+They have a certain structure and supposed to be developed as regular node.js packages.
+
+Typical squid implements both data mapping and HTTP API presenting the end result.
+
+Squids can be deployed to subsquid cloud and in the future to decentralized community network.
+
+## Getting started
+
+The best way to get started is to clone and inspect [squid-template](https://github.com/subsquid/squid-template)
+project.
 
 ## Developer community
 
-[![Subsquid Devs Telegram](https://badgen.net/badge/Subsquid%20Developers/telegram?icon=telegram&)](https://t.me/HydraDevs)
-
-### Documentation
-
-For more information about the project, visit our [documentation page](docs.subsquid.io).
-If you find any inconsistencies in the documentation (spelling mistakes, missing things, passages that are not easy to understand), 
-please report it on our [documentation repository](https://github.com/subsquid/docs).
+Our developers are active on [telegram](https://t.me/HydraDevs). Feel free to join and ask any question!
 
 ## Contributing
 
 Subsquid is an OpenSource project, contributions are welcomed, encouraged and will be rewarded!
 
-Please read and adhere to the guidelines expressed in [the contributing page](CONTRIBUTING.md) 
+Please read and adhere to the guidelines expressed in [the contributing page](CONTRIBUTING.md)
 and make sure to read our [code of conduct](CODE_OF_CONDUCT.md).
