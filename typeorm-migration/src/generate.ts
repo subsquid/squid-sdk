@@ -10,7 +10,7 @@ import {SqlInMemory} from "typeorm/driver/SqlInMemory"
 
 runProgram(async () => {
     program.description('Analyze the current database state and generate migration to match the target schema')
-    program.option('--name', 'name suffix for new migration', 'Data')
+    program.option('-n, --name <name>', 'name suffix for new migration', 'Data')
 
     let {name} = program.parse().opts() as {name: string}
 
