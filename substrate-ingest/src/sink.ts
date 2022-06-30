@@ -25,6 +25,11 @@ interface IndexedEvent extends Event {
 }
 
 
+interface IndexedCall extends Call {
+    contract?: string
+}
+
+
 export class PostgresSink implements Sink {
     private metadataInsert = new Insert<Metadata>('metadata', {
         id: {cast: 'text'},
@@ -60,7 +65,7 @@ export class PostgresSink implements Sink {
         hash: {cast: 'text', map: toJSON}
     })
 
-    private callInsert = new Insert<Call>('call', {
+    private callInsert = new Insert<IndexedCall>('call', {
         id: {cast: 'text'},
         parent_id: {cast: 'text'},
         block_id: {cast: 'text'},
@@ -70,7 +75,8 @@ export class PostgresSink implements Sink {
         args: {map: toJsonString, cast: 'jsonb'},
         success: {cast: 'bool'},
         error: {map: toJsonString, cast: 'jsonb'},
-        pos: {cast: 'int'}
+        pos: {cast: 'int'},
+        contract: {cast: 'text'}
     })
 
     private eventInsert = new Insert<IndexedEvent>('event', {
@@ -109,7 +115,7 @@ export class PostgresSink implements Sink {
         }
         this.headerInsert.add(block.header)
         this.extrinsicInsert.addMany(block.extrinsics)
-        this.callInsert.addMany(block.calls)
+        this.insertCalls(block.calls)
         this.insertEvents(block.events)
         if (block.warnings) {
             this.warningInsert.addMany(block.warnings)
@@ -133,6 +139,21 @@ export class PostgresSink implements Sink {
                 return {...event, contract: toHex(event.args.contract)}
             default:
                 return event
+        }
+    }
+
+    private insertCalls(calls: Call[]): void {
+        for (let call of calls) {
+            this.callInsert.add(this.mapCall(call))
+        }
+    }
+
+    private mapCall(call: Call): IndexedCall {
+        switch(call.name) {
+            case 'Ethereum.transact':
+                return {...call, contract: toHex(call.args.transaction.value.action.value)}
+            default:
+                return call
         }
     }
 
