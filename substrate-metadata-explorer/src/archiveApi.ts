@@ -49,7 +49,7 @@ export class ArchiveApi implements ExploreApi {
                 blockNumber: blockHeight
                 blockHash
             }
-        }`).then(res => res.metadata)
+        }`).then(res => res.metadata.sort((a, b) => a.blockNumber - b.blockNumber))
     }
 
     private request<T>(query: string): Promise<T> {
@@ -83,6 +83,6 @@ export class ArchiveApi implements ExploreApi {
                 blockHash
                 metadata: hex
             }
-        }`).then(res => res.metadata)
+        }`).then(res => res.metadata.sort((a, b) => a.blockNumber - b.blockNumber))
     }
 }
