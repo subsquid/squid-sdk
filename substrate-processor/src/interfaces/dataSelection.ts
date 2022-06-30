@@ -187,6 +187,41 @@ export type CallItem<Name, R = false> = WithKind<
     >
 
 
+export type ItemMerge<A, B, R> =
+    undefined extends A
+        ? undefined | DefinedItemMerge<Exclude<A, undefined>, Exclude<B, undefined>, Exclude<R, undefined | boolean>>
+        : DefinedItemMerge<A, B, Exclude<R, undefined | boolean>>;
+
+
+type DefinedItemMerge<A, B, R> = {
+    [K in keyof A | keyof B]:
+    K extends keyof A
+        ? K extends keyof B
+            ? [never] extends [R]
+                ? K extends keyof R
+                    ? ItemMerge<A[K], B[K], R[K]>
+                    : A[K]
+                : A[K]
+            : A[K]
+        : K extends keyof B ? B[K] : never
+}
+
+
+type ItemKind = {
+    kind: string
+    name: string
+}
+
+
+type AddItem<T extends ItemKind, I extends ItemKind, R> =
+    (T extends Pick<I, "kind" | "name"> ? ItemMerge<T, I, R> : T) |
+    Exclude<I, Pick<T, "kind" | "name">>
+
+
+export type AddEventItem<T extends ItemKind, I extends ItemKind> = AddItem<T, I, EventDataRequest>
+export type AddCallItem<T extends ItemKind, I extends ItemKind> = AddItem<T, I, CallDataRequest>
+
+
 export interface DataSelection<R> {
     data: R
 }

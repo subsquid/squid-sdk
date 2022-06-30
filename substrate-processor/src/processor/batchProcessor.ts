@@ -8,6 +8,8 @@ import {Chain} from "../chain"
 import {BlockData} from "../ingest"
 import type {BlockRangeOption, EvmLogOptions} from "../interfaces/dataHandlers"
 import type {
+    AddCallItem,
+    AddEventItem,
     CallDataRequest,
     CallItem,
     DataSelection,
@@ -78,7 +80,7 @@ export interface BatchBlock<Item> {
  *
  * All configuration methods return a new processor instance.
  */
-export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
+export class SubstrateBatchProcessor<Item extends {kind: string, name: string} = EventItem<'*'> | CallItem<"*">> {
     private batches: Batch<PlainBatchRequest>[] = []
     private options: Options = {}
     private src?: DataSource
@@ -158,12 +160,12 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     addEvent<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
-    ): SubstrateBatchProcessor<Item | EventItem<N, true>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<N, true>>>
 
     addEvent<N extends string, R extends EventDataRequest>(
         name: N,
         options: BlockRangeOption & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | EventItem<N, R>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<N, R>>>
 
     addEvent(
         name: string,
@@ -226,12 +228,12 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     addCall<N extends string>(
         name: N,
         options?: BlockRangeOption & NoDataSelection
-    ): SubstrateBatchProcessor<Item | CallItem<N, true>>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<N, true>>>
 
     addCall<N extends string, R extends CallDataRequest>(
         name: N,
         options: BlockRangeOption & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | CallItem<N, R>>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<N, R>>>
 
     addCall<N extends string, R extends CallDataRequest>(
         name: N,
@@ -256,12 +258,12 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     addEvmLog(
         contractAddress: string,
         options?: EvmLogOptions & NoDataSelection
-    ): SubstrateBatchProcessor<Item | EventItem<"EVM.Log", true>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", true>>>
 
     addEvmLog<R extends EventDataRequest>(
         contractAddress: string,
         options: EvmLogOptions & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | EventItem<"EVM.Log", R>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", R>>>
 
     addEvmLog(
         contractAddress: string,
@@ -283,12 +285,12 @@ export class SubstrateBatchProcessor<Item = EventItem<'*'> | CallItem<"*">> {
     addContractsContractEmitted(
         contractAddress: string,
         options?: BlockRangeOption & NoDataSelection
-    ): SubstrateBatchProcessor<Item | EventItem<"Contracts.ContractEmitted", true>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Contracts.ContractEmitted", true>>>
 
     addContractsContractEmitted<R extends EventDataRequest>(
         contractAddress: string,
         options: BlockRangeOption & DataSelection<R>
-    ): SubstrateBatchProcessor<Item | EventItem<"Contracts.ContractEmitted", R>>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Contracts.ContractEmitted", R>>>
 
     addContractsContractEmitted(
         contractAddress: string,
