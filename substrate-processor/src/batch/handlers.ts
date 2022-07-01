@@ -21,7 +21,7 @@ interface HandlerList<H, R = any> {
 }
 
 
-interface CallHandlerEntry {
+export interface CallHandlerEntry {
     handler: CallHandler<any>
     triggerForFailedCalls?: boolean
 }

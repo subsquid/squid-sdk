@@ -26,7 +26,7 @@ services:
     ]
 
   gateway:
-    image: tmcgroul/archive-gateway:27
+    image: subsquid/substrate-gateway:1.1.0
     depends_on:
       - archive-db
     command: [

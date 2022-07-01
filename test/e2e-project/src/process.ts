@@ -4,7 +4,17 @@ import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import {loadInitialData} from "./initialData"
-import {Account, BlockHook, BlockTimestamp, HookType, MiddleClass, Miserable, Transaction, Transfer} from "./model"
+import {
+    Account,
+    BlockHook,
+    BlockTimestamp,
+    HookType,
+    MiddleClass,
+    Miserable,
+    SeenItem,
+    Transaction,
+    Transfer
+} from "./model"
 import {TimestampSetCall} from "./types/calls"
 import {BalancesTransferEvent} from "./types/events"
 import {SystemAccountStorage} from "./types/storage"
@@ -106,6 +116,22 @@ processor.addCallHandler('Timestamp.set', async ctx => {
         id: ctx.block.hash,
         blockNumber: ctx.block.height,
         timestamp: BigInt(timestamp)
+    }))
+})
+
+
+processor.addEventHandler('*', {range: {from: 1, to: 1}}, async ctx => {
+    await ctx.store.insert(new SeenItem({
+        id: 'event-' + ctx.event.id,
+        name: ctx.event.name
+    }))
+})
+
+
+processor.addCallHandler('*', {range: {from: 1, to: 1}}, async ctx => {
+    await ctx.store.insert(new SeenItem({
+        id: 'call-' + ctx.call.id,
+        name: ctx.call.name
     }))
 })
 

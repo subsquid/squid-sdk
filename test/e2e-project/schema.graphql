@@ -206,3 +206,9 @@ type Transaction @entity {
   name: String!
   sender: String!
 }
+
+
+type SeenItem @entity {
+  id: ID!
+  name: String!
+}

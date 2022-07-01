@@ -3,7 +3,7 @@ import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} fr
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
-import {DataHandlers} from "../batch/handlers"
+import {CallHandlerEntry, DataHandlers} from "../batch/handlers"
 import type {Chain} from "../chain"
 import type {BlockData} from "../ingest"
 import type {
@@ -29,7 +29,7 @@ import type {
 } from "../interfaces/dataSelection"
 import type {Database} from "../interfaces/db"
 import type {Hooks} from "../interfaces/hooks"
-import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateEvent} from "../interfaces/substrate"
+import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateCall, SubstrateEvent} from "../interfaces/substrate"
 import {withErrorContext} from "../util/misc"
 import type {Range} from "../util/range"
 import {Options, Runner} from "./runner"
@@ -695,7 +695,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let item of block.items) {
             switch(item.kind) {
                 case 'event':
-                    for (let handler of handlers.events[item.event.name]?.handlers || []) {
+                    for (let handler of this.getEventHandlers(handlers, item.event)) {
                         let log = blockLog.child({
                             hook: 'event',
                             eventName: item.event.name,
@@ -737,7 +737,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                     }
                     break
                 case 'call':
-                    for (let handler of handlers.calls[item.call.name]?.handlers || []) {
+                    for (let handler of this.getCallHandlers(handlers, item.call)) {
                         if (item.call.success || handler.triggerForFailedCalls) {
                             let log = blockLog.child({
                                 hook: 'call',
@@ -765,11 +765,34 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
     }
 
+    private *getEventHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<EventHandler<any>, any, any> {
+        let hs = handlers.events['*']
+        if (hs) {
+            yield* hs.handlers
+        }
+        hs = handlers.events[event.name]
+        if (hs) {
+            yield* hs.handlers
+        }
+    }
+
+    private *getCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
+        let hs = handlers.calls['*']
+        if (hs) {
+            yield* hs.handlers
+        }
+        hs = handlers.calls[call.name]
+        if (hs) {
+            yield* hs.handlers
+        }
+    }
+
     private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler<any>> {
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractHandlers = evmLogs[log.args.address]
+        let contractAddress = assertNotNull(log.args?.address)
+        let contractHandlers = evmLogs[contractAddress]
         if (contractHandlers == null) return
 
         for (let h of contractHandlers) {
