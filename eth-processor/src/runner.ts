@@ -49,10 +49,8 @@ export class Runner<Store> {
             for(const rawLog of logs) {
                 const log = logFromRaw(rawLog);
 
-                const topics = [log.topic0, log.topic1, log.topic2, log.topic3];
-
                 for (const hook of hooks) {
-                    if (hook.options.address === log.address && matchTopics(hook.options.topics, topics)) {
+                    if (hook.options.address === log.address && matchTopics(hook.options.topics, log.topics)) {
                         await hook.handler({
                             db,
                             log,
@@ -67,15 +65,28 @@ export class Runner<Store> {
 }
 
 function logFromRaw(raw: any): Log {
-    let tx: any = {};
+    let tx: any = {
+        topics: [],
+    };
     let block: any = {};
     let log: any = {};
 
+    for(let i=0; i<4; ++i) {
+        const val = raw[`log_topic${i}`];
+        if (val) {
+            log.topics.push(val);
+        }
+    }
+
     for(const key of Object.keys(raw)) {
         if(key.startsWith("log")) {
-            log[key.substring(4)] = raw[key];
+            let name = key.substring(3)
+
+            if (!name.startsWith("topic")) {
+                log[name] = raw[key];
+            }
         } else if(key.startsWith("tx")) {
-            tx[key.substring(3)] = raw[key];
+            tx[key.substring(2)] = raw[key];
         }  else if(key.startsWith("block")) {
             block[key.substring(5)] = raw[key];
         }
@@ -86,7 +97,7 @@ function logFromRaw(raw: any): Log {
 	}
 }
 
-function matchTopics(expected: Array<Array<string> | null>, got: Array<string | undefined | null>): boolean {
+function matchTopics(expected: Array<Array<string> | null>, got: Array<string | null>): boolean {
     for(let i=0; i<4; ++i) {
         const gotTopic = got[i];
         const expectedTopics = expected[i];

@@ -36,38 +36,23 @@ processor.addEvmLogHandler(
             return;
         }
 
-        const topics = [];
-
-        if (ctx.log.topic0) {
-            topics.push(ctx.log.topic0)
-        }
-        if (ctx.log.topic1) {
-            topics.push(ctx.log.topic1)
-        }
-        if (ctx.log.topic2) {
-            topics.push(ctx.log.topic2)
-        }
-        if (ctx.log.topic3) {
-            topics.push(ctx.log.topic3)
-        }
-
         try {
             const transfer = registry.events['Transfer(bytes32,address)'].decode({
                 data: ctx.log.data,
-                topics,
+                topics: ctx.log.topics,
             })
     
-            console.log(topics[0] === registry.events['Transfer(bytes32,address)'].topic)
+            console.log(ctx.log.topics[0] === registry.events['Transfer(bytes32,address)'].topic)
             console.log(transfer)
         } catch {}
 
         try {
             const transfer = registry.events["NewTTL(bytes32,uint64)"].decode({
                 data: ctx.log.data,
-                topics,
+                topics: ctx.log.topics,
             })
     
-            console.log(topics[0] === registry.events["NewTTL(bytes32,uint64)"].topic)
+            console.log(ctx.log.topics[0] === registry.events["NewTTL(bytes32,uint64)"].topic)
             console.log(transfer)
         } catch {}
     }

@@ -42,10 +42,7 @@ export interface Log {
 	data?: string;
 	logIndex?: string;
 	removed?: boolean;
-	topic0?: string;
-	topic1?: string;
-	topic2?: string;
-	topic3?: string;
+	topics: Array<string>;
 	transactionHash?: string;
 	transactionIndex?: string;
 	tx: Transaction;
