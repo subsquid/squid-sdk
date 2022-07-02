@@ -178,7 +178,7 @@ export class Chain {
     }
 
     async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
-        let item = this.getStorageItem(prefix, name)
+        let item = this.getItem('storage', prefix, name)
         assert(item.keys.length === keys.length)
         let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
         let res = await this.client.call('state_getStorageAt', [req, blockHash])
@@ -187,7 +187,7 @@ export class Chain {
 
     async queryStorage(blockHash: string, prefix: string, name: string, keyList: any[][]): Promise<any[]> {
         if (keyList.length == 0) return []
-        let item = this.getStorageItem(prefix, name)
+        let item = this.getItem('storage', prefix, name)
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
         let query = keyList.map(keys => {
             return storageHash + this.getStorageItemKeysHash(item, keys)
@@ -207,10 +207,8 @@ export class Chain {
         })
     }
 
-
     getConstant(prefix: string, name: string): any {
-        let item = this.description.constants[prefix]?.[name]
-        assert(item != null)
+        let item = this.getItem('constants', prefix, name)
         return this.scaleCodec.decodeBinary(item.type, item.value)
     }
 
@@ -246,19 +244,21 @@ export class Chain {
         return hash
     }
 
-    private getStorageItem(prefix: string, name: string): StorageItem {
-        let items = this.description.storage[prefix]
+    private getItem(kind: 'storage', prefix: string, name: string): StorageItem
+    private getItem(kind: 'constants', prefix: string, name: string): Constant
+    private getItem(kind: 'storage' | 'constants', prefix: string, name: string) {
+        let items = this.description[kind][prefix]
         if (items == null) throw new Error(
-            `There are no storage items under prefix ${prefix}`
+            `There are no ${kind} items under prefix ${prefix}`
         )
         let def = items[name]
         if (def == null) throw new Error(
-            `Unknown storage item: ${prefix}.${name}`
+            `Unknown ${kind} item: ${prefix}.${name}`
         )
         return def
     }
 
-    getTypeHash(kind: 'storage' | 'constants', prefix: string, name: string): string | undefined {
+    private getTypeHash(kind: 'storage' | 'constants', prefix: string, name: string): string | undefined {
         let item = this.description[kind][prefix]?.[name]
         if (item == null) return undefined
         let hash = (item as any)[this.typeHash]
