@@ -15,6 +15,7 @@ import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import {Constant, getConstantTypeHash} from "@subsquid/substrate-metadata/lib/constants"
 import assert from "assert"
 import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
@@ -116,7 +117,7 @@ export class Chain {
     private scaleCodec: ScaleCodec
     private events: eac.Registry
     private calls: eac.Registry
-    private storageHash = Symbol('storage_hash')
+    private typeHash = Symbol('type_hash')
 
     constructor(
         public readonly description: ChainDescription,
@@ -206,6 +207,17 @@ export class Chain {
         })
     }
 
+
+    getConstant(prefix: string, name: string): any {
+        let item = this.description.constants[prefix]?.[name]
+        assert(item != null)
+        return this.scaleCodec.decodeBinary(item.type, item.value)
+    }
+
+    getConstantTypeHash(prefix: string, name: string) {
+        return this.getTypeHash('constants', prefix, name)
+    }
+
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {
@@ -246,13 +258,27 @@ export class Chain {
         return def
     }
 
-    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
-        let item = this.description.storage[prefix]?.[name]
+    getTypeHash(kind: 'storage' | 'constants', prefix: string, name: string): string | undefined {
+        let item = this.description[kind][prefix]?.[name]
         if (item == null) return undefined
-        let hash = (item as any)[this.storageHash]
+        let hash = (item as any)[this.typeHash]
         if (hash == null) {
-            hash = (item as any)[this.storageHash] = getStorageItemTypeHash(this.description.types, item)
+            switch (kind) {
+                case 'storage':
+                    hash = (item as any)[this.typeHash] = getStorageItemTypeHash(this.description.types, item as StorageItem)
+                    break
+                case 'constants':
+                    hash = (item as any)[this.typeHash] = getConstantTypeHash(this.description.types, item as Constant)
+                    break
+                default:
+                    throw new Error()
+            }
+
         }
         return hash
+    }
+
+    getStorageItemTypeHash(prefix: string, name: string) {
+        return this.getTypeHash('storage', prefix, name)
     }
 }

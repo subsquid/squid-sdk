@@ -3,5 +3,8 @@
   "specVersions": "https://kusama.archive.subsquid.io/graphql",
   "events": [
     "Balances.Transfer"
+  ],
+  "consts": [
+    "System.SS58Prefix"
   ]
 }

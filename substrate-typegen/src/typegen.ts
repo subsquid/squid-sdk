@@ -1,5 +1,6 @@
 import {
     ChainDescription,
+    Constant,
     decodeMetadata,
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
@@ -14,6 +15,7 @@ import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
+import {getConstantTypeHash} from "@subsquid/substrate-metadata/lib/constants"
 import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
@@ -29,6 +31,7 @@ export interface TypegenOptions {
     events?: string[] | boolean
     calls?: string[] | boolean
     storage?: string[] | boolean
+    consts?: string[] | boolean
 }
 
 
@@ -49,6 +52,7 @@ export class Typegen {
         this.generateEnums('events')
         this.generateEnums('calls')
         this.generateStorage()
+        this.generateConsts()
         this.interfaces.forEach((ifs, v) => {
             if (ifs.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(v)) + '.ts'
@@ -117,6 +121,83 @@ export class Typegen {
                         out.line(`assert(this.is${versionName})`)
                         out.line(`return this._chain.decode${fix}(this.${ctx})`)
                     })
+                })
+            })
+        })
+
+        out.write()
+    }
+
+    private generateConsts(): void {
+        let items = this.collectItems(
+            this.options.consts,
+            chain => {
+                let items: Item<Constant>[] = []
+                let consts = chain.description.constants
+                for (let prefix in consts) {
+                    for (let name in consts[prefix]) {
+                        items.push({
+                            chain,
+                            name: prefix + '.' + name,
+                            def: consts[prefix][name]
+                        })
+                    }
+                }
+                return items
+            },
+            (chain, name) => {
+                let [prefix, itemName] = name.split('.')
+                return getConstantTypeHash(chain.description.types, chain.description.constants[prefix][itemName])
+            }
+        )
+
+        if (items.size == 0) return
+
+        let out = this.dir.file(`constants.ts`)
+        let names = Array.from(items.keys()).sort()
+
+        out.line(`import assert from 'assert'`)
+        out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
+        let importedInterfaces = this.importInterfaces(out)
+        names.forEach(qualifiedName => {
+            let versions = items.get(qualifiedName)!
+            let [prefix, name] = qualifiedName.split('.')
+            out.line()
+            out.block(`export class ${prefix}${name}Constant`, () => {
+                out.line(`private readonly _chain: Chain`)
+                out.line()
+                out.block(`constructor(ctx: ChainContext)`, () => {
+                    out.line(`this._chain = ctx._chain`)
+                })
+                versions.forEach(v => {
+                    let versionName = this.getVersionName(v.chain)
+                    let hash = getConstantTypeHash(v.chain.description.types, v.def)
+                    let ifs = this.getInterface(v.chain)
+                    let type = ifs.use(v.def.type)
+                    let qualifiedType = this.qualify(importedInterfaces, v.chain, type)
+
+                    out.line()
+                    out.blockComment(v.def.docs)
+                    out.block(`get is${versionName}()`, () => {
+                        out.line(`return this._chain.getConstantTypeHash('${prefix}', '${name}') === '${hash}'`)
+                    })
+
+                    out.line()
+                    out.blockComment(v.def.docs)
+                    let returnType = qualifiedType
+
+                    out.block(`get as${versionName}(): ${returnType}`, () => {
+                        out.line(`assert(this.is${versionName})`)
+                        out.line(`return this._chain.getConstant(${`'${prefix}'`}, ${`'${name}'`})`)
+                    })
+
+                })
+                out.line()
+                out.blockComment([
+                    'Checks whether the constant is defined for the current chain version.'
+                ])
+                out.block(`get isExists(): boolean`, () => {
+                    out.line(`return this._chain.getConstantTypeHash('${prefix}', '${name}') != null`)
                 })
             })
         })
@@ -355,3 +436,4 @@ interface Item<T> {
     def: T
     chain: VersionDescription
 }
+
