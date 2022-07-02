@@ -1,4 +1,4 @@
-import { Processor } from "@subsquid/eth-processor"
+import { Processor, EvmLogHandlerContext } from "@subsquid/eth-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
 import * as registry from "./abi/registry"
 
@@ -28,7 +28,7 @@ processor.addEvmLogHandler(
     [
         [registry.events['Transfer(bytes32,address)'].topic]
     ],
-    async ctx => {
+    async (ctx: EvmLogHandlerContext<TypeormDatabase>) => {
         if(!ctx.log.data) {
             throw new Error("no data");
         }
@@ -47,7 +47,7 @@ processor.addEvmLogHandler(
     [
         [registry.events["NewTTL(bytes32,uint64)"].topic]
     ],
-    async ctx => {
+    async (ctx: EvmLogHandlerContext<TypeormDatabase>) => {
         if(!ctx.log.data) {
             throw new Error("no data");
         }
