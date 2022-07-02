@@ -17,19 +17,19 @@ processor.setBlockRange({
 
 processor.setBatchSize(5000)
 
+processor.setFieldSelection({
+    tx: {},
+    block: {},
+    data: true,
+    topic0: true,
+    topic1: true,
+    topic2: true,
+    topic3: true,
+});
+
 processor.addEvmLogHandler(
     "0x314159265dd8dbb310642f98f50c066173c1259b",
-    {
-        fieldSelection: {
-            tx: {},
-            block: {},
-            data: true,
-            topic0: true,
-            topic1: true,
-            topic2: true,
-            topic3: true,
-        },
-    },
+    [],
     async ctx => {
         if (!ctx.log.data) {
             console.log("no data");

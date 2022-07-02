@@ -12,6 +12,7 @@ export class Processor<Store> {
 	private src?: DataSource
 	private running: boolean
 	private db: Database<Store>
+    private fieldSelection: LogFieldSelection | null
 
 	constructor(db: Database<Store>) {
 		this.hooks = {evmLog: []}
@@ -19,6 +20,7 @@ export class Processor<Store> {
 		this.batchSize = 100
 		this.db = db
 		this.running = false
+        this.fieldSelection = null
 	}
 
 	/**
@@ -66,16 +68,27 @@ export class Processor<Store> {
         this.batchSize = size
     }
 
+    setFieldSelection(fieldSelection: LogFieldSelection): void {
+        this.fieldSelection = fieldSelection;
+    }
+
     addEvmLogHandler(
-    	contractAddress: string,
-    	options: EvmLogOptions,
+    	address: string,
+        topics: Array<Array<string> | null>,
     	fn: EvmLogHandler<Store>
     ): void {
+        if (topics.length > 4) {
+            throw new Error("Topics can't be more than 4")
+        }
+
+        for(let i=topics.length; i<4; ++i) {
+            topics.push(null);
+        }
+
     	this.assertNotRunning()
     	this.hooks.evmLog.push({
     		handler: fn,
-    		contractAddress,
-    		...options
+    		options: { address, topics },
     	})
     }
 
@@ -114,6 +127,14 @@ export class Processor<Store> {
         return this.hooks
     }
 
+    public getFieldSelection(): LogFieldSelection {
+        if (this.fieldSelection === null) {
+            throw new Error('use .setFieldSelection() to specify field selection')
+        }
+
+        return this.fieldSelection
+    }
+
     run(): void {
     	if(this.running) {
     		return
@@ -148,13 +169,14 @@ export interface DataSource {
 }
 
 export interface EvmLogOptions {
-	fieldSelection: LogFieldSelection
+    address: string,
+    topics: Array<Array<string> | null>,
 }
 
 type EvmLogHandlerEntry<Store> = {
 	handler: EvmLogHandler<Store>,
-	contractAddress: string,
-} & EvmLogOptions
+	options: EvmLogOptions,
+}
 
 export interface EvmLogHandler<Store> {
     (ctx: EvmLogHandlerContext<Store>): Promise<void>

@@ -29,29 +29,39 @@ export class Runner<Store> {
 
         const hooks = this.processor.getHooks().evmLog
 
+        const fieldSelection = this.processor.getFieldSelection()
+
 		for (let start=from; start<to; start += batchSize) {
 			const end = start + batchSize > to ? to : start + batchSize;
 
-            for(const hook of hooks) {
-                const req = {
-                    fromBlock: start,
-                    toBlock: end,
-                    address: hook.contractAddress,
-                    fieldSelection: hook.fieldSelection,
-                };
-    
-                const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req);
+            const req = {
+                fromBlock: start,
+                toBlock: end,
+                addresses: hooks.map(hook => ({
+                    address: hook.options.address,
+                    topics: hook.options.topics,
+                })),
+                fieldSelection,
+            };
 
-                for(const rawLog of logs) {
-                    const log = logFromRaw(rawLog);
-                    await hook.handler({
-                        db,
-                        log,
-                    })
+            const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req);
+
+            for(const rawLog of logs) {
+                const log = logFromRaw(rawLog);
+
+                const topics = [log.topic0, log.topic1, log.topic2, log.topic3];
+
+                for (const hook of hooks) {
+                    if (hook.options.address === log.address && matchTopics(hook.options.topics, topics)) {
+                        await hook.handler({
+                            db,
+                            log,
+                        })
+                    }
                 }
-
-                await db.advance(end)
             }
+
+            await db.advance(end)
 		}
     }
 }
@@ -74,4 +84,25 @@ function logFromRaw(raw: any): Log {
 	return {
 		tx, block, ...log
 	}
+}
+
+function matchTopics(expected: Array<Array<string> | null>, got: Array<string | undefined | null>): boolean {
+    for(let i=0; i<4; ++i) {
+        const gotTopic = got[i];
+        const expectedTopics = expected[i];
+
+        if (expectedTopics === null) {
+            continue;
+        }
+
+        const found = expectedTopics.find(topic => {
+            return topic === gotTopic;
+        });
+
+        if(!found) {
+            return false;
+        }
+    }
+
+    return true;
 }
