@@ -41,7 +41,7 @@ export class Output {
     blockComment(lines?: string[]): void {
         if (!lines?.length) return
         this.line(`/**`)
-        lines.forEach((line) => this.line(' * ' + line)) // FIXME: escaping
+        lines.forEach((line) => this.line(' * ' + escapeBlockComment(line)))
         this.line(' */')
     }
 
@@ -126,4 +126,9 @@ export class OutDir {
     path(name: string): string {
         return path.join(this.dir, name)
     }
+}
+
+
+function escapeBlockComment(s: string): string {
+    return s.replace(/\*\//g, 'x/')
 }
