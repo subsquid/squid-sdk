@@ -5,7 +5,7 @@ import { Log } from "./eth"
 import { LogFieldSelection } from "./fieldSelection"
 import { Runner } from "./runner"
 
-export class Processor<Store> {
+export class EthProcessor<Store> {
 	protected hooks: { evmLog: Array<EvmLogHandlerEntry<Store>> }
 	private blockRange: Range
 	private batchSize: number

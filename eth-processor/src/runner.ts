@@ -1,11 +1,11 @@
-import { Processor } from "./processor"
+import { EthProcessor } from "./processor"
 import axios from "axios"
 import { Log } from "./eth"
 
 export class Runner<Store> {
-    private processor: Processor<Store>
+    private processor: EthProcessor<Store>
 
-    constructor(processor: Processor<Store>) {
+    constructor(processor: EthProcessor<Store>) {
         this.processor = processor
     }
 
@@ -14,6 +14,8 @@ export class Runner<Store> {
 		const archiveEndpoint = this.processor.getArchiveEndpoint();
 
 		const heightAtStart = await db.connect()
+
+        console.log(`heightAtStart: ${heightAtStart}`);
 
         const blockRange = this.processor.getBlockRange()
 		const from: number = heightAtStart > blockRange.from ? heightAtStart : blockRange.from
@@ -31,14 +33,16 @@ export class Runner<Store> {
 
         const fieldSelection = this.processor.getFieldSelection()
 
+        console.log(`FROM: ${from} TO: ${to}`);
+
 		for (let start=from; start<to; start += batchSize) {
-			const end = start + batchSize > to ? to : start + batchSize;
+			const end = (start + batchSize > to ? to : start + batchSize) - 1;
 
             console.log(`getting ${start} to ${end}`);
 
             const req = {
                 fromBlock: start,
-                toBlock: end,
+                toBlock: end + 1,
                 addresses: hooks.map(hook => ({
                     address: hook.options.address,
                     topics: hook.options.topics,
@@ -55,7 +59,7 @@ export class Runner<Store> {
 
             console.log(`got ${start} to ${end}`);
 
-            db.transact(start, end, async store => {
+            await db.transact(start, end, async store => {
                 for(const rawLog of logs) {
                     const log = logFromRaw(rawLog);
     
@@ -71,8 +75,6 @@ export class Runner<Store> {
             });
 
             console.log(`advancing to ${end}`);
-
-            await db.advance(end)
 		}
     }
 }

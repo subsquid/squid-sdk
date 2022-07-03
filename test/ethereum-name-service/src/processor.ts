@@ -1,14 +1,11 @@
-import { Processor, EvmLogHandlerContext } from "@subsquid/eth-processor"
+import { EthProcessor, EvmLogHandlerContext } from "@subsquid/eth-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import * as registry from "./abi/registry"
-import { Domain, DomainEvent, Transfer } from "./model"
+import { Account, Domain, DomainEvent, Transfer } from "./model"
 
 require('dotenv').config()
 
-const processor = new Processor(new TypeormDatabase())
-
-const ROOT_NODE = '0x0000000000000000000000000000000000000000000000000000000000000000'
-const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000'
+const processor = new EthProcessor(new TypeormDatabase())
 
 processor.setDataSource({
     archive: 'http://172.30.144.1:8080'
@@ -22,9 +19,14 @@ processor.setBlockRange({
 processor.setBatchSize(5000)
 
 processor.setFieldSelection({
-    tx: {},
-    block: {},
+    tx: {
+        hash: true,
+    },
+    block: {
+        number: true,
+    },
     data: true,
+    logIndex: true,
 });
 
 processor.addEvmLogHandler(
@@ -41,6 +43,45 @@ processor.addEvmLogHandler(
             data: ctx.log.data,
             topics: ctx.log.topics,
         });
+
+        let owner = await ctx.store.get(Account, transfer.owner);
+        if(!owner) {
+            owner = new Account({
+                id: transfer.owner,
+            });
+            await ctx.store.save(owner);
+        }
+
+        let domain = await ctx.store.get(Domain, transfer.node);
+        if(!domain) {
+            domain = new Domain({
+                id: transfer.node,
+                isMigrated: false,
+                createdAt: BigInt(Date.now()),
+                owner,
+            });
+            await ctx.store.save(domain);
+        }
+
+        const blockNumber = ctx.log.block.number;
+        if (!blockNumber) {
+            throw new Error("no block number");
+        }
+
+        const transactionID = ctx.log.tx.hash;
+        if (!transactionID) {
+            throw new Error("no tx hash");
+        }
+
+        await ctx.store.save(new DomainEvent({
+            id: `${transactionID}.${ctx.log.logIndex}`,
+            transactionID: Buffer.from(transactionID, 'hex'),
+            blockNumber,
+            kind: new Transfer({
+                owner: transfer.owner,
+            }),
+            domain,
+        }));
     }
 )
 
