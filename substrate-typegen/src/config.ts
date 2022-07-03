@@ -13,7 +13,7 @@ export interface Config {
     events?: QualifiedName[] | boolean
     calls?: QualifiedName[] | boolean
     storage?: QualifiedName[] | boolean
-    consts?: QualifiedName[] | boolean
+    constants?: QualifiedName[] | boolean
 }
 
 
@@ -53,7 +53,7 @@ export function readConfig(file: string): Config {
             events: json.events,
             calls: json.calls,
             storage: json.storage,
-            consts: json.consts
+            constants: json.constants
         }
     } else {
         throw new ConfigError(`Invalid typegen config ${file}:\n  ${printValidationErrors(validateConfig, '\n  ', 'config')}`)

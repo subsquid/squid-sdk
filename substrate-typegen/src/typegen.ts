@@ -4,6 +4,7 @@ import {
     decodeMetadata,
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
+    getTypeHash,
     isPreV14,
     OldTypes,
     OldTypesBundle,
@@ -15,7 +16,6 @@ import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {getConstantTypeHash} from "@subsquid/substrate-metadata/lib/constants"
 import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
@@ -31,7 +31,7 @@ export interface TypegenOptions {
     events?: string[] | boolean
     calls?: string[] | boolean
     storage?: string[] | boolean
-    consts?: string[] | boolean
+    constants?: string[] | boolean
 }
 
 
@@ -130,7 +130,7 @@ export class Typegen {
 
     private generateConsts(): void {
         let items = this.collectItems(
-            this.options.consts,
+            this.options.constants,
             chain => {
                 let items: Item<Constant>[] = []
                 let consts = chain.description.constants
@@ -147,7 +147,8 @@ export class Typegen {
             },
             (chain, name) => {
                 let [prefix, itemName] = name.split('.')
-                return getConstantTypeHash(chain.description.types, chain.description.constants[prefix][itemName])
+                let def = chain.description.constants[prefix][itemName]
+                return getTypeHash(chain.description.types, def.type)
             }
         )
 
@@ -171,7 +172,7 @@ export class Typegen {
                 })
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
-                    let hash = getConstantTypeHash(v.chain.description.types, v.def)
+                    let hash = getTypeHash(v.chain.description.types, v.def.type)
                     let ifs = this.getInterface(v.chain)
                     let type = ifs.use(v.def.type)
                     let qualifiedType = this.qualify(importedInterfaces, v.chain, type)

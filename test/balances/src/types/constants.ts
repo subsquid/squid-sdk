@@ -16,7 +16,7 @@ export class SystemSS58PrefixConstant {
    *  an identifier of the chain.
    */
   get isV2028() {
-    return this._chain.getConstantTypeHash('System', 'SS58Prefix') === '2708cedf93fed7bee3322af320ea219005dcb55f9862ac9efe54952fdad23f7e'
+    return this._chain.getConstantTypeHash('System', 'SS58Prefix') === 'afecacff3b029831d50a478055aa405254e6579585f9617d2a2f34743b4aff83'
   }
 
   /**
@@ -39,7 +39,7 @@ export class SystemSS58PrefixConstant {
    *  an identifier of the chain.
    */
   get isV9050() {
-    return this._chain.getConstantTypeHash('System', 'SS58Prefix') === '9b69f402e701537d10790f5d9964d91bc1eac970e385f34788d6e9aeada070a1'
+    return this._chain.getConstantTypeHash('System', 'SS58Prefix') === '32def12560ecd411fe2fc796552e97d0d5ee0ea10e059b3d8918c9e94dfdb334'
   }
 
   /**

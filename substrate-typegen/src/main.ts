@@ -43,7 +43,7 @@ Generates TypeScript classes for events, calls and storage items
         events: config.events,
         calls: config.calls,
         storage: config.storage,
-        consts: config.consts
+        constants: config.constants
     })
 
 }, err => {
