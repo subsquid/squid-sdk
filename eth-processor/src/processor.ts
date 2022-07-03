@@ -69,6 +69,13 @@ export class Processor<Store> {
     }
 
     setFieldSelection(fieldSelection: LogFieldSelection): void {
+        this.assertNotRunning()
+        fieldSelection.address = true;
+        fieldSelection.topic0 = true;
+        fieldSelection.topic1 = true;
+        fieldSelection.topic2 = true;
+        fieldSelection.topic3 = true;
+
         this.fieldSelection = fieldSelection;
     }
 
@@ -77,6 +84,8 @@ export class Processor<Store> {
         topics: Array<Array<string> | null>,
     	fn: EvmLogHandler<Store>
     ): void {
+        this.assertNotRunning()
+
         if (topics.length > 4) {
             throw new Error("Topics can't be more than 4")
         }
@@ -85,7 +94,6 @@ export class Processor<Store> {
             topics.push(null);
         }
 
-    	this.assertNotRunning()
     	this.hooks.evmLog.push({
     		handler: fn,
     		options: { address, topics },
@@ -183,7 +191,7 @@ export interface EvmLogHandler<Store> {
 }
 
 export interface EvmLogHandlerContext<Store> {
-	db: Database<Store>,
+    store: Store,
 	log: Log,
 }
 

@@ -1,10 +1,14 @@
 import { Processor, EvmLogHandlerContext } from "@subsquid/eth-processor"
-import {TypeormDatabase} from "@subsquid/typeorm-store"
+import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import * as registry from "./abi/registry"
+import { Domain, DomainEvent, Transfer } from "./model"
 
 require('dotenv').config()
 
 const processor = new Processor(new TypeormDatabase())
+
+const ROOT_NODE = '0x0000000000000000000000000000000000000000000000000000000000000000'
+const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 processor.setDataSource({
     archive: 'http://172.30.144.1:8080'
@@ -28,7 +32,7 @@ processor.addEvmLogHandler(
     [
         [registry.events['Transfer(bytes32,address)'].topic]
     ],
-    async (ctx: EvmLogHandlerContext<TypeormDatabase>) => {
+    async (ctx: EvmLogHandlerContext<Store>) => {
         if(!ctx.log.data) {
             throw new Error("no data");
         }
@@ -37,8 +41,6 @@ processor.addEvmLogHandler(
             data: ctx.log.data,
             topics: ctx.log.topics,
         });
-
-        console.log(`TRANSFER: ${JSON.stringify(transfer, null, 2)}`);
     }
 )
 
@@ -47,7 +49,7 @@ processor.addEvmLogHandler(
     [
         [registry.events["NewTTL(bytes32,uint64)"].topic]
     ],
-    async (ctx: EvmLogHandlerContext<TypeormDatabase>) => {
+    async (ctx: EvmLogHandlerContext<Store>) => {
         if(!ctx.log.data) {
             throw new Error("no data");
         }

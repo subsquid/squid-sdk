@@ -34,6 +34,8 @@ export class Runner<Store> {
 		for (let start=from; start<to; start += batchSize) {
 			const end = start + batchSize > to ? to : start + batchSize;
 
+            console.log(`getting ${start} to ${end}`);
+
             const req = {
                 fromBlock: start,
                 toBlock: end,
@@ -44,20 +46,31 @@ export class Runner<Store> {
                 fieldSelection,
             };
 
-            const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req);
+            const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req, {
+                decompress: true,
+                headers: {
+                    "Accept-Encoding": "gzip"
+                }
+            });
 
-            for(const rawLog of logs) {
-                const log = logFromRaw(rawLog);
+            console.log(`got ${start} to ${end}`);
 
-                for (const hook of hooks) {
-                    if (hook.options.address === log.address && matchTopics(hook.options.topics, log.topics)) {
-                        await hook.handler({
-                            db,
-                            log,
-                        })
+            db.transact(start, end, async store => {
+                for(const rawLog of logs) {
+                    const log = logFromRaw(rawLog);
+    
+                    for (const hook of hooks) {
+                        if (hook.options.address === log.address && matchTopics(hook.options.topics, log.topics)) {
+                            await hook.handler({
+                                log,
+                                store,
+                            })
+                        }
                     }
                 }
-            }
+            });
+
+            console.log(`advancing to ${end}`);
 
             await db.advance(end)
 		}
@@ -65,11 +78,11 @@ export class Runner<Store> {
 }
 
 function logFromRaw(raw: any): Log {
-    let tx: any = {
+    let tx: any = {};
+    let block: any = {};
+    let log: any = {
         topics: [],
     };
-    let block: any = {};
-    let log: any = {};
 
     for(let i=0; i<4; ++i) {
         const val = raw[`log_topic${i}`];
@@ -80,15 +93,15 @@ function logFromRaw(raw: any): Log {
 
     for(const key of Object.keys(raw)) {
         if(key.startsWith("log")) {
-            let name = key.substring(3)
+            let name = key.substring(4)
 
             if (!name.startsWith("topic")) {
                 log[name] = raw[key];
             }
         } else if(key.startsWith("tx")) {
-            tx[key.substring(2)] = raw[key];
+            tx[key.substring(3)] = raw[key];
         }  else if(key.startsWith("block")) {
-            block[key.substring(5)] = raw[key];
+            block[key.substring(6)] = raw[key];
         }
     }
 
@@ -102,7 +115,7 @@ function matchTopics(expected: Array<Array<string> | null>, got: Array<string | 
         const gotTopic = got[i];
         const expectedTopics = expected[i];
 
-        if (expectedTopics === null) {
+        if (!expectedTopics) {
             continue;
         }
 
