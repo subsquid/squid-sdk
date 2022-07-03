@@ -57,6 +57,14 @@ Typical squid implements both data mapping and HTTP API presenting the end resul
 
 Squids can be deployed to subsquid cloud and in the future to decentralized community network.
 
+### Other tools
+
+Subsquid framework incorporates a number of npm packages which might be useful in standalone mode:
+
+* [scale-codec](scale-codec) - encoder and decoder for [SCALE](https://docs.substrate.io/reference/scale-codec/) data serialization format
+* [ss58-codec](ss58-codec) - encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/)
+* [ss58](ss58) - [ss58-codec](ss58-codec) paired with [SS58 registry](https://github.com/paritytech/ss58-registry).
+
 ## Getting started
 
 The best way to get started is to clone and inspect [squid-template](https://github.com/subsquid/squid-template)
@@ -70,5 +78,5 @@ Our developers are active on [telegram](https://t.me/HydraDevs). Feel free to jo
 
 Subsquid is an OpenSource project, contributions are welcomed, encouraged and will be rewarded!
 
-Please read and adhere to the guidelines expressed in [the contributing page](CONTRIBUTING.md)
+Please consult [CONTRIBUTING.md](CONTRIBUTING.md) for hacking instructions
 and make sure to read our [code of conduct](CODE_OF_CONDUCT.md).
