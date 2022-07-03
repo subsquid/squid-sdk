@@ -42,7 +42,8 @@ Generates TypeScript classes for events, calls and storage items
         typesBundle,
         events: config.events,
         calls: config.calls,
-        storage: config.storage
+        storage: config.storage,
+        constants: config.constants
     })
 
 }, err => {

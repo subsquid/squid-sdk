@@ -5,6 +5,7 @@ import {
     decodeMetadata,
     Field,
     getChainDescriptionFromMetadata,
+    getTypeHash,
     isPreV14,
     OldTypes,
     OldTypesBundle,
@@ -15,6 +16,7 @@ import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import {Constant} from "@subsquid/substrate-metadata/lib/constants"
 import assert from "assert"
 import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
@@ -116,7 +118,8 @@ export class Chain {
     private scaleCodec: ScaleCodec
     private events: eac.Registry
     private calls: eac.Registry
-    private storageHash = Symbol('storage_hash')
+    private typeHash = Symbol('type_hash')
+    private constantHash = Symbol('constant_hash')
 
     constructor(
         public readonly description: ChainDescription,
@@ -206,6 +209,29 @@ export class Chain {
         })
     }
 
+    getConstant(prefix: string, name: string): any {
+        let items = this.description.constants[prefix]
+        if (items == null) throw new Error(
+            `There are no constants under prefix ${prefix}`
+        )
+        let def = items[name]
+        if (def == null) throw new Error(
+            `Unknown constant: ${prefix}.${name}`
+        )
+        let value = (def as any)[this.constantHash] = this.scaleCodec.decodeBinary(def.type, def.value)
+        return value
+    }
+    
+    getConstantTypeHash(prefix: string, name: string) {
+        let item = this.description.constants[prefix]?.[name]
+        if (item == null) return undefined
+        let hash = (item as any)[this.typeHash]
+        if (hash == null) {
+                hash = (item as any)[this.typeHash] = getTypeHash(this.description.types, item.type)
+        }
+        return hash
+    }
+
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {
@@ -234,7 +260,7 @@ export class Chain {
         return hash
     }
 
-    private getStorageItem(prefix: string, name: string): StorageItem {
+    private getStorageItem(prefix: string, name: string) {
         let items = this.description.storage[prefix]
         if (items == null) throw new Error(
             `There are no storage items under prefix ${prefix}`
@@ -246,12 +272,12 @@ export class Chain {
         return def
     }
 
-    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
+    getStorageItemTypeHash(prefix: string, name: string) {
         let item = this.description.storage[prefix]?.[name]
         if (item == null) return undefined
-        let hash = (item as any)[this.storageHash]
+        let hash = (item as any)[this.typeHash]
         if (hash == null) {
-            hash = (item as any)[this.storageHash] = getStorageItemTypeHash(this.description.types, item)
+            hash = (item as any)[this.typeHash] = getStorageItemTypeHash(this.description.types, item)
         }
         return hash
     }
