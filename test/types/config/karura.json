@@ -1,7 +1,8 @@
 {
-    "outDir": "../src/karura",
-    "specVersions": "../../data/chain/karura/versions.jsonl",
-    "events": true,
-    "calls": true,
-    "storage": true
-  }
+  "outDir": "../src/karura",
+  "specVersions": "../../data/chain/karura/versions.jsonl",
+  "events": true,
+  "calls": true,
+  "storage": true,
+  "constants": true
+}

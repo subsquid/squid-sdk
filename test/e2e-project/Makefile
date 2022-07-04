@@ -64,10 +64,4 @@ init:
 	make migration
 
 
-re-process:
-	npx sqd db:drop
-	npx sqd db:create
-	make process
-
-
-.PHONY: process serve start codegen typegen migration migrate archive explore up logs down init re-process
+.PHONY: process serve start codegen typegen migration migrate archive explore up logs down init

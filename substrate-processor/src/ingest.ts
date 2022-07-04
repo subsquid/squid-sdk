@@ -241,6 +241,9 @@ export class Ingest<R extends BatchRequest> {
 
     private setArchiveHeight(res: {status: {head: number}}): void {
         let height = res.status.head
+        if (height == 0) {
+            height = -1
+        }
         this.archiveHeight = Math.max(this.archiveHeight, height)
     }
 

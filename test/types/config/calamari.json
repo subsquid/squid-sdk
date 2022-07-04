@@ -3,5 +3,6 @@
   "specVersions": "../../data/chain/calamari/versions.jsonl",
   "events": true,
   "calls": true,
-  "storage": true
+  "storage": true,
+  "constants": true
 }

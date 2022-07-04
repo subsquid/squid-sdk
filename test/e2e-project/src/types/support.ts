@@ -16,6 +16,8 @@ export interface Chain {
     getStorageItemTypeHash(prefix: string, name: string): string | undefined
     getStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any>
     queryStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any[]>
+    getConstantTypeHash(pallet: string, name: string): string | undefined
+    getConstant(pallet: string, name: string): any
 }
 
 

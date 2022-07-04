@@ -1,6 +1,5 @@
 import * as ss58 from "@subsquid/ss58"
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
-import {EventDataRequest, EventItem} from "@subsquid/substrate-processor/lib/interfaces/dataSelection"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import {Account, HistoricalBalance} from "./model"

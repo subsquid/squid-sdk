@@ -1,7 +1,8 @@
 {
-    "outDir": "../src/subsocial",
-    "specVersions": "../../data/chain/subsocial/versions.jsonl",
-    "events": true,
-    "calls": true,
-    "storage": true
-  }
+  "outDir": "../src/subsocial",
+  "specVersions": "../../data/chain/subsocial/versions.jsonl",
+  "events": true,
+  "calls": true,
+  "storage": true,
+  "constants": true
+}

@@ -55,6 +55,20 @@
           "type": "boolean"
         }
       ]
+    },
+    "constants": {
+      "description": "List of constants to generate",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "boolean"
+        }
+      ]
     }
   },
   "required": [

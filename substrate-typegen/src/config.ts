@@ -1,5 +1,4 @@
-import type {QualifiedName} from "@subsquid/substrate-metadata"
-import {getOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, QualifiedName} from "@subsquid/substrate-metadata"
 import * as fs from "fs"
 import * as path from "path"
 import CONFIG_SCHEMA from "./config.schema.json"

@@ -1,7 +1,6 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {assertNotNull, def, last, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
-import {Constants} from "./constants"
 import type {
     EventMetadataV9,
     FunctionMetadataV9,
@@ -32,6 +31,21 @@ export interface ChainDescription {
     storage: Storage
     constants: Constants
 }
+
+
+export interface Constants {
+    [pallet: string]: {
+        [name: string]: Constant
+    }
+}
+
+
+export interface Constant {
+    type: Ti
+    value: Uint8Array
+    docs: string[]
+}
+
 
 
 export function getChainDescriptionFromMetadata(metadata: Metadata, oldTypes?: OldTypes): ChainDescription {

@@ -11,5 +11,8 @@
   ],
   "storage": [
     "System.Account"
+  ],
+  "constants": [
+    "System.MaximumBlockLength"
   ]
 }

@@ -162,9 +162,9 @@ export class Typegen {
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
-            let [prefix, name] = qualifiedName.split('.')
+            let [pallet, name] = qualifiedName.split('.')
             out.line()
-            out.block(`export class ${prefix}${name}Constant`, () => {
+            out.block(`export class ${pallet}${name}Constant`, () => {
                 out.line(`private readonly _chain: Chain`)
                 out.line()
                 out.block(`constructor(ctx: ChainContext)`, () => {
@@ -180,25 +180,22 @@ export class Typegen {
                     out.line()
                     out.blockComment(v.def.docs)
                     out.block(`get is${versionName}()`, () => {
-                        out.line(`return this._chain.getConstantTypeHash('${prefix}', '${name}') === '${hash}'`)
+                        out.line(`return this._chain.getConstantTypeHash('${pallet}', '${name}') === '${hash}'`)
                     })
 
                     out.line()
                     out.blockComment(v.def.docs)
-                    let returnType = qualifiedType
-
-                    out.block(`get as${versionName}(): ${returnType}`, () => {
+                    out.block(`get as${versionName}(): ${qualifiedType}`, () => {
                         out.line(`assert(this.is${versionName})`)
-                        out.line(`return this._chain.getConstant(${`'${prefix}'`}, ${`'${name}'`})`)
+                        out.line(`return this._chain.getConstant('${pallet}', '${name}')`)
                     })
-
                 })
                 out.line()
                 out.blockComment([
                     'Checks whether the constant is defined for the current chain version.'
                 ])
                 out.block(`get isExists(): boolean`, () => {
-                    out.line(`return this._chain.getConstantTypeHash('${prefix}', '${name}') != null`)
+                    out.line(`return this._chain.getConstantTypeHash('${pallet}', '${name}') != null`)
                 })
             })
         })

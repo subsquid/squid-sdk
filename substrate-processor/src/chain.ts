@@ -1,11 +1,10 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
 import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
 import {
-    ChainDescription,
+    ChainDescription, Constant,
     decodeMetadata,
     Field,
-    getChainDescriptionFromMetadata,
-    getTypeHash,
+    getChainDescriptionFromMetadata, getTypeHash,
     isPreV14,
     OldTypes,
     OldTypesBundle,
@@ -16,7 +15,6 @@ import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import {Constant} from "@subsquid/substrate-metadata/lib/constants"
 import assert from "assert"
 import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
@@ -118,8 +116,8 @@ export class Chain {
     private scaleCodec: ScaleCodec
     private events: eac.Registry
     private calls: eac.Registry
-    private typeHash = Symbol('type_hash')
-    private constantHash = Symbol('constant_hash')
+    private storageHashCache = new Map<StorageItem, string>()
+    private constantValueCache = new Map<Constant, any>()
 
     constructor(
         public readonly description: ChainDescription,
@@ -209,29 +207,6 @@ export class Chain {
         })
     }
 
-    getConstant(prefix: string, name: string): any {
-        let items = this.description.constants[prefix]
-        if (items == null) throw new Error(
-            `There are no constants under prefix ${prefix}`
-        )
-        let def = items[name]
-        if (def == null) throw new Error(
-            `Unknown constant: ${prefix}.${name}`
-        )
-        let value = (def as any)[this.constantHash] = this.scaleCodec.decodeBinary(def.type, def.value)
-        return value
-    }
-    
-    getConstantTypeHash(prefix: string, name: string) {
-        let item = this.description.constants[prefix]?.[name]
-        if (item == null) return undefined
-        let hash = (item as any)[this.typeHash]
-        if (hash == null) {
-                hash = (item as any)[this.typeHash] = getTypeHash(this.description.types, item.type)
-        }
-        return hash
-    }
-
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {
@@ -260,7 +235,7 @@ export class Chain {
         return hash
     }
 
-    private getStorageItem(prefix: string, name: string) {
+    private getStorageItem(prefix: string, name: string): StorageItem {
         let items = this.description.storage[prefix]
         if (items == null) throw new Error(
             `There are no storage items under prefix ${prefix}`
@@ -272,13 +247,37 @@ export class Chain {
         return def
     }
 
-    getStorageItemTypeHash(prefix: string, name: string) {
+    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
         let item = this.description.storage[prefix]?.[name]
         if (item == null) return undefined
-        let hash = (item as any)[this.typeHash]
+        let hash = this.storageHashCache.get(item)
         if (hash == null) {
-            hash = (item as any)[this.typeHash] = getStorageItemTypeHash(this.description.types, item)
+            hash = getStorageItemTypeHash(this.description.types, item)
+            this.storageHashCache.set(item, hash)
         }
         return hash
+    }
+
+    getConstant(pallet: string, name: string): any {
+        let palletConstants = this.description.constants[pallet]
+        if (palletConstants == null) throw new Error(
+            `There are no constants in ${pallet} pallet`
+        )
+        let def = palletConstants[name]
+        if (def == null) throw new Error(
+            `Unknown constant: ${pallet}.${name}`
+        )
+        let value = this.constantValueCache.get(def)
+        if (value === undefined) {
+            value = this.scaleCodec.decodeBinary(def.type, def.value)
+            this.constantValueCache.set(def, value)
+        }
+        return value
+    }
+
+    getConstantTypeHash(pallet: string, name: string): string | undefined {
+        let def = this.description.constants[pallet]?.[name]
+        if (def == null) return undefined
+        return getTypeHash(this.description.types, def.type)
     }
 }

@@ -16,6 +16,7 @@ import {
     Transfer
 } from "./model"
 import {TimestampSetCall} from "./types/calls"
+import {SystemMaximumBlockLengthConstant} from "./types/constants"
 import {BalancesTransferEvent} from "./types/events"
 import {SystemAccountStorage} from "./types/storage"
 import {getDataSource, getOrCreate, waitForGateway} from "./util"
@@ -30,6 +31,19 @@ processor.addPreHook({range: {from: 0, to: 0}}, ctx => loadInitialData(ctx.store
 
 
 processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
+    let accounts = new SystemAccountStorage(ctx)
+    let aliceAddress = ss58.decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY').bytes
+    let aliceAccount = await accounts.getAsV1(aliceAddress)
+    assert(aliceAccount.data.free > 0)
+    let aliceAccounts = await accounts.getManyAsV1([aliceAddress, aliceAddress])
+    assert(aliceAccounts.length === 2)
+    assert(aliceAccounts[0] != null)
+    assert(aliceAccounts[0].data.free > 0)
+    assert(aliceAccounts[0].data.free === aliceAccounts[1]?.data.free)
+
+    let maxBlockLength = new SystemMaximumBlockLengthConstant(ctx).asV1
+    assert(maxBlockLength > 0)
+
     let hook = new BlockHook()
     hook.id = `pre-${ctx.block.height}`
     hook.blockNumber = ctx.block.height
@@ -91,19 +105,6 @@ processor.addEventHandler('Balances.Transfer', async ctx => {
     transfer.fromAccount = fromAcc
     transfer.toAccount = toAcc
     await ctx.store.save(transfer)
-})
-
-
-processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
-    let accounts = new SystemAccountStorage(ctx)
-    let aliceAddress = ss58.decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY').bytes
-    let aliceAccount = await accounts.getAsV1(aliceAddress)
-    assert(aliceAccount.data.free > 0)
-    let aliceAccounts = await accounts.getManyAsV1([aliceAddress, aliceAddress])
-    assert(aliceAccounts.length === 2)
-    assert(aliceAccounts[0] != null)
-    assert(aliceAccounts[0].data.free > 0)
-    assert(aliceAccounts[0].data.free === aliceAccounts[1]?.data.free)
 })
 
 

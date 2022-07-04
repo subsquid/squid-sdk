@@ -1,7 +1,8 @@
 {
-    "outDir": "../src/quartz",
-    "specVersions": "../../data/chain/quartz/versions.jsonl",
-    "events": true,
-    "calls": true,
-    "storage": true
-  }
+  "outDir": "../src/quartz",
+  "specVersions": "../../data/chain/quartz/versions.jsonl",
+  "events": true,
+  "calls": true,
+  "storage": true,
+  "constants": true
+}
