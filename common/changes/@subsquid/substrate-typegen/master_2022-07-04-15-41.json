@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "add support for runtime constants",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
