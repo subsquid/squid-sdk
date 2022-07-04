@@ -1,7 +1,6 @@
 # Subsquid - an ETL framework for Web3 data
 
-[Subsquid](https://subsquid.io/) framework is a set of tools that help
-to ingest, transform and present blockchain data.
+[Subsquid](https://subsquid.io/) framework is a set of tools to ingest, transform and present blockchain data.
 
 Our current focus is on [substrate](https://substrate.io)-based chains,
 with support for EVM-based chains coming next.
@@ -12,19 +11,19 @@ Subsquid framework consists of several key components.
 
 ### Archive
 
-Archive is a set of services formed by [substrate-ingest](substrate-ingest),
+An Archive is a set of services formed by [substrate-ingest](substrate-ingest),
 [substrate-gateway](https://github.com/subsquid/archive-gateway), postgres compatible database
 and optionally [substrate-explorer](substrate-explorer), which together
 
 1. ingest blockchain data
-2. decode and persist it in normalized form
+2. decode and persist it in a normalized form
 3. make it available for further processing and exploration.
 
-Compared to chain node RPC,  an archive allows one to access data in a more granular fashion and from multiple blocks at once.
+Compared to data access using a conventional chain node RPC, an archive allows one to access data in a more granular fashion and from multiple blocks at once. The explorer service provides a GraphQL API for querying historical blocks, events and transactions with rich filtering capabilities. 
 
 ### Processor
 
-[substrate-processor](substrate-processor) fetches the data from an archive and executes
+[substrate-processor](substrate-processor) fetches on-chain data from an archive and executes
 user-defined mapping code against it.
 
 ### Typegen tools
@@ -40,27 +39,26 @@ Similarly, [squid-evm-typegen(1)](evm-typegen) generates facade TypeScript class
 `substrate-processor` is designed to be able to load the processed data into an arbitrary database and indeed one can  
 run it without a persistent store. 
 
-However, additional tooling is available when a processor is run against a postgres-compatible database.
-In such a case, subsquid framework suggests the following dev flow:
+However, extra tooling for data modeling and serving the data with GraphQL is available when a processor is run against a postgres-compatible database. In such a case, the Subsquid framework suggests the following dev flow:
 
-1. Define the target database schema using a GraphQL schema enriched with custom directives
+1. Define the target database schema using a GraphQL dialect enriched with custom directives
 2. Generate [TypeORM](https://typeorm.io) entity classes with [typeorm-codegen](typeorm-codegen)
 3. Generate and apply database migrations with [typeorm-migration](typeorm-migration)
 4. Use powerful and extensible [GraphQL server](graphql-server) to serve produced data right away.
 
 ### Squid
 
-_Squids_ - this is how we call ETL projects built with the Subsquid framework.
+ETL projects built with the Subsquid framework are called _Squids_.
 
-Squids have a certain structure and are supposed to be developed as a regular node.js package. See [squid-template](https://github.com/subsquid/squid-template) for a reference. 
+Squids have a certain structure and are supposed to be developed as regular node.js packages. See [squid-template](https://github.com/subsquid/squid-template) for a reference. 
 
 A typical squid implements both data mapping and an API server presenting the data.
 
-Squids can be deployed to a Subsquid cloud service called [Aquairum](https://app.subsquid.io). In the future, the cloud service will be replaced by a decentralized network of providers.
+Squids can be deployed to a Subsquid cloud service called [Aquairum](https://app.subsquid.io). In the future, the cloud service will be replaced by an open network of decentralized squid operators.
 
 ### Other tools
 
-Subsquid framework incorporates a few npm packages that might be useful in standalone mode:
+The Subsquid framework incorporates a few npm packages that might be useful in a standalone mode:
 
 * [scale-codec](scale-codec) - encoder and decoder for [SCALE](https://docs.substrate.io/reference/scale-codec/) data serialization format
 * [ss58-codec](ss58-codec) - encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/)
