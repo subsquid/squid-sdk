@@ -61,7 +61,7 @@ rush e2e
 
 ## Pull Requests
 
-To create a pull request
+All pull requests should be made from a fork. To create a pull request
 
 ```bash
 # 1. Create a new branch to incorporate your changes
