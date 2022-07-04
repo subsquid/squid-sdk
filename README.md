@@ -56,6 +56,9 @@ A typical squid implements both data mapping and an API server presenting the da
 
 Squids can be deployed to a Subsquid cloud service called [Aquairum](https://app.subsquid.io). In the future, the cloud service will be replaced by an open network of decentralized squid operators.
 
+For more details on how to build, run and deploy a squid consult the [Docs](https://docs.subsquid.io)
+
+
 ### Other tools
 
 The Subsquid framework incorporates a few npm packages that might be useful in a standalone mode:
