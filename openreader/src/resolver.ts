@@ -1,9 +1,11 @@
-import type {IFieldResolver, IResolvers} from "@graphql-tools/utils"
+import type {IFieldResolver, IFieldResolverOptions, IResolvers} from "@graphql-tools/utils"
 import {toCamelCase} from "@subsquid/util-naming"
 import {UserInputError} from "apollo-server-core"
 import assert from "assert"
+import deepEqual from "deep-equal"
 import type {GraphQLResolveInfo} from "graphql"
-import type {Database, Transaction} from "./db"
+import {Pool} from "pg"
+import {Database, PoolTransaction, Transaction} from "./db"
 import type {Dialect} from "./dialect"
 import {customScalars} from "./gql/scalars"
 import type {Entity, JsonObject, Model} from "./model"
@@ -21,13 +23,15 @@ import {ensureArray, toQueryListField, unsupportedCase} from "./util"
 
 
 export interface ResolverContext {
+    db?: Pool
     openReaderTransaction: Transaction
 }
 
 
 export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unknown, ResolverContext> {
     let Query: Record<string, IFieldResolver<unknown, ResolverContext>> = {}
-    let resolvers: IResolvers = {Query, ...customScalars}
+    let Subscription: Record<string, IFieldResolverOptions<unknown, ResolverContext>> = {}
+    let resolvers: IResolvers = {Query, Subscription,...customScalars}
 
     for (let name in model) {
         let item = model[name]
@@ -104,6 +108,16 @@ export function buildResolvers(model: Model, dialect: Dialect): IResolvers<unkno
         resolvers[name] = fields
     }
 
+    for (const key in resolvers.Query) {
+        // @ts-ignore
+        const resolver: IFieldResolver<unknown, ResolverContext> = resolvers.Query[key]
+        Subscription[key] = {
+            resolve: (data) => data,
+            subscribe: (source, args, context, info) =>
+                subscriber(context, (context) => resolver(source, args, context, info))
+        }
+    }
+
     return resolvers
 }
 
@@ -127,6 +141,55 @@ interface ConnectionArgs extends RelayConnectionArgs {
 interface ConnectionResponse extends RelayConnectionResponse<any> {
     totalCount?: number
 }
+
+const subscriber = <Result>(
+    context: ResolverContext,
+    request: (modifiedContext: typeof context) => Promise<Result>
+): Subscriber<Result> => {
+    return {
+        [Symbol.asyncIterator]() {
+            return {
+                timeout: null,
+                currentData: null,
+                active: true,
+                async return() {
+                    if (this.timeout) clearTimeout(this.timeout)
+                    return {
+                        done: true,
+                        value: this.currentData
+                    }
+                },
+                async next() {
+                    while(this.active) {
+                        const modifiedContext = { ...context }
+                        let persistedtransaction = new PoolTransaction(context.db!);
+                        modifiedContext.openReaderTransaction.get = async () => persistedtransaction.get()
+                        const nextData = await request(modifiedContext)
+                        persistedtransaction.close()
+                        if (!deepEqual(this.currentData, nextData)) {
+                            this.currentData = nextData
+                            break
+                        }
+                        await new Promise(resolve => this.timeout = setTimeout(resolve, 1000));
+                    }
+                    return {
+                        done: false,
+                        value: this.currentData
+                    }
+                }
+            }
+        }
+    }
+};
+
+interface Subscriber<T> {
+    [Symbol.asyncIterator]: () => AsyncIterator<T | null> & {
+        active: boolean,
+        timeout: NodeJS.Timeout | null,
+        currentData: T | null
+    }
+}
+
 
 
 async function resolveEntityConnection(

@@ -1,7 +1,7 @@
 import {Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase, toPlural} from "@subsquid/util-naming"
 import assert from "assert"
-import {DocumentNode, parse, print} from "graphql"
+import {DocumentNode, Kind, parse, print} from "graphql"
 import type {Dialect} from "../dialect"
 import type {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
 import {getOrderByMapping} from "../orderBy"
@@ -48,6 +48,22 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
     }
 
     out.block('type Query', () => {
+        for (let name in model) {
+            let item = model[name]
+            if (item.kind == 'entity') {
+                out.line(`${toCamelCase(name)}ById(id: ID!): ${name}`)
+                out.line(`${toCamelCase(name)}ByUniqueInput(where: ${name}WhereUniqueInput!): ${name} @deprecated(reason: "Use \`${toCamelCase(name)}ById\`")`)
+                out.line(`${toQueryListField(name)}${manyArguments(name)}: [${name}!]!`)
+                out.line(`${toQueryListField(name)}Connection${connectionArguments(name)}: ${toPlural(name)}Connection!`)
+            }
+            if (item.kind == 'fts') {
+                generateFtsQuery(name, item)
+            }
+        }
+    })
+
+
+    out.block('type Subscription', () => {
         for (let name in model) {
             let item = model[name]
             if (item.kind == 'entity') {
@@ -333,7 +349,7 @@ export function generateOpenCrudQueries(model: Model, dialect: Dialect): string 
     function generateDescription(description?: string): void {
         if (description) {
             out.line(print({
-                kind: 'StringValue',
+                kind: Kind.STRING,
                 value: description
             }))
         }
