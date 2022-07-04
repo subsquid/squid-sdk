@@ -39,7 +39,7 @@ processor.setFieldSelection({
   logIndex: true,
 });
 
-const ensRegistryAddr = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
+const ensRegistryAddr = "0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e";
 
 processor.addEvmLogHandler(
   ensRegistryAddr,

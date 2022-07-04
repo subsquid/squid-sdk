@@ -50,6 +50,8 @@ export class Runner<Store> {
                 fieldSelection,
             };
 
+            const startTime = process.hrtime.bigint();
+
             const { data: logs } = await axios.post(`${archiveEndpoint}/query`, req, {
                 decompress: true,
                 headers: {
@@ -73,6 +75,10 @@ export class Runner<Store> {
                     }
                 }
             });
+
+            const endTime = process.hrtime.bigint();
+
+            console.log(`elapsed: ${(end-start) * 1_000_000_000 / Number(endTime - startTime)}`)
 
             console.log(`advancing to ${end}`);
 		}
