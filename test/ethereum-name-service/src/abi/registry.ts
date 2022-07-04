@@ -29,7 +29,7 @@ export interface EvmEvent {
 }
 
 export const events = {
-  "Transfer(bytes32,address)":  {
+  "Transfer(bytes32,address)": {
     topic: abi.getEventTopic("Transfer(bytes32,address)"),
     decode(data: EvmEvent): Transfer0Event {
       const result = abi.decodeEventLog(
@@ -37,14 +37,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         node: result[0],
         owner: result[1],
-      }
-    }
-  }
-  ,
-  "NewOwner(bytes32,bytes32,address)":  {
+      };
+    },
+  },
+  "NewOwner(bytes32,bytes32,address)": {
     topic: abi.getEventTopic("NewOwner(bytes32,bytes32,address)"),
     decode(data: EvmEvent): NewOwner0Event {
       const result = abi.decodeEventLog(
@@ -52,15 +51,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         node: result[0],
         label: result[1],
         owner: result[2],
-      }
-    }
-  }
-  ,
-  "NewResolver(bytes32,address)":  {
+      };
+    },
+  },
+  "NewResolver(bytes32,address)": {
     topic: abi.getEventTopic("NewResolver(bytes32,address)"),
     decode(data: EvmEvent): NewResolver0Event {
       const result = abi.decodeEventLog(
@@ -68,14 +66,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         node: result[0],
         resolver: result[1],
-      }
-    }
-  }
-  ,
-  "NewTTL(bytes32,uint64)":  {
+      };
+    },
+  },
+  "NewTTL(bytes32,uint64)": {
     topic: abi.getEventTopic("NewTTL(bytes32,uint64)"),
     decode(data: EvmEvent): NewTTL0Event {
       const result = abi.decodeEventLog(
@@ -83,215 +80,214 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         node: result[0],
         ttl: result[1],
-      }
-    }
-  }
-  ,
-}
+      };
+    },
+  },
+};
 
 function getJsonAbi(): any {
   return [
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
-        }
+          name: "node",
+          type: "bytes32",
+        },
       ],
-      "name": "resolver",
-      "outputs": [
+      name: "resolver",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
-        }
+          name: "node",
+          type: "bytes32",
+        },
       ],
-      "name": "owner",
-      "outputs": [
+      name: "owner",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
+          name: "node",
+          type: "bytes32",
         },
         {
-          "name": "label",
-          "type": "bytes32"
+          name: "label",
+          type: "bytes32",
         },
         {
-          "name": "owner",
-          "type": "address"
-        }
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "setSubnodeOwner",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setSubnodeOwner",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
+          name: "node",
+          type: "bytes32",
         },
         {
-          "name": "ttl",
-          "type": "uint64"
-        }
+          name: "ttl",
+          type: "uint64",
+        },
       ],
-      "name": "setTTL",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setTTL",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
-        }
+          name: "node",
+          type: "bytes32",
+        },
       ],
-      "name": "ttl",
-      "outputs": [
+      name: "ttl",
+      outputs: [
         {
-          "name": "",
-          "type": "uint64"
-        }
+          name: "",
+          type: "uint64",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
+          name: "node",
+          type: "bytes32",
         },
         {
-          "name": "resolver",
-          "type": "address"
-        }
+          name: "resolver",
+          type: "address",
+        },
       ],
-      "name": "setResolver",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setResolver",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "node",
-          "type": "bytes32"
+          name: "node",
+          type: "bytes32",
         },
         {
-          "name": "owner",
-          "type": "address"
-        }
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "setOwner",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setOwner",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "node",
-          "type": "bytes32"
+          indexed: true,
+          name: "node",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "owner",
-          "type": "address"
-        }
+          indexed: false,
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "Transfer",
-      "type": "event"
+      name: "Transfer",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "node",
-          "type": "bytes32"
+          indexed: true,
+          name: "node",
+          type: "bytes32",
         },
         {
-          "indexed": true,
-          "name": "label",
-          "type": "bytes32"
+          indexed: true,
+          name: "label",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "owner",
-          "type": "address"
-        }
+          indexed: false,
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "NewOwner",
-      "type": "event"
+      name: "NewOwner",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "node",
-          "type": "bytes32"
+          indexed: true,
+          name: "node",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "resolver",
-          "type": "address"
-        }
+          indexed: false,
+          name: "resolver",
+          type: "address",
+        },
       ],
-      "name": "NewResolver",
-      "type": "event"
+      name: "NewResolver",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "node",
-          "type": "bytes32"
+          indexed: true,
+          name: "node",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "ttl",
-          "type": "uint64"
-        }
+          indexed: false,
+          name: "ttl",
+          type: "uint64",
+        },
       ],
-      "name": "NewTTL",
-      "type": "event"
-    }
-  ]
+      name: "NewTTL",
+      type: "event",
+    },
+  ];
 }

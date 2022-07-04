@@ -45,7 +45,7 @@ export interface EvmEvent {
 }
 
 export const events = {
-  "AuctionStarted(bytes32,uint256)":  {
+  "AuctionStarted(bytes32,uint256)": {
     topic: abi.getEventTopic("AuctionStarted(bytes32,uint256)"),
     decode(data: EvmEvent): AuctionStarted0Event {
       const result = abi.decodeEventLog(
@@ -53,14 +53,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         registrationDate: result[1],
-      }
-    }
-  }
-  ,
-  "NewBid(bytes32,address,uint256)":  {
+      };
+    },
+  },
+  "NewBid(bytes32,address,uint256)": {
     topic: abi.getEventTopic("NewBid(bytes32,address,uint256)"),
     decode(data: EvmEvent): NewBid0Event {
       const result = abi.decodeEventLog(
@@ -68,15 +67,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         bidder: result[1],
         deposit: result[2],
-      }
-    }
-  }
-  ,
-  "BidRevealed(bytes32,address,uint256,uint8)":  {
+      };
+    },
+  },
+  "BidRevealed(bytes32,address,uint256,uint8)": {
     topic: abi.getEventTopic("BidRevealed(bytes32,address,uint256,uint8)"),
     decode(data: EvmEvent): BidRevealed0Event {
       const result = abi.decodeEventLog(
@@ -84,16 +82,15 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         owner: result[1],
         value: result[2],
         status: result[3],
-      }
-    }
-  }
-  ,
-  "HashRegistered(bytes32,address,uint256,uint256)":  {
+      };
+    },
+  },
+  "HashRegistered(bytes32,address,uint256,uint256)": {
     topic: abi.getEventTopic("HashRegistered(bytes32,address,uint256,uint256)"),
     decode(data: EvmEvent): HashRegistered0Event {
       const result = abi.decodeEventLog(
@@ -101,16 +98,15 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         owner: result[1],
         value: result[2],
         registrationDate: result[3],
-      }
-    }
-  }
-  ,
-  "HashReleased(bytes32,uint256)":  {
+      };
+    },
+  },
+  "HashReleased(bytes32,uint256)": {
     topic: abi.getEventTopic("HashReleased(bytes32,uint256)"),
     decode(data: EvmEvent): HashReleased0Event {
       const result = abi.decodeEventLog(
@@ -118,14 +114,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         value: result[1],
-      }
-    }
-  }
-  ,
-  "HashInvalidated(bytes32,string,uint256,uint256)":  {
+      };
+    },
+  },
+  "HashInvalidated(bytes32,string,uint256,uint256)": {
     topic: abi.getEventTopic("HashInvalidated(bytes32,string,uint256,uint256)"),
     decode(data: EvmEvent): HashInvalidated0Event {
       const result = abi.decodeEventLog(
@@ -133,566 +128,565 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         hash: result[0],
         name: result[1],
         value: result[2],
         registrationDate: result[3],
-      }
-    }
-  }
-  ,
-}
+      };
+    },
+  },
+};
 
 function getJsonAbi(): any {
   return [
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "releaseDeed",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "releaseDeed",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "getAllowedTime",
-      "outputs": [
+      name: "getAllowedTime",
+      outputs: [
         {
-          "name": "timestamp",
-          "type": "uint256"
-        }
+          name: "timestamp",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "unhashedName",
-          "type": "string"
-        }
+          name: "unhashedName",
+          type: "string",
+        },
       ],
-      "name": "invalidateName",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "invalidateName",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "hash",
-          "type": "bytes32"
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "name": "owner",
-          "type": "address"
+          name: "owner",
+          type: "address",
         },
         {
-          "name": "value",
-          "type": "uint256"
+          name: "value",
+          type: "uint256",
         },
         {
-          "name": "salt",
-          "type": "bytes32"
-        }
+          name: "salt",
+          type: "bytes32",
+        },
       ],
-      "name": "shaBid",
-      "outputs": [
+      name: "shaBid",
+      outputs: [
         {
-          "name": "sealedBid",
-          "type": "bytes32"
-        }
+          name: "sealedBid",
+          type: "bytes32",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "bidder",
-          "type": "address"
+          name: "bidder",
+          type: "address",
         },
         {
-          "name": "seal",
-          "type": "bytes32"
-        }
+          name: "seal",
+          type: "bytes32",
+        },
       ],
-      "name": "cancelBid",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "cancelBid",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "entries",
-      "outputs": [
+      name: "entries",
+      outputs: [
         {
-          "name": "",
-          "type": "uint8"
+          name: "",
+          type: "uint8",
         },
         {
-          "name": "",
-          "type": "address"
+          name: "",
+          type: "address",
         },
         {
-          "name": "",
-          "type": "uint256"
+          name: "",
+          type: "uint256",
         },
         {
-          "name": "",
-          "type": "uint256"
+          name: "",
+          type: "uint256",
         },
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "ens",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "ens",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
+          name: "_hash",
+          type: "bytes32",
         },
         {
-          "name": "_value",
-          "type": "uint256"
+          name: "_value",
+          type: "uint256",
         },
         {
-          "name": "_salt",
-          "type": "bytes32"
-        }
+          name: "_salt",
+          type: "bytes32",
+        },
       ],
-      "name": "unsealBid",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "unsealBid",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "transferRegistrars",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "transferRegistrars",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "",
-          "type": "address"
+          name: "",
+          type: "address",
         },
         {
-          "name": "",
-          "type": "bytes32"
-        }
+          name: "",
+          type: "bytes32",
+        },
       ],
-      "name": "sealedBids",
-      "outputs": [
+      name: "sealedBids",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "state",
-      "outputs": [
+      name: "state",
+      outputs: [
         {
-          "name": "",
-          "type": "uint8"
-        }
+          name: "",
+          type: "uint8",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
+          name: "_hash",
+          type: "bytes32",
         },
         {
-          "name": "newOwner",
-          "type": "address"
-        }
+          name: "newOwner",
+          type: "address",
+        },
       ],
-      "name": "transfer",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "transfer",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
+          name: "_hash",
+          type: "bytes32",
         },
         {
-          "name": "_timestamp",
-          "type": "uint256"
-        }
+          name: "_timestamp",
+          type: "uint256",
+        },
       ],
-      "name": "isAllowed",
-      "outputs": [
+      name: "isAllowed",
+      outputs: [
         {
-          "name": "allowed",
-          "type": "bool"
-        }
+          name: "allowed",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "finalizeAuction",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "finalizeAuction",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "registryStarted",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "registryStarted",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "launchLength",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "launchLength",
+      outputs: [
         {
-          "name": "",
-          "type": "uint32"
-        }
+          name: "",
+          type: "uint32",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "sealedBid",
-          "type": "bytes32"
-        }
+          name: "sealedBid",
+          type: "bytes32",
+        },
       ],
-      "name": "newBid",
-      "outputs": [],
-      "payable": true,
-      "type": "function"
+      name: "newBid",
+      outputs: [],
+      payable: true,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "labels",
-          "type": "bytes32[]"
-        }
+          name: "labels",
+          type: "bytes32[]",
+        },
       ],
-      "name": "eraseNode",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "eraseNode",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hashes",
-          "type": "bytes32[]"
-        }
+          name: "_hashes",
+          type: "bytes32[]",
+        },
       ],
-      "name": "startAuctions",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "startAuctions",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "hash",
-          "type": "bytes32"
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "name": "deed",
-          "type": "address"
+          name: "deed",
+          type: "address",
         },
         {
-          "name": "registrationDate",
-          "type": "uint256"
-        }
+          name: "registrationDate",
+          type: "uint256",
+        },
       ],
-      "name": "acceptRegistrarTransfer",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "acceptRegistrarTransfer",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "_hash",
-          "type": "bytes32"
-        }
+          name: "_hash",
+          type: "bytes32",
+        },
       ],
-      "name": "startAuction",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "startAuction",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "rootNode",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "rootNode",
+      outputs: [
         {
-          "name": "",
-          "type": "bytes32"
-        }
+          name: "",
+          type: "bytes32",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "hashes",
-          "type": "bytes32[]"
+          name: "hashes",
+          type: "bytes32[]",
         },
         {
-          "name": "sealedBid",
-          "type": "bytes32"
-        }
+          name: "sealedBid",
+          type: "bytes32",
+        },
       ],
-      "name": "startAuctionsAndBid",
-      "outputs": [],
-      "payable": true,
-      "type": "function"
+      name: "startAuctionsAndBid",
+      outputs: [],
+      payable: true,
+      type: "function",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "name": "_ens",
-          "type": "address"
+          name: "_ens",
+          type: "address",
         },
         {
-          "name": "_rootNode",
-          "type": "bytes32"
+          name: "_rootNode",
+          type: "bytes32",
         },
         {
-          "name": "_startDate",
-          "type": "uint256"
-        }
+          name: "_startDate",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "constructor"
+      payable: false,
+      type: "constructor",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "registrationDate",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "registrationDate",
+          type: "uint256",
+        },
       ],
-      "name": "AuctionStarted",
-      "type": "event"
+      name: "AuctionStarted",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": true,
-          "name": "bidder",
-          "type": "address"
+          indexed: true,
+          name: "bidder",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "deposit",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "deposit",
+          type: "uint256",
+        },
       ],
-      "name": "NewBid",
-      "type": "event"
+      name: "NewBid",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
+          indexed: false,
+          name: "value",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "name": "status",
-          "type": "uint8"
-        }
+          indexed: false,
+          name: "status",
+          type: "uint8",
+        },
       ],
-      "name": "BidRevealed",
-      "type": "event"
+      name: "BidRevealed",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
+          indexed: false,
+          name: "value",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "name": "registrationDate",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "registrationDate",
+          type: "uint256",
+        },
       ],
-      "name": "HashRegistered",
-      "type": "event"
+      name: "HashRegistered",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "value",
+          type: "uint256",
+        },
       ],
-      "name": "HashReleased",
-      "type": "event"
+      name: "HashReleased",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "hash",
-          "type": "bytes32"
+          indexed: true,
+          name: "hash",
+          type: "bytes32",
         },
         {
-          "indexed": true,
-          "name": "name",
-          "type": "string"
+          indexed: true,
+          name: "name",
+          type: "string",
         },
         {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
+          indexed: false,
+          name: "value",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "name": "registrationDate",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "registrationDate",
+          type: "uint256",
+        },
       ],
-      "name": "HashInvalidated",
-      "type": "event"
-    }
-  ]
+      name: "HashInvalidated",
+      type: "event",
+    },
+  ];
 }

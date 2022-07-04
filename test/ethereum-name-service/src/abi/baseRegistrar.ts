@@ -56,7 +56,7 @@ export interface EvmEvent {
 }
 
 export const events = {
-  "ControllerAdded(address)":  {
+  "ControllerAdded(address)": {
     topic: abi.getEventTopic("ControllerAdded(address)"),
     decode(data: EvmEvent): ControllerAdded0Event {
       const result = abi.decodeEventLog(
@@ -64,13 +64,12 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         controller: result[0],
-      }
-    }
-  }
-  ,
-  "ControllerRemoved(address)":  {
+      };
+    },
+  },
+  "ControllerRemoved(address)": {
     topic: abi.getEventTopic("ControllerRemoved(address)"),
     decode(data: EvmEvent): ControllerRemoved0Event {
       const result = abi.decodeEventLog(
@@ -78,13 +77,12 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         controller: result[0],
-      }
-    }
-  }
-  ,
-  "NameMigrated(uint256,address,uint256)":  {
+      };
+    },
+  },
+  "NameMigrated(uint256,address,uint256)": {
     topic: abi.getEventTopic("NameMigrated(uint256,address,uint256)"),
     decode(data: EvmEvent): NameMigrated0Event {
       const result = abi.decodeEventLog(
@@ -92,15 +90,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         id: result[0],
         owner: result[1],
         expires: result[2],
-      }
-    }
-  }
-  ,
-  "NameRegistered(uint256,address,uint256)":  {
+      };
+    },
+  },
+  "NameRegistered(uint256,address,uint256)": {
     topic: abi.getEventTopic("NameRegistered(uint256,address,uint256)"),
     decode(data: EvmEvent): NameRegistered0Event {
       const result = abi.decodeEventLog(
@@ -108,15 +105,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         id: result[0],
         owner: result[1],
         expires: result[2],
-      }
-    }
-  }
-  ,
-  "NameRenewed(uint256,uint256)":  {
+      };
+    },
+  },
+  "NameRenewed(uint256,uint256)": {
     topic: abi.getEventTopic("NameRenewed(uint256,uint256)"),
     decode(data: EvmEvent): NameRenewed0Event {
       const result = abi.decodeEventLog(
@@ -124,14 +120,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         id: result[0],
         expires: result[1],
-      }
-    }
-  }
-  ,
-  "OwnershipTransferred(address,address)":  {
+      };
+    },
+  },
+  "OwnershipTransferred(address,address)": {
     topic: abi.getEventTopic("OwnershipTransferred(address,address)"),
     decode(data: EvmEvent): OwnershipTransferred0Event {
       const result = abi.decodeEventLog(
@@ -139,14 +134,13 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         previousOwner: result[0],
         newOwner: result[1],
-      }
-    }
-  }
-  ,
-  "Transfer(address,address,uint256)":  {
+      };
+    },
+  },
+  "Transfer(address,address,uint256)": {
     topic: abi.getEventTopic("Transfer(address,address,uint256)"),
     decode(data: EvmEvent): Transfer0Event {
       const result = abi.decodeEventLog(
@@ -154,15 +148,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         from: result[0],
         to: result[1],
         tokenId: result[2],
-      }
-    }
-  }
-  ,
-  "Approval(address,address,uint256)":  {
+      };
+    },
+  },
+  "Approval(address,address,uint256)": {
     topic: abi.getEventTopic("Approval(address,address,uint256)"),
     decode(data: EvmEvent): Approval0Event {
       const result = abi.decodeEventLog(
@@ -170,15 +163,14 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         owner: result[0],
         approved: result[1],
         tokenId: result[2],
-      }
-    }
-  }
-  ,
-  "ApprovalForAll(address,address,bool)":  {
+      };
+    },
+  },
+  "ApprovalForAll(address,address,bool)": {
     topic: abi.getEventTopic("ApprovalForAll(address,address,bool)"),
     decode(data: EvmEvent): ApprovalForAll0Event {
       const result = abi.decodeEventLog(
@@ -186,737 +178,736 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         owner: result[0],
         operator: result[1],
         approved: result[2],
-      }
-    }
-  }
-  ,
-}
+      };
+    },
+  },
+};
 
 function getJsonAbi(): any {
   return [
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "interfaceID",
-          "type": "bytes4"
-        }
+          name: "interfaceID",
+          type: "bytes4",
+        },
       ],
-      "name": "supportsInterface",
-      "outputs": [
+      name: "supportsInterface",
+      outputs: [
         {
-          "name": "",
-          "type": "bool"
-        }
+          name: "",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "getApproved",
-      "outputs": [
+      name: "getApproved",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "to",
-          "type": "address"
+          name: "to",
+          type: "address",
         },
         {
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "approve",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "approve",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "from",
-          "type": "address"
+          name: "from",
+          type: "address",
         },
         {
-          "name": "to",
-          "type": "address"
+          name: "to",
+          type: "address",
         },
         {
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "transferFrom",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "transferFrom",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "id",
-          "type": "uint256"
+          name: "id",
+          type: "uint256",
         },
         {
-          "name": "owner",
-          "type": "address"
-        }
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "reclaim",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "reclaim",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "ens",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "ens",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "from",
-          "type": "address"
+          name: "from",
+          type: "address",
         },
         {
-          "name": "to",
-          "type": "address"
+          name: "to",
+          type: "address",
         },
         {
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "safeTransferFrom",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "safeTransferFrom",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "transferPeriodEnds",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "transferPeriodEnds",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "resolver",
-          "type": "address"
-        }
+          name: "resolver",
+          type: "address",
+        },
       ],
-      "name": "setResolver",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "setResolver",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "ownerOf",
-      "outputs": [
+      name: "ownerOf",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "MIGRATION_LOCK_PERIOD",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "MIGRATION_LOCK_PERIOD",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "owner",
-          "type": "address"
-        }
+          name: "owner",
+          type: "address",
+        },
       ],
-      "name": "balanceOf",
-      "outputs": [
+      name: "balanceOf",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [],
-      "name": "renounceOwnership",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      constant: false,
+      inputs: [],
+      name: "renounceOwnership",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "owner",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "isOwner",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "isOwner",
+      outputs: [
         {
-          "name": "",
-          "type": "bool"
-        }
+          name: "",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "id",
-          "type": "uint256"
-        }
+          name: "id",
+          type: "uint256",
+        },
       ],
-      "name": "available",
-      "outputs": [
+      name: "available",
+      outputs: [
         {
-          "name": "",
-          "type": "bool"
-        }
+          name: "",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "to",
-          "type": "address"
+          name: "to",
+          type: "address",
         },
         {
-          "name": "approved",
-          "type": "bool"
-        }
+          name: "approved",
+          type: "bool",
+        },
       ],
-      "name": "setApprovalForAll",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "setApprovalForAll",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "controller",
-          "type": "address"
-        }
+          name: "controller",
+          type: "address",
+        },
       ],
-      "name": "addController",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "addController",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "previousRegistrar",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "previousRegistrar",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "from",
-          "type": "address"
+          name: "from",
+          type: "address",
         },
         {
-          "name": "to",
-          "type": "address"
+          name: "to",
+          type: "address",
         },
         {
-          "name": "tokenId",
-          "type": "uint256"
+          name: "tokenId",
+          type: "uint256",
         },
         {
-          "name": "_data",
-          "type": "bytes"
-        }
+          name: "_data",
+          type: "bytes",
+        },
       ],
-      "name": "safeTransferFrom",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "safeTransferFrom",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "GRACE_PERIOD",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "GRACE_PERIOD",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "id",
-          "type": "uint256"
+          name: "id",
+          type: "uint256",
         },
         {
-          "name": "duration",
-          "type": "uint256"
-        }
+          name: "duration",
+          type: "uint256",
+        },
       ],
-      "name": "renew",
-      "outputs": [
+      name: "renew",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "id",
-          "type": "uint256"
-        }
+          name: "id",
+          type: "uint256",
+        },
       ],
-      "name": "nameExpires",
-      "outputs": [
+      name: "nameExpires",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "name": "controllers",
-      "outputs": [
+      name: "controllers",
+      outputs: [
         {
-          "name": "",
-          "type": "bool"
-        }
+          name: "",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "baseNode",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "baseNode",
+      outputs: [
         {
-          "name": "",
-          "type": "bytes32"
-        }
+          name: "",
+          type: "bytes32",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [
+      constant: true,
+      inputs: [
         {
-          "name": "owner",
-          "type": "address"
+          name: "owner",
+          type: "address",
         },
         {
-          "name": "operator",
-          "type": "address"
-        }
+          name: "operator",
+          type: "address",
+        },
       ],
-      "name": "isApprovedForAll",
-      "outputs": [
+      name: "isApprovedForAll",
+      outputs: [
         {
-          "name": "",
-          "type": "bool"
-        }
+          name: "",
+          type: "bool",
+        },
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      payable: false,
+      stateMutability: "view",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "label",
-          "type": "bytes32"
+          name: "label",
+          type: "bytes32",
         },
         {
-          "name": "deed",
-          "type": "address"
+          name: "deed",
+          type: "address",
         },
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "name": "acceptRegistrarTransfer",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "acceptRegistrarTransfer",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "newOwner",
-          "type": "address"
-        }
+          name: "newOwner",
+          type: "address",
+        },
       ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "transferOwnership",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "controller",
-          "type": "address"
-        }
+          name: "controller",
+          type: "address",
+        },
       ],
-      "name": "removeController",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: "removeController",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "id",
-          "type": "uint256"
+          name: "id",
+          type: "uint256",
         },
         {
-          "name": "owner",
-          "type": "address"
+          name: "owner",
+          type: "address",
         },
         {
-          "name": "duration",
-          "type": "uint256"
-        }
+          name: "duration",
+          type: "uint256",
+        },
       ],
-      "name": "register",
-      "outputs": [
+      name: "register",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "name": "_ens",
-          "type": "address"
+          name: "_ens",
+          type: "address",
         },
         {
-          "name": "_previousRegistrar",
-          "type": "address"
+          name: "_previousRegistrar",
+          type: "address",
         },
         {
-          "name": "_baseNode",
-          "type": "bytes32"
+          name: "_baseNode",
+          type: "bytes32",
         },
         {
-          "name": "_transferPeriodEnds",
-          "type": "uint256"
-        }
+          name: "_transferPeriodEnds",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "constructor"
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "constructor",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "controller",
-          "type": "address"
-        }
+          indexed: true,
+          name: "controller",
+          type: "address",
+        },
       ],
-      "name": "ControllerAdded",
-      "type": "event"
+      name: "ControllerAdded",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "controller",
-          "type": "address"
-        }
+          indexed: true,
+          name: "controller",
+          type: "address",
+        },
       ],
-      "name": "ControllerRemoved",
-      "type": "event"
+      name: "ControllerRemoved",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "id",
-          "type": "uint256"
+          indexed: true,
+          name: "id",
+          type: "uint256",
         },
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "expires",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "expires",
+          type: "uint256",
+        },
       ],
-      "name": "NameMigrated",
-      "type": "event"
+      name: "NameMigrated",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "id",
-          "type": "uint256"
+          indexed: true,
+          name: "id",
+          type: "uint256",
         },
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "expires",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "expires",
+          type: "uint256",
+        },
       ],
-      "name": "NameRegistered",
-      "type": "event"
+      name: "NameRegistered",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "id",
-          "type": "uint256"
+          indexed: true,
+          name: "id",
+          type: "uint256",
         },
         {
-          "indexed": false,
-          "name": "expires",
-          "type": "uint256"
-        }
+          indexed: false,
+          name: "expires",
+          type: "uint256",
+        },
       ],
-      "name": "NameRenewed",
-      "type": "event"
+      name: "NameRenewed",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "previousOwner",
-          "type": "address"
+          indexed: true,
+          name: "previousOwner",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "newOwner",
-          "type": "address"
-        }
+          indexed: true,
+          name: "newOwner",
+          type: "address",
+        },
       ],
-      "name": "OwnershipTransferred",
-      "type": "event"
+      name: "OwnershipTransferred",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "from",
-          "type": "address"
+          indexed: true,
+          name: "from",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "to",
-          "type": "address"
+          indexed: true,
+          name: "to",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          indexed: true,
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "Transfer",
-      "type": "event"
+      name: "Transfer",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "approved",
-          "type": "address"
+          indexed: true,
+          name: "approved",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "tokenId",
-          "type": "uint256"
-        }
+          indexed: true,
+          name: "tokenId",
+          type: "uint256",
+        },
       ],
-      "name": "Approval",
-      "type": "event"
+      name: "Approval",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "address"
+          indexed: true,
+          name: "owner",
+          type: "address",
         },
         {
-          "indexed": true,
-          "name": "operator",
-          "type": "address"
+          indexed: true,
+          name: "operator",
+          type: "address",
         },
         {
-          "indexed": false,
-          "name": "approved",
-          "type": "bool"
-        }
+          indexed: false,
+          name: "approved",
+          type: "bool",
+        },
       ],
-      "name": "ApprovalForAll",
-      "type": "event"
-    }
-  ]
+      name: "ApprovalForAll",
+      type: "event",
+    },
+  ];
 }

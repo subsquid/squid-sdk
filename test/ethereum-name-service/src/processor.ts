@@ -1,107 +1,88 @@
-import { EthProcessor, EvmLogHandlerContext } from "@subsquid/eth-processor"
-import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
-import * as registry from "./abi/registry"
-import { Account, Domain, DomainEvent, Transfer } from "./model"
+import { EthProcessor } from "@subsquid/eth-processor";
+import { TypeormDatabase } from "@subsquid/typeorm-store";
+import * as registry from "./abi/registry";
+import {
+  handleTransfer,
+  handleNewOwner,
+  handleNewResolver,
+  handleNewOwnerOldRegistry,
+  handleNewTtl,
+  handleNewTtlOldRegistry,
+  handleTransferOldRegistry,
+  handleNewResolverOldRegistry,
+} from "./ensRegistry";
 
-require('dotenv').config()
+require("dotenv").config();
 
-const processor = new EthProcessor(new TypeormDatabase())
+const processor = new EthProcessor(new TypeormDatabase());
 
 processor.setDataSource({
-    archive: 'http://172.30.144.1:8080'
-})
-
-processor.setBlockRange({
-    from: 11000000,
-    to: 14150000,
-})
-
-processor.setBatchSize(5000)
-
-processor.setFieldSelection({
-    tx: {
-        hash: true,
-    },
-    block: {
-        number: true,
-    },
-    data: true,
-    logIndex: true,
+  archive: "http://172.30.144.1:8080",
 });
 
-processor.addEvmLogHandler(
-    "0x314159265dd8dbb310642f98f50c066173c1259b",
-    [
-        [registry.events['Transfer(bytes32,address)'].topic]
-    ],
-    async (ctx: EvmLogHandlerContext<Store>) => {
-        if(!ctx.log.data) {
-            throw new Error("no data");
-        }
+processor.setBlockRange({
+  from: 11000000,
+  to: 14150000,
+});
 
-        const transfer = registry.events['Transfer(bytes32,address)'].decode({
-            data: ctx.log.data,
-            topics: ctx.log.topics,
-        });
+processor.setBatchSize(1000);
 
-        let owner = await ctx.store.get(Account, transfer.owner);
-        if(!owner) {
-            owner = new Account({
-                id: transfer.owner,
-            });
-            await ctx.store.save(owner);
-        }
+processor.setFieldSelection({
+  tx: {
+    hash: true,
+  },
+  block: {
+    number: true,
+    timestamp: true,
+  },
+  data: true,
+  logIndex: true,
+});
 
-        let domain = await ctx.store.get(Domain, transfer.node);
-        if(!domain) {
-            domain = new Domain({
-                id: transfer.node,
-                isMigrated: false,
-                createdAt: BigInt(Date.now()),
-                owner,
-            });
-            await ctx.store.save(domain);
-        }
-
-        const blockNumber = ctx.log.block.number;
-        if (!blockNumber) {
-            throw new Error("no block number");
-        }
-
-        const transactionID = ctx.log.tx.hash;
-        if (!transactionID) {
-            throw new Error("no tx hash");
-        }
-
-        await ctx.store.save(new DomainEvent({
-            id: `${transactionID}.${ctx.log.logIndex}`,
-            transactionID: Buffer.from(transactionID, 'hex'),
-            blockNumber,
-            kind: new Transfer({
-                owner: transfer.owner,
-            }),
-            domain,
-        }));
-    }
-)
+const ensRegistryAddr = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 
 processor.addEvmLogHandler(
-    "0x314159265dd8dbb310642f98f50c066173c1259b",
-    [
-        [registry.events["NewTTL(bytes32,uint64)"].topic]
-    ],
-    async (ctx: EvmLogHandlerContext<Store>) => {
-        if(!ctx.log.data) {
-            throw new Error("no data");
-        }
+  ensRegistryAddr,
+  [[registry.events["Transfer(bytes32,address)"].topic]],
+  handleTransfer
+);
+processor.addEvmLogHandler(
+  ensRegistryAddr,
+  [[registry.events["NewOwner(bytes32,bytes32,address)"].topic]],
+  handleNewOwner
+);
+processor.addEvmLogHandler(
+  ensRegistryAddr,
+  [[registry.events["NewResolver(bytes32,address)"].topic]],
+  handleNewResolver
+);
+processor.addEvmLogHandler(
+  ensRegistryAddr,
+  [[registry.events["NewTTL(bytes32,uint64)"].topic]],
+  handleNewTtl
+);
 
-        const newTtl = registry.events["NewTTL(bytes32,uint64)"].decode({
-            data: ctx.log.data,
-            topics: ctx.log.topics,
-        });
+const ensRegistryOldAddr = "0x314159265dd8dbb310642f98f50c066173c1259b";
 
-        console.log(`NEW_TTL: ${JSON.stringify(newTtl, null, 2)}`);
-    }
-)
+processor.addEvmLogHandler(
+  ensRegistryOldAddr,
+  [[registry.events["Transfer(bytes32,address)"].topic]],
+  handleTransferOldRegistry
+);
+processor.addEvmLogHandler(
+  ensRegistryOldAddr,
+  [[registry.events["NewOwner(bytes32,bytes32,address)"].topic]],
+  handleNewOwnerOldRegistry
+);
+processor.addEvmLogHandler(
+  ensRegistryOldAddr,
+  [[registry.events["NewResolver(bytes32,address)"].topic]],
+  handleNewResolverOldRegistry
+);
+processor.addEvmLogHandler(
+  ensRegistryOldAddr,
+  [[registry.events["NewTTL(bytes32,uint64)"].topic]],
+  handleNewTtlOldRegistry
+);
 
-processor.run()
+processor.run();

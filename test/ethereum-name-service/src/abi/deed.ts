@@ -6,8 +6,7 @@ export interface OwnerChanged0Event {
   newOwner: string;
 }
 
-export interface DeedClosed0Event {
-}
+export interface DeedClosed0Event {}
 
 export interface EvmEvent {
   data: string;
@@ -15,7 +14,7 @@ export interface EvmEvent {
 }
 
 export const events = {
-  "OwnerChanged(address)":  {
+  "OwnerChanged(address)": {
     topic: abi.getEventTopic("OwnerChanged(address)"),
     decode(data: EvmEvent): OwnerChanged0Event {
       const result = abi.decodeEventLog(
@@ -23,13 +22,12 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
+      return {
         newOwner: result[0],
-      }
-    }
-  }
-  ,
-  "DeedClosed()":  {
+      };
+    },
+  },
+  "DeedClosed()": {
     topic: abi.getEventTopic("DeedClosed()"),
     decode(data: EvmEvent): DeedClosed0Event {
       const result = abi.decodeEventLog(
@@ -37,171 +35,169 @@ export const events = {
         data.data || "",
         data.topics
       );
-      return  {
-      }
-    }
-  }
-  ,
-}
+      return {};
+    },
+  },
+};
 
 function getJsonAbi(): any {
   return [
     {
-      "constant": true,
-      "inputs": [],
-      "name": "creationDate",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "creationDate",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [],
-      "name": "destroyDeed",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      constant: false,
+      inputs: [],
+      name: "destroyDeed",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "newOwner",
-          "type": "address"
-        }
+          name: "newOwner",
+          type: "address",
+        },
       ],
-      "name": "setOwner",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setOwner",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "registrar",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "registrar",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "value",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "value",
+      outputs: [
         {
-          "name": "",
-          "type": "uint256"
-        }
+          name: "",
+          type: "uint256",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "previousOwner",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "previousOwner",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
+      constant: true,
+      inputs: [],
+      name: "owner",
+      outputs: [
         {
-          "name": "",
-          "type": "address"
-        }
+          name: "",
+          type: "address",
+        },
       ],
-      "payable": false,
-      "type": "function"
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "newValue",
-          "type": "uint256"
+          name: "newValue",
+          type: "uint256",
         },
         {
-          "name": "throwOnFailure",
-          "type": "bool"
-        }
+          name: "throwOnFailure",
+          type: "bool",
+        },
       ],
-      "name": "setBalance",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setBalance",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "refundRatio",
-          "type": "uint256"
-        }
+          name: "refundRatio",
+          type: "uint256",
+        },
       ],
-      "name": "closeDeed",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "closeDeed",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "constant": false,
-      "inputs": [
+      constant: false,
+      inputs: [
         {
-          "name": "newRegistrar",
-          "type": "address"
-        }
+          name: "newRegistrar",
+          type: "address",
+        },
       ],
-      "name": "setRegistrar",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
+      name: "setRegistrar",
+      outputs: [],
+      payable: false,
+      type: "function",
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "name": "_owner",
-          "type": "address"
-        }
+          name: "_owner",
+          type: "address",
+        },
       ],
-      "payable": true,
-      "type": "constructor"
+      payable: true,
+      type: "constructor",
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": false,
-          "name": "newOwner",
-          "type": "address"
-        }
+          indexed: false,
+          name: "newOwner",
+          type: "address",
+        },
       ],
-      "name": "OwnerChanged",
-      "type": "event"
+      name: "OwnerChanged",
+      type: "event",
     },
     {
-      "anonymous": false,
-      "inputs": [],
-      "name": "DeedClosed",
-      "type": "event"
-    }
-  ]
+      anonymous: false,
+      inputs: [],
+      name: "DeedClosed",
+      type: "event",
+    },
+  ];
 }
