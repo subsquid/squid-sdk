@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-migration",
+      "comment": "add Readme",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-migration"
+}
