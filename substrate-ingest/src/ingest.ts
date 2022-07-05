@@ -204,6 +204,7 @@ export class Ingest {
         if (raw == null) return []
         let src = new Src(raw)
         let len = src.compactLength()
+        if (len == 0) return []
         let sink = new HexSink()
         sink.compact(len)
         let prefix = sink.toHex()

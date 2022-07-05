@@ -14,6 +14,15 @@ kusama:
 		--start-block 3876
 
 
+kintsugi:
+	@node lib/main.js --out $(DB) \
+		-e wss://kintsugi.api.onfinality.io/public-ws \
+		-c 20 \
+		-e wss://api-kusama.interlay.io/parachain \
+		-c 20 \
+		--start-block 1049400
+
+
 moonriver:
 	@node lib/main.js --out $(DB) \
 		-e wss://moonriver.api.onfinality.io/public-ws \

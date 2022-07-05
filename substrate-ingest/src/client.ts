@@ -191,9 +191,10 @@ class Connection {
         this.log?.debug({
             avgResponseTime: Math.round(this.avgResponseTime()),
             order,
+            priority: req.priority,
             req: req.id,
             method: req.method,
-            priority: req.priority
+            params: this.log.isTrace() ? req.params : undefined
         }, 'request')
         let beg = this.timer.time()
         let epoch = this.epoch
@@ -207,7 +208,8 @@ class Connection {
             this.speed.push(1, beg, end)
             this.log?.debug({
                 req: req.id,
-                responseTime: Math.round(Number(end - beg) / 1000_000)
+                responseTime: Math.round(Number(end - beg) / 1000_000),
+                response: this.log.isTrace() ? res : undefined,
             }, 'response')
             return res
         }, err => {
