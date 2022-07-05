@@ -1,5 +1,6 @@
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {assertNotNull} from "@subsquid/util-internal"
+import {toHex} from "@subsquid/util-internal-hex"
 import {sub} from "../interfaces"
 import type {Account} from "./validator"
 
@@ -112,5 +113,13 @@ export function noneOrigin(): sub.NoneOrigin {
         value: {
             __kind: 'None'
         }
+    }
+}
+
+
+export function extractEthereumTxContract(tx: any): string | undefined {
+    let action = assertNotNull(tx.action || tx.value.action)
+    if (action.__kind == 'Call') {
+        return toHex(action.value)
     }
 }

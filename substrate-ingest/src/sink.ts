@@ -3,6 +3,7 @@ import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
+import {extractEthereumTxContract} from "./parse/util"
 import {toJSON, toJsonString} from "./util"
 import WritableStream = NodeJS.WritableStream
 
@@ -151,7 +152,7 @@ export class PostgresSink implements Sink {
     private mapCall(call: Call): IndexedCall {
         switch(call.name) {
             case 'Ethereum.transact':
-                return {...call, contract: toHex(call.args.transaction.value.action.value)}
+                return {...call, contract: extractEthereumTxContract(call.args.transaction)}
             default:
                 return call
         }

@@ -28,8 +28,9 @@ moonriver:
 		-e wss://moonriver.api.onfinality.io/public-ws \
 		-e wss://moonriver-rpc.dwellir.com \
 		-e wss://wss.api.moonriver.moonbeam.network/ \
+		-c 20 \
 		--write-batch-size 20 \
-		--start-block 600000
+		--start-block 2000000
 
 
 moonbeam:
