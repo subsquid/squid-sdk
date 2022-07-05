@@ -65,11 +65,11 @@ specifiers:
   '@types/mocha': ^9.1.1
   '@types/node': ^16.11.41
   '@types/node-fetch': ^2.6.2
-  '@types/pg': 8.6.5
   '@types/semver': ^7.3.10
   '@types/stoppable': ^1.1.1
   '@types/supports-color': ^8.1.1
   '@types/websocket': ^1.0.5
+  '@types/ws': ^8.5.3
   '@types/xxhashjs': ^0.2.2
   ajv: ^8.11.0
   apollo-server-core: ^3.9.0
@@ -179,11 +179,11 @@ dependencies:
   '@types/mocha': 9.1.1
   '@types/node': 16.11.41
   '@types/node-fetch': 2.6.2
-  '@types/pg': 8.6.5
   '@types/semver': 7.3.10
   '@types/stoppable': 1.1.1
   '@types/supports-color': 8.1.1
   '@types/websocket': 1.0.5
+  '@types/ws': 8.5.3
   '@types/xxhashjs': 0.2.2
   ajv: 8.11.0
   apollo-server-core: 3.9.0_graphql@15.8.0
@@ -2229,6 +2229,12 @@ packages:
 
   /@types/websocket/1.0.5:
     resolution: {integrity: sha512-NbsqiNX9CnEfC1Z0Vf4mE1SgAJ07JnRYcNex7AJ9zAVzmiGHmjKFEk7O4TJIsgv2B1sLEb6owKFZrACwdYngsQ==}
+    dependencies:
+      '@types/node': 16.11.41
+    dev: false
+
+  /@types/ws/8.5.3:
+    resolution: {integrity: sha512-6YOoWjruKj1uLf3INHH7D3qTXwFfEsg1kf3c0uDdSBJwfa/llkwIjrAGV7j7mVgGNbzTQ3HiHKKDXl6bJPD97w==}
     dependencies:
       '@types/node': 16.11.41
     dev: false
@@ -8138,7 +8144,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-C0KrtB/JLAxtlc9HPhWtnEm3bFnEF9PYYmwkIQVeevMqVe14i/n0JC8pbFALecpa3PzyXuGcZc92sUSypM+U+A==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-aEZj1ynBTgkgv8p1s1fSz2S6ekW1GHhMORLwkMXx8rX4YgvApG6pH17bL49Q9CnbnfOAJgUyIgnuTJb0OlUEVA==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
@@ -8152,6 +8158,7 @@ packages:
       '@types/mocha': 9.1.1
       '@types/node': 16.11.41
       '@types/pg': 8.6.5
+      '@types/ws': 8.5.3
       apollo-server-core: 3.9.0_graphql@15.8.0
       apollo-server-express: 3.9.0_74b94fa35b5137c17f5c995c6e82e419
       deep-equal: 2.0.5
