@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "don't crush on empty list of validators",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
