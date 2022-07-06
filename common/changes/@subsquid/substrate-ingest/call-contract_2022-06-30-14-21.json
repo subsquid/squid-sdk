@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "save contracts address in call table",
+      "comment": "save EVM contract address in call table",
       "type": "minor"
     }
   ],

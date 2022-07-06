@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/typeorm-migration",
-      "comment": "fix \"typeorm-migration generate\" name arg",
+      "comment": "fix `typeorm-migration generate` name arg",
       "type": "patch"
     }
   ],
