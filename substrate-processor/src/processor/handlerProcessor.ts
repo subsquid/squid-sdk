@@ -74,9 +74,10 @@ export class SubstrateProcessor<Store> {
      *     archive: 'https://polkadot.indexer.gc.subsquid.io/v4/graphql'
      * })
      */
-    setDataSource(src: DataSource): void {
+    setDataSource(src: DataSource): this {
         this.assertNotRunning()
         this.src = src
+        return this
     }
 
     /**
@@ -110,13 +111,14 @@ export class SubstrateProcessor<Store> {
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): void {
+    setTypesBundle(bundle: string | OldTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
             this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
             this.typesBundle = bundle
         }
+        return this
     }
 
     /**
@@ -132,9 +134,10 @@ export class SubstrateProcessor<Store> {
      *     to: 100
      * })
      */
-    setBlockRange(range: Range): void {
+    setBlockRange(range: Range): this {
         this.assertNotRunning()
         this.blockRange = range
+        return this
     }
 
     /**
@@ -145,10 +148,11 @@ export class SubstrateProcessor<Store> {
      *
      * Usually this setting doesn't have any significant impact on the performance.
      */
-    setBatchSize(size: number): void {
+    setBatchSize(size: number): this {
         this.assertNotRunning()
         assert(size > 0)
         this.batchSize = size
+        return this
     }
 
     /**
@@ -158,9 +162,10 @@ export class SubstrateProcessor<Store> {
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
      */
-    setPrometheusPort(port: number | string) {
+    setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
         this.prometheusPort = port
+        return this
     }
 
     /**
@@ -225,10 +230,10 @@ export class SubstrateProcessor<Store> {
      *     })
      * })
      */
-    addPreHook(fn: BlockHandler<Store>): void
-    addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): void
-    addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): void {
+    addPreHook(fn: BlockHandler<Store>): this
+    addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): this
+    addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -239,6 +244,7 @@ export class SubstrateProcessor<Store> {
             options = fnOrOptions
         }
         this.hooks.pre.push({handler, ...options})
+        return this
     }
 
     /**
@@ -301,10 +307,10 @@ export class SubstrateProcessor<Store> {
      *     })
      * })
      */
-    addPostHook(fn: BlockHandler<Store>): void
-    addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
-    addPostHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): void {
+    addPostHook(fn: BlockHandler<Store>): this
+    addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): this
+    addPostHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
+    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -315,6 +321,7 @@ export class SubstrateProcessor<Store> {
             options = fnOrOptions
         }
         this.hooks.post.push({handler, ...options})
+        return this
     }
 
     /**
@@ -349,10 +356,10 @@ export class SubstrateProcessor<Store> {
      *     }
      * } as const, async ctx => {})
      */
-    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
-    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): void {
+    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): this
+    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): this
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): this
+    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): this {
         this.assertNotRunning()
         let handler: EventHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
@@ -367,6 +374,7 @@ export class SubstrateProcessor<Store> {
             handler,
             ...options
         })
+        return this
     }
 
     /**
@@ -405,10 +413,10 @@ export class SubstrateProcessor<Store> {
      *     }
      * } as const, async ctx => {})
      */
-    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
-    addCallHandler(callName: QualifiedName, options: CallHandlerOptions & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: CallHandlerOptions & DataSelection<R>, fn: CallHandler<Store, R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): void {
+    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): this
+    addCallHandler(callName: QualifiedName, options: CallHandlerOptions & NoDataSelection, fn: CallHandler<Store>): this
+    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: CallHandlerOptions & DataSelection<R>, fn: CallHandler<Store, R>): this
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
         let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
@@ -423,6 +431,7 @@ export class SubstrateProcessor<Store> {
             handler,
             ...options
         })
+        return this
     }
 
     /**
@@ -441,22 +450,22 @@ export class SubstrateProcessor<Store> {
     addEvmLogHandler(
         contractAddress: string,
         fn: EvmLogHandler<Store>
-    ): void
+    ): this
     addEvmLogHandler(
         contractAddress: string,
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
-    ): void
+    ): this
     addEvmLogHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
-    ): void
+    ): this
     addEvmLogHandler(
         contractAddress: string,
         fnOrOptions: EvmLogOptions & MayBeDataSelection<EventDataRequest> | EvmLogHandler<Store>,
         fn?: EvmLogHandler<Store>
-    ): void {
+    ): this {
         this.assertNotRunning()
         let handler: EvmLogHandler<Store>
         let options:  EvmLogOptions= {}
@@ -471,6 +480,7 @@ export class SubstrateProcessor<Store> {
             contractAddress,
             ...options
         })
+        return this
     }
 
     /**
@@ -483,22 +493,22 @@ export class SubstrateProcessor<Store> {
     addContractsContractEmittedHandler(
         contractAddress: string,
         fn: ContractsContractEmittedHandler<Store>
-    ): void
+    ): this
     addContractsContractEmittedHandler(
         contractAddress: string,
         options: BlockRangeOption & NoDataSelection,
         fn: ContractsContractEmittedHandler<Store>
-    ): void
+    ): this
     addContractsContractEmittedHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: BlockRangeOption & DataSelection<R>,
         fn: ContractsContractEmittedHandler<Store, R>
-    ): void
+    ): this
     addContractsContractEmittedHandler(
         contractAddress: string,
         fnOrOptions: ContractsContractEmittedHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
         fn?: ContractsContractEmittedHandler<Store>
-    ): void {
+    ): this {
         this.assertNotRunning()
         let handler: ContractsContractEmittedHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
@@ -513,6 +523,7 @@ export class SubstrateProcessor<Store> {
             contractAddress,
             ...options
         })
+        return this
     }
 
     protected assertNotRunning(): void {
