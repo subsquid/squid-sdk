@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@subsquid/substrate-metadata": "^1.0.1",
-    "@subsquid/substrate-typegen": "^1.0.2",
+    "@subsquid/substrate-typegen": "^1.1.0",
     "@subsquid/util-internal": "^0.0.1",
-    "@subsquid/util-internal-code-printer": "^0.0.1"
+    "@subsquid/util-internal-code-printer": "^0.0.2"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",

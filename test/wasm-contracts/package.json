@@ -8,15 +8,15 @@
   "dependencies": {
     "@polkadot/api-contract": "^8.9.1",
     "@subsquid/graphql-server": "^1.1.0",
-    "@subsquid/substrate-processor": "^1.2.0",
-    "@subsquid/typeorm-migration": "^0.1.0",
+    "@subsquid/substrate-processor": "^1.3.0",
+    "@subsquid/typeorm-migration": "^0.1.1",
     "@subsquid/typeorm-store": "^0.1.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.3.6"
   },
   "devDependencies": {
-    "@subsquid/typeorm-codegen": "^0.0.2",
+    "@subsquid/typeorm-codegen": "^0.0.3",
     "@types/node": "^16.11.41",
     "typescript": "~4.7.4"
   }
