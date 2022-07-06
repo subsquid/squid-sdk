@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+
+## 0.0.3
+Wed, 06 Jul 2022 09:25:54 GMT
+
+### Patches
+
+- add Readme
 
 ## 0.0.2
 Fri, 24 Jun 2022 22:07:05 GMT

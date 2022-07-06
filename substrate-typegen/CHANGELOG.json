@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-typegen_v1.1.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for runtime constants"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.0.3` to `^1.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/substrate-typegen_v1.0.2",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

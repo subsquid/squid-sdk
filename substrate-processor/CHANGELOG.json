@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.3.0",
+      "tag": "@subsquid/substrate-processor_v1.3.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "improve batch processor item type derivation "
+          },
+          {
+            "comment": "support typesafe wrappers for chain constants"
+          },
+          {
+            "comment": "support wildcard requests and handlers for events and calls"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-processor_v1.2.0",
       "date": "Mon, 27 Jun 2022 12:07:48 GMT",

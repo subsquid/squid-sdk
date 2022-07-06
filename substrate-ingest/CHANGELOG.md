@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+
+## 0.1.0
+Wed, 06 Jul 2022 09:25:54 GMT
+
+### Minor changes
+
+- save EVM contract address in call table
+
+### Patches
+
+- don't crush on empty list of validators
 
 ## 0.0.6
 Fri, 24 Jun 2022 22:07:05 GMT

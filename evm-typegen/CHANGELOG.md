@@ -1,6 +1,11 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+
+## 1.0.2
+Wed, 06 Jul 2022 09:25:54 GMT
+
+_Version update only_
 
 ## 1.0.1
 Fri, 24 Jun 2022 22:07:05 GMT

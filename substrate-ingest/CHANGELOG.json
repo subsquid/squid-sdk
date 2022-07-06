@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/substrate-ingest_v0.1.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "save EVM contract address in call table"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "don't crush on empty list of validators"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/substrate-ingest_v0.0.6",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

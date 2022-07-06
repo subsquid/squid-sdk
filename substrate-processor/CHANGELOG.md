@@ -1,6 +1,15 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 27 Jun 2022 12:07:48 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+
+## 1.3.0
+Wed, 06 Jul 2022 09:25:54 GMT
+
+### Minor changes
+
+- improve batch processor item type derivation 
+- support typesafe wrappers for chain constants
+- support wildcard requests and handlers for events and calls
 
 ## 1.2.0
 Mon, 27 Jun 2022 12:07:48 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "1.0.4",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.4",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "sort metadata records by block number"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.3",
       "tag": "@subsquid/substrate-metadata-explorer_v1.0.3",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

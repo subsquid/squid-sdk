@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-code-printer",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/util-internal-code-printer_v0.0.2",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "sanitize `*/` in block comments"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal-code-printer_v0.0.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

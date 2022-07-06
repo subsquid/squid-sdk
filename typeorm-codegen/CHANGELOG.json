@@ -2,6 +2,26 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/typeorm-codegen_v0.0.3",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add Readme"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^1.0.2` to `^1.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/typeorm-codegen_v0.0.2",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",
