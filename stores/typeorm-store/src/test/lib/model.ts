@@ -23,7 +23,7 @@ export class Order {
     @PrimaryColumn()
     id!: string
 
-    @ManyToOne(() => Item, {nullable: false})
+    @ManyToOne(() => Item, {nullable: true})
     item!: Item
 
     @Column({nullable: false})
