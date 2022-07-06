@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "make entity references always nullable in the database",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

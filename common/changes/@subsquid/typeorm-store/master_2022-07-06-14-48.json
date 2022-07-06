@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "refactor tests",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
