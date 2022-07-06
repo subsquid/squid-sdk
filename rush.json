@@ -648,6 +648,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-timeout",
+      "projectFolder": "util/util-timeout",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-xxhash",
       "projectFolder": "util/util-xxhash",
       "shouldPublish": true,

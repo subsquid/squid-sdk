@@ -4,6 +4,7 @@ import {RpcClient, RpcConnectionError} from "@subsquid/rpc-client"
 import {isRateLimitError, isRetryableError} from "@subsquid/rpc-client/lib/resilient"
 import {last} from "@subsquid/util-internal"
 import {Speed} from "@subsquid/util-internal-counters"
+import {addTimeout} from "@subsquid/util-timeout"
 import assert from "assert"
 import {addErrorContext} from "./util"
 
@@ -235,18 +236,7 @@ class Connection {
     }
 
     private addTimeout(res: Promise<any>): Promise<any> {
-        if (this.timeoutSeconds == 0) return res
-        return new Promise((resolve, reject) => {
-            let timeout: any = setTimeout(() => {
-                timeout = undefined
-                reject(new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
-            }, this.timeoutSeconds * 1000)
-            res.finally(() => {
-                if (timeout != null) {
-                    clearTimeout(timeout)
-                }
-            }).then(resolve, reject)
-        })
+        return addTimeout(res, this.timeoutSeconds, () => new RpcConnectionError(`Request timed out in ${this.timeoutSeconds} seconds`))
     }
 
     close() {

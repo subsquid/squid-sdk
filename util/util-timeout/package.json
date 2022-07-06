@@ -1,27 +1,22 @@
 {
-  "name": "@subsquid/rpc-client",
-  "version": "1.0.1",
-  "description": "Lightweight JSON-RPC client library",
+  "name": "@subsquid/util-timeout",
+  "version": "0.0.0",
+  "description": "Add timeout to promise",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
+  "main": "lib/timeout.js",
   "files": [
     "lib",
     "src"
   ],
-  "main": "lib/client.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
-  "dependencies": {
-    "@subsquid/util-timeout": "^0.0.0",
-    "websocket": "^1.0.34"
-  },
   "devDependencies": {
     "@types/node": "^16.11.41",
-    "@types/websocket": "^1.0.5",
     "typescript": "~4.7.4"
   }
 }

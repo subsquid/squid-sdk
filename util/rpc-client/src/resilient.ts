@@ -1,4 +1,4 @@
-import assert from "assert"
+import {addTimeout} from "@subsquid/util-timeout"
 import {RpcClient, RpcConnectionError, RpcError} from "./client"
 
 
@@ -62,21 +62,8 @@ export class ResilientRpcClient {
     }
 
     private addTimeout(res: Promise<any>): Promise<any> {
-        return new Promise((resolve, reject) => {
-            let seconds = this.options.timeoutSeconds || 20
-            assert(seconds > 0)
-
-            let timer: any = setTimeout(() => {
-                timer = undefined
-                reject(new RpcConnectionError(`Request timed out in ${seconds / 1000} seconds`))
-            }, seconds * 1000)
-
-            res.finally(() => {
-                if (timer != null) {
-                    clearTimeout(timer)
-                }
-            }).then(resolve, reject)
-        })
+        let seconds = this.options.timeoutSeconds || 20
+        return addTimeout(res, seconds, () => new RpcConnectionError(`Request timed out in ${seconds} seconds`))
     }
 
     close(err?: Error): void {
