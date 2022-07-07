@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^0.0.2",
-    "@subsquid/rpc-client": "^1.0.1",
+    "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-gql-request": "^0.0.1",
     "@subsquid/util-internal-read-lines": "^0.0.1",
