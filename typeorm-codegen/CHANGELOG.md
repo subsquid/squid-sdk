@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+
+## 0.1.0
+Thu, 07 Jul 2022 15:00:50 GMT
+
+### Minor changes
+
+- make entity references always nullable in the database
 
 ## 0.0.3
 Wed, 06 Jul 2022 09:25:54 GMT

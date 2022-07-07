@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/typeorm-store_v0.1.1",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "refactor tests"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/typeorm-store_v0.1.0",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+
+## 0.1.1
+Thu, 07 Jul 2022 15:00:50 GMT
+
+### Patches
+
+- move timeout code into separate package
 
 ## 0.1.0
 Wed, 06 Jul 2022 09:25:54 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/typeorm-codegen_v0.1.0",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make entity references always nullable in the database"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/typeorm-codegen_v0.0.3",
       "date": "Wed, 06 Jul 2022 09:25:54 GMT",

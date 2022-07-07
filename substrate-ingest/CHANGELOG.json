@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/substrate-ingest_v0.1.1",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "move timeout code into separate package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/substrate-ingest_v0.1.0",
       "date": "Wed, 06 Jul 2022 09:25:54 GMT",
