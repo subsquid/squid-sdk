@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.4.1",
+      "tag": "@subsquid/substrate-processor_v1.4.1",
+      "date": "Sun, 10 Jul 2022 13:47:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `SubstrateBatchProcessor` item type derivation"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "tag": "@subsquid/substrate-processor_v1.4.0",
       "date": "Thu, 07 Jul 2022 15:00:50 GMT",

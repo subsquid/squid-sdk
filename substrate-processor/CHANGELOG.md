@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+This log was last generated on Sun, 10 Jul 2022 13:47:35 GMT and should not be manually modified.
+
+## 1.4.1
+Sun, 10 Jul 2022 13:47:35 GMT
+
+### Patches
+
+- fix `SubstrateBatchProcessor` item type derivation
 
 ## 1.4.0
 Thu, 07 Jul 2022 15:00:50 GMT
