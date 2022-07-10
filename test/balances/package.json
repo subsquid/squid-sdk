@@ -8,7 +8,7 @@
   "dependencies": {
     "@subsquid/graphql-server": "^1.1.0",
     "@subsquid/ss58": "^0.1.1",
-    "@subsquid/substrate-processor": "^1.4.0",
+    "@subsquid/substrate-processor": "^1.4.1",
     "@subsquid/typeorm-migration": "^0.1.1",
     "@subsquid/typeorm-store": "^0.1.1",
     "dotenv": "^10.0.0",
