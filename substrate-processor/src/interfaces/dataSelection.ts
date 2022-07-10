@@ -188,19 +188,23 @@ export type CallItem<Name, R = false> = WithKind<
 
 
 export type ItemMerge<A, B, R> =
-    undefined extends A
-        ? undefined | DefinedItemMerge<Exclude<A, undefined>, Exclude<B, undefined>, Exclude<R, undefined | boolean>>
-        : DefinedItemMerge<A, B, Exclude<R, undefined | boolean>>;
+    [A] extends [never]
+        ? B
+        : [B] extends [never]
+            ? A
+            : [Exclude<R, undefined | boolean>] extends [never]
+                ? A
+                : undefined extends A
+                    ? undefined | ObjectItemMerge<Exclude<A, undefined>, Exclude<B, undefined>, Exclude<R, undefined | boolean>>
+                    : ObjectItemMerge<A, B, Exclude<R, undefined | boolean>>
 
 
-type DefinedItemMerge<A, B, R> = {
+type ObjectItemMerge<A, B, R> =  {
     [K in keyof A | keyof B]:
     K extends keyof A
         ? K extends keyof B
-            ? [never] extends [R]
-                ? K extends keyof R
-                    ? ItemMerge<A[K], B[K], R[K]>
-                    : A[K]
+            ? K extends keyof R
+                ? ItemMerge<A[K], B[K], R[K]>
                 : A[K]
             : A[K]
         : K extends keyof B ? B[K] : never
