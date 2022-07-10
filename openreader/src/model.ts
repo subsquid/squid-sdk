@@ -66,8 +66,11 @@ export type PropType =
 
 export interface ScalarPropType {
     kind: 'scalar'
-    name: Name
+    name: Scalar
 }
+
+
+export type Scalar = 'ID' | 'String' | 'Int' | 'Float' | 'Boolean' | 'DateTime' | 'BigInt' | 'JSON' | 'Bytes'
 
 
 export interface EnumPropType {

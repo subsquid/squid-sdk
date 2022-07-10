@@ -1,14 +1,7 @@
 import assert from "assert"
 import type {Model} from "./model"
 import {getUnionProps} from "./model.tools"
-
-
-export type SortOrder = 'ASC' | 'DESC'
-
-
-export interface OrderBy {
-    [field: string]: SortOrder | OrderBy
-}
+import {OrderBy} from "./sql/args"
 
 
 /**

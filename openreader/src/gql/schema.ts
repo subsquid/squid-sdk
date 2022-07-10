@@ -18,7 +18,7 @@ import {
     parse,
     validateSchema
 } from "graphql"
-import {Index, Model, Prop, PropType} from "../model"
+import {Index, Model, Prop, PropType, Scalar} from "../model"
 import {validateModel} from "../model.tools"
 import {customScalars} from "./scalars"
 
@@ -137,7 +137,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
             properties[key] = {
                 type: wrapWithList(list.nulls, {
                     kind: 'scalar',
-                    name: fieldType.name
+                    name: fieldType.name as Scalar
                 }),
                 nullable,
                 description
