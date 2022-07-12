@@ -528,6 +528,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/contracts-metadata",
+      "projectFolder": "contracts-metadata",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/contracts-typegen",
+      "projectFolder": "contracts-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate-processor",
       "shouldPublish": true,
@@ -695,8 +707,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "wasm-contracts",
-      "projectFolder": "test/wasm-contracts",
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
       "shouldPublish": false
     }
   ]
