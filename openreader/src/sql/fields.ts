@@ -1,30 +1,39 @@
-import {ListArguments} from "./args"
+import {
+    EnumPropType,
+    FkPropType,
+    ListLookupPropType,
+    ListPropType,
+    LookupPropType,
+    ObjectPropType,
+    PropType,
+    ScalarPropType,
+    UnionPropType
+} from "../model"
+import {EntityListArguments} from "./args"
 
 
 export type FieldRequest = EntityListRequest | ObjectRequest | OpaqueRequest
 
 
-interface BaseFieldRequest {
+type Base<T> = T extends PropType ? {
     field: string
+    kind: T['kind']
+    type: T
     aliases: string[]
     ifType?: string
     index: number
-}
+} : never
 
 
-export interface EntityListRequest extends BaseFieldRequest {
-    kind: 'entity-list'
+export type EntityListRequest = Base<ListLookupPropType> & {
     children: FieldRequest[]
-    args?: ListArguments
+    args?: EntityListArguments
 }
 
 
-export interface ObjectRequest extends BaseFieldRequest {
-    kind: 'object'
+export type ObjectRequest = Base<FkPropType | LookupPropType | ObjectPropType | UnionPropType> & {
     children: FieldRequest[]
 }
 
 
-export interface OpaqueRequest extends BaseFieldRequest {
-    kind: 'opaque'
-}
+export type OpaqueRequest = Base<ScalarPropType | EnumPropType | ListPropType>

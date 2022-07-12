@@ -1,14 +1,14 @@
-import {unexpectedCase} from "@subsquid/util-internal"
+import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Dialect} from "../dialect"
-import {Entity, JsonObject, Model} from "../model"
+import {Entity, JsonObject, Model, ObjectPropType, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
 import {toColumn, toFkColumn, toTable} from "../util"
 import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 
-export interface QueryCtx {
+export interface CursorCtx {
     model: Model
     dialect: Dialect
     aliases: AliasSet
@@ -16,16 +16,20 @@ export interface QueryCtx {
 }
 
 
-export type Cursor = EntityCursor | ObjectCursor
+export interface Cursor {
+    output(field: string): string
+    native(field: string): string
+    child(field: string): Cursor
+}
 
 
-export class EntityCursor {
+export class EntityCursor implements Cursor {
     public readonly entity: Entity
     public readonly table: string
     public readonly tableAlias: string
 
     constructor(
-        private ctx: QueryCtx,
+        private ctx: CursorCtx,
         private entityName: string,
         joined?: {on: string, rhs: string}
     ) {
@@ -96,34 +100,33 @@ export class EntityCursor {
     }
 
     native(field: string): string {
-        return this.column(field)
-    }
-
-    fk(field: string): string {
-        assert(this.entity.properties[field]?.type.kind == 'fk')
-        return this.tableAlias + "." + this.ident(toFkColumn(field))
+        let prop = this.entity.properties[field]
+        switch(prop.type.kind) {
+            case "fk":
+                return this.tableAlias + "." + this.ident(toFkColumn(field))
+            case "scalar":
+            case "enum":
+                return this.column(field)
+            default:
+                throw unexpectedCase(prop.type.kind)
+        }
     }
 
     child(field: string): Cursor {
         let prop = this.entity.properties[field]
         switch(prop.type.kind) {
             case "object":
-                return new ObjectCursor(
-                    this.ctx,
-                    getObject(this.ctx.model, prop.type.name),
-                    this.column(field)
-                )
             case "union":
                 return new ObjectCursor(
                     this.ctx,
-                    getUnionProps(this.ctx.model, prop.type.name),
-                    this.column(field)
+                    this.column(field),
+                    prop.type
                 )
             case "fk":
                 return new EntityCursor(
                     this.ctx,
                     prop.type.foreignEntity,
-                    {on: 'id', rhs: this.fk(field)}
+                    {on: 'id', rhs: this.native(field)}
                 )
             case "lookup":
                 return new EntityCursor(
@@ -149,12 +152,22 @@ export class EntityCursor {
 }
 
 
-export class ObjectCursor {
+export class ObjectCursor implements Cursor {
+    private object: JsonObject
+    public readonly isUnion: boolean
+
     constructor(
-        private ctx: QueryCtx,
-        private object: JsonObject,
-        private prefix: string
+        private ctx: CursorCtx,
+        private prefix: string,
+        type: ObjectPropType | UnionPropType
     ) {
+        if (type.kind == 'union') {
+            this.isUnion = true
+            this.object = getUnionProps(this.ctx.model, type.name)
+        } else {
+            this.isUnion = false
+            this.object = getObject(this.ctx.model, type.name)
+        }
     }
 
     private json(field: string): string {
@@ -192,44 +205,41 @@ export class ObjectCursor {
 
     native(field: string): string {
         let prop = this.object.properties[field]
-        assert(prop.type.kind == 'scalar' || prop.type.kind == 'enum')
-        switch(prop.type.name) {
-            case 'Int':
-                return `(${this.json(field)})::integer`
-            case 'Float':
-                return `(${this.json(field)})::numeric`
-            case 'Boolean':
-                return `(${this.string(field)})::bool`
-            case 'BigInt':
-                return `(${this.string(field)})::numeric`
-            case 'Bytes':
-                return `decode(substr(${this.string(field)}, 3), 'hex')`
-            case 'DateTime':
-                return `(${this.string(field)})::timestamptz`
-            default:
+        switch(prop.type.kind) {
+            case "fk":
+            case "enum":
                 return this.string(field)
+            case "scalar":
+                switch(prop.type.name) {
+                    case 'Int':
+                        return `(${this.json(field)})::integer`
+                    case 'Float':
+                        return `(${this.json(field)})::numeric`
+                    case 'Boolean':
+                        return `(${this.string(field)})::bool`
+                    case 'BigInt':
+                        return `(${this.string(field)})::numeric`
+                    case 'Bytes':
+                        return `decode(substr(${this.string(field)}, 3), 'hex')`
+                    case 'DateTime':
+                        return `(${this.string(field)})::timestamptz`
+                    default:
+                        return this.string(field)
+                }
+            default:
+                throw unexpectedCase(prop.type.kind)
         }
-    }
-
-    fk(field: string): string {
-        assert(this.object.properties[field]?.type.kind == 'fk')
-        return this.string(field)
     }
 
     child(field: string): Cursor {
         let prop = this.object.properties[field]
         switch(prop.type.kind) {
             case "object":
-                return new ObjectCursor(
-                    this.ctx,
-                    getObject(this.ctx.model, prop.type.name),
-                    this.json(field)
-                )
             case "union":
                 return new ObjectCursor(
                     this.ctx,
-                    getUnionProps(this.ctx.model, prop.type.name),
-                    this.json(field)
+                    this.json(field),
+                    prop.type
                 )
             case "fk":
                 return new EntityCursor(

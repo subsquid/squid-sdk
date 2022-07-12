@@ -82,3 +82,12 @@ export class AliasSet {
         }
     }
 }
+
+
+export function printClause(op: string, exps: string[]): string {
+    switch(exps.length) {
+        case 0: return ''
+        case 1: return exps[0]
+        default: return exps.join(' ' + op + ' ')
+    }
+}

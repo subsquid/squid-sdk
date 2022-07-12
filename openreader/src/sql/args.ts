@@ -1,4 +1,4 @@
-export interface ListArguments {
+export interface EntityListArguments {
     offset?: number
     limit?: number
     orderBy?: OrderBy
@@ -6,7 +6,7 @@ export interface ListArguments {
 }
 
 
-export type Where = AndCondition | OrCondition | SetCondition | RefCondition | BinaryCondition | UnaryCondition
+export type Where = AndCondition | OrCondition | InCondition | SetCondition | RefCondition | BinaryCondition | UnaryCondition
 
 
 export interface AndCondition {
@@ -35,6 +35,13 @@ export interface RefCondition {
 }
 
 
+export interface InCondition {
+    op: 'in' | 'not_in'
+    field: string
+    values: unknown[]
+}
+
+
 export interface BinaryCondition {
     op: BinaryOp
     field: string
@@ -45,6 +52,7 @@ export interface BinaryCondition {
 export interface UnaryCondition {
     op: UnaryOp
     field: string
+    yes: boolean
 }
 
 
@@ -55,7 +63,6 @@ export type BinaryOp =
     'gte' |
     'lt' |
     'lte' |
-    'in' | 'not_in' |
     'contains' | 'not_contains' |
     'containsInsensitive' | 'not_containsInsensitive' |
     'startsWith' | 'not_startsWith' |
