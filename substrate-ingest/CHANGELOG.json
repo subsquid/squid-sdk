@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/substrate-ingest_v0.1.2",
+      "date": "Tue, 12 Jul 2022 17:07:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix boundary check in event parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/substrate-ingest_v0.1.1",
       "date": "Thu, 07 Jul 2022 15:00:50 GMT",

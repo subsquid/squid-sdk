@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+This log was last generated on Tue, 12 Jul 2022 17:07:20 GMT and should not be manually modified.
+
+## 0.1.2
+Tue, 12 Jul 2022 17:07:20 GMT
+
+### Patches
+
+- fix boundary check in event parsing
 
 ## 0.1.1
 Thu, 07 Jul 2022 15:00:50 GMT
