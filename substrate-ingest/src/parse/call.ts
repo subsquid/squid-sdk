@@ -255,7 +255,7 @@ export class CallParser {
             // calls as successful.
             this.skipCalls(batch.children.slice(0, lastCompletedItem + 1), true)
             let event
-            while (event = this.tryNext()) {
+            while (event = this.tryNext(true)) {
                 event.call_id = batch.id
                 if (isFailure(event)) {
                     this.warnings.push({
@@ -327,7 +327,7 @@ export class CallParser {
 
     private takeEvents(call: Call): void {
         let event: model.Event | undefined
-        while (event = this.tryNext()) {
+        while (event = this.tryNext(true)) {
             event.call_id = call.id
         }
     }
@@ -361,11 +361,11 @@ export class CallParser {
         return assertNotNull(this.tryNext())
     }
 
-    private tryNext(): model.Event | undefined {
+    private tryNext(checkBoundary?: boolean): model.Event | undefined {
         while (this.eix >= 0) {
             let event = this.events[this.eix]
             if (event.phase == 'ApplyExtrinsic') {
-                if (this.boundary?.(event)) {
+                if (checkBoundary && this.boundary?.(event)) {
                     return undefined
                 }
                 if (event.extrinsic_id == this.extrinsic.id) {
