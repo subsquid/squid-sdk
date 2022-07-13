@@ -2,7 +2,7 @@ import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {Dialect} from "../dialect"
-import {Entity, JsonObject, Model, ObjectPropType, UnionPropType} from "../model"
+import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
 import {toColumn, toFkColumn, toTable} from "../util"
 import {AliasSet, escapeIdentifier, JoinSet} from "./util"
@@ -19,7 +19,9 @@ export interface CursorCtx {
 export interface Cursor {
     output(field: string): string
     native(field: string): string
+    ref(field: string): string
     child(field: string): Cursor
+    prop(field: string): Prop
 }
 
 
@@ -50,9 +52,13 @@ export class EntityCursor implements Cursor {
         return this.tableAlias + "." + this.ident(toColumn(field))
     }
 
+    prop(field: string): Prop {
+        return assertNotNull(this.entity.properties[field])
+    }
+
     output(field: string): string {
         let col = this.column(field)
-        let prop = this.entity.properties[field]
+        let prop = this.prop(field)
         switch(prop.type.kind) {
             case "scalar":
                 switch(prop.type.name) {
@@ -100,12 +106,28 @@ export class EntityCursor implements Cursor {
     }
 
     native(field: string): string {
-        let prop = this.entity.properties[field]
+        let prop = this.prop(field)
         switch(prop.type.kind) {
             case "fk":
                 return this.tableAlias + "." + this.ident(toFkColumn(field))
             case "scalar":
             case "enum":
+                return this.column(field)
+            default:
+                throw unexpectedCase(prop.type.kind)
+        }
+    }
+
+    ref(field: string): string {
+        let prop = this.prop(field)
+        switch(prop.type.kind) {
+            case "fk":
+                return this.tableAlias + "." + this.ident(toFkColumn(field))
+            case "scalar":
+            case "enum":
+            case "union":
+            case "object":
+            case "list":
                 return this.column(field)
             default:
                 throw unexpectedCase(prop.type.kind)
@@ -178,8 +200,12 @@ export class ObjectCursor implements Cursor {
         return `${this.prefix}->>'${field}'`
     }
 
+    prop(field: string): Prop {
+        return assertNotNull(this.object.properties[field])
+    }
+
     output(field: string): string {
-        let prop = this.object.properties[field]
+        let prop = this.prop(field)
         switch(prop.type.kind) {
             case "scalar":
                 switch(prop.type.name) {
@@ -204,7 +230,7 @@ export class ObjectCursor implements Cursor {
     }
 
     native(field: string): string {
-        let prop = this.object.properties[field]
+        let prop = this.prop(field)
         switch(prop.type.kind) {
             case "fk":
             case "enum":
@@ -231,8 +257,12 @@ export class ObjectCursor implements Cursor {
         }
     }
 
+    ref(field: string): string {
+        return this.json(field)
+    }
+
     child(field: string): Cursor {
-        let prop = this.object.properties[field]
+        let prop = this.prop(field)
         switch(prop.type.kind) {
             case "object":
             case "union":
@@ -252,4 +282,3 @@ export class ObjectCursor implements Cursor {
         }
     }
 }
-
