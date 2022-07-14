@@ -12,7 +12,7 @@ Subsquid framework consists of several key components.
 ### Archive
 
 An Archive is a set of services formed by [substrate-ingest](substrate-ingest),
-[substrate-gateway](https://github.com/subsquid/archive-gateway), postgres compatible database
+[substrate-gateway](https://github.com/subsquid/substrate-gateway), postgres compatible database
 and optionally [substrate-explorer](substrate-explorer), which together
 
 1. ingest blockchain data
