@@ -18,8 +18,8 @@ import {
     parse,
     validateSchema
 } from "graphql"
-import {Index, Model, Prop, PropType, Scalar} from "../model"
-import {validateModel} from "../model.tools"
+import {Index, Model, Prop, PropType, Scalar} from "./model"
+import {validateModel} from "./model.tools"
 import {customScalars} from "./scalars"
 
 

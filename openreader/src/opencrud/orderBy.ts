@@ -1,7 +1,7 @@
 import assert from "assert"
-import type {Model} from "./model"
-import {getUnionProps} from "./model.tools"
-import {OrderBy} from "./sql/args"
+import type {Model} from "../model"
+import {getUnionProps} from "../model.tools"
+import {OrderBy} from "../sql/args"
 
 
 /**

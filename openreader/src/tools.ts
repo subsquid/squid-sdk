@@ -3,7 +3,7 @@ import * as fs from "fs"
 import * as path from "path"
 import {parse, Source} from "graphql"
 import process from "process"
-import {buildModel, buildSchema} from "./gql/schema"
+import {buildModel, buildSchema} from "./model.schema"
 import type {Model} from "./model"
 
 

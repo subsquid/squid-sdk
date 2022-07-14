@@ -2,7 +2,7 @@ import {assertNotNull} from "@subsquid/util-internal"
 import {Client} from "gql-test-client"
 import {parse} from "graphql"
 import {Client as PgClient, ClientBase, Pool} from "pg"
-import {buildModel, buildSchema} from "../gql/schema"
+import {buildModel, buildSchema} from "../model.schema"
 import {ListeningServer, serve} from "../server"
 
 

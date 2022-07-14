@@ -1,5 +1,5 @@
 import {GraphQLScalarType} from "graphql"
-import {invalidFormat} from "../../util"
+import {invalidFormat} from "../util"
 
 
 export const DateTimeScalar = new GraphQLScalarType({

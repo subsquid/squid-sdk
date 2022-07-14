@@ -7,7 +7,7 @@ import type {GraphQLResolveInfo} from "graphql"
 import {Pool} from "pg"
 import {Database, PoolTransaction, Transaction} from "./db"
 import type {Dialect} from "./dialect"
-import {customScalars} from "./gql/scalars"
+import {customScalars} from "./scalars"
 import type {Entity, JsonObject, Model} from "./model"
 import {QueryBuilder} from "./queryBuilder"
 import {

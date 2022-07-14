@@ -4,9 +4,9 @@ import assert from "assert"
 import {DocumentNode, Kind, parse, print} from "graphql"
 import type {Dialect} from "../dialect"
 import type {Entity, Enum, FTS_Query, Interface, JsonObject, Model, Prop, Union} from "../model"
-import {getOrderByMapping} from "../orderBy"
+import {getOrderByMapping} from "../opencrud/orderBy"
 import {toQueryListField} from "../util"
-import {customScalars} from "./scalars"
+import {customScalars} from "../scalars"
 
 
 export function generateOpenCrudQueries(model: Model, dialect: Dialect): string {

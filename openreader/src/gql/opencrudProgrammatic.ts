@@ -14,7 +14,7 @@ import {
 } from "graphql"
 import type {Entity, Model, Name, Prop} from "../model"
 import {toQueryListField} from "../util"
-import {customScalars} from "./scalars"
+import {customScalars} from "../scalars"
 
 
 type TypeMap = Map<Name, GraphQLOutputType>
