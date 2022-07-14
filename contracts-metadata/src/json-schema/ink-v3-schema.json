@@ -13,8 +13,7 @@
         "V0": {
           "$ref": "#/definitions/MetadataVersionDeprecated"
         }
-      },
-      "additionalProperties": false
+      }
     },
     {
       "description": "Version 1 of the contract metadata.",
@@ -26,8 +25,7 @@
         "V1": {
           "$ref": "#/definitions/MetadataVersionDeprecated"
         }
-      },
-      "additionalProperties": false
+      }
     },
     {
       "description": "Version 2 of the contract metadata.",
@@ -39,8 +37,7 @@
         "V2": {
           "$ref": "#/definitions/MetadataVersionDeprecated"
         }
-      },
-      "additionalProperties": false
+      }
     },
     {
       "description": "Version 3 of the contract metadata.",
@@ -52,8 +49,7 @@
         "V3": {
           "$ref": "#/definitions/InkProject"
         }
-      },
-      "additionalProperties": false
+      }
     }
   ],
   "definitions": {
