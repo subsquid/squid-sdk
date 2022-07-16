@@ -260,7 +260,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.evmLogs.push({
-            contract: contractAddress,
+            contract: contractAddress.toLowerCase(),
             filter: options?.filter,
             data: options?.data
         })

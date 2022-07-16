@@ -186,7 +186,7 @@ export class Ingest<R extends BatchRequest> {
 
         args.evmLogs = req.getEvmLogs().map(({contract, filter, data}) => {
             return {
-                contract: contract.toLowerCase(),
+                contract,
                 filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
                 data: toGatewayFields(data)
             }
