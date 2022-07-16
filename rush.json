@@ -464,6 +464,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/ink-abi",
+      "projectFolder": "ink-abi",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "projectFolder": "ink-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "shouldPublish": true,
@@ -524,18 +536,6 @@
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
       "projectFolder": "substrate-metadata-explorer",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/contracts-metadata",
-      "projectFolder": "contracts-metadata",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/contracts-typegen",
-      "projectFolder": "contracts-typegen",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

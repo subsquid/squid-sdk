@@ -7,7 +7,7 @@ type Transfer @entity {
   id: ID!
   from: Owner
   to: Owner
-  value: BigInt!
-  timestamp: BigInt!
+  amount: BigInt!
+  timestamp: DateTime!
   block: Int!
 }

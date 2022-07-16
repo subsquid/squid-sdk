@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/contracts-metadata",
+  "name": "@subsquid/ink-abi",
   "version": "0.0.0",
-  "description": "Contracts pallet metadata tools for squid framework",
+  "description": "Ink! ABI tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {

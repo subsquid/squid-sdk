@@ -1,7 +1,7 @@
 import {Codec as ScaleCodec, Src} from "@subsquid/scale-codec"
 import {Ti} from "@subsquid/substrate-metadata"
 import {AbiDescription, SelectorsMap} from "./abi-description"
-import {getInkProject} from "./json-schema/validator"
+import {getInkProject} from "./metadata/validator"
 
 
 export class Abi {

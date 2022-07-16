@@ -7,7 +7,7 @@ import {
     InkProject,
     MessageSpecFor_PortableForm,
     PortableType
-} from "./json-schema/interfaces"
+} from "./metadata/interfaces"
 
 
 export interface SelectorsMap {
@@ -87,7 +87,7 @@ export class AbiDescription {
         return this.add({
             kind: TypeKind.Variant,
             variants,
-            path: ['ContractEvent']
+            path: ['Event']
         })
     }
 

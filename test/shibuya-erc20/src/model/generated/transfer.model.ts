@@ -20,10 +20,10 @@ export class Transfer {
   to!: Owner | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  value!: bigint
+  amount!: bigint
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  timestamp!: bigint
+  @Column_("timestamp with time zone", {nullable: false})
+  timestamp!: Date
 
   @Column_("int4", {nullable: false})
   block!: number
