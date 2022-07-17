@@ -158,27 +158,27 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     output.block("export class Contract ", () => {
         output.line(`private readonly _chain: Chain`);
         output.line(`private readonly blockHeight: number`);
-        output.line(`private readonly contract: string`);
+        output.line(`readonly address: string`);
         output.line();
-        output.line(`constructor(ctx: BlockContext, contract: string)`);
-        output.line(`constructor(ctx: ChainContext, block: Block, contract: string)`);
-        output.block(`constructor(ctx: BlockContext, blockOrContract: Block | string, contract?: string)`, () => {
+        output.line(`constructor(ctx: BlockContext, address: string)`);
+        output.line(`constructor(ctx: ChainContext, block: Block, address: string)`);
+        output.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
             output.line(`this._chain = ctx._chain`);
-            output.block(`if (typeof blockOrContract === 'string') `, () => {
+            output.block(`if (typeof blockOrAddress === 'string') `, () => {
                 output.line(`this.blockHeight = ctx.block.height`)
-                output.line(`this.contract = blockOrContract`)
+                output.line(`this.address = ethers.utils.getAddress(blockOrAddress)`)
             })
             output.block(`else `, () => {
-                output.line(`assert(contract != null)`)
-                output.line(`this.blockHeight = blockOrContract.height`)
-                output.line(`this.contract = contract`)
+                output.line(`assert(address != null)`)
+                output.line(`this.blockHeight = blockOrAddress.height`)
+                output.line(`this.address = ethers.utils.getAddress(address)`)
             })
         })
         output.line();
         output.block(`private async call(name: string, args: any[]) : Promise<ReadonlyArray<any>>`, () => {
             output.line(`const fragment = abi.getFunction(name)`);
             output.line(`const data = abi.encodeFunctionData(fragment, args)`);
-            output.line(`const result = await this._chain.client.call('eth_call', [{to: this.contract, data}, this.blockHeight])`);
+            output.line(`const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`);
             output.line(`return abi.decodeFunctionResult(fragment, result)`);
         })
         for (const decl of abiFunctions) {

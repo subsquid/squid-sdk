@@ -99,27 +99,27 @@ interface Chain  {
 export class Contract  {
   private readonly _chain: Chain
   private readonly blockHeight: number
-  private readonly contract: string
+  readonly address: string
 
-  constructor(ctx: BlockContext, contract: string)
-  constructor(ctx: ChainContext, block: Block, contract: string)
-  constructor(ctx: BlockContext, blockOrContract: Block | string, contract?: string) {
+  constructor(ctx: BlockContext, address: string)
+  constructor(ctx: ChainContext, block: Block, address: string)
+  constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string) {
     this._chain = ctx._chain
-    if (typeof blockOrContract === 'string')  {
+    if (typeof blockOrAddress === 'string')  {
       this.blockHeight = ctx.block.height
-      this.contract = blockOrContract
+      this.address = ethers.utils.getAddress(blockOrAddress)
     }
     else  {
-      assert(contract != null)
-      this.blockHeight = blockOrContract.height
-      this.contract = contract
+      assert(address != null)
+      this.blockHeight = blockOrAddress.height
+      this.address = ethers.utils.getAddress(address)
     }
   }
 
   private async call(name: string, args: any[]) : Promise<ReadonlyArray<any>> {
     const fragment = abi.getFunction(name)
     const data = abi.encodeFunctionData(fragment, args)
-    const result = await this._chain.client.call('eth_call', [{to: this.contract, data}, this.blockHeight])
+    const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
     return abi.decodeFunctionResult(fragment, result)
   }
 
