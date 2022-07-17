@@ -477,7 +477,7 @@ export class SubstrateProcessor<Store> {
         }
         this.hooks.evmLog.push({
             handler,
-            contractAddress,
+            contractAddress: contractAddress.toLowerCase(),
             ...options
         })
         return this
@@ -520,7 +520,7 @@ export class SubstrateProcessor<Store> {
         }
         this.hooks.contractsContractEmitted.push({
             handler,
-            contractAddress,
+            contractAddress: contractAddress.toLowerCase(),
             ...options
         })
         return this
