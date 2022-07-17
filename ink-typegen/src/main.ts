@@ -10,7 +10,7 @@ export function run(): void {
     let program = new Command()
 
     program.description(`
-Generates TypeScript API for decoding ink! events and messages.
+Generates TypeScript API for decoding ink! events, messages and constructors.
     `.trim())
 
     program.requiredOption('--abi <path>', 'path to a JSON metadata file')

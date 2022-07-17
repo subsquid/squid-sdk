@@ -7332,12 +7332,13 @@ packages:
     dev: false
 
   file:projects/ink-typegen.tgz:
-    resolution: {integrity: sha512-Djbi7mL1+TYq6py8557SNfcpuWWoJBucJLGTYz84tmr7874BGK1SU2Ti4U9I+LJLfAROPSnA6Yb4ZJeKTQY4gg==, tarball: file:projects/ink-typegen.tgz}
+    resolution: {integrity: sha512-QpzbZd5CqVb0+IigaQjH9Lc4yGk1266ZLc2wU1/UMsi1V2HdRuRzu+OC7HWHBASHZi/t/Tn1MwjOf59JCqJs+A==, tarball: file:projects/ink-typegen.tgz}
     name: '@rush-temp/ink-typegen'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.41
       commander: 9.3.0
+      typescript: 4.7.4
     dev: false
 
   file:projects/logger.tgz:
