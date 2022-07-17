@@ -649,16 +649,16 @@ export type Event = Event_Transfer | Event_Approval
 
 export interface Event_Transfer {
   __kind: 'Transfer'
-  from: (Uint8Array | undefined)
-  to: (Uint8Array | undefined)
-  value: bigint
+  from: (AccountId | undefined)
+  to: (AccountId | undefined)
+  value: Balance
 }
 
 export interface Event_Approval {
   __kind: 'Approval'
-  owner: Uint8Array
-  spender: Uint8Array
-  value: bigint
+  owner: AccountId
+  spender: AccountId
+  value: Balance
 }
 
 export type Message = Message_total_supply | Message_balance_of | Message_allowance | Message_transfer | Message_approve | Message_transfer_from
@@ -677,7 +677,7 @@ export interface Message_total_supply {
  */
 export interface Message_balance_of {
   __kind: 'balance_of'
-  owner: Uint8Array
+  owner: AccountId
 }
 
 /**
@@ -687,8 +687,8 @@ export interface Message_balance_of {
  */
 export interface Message_allowance {
   __kind: 'allowance'
-  owner: Uint8Array
-  spender: Uint8Array
+  owner: AccountId
+  spender: AccountId
 }
 
 /**
@@ -703,8 +703,8 @@ export interface Message_allowance {
  */
 export interface Message_transfer {
   __kind: 'transfer'
-  to: Uint8Array
-  value: bigint
+  to: AccountId
+  value: Balance
 }
 
 /**
@@ -717,8 +717,8 @@ export interface Message_transfer {
  */
 export interface Message_approve {
   __kind: 'approve'
-  spender: Uint8Array
-  value: bigint
+  spender: AccountId
+  value: Balance
 }
 
 /**
@@ -739,9 +739,9 @@ export interface Message_approve {
  */
 export interface Message_transfer_from {
   __kind: 'transfer_from'
-  from: Uint8Array
-  to: Uint8Array
-  value: bigint
+  from: AccountId
+  to: AccountId
+  value: Balance
 }
 
 export type Constructor = Constructor_new
@@ -751,7 +751,11 @@ export type Constructor = Constructor_new
  */
 export interface Constructor_new {
   __kind: 'new'
-  initialSupply: bigint
+  initialSupply: Balance
 }
+
+export type AccountId = Uint8Array
+
+export type Balance = bigint
 
 export type Result<T, E> = {__kind: 'Ok', value: T} | {__kind: 'Err', value: E}

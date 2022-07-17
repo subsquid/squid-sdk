@@ -1,3 +1,3 @@
-# @subsquid/contracts-metadata
+# @subsquid/ink-abi
 
 Contracts pallet metadata tools for squid framework.

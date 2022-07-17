@@ -1,9 +1,9 @@
 import {AbiDescription} from "@subsquid/ink-abi/lib/abi-description"
-import {InkProject} from "@subsquid/ink-abi/lib/metadata/interfaces"
+import {InkProject, TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/interfaces"
 import {getInkProject} from "@subsquid/ink-abi/lib/metadata/validator"
 import {Interfaces} from "@subsquid/substrate-typegen/lib/ifs"
-import {deriveName, distributeNames, needsName} from "@subsquid/substrate-typegen/lib/names"
-import {def} from "@subsquid/util-internal"
+import {Names} from "@subsquid/substrate-typegen/lib/names"
+import {def, last} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import fs from "fs"
 
@@ -44,46 +44,32 @@ export class Typegen {
     @def
     nameAssignment(): Map<Ti, string> {
         let d = this.description()
-        let assignment = new Map()
-        let reserved = new Set<string>()
+        let names = new Names(d.types())
 
-        reserved.add('Result')
-        reserved.add('metadata')
+        names.reserve('metadata')
+        names.assign(d.event(), 'Event')
+        names.assign(d.messages(), 'Message')
+        names.assign(d.constructors(), 'Constructor')
 
-        function assign(ti: Ti, name: string): void {
-            assignment.set(ti, name)
-            reserved.add(name)
+        function addArgAlias({type}: {type: TypeSpecFor_PortableForm}): void {
+            if (type.displayName?.length) {
+                names.alias(type.type, last(type.displayName))
+            }
         }
 
-        assign(d.event(), 'Event')
-        assign(d.messages(), 'Message')
-        assign(d.constructors(), 'Constructor')
-
-        let names = new Map<string, Ti[]>()
-        let types = d.types()
-
-        types.forEach((type, ti) => {
-            if (assignment.has(ti)) return
-            let name = deriveName(type)
-            if (name && reserved.has(name)) {
-                name = undefined
-            }
-            if (name == null && needsName(types, ti)) {
-                name = `Type_${ti}`
-            }
-            if (name) {
-                let list = names.get(name)
-                if (list == null) {
-                    list = []
-                    names.set(name, list)
-                }
-                list.push(ti)
-            }
+        this.project().spec.events.forEach(e => {
+            e.args.forEach(addArgAlias)
         })
 
-        distributeNames(types, names.entries(), assignment)
+        this.project().spec.messages.forEach(m => {
+            m.args.forEach(addArgAlias)
+        })
 
-        return assignment
+        this.project().spec.constructors.forEach(c => {
+            c.args.forEach(addArgAlias)
+        })
+
+        return names.getAssignment()
     }
 
     @def
