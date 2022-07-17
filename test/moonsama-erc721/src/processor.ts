@@ -1,6 +1,6 @@
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
-import {contract, createContractEntity, getContractEntity} from "./contract"
+import {contractAddress, createContractEntity, getContractEntity} from "./contract"
 import * as erc721 from "./erc721"
 import {Owner, Token, Transfer} from "./model"
 
@@ -9,7 +9,8 @@ const processor = new SubstrateProcessor(new TypeormDatabase())
 
 
 processor.setDataSource({
-    archive: 'https://moonriver.archive.subsquid.io/graphql'
+    archive: 'https://moonriver.archive.subsquid.io/graphql',
+    chain: 'wss://moonriver-rpc.dwellir.com'
 })
 
 
@@ -19,7 +20,7 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
 
 
 processor.addEvmLogHandler(
-    contract.address,
+    contractAddress,
     {
         filter: [
             erc721.events['Transfer(address,address,uint256)'].topic
@@ -42,6 +43,7 @@ processor.addEvmLogHandler(
 
         let token = await ctx.store.get(Token, transfer.tokenId.toString())
         if (token == null) {
+            let contract = new erc721.Contract(ctx, contractAddress)
             token = new Token({
                 id: transfer.tokenId.toString(),
                 uri: await contract.tokenURI(transfer.tokenId),
