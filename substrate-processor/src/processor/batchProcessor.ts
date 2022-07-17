@@ -289,7 +289,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.contractsEvents.push({
-            contract: contractAddress,
+            contract: contractAddress.toLowerCase(),
             data: options?.data
         })
         this.add(req, options?.range)

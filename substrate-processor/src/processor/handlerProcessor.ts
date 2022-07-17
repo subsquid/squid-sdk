@@ -520,7 +520,7 @@ export class SubstrateProcessor<Store> {
         }
         this.hooks.contractsContractEmitted.push({
             handler,
-            contractAddress,
+            contractAddress: contractAddress.toLowerCase(),
             ...options
         })
         return this
