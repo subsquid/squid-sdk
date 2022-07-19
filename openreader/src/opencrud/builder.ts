@@ -1,18 +1,63 @@
-import {unexpectedCase} from "@subsquid/util-internal"
+import {def, unexpectedCase} from "@subsquid/util-internal"
+import {toCamelCase, toPlural} from "@subsquid/util-naming"
 import assert from "assert"
-import {GraphQLInterfaceType, GraphQLObjectType, GraphQLOutputType} from "graphql"
-import {Entity, JsonObject, Model} from "../model"
+import {
+    GraphQLBoolean,
+    GraphQLEnumType,
+    GraphQLFieldConfig, GraphQLFloat,
+    GraphQLInputObjectType,
+    GraphQLInputType,
+    GraphQLInt,
+    GraphQLInterfaceType,
+    GraphQLList,
+    GraphQLNonNull,
+    GraphQLObjectType,
+    GraphQLOutputType,
+    GraphQLScalarType, GraphQLSchema, GraphQLString,
+    GraphQLUnionType
+} from "graphql"
+import {
+    GraphQLEnumValueConfigMap,
+    GraphQLFieldConfigArgumentMap,
+    GraphQLFieldConfigMap,
+    GraphQLInputFieldConfigMap
+} from "graphql/type/definition"
+import {Entity, Interface, JsonObject, Model, Prop} from "../model"
+import {getObject, getUnionProps} from "../model.tools"
+import {customScalars} from "../scalars"
+import {getOrderByMapping} from "./orderBy"
 
 
 export class SchemaBuilder {
     private types = new Map<string, GraphQLOutputType>()
+    private where = new Map<string, GraphQLInputType>()
+    private orderBy = new Map<string, GraphQLEnumType>()
 
-    constructor(private model: Model) {
-    }
+    constructor(private model: Model) {}
 
     private get(name: string): GraphQLOutputType
     private get<T extends GraphQLOutputType>(name: string, kind: Type<T>): T
     private get(name: string, kind?: Type<any>): GraphQLOutputType {
+        switch(name) {
+            case 'ID':
+            case 'String':
+                return GraphQLString
+            case 'Int':
+                return GraphQLInt
+            case 'Boolean':
+                return GraphQLBoolean
+            case 'Float':
+                return GraphQLFloat
+            case 'DateTime':
+                return customScalars.DateTime
+            case 'BigInt':
+                return customScalars.BigInt
+            case 'Bytes':
+                return customScalars.Bytes
+            case 'JSON':
+                return customScalars.JSON
+        }
+
         let type = this.types.get(name)
         if (type == null) {
             type = this.buildType(name)
@@ -25,22 +70,297 @@ export class SchemaBuilder {
     }
 
     private buildType(name: string): GraphQLOutputType {
-        let item = this.model[name]
+        const item = this.model[name]
         switch(item.kind) {
             case "entity":
             case "object":
-                return this.buildObjectType(name, item)
+                return new GraphQLObjectType({
+                    name,
+                    description: item.description,
+                    interfaces: () => item.interfaces?.map(name => this.get(name, GraphQLInterfaceType)),
+                    fields: () => this.buildObjectFields(item)
+                })
+            case "interface":
+                return new GraphQLInterfaceType({
+                    name,
+                    description: item.description,
+                    fields: () => this.buildObjectFields(item)
+                })
+            case "enum":
+                return new GraphQLEnumType({
+                    name,
+                    description: item.description,
+                    values: Object.keys(item.values).reduce((values, variant) => {
+                        values[variant] = {value: variant}
+                        return values
+                    }, {} as GraphQLEnumValueConfigMap)
+                })
+            case "union":
+                return new GraphQLUnionType({
+                    name,
+                    description: item.description,
+                    types: () => item.variants.map(variant => this.get(variant, GraphQLObjectType)),
+                    resolveType(value: any) {
+                        return value.isTypeOf
+                    }
+                })
             default:
                 throw unexpectedCase()
         }
     }
 
-    private buildObjectType(name: string, object: Entity | JsonObject): GraphQLObjectType {
-        return new GraphQLObjectType({
-            name,
-            description: object.description,
-            interfaces: () => object.interfaces?.map(name => this.get(name, GraphQLInterfaceType)),
-            fields: {}
+    private buildObjectFields(object: Entity | JsonObject | Interface): GraphQLFieldConfigMap<any, any> {
+        let fields: GraphQLFieldConfigMap<any, any> = {}
+        for (let key in object.properties) {
+            let prop = object.properties[key]
+            let field: GraphQLFieldConfig<any, any> = {
+                description: prop.description,
+                type: this.getPropType(prop)
+            }
+            if (prop.type.kind == 'list-lookup') {
+                field.args = this.entityListArguments(prop.type.entity)
+            }
+            fields[key] = field
+        }
+        return fields
+    }
+
+    private getPropType(prop: Prop): GraphQLOutputType {
+        let type: GraphQLOutputType
+        switch(prop.type.kind) {
+            case "list":
+                type = new GraphQLList(this.getPropType(prop.type.item))
+                break
+            case "fk":
+                type = this.get(prop.type.foreignEntity)
+                break
+            case "lookup":
+                return this.get(prop.type.entity)
+            case "list-lookup":
+                return new GraphQLNonNull(
+                    new GraphQLList(
+                        new GraphQLNonNull(
+                            this.get(prop.type.entity)
+                        )
+                    )
+                )
+            default:
+                type = this.get(prop.type.name)
+        }
+        if (!prop.nullable) {
+            type = new GraphQLNonNull(type)
+        }
+        return type
+    }
+
+    private entityListArguments(entityName: string): GraphQLFieldConfigArgumentMap {
+        return {
+            where: {type: this.getWhere(entityName)},
+            orderBy: {type: this.getOrderBy(entityName)},
+            offset: {type: GraphQLInt},
+            limit: {type: GraphQLInt}
+        }
+    }
+
+    private getWhere(name: string): GraphQLInputType {
+        let where = this.where.get(name)
+        if (where) return where
+
+        const object = this.model[name]
+        switch(object.kind) {
+            case "entity":
+            case "object":
+            case "union":
+                break
+            default:
+                throw unexpectedCase(object.kind)
+        }
+
+        where = new GraphQLInputObjectType({
+            name: `${name}WhereInput`,
+            fields: () => {
+                let fields: GraphQLInputFieldConfigMap = {}
+                let properties
+                if (object.kind == 'union') {
+                    properties = getUnionProps(this.model, name).properties
+                } else {
+                    properties = object.properties
+                }
+
+                for (let key in properties) {
+                    this.buildPropWhereFilters(key, properties[key], fields)
+                }
+
+                if (object.kind == 'entity') {
+                    let whereList = new GraphQLList(new GraphQLNonNull(this.getWhere(name)))
+                    fields['AND'] = {
+                        type: whereList
+                    }
+                    fields['OR'] = {
+                        type: whereList
+                    }
+                }
+
+                return fields
+            }
+        })
+        this.where.set(name, where)
+        return where
+    }
+
+    private buildPropWhereFilters(key: string, prop: Prop, fields: GraphQLInputFieldConfigMap): void {
+        switch(prop.type.kind) {
+            case "scalar":{
+                let type = this.get(prop.type.name, GraphQLScalarType)
+                let listType = new GraphQLList(new GraphQLNonNull(type))
+
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_eq`] = {type}
+                fields[`${key}_not_eq`] = {type}
+
+                switch(prop.type.name) {
+                    case 'ID':
+                    case 'String':
+                    case 'Int':
+                    case 'Float':
+                    case 'DateTime':
+                    case 'BigInt':
+                        fields[`${key}_gt`] = {type}
+                        fields[`${key}_gte`] = {type}
+                        fields[`${key}_lt`] = {type}
+                        fields[`${key}_lte`] = {type}
+                        fields[`${key}_in`] = {type: listType}
+                        fields[`${key}_not_in`] = {type: listType}
+                        break
+                    case "JSON":
+                        fields[`${key}_jsonContains`] = {type}
+                        fields[`${key}_jsonHasKey`] = {type}
+                        break
+                }
+
+                if (prop.type.name == 'ID' || prop.type.name == 'String') {
+                    fields[`${key}_contains`] = {type}
+                    fields[`${key}_not_contains`] = {type}
+                    fields[`${key}_containsInsensitive`] = {type}
+                    fields[`${key}_not_containsInsensitive`] = {type}
+                    fields[`${key}_startsWith`] = {type}
+                    fields[`${key}_not_startsWith`] = {type}
+                    fields[`${key}_endsWith`] = {type}
+                    fields[`${key}_not_endsWith`] = {type}
+                }
+
+                break
+            }
+            case "enum": {
+                let type = this.get(prop.type.name, GraphQLEnumType)
+                let listType = new GraphQLList(new GraphQLNonNull(type))
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_eq`] = {type}
+                fields[`${key}_not_eq`] = {type}
+                fields[`${key}_in`] = {type: listType}
+                fields[`${key}_not_in`] = {type: listType}
+                break
+            }
+            case "list":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                if (prop.type.item.type.kind == 'scalar' || prop.type.item.type.kind == 'enum') {
+                    let item = this.getPropType(prop.type.item)
+                    let list = new GraphQLList(item)
+                    fields[`${key}_containsAll`] = {type: list}
+                    fields[`${key}_containsAny`] = {type: list}
+                    fields[`${key}_containsNone`] = {type: list}
+                }
+                break
+            case "object":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                if (this.hasFilters(getObject(this.model, prop.type.name))) {
+                    fields[key] = {type: this.getWhere(prop.type.name)}
+                }
+                break
+            case "union":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[key] = {type: this.getWhere(prop.type.name)}
+                break
+            case "fk":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[key] = {type: this.getWhere(prop.type.foreignEntity)}
+                break
+            case "lookup":
+                fields[key] = {type: this.getWhere(prop.type.entity)}
+                break
+            case "list-lookup": {
+                let where = this.getWhere(prop.type.entity)
+                fields[`${key}_every`] = {type: where}
+                fields[`${key}_some`] = {type: where}
+                fields[`${key}_none`] = {type: where}
+                break
+            }
+        }
+    }
+
+    private hasFilters(obj: JsonObject): boolean {
+        for (let key in obj.properties) {
+            let propType = obj.properties[key].type
+            switch(propType.kind) {
+                case 'scalar':
+                case 'enum':
+                case 'union':
+                    return true
+                case 'object': {
+                    let ref = getObject(this.model, propType.name)
+                    if (ref !== obj && this.hasFilters(ref)) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+    private getOrderBy(entityName: string): GraphQLEnumType {
+        let orderBy = this.orderBy.get(entityName)
+        if (orderBy) return orderBy
+
+        let values: GraphQLEnumValueConfigMap = {}
+        for (let variant of getOrderByMapping(this.model, entityName).keys()) {
+            values[variant] = {value: variant}
+        }
+
+        orderBy = new GraphQLEnumType({
+            name: `${entityName}OrderByInput`,
+            values
+        })
+        this.orderBy.set(entityName, orderBy)
+        return orderBy
+    }
+
+    @def
+    query(): GraphQLObjectType {
+        let fields: GraphQLFieldConfigMap<any, any> = {}
+
+        for (let name in this.model) {
+            let item = this.model[name]
+            switch(item.kind) {
+                case "entity": {
+                    fields[toPlural(toCamelCase(name))] = {
+                        type: new GraphQLList(new GraphQLNonNull(this.get(name))),
+                        args: this.entityListArguments(name)
+                    }
+                    break
+                }
+            }
+        }
+
+        return new GraphQLObjectType<any, any>({
+            name: 'Query',
+            fields
+        })
+    }
+
+    @def
+    build(): GraphQLSchema {
+        return new GraphQLSchema({
+            query: this.query()
         })
     }
 }
