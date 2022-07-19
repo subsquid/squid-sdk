@@ -2,20 +2,14 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} f
 import * as marshal from "./marshal"
 
 @Entity_()
-export class Flip {
-  constructor(props?: Partial<Flip>) {
+export class Owner {
+  constructor(props?: Partial<Owner>) {
     Object.assign(this, props)
   }
 
   @PrimaryColumn_()
   id!: string
 
-  @Column_("bool", {nullable: false})
-  value!: boolean
-
-  @Column_("text", {nullable: false})
-  caller!: string
-
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  timestamp!: bigint
+  balance!: bigint
 }

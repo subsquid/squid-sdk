@@ -464,6 +464,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/ink-abi",
+      "projectFolder": "ink-abi",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "projectFolder": "ink-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "shouldPublish": true,
@@ -695,8 +707,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "wasm-contracts",
-      "projectFolder": "test/wasm-contracts",
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
       "shouldPublish": false
     }
   ]
