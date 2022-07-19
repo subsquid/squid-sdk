@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+
+## 1.1.0
+Tue, 19 Jul 2022 03:09:10 GMT
+
+### Minor changes
+
+- Introduce type-safe RPC client for EVM contracts
 
 ## 1.0.2
 Wed, 06 Jul 2022 09:25:54 GMT

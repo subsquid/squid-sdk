@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.5.0",
+      "tag": "@subsquid/substrate-processor_v1.5.0",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "convert contract addresses to lower case in configuration methods"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.1",
       "tag": "@subsquid/substrate-processor_v1.4.1",
       "date": "Sun, 10 Jul 2022 13:47:35 GMT",

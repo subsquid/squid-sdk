@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/substrate-ingest_v0.1.3",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of `Utility.force_batch` call (were crashing when processing batches with failed items)"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/substrate-ingest_v0.1.2",
       "date": "Tue, 12 Jul 2022 17:07:20 GMT",

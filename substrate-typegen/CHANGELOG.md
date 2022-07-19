@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+
+## 1.2.0
+Tue, 19 Jul 2022 03:09:10 GMT
+
+### Minor changes
+
+- refactor type name assignment procedure (might affect names of some generated types)
 
 ## 1.1.0
 Wed, 06 Jul 2022 09:25:54 GMT

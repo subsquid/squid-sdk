@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Tue, 12 Jul 2022 17:07:20 GMT and should not be manually modified.
+This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+
+## 0.1.3
+Tue, 19 Jul 2022 03:09:10 GMT
+
+### Patches
+
+- fix handling of `Utility.force_batch` call (were crashing when processing batches with failed items)
 
 ## 0.1.2
 Tue, 12 Jul 2022 17:07:20 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/evm-typegen_v1.1.0",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Introduce type-safe RPC client for EVM contracts"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/evm-typegen_v1.0.2",
       "date": "Wed, 06 Jul 2022 09:25:54 GMT",

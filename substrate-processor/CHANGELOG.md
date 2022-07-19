@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 10 Jul 2022 13:47:35 GMT and should not be manually modified.
+This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+
+## 1.5.0
+Tue, 19 Jul 2022 03:09:10 GMT
+
+### Minor changes
+
+- convert contract addresses to lower case in configuration methods
 
 ## 1.4.1
 Sun, 10 Jul 2022 13:47:35 GMT
