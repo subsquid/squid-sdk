@@ -285,7 +285,7 @@ export class CallParser {
         completedEvent.call_id = batch.id
         for (let i = batch.children.length - 1; i >=0; i--) {
             let item = batch.children[i]
-            let end = this.find(parent, FORCE_BATCH_ITEM)
+            let end = this.find(batch, FORCE_BATCH_ITEM)
             end.event.call_id = batch.id
             if (end.ok) {
                 let boundary = this.boundary
@@ -297,9 +297,9 @@ export class CallParser {
             } else {
                 this.setError(item, end.error)
                 this.skipCall(item, false)
-                this.takeEvents(batch)
             }
         }
+        this.takeEvents(batch)
     }
 
     private visitWrapper(end: (event: model.Event) => CallEnd | undefined, call: Call, parent?: Call): void {
