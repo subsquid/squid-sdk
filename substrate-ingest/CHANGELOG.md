@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Jul 2022 13:59:43 GMT and should not be manually modified.
+
+## 0.2.0
+Wed, 20 Jul 2022 13:59:43 GMT
+
+### Minor changes
+
+- store gear program_id in the event table
 
 ## 0.1.3
 Tue, 19 Jul 2022 03:09:10 GMT
