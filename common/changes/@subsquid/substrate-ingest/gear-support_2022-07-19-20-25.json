@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/substrate-ingest",
       "comment": "store gear program_id in the event table",
-      "type": "patch"
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-ingest"
