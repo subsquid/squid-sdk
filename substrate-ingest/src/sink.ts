@@ -138,6 +138,10 @@ export class PostgresSink implements Sink {
                 return {...event, contract: toHex(event.args.address)}
             case 'Contracts.ContractEmitted':
                 return {...event, contract: toHex(event.args.contract)}
+            case 'Gear.MessageEnqueued':
+                return {...event, contract: toHex(event.args.destination)}
+            case 'Gear.UserMessageSent':
+                return {...event, contract: toHex(event.args.message.source)}
             default:
                 return event
         }
