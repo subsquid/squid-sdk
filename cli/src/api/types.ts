@@ -57,7 +57,7 @@ export type SecretsListResponse = {
   secrets: Record<string, string>;
 }
 
-export type CreateSecretResponse = {
+export type ChangeSecretResponse = {
   name: string;
   result: string;
 }

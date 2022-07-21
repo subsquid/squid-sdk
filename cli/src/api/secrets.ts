@@ -1,13 +1,13 @@
-import { CreateSecretResponse, SecretsListResponse } from './types';
+import { ChangeSecretResponse, SecretsListResponse } from './types';
 import { api } from './api';
 
-export async function createSecret(name: string, value: string): Promise<CreateSecretResponse> {
-    const { body } = await api<CreateSecretResponse>( {
+export async function createSecret(name: string, value: string): Promise<ChangeSecretResponse> {
+    const { body } = await api<ChangeSecretResponse>( {
         method: 'post',
         path: '/client/secret/create',
         data: { name, value }
     });
-    return body || { result: "error" }
+    return body
 }
 
 export async function listSecrets(): Promise<SecretsListResponse> {
@@ -16,4 +16,22 @@ export async function listSecrets(): Promise<SecretsListResponse> {
         path: '/client/secret/list'
     });
     return body || { secrets: {} }
+}
+
+export async function removeSecret(name: string): Promise<ChangeSecretResponse> {
+    const { body } = await api<ChangeSecretResponse>( {
+        method: 'post',
+        path: '/client/secret/remove',
+        data: { name }
+    });
+    return body
+}
+
+export async function updateSecret(name: string, value: string): Promise<ChangeSecretResponse> {
+    const { body } = await api<ChangeSecretResponse>( {
+        method: 'post',
+        path: '/client/secret/update',
+        data: { name, value }
+    });
+    return body
 }
