@@ -30,6 +30,9 @@
       },
       "squid": {
         "description": "Squid management commands (SaaS)"
+      },
+      "user": {
+        "description": "User management commands (Secrets)"
       }
     }
   },

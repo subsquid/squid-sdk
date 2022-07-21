@@ -53,6 +53,15 @@ export type SquidResponse = {
   createdAt: Date
 };
 
+export type SecretsListResponse = {
+  secrets: Record<string, string>;
+}
+
+export type CreateSecretResponse = {
+  name: string;
+  result: string;
+}
+
 export type ManifestResponse = {
   squid: SquidResponse
 }
