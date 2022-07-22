@@ -4,6 +4,9 @@ import {Account, TokenMint} from './model'
 import {decodeNFTInput} from './program'
 
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+
 const NFT_PROGRAM_ID = '0x0a19fc36694e4e075d1183ea92b90c79be8a23982004c76b955f5c36323770af'
 
 
