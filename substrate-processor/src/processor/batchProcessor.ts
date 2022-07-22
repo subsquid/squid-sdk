@@ -296,6 +296,54 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return this
     }
 
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", true>>>
+
+    addGearMessageEnqueued<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", R>>>
+
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearMessagesEnqueued.push({
+            program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", true>>>
+
+    addGearUserMessageSent<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", R>>>
+
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearUserMessagesSent.push({
+            program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
     /**
      * By default, the processor will fetch only blocks
      * which contain requested items. This method

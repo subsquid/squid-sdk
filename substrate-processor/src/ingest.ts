@@ -199,6 +199,20 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
+        args.gearMessagesEnqueued = req.getGearMessagesEnqueued().map(({program, data}) => {
+            return {
+                program,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.gearUserMessagesSent = req.getGearUserMessagesSent().map(({program, data}) => {
+            return {
+                program,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
         let q = new Output()
         q.block(`query`, () => {
             q.block(`status`, () => {

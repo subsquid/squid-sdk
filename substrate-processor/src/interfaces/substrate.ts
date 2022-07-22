@@ -166,3 +166,30 @@ export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEv
         data: string,
     }
 }
+
+
+export interface GearMessageEnqueuedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Gear.MessageEnqueued'
+    args: {
+        id: string,
+        entry: {__kind: 'Init' | 'Handle' | 'Reply'}
+        source: string
+        destination: string
+    }
+}
+
+
+export interface GearUserMessageSentEvent extends SubstrateFinalizationEvent {
+    name: 'Gear.UserMessageSent'
+    args: {
+        message: {
+            id: string
+            reply?: [string, number]
+            value: bigint
+            source: string
+            payload: string
+            destination: string
+        }
+        expiration?: number
+    }
+}
