@@ -1,0 +1,13 @@
+type Account @entity {
+  id: ID!
+}
+
+type TokenMint @entity {
+  id: ID!
+  name: String!
+  description: String!
+  media: String!
+  reference: String!
+  account: Account!
+  successful: Boolean
+}

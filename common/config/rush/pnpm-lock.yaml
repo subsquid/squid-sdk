@@ -18,7 +18,7 @@ specifiers:
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
-  '@rush-temp/gear-nft-marketplace': file:./projects/gear-nft-marketplace.tgz
+  '@rush-temp/gear-nft': file:./projects/gear-nft.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/ink-abi': file:./projects/ink-abi.tgz
@@ -131,7 +131,7 @@ dependencies:
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_supports-color@8.1.1
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz_supports-color@8.1.1
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
-  '@rush-temp/gear-nft-marketplace': file:projects/gear-nft-marketplace.tgz_f3112c9ccceff8ba6e1ae691573f7615
+  '@rush-temp/gear-nft': file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz_supports-color@8.1.1
   '@rush-temp/ink-abi': file:projects/ink-abi.tgz
@@ -7273,10 +7273,10 @@ packages:
       typescript: 4.7.4
     dev: false
 
-  file:projects/gear-nft-marketplace.tgz_f3112c9ccceff8ba6e1ae691573f7615:
-    resolution: {integrity: sha512-RcBQCfjEj7dDykXOoY8DPxhnLVg1O0EYtgzFuN23lVTZPyfyM1kGV3oY91GEVW71+wL8MXPY7kBE6zDtElFFpw==, tarball: file:projects/gear-nft-marketplace.tgz}
-    id: file:projects/gear-nft-marketplace.tgz
-    name: '@rush-temp/gear-nft-marketplace'
+  file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615:
+    resolution: {integrity: sha512-TG363rZ+GFdOELL2pVO+iKtTBjXCS7p1GNxAGPNFbMBTKIW++ahL1Y1KI2SfLbCB7m9Umw1m1uELsjAN/q/p6w==, tarball: file:projects/gear-nft.tgz}
+    id: file:projects/gear-nft.tgz
+    name: '@rush-temp/gear-nft'
     version: 0.0.0
     dependencies:
       '@gear-js/api': 0.24.0_@polkadot+api@7.15.1

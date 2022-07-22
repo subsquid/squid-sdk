@@ -710,6 +710,11 @@
       "packageName": "shibuya-erc20",
       "projectFolder": "test/shibuya-erc20",
       "shouldPublish": false
+    },
+    {
+      "packageName": "gear-nft",
+      "projectFolder": "test/gear-nft",
+      "shouldPublish": false
     }
   ]
 }
