@@ -1,79 +1,121 @@
-import {makeExecutableSchema} from "@graphql-tools/schema"
 import {ApolloServerPluginDrainHttpServer} from "apollo-server-core"
 import {ApolloServer} from "apollo-server-express"
+import assert from "assert"
 import express from "express"
-import {useServer} from "graphql-ws/lib/use/ws"
-import {createServer} from "http"
+import fs from "fs"
+import http from "http"
+import path from "path"
 import type {Pool} from "pg"
-import {WebSocketServer} from "ws"
+import {OpenreaderContext} from "./context"
 import {PoolTransaction} from "./db"
-import {Dialect} from "./dialect"
-import {buildServerSchema} from "./gql/opencrud"
+import type {Dialect} from "./dialect"
 import type {Model} from "./model"
-import {buildResolvers} from "./resolver"
+import {SchemaBuilder} from "./opencrud/schema"
+
+
+export interface ListeningServer {
+    readonly port: number
+    stop(): Promise<void>
+}
+
+
+export interface ServerOptions {
+    model: Model
+    db: Pool
+    port: number | string
+    dialect?: Dialect
+    graphiqlConsole?: boolean
+}
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let { model, db } = options;
-    let dialect = options.dialect ?? "postgres";
-    let resolvers = buildResolvers(model, dialect);
-    let typeDefs = buildServerSchema(model, dialect);
-    const schema = makeExecutableSchema({ typeDefs, resolvers });
+    let {model, db} = options
+    let dialect = options.dialect ?? 'postgres'
 
-    const app = express();
-    const httpServer = createServer(app);
+    let schema = new SchemaBuilder(model).build()
+    let app = express()
+    let server = http.createServer(app)
 
-    const wsServer = new WebSocketServer({
-        server: httpServer,
-        path: "/graphql",
-    });
-
-    const serverCleanup = useServer({
-        context: () => ({
-            db,
-            openReaderTransaction: new PoolTransaction(db)
-        }),
-        schema
-    }, wsServer);
-
-    const server = new ApolloServer({
+    let apollo = new ApolloServer({
         schema,
-        context: () => ({openReaderTransaction: new PoolTransaction(db)}),
+        context: () => {
+            return {
+                openreader: new OpenreaderContext(new PoolTransaction(db), dialect)
+            }
+        },
         plugins: [
-            ApolloServerPluginDrainHttpServer({ httpServer }),
             {
-                serverWillStart: async () => ({
-                    drainServer: async () => serverCleanup.dispose(),
-                }),
+                async requestDidStart() {
+                    return {
+                        willSendResponse(req: any) {
+                            return req.context.openreader.tx.close()
+                        }
+                    }
+                }
             },
-        ],
-    });
-    await server.start();
-    server.applyMiddleware({ app });
+            ApolloServerPluginDrainHttpServer({httpServer: server})
+        ]
+    })
 
-    httpServer.listen(options.port, () => {
-        console.log(
-            `Server is now running on http://localhost:${options.port}${server.graphqlPath}`
-        );
-    });
+    if (options.graphiqlConsole !== false) {
+        setupGraphiqlConsole(app)
+    }
 
-    return {
-        port: options.port,
-        stop: () => new Promise((resolve) => resolve()),
-    };
+    await apollo.start()
+    apollo.applyMiddleware({app})
+    return listen(apollo, server, options.port)
 }
 
-// TODO Make GraphiQL console great again
 
-export interface ListeningServer {
-    readonly port: number;
-    stop(): Promise<void>;
+export function listen(apollo: ApolloServer, server: http.Server, port: number | string): Promise<ListeningServer> {
+    return new Promise((resolve, reject) => {
+        function onerror(err: Error) {
+            cleanup()
+            reject(err)
+        }
+
+        function onlistening() {
+            cleanup()
+            let address = server.address()
+            assert(address != null && typeof address == 'object')
+            resolve({
+                port: address.port,
+                stop: () => apollo.stop()
+            })
+        }
+
+        function cleanup() {
+            server.removeListener('error', onerror)
+            server.removeListener('listening', onlistening)
+        }
+
+        server.on('error', onerror)
+        server.on('listening', onlistening)
+        server.listen(port)
+    })
 }
 
-export interface ServerOptions {
-    model: Model;
-    db: Pool;
-    port: number;
-    dialect?: Dialect;
-    graphiqlConsole?: boolean;
+
+export function setupGraphiqlConsole(app: express.Application): void {
+    let assets = path.join(
+        require.resolve('@subsquid/graphiql-console/package.json'),
+        '../build'
+    )
+
+    let indexHtml = fs.readFileSync(path.join(assets, 'index.html'), 'utf-8')
+        .replace(/\/static\//g, 'console/static/')
+        .replace('/manifest.json', 'console/manifest.json')
+        .replace('${GRAPHQL_API}', 'graphql')
+        .replace('${APP_TITLE}', 'Query node playground')
+
+    app.use('/console', express.static(assets))
+
+    app.use('/graphql', (req, res, next) => {
+        if (req.path != '/') return next()
+        if (req.method != 'GET' && req.method != 'HEAD') return next()
+        if (req.query['query']) return next()
+        res.vary('Accept')
+        if (!req.accepts('html')) return next()
+        res.type('html').send(indexHtml)
+    })
 }

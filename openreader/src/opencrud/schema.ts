@@ -1,10 +1,12 @@
 import {def, unexpectedCase} from "@subsquid/util-internal"
 import {toCamelCase, toPlural} from "@subsquid/util-naming"
+import {UserInputError} from "apollo-server-core"
 import assert from "assert"
 import {
     GraphQLBoolean,
     GraphQLEnumType,
-    GraphQLFieldConfig, GraphQLFloat,
+    GraphQLFieldConfig,
+    GraphQLFloat,
     GraphQLInputObjectType,
     GraphQLInputType,
     GraphQLInt,
@@ -13,7 +15,9 @@ import {
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLOutputType,
-    GraphQLScalarType, GraphQLSchema, GraphQLString,
+    GraphQLScalarType,
+    GraphQLSchema,
+    GraphQLString,
     GraphQLUnionType
 } from "graphql"
 import {
@@ -22,16 +26,23 @@ import {
     GraphQLFieldConfigMap,
     GraphQLInputFieldConfigMap
 } from "graphql/type/definition"
+import {Context} from "../context"
+import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connection"
 import {Entity, Interface, JsonObject, Model, Prop} from "../model"
 import {getObject, getUnionProps} from "../model.tools"
 import {customScalars} from "../scalars"
-import {getOrderByMapping} from "./orderBy"
+import {EntityConnectionQuery, EntityCountQuery, EntityListQuery} from "../sql/query"
+import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
+import {ensureArray} from "../util/util"
+import {getOrderByMapping, parseOrderBy} from "./orderBy"
+import {parseEntityListArguments, parseResolveTree} from "./tree"
+import {parseWhere} from "./where"
 
 
 export class SchemaBuilder {
     private types = new Map<string, GraphQLOutputType>()
     private where = new Map<string, GraphQLInputType>()
-    private orderBy = new Map<string, GraphQLEnumType>()
+    private orderBy = new Map<string, GraphQLInputType>()
 
     constructor(private model: Model) {}
 
@@ -91,7 +102,7 @@ export class SchemaBuilder {
                     name,
                     description: item.description,
                     values: Object.keys(item.values).reduce((values, variant) => {
-                        values[variant] = {value: variant}
+                        values[variant] = {}
                         return values
                     }, {} as GraphQLEnumValueConfigMap)
                 })
@@ -119,6 +130,17 @@ export class SchemaBuilder {
             }
             if (prop.type.kind == 'list-lookup') {
                 field.args = this.entityListArguments(prop.type.entity)
+            }
+            if (object.kind == 'entity' || object.kind == 'object') {
+                switch(prop.type.kind) {
+                    case 'object':
+                    case 'union':
+                    case 'fk':
+                    case 'lookup':
+                    case 'list-lookup':
+                        field.resolve = (source, args, context, info) => source[info.path.key]
+                        break
+                }
             }
             fields[key] = field
         }
@@ -317,37 +339,37 @@ export class SchemaBuilder {
         return false
     }
 
-    private getOrderBy(entityName: string): GraphQLEnumType {
+    private getOrderBy(entityName: string): GraphQLInputType {
         let orderBy = this.orderBy.get(entityName)
         if (orderBy) return orderBy
 
         let values: GraphQLEnumValueConfigMap = {}
         for (let variant of getOrderByMapping(this.model, entityName).keys()) {
-            values[variant] = {value: variant}
+            values[variant] = {}
         }
 
-        orderBy = new GraphQLEnumType({
-            name: `${entityName}OrderByInput`,
-            values
-        })
+        orderBy = new GraphQLList(
+            new GraphQLNonNull(
+                new GraphQLEnumType({
+                    name: `${entityName}OrderByInput`,
+                    values
+                })
+            )
+        )
         this.orderBy.set(entityName, orderBy)
         return orderBy
     }
 
     @def
     query(): GraphQLObjectType {
-        let fields: GraphQLFieldConfigMap<any, any> = {}
+        let fields: GraphQLFieldConfigMap<unknown, Context> = {}
 
         for (let name in this.model) {
             let item = this.model[name]
             switch(item.kind) {
-                case "entity": {
-                    fields[toPlural(toCamelCase(name))] = {
-                        type: new GraphQLList(new GraphQLNonNull(this.get(name))),
-                        args: this.entityListArguments(name)
-                    }
+                case "entity":
+                    this.installEntityQueries(name, fields)
                     break
-                }
             }
         }
 
@@ -355,6 +377,186 @@ export class SchemaBuilder {
             name: 'Query',
             fields
         })
+    }
+
+    private installEntityQueries(entityName: string, qf: GraphQLFieldConfigMap<unknown, Context>): void {
+        let model = this.model
+
+        qf[toPlural(toCamelCase(entityName))] = {
+            type: new GraphQLList(new GraphQLNonNull(this.get(entityName))),
+            args: this.entityListArguments(entityName),
+            resolve(source, args_, context, info) {
+                let tree = getResolveTree(info)
+                let fields = parseResolveTree(model, entityName, info.schema, tree)
+                let args = parseEntityListArguments(model, entityName, tree)
+                let query = new EntityListQuery(
+                    model,
+                    context.openreader.dialect,
+                    entityName,
+                    fields,
+                    args
+                )
+                return context.openreader.executeQuery(query)
+            }
+        }
+
+        qf[`${toCamelCase(entityName)}ById`] = {
+            type: this.get(entityName),
+            args: {
+                id: {type: new GraphQLNonNull(GraphQLString)}
+            },
+            async resolve(source, args, context, info) {
+                let tree = getResolveTree(info)
+                let fields = parseResolveTree(model, entityName, info.schema, tree)
+                let query = new EntityListQuery(
+                    model,
+                    context.openreader.dialect,
+                    entityName,
+                    fields,
+                    {where: {op: 'eq', field: 'id', value: args.id}}
+                )
+                let result = await context.openreader.executeQuery(query)
+                assert(result.length < 2)
+                return result[0]
+            }
+        }
+
+        qf[`${toCamelCase(entityName)}ByUniqueInput`] = {
+            deprecationReason: `Use ${toCamelCase(entityName)}ById`,
+            type: this.get(entityName),
+            args: {
+                where: {type: this.whereIdInput()}
+            },
+            async resolve(source, args, context, info) {
+                let tree = getResolveTree(info)
+                let fields = parseResolveTree(model, entityName, info.schema, tree)
+                let query = new EntityListQuery(
+                    model,
+                    context.openreader.dialect,
+                    entityName,
+                    fields,
+                    {where: {op: 'eq', field: 'id', value: args.where.id}}
+                )
+                let result = await context.openreader.executeQuery(query)
+                assert(result.length < 2)
+                return result[0]
+            }
+        }
+
+        let connectionType = toPlural(entityName) + 'Connection'
+        let connectionEdgeType = `${entityName}Edge`
+
+        qf[`${toPlural(toCamelCase(entityName))}Connection`] = {
+            type: new GraphQLNonNull(new GraphQLObjectType({
+                name: connectionType,
+                fields: {
+                    edges: {
+                        type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLObjectType({
+                            name: connectionEdgeType,
+                            fields: {
+                                node: {type: new GraphQLNonNull(this.get(entityName))},
+                                cursor: {type: new GraphQLNonNull(GraphQLString)}
+                            }
+                        }))))
+                    },
+                    pageInfo: {type: this.pageInfoType()},
+                    totalCount: {type: new GraphQLNonNull(GraphQLInt)}
+                }
+            })),
+            args: {
+                orderBy: {type: new GraphQLNonNull(this.getOrderBy(entityName))},
+                after: {type: GraphQLString},
+                first: {type: GraphQLInt},
+                where: {type: this.getWhere(entityName)}
+            },
+            async resolve(source, args, context, info) {
+                let orderByArg = ensureArray(args.orderBy)
+                if (orderByArg.length == 0) {
+                    throw new UserInputError('orderBy argument is required for connection')
+                }
+
+                let req: RelayConnectionRequest = {
+                    orderBy: parseOrderBy(model, entityName, orderByArg),
+                    where: parseWhere(args.where)
+                }
+
+                if (args.first != null) {
+                    if (args.first < 0) {
+                        throw new UserInputError("'first' argument of connection can't be less than 0")
+                    } else {
+                        req.first = args.first
+                    }
+                }
+
+                if (args.after != null) {
+                    if (decodeRelayConnectionCursor(args.after) == null) {
+                        throw new UserInputError(`invalid cursor value: ${args.after}`)
+                    } else {
+                        req.after = args.after
+                    }
+                }
+
+                let tree = getResolveTree(info, connectionType)
+
+                req.totalCount = hasTreeRequest(tree.fields, 'totalCount')
+                req.pageInfo = hasTreeRequest(tree.fields, 'pageInfo')
+
+                let edgesTree = getTreeRequest(tree.fields, 'edges')
+                if (edgesTree) {
+                    let edgeFields = simplifyResolveTree(info.schema, edgesTree, connectionEdgeType).fields
+                    req.edgeCursor = hasTreeRequest(edgeFields, 'cursor')
+                    let nodeTree = getTreeRequest(edgeFields, 'node')
+                    if (nodeTree) {
+                        req.edgeNode = parseResolveTree(model, entityName, info.schema, nodeTree)
+                    }
+                }
+
+                let result = await context.openreader.executeQuery(new EntityConnectionQuery(
+                    model,
+                    context.openreader.dialect,
+                    entityName,
+                    req
+                ))
+
+                if (req.totalCount && result.totalCount == null) {
+                    result.totalCount = await context.openreader.executeQuery(new EntityCountQuery(
+                        model,
+                        context.openreader.dialect,
+                        entityName,
+                        req.where
+                    ))
+                }
+
+                return result
+            }
+        }
+    }
+
+    @def
+    private whereIdInput(): GraphQLInputType {
+        return new GraphQLNonNull(
+            new GraphQLInputObjectType({
+                name: "WhereIdInput",
+                fields: {
+                    id: {type: new GraphQLNonNull(GraphQLString)}
+                }
+            })
+        )
+    }
+
+    @def
+    private pageInfoType(): GraphQLOutputType {
+        return new GraphQLNonNull(
+            new GraphQLObjectType({
+                name: "PageInfo",
+                fields: {
+                    hasNextPage: {type: new GraphQLNonNull(GraphQLBoolean)},
+                    hasPreviousPage: {type: new GraphQLNonNull(GraphQLBoolean)},
+                    startCursor: {type: new GraphQLNonNull(GraphQLString)},
+                    endCursor: {type: new GraphQLNonNull(GraphQLString)}
+                }
+            })
+        )
     }
 
     @def

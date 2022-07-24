@@ -3,7 +3,6 @@ import type {ClientBase, Pool, PoolClient, PoolConfig} from "pg"
 
 export interface Database {
     query(sql: string, parameters?: any[]): Promise<any[][]>
-    escapeIdentifier(name: string): string
 }
 
 
@@ -20,10 +19,6 @@ export class PgDatabase implements Database {
 
     query(sql: string, parameters?: any[]): Promise<any[]> {
         return this.client.query({text: sql, rowMode: 'array'}, parameters).then(result => result.rows)
-    }
-
-    escapeIdentifier(name: string): string {
-        return this.client.escapeIdentifier(name)
     }
 }
 

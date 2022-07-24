@@ -1,10 +1,5 @@
-import {toCamelCase, toPlural, toSnakeCase} from "@subsquid/util-naming"
+import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
-
-
-export function toQueryListField(entityName: string): string {
-    return toPlural(toCamelCase(entityName))
-}
 
 
 export function toColumn(gqlFieldName: string): string {
@@ -27,14 +22,9 @@ export function ensureArray<T>(item: T | T[]): T[] {
 }
 
 
-export function unsupportedCase(value: string): Error {
-    return new Error(`Unsupported case: ${value}`)
-}
-
-
-export function toInt(val: number | string): number {
-    let i = parseInt(val as string)
-    assert(!isNaN(i) && isFinite(i))
+export function toSafeInteger(s: number | string): number {
+    let i = parseInt(s as string, 10)
+    assert(Number.isSafeInteger(i))
     return i
 }
 

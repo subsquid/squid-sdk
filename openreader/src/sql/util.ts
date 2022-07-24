@@ -18,12 +18,8 @@ export class ColumnSet {
         return idx
     }
 
-    render(withAliases?: boolean): string {
-        let cols = Array.from(this.columns.keys())
-        if (withAliases) {
-            cols = cols.map((col, idx) => `${col} AS _c${idx}`)
-        }
-        return cols.join(", ")
+    names(): string[] {
+        return [...this.columns.keys()]
     }
 
     size(): number {
@@ -33,7 +29,7 @@ export class ColumnSet {
 
 
 /**
- * LEFT OUTER JOIN "{table}" "{alias}" ON "{alias}".{column} = {rhs}
+ * LEFT OUTER JOIN "{table}" "{alias}" ON "{alias}"."{column}" = {rhs}
  */
 export interface Join {
     table: string

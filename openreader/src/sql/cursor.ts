@@ -4,7 +4,7 @@ import assert from "assert"
 import {Dialect} from "../dialect"
 import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
-import {toColumn, toFkColumn, toTable} from "../util"
+import {toColumn, toFkColumn, toTable} from "../util/util"
 import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 
@@ -36,11 +36,11 @@ export class EntityCursor implements Cursor {
         joined?: {on: string, rhs: string}
     ) {
         this.entity = getEntity(this.ctx.model, this.entityName)
-        this.table = this.ident(toTable(this.entityName))
+        this.table = toTable(this.entityName)
         if (joined) {
-            this.tableAlias = this.ctx.join.add(this.table, this.ident(joined.on), joined.rhs)
+            this.tableAlias = this.ctx.join.add(this.table, this._columnName(joined.on), joined.rhs)
         } else {
-            this.tableAlias = this.ident(this.ctx.aliases.add(this.table))
+            this.tableAlias = this.ctx.aliases.add(this.table)
         }
     }
 
@@ -48,8 +48,17 @@ export class EntityCursor implements Cursor {
         return escapeIdentifier(this.ctx.dialect, name)
     }
 
-    private column(field: string) {
-        return this.tableAlias + "." + this.ident(toColumn(field))
+    private column(field: string): string {
+        return this.ident(this.tableAlias) + "." + this.ident(this._columnName(field))
+    }
+
+    private _columnName(field: string): string {
+        let prop = this.prop(field)
+        if (prop.type.kind == 'fk') {
+            return toFkColumn(field)
+        } else {
+            return toColumn(field)
+        }
     }
 
     prop(field: string): Prop {
@@ -109,7 +118,6 @@ export class EntityCursor implements Cursor {
         let prop = this.prop(field)
         switch(prop.type.kind) {
             case "fk":
-                return this.tableAlias + "." + this.ident(toFkColumn(field))
             case "scalar":
             case "enum":
                 return this.column(field)
@@ -122,7 +130,6 @@ export class EntityCursor implements Cursor {
         let prop = this.prop(field)
         switch(prop.type.kind) {
             case "fk":
-                return this.tableAlias + "." + this.ident(toFkColumn(field))
             case "scalar":
             case "enum":
             case "union":
@@ -162,7 +169,7 @@ export class EntityCursor implements Cursor {
     }
 
     tsv(queryName: string): string {
-        return this.tableAlias + "." + this.ident(toSnakeCase(queryName) + "_tsv")
+        return this.ident(this.tableAlias) + "." + this.ident(toSnakeCase(queryName) + "_tsv")
     }
 
     doc(queryName: string): string {

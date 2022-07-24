@@ -1,5 +1,5 @@
 import {unexpectedCase} from "@subsquid/util-internal"
-import {FieldRequest} from "./fields"
+import {FieldRequest} from "../ir/fields"
 
 
 export function mapRows(rows: any[][], fields: FieldRequest[]): any[] {

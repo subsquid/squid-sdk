@@ -2,10 +2,10 @@ import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {Dialect} from "../dialect"
 import {Model} from "../model"
-import {EntityListArguments, OrderBy, Where} from "./args"
+import {EntityListArguments, OrderBy, Where} from "../ir/args"
 import {Cursor, EntityCursor} from "./cursor"
-import {FieldRequest} from "./fields"
-import {AliasSet, ColumnSet, JoinSet, printClause} from "./util"
+import {FieldRequest} from "../ir/fields"
+import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from "./util"
 
 
 export class EntityListQueryPrinter {
@@ -103,7 +103,7 @@ export class EntityListQueryPrinter {
             case "OR": {
                 let or: string[] = []
                 for (let cond of where.args) {
-                    let exp = this.printWhere(cursor, where)
+                    let exp = this.printWhere(cursor, cond)
                     if (exp) {
                         or.push("(" + exp + ")")
                     }
@@ -239,7 +239,7 @@ export class EntityListQueryPrinter {
                 if (where.op == "some") {
                     exps.push(`(SELECT true ${sub.printFrom()})`)
                 } else {
-                    exps.push(`NOT (SELECT true ${sub.printFrom()})`)
+                    exps.push(`(SELECT count(*) FROM (SELECT true ${sub.printFrom()}) AS rows) = 0`)
                 }
                 break
             }
@@ -281,14 +281,22 @@ export class EntityListQueryPrinter {
         return "$" + this.params.push(value)
     }
 
+    private ident(name: string): string {
+        return escapeIdentifier(this.dialect, name)
+    }
+
     addWhereDerivedFrom(field: string, parentIdExp: string): this {
         this.where.push(`${this.root.native(field)} = ${parentIdExp}`)
         return this
     }
 
     printColumnList(options?: {withAliases?: boolean}): string {
-        assert(this.columns.size() > 0)
-        return this.columns.render(options?.withAliases)
+        let names = this.columns.names()
+        assert(names.length > 0)
+        if (options?.withAliases) {
+            names = names.map((name, idx) => `${name} AS _c${idx}`)
+        }
+        return names.join(', ')
     }
 
     printColumnListAsJsonArray(): string {
@@ -296,9 +304,9 @@ export class EntityListQueryPrinter {
     }
 
     printFrom(): string {
-        let out = `FROM ${this.root.table} AS ${this.root.tableAlias}`
+        let out = `FROM ${this.ident(this.root.table)} AS ${this.ident(this.root.tableAlias)}`
         this.join.forEach(j => {
-            out += ` LEFT OUTER JOIN ${j.table} ${j.alias} ON ${j.alias}.${j.column} = ${j.rhs}`
+            out += ` LEFT OUTER JOIN ${this.ident(j.table)} ${this.ident(j.alias)} ON ${this.ident(j.alias)}.${this.ident(j.column)} = ${j.rhs}`
         })
         if (this.where.length > 0) {
             out += ` WHERE ${printClause("AND", this.where)}`

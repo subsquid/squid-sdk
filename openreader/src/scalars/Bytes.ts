@@ -1,6 +1,6 @@
 import {decodeHex, isHex, toHex} from "@subsquid/util-internal-hex"
 import {GraphQLScalarType} from "graphql"
-import {invalidFormat} from "../util"
+import {invalidFormat} from "../util/util"
 
 
 export const BytesScalar = new GraphQLScalarType({
