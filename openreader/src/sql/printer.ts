@@ -1,38 +1,41 @@
 import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {Dialect} from "../dialect"
-import {Model} from "../model"
 import {EntityListArguments, OrderBy, Where} from "../ir/args"
-import {Cursor, EntityCursor} from "./cursor"
 import {FieldRequest} from "../ir/fields"
+import {Model} from "../model"
+import {Cursor, EntityCursor} from "./cursor"
 import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from "./util"
 
 
 export class EntityListQueryPrinter {
-    private join = new JoinSet(this.aliases)
+    private aliases: AliasSet
+    private join: JoinSet
+    private root: EntityCursor
     private columns = new ColumnSet()
     private where: string[] = []
     private orderBy: string[] = []
 
-    private root = new EntityCursor(
-        {
-            model: this.model,
-            dialect: this.dialect,
-            aliases: this.aliases,
-            join: this.join
-        },
-        this.entityName
-    )
-
     constructor(
         private model: Model,
         private dialect: Dialect,
-        private params: unknown[],
-        private aliases: AliasSet,
         private entityName: string,
+        private params: unknown[],
         private args: EntityListArguments = {},
-        fields?: FieldRequest[]
+        fields?: FieldRequest[],
+        aliases?: AliasSet
     ) {
+        this.aliases = aliases || new AliasSet()
+        this.join = new JoinSet(this.aliases)
+        this.root = new EntityCursor(
+            {
+                model: this.model,
+                dialect: this.dialect,
+                aliases: this.aliases,
+                join: this.join
+            },
+            this.entityName
+        )
         if (fields?.length) {
             this.populateColumns(this.root, fields)
         }
@@ -45,15 +48,7 @@ export class EntityListQueryPrinter {
     }
 
     private sub(entityName: string, args?: EntityListArguments, fields?: FieldRequest[]): EntityListQueryPrinter {
-        return new EntityListQueryPrinter(
-            this.model,
-            this.dialect,
-            this.params,
-            this.aliases,
-            entityName,
-            args,
-            fields
-        )
+        return new EntityListQueryPrinter(this.model, this.dialect, entityName, this.params, args, fields, this.aliases)
     }
 
     private populateColumns(cursor: Cursor, fields: FieldRequest[]): void {

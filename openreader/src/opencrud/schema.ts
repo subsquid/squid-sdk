@@ -15,6 +15,7 @@ import {
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLOutputType,
+    GraphQLResolveInfo,
     GraphQLScalarType,
     GraphQLSchema,
     GraphQLString,
@@ -31,12 +32,15 @@ import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connect
 import {Entity, Interface, JsonObject, Model, Prop} from "../model"
 import {getObject, getUnionProps} from "../model.tools"
 import {customScalars} from "../scalars"
-import {EntityConnectionQuery, EntityCountQuery, EntityListQuery} from "../sql/query"
+import {EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
 import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
-import {ensureArray} from "../util/util"
+import {ensureArray, identity} from "../util/util"
 import {getOrderByMapping, parseOrderBy} from "./orderBy"
 import {parseEntityListArguments, parseResolveTree} from "./tree"
 import {parseWhere} from "./where"
+
+
+type GqlFieldMap = GraphQLFieldConfigMap<unknown, Context>
 
 
 export class SchemaBuilder {
@@ -361,46 +365,75 @@ export class SchemaBuilder {
     }
 
     @def
-    query(): GraphQLObjectType {
-        let fields: GraphQLFieldConfigMap<unknown, Context> = {}
+    build(): GraphQLSchema {
+        let query: GqlFieldMap = {}
+        let subscription: GqlFieldMap = {}
 
         for (let name in this.model) {
             let item = this.model[name]
             switch(item.kind) {
                 case "entity":
-                    this.installEntityQueries(name, fields)
+                    this.installEntityList(name, query, subscription)
+                    this.installEntityQueries(name, query, subscription)
                     break
             }
         }
 
-        return new GraphQLObjectType<any, any>({
-            name: 'Query',
-            fields
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: query
+            }),
+            // subscription: new GraphQLObjectType({
+            //     name: 'Subscription',
+            //     fields: subscription
+            // })
         })
     }
 
-    private installEntityQueries(entityName: string, qf: GraphQLFieldConfigMap<unknown, Context>): void {
+    private installEntityList(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
+        let queryName = toPlural(toCamelCase(entityName))
+        let outputType = new GraphQLList(new GraphQLNonNull(this.get(entityName)))
+        let argsType = this.entityListArguments(entityName)
 
-        qf[toPlural(toCamelCase(entityName))] = {
-            type: new GraphQLList(new GraphQLNonNull(this.get(entityName))),
-            args: this.entityListArguments(entityName),
-            resolve(source, args_, context, info) {
-                let tree = getResolveTree(info)
-                let fields = parseResolveTree(model, entityName, info.schema, tree)
-                let args = parseEntityListArguments(model, entityName, tree)
-                let query = new EntityListQuery(
-                    model,
-                    context.openreader.dialect,
-                    entityName,
-                    fields,
-                    args
+        function createQuery(context: Context, info: GraphQLResolveInfo) {
+            let tree = getResolveTree(info)
+            let fields = parseResolveTree(model, entityName, info.schema, tree)
+            let args = parseEntityListArguments(model, entityName, tree.args)
+            return new EntityListQuery(
+                model,
+                context.openreader.dialect,
+                entityName,
+                fields,
+                args
+            )
+        }
+
+        query[queryName] = {
+            type: outputType,
+            args: argsType,
+            resolve(source, args, context, info) {
+                return context.openreader.executeQuery(
+                    createQuery(context, info)
                 )
-                return context.openreader.executeQuery(query)
             }
         }
 
-        qf[`${toCamelCase(entityName)}ById`] = {
+        subscription[queryName] = {
+            type: outputType,
+            args: argsType,
+            resolve: identity,
+            subscribe(source, args, context, info) {
+
+            }
+        }
+    }
+
+    private installEntityQueries(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
+        let model = this.model
+
+        query[`${toCamelCase(entityName)}ById`] = {
             type: this.get(entityName),
             args: {
                 id: {type: new GraphQLNonNull(GraphQLString)}
@@ -421,7 +454,7 @@ export class SchemaBuilder {
             }
         }
 
-        qf[`${toCamelCase(entityName)}ByUniqueInput`] = {
+        query[`${toCamelCase(entityName)}ByUniqueInput`] = {
             deprecationReason: `Use ${toCamelCase(entityName)}ById`,
             type: this.get(entityName),
             args: {
@@ -446,7 +479,7 @@ export class SchemaBuilder {
         let connectionType = toPlural(entityName) + 'Connection'
         let connectionEdgeType = `${entityName}Edge`
 
-        qf[`${toPlural(toCamelCase(entityName))}Connection`] = {
+        query[`${toPlural(toCamelCase(entityName))}Connection`] = {
             type: new GraphQLNonNull(new GraphQLObjectType({
                 name: connectionType,
                 fields: {
@@ -557,13 +590,6 @@ export class SchemaBuilder {
                 }
             })
         )
-    }
-
-    @def
-    build(): GraphQLSchema {
-        return new GraphQLSchema({
-            query: this.query()
-        })
     }
 }
 

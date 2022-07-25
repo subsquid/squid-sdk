@@ -15,7 +15,6 @@ import type {Model} from "../model"
 import {toSafeInteger} from "../util/util"
 import {mapRows} from "./mapping"
 import {EntityListQueryPrinter} from "./printer"
-import {AliasSet} from "./util"
 
 
 export interface Query<T> {
@@ -36,15 +35,7 @@ export class EntityListQuery implements Query<any[]> {
         private fields: FieldRequest[],
         args: EntityListArguments
     ) {
-        this.sql = new EntityListQueryPrinter(
-            model,
-            dialect,
-            this.params,
-            new AliasSet(),
-            entityName,
-            args,
-            fields
-        ).print()
+        this.sql = new EntityListQueryPrinter(model, dialect, entityName, this.params, args, fields).print()
     }
 
     map(rows: any[][]): any[] {
@@ -63,19 +54,11 @@ export class EntityCountQuery implements Query<number> {
         entityName: string,
         where?: Where
     ) {
-        this.sql = 'SELECT count(*) ' + new EntityListQueryPrinter(
-            model,
-            dialect,
-            this.params,
-            new AliasSet(),
-            entityName,
-            {where},
-        ).printFrom()
+        this.sql = 'SELECT count(*) ' + new EntityListQueryPrinter(model, dialect, entityName, this.params, {where}).printFrom()
     }
 
     map(rows: any[][]): number {
-        assert(rows.length == 1)
-        return toSafeInteger(rows[0][0])
+        return toCount(rows)
     }
 }
 
@@ -101,15 +84,12 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
         this.pageInfo = req.pageInfo
         this.totalCount = req.totalCount
 
-        let printer = new EntityListQueryPrinter(
-            model,
-            dialect,
-            this.params,
-            new AliasSet(),
-            entityName,
-            {orderBy: req.orderBy, where: req.where, offset: this.offset, limit: this.limit + 1},
-            req.edgeNode
-        )
+        let printer = new EntityListQueryPrinter(model, dialect, entityName, this.params, {
+            orderBy: req.orderBy,
+            where: req.where,
+            offset: this.offset,
+            limit: this.limit + 1
+        }, req.edgeNode)
 
         if (req.edgeNode?.length) {
             this.edgeNode = req.edgeNode
@@ -144,8 +124,7 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
             res.pageInfo = this.getPageInfo(nodes.length)
             res.totalCount = this.getTotalCount(nodes.length)
         } else {
-            assert(rows.length == 1)
-            let count = toSafeInteger(rows[0][0])
+            let count = toCount(rows)
             if (this.edgeCursor) {
                 res.edges = new Array(Math.min(this.limit, count))
                 for (let i = 0; i < res.edges.length; i++) {
@@ -178,4 +157,10 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
             return undefined
         }
     }
+}
+
+
+function toCount(rows: any[][]): number {
+    assert(rows.length == 1)
+    return toSafeInteger(rows[0][0])
 }

@@ -1,4 +1,7 @@
-import type {ClientBase, Pool, PoolClient, PoolConfig} from "pg"
+import type {ClientBase, Pool, PoolConfig} from "pg"
+import {OpenreaderContext} from "./context"
+import {Dialect} from "./dialect"
+import {Query} from "./sql/query"
 
 
 export interface Database {
@@ -6,63 +9,99 @@ export interface Database {
 }
 
 
-/**
- * This is an interface OpenReader uses to interact with underling database.
- */
-export interface Transaction {
-    get(): Promise<Database>
-}
-
-
 export class PgDatabase implements Database {
     constructor(private client: ClientBase) {}
 
-    query(sql: string, parameters?: any[]): Promise<any[]> {
+    query(sql: string, parameters?: any[]): Promise<any[][]> {
         return this.client.query({text: sql, rowMode: 'array'}, parameters).then(result => result.rows)
     }
 }
 
 
-export class PoolTransaction implements Transaction {
-    private tx: Promise<{client: PoolClient, db: Database}> | undefined
+export class PoolOpenreaderContext implements OpenreaderContext {
+    private tx: LazyTransaction<Database>
+
+    constructor(public readonly dialect: Dialect, private pool: Pool) {
+        this.tx = new LazyTransaction(cb => this.transact(cb))
+    }
+
+    close(): Promise<void> {
+        return this.tx.close()
+    }
+
+    async executeQuery<T>(query: Query<T>): Promise<T> {
+        let db = await this.tx.get()
+        let result = await db.query(query.sql, query.params)
+        return query.map(result)
+    }
+
+    executePollingQuery<T>(query: Query<T>): Promise<T> {
+        return this.transact(async db => {
+            let result = await db.query(query.sql, query.params)
+            return query.map(result)
+        })
+    }
+
+    private async transact<T>(cb: (db: Database) => Promise<T>): Promise<T> {
+        let client = await this.pool.connect()
+        try {
+            await client.query('START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
+            try {
+                let db = new PgDatabase(client)
+                return await cb(db)
+            } finally {
+                await client.query('COMMIT').catch(() => {})
+            }
+        } finally {
+            client.release()
+        }
+    }
+}
+
+
+export class LazyTransaction<T> {
     private closed = false
 
-    constructor(private pool: Pool) {}
+    private tx?: Promise<{
+        close(): void,
+        ctx: T
+    }>
 
-    async get(): Promise<Database> {
+    constructor(private transact: (f: (ctx: T) => Promise<void>) => Promise<void>) {}
+
+    async get(): Promise<T> {
         if (this.closed) {
             throw new Error('Too late to request transaction')
         }
         this.tx = this.tx || this.startTransaction()
-        let {db} = await this.tx
-        return db
+        let {ctx} = await this.tx
+        return ctx
     }
 
-    private async startTransaction(): Promise<{client: PoolClient, db: Database}> {
-        let client = await this.pool.connect()
-        try {
-            await client.query('START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
-            return {
-                client,
-                db: new PgDatabase(client)
-            }
-        } catch(e: any) {
-            client.release()
-            throw e
-        }
+    private async startTransaction(): Promise<{close(): void, ctx: T}> {
+        return new Promise((resolve, reject) => {
+            let promise = this.transact(ctx => {
+                return new Promise<void>(close => {
+                    resolve({
+                        ctx,
+                        close: () => {
+                            close()
+                            return promise
+                        }
+                    })
+                })
+            })
+            promise.catch(err => reject(err))
+        })
     }
 
-    close(): Promise<void> {
+    async close(): Promise<void> {
         this.closed = true
-        return this.tx?.then(async ({client}) => {
-            try {
-                await client.query('COMMIT')
-            } catch(e: any) {
-                // ignore
-            } finally {
-                client.release()
-            }
-        }) || Promise.resolve()
+        if (this.tx) {
+            let tx = this.tx
+            this.tx = undefined
+            await tx.then(tx => tx.close())
+        }
     }
 }
 

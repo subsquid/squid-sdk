@@ -99,7 +99,7 @@ export function parseResolveTree(
                     kind: prop.type.kind,
                     type: prop.type,
                     index: 0,
-                    args: parseEntityListArguments(model, prop.type.entity, f),
+                    args: parseEntityListArguments(model, prop.type.entity, f.args),
                     children: parseResolveTree(model, prop.type.entity, schema, f)
                 })
                 break
@@ -112,26 +112,26 @@ export function parseResolveTree(
 }
 
 
-export function parseEntityListArguments(model: Model, entityName: string, tree: ResolveTree): EntityListArguments {
+export function parseEntityListArguments(model: Model, entityName: string, gqlArgs: any): EntityListArguments {
     let args: EntityListArguments = {}
 
-    let where = parseWhere(tree.args.where)
+    let where = parseWhere(gqlArgs.where)
     if (where) {
         args.where = where
     }
 
-    if (tree.args.orderBy) {
-        args.orderBy = parseOrderBy(model, entityName, ensureArray(tree.args.orderBy))
+    if (gqlArgs.orderBy) {
+        args.orderBy = parseOrderBy(model, entityName, ensureArray(gqlArgs.orderBy))
     }
 
-    if (tree.args.offset) {
-        assert(typeof tree.args.offset == "number")
-        args.offset = tree.args.offset
+    if (gqlArgs.offset) {
+        assert(typeof gqlArgs.offset == "number")
+        args.offset = gqlArgs.offset
     }
 
-    if (tree.args.limit != null) {
-        assert(typeof tree.args.limit == "number")
-        args.limit = tree.args.limit
+    if (gqlArgs.limit != null) {
+        assert(typeof gqlArgs.limit == "number")
+        args.limit = gqlArgs.limit
     }
 
     return args

@@ -32,3 +32,8 @@ export function toSafeInteger(s: number | string): number {
 export function invalidFormat(type: string, value: string): Error {
     return new TypeError(`Not a ${type}: ${value}`)
 }
+
+
+export function identity<T>(x: T): T {
+    return x
+}

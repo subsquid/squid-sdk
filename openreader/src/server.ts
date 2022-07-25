@@ -7,7 +7,7 @@ import http from "http"
 import path from "path"
 import type {Pool} from "pg"
 import {OpenreaderContext} from "./context"
-import {PoolTransaction} from "./db"
+import {LazyTransaction, PoolOpenreaderContext} from "./db"
 import type {Dialect} from "./dialect"
 import type {Model} from "./model"
 import {SchemaBuilder} from "./opencrud/schema"
@@ -40,7 +40,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         schema,
         context: () => {
             return {
-                openreader: new OpenreaderContext(new PoolTransaction(db), dialect)
+                openreader: new PoolOpenreaderContext(dialect, db)
             }
         },
         plugins: [
@@ -48,7 +48,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                 async requestDidStart() {
                     return {
                         willSendResponse(req: any) {
-                            return req.context.openreader.tx.close()
+                            return req.context.openreader.close()
                         }
                     }
                 }
