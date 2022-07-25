@@ -103,6 +103,9 @@ export class Runner<S, R extends BatchRequest> {
             }, 'request')
 
             let response = await graphqlRequest({
+                headers: {
+                    'x-squid-id': process.env['X-SQUID-ID'],
+                },
                 url: archiveUrl,
                 query: archiveQuery,
                 timeout: 60_000,

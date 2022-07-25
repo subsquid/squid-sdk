@@ -9,6 +9,7 @@ export interface GraphqlRequestRetryConfig {
 
 
 export interface GraphqlRequest {
+    headers?: Partial<Record<'x-squid-id', string>>
     url: string
     query: string
     method?: 'GET' | 'POST'
@@ -22,7 +23,8 @@ export async function graphqlRequest<T>(req: GraphqlRequest): Promise<T> {
     let method = req.method || 'POST'
     let headers: Record<string, string> = {
         'accept': 'application/json',
-        'accept-encoding': 'gzip, br'
+        'accept-encoding': 'gzip, br',
+        ...req.headers
     }
     let body: string | undefined
 
