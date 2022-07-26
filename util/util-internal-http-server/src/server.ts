@@ -1,6 +1,6 @@
 import assert from "assert"
-import {RequestListener} from "http"
 import * as http from "http"
+import {RequestListener} from "http"
 import stoppable from "stoppable"
 
 
@@ -76,11 +76,17 @@ export function createHttpServer(handler: RequestHandler, port?: number | string
 
 
 export function createNodeHttpServer(handler: RequestListener, port?: number | string): Promise<ListeningServer> {
-    let server = stoppable(http.createServer(handler), 1000)
+    let server = http.createServer(handler)
+    return listen(server, port)
+}
+
+
+export function listen(server: http.Server, port?: number | string): Promise<ListeningServer> {
+    let s = stoppable(server, 5000)
 
     function close(): Promise<void> {
         return new Promise((resolve, reject) => {
-            server.stop((err, gracefully) => {
+            s.stop((err, gracefully) => {
                 if (err) {
                     reject(err)
                 } else {
@@ -91,11 +97,11 @@ export function createNodeHttpServer(handler: RequestListener, port?: number | s
     }
 
     return new Promise<ListeningServer>((resolve, reject) => {
-        server.listen(port || 0, (err?: Error) => {
+        s.listen(port || 0, (err?: Error) => {
             if (err) {
                 reject(err)
             } else {
-                let address = server.address()
+                let address = s.address()
                 assert(address != null && typeof address == 'object')
                 resolve({
                     port: address.port,

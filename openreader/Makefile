@@ -1,5 +1,5 @@
 test:
-	npx mocha -r dotenv/config ./dist/test/*.test.js --exit
+	npx mocha -r dotenv/config ./dist/test/*.test.js --exit --timeout 10000
 
 
 test-cockroach:
@@ -11,7 +11,7 @@ up:
 
 
 down:
-	@docker-compose down 2>&1
+	@docker-compose down -v 2>&1
 
 
 logs:

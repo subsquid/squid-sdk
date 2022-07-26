@@ -89,7 +89,7 @@ specifiers:
   fast-check: ^2.25.0
   graphql: ^15.8.0
   graphql-parse-resolve-info: ^4.12.3
-  graphql-ws: ^5.8.1
+  graphql-ws: ^5.9.1
   inflected: ^2.1.0
   inquirer: ^8.2.4
   js-yaml: ^4.1.0
@@ -110,7 +110,6 @@ specifiers:
   typeorm: ^0.3.6
   typescript: ~4.7.4
   websocket: ^1.0.34
-  ws: ^8.6.0
   xxhash-wasm: ^1.0.1
   xxhashjs: ^0.2.2
 
@@ -133,7 +132,7 @@ dependencies:
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_supports-color@8.1.1
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz_supports-color@8.1.1
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
-  '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
+  '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz_graphql@15.8.0
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz_supports-color@8.1.1
   '@rush-temp/logger': file:projects/logger.tgz
   '@rush-temp/moonsama-erc721': file:projects/moonsama-erc721.tgz_supports-color@8.1.1
@@ -224,7 +223,6 @@ dependencies:
   typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
   typescript: 4.7.4
   websocket: 1.0.34_supports-color@8.1.1
-  ws: 8.8.0
   xxhash-wasm: 1.0.1
   xxhashjs: 0.2.2
 
@@ -7623,8 +7621,8 @@ packages:
         optional: true
     dev: false
 
-  /ws/8.8.0:
-    resolution: {integrity: sha512-JDAgSYQ1ksuwqfChJusw1LSJ8BizJ2e/vVu5Lxjq3YvNJNlROv1ui4i+c/kUUrPheBvQl4c5UbERhTwKa6QBJQ==}
+  /ws/8.8.1:
+    resolution: {integrity: sha512-bGy2JzvzkPowEJV++hF07hAD6niYSr0JzBNo/J29WsB57A2r7Wlc1UFcTR9IzrPvuNVO4B8LGqF8qcpsVOhJCA==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -8036,18 +8034,25 @@ packages:
       typescript: 4.7.4
     dev: false
 
-  file:projects/gql-test-client.tgz:
-    resolution: {integrity: sha512-fW4KwbWvfJ7UXjUviCR6BIiYCV0qveQZxD2k/cvnDw4qn26KJSdxe9cnFwiACT8bMzQMGditVk/9wmy3Xh0aAw==, tarball: file:projects/gql-test-client.tgz}
+  file:projects/gql-test-client.tgz_graphql@15.8.0:
+    resolution: {integrity: sha512-aAYAqAYsQ9GJQdbAWjV8itDYq8lbf7wpVpr5hKa3aqyLbf4yHSs0+ETGRgYEh10hBGKloKPDLoWft4zCIzoK+g==, tarball: file:projects/gql-test-client.tgz}
+    id: file:projects/gql-test-client.tgz
     name: '@rush-temp/gql-test-client'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.41
       '@types/node-fetch': 2.6.2
+      '@types/ws': 8.5.3
       expect: 27.5.1
+      graphql-ws: 5.9.1_graphql@15.8.0
       node-fetch: 2.6.7
       typescript: 4.7.4
+      ws: 8.8.1
     transitivePeerDependencies:
+      - bufferutil
       - encoding
+      - graphql
+      - utf-8-validate
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
@@ -8144,7 +8149,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-aEZj1ynBTgkgv8p1s1fSz2S6ekW1GHhMORLwkMXx8rX4YgvApG6pH17bL49Q9CnbnfOAJgUyIgnuTJb0OlUEVA==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-4OY7fYJ+01Q9bI4dmyehC/pNwnXrhxRk7iIepNnFKzoVsDTfsG5bXczl//YNy+aFYFbpzUCJxQVrLXtUnlaF9Q==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
@@ -8171,7 +8176,7 @@ packages:
       mocha: 9.2.2
       pg: 8.7.3
       typescript: 4.7.4
-      ws: 8.8.0
+      ws: 8.8.1
     transitivePeerDependencies:
       - bufferutil
       - encoding

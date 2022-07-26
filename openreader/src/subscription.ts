@@ -1,20 +1,26 @@
 import deepEqual from "deep-equal"
 
 
-export class Subscription<T> implements AsyncIterator<T> {
+export class Subscription<T> implements AsyncIterator<T>, AsyncIterable<T> {
     private timer?: NodeJS.Timer
     private prev?: T
+    private hasNoVal = true
 
     constructor(private poll: () => Promise<T>) {}
 
+    [Symbol.asyncIterator]() {
+        return this
+    }
+
     async next() {
-        if (this.prev === undefined) {
+        if (this.hasNoVal) {
             this.prev = await this.poll()
+            this.hasNoVal = false
         }
         let value
         do {
             await new Promise(resolve => {
-                this.timer = setTimeout(resolve, 1500)
+                this.timer = setTimeout(resolve, 1000)
             })
             value = await this.poll()
         } while (deepEqual(this.prev, value))

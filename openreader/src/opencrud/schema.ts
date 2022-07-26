@@ -32,7 +32,8 @@ import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connect
 import {Entity, Interface, JsonObject, Model, Prop} from "../model"
 import {getObject, getUnionProps} from "../model.tools"
 import {customScalars} from "../scalars"
-import {EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
+import {EntityByIdQuery, EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
+import {Subscription} from "../subscription"
 import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
 import {ensureArray, identity} from "../util/util"
 import {getOrderByMapping, parseOrderBy} from "./orderBy"
@@ -374,7 +375,9 @@ export class SchemaBuilder {
             switch(item.kind) {
                 case "entity":
                     this.installEntityList(name, query, subscription)
-                    this.installEntityQueries(name, query, subscription)
+                    this.installEntityById(name, query, subscription)
+                    this.installEntityByUniqueInput(name, query)
+                    this.installRelayConnection(name, query)
                     break
             }
         }
@@ -384,10 +387,10 @@ export class SchemaBuilder {
                 name: 'Query',
                 fields: query
             }),
-            // subscription: new GraphQLObjectType({
-            //     name: 'Subscription',
-            //     fields: subscription
-            // })
+            subscription: new GraphQLObjectType({
+                name: 'Subscription',
+                fields: subscription
+            })
         })
     }
 
@@ -414,9 +417,8 @@ export class SchemaBuilder {
             type: outputType,
             args: argsType,
             resolve(source, args, context, info) {
-                return context.openreader.executeQuery(
-                    createQuery(context, info)
-                )
+                let q = createQuery(context, info)
+                return context.openreader.executeQuery(q)
             }
         }
 
@@ -425,34 +427,53 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-
+                let q = createQuery(context, info)
+                return context.openreader.subscription(q)
             }
         }
     }
 
-    private installEntityQueries(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
+    private installEntityById(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
+        let queryName = `${toCamelCase(entityName)}ById`
+        let argsType = {
+            id: {type: new GraphQLNonNull(GraphQLString)}
+        }
 
-        query[`${toCamelCase(entityName)}ById`] = {
+        function createQuery(context: Context, info: GraphQLResolveInfo) {
+            let tree = getResolveTree(info)
+            let fields = parseResolveTree(model, entityName, info.schema, tree)
+            return new EntityByIdQuery(
+                model,
+                context.openreader.dialect,
+                entityName,
+                fields,
+                tree.args.id as string
+            )
+        }
+
+        query[queryName] = {
             type: this.get(entityName),
-            args: {
-                id: {type: new GraphQLNonNull(GraphQLString)}
-            },
+            args: argsType,
             async resolve(source, args, context, info) {
-                let tree = getResolveTree(info)
-                let fields = parseResolveTree(model, entityName, info.schema, tree)
-                let query = new EntityListQuery(
-                    model,
-                    context.openreader.dialect,
-                    entityName,
-                    fields,
-                    {where: {op: 'eq', field: 'id', value: args.id}}
-                )
-                let result = await context.openreader.executeQuery(query)
-                assert(result.length < 2)
-                return result[0]
+                let q = createQuery(context, info)
+                return context.openreader.executeQuery(q)
             }
         }
+
+        subscription[queryName] = {
+            type: this.get(entityName),
+            args: argsType,
+            resolve: identity,
+            subscribe(source, args, context, info) {
+                let q = createQuery(context, info)
+                return context.openreader.subscription(q)
+            }
+        }
+    }
+
+    private installEntityByUniqueInput(entityName: string, query: GqlFieldMap): void {
+        let model = this.model
 
         query[`${toCamelCase(entityName)}ByUniqueInput`] = {
             deprecationReason: `Use ${toCamelCase(entityName)}ById`,
@@ -475,17 +496,20 @@ export class SchemaBuilder {
                 return result[0]
             }
         }
+    }
 
-        let connectionType = toPlural(entityName) + 'Connection'
-        let connectionEdgeType = `${entityName}Edge`
+    private installRelayConnection(entityName: string, query: GqlFieldMap): void {
+        let model = this.model
+        let outputType = toPlural(entityName) + 'Connection'
+        let edgeType = `${entityName}Edge`
 
         query[`${toPlural(toCamelCase(entityName))}Connection`] = {
             type: new GraphQLNonNull(new GraphQLObjectType({
-                name: connectionType,
+                name: outputType,
                 fields: {
                     edges: {
                         type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLObjectType({
-                            name: connectionEdgeType,
+                            name: edgeType,
                             fields: {
                                 node: {type: new GraphQLNonNull(this.get(entityName))},
                                 cursor: {type: new GraphQLNonNull(GraphQLString)}
@@ -529,14 +553,14 @@ export class SchemaBuilder {
                     }
                 }
 
-                let tree = getResolveTree(info, connectionType)
+                let tree = getResolveTree(info, outputType)
 
                 req.totalCount = hasTreeRequest(tree.fields, 'totalCount')
                 req.pageInfo = hasTreeRequest(tree.fields, 'pageInfo')
 
                 let edgesTree = getTreeRequest(tree.fields, 'edges')
                 if (edgesTree) {
-                    let edgeFields = simplifyResolveTree(info.schema, edgesTree, connectionEdgeType).fields
+                    let edgeFields = simplifyResolveTree(info.schema, edgesTree, edgeType).fields
                     req.edgeCursor = hasTreeRequest(edgeFields, 'cursor')
                     let nodeTree = getTreeRequest(edgeFields, 'node')
                     if (nodeTree) {

@@ -44,6 +44,34 @@ export class EntityListQuery implements Query<any[]> {
 }
 
 
+export class EntityByIdQuery {
+    public readonly sql: string
+    public readonly params: unknown[] = []
+
+    constructor(
+        model: Model,
+        dialect: Dialect,
+        entityName: string,
+        private fields: FieldRequest[],
+        id: string
+    ) {
+        this.sql = new EntityListQueryPrinter(
+            model,
+            dialect,
+            entityName,
+            this.params,
+            {where: {op: 'eq', field: 'id', value: id}},
+            fields
+        ).print()
+    }
+
+    map(rows: any[][]): any {
+        assert(rows.length < 2)
+        return mapRows(rows, this.fields)[0]
+    }
+}
+
+
 export class EntityCountQuery implements Query<number> {
     public readonly sql: string
     public readonly params: unknown[] = []

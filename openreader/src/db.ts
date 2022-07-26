@@ -2,6 +2,7 @@ import type {ClientBase, Pool, PoolConfig} from "pg"
 import {OpenreaderContext} from "./context"
 import {Dialect} from "./dialect"
 import {Query} from "./sql/query"
+import {Subscription} from "./subscription"
 
 
 export interface Database {
@@ -35,11 +36,11 @@ export class PoolOpenreaderContext implements OpenreaderContext {
         return query.map(result)
     }
 
-    executePollingQuery<T>(query: Query<T>): Promise<T> {
-        return this.transact(async db => {
+    subscription<T>(query: Query<T>): AsyncIterator<T> {
+        return new Subscription(() => this.transact(async db => {
             let result = await db.query(query.sql, query.params)
             return query.map(result)
-        })
+        }))
     }
 
     private async transact<T>(cb: (db: Database) => Promise<T>): Promise<T> {

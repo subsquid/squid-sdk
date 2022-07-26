@@ -1,22 +1,16 @@
-import {ApolloServerPluginDrainHttpServer} from "apollo-server-core"
+import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
 import {ApolloServer} from "apollo-server-express"
-import assert from "assert"
 import express from "express"
 import fs from "fs"
+import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
 import http from "http"
 import path from "path"
 import type {Pool} from "pg"
-import {OpenreaderContext} from "./context"
-import {LazyTransaction, PoolOpenreaderContext} from "./db"
+import {WebSocketServer} from "ws"
+import {PoolOpenreaderContext} from "./db"
 import type {Dialect} from "./dialect"
 import type {Model} from "./model"
 import {SchemaBuilder} from "./opencrud/schema"
-
-
-export interface ListeningServer {
-    readonly port: number
-    stop(): Promise<void>
-}
 
 
 export interface ServerOptions {
@@ -33,8 +27,26 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let dialect = options.dialect ?? 'postgres'
 
     let schema = new SchemaBuilder(model).build()
+
     let app = express()
     let server = http.createServer(app)
+    let wsServer = new WebSocketServer({server})
+
+    let wsServerCleanup = useWsServer(
+        {
+            schema,
+            context() {
+                return {
+                    openreader: new PoolOpenreaderContext(dialect, db)
+                }
+            },
+            onNext(_ctx, _message, args, result) {
+                args.contextValue.openreader.close()
+                return result
+            }
+        },
+        wsServer
+    )
 
     let apollo = new ApolloServer({
         schema,
@@ -52,9 +64,9 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                         }
                     }
                 }
-            },
-            ApolloServerPluginDrainHttpServer({httpServer: server})
-        ]
+            }
+        ],
+        stopOnTerminationSignals: false
     })
 
     if (options.graphiqlConsole !== false) {
@@ -63,35 +75,16 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
 
     await apollo.start()
     apollo.applyMiddleware({app})
-    return listen(apollo, server, options.port)
-}
-
-
-export function listen(apollo: ApolloServer, server: http.Server, port: number | string): Promise<ListeningServer> {
-    return new Promise((resolve, reject) => {
-        function onerror(err: Error) {
-            cleanup()
-            reject(err)
+    return listen(server, options.port).then(s => {
+        return {
+            port: s.port,
+            async close() {
+                try {
+                    await wsServerCleanup.dispose()
+                } catch(e: any) {}
+                await s.close()
+            }
         }
-
-        function onlistening() {
-            cleanup()
-            let address = server.address()
-            assert(address != null && typeof address == 'object')
-            resolve({
-                port: address.port,
-                stop: () => apollo.stop()
-            })
-        }
-
-        function cleanup() {
-            server.removeListener('error', onerror)
-            server.removeListener('listening', onlistening)
-        }
-
-        server.on('error', onerror)
-        server.on('listening', onlistening)
-        server.listen(port)
     })
 }
 

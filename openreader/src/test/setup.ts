@@ -1,9 +1,10 @@
 import {assertNotNull} from "@subsquid/util-internal"
+import {ListeningServer} from "@subsquid/util-internal-http-server"
 import {Client} from "gql-test-client"
 import {parse} from "graphql"
 import {Client as PgClient, ClientBase, Pool} from "pg"
 import {buildModel, buildSchema} from "../model.schema"
-import {ListeningServer, serve} from "../server"
+import {serve} from "../server"
 
 
 export function isCockroach(): boolean {
@@ -22,7 +23,7 @@ export const db_config = {
 }
 
 
-async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {
+export async function withDatabase(block: (client: ClientBase) => Promise<void>): Promise<void> {
     let client = new PgClient(db_config)
     await client.connect()
     try {
@@ -33,8 +34,8 @@ async function withClient(block: (client: ClientBase) => Promise<void>): Promise
 }
 
 
-export function databaseInit(sql: string[]): Promise<void> {
-    return withClient(async client => {
+export function databaseExecute(sql: string[]): Promise<void> {
+    return withDatabase(async client => {
         for (let i = 0; i < sql.length; i++) {
             await client.query(sql[i])
         }
@@ -43,7 +44,7 @@ export function databaseInit(sql: string[]): Promise<void> {
 
 
 export function databaseDelete(): Promise<void> {
-    return withClient(async client => {
+    return withDatabase(async client => {
         await client.query(`DROP SCHEMA IF EXISTS root CASCADE`)
         await client.query(`CREATE SCHEMA root`)
     })
@@ -53,7 +54,7 @@ export function databaseDelete(): Promise<void> {
 export function useDatabase(sql: string[]): void {
     before(async () => {
         await databaseDelete()
-        await databaseInit(sql)
+        await databaseExecute(sql)
     })
 }
 
@@ -71,7 +72,7 @@ export function useServer(schema: string): Client {
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })
-    after(() => info?.stop())
+    after(() => info?.close())
     after(() => db.end())
     return client
 }
