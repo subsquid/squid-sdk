@@ -1,9 +1,9 @@
-import { updateSecret } from "../../../api";
+import { setSecret } from "../../../api";
 import { CliCommand } from "../../../command";
 
 
-export default class Update extends CliCommand {
-    static description = 'Update secret';
+export default class Set extends CliCommand {
+    static description = 'Set secret';
     static args = [
         {
             name: 'name',
@@ -19,7 +19,7 @@ export default class Update extends CliCommand {
     static flags = {};
 
     async run(): Promise<void> {
-        const { flags: { }, args: { name, value } } = await this.parse(Update);
-        updateSecret(name, value);
+        const { flags: { }, args: { name, value } } = await this.parse(Set);
+        setSecret(name, value);
     }
 }

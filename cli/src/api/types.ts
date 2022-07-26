@@ -59,7 +59,6 @@ export type SecretsListResponse = {
 
 export type ChangeSecretResponse = {
   name: string;
-  result: string;
 }
 
 export type ManifestResponse = {

@@ -1,15 +1,6 @@
 import { ChangeSecretResponse, SecretsListResponse } from './types';
 import { api } from './api';
 
-export async function createSecret(name: string, value: string): Promise<ChangeSecretResponse> {
-    const { body } = await api<ChangeSecretResponse>( {
-        method: 'post',
-        path: '/client/secret/create',
-        data: { name, value }
-    });
-    return body
-}
-
 export async function listSecrets(): Promise<SecretsListResponse> {
     const { body } = await api<SecretsListResponse>( {
         method: 'get',
@@ -20,18 +11,17 @@ export async function listSecrets(): Promise<SecretsListResponse> {
 
 export async function removeSecret(name: string): Promise<ChangeSecretResponse> {
     const { body } = await api<ChangeSecretResponse>( {
-        method: 'post',
-        path: '/client/secret/remove',
-        data: { name }
+        method: 'delete',
+        path: `/client/secret/${name}`,
     });
     return body
 }
 
-export async function updateSecret(name: string, value: string): Promise<ChangeSecretResponse> {
+export async function setSecret(name: string, value: string): Promise<ChangeSecretResponse> {
     const { body } = await api<ChangeSecretResponse>( {
-        method: 'post',
-        path: '/client/secret/update',
-        data: { name, value }
+        method: 'put',
+        path: `/client/secret/${name}`,
+        data: { value }
     });
     return body
 }
