@@ -3,16 +3,16 @@ import { CliCommand } from "../../command";
 
 
 export default class Set extends CliCommand {
-    static description = 'Set secret';
+    static description = 'Create or update a secret. The secret will be exposed as an environment variable with the given name to all the squids. Note the changes take affect only after a squid is restarted or updated.';
     static args = [
         {
             name: 'name',
-            description: 'secret name',
+            description: 'The secret name',
             required: true,
         },
         {
             name: 'value',
-            description: 'secret value',
+            description: 'The secret value',
             required: true,
         },
     ];

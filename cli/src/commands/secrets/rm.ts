@@ -3,11 +3,11 @@ import { CliCommand } from "../../command";
 
 
 export default class Rm extends CliCommand {
-    static description = 'Remove secret';
+    static description = 'Remove a secret';
     static args = [
         {
             name: 'name',
-            description: 'secret name',
+            description: 'The secret name',
             required: true,
         }
     ];
