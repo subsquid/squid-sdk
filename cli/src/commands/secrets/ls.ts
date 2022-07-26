@@ -4,7 +4,7 @@ import { CliCommand } from "../../command";
 
 
 export default class Ls extends CliCommand {
-    static description = 'List secrets';
+    static description = 'List all secrets for the current Aquarium account';
     static args = [];
 
     static flags = {};
