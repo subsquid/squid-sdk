@@ -1,6 +1,6 @@
 import { CliUx } from "@oclif/core";
-import { listSecrets } from "../../../api";
-import { CliCommand } from "../../../command";
+import { listSecrets } from "../../api";
+import { CliCommand } from "../../command";
 
 
 export default class Ls extends CliCommand {

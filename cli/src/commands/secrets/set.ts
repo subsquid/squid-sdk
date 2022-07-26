@@ -1,5 +1,5 @@
-import { setSecret } from "../../../api";
-import { CliCommand } from "../../../command";
+import { setSecret } from "../../api";
+import { CliCommand } from "../../command";
 
 
 export default class Set extends CliCommand {

@@ -27,8 +27,7 @@
     "topics": {
       "db": { "description": "Database management commands" },
       "squid": { "description": "Squid management commands (SaaS)" },
-      "user": { "description": "User management commands" },
-      "user:secret": { "description": "User secrets management commands" }
+      "secrets": { "description": "Secrets management commands" }
     }
   },
   "homepage": "https://www.subsquid.io/",
