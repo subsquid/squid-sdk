@@ -296,6 +296,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return this
     }
 
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.MessageEnqueued` events belonging to particular program.
+     */
     addGearMessageEnqueued(
         programId: string,
         options?: BlockRangeOption & NoDataSelection
@@ -320,6 +324,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return this
     }
 
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.UserMessageSent` events belonging to particular program.
+     */
     addGearUserMessageSent(
         programId: string,
         options?: BlockRangeOption & NoDataSelection

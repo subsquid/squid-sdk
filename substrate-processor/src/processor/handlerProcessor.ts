@@ -544,6 +544,13 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `Gear.MessageEnqueued` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearMessageEnqueuedEvent | event type} and selects
+     * events by program id.
+     */
     addGearMessageEnqueuedHandler(
         programId: string,
         fn: GearMessageEnqueuedHandler<Store>
@@ -580,6 +587,13 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `Gear.UserMessageSent` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearUserMessageSentEvent | event type} and selects
+     * events by program id.
+     */
     addGearUserMessageSentHandler(
         programId: string,
         fn: GearUserMessageSentHandler<Store>
