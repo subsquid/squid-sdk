@@ -5,14 +5,14 @@ import type {OldTypes, OldTypesBundle, SpecVersionRange} from "./types"
 
 
 export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes
-export function getTypesFromBundle(bundles: Record<string, OldTypesBundle>, specVersion: number, specName: string): OldTypes
-export function getTypesFromBundle(bundleOrBundles: OldTypesBundle | Record<string, OldTypesBundle>, specVersion: number, specName?: string): OldTypes {
+export function getTypesFromBundle(specs: Record<string, OldTypesBundle>, specVersion: number, specName: string): OldTypes
+export function getTypesFromBundle(bundleOrSpecs: OldTypesBundle | Record<string, OldTypesBundle>, specVersion: number, specName?: string): OldTypes {
     let bundle: OldTypesBundle
     if (specName != null) {
-        let bundles = bundleOrBundles as Record<string, OldTypesBundle>
+        let bundles = bundleOrSpecs as Record<string, OldTypesBundle>
         bundle = bundles[specName]
     } else {
-        bundle = bundleOrBundles as OldTypesBundle
+        bundle = bundleOrSpecs as OldTypesBundle
     }
  
     let types: OldTypes = {
