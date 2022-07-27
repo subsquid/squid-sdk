@@ -1,9 +1,20 @@
+import { assertNotNull } from "@subsquid/util-internal"
 import {types as metadataDefinitions} from "./definitions/metadata"
 import {substrateBundle} from "./definitions/substrate"
 import type {OldTypes, OldTypesBundle, SpecVersionRange} from "./types"
 
 
-export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes {
+export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes
+export function getTypesFromBundle(bundles: Record<string, OldTypesBundle>, specVersion: number, specName: string): OldTypes
+export function getTypesFromBundle(bundleOrBundles: OldTypesBundle | Record<string, OldTypesBundle>, specVersion: number, specName?: string): OldTypes {
+    let bundle: OldTypesBundle
+    if (specName != null) {
+        let bundles = bundleOrBundles as Record<string, OldTypesBundle>
+        bundle = bundles[specName]
+    } else {
+        bundle = bundleOrBundles as OldTypesBundle
+    }
+ 
     let types: OldTypes = {
         types: {
             ...metadataDefinitions as any,

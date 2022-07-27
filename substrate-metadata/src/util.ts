@@ -1,9 +1,10 @@
-import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {last} from "@subsquid/util-internal"
-import {toCamelCase} from "@subsquid/util-naming"
+import { getUnwrappedType } from "@subsquid/scale-codec/lib/types-codec"
+import { last } from "@subsquid/util-internal"
+import { toCamelCase } from "@subsquid/util-naming"
 import crypto from "crypto"
-import type {Metadata} from "./interfaces"
-import {Field, Type, TypeKind, VariantType} from "./types"
+import type { Metadata } from "./interfaces"
+import { OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle } from "./old/types"
+import { Field, Type, TypeKind, VariantType } from "./types"
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
@@ -77,7 +78,7 @@ function removeUnitFieldsFromStructs(types: Type[]): Type[] {
     while (changed) {
         changed = false
         types = types.map(type => {
-            switch(type.kind) {
+            switch (type.kind) {
                 case TypeKind.Composite: {
                     if (type.fields[0]?.name == null) return type
                     let fields = type.fields.filter(f => {
@@ -142,9 +143,9 @@ function replaceUnitOptionWithBoolean(types: Type[]): Type[] {
 
 function normalizeFieldNames(types: Type[]): Type[] {
     return types.map(type => {
-        switch(type.kind) {
+        switch (type.kind) {
             case TypeKind.Composite:
-                return  {
+                return {
                     ...type,
                     fields: convertToCamelCase(type.fields)
                 }
@@ -173,7 +174,7 @@ function convertToCamelCase(fields: Field[]): Field[] {
                 name = name.slice(2)
             }
             name = toCamelCase(name)
-            return {...f, name}
+            return { ...f, name }
         } else {
             return f
         }
@@ -190,7 +191,7 @@ export function sha256(obj: object | string): string {
 
 
 export function isPreV14(metadata: Metadata): boolean {
-    switch(metadata.__kind) {
+    switch (metadata.__kind) {
         case 'V0':
         case 'V1':
         case 'V2':
@@ -209,4 +210,42 @@ export function isPreV14(metadata: Metadata): boolean {
         default:
             return false
     }
+}
+
+interface PolkadotJSTypesBundle {
+    spec: {
+        [specName: string]: {
+            types: {
+                types: Record<string, OldTypeDefinition>
+                minmax: [
+                    min: number | undefined | null,
+                    max: number | undefined | null
+                ]
+            }[]
+            alias: OldTypesAlias,
+            signedExtensions: Record<string, OldTypeExp>
+        }
+    }
+}
+
+export function convertPolkadotJSTypesBundle(typesByndle: PolkadotJSTypesBundle): Record<string, OldTypesBundle> {
+    let res: Record<string, OldTypesBundle> = {}
+
+    for (let specName in typesByndle.spec) {
+        let spec = typesByndle.spec[specName]
+        res[specName] = {
+            types: {},
+            typesAlias: spec.alias,
+            signedExtensions: spec.signedExtensions,
+            versions: spec.types.map(v => ({
+                minmax: [
+                    v.minmax[0] || null,
+                    v.minmax[1] || null
+                ],
+                types: v.types,
+            })),
+        }
+    }
+
+    return res
 }
