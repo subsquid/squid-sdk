@@ -1,6 +1,8 @@
 import type {
     ContractsContractEmittedEvent,
     EvmLogEvent,
+    GearMessageEnqueuedEvent,
+    GearUserMessageSentEvent,
     SubstrateCall,
     SubstrateEvent,
     SubstrateExtrinsic,
@@ -128,12 +130,30 @@ type ContractsContractEmittedEventType<R> = R extends true
         : never
 
 
+type GearMessageEnqueuedEventType<R> = R extends true
+    ? GearMessageEnqueuedEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearMessageEnqueuedEvent>, R>
+        : never
+
+
+type GearUserMessageSentEventType<R> = R extends true
+    ? GearUserMessageSentEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearUserMessageSentEvent>, R>
+        : never
+
+
 export type EventType<R, N = string> =
     N extends 'Contracts.ContractEmitted'
         ? ContractsContractEmittedEventType<R>
         : N extends 'EVM.Log'
             ? EvmLogEventType<R>
-            : CommonEventType<R>
+            : N extends 'Gear.MessageEnqueued'
+                ? GearMessageEnqueuedEventType<R>
+                : N extends 'Gear.UserMessageSent'
+                    ? GearUserMessageSentEventType<R>
+                    : CommonEventType<R>
 
 
 export interface EventDataRequest {

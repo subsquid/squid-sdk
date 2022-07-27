@@ -989,7 +989,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
     }
 
-    private *getGearUserMessageSentHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearMessageEnqueuedHandler<any>> {
+    private *getGearUserMessageSentHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearUserMessageSentHandler<any>> {
         if (event.name != 'Gear.UserMessageSent') return
         let e = event as GearUserMessageSentEvent
 
