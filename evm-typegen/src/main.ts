@@ -126,15 +126,18 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.line();
 
-    const abiFunctions: Array<AbiFunction> = Object.values(abi.functions)
-        .filter((func: FunctionFragment) => func.constant && func.outputs != null)
-        .map((func): AbiFunction => {
-            return {
-                name: func.name,
-                inputs: func.inputs,
-                outputs: func.outputs || []
-            };
-        });
+
+    let abiFunctions: AbiFunction[] = []
+    for (let func of Object.values(abi.functions)) {
+        if (!func.constant) continue
+
+        let overloadNumber = abiFunctions.filter(f => f.name == func.name).length
+        abiFunctions.push({
+            name: overloadNumber > 0 ? func.name + overloadNumber : func.name,
+            inputs: func.inputs,
+            outputs: func.outputs || []
+        })
+    }
 
     output.block("interface ChainContext ", () => {
         output.line(`_chain: Chain`);
@@ -182,18 +185,18 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             output.line(`return abi.decodeFunctionResult(fragment, result)`);
         })
         for (const decl of abiFunctions) {
-            const params = decl.inputs.map((i) => `${i.name}: ${getType(i)}`)
-            const returnType = decl.outputs.length > 1
-                ? `{${decl.outputs.map((i) => `${i.name}: ${getType(i)}`)}}`
-                : getType(decl.outputs[0])
             output.line();
+            const params = decl.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
+            const returnType = decl.outputs.length > 1
+                ? `{${decl.outputs.map((o, n) => `${o.name || `result${n}`}: ${getType(o)}`)}}`
+                : getType(decl.outputs[0])
             output.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
-                output.line(`const result = await this.call("${decl.name}", [${decl.inputs.map((i) => `${i.name}`).join(`, `)}])`);
+                output.line(`const result = await this.call("${decl.name}", [${decl.inputs.map((i, n) => `${i.name || `arg${n}`}`).join(`, `)}])`);
                 if (decl.outputs.length > 1) {
                     output.block("return ", () => {
                         for (let i = 0; i < decl.outputs.length; ++i) {
                             const out = decl.outputs[i];
-                            output.line(`${out.name}: ${`result[${i}]`},`);
+                            output.line(`${out.name || `result${i}`}: ${`result[${i}]`},`);
                         }
                     });
                 } else {
