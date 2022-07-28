@@ -396,10 +396,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): this {
+    setTypesBundle(bundle: string | OldTypesBundle, format?: string): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
-            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
+            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle, format)
         } else {
             this.typesBundle = bundle
         }
