@@ -1,5 +1,6 @@
 import fs from "fs"
 import {OldTypesBundle} from "./old/types"
+import { convertPolkadotJSTypesBundle } from "./util"
 
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
@@ -70,7 +71,7 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
 }
 
 
-export function readOldTypesBundle(file: string): OldTypesBundle {
+export function readOldTypesBundle(file: string, format: string = 'subsquid'): OldTypesBundle | Record<string, OldTypesBundle> {
     let content: string
     try {
         content = fs.readFileSync(file, 'utf-8')
@@ -83,8 +84,15 @@ export function readOldTypesBundle(file: string): OldTypesBundle {
     } catch(e: any) {
         throw new OldTypesBundleError(`Failed to parse ${file}: ${e}`)
     }
-    // TODO: verify structure
-    return json
+
+    switch (format) {
+        case 'subsquid':
+            return json // TODO: verify structure
+        case 'polkadot.js':
+            return convertPolkadotJSTypesBundle(json)
+        default:
+            throw new OldTypesBundleError(`Uknown format: ${format}`)
+    }
 }
 
 

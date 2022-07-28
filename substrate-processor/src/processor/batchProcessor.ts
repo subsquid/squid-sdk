@@ -1,5 +1,5 @@
 import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {last, runProgram} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
@@ -82,7 +82,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     private batches: Batch<PlainBatchRequest>[] = []
     private options: Options = {}
     private src?: DataSource
-    private typesBundle?: OldTypesBundle
+    private typesBundle?: OldTypesBundle | OldSpecsBundle
     private running = false
 
     private add(request: PlainBatchRequest, range?: Range): void {
@@ -413,7 +413,14 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     }
 
     private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle = this.typesBundle || getOldTypesBundle(specName)
+        let bundle: OldTypesBundle | undefined
+        if (this.typesBundle != null) {
+            bundle = this.typesBundle.types != null
+                ? this.typesBundle as OldTypesBundle
+                : (this.typesBundle as OldSpecsBundle)[specName]
+        } else {
+            bundle = getOldTypesBundle(specName)
+        }
         if (bundle) return bundle
         throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
     }

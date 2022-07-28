@@ -5,6 +5,7 @@ import {
     getChainDescriptionFromMetadata,
     getOldTypesBundle,
     isPreV14,
+    OldSpecsBundle,
     OldTypes,
     OldTypesBundle
 } from "@subsquid/substrate-metadata"
@@ -31,7 +32,7 @@ import {
 
 export interface IngestOptions {
     client: Client
-    typesBundle?: OldTypesBundle
+    typesBundle?: OldTypesBundle | OldSpecsBundle
     startBlock?: number
     log?: Logger
 }
@@ -43,7 +44,7 @@ export class Ingest {
     }
 
     private client: Client
-    private typesBundle?: OldTypesBundle
+    private typesBundle?: OldTypesBundle | OldSpecsBundle
     private maxStrides = 20
     private readonly strideSize = 10
     private log?: Logger
@@ -247,7 +248,7 @@ export class Ingest {
                 this.typesBundle || getOldTypesBundle(specName),
                 `types bundle is required for ${specName} chain`
             )
-            oldTypes = getTypesFromBundle(typesBundle, specVersion)
+            oldTypes = getTypesFromBundle(typesBundle, specVersion, specName)
         }
         let description = getChainDescriptionFromMetadata(metadata, oldTypes)
         return {

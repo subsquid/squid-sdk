@@ -48,3 +48,5 @@ export interface OldTypesWithSpecVersionRange extends OldTypes {
 export interface OldTypesBundle extends OldTypes {
     versions?: OldTypesWithSpecVersionRange[]
 }
+
+export type OldSpecsBundle = Record<string, OldTypesBundle>

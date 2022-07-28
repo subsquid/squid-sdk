@@ -25,6 +25,7 @@ runProgram(async () => {
     program.requiredOption('-e, --endpoint <url...>', 'WS rpc endpoint')
     program.option('-c, --endpoint-capacity <number...>', 'Maximum number of pending requests allowed for endpoint')
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
+    program.option('--format <name>', 'Format of types bundle')
     program.option('--out <sink>', 'Name of a file or postgres connection string')
     program.option('--start-block <number>', 'Height of the block from which to start processing', positiveInteger)
     program.option(
@@ -43,6 +44,7 @@ runProgram(async () => {
         endpointCapacity: string[]
         out?: string
         typesBundle?: string
+        format?: string
         startBlock?: number
         writeBatchSize?: number,
         promPort?: number
@@ -86,7 +88,7 @@ runProgram(async () => {
 
     let typesBundle = options.typesBundle == null
         ? undefined
-        : readOldTypesBundle(options.typesBundle)
+        : readOldTypesBundle(options.typesBundle, options.format)
 
     let startBlock = options.startBlock || 0
     let writeSpeed = new Speed()

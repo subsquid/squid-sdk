@@ -1,5 +1,5 @@
 import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
@@ -56,7 +56,7 @@ export class SubstrateProcessor<Store> {
     private batchSize = 100
     private prometheusPort?: number | string
     private src?: DataSource
-    private typesBundle?: OldTypesBundle
+    private typesBundle?: OldTypesBundle | OldSpecsBundle
     private running = false
 
     /**
@@ -622,7 +622,14 @@ export class SubstrateProcessor<Store> {
     }
 
     private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle = this.typesBundle || getOldTypesBundle(specName)
+        let bundle: OldTypesBundle | undefined
+        if (this.typesBundle != null) {
+            bundle = this.typesBundle.types != null
+                ? this.typesBundle as OldTypesBundle
+                : (this.typesBundle as OldSpecsBundle)[specName]
+        } else {
+            bundle = getOldTypesBundle(specName)
+        }
         if (bundle) return bundle
         throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
     }

@@ -9,6 +9,7 @@ export interface Config {
     outDir: string
     specVersions: string
     typesBundle?: string
+    format?: string
     events?: QualifiedName[] | boolean
     calls?: QualifiedName[] | boolean
     storage?: QualifiedName[] | boolean
@@ -49,6 +50,7 @@ export function readConfig(file: string): Config {
             outDir,
             specVersions,
             typesBundle,
+            format: json.format,
             events: json.events,
             calls: json.calls,
             storage: json.storage,
