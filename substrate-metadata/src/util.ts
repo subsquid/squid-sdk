@@ -2,7 +2,7 @@ import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {last} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
-import type { Metadata } from "./interfaces"
+import type {Metadata} from "./interfaces"
 import {OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle} from "./old/types"
 import {Field, Type, TypeKind, VariantType} from "./types"
 
@@ -174,7 +174,7 @@ function convertToCamelCase(fields: Field[]): Field[] {
                 name = name.slice(2)
             }
             name = toCamelCase(name)
-            return { ...f, name }
+            return {...f, name}
         } else {
             return f
         }
