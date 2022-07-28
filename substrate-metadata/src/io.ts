@@ -1,6 +1,6 @@
 import fs from "fs"
 import {OldSpecsBundle, OldTypesBundle} from "./old/types"
-import { convertPolkadotJSTypesBundle } from "./util"
+import {convertPolkadotJSTypesBundle} from "./util"
 
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {

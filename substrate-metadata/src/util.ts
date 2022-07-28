@@ -1,10 +1,10 @@
-import { getUnwrappedType } from "@subsquid/scale-codec/lib/types-codec"
-import { last } from "@subsquid/util-internal"
-import { toCamelCase } from "@subsquid/util-naming"
+import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
+import {last} from "@subsquid/util-internal"
+import {toCamelCase} from "@subsquid/util-naming"
 import crypto from "crypto"
 import type { Metadata } from "./interfaces"
-import { OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle } from "./old/types"
-import { Field, Type, TypeKind, VariantType } from "./types"
+import {OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle} from "./old/types"
+import {Field, Type, TypeKind, VariantType} from "./types"
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
