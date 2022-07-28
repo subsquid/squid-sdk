@@ -9,7 +9,7 @@ export interface GraphqlRequestRetryConfig {
 
 
 export interface GraphqlRequest {
-    headers?: Partial<Record<'x-squid-id', string>>
+    headers?: Partial<Record<string, string>>
     url: string
     query: string
     method?: 'GET' | 'POST'
