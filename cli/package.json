@@ -27,7 +27,7 @@
     "topics": {
       "db": { "description": "Database management commands. Deprecated, use squid-typeorm-migration." },
       "squid": { "description": "Manage squid deployments to the Aquarium cloud service." },
-      "secret": { "description": "Manage account secrets. The secrets are exposed as enviroment variables, and are accessible to all the squids deployed by the current Aquarium account." }
+      "secrets": { "description": "Manage account secrets. The secrets are exposed as enviroment variables, and are accessible to all the squids deployed by the current Aquarium account." }
     }
   },
   "homepage": "https://www.subsquid.io/",
