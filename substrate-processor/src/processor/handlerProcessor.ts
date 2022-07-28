@@ -871,7 +871,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                     for (let handler of this.getGearMessageEnqueuedHandlers(handlers, item.event)) {
                         let event = item.event as GearMessageEnqueuedEvent
                         let log = blockLog.child({
-                            hook: 'message-enqueued',
+                            hook: 'gear-message-enqueued',
                             programId: event.args.destination,
                             eventId: event.id
                         })
@@ -886,7 +886,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                     for (let handler of this.getGearUserMessageSentHandlers(handlers, item.event)) {
                         let event = item.event as GearUserMessageSentEvent
                         let log = blockLog.child({
-                            hook: 'message-enqueued',
+                            hook: 'gear-message-sent',
                             programId: event.args.message.source,
                             eventId: event.id
                         })
