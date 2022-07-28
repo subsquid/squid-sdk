@@ -3,11 +3,13 @@ import { getCreds } from '../../creds';
 import { request } from '../request';
 
 type DeploymentStatus = 'CREATED' | 'BUILDING' | 'ERROR' | 'OK';
+type SecretsStatus = 'UP_TO_DATE' | 'NONE' | 'OUTDATED';
 
 export type DeploymentListResponse = {
     name: string;
     artifactUrl: string;
     deploymentUrl: string;
+    secretsStatus: SecretsStatus;
     status: DeploymentStatus;
     createdAt: number;
 };

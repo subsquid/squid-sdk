@@ -18,6 +18,7 @@ export type DeployResponse = {
 }
 
 export type DeploymentStatus = 'CREATED' | 'DEPLOYING' | 'DEPLOY_ERROR' | 'DEPLOYED';
+export type SecretsStatus = 'UP_TO_DATE' | 'NONE' | 'OUTDATED';
 
 export type VersionResponse = {
   name: string;
@@ -25,6 +26,7 @@ export type VersionResponse = {
   deploymentUrl: string;
   description: string;
   status: DeploymentStatus;
+  secretStatus: SecretsStatus;
   api: {
     status: string
   };
