@@ -1,5 +1,5 @@
 import fs from "fs"
-import {OldTypesBundle} from "./old/types"
+import {OldSpecsBundle, OldTypesBundle} from "./old/types"
 import { convertPolkadotJSTypesBundle } from "./util"
 
 
@@ -71,7 +71,7 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
 }
 
 
-export function readOldTypesBundle(file: string, format: string = 'subsquid'): OldTypesBundle | Record<string, OldTypesBundle> {
+export function readOldTypesBundle(file: string, format: string = 'subsquid'): OldTypesBundle | OldSpecsBundle {
     let content: string
     try {
         content = fs.readFileSync(file, 'utf-8')
