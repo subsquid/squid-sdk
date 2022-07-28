@@ -15,7 +15,7 @@ export default class Rm extends CliCommand {
 
     async run(): Promise<void> {
         const { flags: { }, args: { name } } = await this.parse(Rm);
-        const response = await removeSecret(name);
-        this.log(`Secret '${response.name}' removed`);
+        await removeSecret(name);
+        this.log(`Secret '${name}' removed`);
     }
 }

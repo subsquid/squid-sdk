@@ -16,7 +16,7 @@ export class ApiError extends Error {
 
 export async function api<T = any>(
   { method, path, data, query, responseType = 'json' } : {
-    method: 'get' |'post' | 'put' | 'delete'
+    method: 'get' |'post' | 'put' | 'delete' | 'patch'
     path: string,
     query?: Record<string, string | string[] | boolean | number | undefined>,
     data?: unknown

@@ -59,10 +59,6 @@ export type SecretsListResponse = {
   secrets: Record<string, string>;
 }
 
-export type SetSecretResponse = {
-  name: string;
-}
-
 export type ManifestResponse = {
   squid: SquidResponse
 }
