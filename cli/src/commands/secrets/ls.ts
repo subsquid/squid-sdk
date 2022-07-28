@@ -12,7 +12,7 @@ export default class Ls extends CliCommand {
     async run(): Promise<void> {
         const { flags: { }, args: { } } = await this.parse(Ls);
         const response = await listSecrets();
-        if (response.secrets) {
+        if (Object.keys(response.secrets).length) {
             let values: {name: string, value: string}[] = []
             for (const secret in response.secrets) {
                 values.push({name: secret, value: response.secrets[secret]})
@@ -25,6 +25,8 @@ export default class Ls extends CliCommand {
                 },
                 { 'no-truncate': false }
             );
+        } else {
+            this.log("There are no secrets");
         }
     }
 }

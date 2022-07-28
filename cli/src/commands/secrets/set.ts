@@ -20,6 +20,7 @@ export default class Set extends CliCommand {
 
     async run(): Promise<void> {
         const { flags: { }, args: { name, value } } = await this.parse(Set);
-        setSecret(name, value);
+        const response = await setSecret(name, value);
+        this.log(`Secret '${response.name}' set`);
     }
 }
