@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "add X-SQUID-ID request header to metadata request",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}
