@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-gql-request",
+      "comment": "add `headers` option",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-gql-request"
+}

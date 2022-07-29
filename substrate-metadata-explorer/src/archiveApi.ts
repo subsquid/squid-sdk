@@ -54,6 +54,9 @@ export class ArchiveApi implements ExploreApi {
 
     private request<T>(query: string): Promise<T> {
         return graphqlRequest<T>({
+            headers: {
+                'x-squid-id': 'metadata-explorer'
+            },
             url: this.url,
             query,
             retry: {
