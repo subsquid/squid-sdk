@@ -96,14 +96,13 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     output.line();
 
     output.block(`function decodeEvent(signature: string, data: EvmEvent): any`, () => {
-        output.line(`const result = abi.decodeEventLog(`);
+        output.line(`return abi.decodeEventLog(`);
         output.indentation(() => {
             output.line(`abi.getEvent(signature),`);
             output.line(`data.data || "",`);
             output.line("data.topics");
         });
         output.line(");");
-        output.line("return result")
     });
 
     output.line();

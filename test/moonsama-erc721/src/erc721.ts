@@ -15,30 +15,29 @@ export interface EvmEvent {
 }
 
 function decodeEvent(signature: string, data: EvmEvent): any {
-  const result = abi.decodeEventLog(
+  return abi.decodeEventLog(
     abi.getEvent(signature),
     data.data || "",
     data.topics
   );
-  return result
 }
 
 export const events = {
-  "Approval(address,address,uint256)":  {
+  "Approval(address,address,uint256)": {
     topic: abi.getEventTopic("Approval(address,address,uint256)"),
     decode(data: EvmEvent): Approval0Event {
       return decodeEvent("Approval(address,address,uint256)", data)
     }
   }
   ,
-  "ApprovalForAll(address,address,bool)":  {
+  "ApprovalForAll(address,address,bool)": {
     topic: abi.getEventTopic("ApprovalForAll(address,address,bool)"),
     decode(data: EvmEvent): ApprovalForAll0Event {
       return decodeEvent("ApprovalForAll(address,address,bool)", data)
     }
   }
   ,
-  "Transfer(address,address,uint256)":  {
+  "Transfer(address,address,uint256)": {
     topic: abi.getEventTopic("Transfer(address,address,uint256)"),
     decode(data: EvmEvent): Transfer0Event {
       return decodeEvent("Transfer(address,address,uint256)", data)
