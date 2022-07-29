@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "add X-SQUID-ID request header to processor request",
-      "type": "minor"
+      "comment": "add X-SQUID-ID HTTP header to archive requests",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/substrate-processor"
