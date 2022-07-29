@@ -14,8 +14,9 @@ export function getTypesFromBundle(bundleOrSpecs: OldTypesBundle | OldSpecsBundl
     } else {
         let bundles = bundleOrSpecs as OldSpecsBundle
         bundle = bundles[assertNotNull(specName)]
+        assertNotNull(bundle, `Missing typesBundle for spec ${specName}@${specVersion}`)
     }
- 
+
     let types: OldTypes = {
         types: {
             ...metadataDefinitions as any,

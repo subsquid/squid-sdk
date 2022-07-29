@@ -91,7 +91,7 @@ export function readOldTypesBundle(file: string, format: string = 'subsquid'): O
         case 'polkadot.js':
             return convertPolkadotJSTypesBundle(json)
         default:
-            throw new OldTypesBundleError(`Uknown format: ${format}`)
+            throw new OldTypesBundleError(`Unknown typesBundle format: ${format}`)
     }
 }
 
