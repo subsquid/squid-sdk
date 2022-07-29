@@ -86,51 +86,51 @@ export class Contract  {
   }
 
   async balanceOf(owner: string): Promise<ethers.BigNumber> {
-    return await this.call("balanceOf", [owner])
+    return this.call("balanceOf", [owner])
   }
 
   async baseURI(): Promise<string> {
-    return await this.call("baseURI", [])
+    return this.call("baseURI", [])
   }
 
   async getApproved(tokenId: ethers.BigNumber): Promise<string> {
-    return await this.call("getApproved", [tokenId])
+    return this.call("getApproved", [tokenId])
   }
 
   async isApprovedForAll(owner: string, operator: string): Promise<boolean> {
-    return await this.call("isApprovedForAll", [owner, operator])
+    return this.call("isApprovedForAll", [owner, operator])
   }
 
   async name(): Promise<string> {
-    return await this.call("name", [])
+    return this.call("name", [])
   }
 
   async ownerOf(tokenId: ethers.BigNumber): Promise<string> {
-    return await this.call("ownerOf", [tokenId])
+    return this.call("ownerOf", [tokenId])
   }
 
   async supportsInterface(interfaceId: string): Promise<boolean> {
-    return await this.call("supportsInterface", [interfaceId])
+    return this.call("supportsInterface", [interfaceId])
   }
 
   async symbol(): Promise<string> {
-    return await this.call("symbol", [])
+    return this.call("symbol", [])
   }
 
   async tokenByIndex(index: ethers.BigNumber): Promise<ethers.BigNumber> {
-    return await this.call("tokenByIndex", [index])
+    return this.call("tokenByIndex", [index])
   }
 
   async tokenOfOwnerByIndex(owner: string, index: ethers.BigNumber): Promise<ethers.BigNumber> {
-    return await this.call("tokenOfOwnerByIndex", [owner, index])
+    return this.call("tokenOfOwnerByIndex", [owner, index])
   }
 
   async tokenURI(tokenId: ethers.BigNumber): Promise<string> {
-    return await this.call("tokenURI", [tokenId])
+    return this.call("tokenURI", [tokenId])
   }
 
   async totalSupply(): Promise<ethers.BigNumber> {
-    return await this.call("totalSupply", [])
+    return this.call("totalSupply", [])
   }
 
   private async call(name: string, args: any[]) : Promise<any> {

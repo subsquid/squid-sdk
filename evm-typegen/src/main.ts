@@ -199,14 +199,14 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
                     output.line(`async ${decl.name}(${args}): Promise<${returnType}>`)
                 }
                 output.block(`async ${decl.name}(...args: any[])`, () => {
-                    output.line(`return await this.call("${decl.name}", args)`);
+                    output.line(`return this.call("${decl.name}", args)`);
                 });
             } else {
                 const overload = decl.overloads[0]
                 const params = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
                 const returnType = overload.returnTypeName
                 output.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
-                    output.line(`return await this.call("${decl.name}", [${overload.inputs.map((i, n) => `${i.name || `arg${n}`}`).join(`, `)}])`);
+                    output.line(`return this.call("${decl.name}", [${overload.inputs.map((i, n) => `${i.name || `arg${n}`}`).join(`, `)}])`);
                 });
             }
             output.line();
