@@ -33,7 +33,8 @@ export default class Ls extends Command {
                         name: { header: 'version' },
                         artifactUrl: { header: 'endpoint' },
                         deploymentUrl: { header: 'source' },
-                        status: {},
+                        status: { header: 'status' },
+                        secretsStatus: { header: 'secrets' },
                         createdAt: { header: 'created at' },
                     },
                     { 'no-truncate': noTruncate }
