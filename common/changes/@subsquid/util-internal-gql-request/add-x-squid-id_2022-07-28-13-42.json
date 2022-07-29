@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-gql-request",
-      "comment": "add X-SQUID-ID request header to requests",
+      "comment": "add `headers` option",
       "type": "minor"
     }
   ],
