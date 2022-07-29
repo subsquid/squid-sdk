@@ -3,7 +3,7 @@ import {readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {runProgram} from "@subsquid/util-internal"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
-import {Command} from "commander"
+import {Command, Option} from "commander"
 import * as fs from "fs"
 import path from "path"
 import * as pg from "pg"
@@ -25,7 +25,7 @@ runProgram(async () => {
     program.requiredOption('-e, --endpoint <url...>', 'WS rpc endpoint')
     program.option('-c, --endpoint-capacity <number...>', 'Maximum number of pending requests allowed for endpoint')
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
-    program.option('--format <name>', 'Format of types bundle')
+    program.addOption(new Option('--format <name>', 'The the type bundle file format.').choices(['subsquid', 'polkadotjs']))
     program.option('--out <sink>', 'Name of a file or postgres connection string')
     program.option('--start-block <number>', 'Height of the block from which to start processing', positiveInteger)
     program.option(
@@ -56,7 +56,7 @@ runProgram(async () => {
             assert(Number.isSafeInteger(cap))
             assert(cap > 0)
             return cap
-        } catch(e: any) {
+        } catch (e: any) {
             log.fatal(`Expected positive integer for endpoint capacity, but got: ${s}`)
             process.exit(1)
         }
@@ -66,11 +66,11 @@ runProgram(async () => {
         let u: URL
         try {
             u = new URL(url)
-        } catch(e: any) {
+        } catch (e: any) {
             log.fatal(`Invalid endpoint url: ${url}`)
             process.exit(1)
         }
-        switch(u.protocol) {
+        switch (u.protocol) {
             case 'ws:':
             case 'wss:':
                 break
@@ -193,7 +193,7 @@ function every(ms: number, cb: () => void): void {
         try {
             cb()
             every(ms, cb)
-        } catch(e: any) {
+        } catch (e: any) {
             console.error(e)
             process.exit(1)
         }
