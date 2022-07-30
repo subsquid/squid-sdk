@@ -25,7 +25,7 @@ Generates TypeScript classes for events, calls and storage items
 
     let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
     if (config.typesBundle) {
-        typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle, config.format)
+        typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle)
     }
 
     let specVersions: SpecVersion[]

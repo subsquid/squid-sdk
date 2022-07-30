@@ -71,7 +71,7 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
 }
 
 
-export function readOldTypesBundle(file: string, format: string = 'subsquid'): OldTypesBundle | OldSpecsBundle {
+export function readOldTypesBundle(file: string): OldTypesBundle | OldSpecsBundle {
     let content: string
     try {
         content = fs.readFileSync(file, 'utf-8')
@@ -85,14 +85,8 @@ export function readOldTypesBundle(file: string, format: string = 'subsquid'): O
         throw new OldTypesBundleError(`Failed to parse ${file}: ${e}`)
     }
 
-    switch (format) {
-        case 'subsquid':
-            return json // TODO: verify structure
-        case 'polkadotjs':
-            return convertPolkadotJSTypesBundle(json)
-        default:
-            throw new OldTypesBundleError(`Unknown typesBundle format: ${format}`)
-    }
+    return json // TODO: verify structure
+    return convertPolkadotJSTypesBundle(json)
 }
 
 

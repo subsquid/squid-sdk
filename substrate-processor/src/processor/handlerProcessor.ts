@@ -111,10 +111,10 @@ export class SubstrateProcessor<Store> {
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle, format?: string): this {
+    setTypesBundle(bundle: string | OldTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
-            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle, format)
+            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
             this.typesBundle = bundle
         }
