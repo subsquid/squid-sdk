@@ -16,7 +16,7 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'moonbeam':
         case 'moonbase':
         case 'moonriver':
-            return require('./old/definitions/moonsama').bundle
+            return require('./old/definitions/moonbeam').bundle
         case 'polkadot':
             return require('./old/definitions/polkadot').bundle
         case 'acala':
@@ -85,8 +85,11 @@ export function readOldTypesBundle(file: string): OldTypesBundle | OldSpecsBundl
         throw new OldTypesBundleError(`Failed to parse ${file}: ${e}`)
     }
 
-    return json // TODO: verify structure
-    return convertPolkadotJSTypesBundle(json)
+    if (json.types != null) {
+        return json // TODO: verify structure
+    } else {
+        return convertPolkadotJSTypesBundle(json)
+    }
 }
 
 

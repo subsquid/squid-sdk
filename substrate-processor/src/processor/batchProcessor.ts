@@ -1,6 +1,7 @@
 import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {last, runProgram} from "@subsquid/util-internal"
+import {getOldTypesBundle, OldSpecsBundle, OldTypes, OldTypesBundle, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
+import {assertNotNull, last, runProgram} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
@@ -396,10 +397,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle, format?: string): this {
+    setTypesBundle(bundle: string | OldTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
-            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle, format)
+            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
             this.typesBundle = bundle
         }
@@ -412,17 +413,20 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         }
     }
 
-    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle: OldTypesBundle | undefined
+    private getTypes(specName: string, specVersion: number): OldTypes {
+        let bundle: OldTypesBundle | OldSpecsBundle | undefined
         if (this.typesBundle != null) {
-            bundle = this.typesBundle.types != null
-                ? this.typesBundle as OldTypesBundle
-                : (this.typesBundle as OldSpecsBundle)[specName]
+            bundle = this.typesBundle
         } else {
             bundle = getOldTypesBundle(specName)
         }
-        if (bundle) return bundle
-        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+        
+        bundle = assertNotNull(
+            bundle,
+            `Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`
+        )
+
+        return getTypesFromBundle(bundle, specVersion, specName)
     }
 
     private getArchiveEndpoint(): string {
@@ -463,7 +467,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
                 getDatabase: () => db,
                 getArchiveEndpoint: () => this.getArchiveEndpoint(),
                 getChainEndpoint: () => this.getChainEndpoint(),
-                getTypesBundle: this.getTypesBundle.bind(this),
+                getTypes: this.getTypes.bind(this),
                 getLogger: () => logger,
                 getOptions: () => this.options,
                 createBatches(blockRange: Range): Batch<PlainBatchRequest>[] {

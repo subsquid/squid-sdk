@@ -1,6 +1,7 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {last} from "@subsquid/util-internal"
 import {toCamelCase} from "@subsquid/util-naming"
+import assert from "assert"
 import crypto from "crypto"
 import type {Metadata} from "./interfaces"
 import {OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle} from "./old/types"
@@ -213,10 +214,11 @@ export function isPreV14(metadata: Metadata): boolean {
 }
 
 interface PolkadotJSTypesBundle {
+    chain: {}
     spec: {
         [specName: string]: {
             types: {
-                types: Record<string, OldTypeDefinition>
+                types: Record<string, any>
                 minmax: [
                     min: number | undefined | null,
                     max: number | undefined | null
@@ -228,22 +230,39 @@ interface PolkadotJSTypesBundle {
     }
 }
 
-export function convertPolkadotJSTypesBundle(typesByndle: PolkadotJSTypesBundle): Record<string, OldTypesBundle> {
+export function convertPolkadotJSTypesBundle(typesBundle: PolkadotJSTypesBundle): Record<string, OldTypesBundle> {
     let res: Record<string, OldTypesBundle> = {}
 
-    for (let specName in typesByndle.spec) {
-        let spec = typesByndle.spec[specName]
+    assert(typesBundle.chain == null, ``) // need to add error text
+
+    for (let specName in typesBundle.spec) {
+        let spec = typesBundle.spec[specName]
         res[specName] = {
             types: {},
             typesAlias: spec.alias,
             signedExtensions: spec.signedExtensions,
-            versions: spec.types.map(v => ({
-                minmax: [
-                    v.minmax[0] || null,
-                    v.minmax[1] || null
-                ],
-                types: v.types,
-            })),
+            versions: spec.types.map(v => {
+                for (let typeName in v.types) {
+                    let type = v.types[typeName]
+                    if (typeof type === 'object') {
+                        if (type._alias != null) {
+                            // warn
+                            delete type._alias
+                        }
+                        if (type._fallback != null) {
+                            // warn
+                            delete type._fallback
+                        }
+                    }
+                }
+                return {
+                    minmax: [
+                        v.minmax[0] || null,
+                        v.minmax[1] || null
+                    ],
+                    types: v.types,
+                }
+            }),
         }
     }
 

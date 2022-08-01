@@ -87,7 +87,7 @@ runProgram(async () => {
 
     let typesBundle = options.typesBundle == null
         ? undefined
-        : readOldTypesBundle(options.typesBundle, options.format)
+        : readOldTypesBundle(options.typesBundle)
 
     let startBlock = options.startBlock || 0
     let writeSpeed = new Speed()

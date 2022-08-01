@@ -1,5 +1,6 @@
 import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, OldSpecsBundle, OldTypes, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
@@ -233,7 +234,7 @@ export class SubstrateProcessor<Store> {
     addPreHook(fn: BlockHandler<Store>): this
     addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): this
     addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): this {
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -358,7 +359,7 @@ export class SubstrateProcessor<Store> {
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): this
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): this
-    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): this
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R>): this
     addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): this {
         this.assertNotRunning()
         let handler: EventHandler<Store>
@@ -419,7 +420,7 @@ export class SubstrateProcessor<Store> {
     addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
+        let options: CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -468,7 +469,7 @@ export class SubstrateProcessor<Store> {
     ): this {
         this.assertNotRunning()
         let handler: EvmLogHandler<Store>
-        let options:  EvmLogOptions= {}
+        let options: EvmLogOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -535,7 +536,7 @@ export class SubstrateProcessor<Store> {
     private createBatches(blockRange: Range) {
         let batches: Batch<DataHandlers>[] = []
 
-        function getRange(hook: { range?: Range }): Range{
+        function getRange(hook: {range?: Range}): Range {
             return hook.range || {from: 0}
         }
 
@@ -621,17 +622,20 @@ export class SubstrateProcessor<Store> {
         return this.db
     }
 
-    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle: OldTypesBundle | undefined
+    private getTypes(specName: string, specVersion: number): OldTypes {
+        let bundle: OldTypesBundle | OldSpecsBundle | undefined
         if (this.typesBundle != null) {
-            bundle = this.typesBundle.types != null
-                ? this.typesBundle as OldTypesBundle
-                : (this.typesBundle as OldSpecsBundle)[specName]
+            bundle = this.typesBundle
         } else {
             bundle = getOldTypesBundle(specName)
         }
-        if (bundle) return bundle
-        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+        
+        bundle = assertNotNull(
+            bundle,
+            `Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`
+        )
+
+        return getTypesFromBundle(bundle, specVersion, specName)
     }
 
     private getArchiveEndpoint(): string {
@@ -711,7 +715,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
 
         for (let item of block.items) {
-            switch(item.kind) {
+            switch (item.kind) {
                 case 'event':
                     for (let handler of this.getEventHandlers(handlers, item.event)) {
                         let log = blockLog.child({
