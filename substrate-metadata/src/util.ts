@@ -233,7 +233,7 @@ interface PolkadotJSTypesBundle {
 export function convertPolkadotJSTypesBundle(typesBundle: PolkadotJSTypesBundle): Record<string, OldTypesBundle> {
     let res: Record<string, OldTypesBundle> = {}
 
-    assert(typesBundle.chain == null, ``) // need to add error text
+    assert(typesBundle.chain == null, '') // add error text
 
     for (let specName in typesBundle.spec) {
         let spec = typesBundle.spec[specName]
@@ -244,16 +244,8 @@ export function convertPolkadotJSTypesBundle(typesBundle: PolkadotJSTypesBundle)
             versions: spec.types.map(v => {
                 for (let typeName in v.types) {
                     let type = v.types[typeName]
-                    if (typeof type === 'object') {
-                        if (type._alias != null) {
-                            // warn
-                            delete type._alias
-                        }
-                        if (type._fallback != null) {
-                            // warn
-                            delete type._fallback
-                        }
-                    }
+                    assert(type._alias == null, '') // add error text
+                    assert(type._fallback == null, '') // add error text
                 }
                 return {
                     minmax: [
