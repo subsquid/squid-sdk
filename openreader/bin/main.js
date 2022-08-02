@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('../dist/main')()
+require('../dist/main')

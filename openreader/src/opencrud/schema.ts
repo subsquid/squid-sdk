@@ -44,12 +44,21 @@ import {parseWhere} from "./where"
 type GqlFieldMap = GraphQLFieldConfigMap<unknown, Context>
 
 
+export interface SchemaOptions {
+    model: Model
+    subscriptions?: boolean
+}
+
+
 export class SchemaBuilder {
+    private model: Model
     private types = new Map<string, GraphQLOutputType>()
     private where = new Map<string, GraphQLInputType>()
     private orderBy = new Map<string, GraphQLInputType>()
 
-    constructor(private model: Model) {}
+    constructor(private options: SchemaOptions) {
+        this.model = options.model
+    }
 
     private get(name: string): GraphQLOutputType
     private get<T extends GraphQLOutputType>(name: string, kind: Type<T>): T
@@ -387,10 +396,10 @@ export class SchemaBuilder {
                 name: 'Query',
                 fields: query
             }),
-            subscription: new GraphQLObjectType({
-                name: 'Subscription',
+            subscription: this.options.subscriptions ? new GraphQLObjectType({
+                name: "Subscription",
                 fields: subscription
-            })
+            }) : undefined
         })
     }
 

@@ -1,7 +1,9 @@
+import type {Logger} from "@subsquid/logger"
 import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
 import {ApolloServer} from "apollo-server-express"
 import express from "express"
 import fs from "fs"
+import {Disposable} from "graphql-ws"
 import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
 import http from "http"
 import path from "path"
@@ -14,45 +16,52 @@ import {SchemaBuilder} from "./opencrud/schema"
 
 
 export interface ServerOptions {
-    model: Model
-    db: Pool
     port: number | string
+    model: Model
+    connection: Pool
     dialect?: Dialect
+    subscriptions?: boolean
+    subscriptionPollInterval?: number
+    subscriptionConnection?: Pool
     graphiqlConsole?: boolean
+    log?: Logger
 }
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {model, db} = options
+    let {connection, subscriptionConnection} = options
     let dialect = options.dialect ?? 'postgres'
 
-    let schema = new SchemaBuilder(model).build()
+    let schema = new SchemaBuilder(options).build()
 
     let app = express()
     let server = http.createServer(app)
-    let wsServer = new WebSocketServer({server})
+    let wsServerCleanup: Disposable | undefined
 
-    let wsServerCleanup = useWsServer(
-        {
-            schema,
-            context() {
-                return {
-                    openreader: new PoolOpenreaderContext(dialect, db)
+    if (options.subscriptions) {
+        let wsServer = new WebSocketServer({server, path: '/graphql'})
+        wsServerCleanup = useWsServer(
+            {
+                schema,
+                context() {
+                    return {
+                        openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection)
+                    }
+                },
+                onNext(_ctx, _message, args, result) {
+                    args.contextValue.openreader.close()
+                    return result
                 }
             },
-            onNext(_ctx, _message, args, result) {
-                args.contextValue.openreader.close()
-                return result
-            }
-        },
-        wsServer
-    )
+            wsServer
+        )
+    }
 
     let apollo = new ApolloServer({
         schema,
         context: () => {
             return {
-                openreader: new PoolOpenreaderContext(dialect, db)
+                openreader: new PoolOpenreaderContext(dialect, connection)
             }
         },
         plugins: [
@@ -80,7 +89,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
             port: s.port,
             async close() {
                 try {
-                    await wsServerCleanup.dispose()
+                    await wsServerCleanup?.dispose()
                 } catch(e: any) {}
                 await s.close()
             }

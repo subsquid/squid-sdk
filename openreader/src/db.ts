@@ -1,8 +1,9 @@
-import type {ClientBase, Pool, PoolConfig} from "pg"
+import type {ClientBase, Pool} from "pg"
 import {OpenreaderContext} from "./context"
 import {Dialect} from "./dialect"
 import {Query} from "./sql/query"
 import {Subscription} from "./subscription"
+import {LazyTransaction} from "./util/lazy-transaction"
 
 
 export interface Database {
@@ -21,9 +22,11 @@ export class PgDatabase implements Database {
 
 export class PoolOpenreaderContext implements OpenreaderContext {
     private tx: LazyTransaction<Database>
+    private subscriptionPool: Pool
 
-    constructor(public readonly dialect: Dialect, private pool: Pool) {
-        this.tx = new LazyTransaction(cb => this.transact(cb))
+    constructor(public readonly dialect: Dialect, pool: Pool, subscriptionPool?: Pool) {
+        this.tx = new LazyTransaction(cb => transact(pool, cb))
+        this.subscriptionPool = subscriptionPool || pool
     }
 
     close(): Promise<void> {
@@ -37,82 +40,25 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     }
 
     subscription<T>(query: Query<T>): AsyncIterator<T> {
-        return new Subscription(() => this.transact(async db => {
+        return new Subscription(() => transact(this.subscriptionPool, async db => {
             let result = await db.query(query.sql, query.params)
             return query.map(result)
         }))
     }
+}
 
-    private async transact<T>(cb: (db: Database) => Promise<T>): Promise<T> {
-        let client = await this.pool.connect()
+
+async function transact<T>(pool: Pool, cb: (db: Database) => Promise<T>): Promise<T> {
+    let client = await pool.connect()
+    try {
+        await client.query('START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
         try {
-            await client.query('START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
-            try {
-                let db = new PgDatabase(client)
-                return await cb(db)
-            } finally {
-                await client.query('COMMIT').catch(() => {})
-            }
+            let db = new PgDatabase(client)
+            return await cb(db)
         } finally {
-            client.release()
+            await client.query('COMMIT').catch(() => {})
         }
-    }
-}
-
-
-export class LazyTransaction<T> {
-    private closed = false
-
-    private tx?: Promise<{
-        close(): void,
-        ctx: T
-    }>
-
-    constructor(private transact: (f: (ctx: T) => Promise<void>) => Promise<void>) {}
-
-    async get(): Promise<T> {
-        if (this.closed) {
-            throw new Error('Too late to request transaction')
-        }
-        this.tx = this.tx || this.startTransaction()
-        let {ctx} = await this.tx
-        return ctx
-    }
-
-    private async startTransaction(): Promise<{close(): void, ctx: T}> {
-        return new Promise((resolve, reject) => {
-            let promise = this.transact(ctx => {
-                return new Promise<void>(close => {
-                    resolve({
-                        ctx,
-                        close: () => {
-                            close()
-                            return promise
-                        }
-                    })
-                })
-            })
-            promise.catch(err => reject(err))
-        })
-    }
-
-    async close(): Promise<void> {
-        this.closed = true
-        if (this.tx) {
-            let tx = this.tx
-            this.tx = undefined
-            await tx.then(tx => tx.close())
-        }
-    }
-}
-
-
-export function createPoolConfig(): PoolConfig {
-    return {
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
-        database: process.env.DB_NAME || 'postgres',
-        user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASS || 'postgres'
+    } finally {
+        client.release()
     }
 }

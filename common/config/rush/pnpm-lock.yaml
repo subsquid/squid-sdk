@@ -3,7 +3,6 @@ lockfileVersion: 5.3
 specifiers:
   '@ethersproject/abi': ^5.6.4
   '@graphql-tools/merge': ^8
-  '@graphql-tools/schema': ^8
   '@graphql-tools/utils': ^8
   '@oclif/core': ^1.9.5
   '@oclif/plugin-help': ^5.1.12
@@ -116,7 +115,6 @@ specifiers:
 dependencies:
   '@ethersproject/abi': 5.6.4
   '@graphql-tools/merge': 8.2.14_graphql@15.8.0
-  '@graphql-tools/schema': 8.3.14_graphql@15.8.0
   '@graphql-tools/utils': 8.6.13_graphql@15.8.0
   '@oclif/core': 1.9.5
   '@oclif/plugin-help': 5.1.12
@@ -8149,7 +8147,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-4OY7fYJ+01Q9bI4dmyehC/pNwnXrhxRk7iIepNnFKzoVsDTfsG5bXczl//YNy+aFYFbpzUCJxQVrLXtUnlaF9Q==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-BhUZbzZ3nP6L4YNzZYGcifXmOcYDk8OvFo+Ckjo8obyH65WWKd4qJ9UoSbx5SiPE36MqDDqyICkD5xkmQSZWgQ==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
@@ -8166,6 +8164,7 @@ packages:
       '@types/ws': 8.5.3
       apollo-server-core: 3.9.0_graphql@15.8.0
       apollo-server-express: 3.9.0_74b94fa35b5137c17f5c995c6e82e419
+      commander: 9.3.0
       deep-equal: 2.0.5
       dotenv: 10.0.0
       expect: 27.5.1

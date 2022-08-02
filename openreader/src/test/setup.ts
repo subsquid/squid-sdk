@@ -65,10 +65,11 @@ export function useServer(schema: string): Client {
     let info: ListeningServer | undefined
     before(async () => {
         info = await serve({
-            db,
+            connection: db,
             model: buildModel(buildSchema(parse(schema))),
             port: 0,
-            dialect: isCockroach() ? 'cockroach' : 'postgres'
+            dialect: isCockroach() ? 'cockroach' : 'postgres',
+            subscriptions: true
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })
