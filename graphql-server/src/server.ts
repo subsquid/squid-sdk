@@ -1,12 +1,10 @@
 import {mergeResolvers} from "@graphql-tools/merge"
-import {createPoolConfig, PoolTransaction} from "@subsquid/openreader/dist/db"
 import {Dialect} from "@subsquid/openreader/dist/dialect"
-import {buildServerSchema} from "@subsquid/openreader/dist/gql/opencrud"
 import type {Model} from "@subsquid/openreader/dist/model"
-import {buildResolvers, ResolverContext} from "@subsquid/openreader/dist/resolver"
-import {listen, ListeningServer, setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
+import {setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
 import {assertNotNull, def} from "@subsquid/util-internal"
+import {ListeningServer} from "@subsquid/util-internal-http-server"
 import {ApolloServerPluginDrainHttpServer, PluginDefinition} from "apollo-server-core"
 import {ApolloServer, ApolloServerExpressConfig} from "apollo-server-express"
 import assert from "assert"
@@ -21,28 +19,22 @@ import type {CustomResolvers} from "./resolvers"
 import {TypeormTransaction} from "./typeorm"
 
 
+export interface ServerOptions {
+    dir?: string
+    sqlStatementTimeout?: number
+}
+
+
 export class Server {
     private dir: string
     private db?: Pool | DataSource
 
-    constructor(dir?: string) {
-        this.dir = path.resolve(dir || process.cwd())
+    constructor(private options: ServerOptions = {}) {
+        this.dir = path.resolve(options.dir || process.cwd())
     }
 
     path(name: string): string {
         return path.join(this.dir, name)
-    }
-
-    run(): void {
-        this.start().then(
-            s => {
-                console.log(`Squid graphql server is listening on port ${s.port}`)
-            },
-            err => {
-                console.error(err)
-                process.exit(1)
-            }
-        )
     }
 
     private getPort(): number | string {
