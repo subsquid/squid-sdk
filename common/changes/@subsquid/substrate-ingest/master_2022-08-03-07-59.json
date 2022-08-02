@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "throw correct object on storage error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
