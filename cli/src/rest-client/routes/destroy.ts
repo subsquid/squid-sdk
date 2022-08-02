@@ -17,7 +17,7 @@ export async function destroyDeployment(
     });
     const responseBody = await response.json();
     if (response.status === 200) {
-        return `Destroyed Squid version ${responseBody.squidName}`;
+        return `Destroyed Squid version ${responseBody.name}`;
     }
 }
 

@@ -1,6 +1,7 @@
-import { HttpResponse, LogsResponse } from './types';
-import { api, ApiError } from './api';
+import { LogEntry, LogsResponse } from './types';
+import { api } from './api';
 import { createInterface } from 'readline';
+import { pretty } from '../logs';
 
 export async function versionHistoryLogs(squidName: string, versionName: string, query : {
   limit: number
@@ -23,11 +24,12 @@ export async function versionHistoryLogs(squidName: string, versionName: string,
   return body || { logs: [], nextPage: null }
 }
 
-export async function versionLogsFollow(squidName: string, versionName: string) {
-  const {body, } = await api<NodeJS.ReadableStream>({
+export async function versionLogsFollow(squidName: string, versionName: string, query: { container?: string[], level?: string[]}) {
+  const { body } = await api<NodeJS.ReadableStream>({
     method: 'get',
     path: `/client/squid/${squidName}/versions/${versionName}/logs/follow`,
-    responseType: 'stream'
+    query,
+    responseType: 'stream',
   });
 
   return body
@@ -43,3 +45,26 @@ export function streamLines(body: NodeJS.ReadableStream, cb: (line: string) => v
 
   return rl
 }
+
+export async function streamSquidLogs(squidName: string, versionName: string, onLog: (log: string) => unknown , query: { container?: string[], level?: string[]} = {}) {
+  const stream = await versionLogsFollow(squidName, versionName, query);
+
+  await new Promise((resolve, reject) => {
+    streamLines(stream, (line) => {
+      if (line.length === 0) return
+
+      try {
+        const entries: LogEntry[] = JSON.parse(line)
+
+        pretty(entries).forEach(l => {
+          onLog(l)
+        });
+      } catch (e) {
+        reject(e)
+      }
+    })
+
+    stream.on('error', reject)
+  })
+}
+

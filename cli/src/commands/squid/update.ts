@@ -79,7 +79,6 @@ export default class Update extends Command {
             versionName,
             result?.deploymentUrl || '',
             this,
-          { verbose: flags.verbose }
         );
         this.log('✔️ Done!');
     }

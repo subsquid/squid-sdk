@@ -1,7 +1,7 @@
 import { CliUx, Flags } from '@oclif/core';
 import ms from 'ms';
 
-import { LogEntry, streamLines, versionHistoryLogs, versionLogsFollow } from '../../api';
+import { streamSquidLogs, versionHistoryLogs } from '../../api';
 import { CliCommand } from '../../command';
 import { pretty } from '../../logs';
 import { parseNameAndVersion } from '../../utils';
@@ -36,7 +36,7 @@ export default class Logs extends CliCommand {
             summary: `Container name`,
             required: false,
             multiple: true,
-            options: ['processor', 'query-node', 'db-migrate']
+            options: ['processor', 'query-node', 'db-migrate', 'db']
         }),
         pageSize: Flags.integer({
             char: 'p',
@@ -85,25 +85,7 @@ export default class Logs extends CliCommand {
                 container,
                 level,
             })
-            const stream = await versionLogsFollow(squidName, versionName);
-            await new Promise((resolve, reject) => {
-                streamLines(stream, (line) => {
-                    if (line.length === 0) return
-
-                    try {
-                        const entries: LogEntry[] = JSON.parse(line)
-
-                        pretty(entries).forEach(l => {
-                            this.log(l)
-                        });
-                    } catch (e) {
-                        reject(e)
-                    }
-                })
-
-                stream.on('error', reject)
-            })
-
+            await streamSquidLogs(squidName, versionName,  (l) => this.log(l), { container, level });
             return
         }
 

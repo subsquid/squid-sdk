@@ -79,7 +79,7 @@ export default class Release extends Command {
             versionName,
             result?.version.deploymentUrl || '',
             this,
-          { verbose: flags.verbose }
+
         );
         this.log('✔️ Done!');
     }

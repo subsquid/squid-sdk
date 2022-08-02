@@ -40,7 +40,7 @@ export async function request(
             `Authentication failure. Please obtain a new deployment key at https://app.subsquid.io and follow the instructions`
         );
     }
-    else if (response.status === 400 && responseBody.errors.length !== 0) {
+    else if (response.status === 400 && responseBody.errors?.length !== 0) {
         let validationErrorString = 'An error occurred processing the request:\n';
         for (const error of responseBody.errors) {
             for (const constraint of Object.values(error.constraints)) {
