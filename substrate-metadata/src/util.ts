@@ -4,7 +4,7 @@ import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import crypto from "crypto"
 import type {Metadata} from "./interfaces"
-import {OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle} from "./old/types"
+import {OldTypeDefinition, OldTypeExp, OldTypes, OldTypesAlias, OldTypesBundle, OldTypesWithSpecVersionRange} from "./old/types"
 import {Field, Type, TypeKind, VariantType} from "./types"
 
 
@@ -225,7 +225,7 @@ interface PolkadotJSTypesBundle {
                 ]
             }[]
             alias: OldTypesAlias,
-            signedExtensions: Record<string, OldTypeExp>
+            signedExtensions: Record<string, {extrinsic: Record<string, string>}>
         }
     }
 }
@@ -237,24 +237,33 @@ export function convertPolkadotJSTypesBundle(typesBundle: PolkadotJSTypesBundle)
 
     for (let specName in typesBundle.spec) {
         let spec = typesBundle.spec[specName]
+
+        let versions: OldTypesWithSpecVersionRange[] = spec.types.map(v => {
+            for (let typeName in v.types) {
+                let type = v.types[typeName]
+                assert(type._alias == null, '') // add error text
+                assert(type._fallback == null, '') // add error text
+            }
+            return {
+                minmax: [
+                    v.minmax[0] || null,
+                    v.minmax[1] || null
+                ],
+                types: v.types,
+            }
+        })
+
+        let signedExtensions: Record<string, OldTypeExp> = {}
+        for (let extensionName in spec.signedExtensions) {
+            let extension = spec.signedExtensions[extensionName]
+            signedExtensions[extensionName] = Object.values(extension.extrinsic)[0] || 'Null'
+        }
+
         res[specName] = {
             types: {},
             typesAlias: spec.alias,
-            signedExtensions: spec.signedExtensions,
-            versions: spec.types.map(v => {
-                for (let typeName in v.types) {
-                    let type = v.types[typeName]
-                    assert(type._alias == null, '') // add error text
-                    assert(type._fallback == null, '') // add error text
-                }
-                return {
-                    minmax: [
-                        v.minmax[0] || null,
-                        v.minmax[1] || null
-                    ],
-                    types: v.types,
-                }
-            }),
+            signedExtensions,
+            versions
         }
     }
 
