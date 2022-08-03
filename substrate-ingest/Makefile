@@ -64,6 +64,13 @@ shibuya:
 		--start-block 816402
 
 
+crab:
+	@node lib/main.js --out $(DB) \
+		-e wss://crab-rpc.darwinia.network \
+		-c 50 \
+		--types-bundle crab.temp.json
+
+
 up:
 	@docker-compose up -d
 
