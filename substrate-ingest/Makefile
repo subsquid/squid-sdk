@@ -71,6 +71,11 @@ crab:
 		--types-bundle crab.temp.json
 
 
+mangata:
+	@node lib/main.js --out $(DB) \
+		-e wss://mangata-x.api.onfinality.io/public-ws
+		-c 10
+
 up:
 	@docker-compose up -d
 
