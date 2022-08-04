@@ -166,3 +166,13 @@ export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEv
         data: string,
     }
 }
+
+
+export interface GearMessageEnqueuedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Gear.MessageEnqueued'
+}
+
+
+export interface GearUserMessageSentEvent extends SubstrateFinalizationEvent {
+    name: 'Gear.UserMessageSent'
+}

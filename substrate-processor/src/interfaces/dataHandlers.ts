@@ -158,3 +158,21 @@ export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest
 export interface ContractsContractEmittedHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: ContractsContractEmittedHandlerContext<S, R>): Promise<void>
 }
+
+
+export type GearMessageEnqueuedHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R, 'Gear.MessageEnqueued'>
+
+
+export interface GearMessageEnqueuedHandler<S, R extends EventDataRequest = {event: true}> {
+    (ctx: GearMessageEnqueuedHandlerContext<S, R>): Promise<void>
+}
+
+
+export type GearUserMessageSentHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R, 'Gear.UserMessageSent'>
+
+
+export interface GearUserMessageSentHandler<S, R extends EventDataRequest = {event: true}> {
+    (ctx: GearUserMessageSentHandlerContext<S, R>): Promise<void>
+}

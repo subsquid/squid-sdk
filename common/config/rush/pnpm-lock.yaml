@@ -2,6 +2,7 @@ lockfileVersion: 5.3
 
 specifiers:
   '@ethersproject/abi': ^5.6.4
+  '@gear-js/api': ^0.24.0
   '@graphql-tools/merge': ^8
   '@graphql-tools/utils': ^8
   '@oclif/core': ^1.9.5
@@ -17,6 +18,7 @@ specifiers:
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
+  '@rush-temp/gear-nft': file:./projects/gear-nft.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
   '@rush-temp/ink-abi': file:./projects/ink-abi.tgz
@@ -57,13 +59,13 @@ specifiers:
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.2.0
-  '@subsquid/substrate-metadata': 0.8.4
   '@substrate/calc': ^0.2.8
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
   '@types/inquirer': ^8.2.1
   '@types/js-yaml': ^4.0.5
   '@types/mocha': ^9.1.1
+  '@types/node': ^16.11.41
   '@types/node-fetch': ^2.6.2
   '@types/pg': 8.6.5
   '@types/semver': ^7.3.10
@@ -80,6 +82,7 @@ specifiers:
   chalk: ^4.1.2
   cli-select: ^1.1.2
   cli-table3: ^0.6.2
+  commander: ^9.3.0
   dotenv: ^10.0.0
   ethers: ^5.6.9
   expect: ^27.5.1
@@ -112,6 +115,7 @@ specifiers:
 
 dependencies:
   '@ethersproject/abi': 5.6.4
+  '@gear-js/api': 0.24.0_@polkadot+api@7.15.1
   '@graphql-tools/merge': 8.2.14_graphql@15.8.0
   '@graphql-tools/utils': 8.6.13_graphql@15.8.0
   '@oclif/core': 1.9.5
@@ -127,6 +131,7 @@ dependencies:
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_supports-color@8.1.1
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz_supports-color@8.1.1
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
+  '@rush-temp/gear-nft': file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz_supports-color@8.1.1
   '@rush-temp/ink-abi': file:projects/ink-abi.tgz
@@ -167,13 +172,13 @@ dependencies:
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.2.0
-  '@subsquid/substrate-metadata': 0.8.4
   '@substrate/calc': 0.2.8
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
   '@types/inquirer': 8.2.1
   '@types/js-yaml': 4.0.5
   '@types/mocha': 9.1.1
+  '@types/node': 16.11.41
   '@types/node-fetch': 2.6.2
   '@types/pg': 8.6.5
   '@types/semver': 7.3.10
@@ -190,6 +195,7 @@ dependencies:
   chalk: 4.1.2
   cli-select: 1.1.2
   cli-table3: 0.6.2
+  commander: 9.3.0
   dotenv: 10.0.0
   ethers: 5.6.9
   expect: 27.5.1
@@ -680,6 +686,15 @@ packages:
 
   /@gar/promisify/1.1.3:
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
+    dev: false
+
+  /@gear-js/api/0.24.0_@polkadot+api@7.15.1:
+    resolution: {integrity: sha512-rhHqxhqNFJYPiX36liQV1lPYUzd0tdftH+ldkKRLdkRtBqeEcJjNo0rIMEGRxOSjs9nFtCFZKPRekonahhyYaQ==}
+    peerDependencies:
+      '@polkadot/api': ^8.11.3
+      rxjs: ^7.5.5
+    dependencies:
+      '@polkadot/api': 7.15.1_supports-color@8.1.1
     dev: false
 
   /@graphql-tools/merge/8.2.14_graphql@15.8.0:
@@ -7103,7 +7118,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-Oc3C+V7uojc9+55hwV0kKRqMExlPlbzz97btKGG2rkKWjs2+u0rWVIeIV/8zGbUg97LqGeLQw7AJNkNo8JMIKg==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-LPHGLdA90FSL/IZ1ZeDuiq3uBGHVcx3uzB5Bp5IeGvK01GjkhXg3wpYY2JEnvE3QUxJes5rad/gfxwYBniDElQ==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7195,7 +7210,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-sd7E5jvpKQ/ky4NvR7TUbV7IIeMEw0n/ZeXCFJwg+1c6W+ceKlqzc/gSxUlLYW9U/+/7uUwq6ii/43QrMDFlQw==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-iz87TkXBZ8kMO4Hr/kAbTpYzRvcjB5MJ5V1jY1qQ5MvNFqoIDtq7MK+2MT6iZEVNnanQb2GosBKfFPoYfUPiQA==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -7258,6 +7273,40 @@ packages:
       typescript: 4.7.4
     dev: false
 
+  file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615:
+    resolution: {integrity: sha512-TG363rZ+GFdOELL2pVO+iKtTBjXCS7p1GNxAGPNFbMBTKIW++ahL1Y1KI2SfLbCB7m9Umw1m1uELsjAN/q/p6w==, tarball: file:projects/gear-nft.tgz}
+    id: file:projects/gear-nft.tgz
+    name: '@rush-temp/gear-nft'
+    version: 0.0.0
+    dependencies:
+      '@gear-js/api': 0.24.0_@polkadot+api@7.15.1
+      '@types/node': 16.11.41
+      dotenv: 10.0.0
+      pg: 8.7.3
+      typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
+      typescript: 4.7.4
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@polkadot/api'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - rxjs
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+    dev: false
+
   file:projects/gql-test-client.tgz:
     resolution: {integrity: sha512-fW4KwbWvfJ7UXjUviCR6BIiYCV0qveQZxD2k/cvnDw4qn26KJSdxe9cnFwiACT8bMzQMGditVk/9wmy3Xh0aAw==, tarball: file:projects/gql-test-client.tgz}
     name: '@rush-temp/gql-test-client'
@@ -7318,7 +7367,7 @@ packages:
     dev: false
 
   file:projects/ink-abi.tgz:
-    resolution: {integrity: sha512-DgyzyJuApVsoznz/yfi2zypg+VJZKGokeOtQapYGQj4bbObqas4PCGm4N65vNHkX3TiYJ/WdzR1dZntNPnJM5w==, tarball: file:projects/ink-abi.tgz}
+    resolution: {integrity: sha512-dq/VMaaoPlfeac63ZJ990y0Q6RP70p7EiM8DpvUyViKUDwx3JPd2o8Qa3dkVzdOsHctm15Mtq6C5QrNOlQ2Eyg==, tarball: file:projects/ink-abi.tgz}
     name: '@rush-temp/ink-abi'
     version: 0.0.0
     dependencies:
@@ -7332,7 +7381,7 @@ packages:
     dev: false
 
   file:projects/ink-typegen.tgz:
-    resolution: {integrity: sha512-QpzbZd5CqVb0+IigaQjH9Lc4yGk1266ZLc2wU1/UMsi1V2HdRuRzu+OC7HWHBASHZi/t/Tn1MwjOf59JCqJs+A==, tarball: file:projects/ink-typegen.tgz}
+    resolution: {integrity: sha512-gcQo1NNTDViRteobR0t6FHN/n7qs+3JSblShlxpnBh3tLQkz8PhLgtcEusVVq4BSWMvKSDNhHqT8n1wrhKzkFg==, tarball: file:projects/ink-typegen.tgz}
     name: '@rush-temp/ink-typegen'
     version: 0.0.0
     dependencies:
@@ -7356,7 +7405,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-FrttXnZPNmYkBvH5bkHsO2HTIuV9vYqAHgrebyFIwPRjPzF45Cb+7LiDv9sdJNeLv+Xb3+y1RyIfu1klFsnLMg==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-15GUOTBelX89e9IiHJaqzJJIXMo+wAkE4XqX5Ail0pqt1Zvv1SQ7Vdyc96qDSwrWhbhnV3faErdx98wddTiDeQ==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7419,7 +7468,7 @@ packages:
     dev: false
 
   file:projects/ops-xcm-typegen.tgz:
-    resolution: {integrity: sha512-VAPluOJVKo1lrlp0eVsPGtzhiYF3TZ441FpSO8QHYn3ohxmx/iRuJKYCpggP9gqorf5kSCTDQBVNVO/CyIwDgQ==, tarball: file:projects/ops-xcm-typegen.tgz}
+    resolution: {integrity: sha512-CX2Br5zICi+DgbK0/tDoSEiCDrhiyh73clYR3TUAP9f8eVQifuQTVsU40HV5wC86yDV5D/XaIpBSFZMN+N2rqw==, tarball: file:projects/ops-xcm-typegen.tgz}
     name: '@rush-temp/ops-xcm-typegen'
     version: 0.0.0
     dependencies:
@@ -7451,7 +7500,7 @@ packages:
     dev: false
 
   file:projects/shibuya-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-jkqG57SPe+6TRVypI0MEBRS7S7Yo6q6fdfCZUnMjY4m3KwBi5KTGJGLPsubG/mb505Hzp9prJKrLI7F7x2Bzpg==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-aLk4pVS+U/skRX4Xpg6r/583W2JLn7Itq0Iffs6CvSH0IREKKkOnNJe7PCA/7YbnoX49pNP/EUY9VNBWF8DCmQ==, tarball: file:projects/shibuya-erc20.tgz}
     id: file:projects/shibuya-erc20.tgz
     name: '@rush-temp/shibuya-erc20'
     version: 0.0.0
@@ -7681,7 +7730,7 @@ packages:
     dev: false
 
   file:projects/types-test.tgz:
-    resolution: {integrity: sha512-W47iuWBm0fs6EebNA2dFyV+pYV+0rb6Vz3WxOa9FYZhH5q9FZUVX95Dn9WnvFQRe7NOi43vTXGP3vLiL0haSDg==, tarball: file:projects/types-test.tgz}
+    resolution: {integrity: sha512-L8DOvWiJ9oAVgqPKm+PbP6WK3bvKGk9kXEf+ZV5EVWMPpNoUldpzoPMTqTym/PMBIlnDDIzFxlAWrQptvZTB0g==, tarball: file:projects/types-test.tgz}
     name: '@rush-temp/types-test'
     version: 0.0.0
     dependencies:
