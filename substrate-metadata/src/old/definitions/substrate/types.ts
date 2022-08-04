@@ -1149,7 +1149,6 @@ export const types = {
       "EIP1559": "EIP1559Transaction"
     }
   },
-  "GenericEthereumAccountId": "[u8; 20]",
   "EthereumAccountId": "GenericEthereumAccountId",
   "EthereumLookupSource": "GenericEthereumLookupSource",
   "EthereumSignature": "[u8; 65]",
