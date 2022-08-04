@@ -2,6 +2,28 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/substrate-ingest_v0.3.0",
+      "date": "Thu, 04 Aug 2022 06:00:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "throw correct object on storage error"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "Omit non-executed extrinsics from Mangata chain"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/substrate-ingest_v0.2.0",
       "date": "Wed, 20 Jul 2022 13:59:43 GMT",

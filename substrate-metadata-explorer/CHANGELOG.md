@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Thu, 04 Aug 2022 06:00:53 GMT and should not be manually modified.
+
+## 1.0.5
+Thu, 04 Aug 2022 06:00:53 GMT
+
+### Patches
+
+- add `X-SQUID-ID` HTTP header to archive metadata request
 
 ## 1.0.4
 Wed, 06 Jul 2022 09:25:54 GMT

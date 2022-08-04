@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "1.0.2",
+      "tag": "@subsquid/substrate-metadata_v1.0.2",
+      "date": "Thu, 04 Aug 2022 06:00:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix parsing of `Struct::<T>` type expressions in old metadata"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/substrate-metadata_v1.0.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",
