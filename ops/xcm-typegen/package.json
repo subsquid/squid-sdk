@@ -7,8 +7,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-metadata": "^1.0.1",
-    "@subsquid/substrate-typegen": "^1.2.0",
+    "@subsquid/substrate-metadata": "^1.0.2",
+    "@subsquid/substrate-typegen": "^1.2.1",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-code-printer": "^0.0.2"
   },
