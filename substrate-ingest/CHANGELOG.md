@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Thu, 04 Aug 2022 06:00:53 GMT and should not be manually modified.
+This log was last generated on Thu, 04 Aug 2022 06:15:02 GMT and should not be manually modified.
+
+## 0.3.1
+Thu, 04 Aug 2022 06:15:02 GMT
+
+### Patches
+
+- fix shebang in executable
 
 ## 0.3.0
 Thu, 04 Aug 2022 06:00:53 GMT

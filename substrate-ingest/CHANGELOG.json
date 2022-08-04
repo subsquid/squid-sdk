@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/substrate-ingest_v0.3.1",
+      "date": "Thu, 04 Aug 2022 06:15:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix shebang in executable"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/substrate-ingest_v0.3.0",
       "date": "Thu, 04 Aug 2022 06:00:53 GMT",
