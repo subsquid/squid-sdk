@@ -1,3 +1,4 @@
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
 import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
@@ -18,14 +19,16 @@ to squid's conventions and places the resulting models at src/model/generated
 and db migrations (if any) at db/migrations. 
     `.trim())
 
-    program.parse()
+    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type', 'postgres')
+
+    let {rdbmsType} = program.parse().opts() as { rdbmsType: DatabaseType}
 
     let model = loadModel(resolveGraphqlSchema())
     let orm = new OutDir('src/model')
     let generatedOrm = orm.child('generated')
 
     generatedOrm.del()
-    generateOrmModels(model, generatedOrm)
+    generateOrmModels(model, generatedOrm, rdbmsType)
     if (!fs.existsSync(orm.path('index.ts'))) {
         let index = orm.file('index.ts')
         index.line(`export * from "./generated"`)

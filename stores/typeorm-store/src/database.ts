@@ -1,3 +1,4 @@
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
@@ -12,6 +13,7 @@ export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE REA
 export interface TypeormDatabaseOptions {
     stateSchema?: string
     isolationLevel?: IsolationLevel
+    rdbmsType: DatabaseType
 }
 
 
@@ -19,43 +21,58 @@ class BaseDatabase<S> {
     protected statusSchema: string
     protected isolationLevel: IsolationLevel
     protected con?: DataSource
+    protected conStatusSqlite?: DataSource // Actual only for RDBMS SQLite
     protected lastCommitted = -1
+    protected rdbmsType = 'postgres'
 
     constructor(options?: TypeormDatabaseOptions) {
-        this.statusSchema = options?.stateSchema ? `"${options.stateSchema}"` : 'squid_processor'
+        this.statusSchema = options?.stateSchema ? `"${options.stateSchema}"` : 'squid_processor_status'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
+        this.rdbmsType = options?.rdbmsType || 'postgres'
     }
 
     async connect(): Promise<number> {
-        if (this.con != null) {
+        if (this.con != null || this.conStatusSqlite != null) {
             throw new Error('Already connected')
         }
-        let cfg = createOrmConfig()
+        let cfg = createOrmConfig({rdbmsType: this.rdbmsType as DatabaseType})
         let con = new DataSource(cfg)
         await con.initialize()
+        this.con = con
+        let conStatus = con
+        let statusTableName = `${this.statusSchema}.status`
+
+        if (this.rdbmsType === 'better-sqlite3') {
+            conStatus = await this.setStatusDatasourceSQLite()
+            statusTableName = 'status'
+        }
+
         try {
-            let height = await con.transaction('SERIALIZABLE', async em => {
-                await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
+            let height = await conStatus.transaction('SERIALIZABLE', async em => {
+                if (this.rdbmsType !== 'better-sqlite3')
+                    await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
+
                 await em.query(`
-                    CREATE TABLE IF NOT EXISTS ${this.statusSchema}.status (
+                    CREATE TABLE IF NOT EXISTS ${statusTableName} (
                         id int primary key,
                         height int not null
                     )
                 `)
+
                 let status: {height: number}[] = await em.query(
-                    `SELECT height FROM ${this.statusSchema}.status WHERE id = 0`
+                    `SELECT height FROM ${statusTableName} WHERE id = 0`
                 )
+
                 if (status.length == 0) {
-                    await em.query(`INSERT INTO ${this.statusSchema}.status (id, height) VALUES (0, -1)`)
+                    await em.query(`INSERT INTO ${statusTableName} (id, height) VALUES (0, -1)`)
                     return -1
                 } else {
                     return status[0].height
                 }
             })
-            this.con = con
             return height
         } catch(e: any) {
-            await con.destroy().catch(() => {}) // ignore error
+            await conStatus.destroy().catch(() => {}) // ignore error
             throw e
         }
     }
@@ -66,6 +83,13 @@ class BaseDatabase<S> {
         this.lastCommitted = -1
         if (con) {
             await con.destroy()
+        }
+        if (this.rdbmsType === 'better-sqlite3') {
+            let conStatusSqlite = this.conStatusSqlite
+            this.conStatusSqlite = undefined
+            if (conStatusSqlite) {
+                await conStatusSqlite.destroy()
+            }
         }
     }
 
@@ -89,17 +113,54 @@ class BaseDatabase<S> {
     }
 
     protected async updateHeight(em: EntityManager, from: number, to: number): Promise<void> {
-        return em.query(
-            `UPDATE ${this.statusSchema}.status SET height = $2 WHERE id = 0 AND height < $1`,
+        let statusTableName = this.rdbmsType === 'better-sqlite3' ? 'status' : `${this.statusSchema}.status`
+
+        let queryResult: [data: any[], rowsChanged: number] | number = this.rdbmsType === 'better-sqlite3' ?
+            await em.query(
+            `UPDATE ${statusTableName} SET height = ? WHERE id = 0 AND height < ?`,
+            [to, from]
+        ) : await em.query(
+            `UPDATE ${statusTableName} SET height = $2 WHERE id = 0 AND height < $1`,
             [from, to]
-        ).then((result: [data: any[], rowsChanged: number]) => {
-            let rowsChanged = result[1]
-            assert.strictEqual(
-                rowsChanged,
-                1,
-                'status table was updated by foreign process, make sure no other processor is running'
-            )
+        )
+
+        /**
+         * If (this.rdbmsType === 'better-sqlite3') => result: number
+         */
+        let rowsChanged = Array.isArray(queryResult) ? queryResult[1] : queryResult
+
+        /**
+         * Issue with SQLIte3 - result doesn't contain real count of updated rows -
+         * https://github.com/typeorm/typeorm/issues/2660
+         * so check below doesn't work for all cases:
+         *
+         *   assert.strictEqual(
+         *       rowsChanged,
+         *       1,
+         *       'status table was updated by foreign process, make sure no other processor is running'
+         *   )
+         */
+        assert.equal(
+            (rowsChanged <= 1),
+            true,
+            'status table was updated by foreign process, make sure no other processor is running'
+        )
+    }
+
+    protected async setStatusDatasourceSQLite(): Promise<DataSource> {
+        /**
+         * If RDBMS is SQLite, we need create separate connection for status database
+         */
+        let cfgStatusSqlite = createOrmConfig({
+            rdbmsType: this.rdbmsType as DatabaseType,
+            customDbName: this.statusSchema,
+            entities: null,
+            migrations: null
         })
+        let conStatus = new DataSource(cfgStatusSqlite)
+        await conStatus.initialize()
+        this.conStatusSqlite = conStatus
+        return conStatus
     }
 }
 
@@ -149,12 +210,26 @@ export class TypeormDatabase extends BaseDatabase<Store> {
     private async createTx(from: number, to: number): Promise<Tx> {
         let con = assertNotNull(this.con, 'not connected')
         let tx = await createTransaction(con, this.isolationLevel)
-        try {
-            await this.updateHeight(tx.em, from, to)
-            return tx
-        } catch(e: any) {
-            await tx.rollback().catch(() => {})
-            throw e
+
+        if (this.rdbmsType === 'better-sqlite3'){
+            let conStatusSqlite = assertNotNull(this.conStatusSqlite, 'not connected')
+            // let txSqlite = await createTransaction(conStatusSqlite, this.isolationLevel)
+            try {
+                await this.updateHeight(conStatusSqlite.manager, from, to)
+                return tx
+            } catch(e: any) {
+                await tx.rollback().catch(() => {})
+                // await txSqlite.rollback().catch(() => {})
+                throw e
+            }
+        } else {
+            try {
+                await this.updateHeight(tx.em, from, to)
+                return tx
+            } catch(e: any) {
+                await tx.rollback().catch(() => {})
+                throw e
+            }
         }
     }
 

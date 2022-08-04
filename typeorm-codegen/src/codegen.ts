@@ -1,3 +1,4 @@
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import type {Entity, Enum, JsonObject, Model, Prop, Union} from "@subsquid/openreader/dist/model"
 import {unexpectedCase} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
@@ -6,7 +7,7 @@ import assert from "assert"
 import * as path from "path"
 
 
-export function generateOrmModels(model: Model, dir: OutDir): void {
+export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: DatabaseType = 'postgres'): void {
     const variants = collectVariants(model)
     const index = dir.file('index.ts')
 
@@ -173,18 +174,23 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             case 'String':
                 return 'text'
             case 'Int':
+                if (rdbmsType === 'better-sqlite3') return 'int8'
                 return 'int4'
             case 'Float':
                 return 'numeric'
             case 'Boolean':
+                if (rdbmsType === 'better-sqlite3') return 'boolean'
                 return 'bool'
             case 'DateTime':
+                if (rdbmsType === 'better-sqlite3') return 'text'
                 return 'timestamp with time zone'
             case 'BigInt':
                 return 'numeric'
             case 'Bytes':
+                if (rdbmsType === 'better-sqlite3') return 'blob'
                 return 'bytea'
             case 'JSON':
+                if (rdbmsType === 'better-sqlite3') return 'text'
                 return 'jsonb'
             default:
                 throw unexpectedCase(scalar)
