@@ -116,7 +116,7 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                     case 'union':
                         imports.useMarshal()
                         out.line(
-                            `@Column_("jsonb", {transformer: {to: obj => ${marshalToJson(
+                            `@Column_("${getDbTypeNonScalar('union')}", {transformer: {to: obj => ${marshalToJson(
                                 prop,
                                 'obj'
                             )}, from: obj => ${marshalFromJson(prop, 'obj')}}, nullable: ${
@@ -125,38 +125,51 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                         )
                         break
                     case 'list':
-                        switch(prop.type.item.type.kind) {
-                            case 'scalar':
-                                out.line(
-                                    `@Column_("${getDbType(
-                                        prop.type.item.type.name
-                                    )}", {array: true, nullable: ${prop.nullable}})`
-                                )
-                                break
-                            case 'enum':
-                                out.line(
-                                    `@Column_("varchar", {length: ${getEnumMaxLength(
-                                        model,
-                                        prop.type.item.type.name
-                                    )}, array: true, nullable: ${prop.nullable}})`
-                                )
-                                break
-                            case 'object':
-                            case 'union':
-                            case 'list':
-                                imports.useMarshal()
-                                out.line(
-                                    `@Column_("jsonb", {transformer: {to: obj => ${marshalToJson(
-                                        prop,
-                                        'obj'
-                                    )}, from: obj => ${marshalFromJson(
-                                        prop,
-                                        'obj'
-                                    )}}, nullable: ${prop.nullable}})`
-                                )
-                                break
-                            default:
-                                throw unexpectedCase(prop.type.item.type.kind)
+                        if (rdbmsType === 'better-sqlite3') {
+                            imports.useMarshal()
+                            out.line(
+                                `@Column_("text", {transformer: {to: obj => ${marshalToJson(
+                                    prop,
+                                    'obj'
+                                )}, from: obj => ${marshalFromJson(
+                                    prop,
+                                    'obj'
+                                )}}, nullable: ${prop.nullable}})`
+                            )
+                        } else {
+                            switch(prop.type.item.type.kind) {
+                                case 'scalar':
+                                    out.line(
+                                        `@Column_("${getDbType(
+                                            prop.type.item.type.name
+                                        )}", {array: true, nullable: ${prop.nullable}})`
+                                    )
+                                    break
+                                case 'enum':
+                                    out.line(
+                                        `@Column_("varchar", {length: ${getEnumMaxLength(
+                                            model,
+                                            prop.type.item.type.name
+                                        )}, array: true, nullable: ${prop.nullable}})`
+                                    )
+                                    break
+                                case 'object':
+                                case 'union':
+                                case 'list':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${getDbTypeNonScalar('list')}", {transformer: {to: obj => ${marshalToJson(
+                                            prop,
+                                            'obj'
+                                        )}, from: obj => ${marshalFromJson(
+                                            prop,
+                                            'obj'
+                                        )}}, nullable: ${prop.nullable}})`
+                                    )
+                                    break
+                                default:
+                                    throw unexpectedCase(prop.type.item.type.kind)
+                            }
                         }
                         break
                     default:
@@ -194,6 +207,22 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                 return 'jsonb'
             default:
                 throw unexpectedCase(scalar)
+        }
+    }
+
+    /**
+     * Can be merged with "getDbType" method
+     * @param propType
+     */
+    function getDbTypeNonScalar(propType: string): string {
+        switch (propType) {
+            case 'object':
+            case 'list':
+            case 'union':
+                if (rdbmsType === 'better-sqlite3') return 'text'
+                return 'jsonb'
+            default:
+                throw unexpectedCase(propType)
         }
     }
 
@@ -294,18 +323,37 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                 convert = `marshal.string.fromJSON(${exp})`
                 break
             case 'object':
-                convert = `new ${prop.type.name}(undefined, ${
-                    prop.nullable ? exp : `marshal.nonNull(${exp})`
-                })`
+                if (rdbmsType === 'better-sqlite3') {
+                    convert = `new ${prop.type.name}(undefined, ${
+                        prop.nullable 
+                            ? `marshal.stringToJson(${exp})` 
+                            : `marshal.nonNull(marshal.stringToJson(${exp}))`
+                    })`
+                } else {
+                    convert = `new ${prop.type.name}(undefined, ${
+                        prop.nullable ? exp : `marshal.nonNull(${exp})`
+                    })`
+                }
                 break
             case 'union':
-                convert = `fromJson${prop.type.name}(${exp})`
+                if (rdbmsType === 'better-sqlite3') {
+                    convert = `fromJson${prop.type.name}(marshal.stringToJson(${exp}))`
+                } else {
+                    convert = `fromJson${prop.type.name}(${exp})`
+                }
                 break
             case 'list':
-                convert = `marshal.fromList(${exp}, val => ${marshalFromJson(
-                    prop.type.item,
-                    'val'
-                )})`
+                if (rdbmsType === 'better-sqlite3') {
+                    convert = `marshal.fromList(marshal.stringToJson(${exp}), val => ${marshalFromJson(
+                        prop.type.item,
+                        'val'
+                    )})`
+                } else {
+                    convert = `marshal.fromList(${exp}, val => ${marshalFromJson(
+                        prop.type.item,
+                        'val'
+                    )})`
+                }
                 break
             default:
                 throw unexpectedCase(prop.type.kind)
@@ -338,12 +386,21 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                 return exp
             case 'object':
             case 'union':
-                convert = exp + '.toJSON()'
+                if (rdbmsType === 'better-sqlite3' && exp !== 'val') {
+                    convert = `marshal.jsonToString(${exp})`
+                } else {
+                    convert = exp + '.toJSON()'
+                }
                 break
             case 'list': {
                 let marshal = marshalToJson(prop.type.item, 'val')
-                if (marshal == 'val') return exp
-                convert = `${exp}.map((val: any) => ${marshal})`
+                if (marshal == 'val' && rdbmsType !== 'better-sqlite3') return exp
+                if (marshal == 'val' && rdbmsType === 'better-sqlite3') return `marshal.jsonToString(${exp})`
+                if (rdbmsType === 'better-sqlite3' && exp !== 'val') {
+                    convert = `marshal.jsonToString(${exp}.map((val: any) => ${marshal}))`
+                } else {
+                    convert = `${exp}.map((val: any) => ${marshal})`
+                }
                 break
             }
             default:
