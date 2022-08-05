@@ -60,19 +60,29 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                             out.line('@PrimaryColumn_()')
                         } else {
                             addIndexAnnotation(entity, key, imports, out)
-                            if (prop.type.name === 'BigInt') {
-                                imports.useMarshal()
-                                out.line(
-                                    `@Column_("${
-                                        rdbmsType === 'better-sqlite3' ? 'int8' : 'numeric'
-                                    }", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                                )
-                            } else {
-                                out.line(
-                                    `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                        prop.nullable
-                                    }})`
-                                )
+                            switch (prop.type.name) {
+                                case 'BigInt':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${
+                                            rdbmsType === 'better-sqlite3' ? 'int8' : 'numeric'
+                                        }", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
+                                    )
+                                    break;
+                                case 'DateTime':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {${
+                                            rdbmsType === 'better-sqlite3' ? `transformer: marshal.datetimeSqliteTransformer, length: 30, ` : ''
+                                        }nullable: ${prop.nullable}})`
+                                    )
+                                    break;
+                                default:
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {nullable: ${
+                                            prop.nullable
+                                        }})`
+                                    )
                             }
                         }
                         break
@@ -197,7 +207,7 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                 if (rdbmsType === 'better-sqlite3') return 'boolean'
                 return 'bool'
             case 'DateTime':
-                if (rdbmsType === 'better-sqlite3') return 'text'
+                if (rdbmsType === 'better-sqlite3') return 'varchar'
                 return 'timestamp with time zone'
             case 'BigInt':
                 return 'numeric'
