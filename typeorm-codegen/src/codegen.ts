@@ -63,7 +63,9 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                             if (prop.type.name === 'BigInt') {
                                 imports.useMarshal()
                                 out.line(
-                                    `@Column_("numeric", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
+                                    `@Column_("${
+                                        rdbmsType === 'better-sqlite3' ? 'int8' : 'numeric'
+                                    }", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
                                 )
                             } else {
                                 out.line(
