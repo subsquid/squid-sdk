@@ -149,20 +149,41 @@ export class BlockParser {
     }
 
     private setExtrinsicFees(): void {
+        if (this.spec.events.definitions['TransactionPayment.TransactionFeePaid']) {
+            this.setExtrinsicFeesFromPaidEvent()
+        } else {
+            this.calcExtrinsicFees()
+        }
+    }
+
+    private setExtrinsicFeesFromPaidEvent(): void {
+        let extrinsics = this._extrinsics()
+        for (let e of this.events()) {
+            if (e.name == 'TransactionPayment.TransactionFeePaid') {
+                let ex = extrinsics[assertNotNull(e.extrinsicIdx)]
+                let actualFee = BigInt(e.args.actualFee)
+                let tip = BigInt(e.args.tip)
+                ex.fee = actualFee - tip
+                ex.tip = tip
+            }
+        }
+    }
+
+    private calcExtrinsicFees(): void {
         if (this.raw.feeMultiplier == null) return
         let calc = FeeCalc.get(this.spec, this.raw.feeMultiplier)
         if (calc == null) return
         for (let e of this.events()) {
             switch(e.name) {
                 case 'System.ExtrinsicSuccess':
-                    this.setFee(
+                    this.calcFee(
                         calc,
                         assertNotNull(e.extrinsicIdx),
                         getDispatchInfoFromExtrinsicSuccess(e.args)
                     )
                     break
                 case 'System.ExtrinsicFailed':
-                    this.setFee(
+                    this.calcFee(
                         calc,
                         assertNotNull(e.extrinsicIdx),
                         getDispatchInfoFromExtrinsicFailed(e.args)
@@ -172,7 +193,7 @@ export class BlockParser {
         }
     }
 
-    private setFee(calc: FeeCalc, extrinsicIdx: number, dispatchInfo: sub.DispatchInfo): void {
+    private calcFee(calc: FeeCalc, extrinsicIdx: number, dispatchInfo: sub.DispatchInfo): void {
         let extrinsic = this._extrinsics()[extrinsicIdx]
         if (extrinsic.signature == null) return
         let len = this.raw.block.extrinsics[extrinsicIdx].length / 2 - 1
