@@ -59,11 +59,11 @@ GraphQL server for postgres-compatible databases
         model,
         dialect: opts.dbType,
         connection,
-        subscriptionConnection,
         port: opts.port,
         log: LOG,
         subscriptions: opts.subscriptions,
-        subscriptionPollInterval: opts.subscriptionPollInterval
+        subscriptionPollInterval: opts.subscriptionPollInterval,
+        subscriptionConnection
     })
 
     LOG.info(`listening on port ${server.port}`)

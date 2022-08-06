@@ -77,8 +77,10 @@ describe("subscriptions", function() {
         `, async take => {
             await wait(1000)
             await databaseExecute([`
+                start transaction;
                 update "order" set name = 'foo' where id = '3';
-                insert into item (id, "order_id", name) values ('3-2', '3', 'world')
+                insert into item (id, "order_id", name) values ('3-2', '3', 'world');
+                commit;
             `])
             expect(await take()).toEqual({
                 data: {

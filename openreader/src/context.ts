@@ -10,5 +10,5 @@ export interface Context {
 export interface OpenreaderContext {
     dialect: Dialect
     executeQuery<T>(query: Query<T>): Promise<T>
-    subscription<T>(query: Query<T>): AsyncIterator<T>
+    subscription<T>(query: Query<T>): AsyncIterable<T>
 }

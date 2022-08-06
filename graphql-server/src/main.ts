@@ -1,6 +1,10 @@
+import {runProgram} from "@subsquid/util-internal"
+import {waitForInterruption} from "@subsquid/util-internal-http-server"
 import {Server} from "./server"
 
-export function main(): void {
-    new Server().run()
-}
+
+runProgram(async () => {
+    let server = await new Server().start()
+    return waitForInterruption(server)
+})
 

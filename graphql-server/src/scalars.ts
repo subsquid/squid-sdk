@@ -1,4 +1,4 @@
-import {customScalars} from "@subsquid/openreader/dist/gql/scalars"
+import {customScalars} from "@subsquid/openreader/dist/scalars"
 import {GraphQLFloat, GraphQLID, GraphQLInt} from "graphql"
 
 

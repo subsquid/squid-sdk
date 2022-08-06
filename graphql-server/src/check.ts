@@ -47,10 +47,10 @@ export function createCheckPlugin(requestCheck: RequestCheckFunction, model: Mod
                     })
                     if (typeof ok == 'string') {
                         return {errors: [{message: ok}]}
-                    }
-                    if (ok) return null
-                    return {
-                        errors: [{message: 'not allowed'}]
+                    } else if (ok) {
+                        return null
+                    } else {
+                        return {errors: [{message: 'not allowed'}]}
                     }
                 }
             }

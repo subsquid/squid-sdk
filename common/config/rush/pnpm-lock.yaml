@@ -3,6 +3,7 @@ lockfileVersion: 5.3
 specifiers:
   '@ethersproject/abi': ^5.6.4
   '@graphql-tools/merge': ^8
+  '@graphql-tools/schema': ^8
   '@graphql-tools/utils': ^8
   '@oclif/core': ^1.9.5
   '@oclif/plugin-help': ^5.1.12
@@ -115,6 +116,7 @@ specifiers:
 dependencies:
   '@ethersproject/abi': 5.6.4
   '@graphql-tools/merge': 8.2.14_graphql@15.8.0
+  '@graphql-tools/schema': 8.3.14_graphql@15.8.0
   '@graphql-tools/utils': 8.6.13_graphql@15.8.0
   '@oclif/core': 1.9.5
   '@oclif/plugin-help': 5.1.12
@@ -8054,17 +8056,19 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-oSOcsPaapSHYDl++frB3U64wR7Dq3uxsZ7lK8CMcqJEKY8wz8dkrCt4vJxk2QvhPe2Hs44SxEG8txz7pGSDglA==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-wwpGY5Hnys5asOyXZ969edtbswyqbcELSt15v3IqsSWffFDZh8G1gslqfLOdHQJt45NwF96CltLVQhd5zPaaSQ==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
     dependencies:
       '@graphql-tools/merge': 8.2.14_graphql@15.8.0
+      '@graphql-tools/schema': 8.3.14_graphql@15.8.0
       '@graphql-tools/utils': 8.6.13_graphql@15.8.0
       '@types/express': 4.17.13
       '@types/mocha': 9.1.1
       '@types/node': 16.11.41
       '@types/pg': 8.6.5
+      '@types/ws': 8.5.3
       apollo-server-core: 3.9.0_graphql@15.8.0
       apollo-server-express: 3.9.0_74b94fa35b5137c17f5c995c6e82e419
       class-validator: 0.13.2
@@ -8072,15 +8076,18 @@ packages:
       expect: 27.5.1
       express: 4.18.1_supports-color@8.1.1
       graphql: 15.8.0
+      graphql-ws: 5.9.1_graphql@15.8.0
       mocha: 9.2.2
       pg: 8.7.3
       type-graphql: 1.2.0-rc.1_aea24acf06b899fbc466d3b3b949c72d
       typeorm: 0.3.6_pg@8.7.3+supports-color@8.1.1
       typescript: 4.7.4
+      ws: 8.8.1
     transitivePeerDependencies:
       - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
+      - bufferutil
       - encoding
       - hdb-pool
       - ioredis
@@ -8096,6 +8103,7 @@ packages:
       - supports-color
       - ts-node
       - typeorm-aurora-data-api-driver
+      - utf-8-validate
     dev: false
 
   file:projects/logger.tgz:
@@ -8147,7 +8155,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-BhUZbzZ3nP6L4YNzZYGcifXmOcYDk8OvFo+Ckjo8obyH65WWKd4qJ9UoSbx5SiPE36MqDDqyICkD5xkmQSZWgQ==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-g97Ks8K4BrP0psr2HgoaIQk16iEgS5k+uVKXURbjKaZLwz8oYkCgd1uFdZ7yLrIhV+sxSjNgVeSdZGKcj5+kiA==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0

@@ -39,7 +39,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
         return query.map(result)
     }
 
-    subscription<T>(query: Query<T>): AsyncIterator<T> {
+    subscription<T>(query: Query<T>): AsyncIterable<T> {
         return new Subscription(() => transact(this.subscriptionPool, async db => {
             let result = await db.query(query.sql, query.params)
             return query.map(result)
