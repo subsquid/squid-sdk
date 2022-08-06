@@ -8056,7 +8056,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-wwpGY5Hnys5asOyXZ969edtbswyqbcELSt15v3IqsSWffFDZh8G1gslqfLOdHQJt45NwF96CltLVQhd5zPaaSQ==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-QuqOkZIUZqv0IPazAdBdTZ1hs6N92mz+NboiGAnU3vw3ceRruO4yZ9kCuxOd0qS3rPPUoTcVGy+Q/m3Wws9ywg==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -8072,6 +8072,7 @@ packages:
       apollo-server-core: 3.9.0_graphql@15.8.0
       apollo-server-express: 3.9.0_74b94fa35b5137c17f5c995c6e82e419
       class-validator: 0.13.2
+      commander: 9.3.0
       dotenv: 10.0.0
       expect: 27.5.1
       express: 4.18.1_supports-color@8.1.1

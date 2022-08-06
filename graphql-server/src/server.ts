@@ -12,11 +12,13 @@ import {PluginDefinition} from "apollo-server-core"
 import {ApolloServer} from "apollo-server-express"
 import express from "express"
 import {GraphQLSchema} from "graphql"
+import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
 import * as http from "http"
 import * as path from "path"
 import {Pool} from "pg"
 import * as process from "process"
 import type {DataSource} from "typeorm"
+import {WebSocketServer} from "ws"
 import {createCheckPlugin, RequestCheckFunction} from "./check"
 import {loadCustomResolvers} from "./resolvers"
 import {TypeormOpenreaderContext} from "./typeorm"
@@ -26,6 +28,7 @@ export interface ServerOptions {
     dir?: string
     sqlStatementTimeout?: number
     subscriptions?: boolean
+    subscriptionSqlStatementTimeout?: number
 }
 
 
@@ -62,6 +65,8 @@ export class Server {
     }
 
     private async bootstrap(): Promise<ListeningServer> {
+        let schema = await this.schema()
+        let context = await this.context()
         let app = express()
         let httpServer = http.createServer(app)
 
@@ -69,6 +74,22 @@ export class Server {
         let requestCheck = this.customCheck()
         if (requestCheck) {
             apolloPlugins.push(createCheckPlugin(requestCheck, this.model()))
+        }
+
+        if (this.options.subscriptions) {
+            let wsServer = new WebSocketServer({server: httpServer, path: '/graphql'})
+            let wsServerCleanup = useWsServer(
+                {
+                    schema,
+                    context,
+                    onNext(_ctx, _message, args, result) {
+                        args.contextValue.openreader.close()
+                        return result
+                    }
+                },
+                wsServer
+            )
+            this.cleanup.push(async () => await wsServerCleanup.dispose())
         }
 
         apolloPlugins.push({
@@ -82,8 +103,8 @@ export class Server {
         })
 
         let apollo = new ApolloServer({
-            schema: await this.schema(),
-            context: await this.context(),
+            schema,
+            context,
             plugins: apolloPlugins,
             stopOnTerminationSignals: false
         })
@@ -139,38 +160,54 @@ export class Server {
     private async context(): Promise<() => Context> {
         let dialect = this.dialect()
         if (await this.customResolvers()) {
-            let con = await this.createTypeormConnection()
+            let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.cleanup.push(() => con.destroy())
+            let subscriptionCon = con
+            if (this.options.subscriptions) {
+                subscriptionCon = await this.createTypeormConnection({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
+                this.cleanup.push(() => subscriptionCon.destroy())
+            }
             return () => {
-                return {openreader: new TypeormOpenreaderContext(dialect, con)}
+                return {openreader: new TypeormOpenreaderContext(dialect, con, subscriptionCon)}
             }
         } else {
             let pool = await this.createPgPool()
             this.cleanup.push(() => pool.end())
+            let subscriptionPool = pool
+            if (this.options.subscriptions) {
+                subscriptionPool = await this.createPgPool({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
+                this.cleanup.push(() => subscriptionPool.end())
+            }
             return () => {
-                return {openreader: new PoolOpenreaderContext(dialect, pool)}
+                return {openreader: new PoolOpenreaderContext(dialect, pool, subscriptionPool)}
             }
         }
     }
 
-    private async createTypeormConnection(): Promise<DataSource> {
+    private async createTypeormConnection(options?: ConnectionOptions): Promise<DataSource> {
         let {createOrmConfig} = await import('@subsquid/typeorm-config')
         let {DataSource} = await import('typeorm')
-        let cfg = createOrmConfig({projectDir: this.dir})
+        let cfg = {
+            ...createOrmConfig({projectDir: this.dir}),
+            extra: {
+                statement_timeout: options?.sqlStatementTimeout || undefined
+            }
+        }
         let con = new DataSource(cfg)
         await con.initialize()
         return con
     }
 
-    private async createPgPool(): Promise<Pool> {
+    private async createPgPool(options?: ConnectionOptions): Promise<Pool> {
         let {createConnectionOptions} = await import('@subsquid/typeorm-config/lib/connectionOptions')
-        let options = createConnectionOptions()
+        let params = createConnectionOptions()
         return new Pool({
-            host: options.host,
-            port: options.port,
-            database: options.database,
-            user: options.username,
-            password: options.password
+            host: params.host,
+            port: params.port,
+            database: params.database,
+            user: params.username,
+            password: params.password,
+            statement_timeout: options?.sqlStatementTimeout || undefined
         })
     }
 
@@ -200,4 +237,9 @@ export class Server {
     private path(name: string): string {
         return path.join(this.dir, name)
     }
+}
+
+
+interface ConnectionOptions {
+    sqlStatementTimeout?: number
 }
