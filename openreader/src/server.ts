@@ -29,7 +29,7 @@ export interface ServerOptions {
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {connection, subscriptionConnection} = options
+    let {connection, subscriptionConnection, subscriptionPollInterval} = options
     let dialect = options.dialect ?? 'postgres'
 
     let schema = new SchemaBuilder(options).build()
@@ -45,7 +45,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                 schema,
                 context() {
                     return {
-                        openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection)
+                        openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection, subscriptionPollInterval)
                     }
                 },
                 onNext(_ctx, _message, args, result) {

@@ -43,6 +43,7 @@ specifiers:
   '@rush-temp/util-internal': file:./projects/util-internal.tgz
   '@rush-temp/util-internal-binary-heap': file:./projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
+  '@rush-temp/util-internal-commander': file:./projects/util-internal-commander.tgz
   '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:./projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:./projects/util-internal-hex.tgz
@@ -156,6 +157,7 @@ dependencies:
   '@rush-temp/util-internal': file:projects/util-internal.tgz
   '@rush-temp/util-internal-binary-heap': file:projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
+  '@rush-temp/util-internal-commander': file:projects/util-internal-commander.tgz
   '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:projects/util-internal-hex.tgz
@@ -8445,6 +8447,16 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.41
+      typescript: 4.7.4
+    dev: false
+
+  file:projects/util-internal-commander.tgz:
+    resolution: {integrity: sha512-dIcnZtqAdT4MkxLBflQhn1V7H7rRYbNGjlLkERJKNZc1DbQh862kuYJwb+XiJ9j8M+x2frek0R0HHNDOPNJ8cw==, tarball: file:projects/util-internal-commander.tgz}
+    name: '@rush-temp/util-internal-commander'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.41
+      commander: 9.3.0
       typescript: 4.7.4
     dev: false
 

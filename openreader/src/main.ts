@@ -1,7 +1,8 @@
 import {createLogger} from "@subsquid/logger"
 import {runProgram} from "@subsquid/util-internal"
+import {nat, Url} from "@subsquid/util-internal-commander"
 import {waitForInterruption} from "@subsquid/util-internal-http-server"
-import {Command, InvalidArgumentError, Option} from "commander"
+import {Command, Option} from "commander"
 import {Pool} from "pg"
 import {Dialect} from "./dialect"
 import {serve} from "./server"
@@ -19,7 +20,7 @@ GraphQL server for postgres-compatible databases
     `.trim())
 
     program.requiredOption('-s, --schema <file>', 'a path to a file or folder with database description')
-    program.requiredOption('-d, --db-url <url>', 'database connection string', postgresUrl)
+    program.requiredOption('-d, --db-url <url>', 'database connection string', Url(['postgres:']))
     program.addOption(
         new Option('-t, --db-type <type>', 'database type').choices(['postgres', 'cockroach']).default('postgres')
     )
@@ -70,24 +71,3 @@ GraphQL server for postgres-compatible databases
 
     return waitForInterruption(server)
 }, err => LOG.fatal(err))
-
-
-function nat(s: string): number {
-    let n = parseInt(s, 10)
-    if (Number.isSafeInteger(n) && n >= 0) return n
-    throw new InvalidArgumentError('not a natural number')
-}
-
-
-function postgresUrl(s: string): string {
-    let url: URL
-    try {
-        url = new URL(s)
-    } catch(e: any) {
-        throw new InvalidArgumentError('invalid url')
-    }
-    if (url.protocol !== 'postgres:') {
-        throw new InvalidArgumentError('only postgres:// protocol is supported')
-    }
-    return url.toString()
-}

@@ -37,7 +37,8 @@ export class TypeormOpenreaderContext implements OpenreaderContext {
     constructor(
         public readonly dialect: Dialect,
         private connection: DataSource,
-        subscriptionConnection?: DataSource
+        subscriptionConnection?: DataSource,
+        private subscriptionPollInterval: number = 1000
     ) {
         this.tx = new LazyTransaction(cb => this.connection.transaction(cb))
         this.subscriptionConnection = subscriptionConnection || this.connection
@@ -51,7 +52,7 @@ export class TypeormOpenreaderContext implements OpenreaderContext {
     }
 
     subscription<T>(query: Query<T>): AsyncIterable<T> {
-        return new Subscription(() => this.subscriptionConnection.transaction(async em => {
+        return new Subscription(this.subscriptionPollInterval, () => this.subscriptionConnection.transaction(async em => {
             let db = new EMDatabase(em)
             let result = await db.query(query.sql, query.params)
             return query.map(result)

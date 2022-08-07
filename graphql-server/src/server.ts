@@ -28,6 +28,7 @@ export interface ServerOptions {
     dir?: string
     sqlStatementTimeout?: number
     subscriptions?: boolean
+    subscriptionPollInterval?: number
     subscriptionSqlStatementTimeout?: number
 }
 
@@ -168,7 +169,9 @@ export class Server {
                 this.cleanup.push(() => subscriptionCon.destroy())
             }
             return () => {
-                return {openreader: new TypeormOpenreaderContext(dialect, con, subscriptionCon)}
+                return {
+                    openreader: new TypeormOpenreaderContext(dialect, con, subscriptionCon, this.options.subscriptionPollInterval)
+                }
             }
         } else {
             let pool = await this.createPgPool()
@@ -179,7 +182,9 @@ export class Server {
                 this.cleanup.push(() => subscriptionPool.end())
             }
             return () => {
-                return {openreader: new PoolOpenreaderContext(dialect, pool, subscriptionPool)}
+                return {
+                    openreader: new PoolOpenreaderContext(dialect, pool, subscriptionPool, this.options.subscriptionPollInterval)
+                }
             }
         }
     }

@@ -24,7 +24,12 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     private tx: LazyTransaction<Database>
     private subscriptionPool: Pool
 
-    constructor(public readonly dialect: Dialect, pool: Pool, subscriptionPool?: Pool) {
+    constructor(
+        public readonly dialect: Dialect,
+        pool: Pool,
+        subscriptionPool?: Pool,
+        private subscriptionPollInterval: number = 1000
+    ) {
         this.tx = new LazyTransaction(cb => transact(pool, cb))
         this.subscriptionPool = subscriptionPool || pool
     }
@@ -40,7 +45,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     }
 
     subscription<T>(query: Query<T>): AsyncIterable<T> {
-        return new Subscription(() => transact(this.subscriptionPool, async db => {
+        return new Subscription(this.subscriptionPollInterval, () => transact(this.subscriptionPool, async db => {
             let result = await db.query(query.sql, query.params)
             return query.map(result)
         }))

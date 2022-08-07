@@ -29,6 +29,7 @@
     "@subsquid/graphiql-console": "^0.2.0",
     "@subsquid/logger": "^0.0.2",
     "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal-commander": "^0.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-http-server": "^0.0.1",
     "@subsquid/util-naming": "^0.0.1",

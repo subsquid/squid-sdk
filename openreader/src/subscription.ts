@@ -6,7 +6,7 @@ export class Subscription<T> implements AsyncIterator<T>, AsyncIterable<T> {
     private prev?: T
     private hasNoVal = true
 
-    constructor(private poll: () => Promise<T>) {}
+    constructor(private interval: number, private poll: () => Promise<T>) {}
 
     [Symbol.asyncIterator]() {
         return this
@@ -20,7 +20,7 @@ export class Subscription<T> implements AsyncIterator<T>, AsyncIterable<T> {
         let value
         do {
             await new Promise(resolve => {
-                this.timer = setTimeout(resolve, 1000)
+                this.timer = setTimeout(resolve, this.interval)
             })
             value = await this.poll()
         } while (deepEqual(this.prev, value))
