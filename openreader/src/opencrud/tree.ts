@@ -38,6 +38,7 @@ export function parseResolveTree(
                         aliases: [f.name],
                         kind: prop.type.kind,
                         type: prop.type,
+                        prop,
                         index: 0
                     } as OpaqueRequest)
                 }
@@ -48,6 +49,7 @@ export function parseResolveTree(
                     aliases: [f.alias],
                     kind: prop.type.kind,
                     type: prop.type,
+                    prop,
                     index: 0,
                     children: parseResolveTree(model, prop.type.name, schema, f)
                 })
@@ -67,6 +69,7 @@ export function parseResolveTree(
                     aliases: [f.alias],
                     kind: prop.type.kind,
                     type: prop.type,
+                    prop,
                     index: 0,
                     children
                 })
@@ -78,6 +81,7 @@ export function parseResolveTree(
                     aliases: [f.alias],
                     kind: prop.type.kind,
                     type: prop.type,
+                    prop,
                     index: 0,
                     children: parseResolveTree(model, prop.type.foreignEntity, schema, f)
                 })
@@ -88,6 +92,7 @@ export function parseResolveTree(
                     aliases: [f.alias],
                     kind: prop.type.kind,
                     type: prop.type,
+                    prop,
                     index: 0,
                     children: parseResolveTree(model, prop.type.entity, schema, f)
                 })
@@ -98,6 +103,7 @@ export function parseResolveTree(
                     aliases: [f.alias],
                     kind: prop.type.kind,
                     type: prop.type,
+                    prop,
                     index: 0,
                     args: parseEntityListArguments(model, prop.type.entity, f.args),
                     children: parseResolveTree(model, prop.type.entity, schema, f)

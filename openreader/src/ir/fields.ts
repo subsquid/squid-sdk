@@ -4,7 +4,7 @@ import {
     ListLookupPropType,
     ListPropType,
     LookupPropType,
-    ObjectPropType,
+    ObjectPropType, Prop,
     PropType,
     ScalarPropType,
     UnionPropType
@@ -19,6 +19,7 @@ type Base<T> = T extends PropType ? {
     field: string
     kind: T['kind']
     type: T
+    prop: Prop
     aliases: string[]
     ifType?: string
     index: number
