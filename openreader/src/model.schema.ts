@@ -488,6 +488,7 @@ function checkByteWeightDirective(type: GraphQLNamedType, f: GraphQLField<any, a
     if (directives.length > 1) throw new SchemaError(
         `Multiple @byteWeight where applied to ${type.name}.${f.name}`
     )
+    if (directives.length == 0) return {}
     let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
     assert(arg.value.kind == 'FloatValue')
     let byteWeight = parseFloat(arg.value.value)

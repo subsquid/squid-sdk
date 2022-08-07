@@ -45,14 +45,14 @@ GraphQL server for postgres-compatible databases
 
     let connection = new Pool({
         connectionString: opts.dbUrl,
-        statement_timeout: opts.sqlStatementTimeout ? opts.sqlStatementTimeout : undefined
+        statement_timeout: opts.sqlStatementTimeout || undefined
     })
 
     let subscriptionConnection: Pool | undefined
-    if (opts.subscriptions && opts.subscriptionSqlStatementTimeout) {
+    if (opts.subscriptions) {
         subscriptionConnection = new Pool({
             connectionString: opts.dbUrl,
-            statement_timeout: opts.sqlStatementTimeout ? opts.sqlStatementTimeout : undefined
+            statement_timeout: opts.subscriptionSqlStatementTimeout || opts.sqlStatementTimeout || undefined
         })
     }
 

@@ -10,8 +10,9 @@ import {def} from "@subsquid/util-internal"
 import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
 import {PluginDefinition} from "apollo-server-core"
 import {ApolloServer} from "apollo-server-express"
+import assert from "assert"
 import express from "express"
-import {GraphQLSchema} from "graphql"
+import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from "graphql"
 import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
 import * as http from "http"
 import * as path from "path"
@@ -27,6 +28,7 @@ import {TypeormOpenreaderContext} from "./typeorm"
 export interface ServerOptions {
     dir?: string
     sqlStatementTimeout?: number
+    squidStatus?: boolean
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionSqlStatementTimeout?: number
@@ -118,16 +120,56 @@ export class Server {
 
     @def
     private async schema(): Promise<GraphQLSchema> {
-        let schema = new SchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions}).build()
+        let schemas = [
+            new SchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions}).build()
+        ]
+
+        if (this.options.squidStatus !== false) {
+            schemas.push(this.squidStatusSchema())
+        }
+
         let customResolvers = await this.customResolvers()
         if (customResolvers) {
-            schema = mergeSchemas({
-                schemas: [schema, customResolvers]
-            })
+            schemas.push(customResolvers)
         }
-        return schema
+
+        return mergeSchemas({schemas})
     }
 
+    @def
+    private squidStatusSchema(): GraphQLSchema {
+        let statusQuery = {
+            sql: `SELECT height FROM squid_processor.status WHERE id = 0`,
+            params: [],
+            map(rows: any[][]): {height: number} {
+                assert(rows.length == 1)
+                let height = parseInt(rows[0][0], 10)
+                return {height}
+            }
+        }
+
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: {
+                    squidStatus: {
+                        type: new GraphQLObjectType({
+                            name: 'SquidStatus',
+                            fields: {
+                                height: {
+                                    type: GraphQLInt,
+                                    description: 'The height of the processed part of the chain'
+                                }
+                            }
+                        }),
+                        resolve(source, args, context: Context) {
+                            return context.openreader.executeQuery(statusQuery)
+                        }
+                    }
+                }
+            })
+        })
+    }
 
     @def
     private async customResolvers(): Promise<GraphQLSchema | undefined> {

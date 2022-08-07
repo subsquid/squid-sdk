@@ -12,12 +12,14 @@ const LOG = createLogger('sqd:graphql-server')
 runProgram(async () => {
     let program = new Command()
     program.description(`GraphQL server for squids`)
+    program.option('--no-squid-status', 'disable .squidStatus query')
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
     program.option('--subscription-sql-statement-timeout <ms>', 'sql statement timeout for polling queries', nat)
 
     let opts = program.parse().opts() as {
+        squidStatus?: boolean
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number

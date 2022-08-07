@@ -2,10 +2,10 @@ import {unexpectedCase} from "@subsquid/util-internal"
 import {FieldRequest} from "./ir/fields"
 
 
-export function getResponseSize(fields: FieldRequest[]): number {
+export function getSize(fields: FieldRequest[]): number {
     let total = 0
     for (let req of fields) {
-        let size = getSize(req)
+        let size = getFieldSize(req)
         if (Number.isFinite(size)) {
             total += size * req.aliases.length
         } else {
@@ -16,7 +16,7 @@ export function getResponseSize(fields: FieldRequest[]): number {
 }
 
 
-function getSize(req: FieldRequest): number {
+function getFieldSize(req: FieldRequest): number {
     switch(req.kind) {
         case "scalar":
         case "list":
@@ -27,11 +27,11 @@ function getSize(req: FieldRequest): number {
         case "fk":
         case "lookup":
         case "union":
-            return getResponseSize(req.children) + 1
+            return getSize(req.children) + 1
         case "list-lookup": {
             let limit = Math.min(req.args?.limit ?? Infinity, req.prop.cardinality ?? Infinity)
             if (Number.isFinite(limit)) {
-                return limit * Math.max(getResponseSize(req.children), 1)
+                return limit * Math.max(getSize(req.children), 1)
             } else {
                 return Infinity
             }
