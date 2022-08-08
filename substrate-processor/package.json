@@ -21,7 +21,7 @@
     "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.0.2",
     "@subsquid/substrate-metadata": "^1.0.1",
-    "@subsquid/typeorm-config": "^1.1.0",
+    "@subsquid/typeorm-config": "file:../util/typeorm-config/",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.2",
@@ -30,11 +30,12 @@
     "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-prometheus-server": "^0.0.1",
     "@subsquid/util-xxhash": "^0.1.1",
+    "better-sqlite3": "^7.6.2",
     "blake2b": "^2.1.4",
     "prom-client": "^14.0.1"
   },
   "peerDependencies": {
-    "@subsquid/typeorm-store": "^0.1.1"
+    "@subsquid/typeorm-store": "file:../store/typeorm-store/"
   },
   "peerDependenciesMeta": {
     "@subsquid/typeorm-store": {

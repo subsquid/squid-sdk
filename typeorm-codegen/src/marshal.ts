@@ -125,10 +125,36 @@ export const bigintTransformer = {
     }
 }
 
+export const datetimeSqliteTransformer = {
+    to(value: Date): string {
+        return value.toISOString()
+    },
+    from(value: unknown): Date {
+        assert(typeof value === 'string', 'invalid DateTime')
+        assert(isIsoDateTimeString(value), 'invalid DateTime')
+        return new Date(value)
+    }
+}
 
 export function enumFromJson<E extends object>(json: unknown, enumObject: E): E[keyof E] {
     assert(typeof json == 'string', 'invalid enum value')
     let val = (enumObject as any)[json]
     assert(typeof val == 'string', `invalid enum value`)
     return val as any
+}
+
+export function stringToJson(source: unknown): unknown {
+    if (typeof source !== 'string') return source
+    try {
+        return JSON.parse(source)
+    } catch (e) {
+        assert.fail('invalid stringified json value')
+    }
+}
+export function jsonToString(source: unknown): unknown {
+    try {
+        return JSON.stringify(source)
+    } catch (e) {
+        assert.fail('invalid json value')
+    }
 }

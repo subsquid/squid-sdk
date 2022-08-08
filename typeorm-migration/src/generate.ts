@@ -1,6 +1,7 @@
 import {createOrmConfig, MIGRATIONS_DIR} from "@subsquid/typeorm-config"
 import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import {program} from "commander"
 import * as dotenv from "dotenv"
 import {DataSource} from "typeorm"
@@ -11,19 +12,19 @@ import {SqlInMemory} from "typeorm/driver/SqlInMemory"
 runProgram(async () => {
     program.description('Analyze the current database state and generate migration to match the target schema')
     program.option('-n, --name <name>', 'name suffix for new migration', 'Data')
+    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type', 'postgres')
 
-    let {name} = program.parse().opts() as {name: string}
+    let {name, rdbmsType} = program.parse().opts() as {name: string, rdbmsType: DatabaseType}
 
     dotenv.config()
 
     let connection = new DataSource({
-        ...createOrmConfig(),
+        ...createOrmConfig({rdbmsType}),
         synchronize: false,
         migrationsRun: false,
         dropSchema: false,
         logging: false
     })
-
     await connection.initialize()
 
     let commands: SqlInMemory
