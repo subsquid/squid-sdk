@@ -10,7 +10,9 @@ export function jsonLinesStderrSink(rec: LogRecord): void {
 
 function stringify(rec: LogRecord): string {
     try {
-        return JSON.stringify(toJSON(rec))
+        let json = toJSON(rec)
+        json.severity = LogLevel[rec.level]
+        return JSON.stringify(json)
     } catch(e: any) {
         return stringify({
             ns: 'sys',

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "Add `.severity` to JSON log records",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
