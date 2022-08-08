@@ -65,7 +65,7 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
                                     imports.useMarshal()
                                     out.line(
                                         `@Column_("${
-                                            rdbmsType === 'better-sqlite3' ? 'int8' : 'numeric'
+                                            rdbmsType === 'better-sqlite3' ? 'text' : 'numeric'
                                         }", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
                                     )
                                     break;
