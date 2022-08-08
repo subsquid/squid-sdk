@@ -2,7 +2,7 @@ import {toHex} from "@subsquid/util-internal-hex"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"
-import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
+import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning, EvmLog} from "./model"
 import {extractEthereumTxContract} from "./parse/util"
 import {toJSON, toJsonString} from "./util"
 import WritableStream = NodeJS.WritableStream
@@ -93,6 +93,17 @@ export class PostgresSink implements Sink {
         contract: {cast: 'text'}
     })
 
+    private evmLogInsert = new Insert<EvmLog>('evm_log', {
+        id: {cast: 'text'},
+        block_id: {cast: 'text'},
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
+    })
+
     private warningInsert = new Insert<Warning>('warning', {
         block_id: {cast: 'text'},
         message: {cast: 'text'}
@@ -118,6 +129,7 @@ export class PostgresSink implements Sink {
         this.extrinsicInsert.addMany(block.extrinsics)
         this.insertCalls(block.calls)
         this.insertEvents(block.events)
+        this.insertLogs(block.logs)
         if (block.warnings) {
             this.warningInsert.addMany(block.warnings)
         }
@@ -147,6 +159,12 @@ export class PostgresSink implements Sink {
         }
     }
 
+    private insertLogs(logs: EvmLog[]): void {
+        for (let log of logs) {
+            this.evmLogInsert.add(log)
+        }
+    }
+
     private insertCalls(calls: Call[]): void {
         for (let call of calls) {
             this.callInsert.add(this.mapCall(call))
@@ -171,6 +189,7 @@ export class PostgresSink implements Sink {
         let callInsert = this.callInsert.take()
         let eventInsert = this.eventInsert.take()
         let warningInsert = this.warningInsert.take()
+        let evmLogInsert = this.evmLogInsert.take()
         await this.tx(async () => {
             await metadataInsert.query(this.db)
             await headerInsert.query(this.db)
@@ -178,6 +197,7 @@ export class PostgresSink implements Sink {
             await callInsert.query(this.db)
             await eventInsert.query(this.db)
             await warningInsert.query(this.db)
+            await evmLogInsert.query(this.db)
         })
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()

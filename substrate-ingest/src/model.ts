@@ -26,6 +26,18 @@ export interface Event {
 }
 
 
+export interface EvmLog {
+    id: string
+    block_id: string
+    event_id: string
+    contract: string
+    topic0?: string
+    topic1?: string
+    topic2?: string
+    topic3?: string
+}
+
+
 export interface Extrinsic {
     id: string
     block_id: string
@@ -76,6 +88,7 @@ export interface BlockData {
     header: Block
     extrinsics: Extrinsic[]
     events: Event[]
+    logs: EvmLog[]
     calls: Call[]
     metadata?: Metadata
     warnings?: Warning[]

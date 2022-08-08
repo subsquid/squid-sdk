@@ -28,6 +28,13 @@ export function formatId(height: number, hash: string, index?: number): string {
 }
 
 
+export function formatEvmLogId(height: number, index: number): string {
+    const blockPart = `${String(height).padStart(10, "0")}`
+    const indexPart = `${String(index).padStart(6, "0")}`
+    return `${blockPart}-${indexPart}`
+}
+
+
 export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, "__kind"> {
     let {__kind, ...props} = obj
     return props
