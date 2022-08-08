@@ -3,11 +3,11 @@ import assert from "assert";
 
 export const abi = new ethers.utils.Interface(getJsonAbi());
 
-export type Approval0Event = [string, string, ethers.BigNumber] & {owner: string, approved: string, tokenId: ethers.BigNumber}
+export type Approval0Event = ([owner: string, approved: string, tokenId: ethers.BigNumber] & {owner: string, approved: string, tokenId: ethers.BigNumber})
 
-export type ApprovalForAll0Event = [string, string, boolean] & {owner: string, operator: string, approved: boolean}
+export type ApprovalForAll0Event = ([owner: string, operator: string, approved: boolean] & {owner: string, operator: string, approved: boolean})
 
-export type Transfer0Event = [string, string, ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber}
+export type Transfer0Event = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
 export interface EvmEvent {
   data: string;

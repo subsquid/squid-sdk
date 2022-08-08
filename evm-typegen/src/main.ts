@@ -1,10 +1,9 @@
-import {program} from "commander";
-import process from "process";
-import path from "path";
-import fs from "fs";
-import {Output} from "@subsquid/util-internal-code-printer";
-import {toCamelCase} from "@subsquid/util-naming";
-import {EventFragment, FunctionFragment, Interface, ParamType} from "@ethersproject/abi";
+import {EventFragment, Interface, ParamType} from "@ethersproject/abi"
+import {Output} from "@subsquid/util-internal-code-printer"
+import {program} from "commander"
+import fs from "fs"
+import path from "path"
+import process from "process"
 
 export function run(): void {
     program.description(`
@@ -65,7 +64,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             typeNames[event.name] = 1;
         }
         eventTypeName += 'Event'
-        
+
         let signature = `${event.name}(`;
         if (event.inputs.length > 0) {
             signature += event.inputs[0].type;
@@ -84,7 +83,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     });
 
     for (const decl of abiEvents) {
-        output.line(`export type ${decl.eventTypeName} = ${paramsToTypeString(decl.inputs)}`)
+        output.line(`export type ${decl.eventTypeName} = ${getTupleType(decl.inputs)}`)
         output.line("");
     }
 
@@ -134,16 +133,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             abiFunctions.set(func.name, abiFunction)
         }
 
-        const normalizedName = toCamelCase(func.name)
-
-        let returnTypeName: string | undefined
-        if (func.outputs.length > 1) {
-            returnTypeName = `${normalizedName[0].toUpperCase()}${normalizedName.slice(1)}${abiFunction.overloads.length}Result`
-            output.line(`export type ${returnTypeName} = ${paramsToTypeString(func.outputs)}`)
-            output.line();
-        } else {
-            returnTypeName = getType(func.outputs[0])
-        }
+        let returnTypeName = func.outputs.length == 1 ? getType(func.outputs[0]) : getTupleType(func.outputs)
 
         abiFunction.overloads.push({
             inputs: func.inputs,
@@ -232,25 +222,22 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 }
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
-function getType(param: ParamType, flexible?: boolean): string {
-    if (param.type === "address" || param.type === "string") {return "string";}
+function getType(param: ParamType): string {
+    if (param.type === "address" || param.type === "string") {
+        return "string"
+    }
 
-    if (param.type === "bool") {return "boolean"}
+    if (param.type === "bool") {
+        return "boolean"
+    }
 
     if (param.type.substring(0, 5) === "bytes") {
-        if (flexible) {
-            return "string | ethers.utils.BytesLike";
-        }
         return "string"
     }
 
     let match = param.type.match(/^(u?int)([0-9]+)$/)
     if (match) {
-        if (flexible) {
-            return "ethers.BigNumberish";
-        }
-        if (parseInt(match[2]) < 53) {return 'number';}
-        return 'ethers.BigNumber';
+        return parseInt(match[2]) < 53 ? 'number' : 'ethers.BigNumber'
     }
 
     if (param.baseType === "array") {
@@ -258,16 +245,35 @@ function getType(param: ParamType, flexible?: boolean): string {
     }
 
     if (param.baseType === "tuple") {
-        let struct = param.components.map((p, i) => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
-        return "{ " + struct.join(", ") + " }";
+        return getTupleType(param.components);
     }
 
     throw new Error("unknown type");
 }
 
-function paramsToTypeString(params: ParamType[]) {
-    return `[${params.map((p) => getType(p)).join(`, `)}] ` +
-    `& {${params.filter((p) => p.name != null).map((p) => `${p.name}: ${getType(p)}`).join(`, `)}}`
+function getTupleType(params: ParamType[]) {
+    let tuple = '[' + params.map(p => {
+        return p.name ? `${p.name}: ${getType(p)}` : getType(p)
+    }).join(', ') + ']'
+
+    let fields = getStructFields(params)
+    if (fields.length == 0) return tuple
+
+    let struct = '{' + fields.map(f => `${f.name}: ${getType(f)}`).join(', ') + '}'
+
+    return `(${tuple} & ${struct})`
+}
+
+// https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/abi/src.ts/coders/tuple.ts#L29
+function getStructFields(params: ParamType[]): ParamType[] {
+    let array: any = []
+    let counts: Record<string, number> = {}
+    for (let p of params) {
+        if (p.name && array[p.name] == null) {
+            counts[p.name] = (counts[p.name] || 0) + 1
+        }
+    }
+    return params.filter(p => counts[p.name] == 1)
 }
 
 interface AbiEvent {
