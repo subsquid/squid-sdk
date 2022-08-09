@@ -85,7 +85,7 @@ export default class Release extends CliCommand {
             versionName,
             deployUrl as string,
             description,
-            envs
+            Object.keys(envs).length ? envs : undefined
         );
         this.log(
             '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'

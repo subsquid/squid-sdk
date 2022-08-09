@@ -1,6 +1,7 @@
-import { Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
-import { update } from '../../rest-client/routes/update';
+import { updateSquid } from '../../api';
+import { CliCommand } from '../../command';
 import {
     buildRemoteUrlFromGit,
     parseNameAndVersion,
@@ -13,7 +14,7 @@ const options: Partial<SimpleGitOptions> = {
 };
 const git: SimpleGit = simpleGit(options);
 
-export default class Update extends Command {
+export default class Update extends CliCommand {
     static description = 'Update a version image';
     static args = [
         {
@@ -40,6 +41,12 @@ export default class Update extends Command {
             description: 'verbose',
             required: false,
         }),
+        env: Flags.string({
+            char: 'e',
+            description: 'environment variable',
+            required: false,
+            multiple: true,
+        }),
     };
 
     async run(): Promise<void> {
@@ -49,6 +56,16 @@ export default class Update extends Command {
             nameAndVersion,
             this
         );
+        const envs: Record<string, string> = {} 
+        
+        flags.env?.forEach((e: string)=>{
+            const variable = /^(?<name>[a-zA-Z_][0-9a-zA-Z_]*)=(?<value>.+)$/.exec(e);
+            if (variable == null || variable.groups == null) {
+                throw new Error(`❌ An error occurred during parsing variable "${e}"`);
+            }
+            envs[variable.groups.name] = variable.groups.value;
+        });
+
         let deployUrl = flags.source;
         if (!deployUrl) {
             deployUrl = await buildRemoteUrlFromGit(git, this);
@@ -62,11 +79,12 @@ export default class Update extends Command {
                   }`;
         }
         this.log(`🦑 Releasing the squid at ${deployUrl}`);
-        const result = await update(
+        const result = await updateSquid(
             squidName,
             versionName,
             deployUrl as string,
-            flags.hardReset
+            flags.hardReset,
+            Object.keys(envs).length ? envs : undefined
         );
         this.log(
             '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'

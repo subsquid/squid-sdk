@@ -1,4 +1,4 @@
-import { HttpResponse, LogEntry, LogsResponse, SquidVersionResponse } from './types';
+import { HttpResponse, LogEntry, LogsResponse, SquidVersionResponse, VersionResponse } from './types';
 import { api } from './api';
 import { createInterface } from 'readline';
 import { pretty } from '../logs';
@@ -79,6 +79,21 @@ export async function releaseSquid(
     method: 'post',
     path: `/client/squid/${squidName}/version`,
     data: { artifactUrl, versionName, description, envs }
+  });
+  return body.payload;
+}
+
+export async function updateSquid(
+  squidName: string, 
+  versionName: string, 
+  artifactUrl: string, 
+  hardReset: boolean,
+  envs?: Record<string, string>
+): Promise<VersionResponse> {
+  const { body } = await api<HttpResponse<VersionResponse>>( {
+    method: 'put',
+    path: `/client/squid/${squidName}/version/${versionName}/deployment`,
+    data: { artifactUrl, hardReset, envs }
   });
   return body.payload;
 }
