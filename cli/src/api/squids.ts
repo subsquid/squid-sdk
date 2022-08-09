@@ -1,4 +1,4 @@
-import { LogEntry, LogsResponse } from './types';
+import { HttpResponse, LogEntry, LogsResponse, SquidVersionResponse } from './types';
 import { api } from './api';
 import { createInterface } from 'readline';
 import { pretty } from '../logs';
@@ -68,3 +68,17 @@ export async function streamSquidLogs(squidName: string, versionName: string, on
   })
 }
 
+export async function releaseSquid(
+    squidName: string, 
+    versionName: string, 
+    artifactUrl: string, 
+    description?: string,
+    envs?: Record<string, string>
+  ): Promise<SquidVersionResponse> {
+  const { body } = await api<HttpResponse<SquidVersionResponse>>( {
+    method: 'post',
+    path: `/client/squid/${squidName}/version`,
+    data: { artifactUrl, versionName, description, envs }
+  });
+  return body.payload;
+}

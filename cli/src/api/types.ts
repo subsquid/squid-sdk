@@ -85,3 +85,11 @@ export type LogsResponse = {
   logs: LogEntry[];
   nextPage: string | null;
 };
+
+export type SquidVersionResponse = {
+  id: number
+  name: string
+  version: { 
+    deploymentUrl: string 
+  }
+}

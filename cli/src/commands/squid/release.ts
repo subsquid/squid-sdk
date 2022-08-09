@@ -1,6 +1,7 @@
-import { Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
-import { release } from '../../rest-client/routes/release';
+import { releaseSquid } from '../../api';
+import { CliCommand } from '../../command';
 import {
     buildRemoteUrlFromGit,
     parseNameAndVersion,
@@ -13,7 +14,7 @@ const options: Partial<SimpleGitOptions> = {
 };
 const git: SimpleGit = simpleGit(options);
 
-export default class Release extends Command {
+export default class Release extends CliCommand {
     static description = 'Create a new squid version';
     static args = [
         {
@@ -39,6 +40,12 @@ export default class Release extends Command {
             description: 'verbose',
             required: false,
         }),
+        env: Flags.string({
+            char: 'e',
+            description: 'environment variable',
+            required: false,
+            multiple: true,
+        }),
     };
 
     async run(): Promise<void> {
@@ -49,6 +56,15 @@ export default class Release extends Command {
             nameAndVersion,
             this
         );
+
+        const envs: Record<string, string> = flags.env?.map((e: string)=>{
+            const variable = /^(?<name>[0-9a-zA-Z_]+)=(?<value>.+)$/.exec(e);
+            if (variable == null || variable.groups == null) {
+                throw new Error(`❌ An error occurred during parsing variable "${e}"`);
+            }
+            return { [variable.groups.name]: variable.groups.value }
+        });
+
         let deployUrl = flags.source;
         if (!deployUrl) {
             deployUrl = await buildRemoteUrlFromGit(git, this);
@@ -62,11 +78,12 @@ export default class Release extends Command {
                   }`;
         }
         this.log(`🦑 Releasing the squid at ${deployUrl}`);
-        const result = await release(
+        const result = await releaseSquid(
             squidName,
             versionName,
             deployUrl as string,
-            description
+            description,
+            envs
         );
         this.log(
             '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'
@@ -79,7 +96,6 @@ export default class Release extends Command {
             versionName,
             result?.version.deploymentUrl || '',
             this,
-
         );
         this.log('✔️ Done!');
     }
