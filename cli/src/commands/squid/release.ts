@@ -1,4 +1,5 @@
 import { Flags } from '@oclif/core';
+import { existsSync, readFileSync } from 'fs';
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
 import { releaseSquid } from '../../api';
 import { CliCommand } from '../../command';
@@ -13,6 +14,14 @@ const options: Partial<SimpleGitOptions> = {
     binary: 'git',
 };
 const git: SimpleGit = simpleGit(options);
+
+export function getEnv(e: string): { name: string, value: string } {
+    const variable = /^(?<name>.*)=(?<value>.*)$/.exec(e);
+    if (variable == null || variable.groups == null) {
+        throw new Error(`❌ An error occurred during parsing variable "${e}"`);
+    }
+    return { name: variable.groups.name, value: variable.groups.value }
+}
 
 export default class Release extends CliCommand {
     static description = 'Create a new squid version';
@@ -46,6 +55,10 @@ export default class Release extends CliCommand {
             required: false,
             multiple: true,
         }),
+        envFile: Flags.string({
+            description: 'file with environment variables',
+            required: false,
+        }),
     };
 
     async run(): Promise<void> {
@@ -60,12 +73,17 @@ export default class Release extends CliCommand {
         const envs: Record<string, string> = {} 
         
         flags.env?.forEach((e: string)=>{
-            const variable = /^(?<name>[a-zA-Z_][0-9a-zA-Z_]*)=(?<value>.+)$/.exec(e);
-            if (variable == null || variable.groups == null) {
-                throw new Error(`❌ An error occurred during parsing variable "${e}"`);
-            }
-            envs[variable.groups.name] = variable.groups.value;
+            const v = getEnv(e);
+            envs[v.name] = v.value;
         });
+
+        if (flags.envFile != undefined && existsSync(flags.envFile)) {
+            const envFile = readFileSync(flags.envFile);
+            envFile.toString().replace(/\r\n/g,'\n').split('\n').forEach((e: string) => {
+                const v = getEnv(e);
+                envs[v.name] = v.value;
+            });
+        }
 
         let deployUrl = flags.source;
         if (!deployUrl) {
