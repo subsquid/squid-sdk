@@ -26,7 +26,7 @@ runProgram(async () => {
         subscriptionSqlStatementTimeout?: number
     }
 
-    let server = await new Server(opts).start()
+    let server = await new Server({log: LOG, ...opts}).start()
     LOG.info(`listening on port ${server.port}`)
     return waitForInterruption(server)
 }, err => LOG.fatal(err))

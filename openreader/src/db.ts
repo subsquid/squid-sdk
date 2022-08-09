@@ -3,6 +3,7 @@ import {OpenreaderContext} from "./context"
 import {Dialect} from "./dialect"
 import {Query} from "./sql/query"
 import {Subscription} from "./subscription"
+import {withErrorContext} from "./util/error-handling"
 import {LazyTransaction} from "./util/lazy-transaction"
 
 
@@ -15,7 +16,9 @@ export class PgDatabase implements Database {
     constructor(private client: ClientBase) {}
 
     query(sql: string, parameters?: any[]): Promise<any[][]> {
-        return this.client.query({text: sql, rowMode: 'array'}, parameters).then(result => result.rows)
+        return this.client.query({text: sql, rowMode: 'array'}, parameters)
+            .then(result => result.rows)
+            .catch(withErrorContext({sql, parameters}))
     }
 }
 

@@ -29,7 +29,7 @@ const baseSchema = buildASTSchema(parse(`
     directive @unique on FIELD_DEFINITION
     directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
     directive @fulltext(query: String!) on FIELD_DEFINITION
-    directive @cardinalityLimit(value: Int!) on FIELD_DEFINITION
+    directive @cardinality(value: Int!) on FIELD_DEFINITION
     directive @byteWeight(value: Float!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
@@ -468,16 +468,16 @@ function checkDerivedFrom(type: GraphQLNamedType, f: GraphQLField<any, any>): {f
 
 
 function checkCardinalityLimitDirective(type: GraphQLNamedType, f: GraphQLField<any, any>): {cardinality?: number} {
-    let directives = f.astNode?.directives?.filter(d => d.name.value == 'cardinalityLimit') || []
+    let directives = f.astNode?.directives?.filter(d => d.name.value == 'cardinality') || []
     if (directives.length > 1) throw new SchemaError(
-        `Multiple @cardinalityLimit where applied to ${type.name}.${f.name}`
+        `Multiple @cardinality where applied to ${type.name}.${f.name}`
     )
     if (directives.length == 0) return {}
     let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
     assert(arg.value.kind == 'IntValue')
     let cardinality = parseInt(arg.value.value, 10)
     if (cardinality < 0) throw new SchemaError(
-        `Incorrect @cardinalityLimit where applied to ${type.name}.${f.name}. Cardinality value must be positive.`
+        `Incorrect @cardinality where applied to ${type.name}.${f.name}. Cardinality value must be positive.`
     )
     return {cardinality}
 }

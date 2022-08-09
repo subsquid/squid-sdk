@@ -1,4 +1,5 @@
 import {mergeSchemas} from "@graphql-tools/schema"
+import {Logger} from "@subsquid/logger"
 import {Context} from "@subsquid/openreader/dist/context"
 import {PoolOpenreaderContext} from "@subsquid/openreader/dist/db"
 import {Dialect} from "@subsquid/openreader/dist/dialect"
@@ -6,6 +7,7 @@ import type {Model} from "@subsquid/openreader/dist/model"
 import {SchemaBuilder} from "@subsquid/openreader/dist/opencrud/schema"
 import {setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
+import {logGraphQLError} from "@subsquid/openreader/dist/util/error-handling"
 import {def} from "@subsquid/util-internal"
 import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
 import {PluginDefinition} from "apollo-server-core"
@@ -27,6 +29,7 @@ import {TypeormOpenreaderContext} from "./typeorm"
 
 export interface ServerOptions {
     dir?: string
+    log?: Logger
     sqlStatementTimeout?: number
     squidStatus?: boolean
     subscriptions?: boolean
@@ -68,6 +71,7 @@ export class Server {
     }
 
     private async bootstrap(): Promise<ListeningServer> {
+        let log = this.options.log
         let schema = await this.schema()
         let context = await this.context()
         let app = express()
@@ -85,6 +89,14 @@ export class Server {
                 {
                     schema,
                     context,
+                    onError(ctx, message, errors) {
+                        if (log) {
+                            // FIXME: we don't want to log client errors
+                            for (let err of errors) {
+                                logGraphQLError(log, err)
+                            }
+                        }
+                    },
                     onNext(_ctx, _message, args, result) {
                         args.contextValue.openreader.close()
                         return result
@@ -100,6 +112,13 @@ export class Server {
                 return {
                     willSendResponse(req: any) {
                         return req.context.openreader.close()
+                    },
+                    async didEncounterErrors(req) {
+                        if (req.operation && log) {
+                            for (let err of req.errors) {
+                                logGraphQLError(log, err)
+                            }
+                        }
                     }
                 }
             }
@@ -216,7 +235,7 @@ export class Server {
                 }
             }
         } else {
-            let pool = await this.createPgPool()
+            let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.cleanup.push(() => pool.end())
             let subscriptionPool = pool
             if (this.options.subscriptions) {

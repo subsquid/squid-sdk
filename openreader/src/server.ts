@@ -13,6 +13,7 @@ import {PoolOpenreaderContext} from "./db"
 import type {Dialect} from "./dialect"
 import type {Model} from "./model"
 import {SchemaBuilder} from "./opencrud/schema"
+import {logGraphQLError} from "./util/error-handling"
 
 
 export interface ServerOptions {
@@ -29,7 +30,7 @@ export interface ServerOptions {
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {connection, subscriptionConnection, subscriptionPollInterval} = options
+    let {connection, subscriptionConnection, subscriptionPollInterval, log} = options
     let dialect = options.dialect ?? 'postgres'
 
     let schema = new SchemaBuilder(options).build()
@@ -47,6 +48,14 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                     return {
                         openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection, subscriptionPollInterval)
                     }
+                },
+                onError(ctx, message, errors) {
+                   if (log) {
+                       // FIXME: we don't want to log client errors
+                       for (let err of errors) {
+                           logGraphQLError(log, err)
+                       }
+                   }
                 },
                 onNext(_ctx, _message, args, result) {
                     args.contextValue.openreader.close()
@@ -70,6 +79,13 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
                     return {
                         willSendResponse(req: any) {
                             return req.context.openreader.close()
+                        },
+                        async didEncounterErrors(req) {
+                            if (req.operation && log) {
+                                for (let err of req.errors) {
+                                    logGraphQLError(log, err)
+                                }
+                            }
                         }
                     }
                 }
