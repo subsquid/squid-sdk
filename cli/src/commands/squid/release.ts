@@ -57,12 +57,14 @@ export default class Release extends CliCommand {
             this
         );
 
-        const envs: Record<string, string> = flags.env?.map((e: string)=>{
-            const variable = /^(?<name>[0-9a-zA-Z_]+)=(?<value>.+)$/.exec(e);
+        const envs: Record<string, string> = {} 
+        
+        flags.env?.forEach((e: string)=>{
+            const variable = /^(?<name>[a-zA-Z_][0-9a-zA-Z_]*)=(?<value>.+)$/.exec(e);
             if (variable == null || variable.groups == null) {
                 throw new Error(`❌ An error occurred during parsing variable "${e}"`);
             }
-            return { [variable.groups.name]: variable.groups.value }
+            envs[variable.groups.name] = variable.groups.value;
         });
 
         let deployUrl = flags.source;
