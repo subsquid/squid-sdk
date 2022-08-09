@@ -1,6 +1,4 @@
-import { baseUrl } from '../baseUrl';
-import { getCreds } from '../../creds';
-import { request } from '../request';
+import { api } from '../../api';
 
 type SquidListResponse = {
     id: number;
@@ -11,18 +9,11 @@ type SquidListResponse = {
     websiteUrl: string;
 };
 
-export async function squidList(): Promise<SquidListResponse[] | undefined> {
-    const apiUrl = `${baseUrl}/client/squid`;
-    const response = await request(apiUrl, {
+export async function squidList(): Promise<SquidListResponse[]> {
+    const { body } =  await api<SquidListResponse[]>({
         method: 'get',
-        headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'application/json',
-            authorization: `token ${getCreds()}`,
-        },
+        path: '/client/squid',
     });
-    const responseBody: SquidListResponse[] = await response.json();
-    if (response.status === 200) {
-        return responseBody;
-    }
+
+    return body
 }

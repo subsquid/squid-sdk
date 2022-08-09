@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import qs from 'query-string';
 import { getConfig } from '../config';
 
-
 const debug = process.env.API_DEBUG === 'true';
 
 let version = 'unknown'
