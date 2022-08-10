@@ -5,23 +5,17 @@ import {PoolOpenreaderContext} from "@subsquid/openreader/dist/db"
 import {Dialect} from "@subsquid/openreader/dist/dialect"
 import type {Model} from "@subsquid/openreader/dist/model"
 import {SchemaBuilder} from "@subsquid/openreader/dist/opencrud/schema"
-import {setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
+import {addServerCleanup, Dispose, runApollo} from "@subsquid/openreader/dist/server"
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
-import {logGraphQLError} from "@subsquid/openreader/dist/util/error-handling"
 import {def} from "@subsquid/util-internal"
-import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
+import {ListeningServer} from "@subsquid/util-internal-http-server"
 import {PluginDefinition} from "apollo-server-core"
-import {ApolloServer} from "apollo-server-express"
 import assert from "assert"
-import express from "express"
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from "graphql"
-import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
-import * as http from "http"
 import * as path from "path"
 import {Pool} from "pg"
 import * as process from "process"
 import type {DataSource} from "typeorm"
-import {WebSocketServer} from "ws"
 import {createCheckPlugin, RequestCheckFunction} from "./check"
 import {loadCustomResolvers} from "./resolvers"
 import {TypeormOpenreaderContext} from "./typeorm"
@@ -40,101 +34,37 @@ export interface ServerOptions {
 
 export class Server {
     private dir: string
-    private cleanup: (() => Promise<void>)[] = []
+    private disposals: Dispose[] = []
 
     constructor(private options: ServerOptions = {}) {
         this.dir = path.resolve(options.dir || process.cwd())
     }
 
     @def
-    async start(): Promise<ListeningServer> {
-        return this.bootstrap().then(
-            server => {
-                return {
-                    port: server.port,
-                    close: () => {
-                        return server.close().finally(() => this.dispose())
-                    }
-                }
-            },
-            async err => {
-                await this.dispose()
-                throw err
-            }
-        )
-    }
-
-    private async dispose(): Promise<void> {
-        for (let i = this.cleanup.length - 1; i >= 0; i--) {
-            await this.cleanup[i]().catch(err => {})
-        }
+    start(): Promise<ListeningServer> {
+        return addServerCleanup(this.disposals, this.bootstrap(), this.options.log)
     }
 
     private async bootstrap(): Promise<ListeningServer> {
-        let log = this.options.log
         let schema = await this.schema()
         let context = await this.context()
-        let app = express()
-        let httpServer = http.createServer(app)
+        let plugins: PluginDefinition[] = []
 
-        let apolloPlugins: PluginDefinition[] = []
         let requestCheck = this.customCheck()
         if (requestCheck) {
-            apolloPlugins.push(createCheckPlugin(requestCheck, this.model()))
+            plugins.push(createCheckPlugin(requestCheck, this.model()))
         }
 
-        if (this.options.subscriptions) {
-            let wsServer = new WebSocketServer({server: httpServer, path: '/graphql'})
-            let wsServerCleanup = useWsServer(
-                {
-                    schema,
-                    context,
-                    onError(ctx, message, errors) {
-                        if (log) {
-                            // FIXME: we don't want to log client errors
-                            for (let err of errors) {
-                                logGraphQLError(log, err)
-                            }
-                        }
-                    },
-                    onNext(_ctx, _message, args, result) {
-                        args.contextValue.openreader.close()
-                        return result
-                    }
-                },
-                wsServer
-            )
-            this.cleanup.push(async () => await wsServerCleanup.dispose())
-        }
-
-        apolloPlugins.push({
-            async requestDidStart() {
-                return {
-                    willSendResponse(req: any) {
-                        return req.context.openreader.close()
-                    },
-                    async didEncounterErrors(req) {
-                        if (req.operation && log) {
-                            for (let err of req.errors) {
-                                logGraphQLError(log, err)
-                            }
-                        }
-                    }
-                }
-            }
-        })
-
-        let apollo = new ApolloServer({
+        return runApollo({
+            port: this.port(),
+            disposals: this.disposals,
             schema,
             context,
-            plugins: apolloPlugins,
-            stopOnTerminationSignals: false
+            plugins,
+            log: this.options.log,
+            subscriptions: this.options.subscriptions,
+            graphiqlConsole: true
         })
-
-        await apollo.start()
-        setupGraphiqlConsole(app)
-        apollo.applyMiddleware({app})
-        return listen(httpServer, this.port())
     }
 
     @def
@@ -223,11 +153,11 @@ export class Server {
         let dialect = this.dialect()
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
-            this.cleanup.push(() => con.destroy())
+            this.disposals.push(() => con.destroy())
             let subscriptionCon = con
             if (this.options.subscriptions) {
                 subscriptionCon = await this.createTypeormConnection({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
-                this.cleanup.push(() => subscriptionCon.destroy())
+                this.disposals.push(() => subscriptionCon.destroy())
             }
             return () => {
                 return {
@@ -236,11 +166,11 @@ export class Server {
             }
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
-            this.cleanup.push(() => pool.end())
+            this.disposals.push(() => pool.end())
             let subscriptionPool = pool
             if (this.options.subscriptions) {
                 subscriptionPool = await this.createPgPool({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
-                this.cleanup.push(() => subscriptionPool.end())
+                this.disposals.push(() => subscriptionPool.end())
             }
             return () => {
                 return {
