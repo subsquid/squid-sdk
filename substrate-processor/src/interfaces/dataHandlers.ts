@@ -126,6 +126,15 @@ export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
 }
 
 
+export type EvmExecutedHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R, 'EVM.Executed'>
+
+
+export interface EvmExecutedHandler<S, R extends EventDataRequest = {event: true}> {
+    (ctx: EvmExecutedHandlerContext<S, R>): Promise<void>
+}
+
+
 export interface BlockRangeOption {
     range?: Range
 }
@@ -141,6 +150,14 @@ export interface CallHandlerOptions extends BlockRangeOption {
 
 
 export interface EvmLogOptions extends BlockRangeOption {
+    /**
+     * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
+     */
+    filter?: EvmTopicSet[]
+}
+
+
+export interface EvmExecutedOptions extends BlockRangeOption {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
      */

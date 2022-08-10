@@ -192,6 +192,14 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
+        args.evmExecuted = req.getEvmExecuted().map(({contract, filter, data}) => {
+            return {
+                contract,
+                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                data: toGatewayFields(data)
+            }
+        })
+
         args.contractsEvents = req.getContractsEvents().map(({contract, data}) => {
             return {
                 contract,

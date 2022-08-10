@@ -21,6 +21,13 @@ type EvmLogReq = {
 }
 
 
+type EvmExecutedReq = {
+    contract: string
+    filter?: EvmTopicSet[]
+    data?: EventDataRequest
+}
+
+
 type ContractsEventsReq = {
     contract: string
     data?: EventDataRequest
@@ -44,6 +51,7 @@ export interface BatchRequest {
     getEvents(): EventReq[]
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
+    getEvmExecuted(): EvmExecutedReq[]
     getContractsEvents(): ContractsEventsReq[]
     getGearMessagesEnqueued(): GearMessagesEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessagesSentReq[]
@@ -54,6 +62,7 @@ export class PlainBatchRequest implements BatchRequest {
     events: EventReq[] = []
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
+    evmExecuted: EvmExecutedReq[] = []
     contractsEvents: ContractsEventsReq[] = []
     gearMessagesEnqueued: GearMessagesEnqueuedReq[] = []
     gearUserMessagesSent: GearUserMessagesSentReq[] = []
@@ -69,6 +78,10 @@ export class PlainBatchRequest implements BatchRequest {
 
     getEvmLogs(): EvmLogReq[] {
         return this.evmLogs
+    }
+
+    getEvmExecuted(): EvmExecutedReq[] {
+        return this.evmExecuted
     }
 
     getContractsEvents(): ContractsEventsReq[] {
@@ -93,6 +106,7 @@ export class PlainBatchRequest implements BatchRequest {
         result.events = this.events.concat(other.events)
         result.calls = this.calls.concat(other.calls)
         result.evmLogs = this.evmLogs.concat(other.evmLogs)
+        result.evmExecuted = this.evmExecuted.concat(other.evmExecuted)
         result.contractsEvents = this.contractsEvents.concat(other.contractsEvents)
         result.gearMessagesEnqueued = this.gearMessagesEnqueued.concat(other.gearMessagesEnqueued)
         result.gearUserMessagesSent = this.gearUserMessagesSent.concat(other.gearUserMessagesSent)

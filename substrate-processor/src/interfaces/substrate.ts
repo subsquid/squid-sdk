@@ -154,6 +154,25 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
 }
 
 
+export interface EvmExecutedLog {
+    address: string
+    data: string
+    topics: string[]
+}
+
+
+export interface EvmExecutedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'EVM.Executed'
+    args: {
+        contract: string
+        from: string
+        logs: EvmExecutedLog[]
+        usedGas: string
+        usedStorage: number
+    }
+}
+
+
 export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEvent {
     name: 'Contracts.ContractEmitted',
     args: {

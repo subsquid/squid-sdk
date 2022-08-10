@@ -7,6 +7,7 @@ import type {
     GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
+    EvmExecutedHandler,
     EvmTopicSet
 } from "../interfaces/dataHandlers"
 import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
@@ -36,6 +37,7 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
+    evmExecuted: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmExecutedHandler<any>}[]> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
@@ -47,6 +49,7 @@ export class DataHandlers implements BatchRequest {
         res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
+        res.evmExecuted = mergeMaps(this.evmExecuted, other.evmExecuted, (ha, hb) => ha.concat(hb))
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
@@ -153,6 +156,18 @@ export class DataHandlers implements BatchRequest {
 
     getEvmLogs() {
         return Object.entries(this.evmLogs).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                return {
+                    contract,
+                    filter: h.filter,
+                    data: h.data
+                }
+            })
+        })
+    }
+
+    getEvmExecuted() {
+        return Object.entries(this.evmExecuted).flatMap(([contract, hs]) => {
             return hs.map(h => {
                 return {
                     contract,

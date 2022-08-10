@@ -17,7 +17,9 @@ import type {
     ContractsContractEmittedHandler,
     EventHandler,
     EvmLogHandler,
+    EvmExecutedHandler,
     EvmLogOptions,
+    EvmExecutedOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
@@ -36,8 +38,10 @@ import type {
     GearMessageEnqueuedEvent,
     GearUserMessageSentEvent,
     EvmLogEvent,
+    EvmExecutedEvent,
     SubstrateCall,
-    SubstrateEvent
+    SubstrateEvent,
+    EvmExecutedLog
 } from "../interfaces/substrate"
 import {withErrorContext} from "../util/misc"
 import type {Range} from "../util/range"
@@ -66,6 +70,7 @@ export class SubstrateProcessor<Store> {
         event: [],
         call: [],
         evmLog: [],
+        evmExecuted: [],
         contractsContractEmitted: [],
         gearMessageEnqueued: [],
         gearUserMessageSent: [],
@@ -630,6 +635,58 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `EVM.Executed` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link EvmExecutedEvent | event type}.
+     * 
+     * `EVM.Executed` event contains all the logs emitted during a contract call
+     * and this handler selects events by evm log contract address and topics
+     * contained in them.
+     *
+     * @example
+     * // process ERC20 transfers from Karura contract
+     * processor.addEvmExecutedHandler('0x0000000000000000000100000000000000000084', {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * }, async ctx => {})
+     */
+    addEvmExecutedHandler(
+        contractAddress: string,
+        fn: EvmExecutedHandler<Store>
+    ): this
+    addEvmExecutedHandler(
+        contractAddress: string,
+        options: EvmExecutedOptions & NoDataSelection,
+        fn: EvmExecutedHandler<Store>
+    ): this
+    addEvmExecutedHandler<R extends EventDataRequest>(
+        contractAddress: string,
+        options: EvmExecutedOptions & DataSelection<R>,
+        fn: EvmExecutedHandler<Store, R>
+    ): this
+    addEvmExecutedHandler(
+        contractAddress: string,
+        fnOrOptions: EvmExecutedOptions & MayBeDataSelection<EventDataRequest> | EvmExecutedHandler<Store>,
+        fn?: EvmExecutedHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: EvmExecutedHandler<Store>
+        let options: EvmExecutedOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.evmExecuted.push({
+            handler,
+            contractAddress: contractAddress.toLowerCase(),
+            ...options
+        })
+        return this
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -685,6 +742,18 @@ export class SubstrateProcessor<Store> {
             let range = getRange(hook)
             let request = new DataHandlers()
             request.evmLogs = {
+                [hook.contractAddress]: [{
+                    filter: hook.filter,
+                    handler: hook.handler
+                }]
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.evmExecuted.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.evmExecuted = {
                 [hook.contractAddress]: [{
                     filter: hook.filter,
                     handler: hook.handler
@@ -853,6 +922,21 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         })
                         log.debug('end')
                     }
+                    for (let handler of this.getEvmExecutedHandlers(handlers.evmExecuted, item.event)) {
+                        let event = item.event as EvmExecutedEvent
+                        let log = blockLog.child({
+                            hook: 'evm-executed',
+                            contractAddress: event.args.contract,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
                     for (let handler of this.getContractEmittedHandlers(handlers, item.event)) {
                         let event = item.event as ContractsContractEmittedEvent
                         let log = blockLog.child({
@@ -975,6 +1059,41 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                     return false
                 }
             } else if (set !== log.args.topics[i]) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private *getEvmExecutedHandlers(evmExecuted: DataHandlers["evmExecuted"], event: SubstrateEvent): Generator<EvmExecutedHandler<any>> {
+        if (event.name != 'EVM.Executed') return
+        let e = event as EvmExecutedEvent
+
+        let handlers = new Set<EvmExecutedHandler<any>>()
+        for (let log of e.args.logs) {
+            let logHandlers = evmExecuted[log.address]
+            if (logHandlers == null) continue
+
+            for (let h of logHandlers) {
+                if (this.evmExecutedHandlerMatches(h, log)) {
+                    handlers.add(h.handler)
+                }
+            }
+        }
+
+        for (let h of handlers) {
+            yield h
+        }
+    }
+
+    private evmExecutedHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmExecutedLog): boolean {
+        if (handler.filter == null) return true
+        for (let i = 0; i < handler.filter.length; i++) {
+            let set = handler.filter[i]
+            if (set == null) continue
+            if (Array.isArray(set) && !set.includes(log.topics[i])) {
+                return false
+            } else if (set !== log.topics[i]) {
                 return false
             }
         }
