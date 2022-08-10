@@ -24,6 +24,7 @@ import {TypeormOpenreaderContext} from "./typeorm"
 export interface ServerOptions {
     dir?: string
     log?: Logger
+    maxRequestSizeBytes?: number
     sqlStatementTimeout?: number
     squidStatus?: boolean
     subscriptions?: boolean
@@ -63,7 +64,8 @@ export class Server {
             plugins,
             log: this.options.log,
             subscriptions: this.options.subscriptions,
-            graphiqlConsole: true
+            graphiqlConsole: true,
+            maxRequestSizeBytes: this.options.maxRequestSizeBytes
         })
     }
 

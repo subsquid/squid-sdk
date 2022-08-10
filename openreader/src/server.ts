@@ -28,6 +28,7 @@ export interface ServerOptions {
     subscriptionConnection?: Pool
     graphiqlConsole?: boolean
     log?: Logger
+    maxRequestSizeBytes?: number
 }
 
 
@@ -50,7 +51,8 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         disposals,
         subscriptions: options.subscriptions,
         log: options.log,
-        graphiqlConsole: options.graphiqlConsole
+        graphiqlConsole: options.graphiqlConsole,
+        maxRequestSizeBytes: options.maxRequestSizeBytes
     }), options.log)
 }
 
@@ -67,16 +69,22 @@ export interface ApolloOptions {
     subscriptions?: boolean
     graphiqlConsole?: boolean
     log?: Logger
+    maxRequestSizeBytes?: number
 }
 
 
 export async function runApollo(options: ApolloOptions): Promise<ListeningServer> {
     let {disposals, context, schema, log} = options
+    let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
     let app = express()
     let server = http.createServer(app)
 
     if (options.subscriptions) {
-        let wsServer = new WebSocketServer({server, path: '/graphql'})
+        let wsServer = new WebSocketServer({
+            server,
+            path: '/graphql',
+            maxPayload: maxRequestSizeBytes
+        })
         let wsServerCleanup = useWsServer(
             {
                 schema,
@@ -102,6 +110,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     let apollo = new ApolloServer({
         schema,
         context,
+        stopOnTerminationSignals: false,
         plugins: [
             ...options.plugins || [],
             {
@@ -120,8 +129,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                     }
                 }
             }
-        ],
-        stopOnTerminationSignals: false
+        ]
     })
 
     if (options.graphiqlConsole !== false) {
@@ -132,7 +140,12 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     await apollo.start()
     disposals.push(() => apollo.stop())
 
-    apollo.applyMiddleware({app})
+    apollo.applyMiddleware({
+        app,
+        bodyParserConfig: {
+            limit: maxRequestSizeBytes
+        }
+    })
 
     return listen(server, options.port)
 }

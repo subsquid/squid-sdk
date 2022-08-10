@@ -25,6 +25,7 @@ GraphQL server for postgres-compatible databases
         new Option('-t, --db-type <type>', 'database type').choices(['postgres', 'cockroach']).default('postgres')
     )
     program.option('-p, --port <number>', 'port to listen on', nat, 3000)
+    program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
@@ -35,6 +36,7 @@ GraphQL server for postgres-compatible databases
         dbUrl: string
         dbType: Dialect
         port: number
+        maxRequestSize: number
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
@@ -62,6 +64,7 @@ GraphQL server for postgres-compatible databases
         connection,
         port: opts.port,
         log: LOG,
+        maxRequestSizeBytes: opts.maxRequestSize * 1024,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
         subscriptionConnection
