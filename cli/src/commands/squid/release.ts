@@ -23,6 +23,18 @@ export function getEnv(e: string): { name: string, value: string } {
     return { name: variable.groups.name, value: variable.groups.value }
 }
 
+export function mergeEnvWithFile(envs: Record<string, string>, path: string) {
+    if (!existsSync(path)) return envs;
+    return readFileSync(path)
+        .toString()
+        .replace(/\r\n/g,'\n')
+        .split('\n')
+        .reduce((res, e: string) => {
+            const {name, value} = getEnv(e);
+            return {...res, [name]: value};
+        }, { ...envs })
+}
+
 export default class Release extends CliCommand {
     static description = 'Create a new squid version';
     static args = [
@@ -70,20 +82,15 @@ export default class Release extends CliCommand {
             this
         );
 
-        const envs: Record<string, string> = {} 
+        let envs: Record<string, string> = {} 
         
         flags.env?.forEach((e: string)=>{
-            const v = getEnv(e);
-            envs[v.name] = v.value;
+            const { name, value } = getEnv(e);
+            envs[name] = value;
         });
-
-        if (flags.envFile != undefined && existsSync(flags.envFile)) {
-            const envFile = readFileSync(flags.envFile);
-            envFile.toString().replace(/\r\n/g,'\n').split('\n').forEach((e: string) => {
-                const v = getEnv(e);
-                envs[v.name] = v.value;
-            });
-        }
+        
+        if (flags.envFile != undefined)
+            envs = mergeEnvWithFile(envs, flags.envFile)
 
         let deployUrl = flags.source;
         if (!deployUrl) {
