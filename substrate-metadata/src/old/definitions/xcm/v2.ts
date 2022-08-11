@@ -6,11 +6,9 @@ export const V2: OldTypes['types'] = {
         _enum: {
             Null: 'Null',
             Assets: 'MultiAssetsV1',
-            ExecutionResult: 'ResponseV2Result'
+            ExecutionResult: 'Option<(u32, XcmErrorV2)>'
         }
     },
-    ResponseV2Error: '(u32, XcmErrorV2)',
-    ResponseV2Result: 'Result<Null, ResponseV2Error>',
     WeightLimitV2: {
         _enum: {
             Unlimited: 'Null',

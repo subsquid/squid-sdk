@@ -1,4 +1,3 @@
-import type {Result} from './support'
 
 export type VersionedXcm = VersionedXcm_V0 | VersionedXcm_V1 | VersionedXcm_V2
 
@@ -17,7 +16,7 @@ export interface VersionedXcm_V2 {
   value: XcmV2
 }
 
-export type XcmV0 = XcmV0_WithdrawAsset | XcmV0_ReserveAssetDeposit | XcmV0_ReceiveTeleportedAsset | XcmV0_QueryResponse | XcmV0_TransferAsset | XcmV0_TransferReserveAsset | XcmV0_Transact | XcmV0_HrmpNewChannelOpenRequest | XcmV0_HrmpChannelAccepted | XcmV0_HrmpChannelClosing | XcmV0_RelayedFrom
+export type XcmV0 = XcmV0_WithdrawAsset | XcmV0_ReserveAssetDeposit | XcmV0_TeleportAsset | XcmV0_QueryResponse | XcmV0_TransferAsset | XcmV0_TransferReserveAsset | XcmV0_Transact | XcmV0_HrmpNewChannelOpenRequest | XcmV0_HrmpChannelAccepted | XcmV0_HrmpChannelClosing | XcmV0_RelayedFrom
 
 export interface XcmV0_WithdrawAsset {
   __kind: 'WithdrawAsset'
@@ -31,8 +30,8 @@ export interface XcmV0_ReserveAssetDeposit {
   effects: XcmOrderV0[]
 }
 
-export interface XcmV0_ReceiveTeleportedAsset {
-  __kind: 'ReceiveTeleportedAsset'
+export interface XcmV0_TeleportAsset {
+  __kind: 'TeleportAsset'
   assets: MultiAssetV0[]
   effects: XcmOrderV0[]
 }
@@ -88,7 +87,7 @@ export interface XcmV0_RelayedFrom {
   message: XcmV0
 }
 
-export type XcmV1 = XcmV1_WithdrawAsset | XcmV1_ReserveAssetDeposit | XcmV1_ReceiveTeleportedAsset | XcmV1_QueryResponse | XcmV1_TransferAsset | XcmV1_TransferReserveAsset | XcmV1_Transact | XcmV1_HrmpNewChannelOpenRequest | XcmV1_HrmpChannelAccepted | XcmV1_HrmpChannelClosing | XcmV1_RelayedFrom
+export type XcmV1 = XcmV1_WithdrawAsset | XcmV1_ReserveAssetDeposited | XcmV1_ReceiveTeleportedAsset | XcmV1_QueryResponse | XcmV1_TransferAsset | XcmV1_TransferReserveAsset | XcmV1_Transact | XcmV1_HrmpNewChannelOpenRequest | XcmV1_HrmpChannelAccepted | XcmV1_HrmpChannelClosing | XcmV1_RelayedFrom | XcmV1_SubscribeVersion | XcmV1_UnsubscribeVersion
 
 export interface XcmV1_WithdrawAsset {
   __kind: 'WithdrawAsset'
@@ -96,8 +95,8 @@ export interface XcmV1_WithdrawAsset {
   effects: XcmOrderV1[]
 }
 
-export interface XcmV1_ReserveAssetDeposit {
-  __kind: 'ReserveAssetDeposit'
+export interface XcmV1_ReserveAssetDeposited {
+  __kind: 'ReserveAssetDeposited'
   assets: MultiAssetsV1
   effects: XcmOrderV1[]
 }
@@ -117,7 +116,7 @@ export interface XcmV1_QueryResponse {
 export interface XcmV1_TransferAsset {
   __kind: 'TransferAsset'
   assets: MultiAssetsV1
-  dest: MultiLocationV1
+  beneficiary: MultiLocationV1
 }
 
 export interface XcmV1_TransferReserveAsset {
@@ -159,7 +158,18 @@ export interface XcmV1_RelayedFrom {
   message: XcmV1
 }
 
-export type InstructionV2 = InstructionV2_WithdrawAsset | InstructionV2_ReserveAssetDeposited | InstructionV2_ReceiveTeleportedAsset | InstructionV2_QueryResponse | InstructionV2_TransferAsset | InstructionV2_TransferReserveAsset | InstructionV2_Transact | InstructionV2_HrmpNewChannelOpenRequest | InstructionV2_HrmpChannelAccepted | InstructionV2_HrmpChannelClosing | InstructionV2_ClearOrigin | InstructionV2_DescendOrigin | InstructionV2_ReportError | InstructionV2_DepositAsset | InstructionV2_DepositReserveAsset | InstructionV2_ExchangeAsset | InstructionV2_InitiateReserveWithdraw | InstructionV2_InitiateTeleport | InstructionV2_QueryHolding | InstructionV2_BuyExecution | InstructionV2_RefundSurplus | InstructionV2_SetErrorHandler | InstructionV2_SetAppendix | InstructionV2_ClearError | InstructionV2_ClaimAsset | InstructionV2_Trap
+export interface XcmV1_SubscribeVersion {
+  __kind: 'SubscribeVersion'
+  queryId: bigint
+  maxResponseWeight: bigint
+}
+
+export interface XcmV1_UnsubscribeVersion {
+  __kind: 'UnsubscribeVersion'
+  value: null
+}
+
+export type InstructionV2 = InstructionV2_WithdrawAsset | InstructionV2_ReserveAssetDeposited | InstructionV2_ReceiveTeleportedAsset | InstructionV2_QueryResponse | InstructionV2_TransferAsset | InstructionV2_TransferReserveAsset | InstructionV2_Transact | InstructionV2_HrmpNewChannelOpenRequest | InstructionV2_HrmpChannelAccepted | InstructionV2_HrmpChannelClosing | InstructionV2_ClearOrigin | InstructionV2_DescendOrigin | InstructionV2_ReportError | InstructionV2_DepositAsset | InstructionV2_DepositReserveAsset | InstructionV2_ExchangeAsset | InstructionV2_InitiateReserveWithdraw | InstructionV2_InitiateTeleport | InstructionV2_QueryHolding | InstructionV2_BuyExecution | InstructionV2_RefundSurplus | InstructionV2_SetErrorHandler | InstructionV2_SetAppendix | InstructionV2_ClearError | InstructionV2_ClaimAsset | InstructionV2_Trap | InstructionV2_SubscribeVersion | InstructionV2_UnsubscribeVersion
 
 export interface InstructionV2_WithdrawAsset {
   __kind: 'WithdrawAsset'
@@ -317,6 +327,17 @@ export interface InstructionV2_ClaimAsset {
 export interface InstructionV2_Trap {
   __kind: 'Trap'
   value: bigint
+}
+
+export interface InstructionV2_SubscribeVersion {
+  __kind: 'SubscribeVersion'
+  queryId: bigint
+  maxResponseWeight: bigint
+}
+
+export interface InstructionV2_UnsubscribeVersion {
+  __kind: 'UnsubscribeVersion'
+  value: null
 }
 
 export type XcmV2 = InstructionV2[]
@@ -606,7 +627,7 @@ export interface ResponseV2_Assets {
 
 export interface ResponseV2_ExecutionResult {
   __kind: 'ExecutionResult'
-  value: ResponseV2Result
+  value: ([number, XcmErrorV2] | undefined)
 }
 
 export type JunctionsV1 = JunctionsV1_Here | JunctionsV1_X1 | JunctionsV1_X2 | JunctionsV1_X3 | JunctionsV1_X4 | JunctionsV1_X5 | JunctionsV1_X6 | JunctionsV1_X7 | JunctionsV1_X8
@@ -988,10 +1009,6 @@ export interface XcmErrorV2_InvalidLocation {
   __kind: 'InvalidLocation'
   value: null
 }
-
-export type ResponseV2Error = [number, XcmErrorV2]
-
-export type ResponseV2Result = Result<null, ResponseV2Error>
 
 export type JunctionV1 = JunctionV1_Parachain | JunctionV1_AccountId32 | JunctionV1_AccountIndex64 | JunctionV1_AccountKey20 | JunctionV1_PalletInstance | JunctionV1_GeneralIndex | JunctionV1_GeneralKey | JunctionV1_OnlyChild | JunctionV1_Plurality
 
