@@ -139,7 +139,7 @@ export const V0: OldTypes['types'] = {
                 assets: 'Vec<MultiAssetV0>',
                 effects: 'Vec<XcmOrderV0>'
             },
-            ReceiveTeleportedAsset: {
+            TeleportAsset: {
                 assets: 'Vec<MultiAssetV0>',
                 effects: 'Vec<XcmOrderV0>'
             },

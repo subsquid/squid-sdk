@@ -38,7 +38,7 @@ export const V2: OldTypes['types'] = {
             },
             Transact: {
                 originType: 'OriginKindV0',
-                requireWeightAtMost: 'u64',
+                requireWeightAtMost: 'Compact<u64>',
                 call: 'Vec<u8>'
             },
             HrmpNewChannelOpenRequest: {
@@ -63,12 +63,12 @@ export const V2: OldTypes['types'] = {
             },
             DepositAsset: {
                 assets: 'MultiAssetFilterV1',
-                maxAssets: 'u32',
+                maxAssets: 'Compact<u32>',
                 beneficiary: 'MultiLocationV1'
             },
             DepositReserveAsset: {
                 assets: 'MultiAssetFilterV1',
-                maxAssets: 'u32',
+                maxAssets: 'Compact<u32>',
                 dest: 'MultiLocationV1',
                 xcm: 'XcmV2'
             },
@@ -104,7 +104,12 @@ export const V2: OldTypes['types'] = {
                 assets: 'MultiAssetsV1',
                 ticket: 'MultiLocationV1'
             },
-            Trap: 'u64'
+            Trap: 'Compact<u64>',
+            SubscribeVersion: {
+                queryId: 'Compact<u64>',
+                maxResponseWeight: 'Compact<u64>'
+            },
+            UnsubscribeVersion: 'Null'
         }
     },
     XcmV2: 'Vec<InstructionV2>',
