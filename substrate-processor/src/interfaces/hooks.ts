@@ -8,7 +8,8 @@ import {
     GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
-    EvmTopicSet
+    EvmTopicSet,
+    EthereumTransactionHandler
 } from "./dataHandlers"
 import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
@@ -46,6 +47,21 @@ export interface EvmLogHook {
     range?: Range
 }
 
+export interface EvmLogHook {
+    handler: EvmLogHandler<any>
+    contractAddress: string
+    filter?: EvmTopicSet[]
+    data?: EventDataRequest
+    range?: Range
+}
+
+export interface EthereumTransactionHook {
+    handler: EthereumTransactionHandler<any>
+    contractAddress: string
+    triggerForFailedCalls?: boolean
+    data?: CallDataRequest
+    range?: Range
+}
 
 export interface ContractsContractEmittedHook {
     handler: ContractsContractEmittedHandler<any>,
@@ -77,6 +93,7 @@ export interface Hooks {
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
+    ethereumTransactions: EthereumTransactionHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]

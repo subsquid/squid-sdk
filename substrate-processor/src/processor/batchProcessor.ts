@@ -268,6 +268,30 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return this
     }
 
+    addEthereumTransaction(
+        contractAddress: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", true>>>
+
+    addEthereumTransaction<R extends CallDataRequest>(
+        contractAddress: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", R>>>
+
+    addEthereumTransaction(
+        contractAddress: string,
+        options?: BlockRangeOption & MayBeDataSelection<CallDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.ethereumTransactions.push({
+            contract: contractAddress.toLowerCase(),
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
     /**
      * Similar to {@link .addEvent},
      * but requests `Contracts.ContractEmitted` events belonging to particular contract.

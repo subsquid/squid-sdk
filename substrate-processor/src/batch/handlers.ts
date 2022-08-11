@@ -5,6 +5,7 @@ import type {
     ContractsContractEmittedHandler,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
+    EthereumTransactionHandler,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet
@@ -29,6 +30,11 @@ export interface CallHandlerEntry {
     triggerForFailedCalls?: boolean
 }
 
+export interface EthereumTransactionHandlerEntry {
+    handler: EthereumTransactionHandler<any>
+    triggerForFailedCalls?: boolean
+}
+
 
 export class DataHandlers implements BatchRequest {
     pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
@@ -36,6 +42,7 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
+    ethereumTransactions: Record<ContractAddress, HandlerList<EthereumTransactionHandlerEntry, CallDataRequest>> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
@@ -47,6 +54,7 @@ export class DataHandlers implements BatchRequest {
         res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
+        res.ethereumTransactions = mergeMaps(this.ethereumTransactions, other.ethereumTransactions, mergeItemHandlerLists)
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
@@ -160,6 +168,15 @@ export class DataHandlers implements BatchRequest {
                     data: h.data
                 }
             })
+        })
+    }
+
+    getEthereumTransactions() {
+        return Object.entries(this.ethereumTransactions).map(([contract, {data}]) => {
+            return {
+                contract,
+                data
+            }
         })
     }
 
