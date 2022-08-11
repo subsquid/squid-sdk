@@ -5,7 +5,7 @@ import {Account, TokenMint} from './model'
 import {decodeNFTInput} from './program'
 
 
-const NFT_PROGRAM_ID = '0x0a19fc36694e4e075d1183ea92b90c79be8a23982004c76b955f5c36323770af'
+const NFT_PROGRAM_ID = '0x785dd06350605d104eb43478cc40945d975c0817167a0d551f933e56bdfa39b1'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -110,8 +110,10 @@ async function extractMintsAndReplies(ctx: Ctx): Promise<{records: MintRecord[],
                     })
                 }
             } else if (item.event.name == 'Gear.UserMessageSent') {
-                let [message, code] = item.event.args.message.reply
-                replies.push({message, code})
+                replies.push({
+                    message: item.event.args.message.reply.replyTo,
+                    code: item.event.args.message.reply.exitCode,
+                })
             }
         }
     }
