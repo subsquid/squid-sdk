@@ -81,7 +81,7 @@ export class BlockParser {
         for (let i = 0; i < extrinsics.length; i++) {
             let ex = extrinsics[i]
             if (ex.call.__kind == 'Timestamp' && ex.call.value.__kind == 'set') {
-                return ex.call.value.now
+                return Number(ex.call.value.now)
             }
         }
         return 0
