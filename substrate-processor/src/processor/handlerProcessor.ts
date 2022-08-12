@@ -842,7 +842,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let event = item.event as EvmLogEvent
                         let log = blockLog.child({
                             hook: 'evm-log',
-                            contractAddress: event.args.address,
+                            contractAddress: event.args.address || event.args.log.address,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -954,7 +954,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractAddress = assertNotNull(log.args?.address)
+        let contractAddress = assertNotNull(log.args.address || log.args.log.address)
         let contractHandlers = evmLogs[contractAddress]
         if (contractHandlers == null) return
 

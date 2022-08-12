@@ -135,7 +135,7 @@ export class PostgresSink implements Sink {
     private mapEvent(event: Event): IndexedEvent {
         switch(event.name) {
             case 'EVM.Log':
-                return {...event, contract: toHex(event.args.address)}
+                return {...event, contract: toHex(event.args.address || event.args.log.address)}
             case 'Contracts.ContractEmitted':
                 return {...event, contract: toHex(event.args.contract)}
             case 'Gear.MessageEnqueued':
