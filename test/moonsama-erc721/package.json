@@ -14,7 +14,7 @@
     "ethers": "^5.6.3"
   },
   "devDependencies": {
-    "@subsquid/cli": "^0.5.1",
+    "@subsquid/cli": "^0.6.0",
     "@subsquid/evm-typegen": "^0.1.0",
     "@subsquid/substrate-metadata-explorer": "^0.0.8",
     "@subsquid/substrate-typegen": "^0.5.0",
