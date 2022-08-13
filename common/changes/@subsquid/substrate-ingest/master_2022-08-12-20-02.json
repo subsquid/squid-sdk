@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "convert Timestamp.set value from bigint to number",
+      "comment": "always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`",
       "type": "patch"
     }
   ],
