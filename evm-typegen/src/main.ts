@@ -52,49 +52,24 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     // validate the abi
     const abi = new Interface(rawABI);
 
-    const typeNames: {[key: string]: number} = {};
-
-    const abiEvents: Array<AbiEvent> = Object.values(abi.events).map((event: EventFragment): AbiEvent => {
-        let eventTypeName = `${event.name}`;
-        if (typeNames[event.name]) {
-            eventTypeName += typeNames[event.name].toString();
-            typeNames[event.name]++;
-        } else {
-            eventTypeName += "0";
-            typeNames[event.name] = 1;
-        }
-        eventTypeName += 'Event'
-
-        let signature = `${event.name}(`;
-        if (event.inputs.length > 0) {
-            signature += event.inputs[0].type;
-        }
-        for (let i = 1; i < event.inputs.length; ++i) {
-            const input = event.inputs[i];
-            signature += `,${input.type}`;
-        }
-        signature += ")";
-
-        return {
-            signature,
-            eventTypeName,
-            inputs: event.inputs,
-        };
-    });
+    const abiEvents = getEvents(abi)
 
     for (const decl of abiEvents) {
-        output.line(`export type ${decl.eventTypeName} = ${getTupleType(decl.inputs)}`)
-        output.line("");
+        for (let i = 0; i < decl.overloads.length; i++) {
+            if (decl.overloads[i].inputs.length === 0) continue
+            output.line(`export type ${decl.name}${i}Event = ${getTupleType(decl.overloads[i].inputs)}`)
+            output.line("");
+        }
     }
 
-    output.block("export interface EvmEvent", () => {
+    output.block("export interface EvmLog", () => {
         output.line("data: string;");
         output.line("topics: string[];");
     });
 
     output.line();
 
-    output.block(`function decodeEvent(signature: string, data: EvmEvent): any`, () => {
+    output.block(`function decodeEvent(signature: string, data: EvmLog): any`, () => {
         output.line(`return abi.decodeEventLog(`);
         output.indentation(() => {
             output.line(`abi.getEvent(signature),`);
@@ -108,39 +83,65 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.block("export const events =", () => {
         for (const decl of abiEvents) {
-            output.block(`"${decl.signature}":`, () => {
-                output.line(`topic: abi.getEventTopic("${decl.signature}"),`);
-                output.block(`decode(data: EvmEvent): ${decl.eventTypeName}`, () => {
-                    output.line(`return decodeEvent("${decl.signature}", data)`);
+            for (let i = 0; i < decl.overloads.length; i++) {
+                const overload = decl.overloads[i]
+                const signature = createSignature(decl.name, overload.inputs)
+                output.block(`"${signature}":`, () => {
+                    output.line(`topic: abi.getEventTopic("${signature}"),`);
+                    if (decl.overloads[i].inputs.length > 0)
+                        output.block(`decode(data: EvmLog): ${decl.name}${i}Event`, () => {
+                            output.line(`return decodeEvent("${signature}", data)`)
+                        });
                 });
-            });
-            output.line(",");
+                output.line(",")
+            }
         }
     });
 
     output.line();
 
-    let abiFunctions: Map<string, AbiFunction> = new Map()
-    for (let func of Object.values(abi.functions)) {
-        if (!func.constant || func.outputs == null) continue
+    let abiFunctions = getFunctions(abi)
 
-        let abiFunction = abiFunctions.get(func.name)
-        if (abiFunction == null) {
-            abiFunction = {
-                name: func.name,
-                overloads: []
-            }
-            abiFunctions.set(func.name, abiFunction)
+    for (const decl of abiFunctions) {
+        for (let i = 0; i < decl.overloads.length; i++) {
+            if (decl.overloads[i].inputs.length === 0) continue
+            output.line(`export type ${decl.name}${i}Function = ${getTupleType(decl.overloads[i].inputs)}`)
+            output.line("");
         }
-
-        let returnTypeName = func.outputs.length == 1 ? getType(func.outputs[0]) : getTupleType(func.outputs)
-
-        abiFunction.overloads.push({
-            inputs: func.inputs,
-            outputs: func.outputs || [],
-            returnTypeName
-        })
     }
+
+    output.block("export interface Transaction", () => {
+        output.line("input: string")
+    });
+
+    output.line();
+
+    output.block(`function decodeFunction(data: Transaction): any`, () => {
+        output.line(`return abi.decodeFunctionData(data.input.slice(0, 10), data.input)`);
+    });
+
+    output.line();
+
+    output.block("export const functions =", () => {
+        for (const decl of abiFunctions) {
+            for (let i = 0; i < decl.overloads.length; i++) {
+                const overload = decl.overloads[i]
+                const signature = createSignature(decl.name, overload.inputs)
+                output.block(`"${signature}":`, () => {
+                    output.line(`sighash: abi.getSighash("${signature}"),`);
+                    if (decl.overloads[i].inputs.length > 0)
+                        output.block(`decode(data: Transaction): ${decl.name}${i}Function`, () => {
+                            output.line(`return decodeFunction(data)`)
+                        });
+                });
+                output.line(",")
+            }
+        }
+    });
+
+    output.line();
+
+    let abiCalls = getCalls(abi)
 
     output.block("interface ChainContext ", () => {
         output.line(`_chain: Chain`);
@@ -181,11 +182,11 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             })
         })
         output.line();
-        for (const decl of abiFunctions.values()) {
+        for (const decl of abiCalls) {
             if (decl.overloads.length > 1) {
                 for (let overload of decl.overloads) {
                     const args = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
-                    const returnType = overload.returnTypeName
+                    const returnType = overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
                     output.line(`async ${decl.name}(${args}): Promise<${returnType}>`)
                 }
                 output.block(`async ${decl.name}(...args: any[])`, () => {
@@ -194,7 +195,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             } else {
                 const overload = decl.overloads[0]
                 const params = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
-                const returnType = overload.returnTypeName
+                const returnType = overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
                 output.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
                     output.line(`return this.call("${decl.name}", [${overload.inputs.map((i, n) => `${i.name || `arg${n}`}`).join(`, `)}])`);
                 });
@@ -276,17 +277,93 @@ function getStructFields(params: ParamType[]): ParamType[] {
     return params.filter(p => counts[p.name] == 1)
 }
 
+function createSignature(name: string, inputs: ParamType[]) {
+    return `${name}(${inputs.map((i) => i.type).join(`,`)})`
+}
+
+function getEvents(abi: Interface): AbiEvent[] {
+    let res: Map<string, AbiEvent> = new Map()
+    for (let event of Object.values(abi.events)) {
+        let abiEvent = res.get(event.name)
+        if (abiEvent == null) {
+            abiEvent = {
+                name: event.name,
+                overloads: []
+            }
+            res.set(event.name, abiEvent)
+        }
+
+        abiEvent.overloads.push({
+            inputs: event.inputs || [],
+        })
+    }
+
+    return [...res.values()]
+}
+
+function getFunctions(abi: Interface): AbiFunction[] {
+    let res: Map<string, AbiFunction> = new Map()
+    for (let func of Object.values(abi.functions)) {
+        if (func.constant) continue
+
+        let abiFunc = res.get(func.name)
+        if (abiFunc == null) {
+            abiFunc = {
+                name: func.name,
+                overloads: []
+            }
+            res.set(func.name, abiFunc)
+        }
+
+        abiFunc.overloads.push({
+            inputs: func.inputs || [],
+        })
+    }
+
+    return [...res.values()]
+}
+
+function getCalls(abi: Interface): AbiCall[] {
+    let res: Map<string, AbiCall> = new Map()
+    for (let func of Object.values(abi.functions)) {
+        if (!func.constant || func.outputs == null) continue
+
+        let abiCall = res.get(func.name)
+        if (abiCall == null) {
+            abiCall = {
+                name: func.name,
+                overloads: []
+            }
+            res.set(func.name, abiCall)
+        }
+
+        abiCall.overloads.push({
+            inputs: func.inputs,
+            outputs: func.outputs || [],
+        })
+    }
+
+    return [...res.values()]
+}
+
 interface AbiEvent {
-    signature: string;
-    eventTypeName: string;
-    inputs: ParamType[];
+    name: string;
+    overloads: {
+        inputs: ParamType[];
+    }[]
 }
 
 interface AbiFunction {
     name: string;
     overloads: {
         inputs: ParamType[];
+    }[]
+}
+
+interface AbiCall {
+    name: string;
+    overloads: {
+        inputs: ParamType[];
         outputs: ParamType[];
-        returnTypeName?: string;
     }[]
 }
