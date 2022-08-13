@@ -1,11 +1,14 @@
-import { Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
+import { existsSync, readFileSync } from 'fs';
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
-import { update } from '../../rest-client/routes/update';
+import { updateSquid } from '../../api';
+import { CliCommand } from '../../command';
 import {
     buildRemoteUrlFromGit,
     parseNameAndVersion,
     pollDeployPipelines,
 } from '../../utils';
+import { getEnv, mergeEnvWithFile } from './release';
 
 const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
@@ -13,7 +16,7 @@ const options: Partial<SimpleGitOptions> = {
 };
 const git: SimpleGit = simpleGit(options);
 
-export default class Update extends Command {
+export default class Update extends CliCommand {
     static description = 'Update a version image';
     static args = [
         {
@@ -40,6 +43,16 @@ export default class Update extends Command {
             description: 'verbose',
             required: false,
         }),
+        env: Flags.string({
+            char: 'e',
+            description: 'environment variable',
+            required: false,
+            multiple: true,
+        }),
+        envFile: Flags.string({
+            description: 'file with environment variables',
+            required: false,
+        }),
     };
 
     async run(): Promise<void> {
@@ -49,6 +62,25 @@ export default class Update extends Command {
             nameAndVersion,
             this
         );
+        
+        let envs: Record<string, string> = {} 
+        
+        flags.env?.forEach((e: string)=>{
+            const { name, value } = getEnv(e);
+            envs[name] = value;
+        });
+        
+        if (flags.envFile != undefined)
+            envs = mergeEnvWithFile(envs, flags.envFile)
+
+        if (flags.envFile != undefined && existsSync(flags.envFile)) {
+            const envFile = readFileSync(flags.envFile);
+            envFile.toString().replace(/\r\n/g,'\n').split('\n').forEach((e: string) => {
+                const v = getEnv(e);
+                envs[v.name] = v.value;
+            });
+        }
+
         let deployUrl = flags.source;
         if (!deployUrl) {
             deployUrl = await buildRemoteUrlFromGit(git, this);
@@ -62,11 +94,12 @@ export default class Update extends Command {
                   }`;
         }
         this.log(`🦑 Releasing the squid at ${deployUrl}`);
-        const result = await update(
+        const result = await updateSquid(
             squidName,
             versionName,
             deployUrl as string,
-            flags.hardReset
+            flags.hardReset,
+            Object.keys(envs).length ? envs : undefined
         );
         this.log(
             '◷ You may now detach from the build process by pressing Ctrl + C. The Squid deployment will continue uninterrupted.'
@@ -79,7 +112,6 @@ export default class Update extends Command {
             versionName,
             result?.deploymentUrl || '',
             this,
-          { verbose: flags.verbose }
         );
         this.log('✔️ Done!');
     }

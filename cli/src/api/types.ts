@@ -69,6 +69,8 @@ export enum LogLevel {
   Info = 'INFO',
   Notice = 'NOTICE',
   Warning = 'WARNING',
+  Critical = 'CRITICAL',
+  Fatal = 'FATAL',
 }
 export type LogPayload = string | Record<string, unknown>
 
@@ -83,3 +85,11 @@ export type LogsResponse = {
   logs: LogEntry[];
   nextPage: string | null;
 };
+
+export type SquidVersionResponse = {
+  id: number
+  name: string
+  version: { 
+    deploymentUrl: string 
+  }
+}

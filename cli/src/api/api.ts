@@ -1,9 +1,15 @@
 import fetch from 'node-fetch';
+import path from 'path';
 import chalk from 'chalk';
 import qs from 'query-string';
 import { getConfig } from '../config';
 
 const debug = process.env.API_DEBUG === 'true';
+
+let version = 'unknown'
+try {
+  version = require(path.resolve(__dirname, '../../package.json')).version
+} catch (e) {}
 
 export class ApiError extends Error {
   constructor(public status: number, public body: {
@@ -30,6 +36,7 @@ export async function api<T = any>(
   const headers = {
     'Content-Type': 'application/json',
     authorization: `token ${config.credentials}`,
+    'X-CLI-Version': version,
   }
 
   if (debug) {
@@ -68,6 +75,7 @@ export async function api<T = any>(
 
   switch (response.status) {
     case 200:
+    case 201:
       return { body };
     default:
       throw new ApiError(response.status, body as any);

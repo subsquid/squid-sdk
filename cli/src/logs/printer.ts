@@ -11,6 +11,8 @@ function getLevel(level: LogLevel) {
     case LogLevel.Warning:
       return chalk.yellow(level)
     case LogLevel.Error:
+    case LogLevel.Critical:
+    case LogLevel.Fatal:
       return chalk.red(level)
     default:
       return chalk.dim(level)
