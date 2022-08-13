@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "update interface for EVM.Log",
+      "comment": "adapt for new `EVM.Log` event arguments",
       "type": "patch"
     }
   ],
