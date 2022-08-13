@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "update the way of getting EVM.Log contract address",
+      "comment": "adapt for new `EVM.Log` event arguments",
       "type": "patch"
     }
   ],
