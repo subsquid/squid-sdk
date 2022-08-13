@@ -2,6 +2,18 @@
   "name": "@subsquid/cli",
   "entries": [
     {
+      "version": "0.6.0",
+      "tag": "@subsquid/cli_v0.6.0",
+      "date": "Sat, 13 Aug 2022 13:18:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "deploy flow improvements"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.1",
       "tag": "@subsquid/cli_v0.5.1",
       "date": "Tue, 28 Jun 2022 18:37:46 GMT",
