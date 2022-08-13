@@ -162,19 +162,13 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
 export interface EthereumTransactCall extends SubstrateCall {
     name: 'Ethereum.transact'
     args: {
-        action: {
-            __kind: 'Call'
-            value: string
+        transaction: {
+            action: {
+                __kind: 'Call'
+                value: string
+            }
+            input: string
         }
-        gasLimit: Uint8Array
-        gasPrice: Uint8Array
-        input: string
-        signature: {
-            r: string
-            s: string
-            v: number
-        }
-        value: Uint8Array
     }
 }
 
