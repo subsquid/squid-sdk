@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/logger",
-      "comment": "Add `.severity` to JSON log records",
+      "comment": "Support `SQD_LOG_LABELS` env variable to control `.level` output in JSON lines format",
       "type": "minor"
     }
   ],
