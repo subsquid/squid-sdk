@@ -6,7 +6,7 @@ import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
 import {Chain} from "../chain"
 import {BlockData} from "../ingest"
-import type {BlockRangeOption, EvmLogOptions} from "../interfaces/dataHandlers"
+import type {BlockRangeOption, EvmLogOptions, EvmExecutedOptions} from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
     AddEventItem,
@@ -346,6 +346,42 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         let req = new PlainBatchRequest()
         req.gearUserMessagesSent.push({
             program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `EVM.Executed` events containing logs from particular contract
+     * with an option to filter them by topic.
+     *
+     * @example
+     * // request ERC20 transfers from Karura contract
+     * processor.addAcalaEvmExecuted('0x0000000000000000000100000000000000000084', {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * })
+     */
+    addAcalaEvmExecuted(
+        contractAddress: string,
+        options?: EvmExecutedOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
+
+    addAcalaEvmExecuted<R extends EventDataRequest>(
+        contractAddress: string,
+        options: EvmExecutedOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
+
+    addAcalaEvmExecuted(
+        contractAddress: string,
+        options?: EvmExecutedOptions & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.evmExecuted.push({
+            contract: contractAddress.toLowerCase(),
+            filter: options?.filter,
             data: options?.data
         })
         this.add(req, options?.range)
