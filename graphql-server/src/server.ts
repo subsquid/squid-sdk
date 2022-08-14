@@ -158,7 +158,9 @@ export class Server {
             this.disposals.push(() => con.destroy())
             let subscriptionCon = con
             if (this.options.subscriptions) {
-                subscriptionCon = await this.createTypeormConnection({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
+                subscriptionCon = await this.createTypeormConnection({
+                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
+                })
                 this.disposals.push(() => subscriptionCon.destroy())
             }
             return () => {
@@ -171,7 +173,9 @@ export class Server {
             this.disposals.push(() => pool.end())
             let subscriptionPool = pool
             if (this.options.subscriptions) {
-                subscriptionPool = await this.createPgPool({sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout})
+                subscriptionPool = await this.createPgPool({
+                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
+                })
                 this.disposals.push(() => subscriptionPool.end())
             }
             return () => {
