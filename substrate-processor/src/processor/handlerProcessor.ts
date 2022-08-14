@@ -255,7 +255,7 @@ export class SubstrateProcessor<Store> {
     addPreHook(fn: BlockHandler<Store>): this
     addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): this
     addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): this {
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -380,7 +380,7 @@ export class SubstrateProcessor<Store> {
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): this
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): this
-    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): this
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R>): this
     addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): this {
         this.assertNotRunning()
         let handler: EventHandler<Store>
@@ -441,7 +441,7 @@ export class SubstrateProcessor<Store> {
     addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
+        let options: CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -490,7 +490,7 @@ export class SubstrateProcessor<Store> {
     ): this {
         this.assertNotRunning()
         let handler: EvmLogHandler<Store>
-        let options:  EvmLogOptions= {}
+        let options: EvmLogOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -652,7 +652,7 @@ export class SubstrateProcessor<Store> {
         programId: string,
         fnOrOptions: GearUserMessageSentHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
         fn?: GearUserMessageSentHandler<Store>
-    ): this{
+    ): this {
         this.assertNotRunning()
         let handler: GearUserMessageSentHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
@@ -679,7 +679,7 @@ export class SubstrateProcessor<Store> {
     private createBatches(blockRange: Range) {
         let batches: Batch<DataHandlers>[] = []
 
-        function getRange(hook: { range?: Range }): Range{
+        function getRange(hook: {range?: Range}): Range {
             return hook.range || {from: 0}
         }
 
@@ -881,7 +881,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
 
         for (let item of block.items) {
-            switch(item.kind) {
+            switch (item.kind) {
                 case 'event':
                     for (let handler of this.getEventHandlers(handlers, item.event)) {
                         let log = blockLog.child({
@@ -1022,7 +1022,9 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         if (call.name != 'Ethereum.transact') return
         let transaction = call as EthereumTransactCall
 
-        let hs = handlers.ethereumTransactions['*'] // TODO: get contract address from transaction
+        let contractAddress = assertNotNull(transaction.args?.transaction.action?.value
+            || transaction.args?.transaction.value.action?.value)
+        let hs = handlers.ethereumTransactions[contractAddress]
         if (hs == null) return
 
         for (let h of hs.handlers) {

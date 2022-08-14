@@ -65,35 +65,35 @@ export const functions = {
   "approve(address,uint256)": {
     sighash: abi.getSighash("approve(address,uint256)"),
     decode(input: string): approve0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256)"),
     decode(input: string): safeTransferFrom0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256,bytes)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256,bytes)"),
     decode(input: string): safeTransferFrom1Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setApprovalForAll(address,bool)": {
     sighash: abi.getSighash("setApprovalForAll(address,bool)"),
     decode(input: string): setApprovalForAll0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "transferFrom(address,address,uint256)": {
     sighash: abi.getSighash("transferFrom(address,address,uint256)"),
     decode(input: string): transferFrom0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,

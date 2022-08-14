@@ -144,28 +144,28 @@ export const functions = {
   "approve(address,uint256)": {
     sighash: abi.getSighash("approve(address,uint256)"),
     decode(input: string): approve0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "batch(bytes[],bool)": {
     sighash: abi.getSighash("batch(bytes[],bool)"),
     decode(input: string): batch0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "burn(uint256)": {
     sighash: abi.getSighash("burn(uint256)"),
     decode(input: string): burn0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "grantRole(bytes32,address)": {
     sighash: abi.getSighash("grantRole(bytes32,address)"),
     decode(input: string): grantRole0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
@@ -176,126 +176,126 @@ export const functions = {
   "mint(address,string)": {
     sighash: abi.getSighash("mint(address,string)"),
     decode(input: string): mint0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "mintDefault(address)": {
     sighash: abi.getSighash("mintDefault(address)"),
     decode(input: string): mintDefault0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "renounceRole(bytes32,address)": {
     sighash: abi.getSighash("renounceRole(bytes32,address)"),
     decode(input: string): renounceRole0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "revokeRole(bytes32,address)": {
     sighash: abi.getSighash("revokeRole(bytes32,address)"),
     decode(input: string): revokeRole0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256)"),
     decode(input: string): safeTransferFrom0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256,bytes)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256,bytes)"),
     decode(input: string): safeTransferFrom1Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setApprovalForAll(address,bool)": {
     sighash: abi.getSighash("setApprovalForAll(address,bool)"),
     decode(input: string): setApprovalForAll0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setContractURI(string)": {
     sighash: abi.getSighash("setContractURI(string)"),
     decode(input: string): setContractURI0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setCustomCompositeTokenURIBase(uint256,string)": {
     sighash: abi.getSighash("setCustomCompositeTokenURIBase(uint256,string)"),
     decode(input: string): setCustomCompositeTokenURIBase0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setCustomTokenURI(uint256,string)": {
     sighash: abi.getSighash("setCustomTokenURI(uint256,string)"),
     decode(input: string): setCustomTokenURI0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setDefaultTokenURI(string)": {
     sighash: abi.getSighash("setDefaultTokenURI(string)"),
     decode(input: string): setDefaultTokenURI0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setERC2665Handler(address)": {
     sighash: abi.getSighash("setERC2665Handler(address)"),
     decode(input: string): setERC2665Handler0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setFee(address,uint256)": {
     sighash: abi.getSighash("setFee(address,uint256)"),
     decode(input: string): setFee0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setGlobalCompositeTokenURIBase(string)": {
     sighash: abi.getSighash("setGlobalCompositeTokenURIBase(string)"),
     decode(input: string): setGlobalCompositeTokenURIBase0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setProxyRegistryAddress(address)": {
     sighash: abi.getSighash("setProxyRegistryAddress(address)"),
     decode(input: string): setProxyRegistryAddress0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setTransferListener(address)": {
     sighash: abi.getSighash("setTransferListener(address)"),
     decode(input: string): setTransferListener0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "setUseCompositeTokenURI(uint256,bool)": {
     sighash: abi.getSighash("setUseCompositeTokenURI(uint256,bool)"),
     decode(input: string): setUseCompositeTokenURI0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,
   "transferFrom(address,address,uint256)": {
     sighash: abi.getSighash("transferFrom(address,address,uint256)"),
     decode(input: string): transferFrom0Function {
-      return decodeFunction(data)
+      return decodeFunction(input)
     }
   }
   ,

@@ -83,7 +83,7 @@ export class Typegen {
                             this.out.line(`sighash: abi.getSighash("${signature}"),`);
                             if (decl.overloads[i].inputs.length > 0)
                                 this.out.block(`decode(input: string): ${decl.name}${i}Function`, () => {
-                                    this.out.line(`return decodeFunction(data)`)
+                                    this.out.line(`return decodeFunction(input)`)
                                 });
                         }
                     });
