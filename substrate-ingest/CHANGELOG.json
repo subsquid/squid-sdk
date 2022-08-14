@@ -2,6 +2,110 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/substrate-ingest_v0.3.1",
+      "date": "Thu, 04 Aug 2022 06:15:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix shebang in executable"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/substrate-ingest_v0.3.0",
+      "date": "Thu, 04 Aug 2022 06:00:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "throw correct object on storage error"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "Omit non-executed extrinsics from Mangata chain"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/substrate-ingest_v0.2.0",
+      "date": "Wed, 20 Jul 2022 13:59:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "store gear program_id in the event table"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.3",
+      "tag": "@subsquid/substrate-ingest_v0.1.3",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of `Utility.force_batch` call (were crashing when processing batches with failed items)"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.2",
+      "tag": "@subsquid/substrate-ingest_v0.1.2",
+      "date": "Tue, 12 Jul 2022 17:07:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix boundary check in event parsing"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "@subsquid/substrate-ingest_v0.1.1",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "move timeout code into separate package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/substrate-ingest_v0.1.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "save EVM contract address in call table"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "don't crush on empty list of validators"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/substrate-ingest_v0.0.6",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

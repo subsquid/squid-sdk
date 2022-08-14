@@ -464,6 +464,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/ink-abi",
+      "projectFolder": "ink-abi",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "projectFolder": "ink-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/openreader",
       "projectFolder": "openreader",
       "shouldPublish": true,
@@ -654,6 +666,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-timeout",
+      "projectFolder": "util/util-timeout",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-xxhash",
       "projectFolder": "util/util-xxhash",
       "shouldPublish": true,
@@ -695,8 +713,13 @@
       "shouldPublish": false
     },
     {
-      "packageName": "wasm-contracts",
-      "projectFolder": "test/wasm-contracts",
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "gear-nft",
+      "projectFolder": "test/gear-nft",
       "shouldPublish": false
     }
   ]

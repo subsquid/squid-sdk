@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "1.0.3",
+      "tag": "@subsquid/openreader_v1.0.3",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/openreader_v1.0.2",
       "date": "Sun, 26 Jun 2022 21:17:38 GMT",

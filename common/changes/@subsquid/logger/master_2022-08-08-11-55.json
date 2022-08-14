@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "Support `SQD_LOG_LABELS` env variable to control `.level` output in JSON lines format",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}

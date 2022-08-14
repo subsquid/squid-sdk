@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "1.0.2",
+      "tag": "@subsquid/rpc-client_v1.0.2",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "move timeout code into separate package"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/rpc-client_v1.0.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

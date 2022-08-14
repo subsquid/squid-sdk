@@ -53,6 +53,16 @@ new SubstrateBatchProcessor()
     .addEvmLog('0x')
     .run(db, getItem(item => {
         if (item.name == 'EVM.Log') {
-            console.log(item.event.args.address)
+            const address: string = item.event.args.address
+        }
+    }))
+
+
+new SubstrateBatchProcessor()
+    .addEvmLog('0x00')
+    .addEvmLog('*')
+    .run(db, getItem(item => {
+        if (item.name == 'EVM.Log') {
+            const address: string = item.event.args.address
         }
     }))

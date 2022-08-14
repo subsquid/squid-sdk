@@ -1,5 +1,7 @@
+import {assertNotNull} from "@subsquid/util-internal"
 import expect from "expect"
-import {Item} from "./lib/model"
+import {Equal} from "typeorm"
+import {Item, Order} from "./lib/model"
 import {createStore, getItemIds, getItems, useDatabase} from "./util"
 
 describe("Store", function() {
@@ -80,6 +82,30 @@ describe("Store", function() {
             let store = createStore()
             await store.remove(Item, ['1', '2'])
             await expect(getItemIds()).resolves.toEqual(['3'])
+        })
+    })
+
+    describe("Update with un-fetched reference", function() {
+        useDatabase([
+            `CREATE TABLE item (id text primary key , name text)`,
+            `CREATE TABLE "order" (id text primary key, item_id text REFERENCES item, qty int4)`,
+            `INSERT INTO item (id, name) values ('1', 'a')`,
+            `INSERT INTO "order" (id, item_id, qty) values ('1', '1', 3)`
+        ])
+
+        it(".save() doesn't clear reference", async function() {
+            let store = createStore()
+            let order = assertNotNull(await store.get(Order, '1'))
+            order.qty = 5
+            await store.save(order)
+            let newOrder = await store.findOneOrFail(Order, {
+                where: {id: Equal('1')},
+                relations: {
+                    item: true
+                }
+            })
+            expect(newOrder.qty).toEqual(5)
+            expect(newOrder.item.id).toEqual('1')
         })
     })
 })

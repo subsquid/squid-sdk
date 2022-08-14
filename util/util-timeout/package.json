@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/util-timeout",
+  "version": "0.0.0",
+  "description": "Add timeout to promise",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/timeout.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.41",
+    "typescript": "~4.7.4"
+  }
+}

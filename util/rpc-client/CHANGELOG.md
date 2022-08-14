@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+
+## 1.0.2
+Thu, 07 Jul 2022 15:00:50 GMT
+
+### Patches
+
+- move timeout code into separate package
 
 ## 1.0.1
 Fri, 24 Jun 2022 22:07:05 GMT

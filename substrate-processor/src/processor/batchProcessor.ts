@@ -77,35 +77,19 @@ export interface BatchBlock<Item> {
  * This gives mapping developers an opportunity to reduce the number of round-trips
  * both to database and chain nodes,
  * thus providing much better performance.
- *
- * All configuration methods return a new processor instance.
  */
 export class SubstrateBatchProcessor<Item extends {kind: string, name: string} = EventItem<'*'> | CallItem<"*">> {
     private batches: Batch<PlainBatchRequest>[] = []
     private options: Options = {}
     private src?: DataSource
     private typesBundle?: OldTypesBundle
+    private running = false
 
-    private copy(): SubstrateBatchProcessor<Item> {
-        let copy = new SubstrateBatchProcessor<Item>()
-        copy.batches = this.batches
-        copy.options = this.options
-        copy.src = this.src
-        copy.typesBundle = this.typesBundle
-        return copy
-    }
-
-    private setOption<K extends keyof Options>(name: K, value: Options[K]): SubstrateBatchProcessor<Item> {
-        let next = this.copy()
-        next.options = {...this.options, [name]: value}
-        return next
-    }
-
-    private add(request: PlainBatchRequest, range?: Range): SubstrateBatchProcessor<any> {
-        let batch = {range: range || {from: 0}, request}
-        let next = this.copy()
-        next.batches = this.batches.concat([batch])
-        return next
+    private add(request: PlainBatchRequest, range?: Range): void {
+        this.batches.push({
+            range: range || {from: 0},
+            request
+        })
     }
 
     /**
@@ -171,9 +155,11 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         name: string,
         options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.events.push({name, data: options?.data})
-        return this.add(req, options?.range)
+        this.add(req, options?.range)
+        return this
     }
 
     /**
@@ -239,9 +225,11 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         name: N,
         options?: BlockRangeOption & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.calls.push({name, data: options?.data})
-        return this.add(req, options?.range)
+        this.add(req, options?.range)
+        return this
     }
 
     /**
@@ -269,13 +257,15 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         contractAddress: string,
         options?: EvmLogOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.evmLogs.push({
-            contract: contractAddress,
+            contract: contractAddress.toLowerCase(),
             filter: options?.filter,
             data: options?.data
         })
-        return this.add(req, options?.range)
+        this.add(req, options?.range)
+        return this
     }
 
     /**
@@ -296,12 +286,70 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         contractAddress: string,
         options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.contractsEvents.push({
-            contract: contractAddress,
+            contract: contractAddress.toLowerCase(),
             data: options?.data
         })
-        return this.add(req, options?.range)
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.MessageEnqueued` events belonging to particular program.
+     */
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", true>>>
+
+    addGearMessageEnqueued<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", R>>>
+
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearMessagesEnqueued.push({
+            program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.UserMessageSent` events belonging to particular program.
+     */
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", true>>>
+
+    addGearUserMessageSent<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", R>>>
+
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearUserMessagesSent.push({
+            program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
     }
 
     /**
@@ -312,10 +360,12 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * Optionally a range of blocks can be specified
      * for which the setting should be effective.
      */
-    includeAllBlocks(range?: Range): SubstrateBatchProcessor<Item> {
+    includeAllBlocks(range?: Range): this {
+        this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.includeAllBlocks = true
-        return this.add(req)
+        this.add(req)
+        return this
     }
 
     /**
@@ -325,8 +375,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
      */
-    setPrometheusPort(port: number | string): SubstrateBatchProcessor<Item> {
-        return this.setOption('prometheusPort', port)
+    setPrometheusPort(port: number | string): this {
+        this.assertNotRunning()
+        this.options.prometheusPort = port
+        return this
     }
 
     /**
@@ -335,8 +387,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * When the upper bound is specified,
      * the processor will terminate with exit code 0 once it reaches it.
      */
-    setBlockRange(range?: Range): SubstrateBatchProcessor<Item> {
-        return this.setOption('blockRange', range)
+    setBlockRange(range?: Range): this {
+        this.assertNotRunning()
+        this.options.blockRange = range
+        return this
     }
 
     /**
@@ -345,9 +399,11 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *
      * The default is 100.
      */
-    setBatchSize(size: number): SubstrateBatchProcessor<Item> {
+    setBatchSize(size: number): this {
         assert(size > 0)
-        return this.setOption('batchSize', size)
+        this.assertNotRunning()
+        this.options.batchSize = size
+        return this
     }
 
     /**
@@ -359,10 +415,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *     archive: 'https://polkadot.archive.subsquid.io/graphql'
      * })
      */
-    setDataSource(src: DataSource): SubstrateBatchProcessor<Item> {
-        let next = this.copy()
-        next.src = src
-        return next
+    setDataSource(src: DataSource): this {
+        this.assertNotRunning()
+        this.src = src
+        return this
     }
 
     /**
@@ -396,14 +452,20 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): SubstrateBatchProcessor<Item> {
-        let next = this.copy()
+    setTypesBundle(bundle: string | OldTypesBundle): this {
+        this.assertNotRunning()
         if (typeof bundle == 'string') {
-            next.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
+            this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
-            next.typesBundle = bundle
+            this.typesBundle = bundle
         }
-        return next
+        return this
+    }
+
+    private assertNotRunning(): void {
+        if (this.running) {
+            throw new Error('Settings modifications are not allowed after start of processing')
+        }
     }
 
     private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
@@ -442,7 +504,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      */
     run<Store>(db: Database<Store>, handler: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
         let logger = createLogger('sqd:processor')
-
+        this.running = true
         runProgram(async () => {
             let batches = mergeBatches(this.batches, (a, b) => a.merge(b))
 

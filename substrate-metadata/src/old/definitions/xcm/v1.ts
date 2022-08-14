@@ -101,7 +101,7 @@ export const V1: OldTypes['types'] = {
                 assets: 'MultiAssetsV1',
                 effects: 'Vec<XcmOrderV1>'
             },
-            ReserveAssetDeposit: {
+            ReserveAssetDeposited: {
                 assets: 'MultiAssetsV1',
                 effects: 'Vec<XcmOrderV1>'
             },
@@ -115,7 +115,7 @@ export const V1: OldTypes['types'] = {
             },
             TransferAsset: {
                 assets: 'MultiAssetsV1',
-                dest: 'MultiLocationV1'
+                beneficiary: 'MultiLocationV1'
             },
             TransferReserveAsset: {
                 assets: 'MultiAssetsV1',
@@ -143,7 +143,12 @@ export const V1: OldTypes['types'] = {
             RelayedFrom: {
                 who: 'MultiLocationV1',
                 message: 'XcmV1'
-            }
+            },
+            SubscribeVersion: {
+                queryId: 'Compact<u64>',
+                maxResponseWeight: 'Compact<u64>'
+            },
+            UnsubscribeVersion: 'Null'
         }
     },
     XcmErrorV1: {

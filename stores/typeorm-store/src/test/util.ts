@@ -1,7 +1,7 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import {Client as PgClient, ClientBase} from "pg"
-import {Connection, createConnection, EntityManager} from "typeorm"
+import {DataSource, EntityManager} from "typeorm"
 import {Store} from "../store"
 import {Item} from "./lib/model"
 
@@ -51,14 +51,13 @@ export function useDatabase(sql: string[]): void {
 }
 
 
-let connection: Promise<Connection> | undefined
+let connection: Promise<DataSource> | undefined
 
 
 export function getEntityManager(): Promise<EntityManager> {
     if (connection == null) {
-        connection = createConnection(
-            createOrmConfig({projectDir: __dirname})
-        )
+        let cfg = createOrmConfig({projectDir: __dirname})
+        connection = new DataSource(cfg).initialize()
     }
     return connection.then(con => con.createEntityManager())
 }

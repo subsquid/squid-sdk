@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "throw error on unknown signed extension",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

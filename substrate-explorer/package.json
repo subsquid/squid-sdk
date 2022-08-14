@@ -11,6 +11,6 @@
     "build": ""
   },
   "dependencies": {
-    "@subsquid/openreader": "^1.0.2"
+    "@subsquid/openreader": "^1.0.3"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-typegen",
-  "version": "1.0.2",
+  "version": "1.2.1",
   "description": "Generates TypeScript definitions for substrate events and calls",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -22,11 +22,11 @@
   "dependencies": {
     "@subsquid/logger": "^0.0.2",
     "@subsquid/scale-codec": "^1.0.2",
-    "@subsquid/substrate-metadata": "^1.0.1",
-    "@subsquid/substrate-metadata-explorer": "^1.0.3",
+    "@subsquid/substrate-metadata": "^1.0.2",
+    "@subsquid/substrate-metadata-explorer": "^1.0.5",
     "@subsquid/util-internal": "^0.0.1",
-    "@subsquid/util-internal-code-printer": "^0.0.1",
-    "@subsquid/util-internal-gql-request": "^0.0.1",
+    "@subsquid/util-internal-code-printer": "^0.0.2",
+    "@subsquid/util-internal-gql-request": "^0.1.0",
     "@subsquid/util-internal-read-lines": "^0.0.1",
     "@subsquid/util-naming": "^0.0.1",
     "ajv": "^8.11.0",

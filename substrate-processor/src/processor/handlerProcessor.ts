@@ -18,7 +18,9 @@ import type {
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
-    EvmTopicSet
+    EvmTopicSet,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
 } from "../interfaces/dataHandlers"
 import type {
     CallDataRequest,
@@ -29,7 +31,14 @@ import type {
 } from "../interfaces/dataSelection"
 import type {Database} from "../interfaces/db"
 import type {Hooks} from "../interfaces/hooks"
-import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateCall, SubstrateEvent} from "../interfaces/substrate"
+import type {
+    ContractsContractEmittedEvent,
+    GearMessageEnqueuedEvent,
+    GearUserMessageSentEvent,
+    EvmLogEvent,
+    SubstrateCall,
+    SubstrateEvent
+} from "../interfaces/substrate"
 import {withErrorContext} from "../util/misc"
 import type {Range} from "../util/range"
 import {Options, Runner} from "./runner"
@@ -51,7 +60,16 @@ export interface DataSource {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateProcessor<Store> {
-    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: [], contractsContractEmitted: []}
+    protected hooks: Hooks = {
+        pre: [],
+        post: [],
+        event: [],
+        call: [],
+        evmLog: [],
+        contractsContractEmitted: [],
+        gearMessageEnqueued: [],
+        gearUserMessageSent: [],
+    }
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -74,9 +92,10 @@ export class SubstrateProcessor<Store> {
      *     archive: 'https://polkadot.indexer.gc.subsquid.io/v4/graphql'
      * })
      */
-    setDataSource(src: DataSource): void {
+    setDataSource(src: DataSource): this {
         this.assertNotRunning()
         this.src = src
+        return this
     }
 
     /**
@@ -110,13 +129,14 @@ export class SubstrateProcessor<Store> {
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): void {
+    setTypesBundle(bundle: string | OldTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
             this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
             this.typesBundle = bundle
         }
+        return this
     }
 
     /**
@@ -132,9 +152,10 @@ export class SubstrateProcessor<Store> {
      *     to: 100
      * })
      */
-    setBlockRange(range: Range): void {
+    setBlockRange(range: Range): this {
         this.assertNotRunning()
         this.blockRange = range
+        return this
     }
 
     /**
@@ -145,10 +166,11 @@ export class SubstrateProcessor<Store> {
      *
      * Usually this setting doesn't have any significant impact on the performance.
      */
-    setBatchSize(size: number): void {
+    setBatchSize(size: number): this {
         this.assertNotRunning()
         assert(size > 0)
         this.batchSize = size
+        return this
     }
 
     /**
@@ -158,9 +180,10 @@ export class SubstrateProcessor<Store> {
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
      */
-    setPrometheusPort(port: number | string) {
+    setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
         this.prometheusPort = port
+        return this
     }
 
     /**
@@ -225,10 +248,10 @@ export class SubstrateProcessor<Store> {
      *     })
      * })
      */
-    addPreHook(fn: BlockHandler<Store>): void
-    addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): void
-    addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): void {
+    addPreHook(fn: BlockHandler<Store>): this
+    addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): this
+    addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -239,6 +262,7 @@ export class SubstrateProcessor<Store> {
             options = fnOrOptions
         }
         this.hooks.pre.push({handler, ...options})
+        return this
     }
 
     /**
@@ -301,10 +325,10 @@ export class SubstrateProcessor<Store> {
      *     })
      * })
      */
-    addPostHook(fn: BlockHandler<Store>): void
-    addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): void
-    addPostHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): void
-    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): void {
+    addPostHook(fn: BlockHandler<Store>): this
+    addPostHook(options: BlockRangeOption, fn: BlockHandler<Store>): this
+    addPostHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
+    addPostHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -315,6 +339,7 @@ export class SubstrateProcessor<Store> {
             options = fnOrOptions
         }
         this.hooks.post.push({handler, ...options})
+        return this
     }
 
     /**
@@ -349,10 +374,10 @@ export class SubstrateProcessor<Store> {
      *     }
      * } as const, async ctx => {})
      */
-    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): void
-    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): void
-    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): void
-    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): void {
+    addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): this
+    addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): this
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): this
+    addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): this {
         this.assertNotRunning()
         let handler: EventHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
@@ -367,6 +392,7 @@ export class SubstrateProcessor<Store> {
             handler,
             ...options
         })
+        return this
     }
 
     /**
@@ -405,10 +431,10 @@ export class SubstrateProcessor<Store> {
      *     }
      * } as const, async ctx => {})
      */
-    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): void
-    addCallHandler(callName: QualifiedName, options: CallHandlerOptions & NoDataSelection, fn: CallHandler<Store>): void
-    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: CallHandlerOptions & DataSelection<R>, fn: CallHandler<Store, R>): void
-    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): void {
+    addCallHandler(callName: QualifiedName, fn: CallHandler<Store>): this
+    addCallHandler(callName: QualifiedName, options: CallHandlerOptions & NoDataSelection, fn: CallHandler<Store>): this
+    addCallHandler<R extends CallDataRequest>(callName: QualifiedName, options: CallHandlerOptions & DataSelection<R>, fn: CallHandler<Store, R>): this
+    addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
         let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
@@ -423,6 +449,7 @@ export class SubstrateProcessor<Store> {
             handler,
             ...options
         })
+        return this
     }
 
     /**
@@ -441,22 +468,22 @@ export class SubstrateProcessor<Store> {
     addEvmLogHandler(
         contractAddress: string,
         fn: EvmLogHandler<Store>
-    ): void
+    ): this
     addEvmLogHandler(
         contractAddress: string,
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
-    ): void
+    ): this
     addEvmLogHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
-    ): void
+    ): this
     addEvmLogHandler(
         contractAddress: string,
         fnOrOptions: EvmLogOptions & MayBeDataSelection<EventDataRequest> | EvmLogHandler<Store>,
         fn?: EvmLogHandler<Store>
-    ): void {
+    ): this {
         this.assertNotRunning()
         let handler: EvmLogHandler<Store>
         let options:  EvmLogOptions= {}
@@ -468,9 +495,10 @@ export class SubstrateProcessor<Store> {
         }
         this.hooks.evmLog.push({
             handler,
-            contractAddress,
+            contractAddress: contractAddress.toLowerCase(),
             ...options
         })
+        return this
     }
 
     /**
@@ -483,22 +511,22 @@ export class SubstrateProcessor<Store> {
     addContractsContractEmittedHandler(
         contractAddress: string,
         fn: ContractsContractEmittedHandler<Store>
-    ): void
+    ): this
     addContractsContractEmittedHandler(
         contractAddress: string,
         options: BlockRangeOption & NoDataSelection,
         fn: ContractsContractEmittedHandler<Store>
-    ): void
+    ): this
     addContractsContractEmittedHandler<R extends EventDataRequest>(
         contractAddress: string,
         options: BlockRangeOption & DataSelection<R>,
         fn: ContractsContractEmittedHandler<Store, R>
-    ): void
+    ): this
     addContractsContractEmittedHandler(
         contractAddress: string,
         fnOrOptions: ContractsContractEmittedHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
         fn?: ContractsContractEmittedHandler<Store>
-    ): void {
+    ): this {
         this.assertNotRunning()
         let handler: ContractsContractEmittedHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
@@ -510,9 +538,96 @@ export class SubstrateProcessor<Store> {
         }
         this.hooks.contractsContractEmitted.push({
             handler,
-            contractAddress,
+            contractAddress: contractAddress.toLowerCase(),
             ...options
         })
+        return this
+    }
+
+    /**
+     * Registers `Gear.MessageEnqueued` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearMessageEnqueuedEvent | event type} and selects
+     * events by program id.
+     */
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearMessageEnqueuedHandler<Store, R>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fnOrOptions: GearMessageEnqueuedHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearMessageEnqueuedHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: GearMessageEnqueuedHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearMessageEnqueued.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
+    }
+
+    /**
+     * Registers `Gear.UserMessageSent` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearUserMessageSentEvent | event type} and selects
+     * events by program id.
+     */
+    addGearUserMessageSentHandler(
+        programId: string,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearUserMessageSentHandler<Store, R>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        fnOrOptions: GearUserMessageSentHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearUserMessageSentHandler<Store>
+    ): this{
+        this.assertNotRunning()
+        let handler: GearUserMessageSentHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearUserMessageSent.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
     }
 
     protected assertNotRunning(): void {
@@ -583,6 +698,24 @@ export class SubstrateProcessor<Store> {
             let request = new DataHandlers()
             request.contractsContractEmitted = {
                 [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearMessageEnqueued.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearMessageEnqueued = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearUserMessageSent.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearUserMessageSent = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
             }
             batches.push({range, request})
         })
@@ -709,7 +842,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let event = item.event as EvmLogEvent
                         let log = blockLog.child({
                             hook: 'evm-log',
-                            contractAddress: event.args.address,
+                            contractAddress: event.args.address || event.args.log.address,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -725,6 +858,36 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let log = blockLog.child({
                             hook: 'contract-emitted',
                             contractAddress: event.args.contract,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getGearMessageEnqueuedHandlers(handlers, item.event)) {
+                        let event = item.event as GearMessageEnqueuedEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-enqueued',
+                            programId: event.args.destination,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getGearUserMessageSentHandlers(handlers, item.event)) {
+                        let event = item.event as GearUserMessageSentEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-sent',
+                            programId: event.args.message.source,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -791,7 +954,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractAddress = assertNotNull(log.args?.address)
+        let contractAddress = assertNotNull(log.args.address || log.args.log.address)
         let contractHandlers = evmLogs[contractAddress]
         if (contractHandlers == null) return
 
@@ -807,8 +970,10 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
-            if (Array.isArray(set) && !set.includes(log.args.topics[i])) {
-                return false
+            if (Array.isArray(set)) {
+                if (!set.includes(log.args.topics[i])) {
+                    return false
+                }
             } else if (set !== log.args.topics[i]) {
                 return false
             }
@@ -821,6 +986,30 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         let e = event as ContractsContractEmittedEvent
 
         let hs = handlers.contractsContractEmitted[e.args.contract]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+
+    private *getGearMessageEnqueuedHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearMessageEnqueuedHandler<any>> {
+        if (event.name != 'Gear.MessageEnqueued') return
+        let e = event as GearMessageEnqueuedEvent
+
+        let hs = handlers.gearMessageEnqueued[e.args.destination]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+
+    private *getGearUserMessageSentHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearUserMessageSentHandler<any>> {
+        if (event.name != 'Gear.UserMessageSent') return
+        let e = event as GearUserMessageSentEvent
+
+        let hs = handlers.gearUserMessageSent[e.args.message.source]
         if (hs == null) return
 
         for (let h of hs.handlers) {

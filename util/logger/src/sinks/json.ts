@@ -10,7 +10,12 @@ export function jsonLinesStderrSink(rec: LogRecord): void {
 
 function stringify(rec: LogRecord): string {
     try {
-        return JSON.stringify(toJSON(rec))
+        let json = toJSON(rec)
+        let label = LABELS?.[json.level]
+        if (label) {
+            json.level = label
+        }
+        return JSON.stringify(json)
     } catch(e: any) {
         return stringify({
             ns: 'sys',
@@ -21,3 +26,12 @@ function stringify(rec: LogRecord): string {
         })
     }
 }
+
+
+const LABELS: Record<number, string> | undefined = (() => {
+    let json = process.env.SQD_LOG_LABELS
+    if (!json) return undefined
+    try {
+        return JSON.parse(json)
+    } catch(e: any) {}
+})()

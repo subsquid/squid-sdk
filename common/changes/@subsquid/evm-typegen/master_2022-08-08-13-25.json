@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "generate typed `eth_call` facades",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

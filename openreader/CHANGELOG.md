@@ -1,6 +1,11 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Sun, 26 Jun 2022 21:17:38 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+
+## 1.0.3
+Wed, 06 Jul 2022 09:25:54 GMT
+
+_Version update only_
 
 ## 1.0.2
 Sun, 26 Jun 2022 21:17:38 GMT

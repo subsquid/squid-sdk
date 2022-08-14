@@ -95,8 +95,9 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
                                 out.line(`@Index_()`)
                             }
+                            // Make foreign entity references always nullable
                             out.line(
-                                `@ManyToOne_(() => ${prop.type.foreignEntity}, {nullable: ${prop.nullable}})`
+                                `@ManyToOne_(() => ${prop.type.foreignEntity}, {nullable: true})`
                             )
                         }
                         break

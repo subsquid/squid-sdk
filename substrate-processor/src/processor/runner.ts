@@ -103,6 +103,9 @@ export class Runner<S, R extends BatchRequest> {
             }, 'request')
 
             let response = await graphqlRequest({
+                headers: {
+                    'x-squid-id': this.getId(),
+                },
                 url: archiveUrl,
                 query: archiveQuery,
                 timeout: 60_000,
@@ -280,6 +283,11 @@ export class Runner<S, R extends BatchRequest> {
             ? process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT || 0
             : port
     }
+
+    @def
+    private getId() {
+        return process.env.SQUID_ID || `gen-${randomString(10)}`
+    }
 }
 
 
@@ -292,4 +300,16 @@ function getItemsCount(blocks: BlockData[]): number {
         count += blocks[i].items.length
     }
     return count
+}
+
+
+function randomString(len: number) {
+    const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+    let result = ''
+    for (let i = 0; i < len; i++) {
+        result += chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    return result
 }

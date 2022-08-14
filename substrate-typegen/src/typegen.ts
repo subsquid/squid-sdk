@@ -57,6 +57,7 @@ export class Typegen {
             if (ifs.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(v)) + '.ts'
             let file = this.dir.file(fileName)
+            file.line(`import type {Result} from './support'`)
             ifs.generate(file)
             file.write()
         })

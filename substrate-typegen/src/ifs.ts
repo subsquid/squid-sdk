@@ -157,7 +157,6 @@ export class Interfaces {
     }
 
     generate(out: Output): void {
-        out.line(`import type {Result} from './support'`)
         for (let i = 0; i < this.queue.length; i++) {
             this.queue[i](out)
         }

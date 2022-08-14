@@ -176,7 +176,7 @@ export class Ingest {
         let result = new Array<RawBlock>(size)
         for (let i = 0; i < size; i++) {
             let s = storage[i]
-            if (s instanceof Error) throw Error
+            if (s instanceof Error) throw s
             let [events, feeMultiplier] = s
             result[i] = {
                 blockHeight: height + i,
@@ -204,6 +204,7 @@ export class Ingest {
         if (raw == null) return []
         let src = new Src(raw)
         let len = src.compactLength()
+        if (len == 0) return []
         let sink = new HexSink()
         sink.compact(len)
         let prefix = sink.toHex()

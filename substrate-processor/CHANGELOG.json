@@ -2,6 +2,96 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.5.1",
+      "tag": "@subsquid/substrate-processor_v1.5.1",
+      "date": "Thu, 04 Aug 2022 06:00:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add `X-SQUID-ID` HTTP header to archive requests"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-gql-request\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.5.0",
+      "tag": "@subsquid/substrate-processor_v1.5.0",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "convert contract addresses to lower case in configuration methods"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.4.1",
+      "tag": "@subsquid/substrate-processor_v1.4.1",
+      "date": "Sun, 10 Jul 2022 13:47:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `SubstrateBatchProcessor` item type derivation"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.4.0",
+      "tag": "@subsquid/substrate-processor_v1.4.0",
+      "date": "Thu, 07 Jul 2022 15:00:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make `SubstrateBatchProcessor` mutable"
+          },
+          {
+            "comment": "add chaining to `SubstrateProcessor` configuration methods"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^0.1.0` to `^0.1.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.3.0",
+      "tag": "@subsquid/substrate-processor_v1.3.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "improve batch processor item type derivation "
+          },
+          {
+            "comment": "support typesafe wrappers for chain constants"
+          },
+          {
+            "comment": "support wildcard requests and handlers for events and calls"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-processor_v1.2.0",
       "date": "Mon, 27 Jun 2022 12:07:48 GMT",

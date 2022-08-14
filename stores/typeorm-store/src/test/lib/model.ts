@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryColumn} from "typeorm"
+import {Column, Entity, ManyToOne, PrimaryColumn} from "typeorm"
 
 
 @Entity()
@@ -15,4 +15,17 @@ export class Item {
             this.name = name
         }
     }
+}
+
+
+@Entity()
+export class Order {
+    @PrimaryColumn()
+    id!: string
+
+    @ManyToOne(() => Item, {nullable: true})
+    item!: Item
+
+    @Column({nullable: false})
+    qty!: number
 }

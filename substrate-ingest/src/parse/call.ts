@@ -152,12 +152,18 @@ export class CallParser {
             this.extrinsic = this.extrinsics[i]
             this.visitExtrinsic(calls[i])
         }
-        assert(this.pos == 0)
+        assert(this.pos >= 0)
     }
 
     private visitExtrinsic(call: Call): void {
+        let event = this.tryNext()
+        if (event == null) {
+            // non-executed extrinsic from Mangata chain
+            this.takePos()
+            this.extrinsic.pos = -1
+            return
+        }
         this.extrinsic.pos = this.takePos()
-        let event = this.next()
         switch(event.name) {
             case 'System.ExtrinsicSuccess':
                 this.extrinsic.success = true
@@ -255,7 +261,7 @@ export class CallParser {
             // calls as successful.
             this.skipCalls(batch.children.slice(0, lastCompletedItem + 1), true)
             let event
-            while (event = this.tryNext()) {
+            while (event = this.tryNext(true)) {
                 event.call_id = batch.id
                 if (isFailure(event)) {
                     this.warnings.push({
@@ -285,7 +291,7 @@ export class CallParser {
         completedEvent.call_id = batch.id
         for (let i = batch.children.length - 1; i >=0; i--) {
             let item = batch.children[i]
-            let end = this.find(parent, FORCE_BATCH_ITEM)
+            let end = this.find(batch, FORCE_BATCH_ITEM)
             end.event.call_id = batch.id
             if (end.ok) {
                 let boundary = this.boundary
@@ -297,9 +303,9 @@ export class CallParser {
             } else {
                 this.setError(item, end.error)
                 this.skipCall(item, false)
-                this.takeEvents(batch)
             }
         }
+        this.takeEvents(batch)
     }
 
     private visitWrapper(end: (event: model.Event) => CallEnd | undefined, call: Call, parent?: Call): void {
@@ -327,7 +333,7 @@ export class CallParser {
 
     private takeEvents(call: Call): void {
         let event: model.Event | undefined
-        while (event = this.tryNext()) {
+        while (event = this.tryNext(true)) {
             event.call_id = call.id
         }
     }
@@ -361,11 +367,11 @@ export class CallParser {
         return assertNotNull(this.tryNext())
     }
 
-    private tryNext(): model.Event | undefined {
+    private tryNext(checkBoundary?: boolean): model.Event | undefined {
         while (this.eix >= 0) {
             let event = this.events[this.eix]
             if (event.phase == 'ApplyExtrinsic') {
-                if (this.boundary?.(event)) {
+                if (checkBoundary && this.boundary?.(event)) {
                     return undefined
                 }
                 if (event.extrinsic_id == this.extrinsic.id) {

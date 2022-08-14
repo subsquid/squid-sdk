@@ -4,14 +4,21 @@ DB="postgres://postgres:postgres@localhost:29387/archive"
 kusama:
 	@node lib/main.js --out $(DB) \
 		-e wss://kusama-rpc.polkadot.io \
-		-c 10 \
-		-e wss://kusama-rpc.dwellir.com \
-		-c 10 \
+		-c 20 \
 		-e wss://kusama.api.onfinality.io/public-ws \
-		-c 10 \
+		-c 20 \
 		--prom-port 0 \
 		--write-batch-size 30 \
-		--start-block 3876
+		--start-block 13846889
+
+
+kintsugi:
+	@node lib/main.js --out $(DB) \
+		-e wss://kintsugi.api.onfinality.io/public-ws \
+		-c 20 \
+		-e wss://api-kusama.interlay.io/parachain \
+		-c 20 \
+		--start-block 1049400
 
 
 moonriver:
@@ -19,8 +26,9 @@ moonriver:
 		-e wss://moonriver.api.onfinality.io/public-ws \
 		-e wss://moonriver-rpc.dwellir.com \
 		-e wss://wss.api.moonriver.moonbeam.network/ \
+		-c 20 \
 		--write-batch-size 20 \
-		--start-block 600000
+		--start-block 2000000
 
 
 moonbeam:
@@ -53,6 +61,18 @@ shibuya:
 		--write-batch-size 20 \
 		--start-block 816402
 
+
+crab:
+	@node lib/main.js --out $(DB) \
+		-e wss://crab-rpc.darwinia.network \
+		-c 50 \
+		--types-bundle crab.temp.json
+
+
+mangata:
+	@node lib/main.js --out $(DB) \
+		-e wss://mangata-x.api.onfinality.io/public-ws
+		-c 10
 
 up:
 	@docker-compose up -d

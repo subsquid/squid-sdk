@@ -2,6 +2,56 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-typegen_v1.2.1",
+      "date": "Thu, 04 Aug 2022 06:00:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.0.4` to `^1.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-gql-request\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.0",
+      "tag": "@subsquid/substrate-typegen_v1.2.0",
+      "date": "Tue, 19 Jul 2022 03:09:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "refactor type name assignment procedure (might affect names of some generated types)"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-typegen_v1.1.0",
+      "date": "Wed, 06 Jul 2022 09:25:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for runtime constants"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.0.3` to `^1.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/substrate-typegen_v1.0.2",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",
