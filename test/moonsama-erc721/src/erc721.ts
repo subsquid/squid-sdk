@@ -56,46 +56,43 @@ export type setApprovalForAll0Function = ([operator: string, approved: boolean] 
 
 export type transferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
-export interface Transaction {
-  input: string
-}
 
-function decodeFunction(data: Transaction): any {
-  return abi.decodeFunctionData(data.input.slice(0, 10), data.input)
+function decodeFunction(data: string): any {
+  return abi.decodeFunctionData(data.slice(0, 10), data)
 }
 
 export const functions = {
   "approve(address,uint256)": {
     sighash: abi.getSighash("approve(address,uint256)"),
-    decode(data: Transaction): approve0Function {
+    decode(input: string): approve0Function {
       return decodeFunction(data)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256)"),
-    decode(data: Transaction): safeTransferFrom0Function {
+    decode(input: string): safeTransferFrom0Function {
       return decodeFunction(data)
     }
   }
   ,
   "safeTransferFrom(address,address,uint256,bytes)": {
     sighash: abi.getSighash("safeTransferFrom(address,address,uint256,bytes)"),
-    decode(data: Transaction): safeTransferFrom1Function {
+    decode(input: string): safeTransferFrom1Function {
       return decodeFunction(data)
     }
   }
   ,
   "setApprovalForAll(address,bool)": {
     sighash: abi.getSighash("setApprovalForAll(address,bool)"),
-    decode(data: Transaction): setApprovalForAll0Function {
+    decode(input: string): setApprovalForAll0Function {
       return decodeFunction(data)
     }
   }
   ,
   "transferFrom(address,address,uint256)": {
     sighash: abi.getSighash("transferFrom(address,address,uint256)"),
-    decode(data: Transaction): transferFrom0Function {
+    decode(input: string): transferFrom0Function {
       return decodeFunction(data)
     }
   }

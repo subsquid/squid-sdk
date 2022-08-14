@@ -60,12 +60,9 @@ export class Typegen {
                 this.out.line(");");
             });
         } else {
-            this.out.block("export interface Transaction", () => {
-                this.out.line("input: string")
-            });
             this.out.line();
-            this.out.block(`function decodeFunction(data: Transaction): any`, () => {
-                this.out.line(`return abi.decodeFunctionData(data.input.slice(0, 10), data.input)`);
+            this.out.block(`function decodeFunction(data: string): any`, () => {
+                this.out.line(`return abi.decodeFunctionData(data.slice(0, 10), data)`);
             });
         }
         this.out.line();
@@ -85,7 +82,7 @@ export class Typegen {
                         } else {
                             this.out.line(`sighash: abi.getSighash("${signature}"),`);
                             if (decl.overloads[i].inputs.length > 0)
-                                this.out.block(`decode(data: Transaction): ${decl.name}${i}Function`, () => {
+                                this.out.block(`decode(input: string): ${decl.name}${i}Function`, () => {
                                     this.out.line(`return decodeFunction(data)`)
                                 });
                         }

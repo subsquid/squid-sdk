@@ -161,15 +161,6 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
 
 export interface EthereumTransactCall extends SubstrateCall {
     name: 'Ethereum.transact'
-    args: {
-        transaction: {
-            action: {
-                __kind: 'Call'
-                value: string
-            }
-            input: string
-        }
-    }
 }
 
 
