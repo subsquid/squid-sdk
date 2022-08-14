@@ -1,10 +1,9 @@
 import { Command, Flags } from '@oclif/core';
-import { log } from '../../rest-client/routes/log';
-import { parseNameAndVersion } from '../../utils';
 
 export default class Tail extends Command {
     static description = 'Getting logs about version';
     static hidden = true;
+    static deprecated = true;
     static args = [
         {
             name: 'nameAndVersion',
@@ -30,16 +29,9 @@ export default class Tail extends Command {
     };
 
     async run(): Promise<void> {
-        const { flags, args } = await this.parse(Tail);
-        const nameAndVersion = args.nameAndVersion;
-        const { squidName, versionName } = parseNameAndVersion(
-            nameAndVersion,
-            this
-        );
-        const follow = flags.follow;
-        const lines = flags.lines;
-
-        this.log('Fetching logs...');
-        await log(squidName, versionName, follow, lines);
+        this.log('Tail command is deprecated');
+        this.log('Please use `sqd squid logs` instead');
+        this.log('');
+        this.log('You can find documentation by running `sqd squid logs --help`');
     }
 }

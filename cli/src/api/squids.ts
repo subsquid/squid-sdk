@@ -1,7 +1,29 @@
-import { HttpResponse, LogEntry, LogsResponse, SquidVersionResponse, VersionResponse } from './types';
+import { HttpResponse, LogEntry, LogsResponse, SquidResponse, SquidVersionResponse, VersionResponse } from './types';
 import { api } from './api';
 import { createInterface } from 'readline';
 import { pretty } from '../logs';
+
+export async function getSquidList(): Promise<SquidResponse[]> {
+  const { body } =  await api<SquidResponse[]>({
+    method: 'get',
+    path: '/client/squid',
+  });
+
+  return body
+}
+
+
+export async function getSquid(squidName: string, versionName?: string): Promise<SquidResponse> {
+  const { body } = await api<SquidResponse>( {
+    method: 'get',
+    path: `/client/squid/${squidName}`,
+    query: {
+      versionName,
+    }
+  });
+
+  return body
+}
 
 export async function versionHistoryLogs(squidName: string, versionName: string, query : {
   limit: number
@@ -69,9 +91,9 @@ export async function streamSquidLogs(squidName: string, versionName: string, on
 }
 
 export async function releaseSquid(
-    squidName: string, 
-    versionName: string, 
-    artifactUrl: string, 
+    squidName: string,
+    versionName: string,
+    artifactUrl: string,
     description?: string,
     envs?: Record<string, string>
   ): Promise<SquidVersionResponse> {
@@ -84,9 +106,9 @@ export async function releaseSquid(
 }
 
 export async function updateSquid(
-  squidName: string, 
-  versionName: string, 
-  artifactUrl: string, 
+  squidName: string,
+  versionName: string,
+  artifactUrl: string,
   hardReset: boolean,
   envs?: Record<string, string>
 ): Promise<VersionResponse> {
