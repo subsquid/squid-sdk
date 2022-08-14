@@ -715,6 +715,11 @@
       "packageName": "gear-nft",
       "projectFolder": "test/gear-nft",
       "shouldPublish": false
+    },
+    {
+      "packageName": "astar-erc20",
+      "projectFolder": "test/astar-erc20",
+      "shouldPublish": false
     }
   ]
 }
