@@ -1091,8 +1091,10 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
-            if (Array.isArray(set) && !set.includes(log.topics[i])) {
-                return false
+            if (Array.isArray(set)) {
+                if (!set.includes(log.topics[i])) {
+                    return false
+                }
             } else if (set !== log.topics[i]) {
                 return false
             }
