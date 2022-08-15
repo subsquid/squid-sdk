@@ -46,6 +46,8 @@ export class PostgresSink implements Sink {
         height: {cast: 'int'},
         hash: {cast: 'text'},
         parent_hash: {cast: 'text'},
+        state_root: {cast: 'text'},
+        extrinsics_root: {cast: 'text'},
         timestamp: {cast: 'timestamptz'},
         spec_id: {cast: 'text'},
         validator: {cast: 'text'}

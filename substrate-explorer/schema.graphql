@@ -12,6 +12,8 @@ type Block @entity {
     height: Int!
     hash: String!
     parentHash: String!
+    stateRoot: String!
+    extrinsicsRoot: String!
     timestamp: BigInt!
     spec: Metadata!
     validator: String

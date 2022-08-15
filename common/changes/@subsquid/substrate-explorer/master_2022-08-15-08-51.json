@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-explorer",
+      "comment": "expose newly indexed `block.state_root`, `block.extrinsics_root`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-explorer"
+}

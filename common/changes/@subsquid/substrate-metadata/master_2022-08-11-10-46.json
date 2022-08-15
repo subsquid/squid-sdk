@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-metadata",
-      "comment": "fix xcm type definitions",
-      "type": "patch"
+      "comment": "fix and rework xcm type definitions",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-metadata"

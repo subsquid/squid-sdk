@@ -14,6 +14,8 @@ CREATE TABLE block (
     height integer not null,
     hash char(66) not null,
     parent_hash char(66) not null,
+    state_root char(66) not null,
+    extrinsics_root char(66) not null,
     timestamp timestamptz not null,
     validator varchar,
     spec_id text not null
@@ -58,11 +60,13 @@ CREATE TABLE call (
     success bool not null,
     error jsonb,
     origin jsonb,
-    pos integer not null
+    pos integer not null,
+    contract varchar
 );
 
 
 CREATE INDEX IDX_call__name__block ON call(name, block_id);
+CREATE INDEX IDX_call__contract__block ON call(contract, block_id);
 CREATE INDEX IDX_call__extrinsic__index ON call(extrinsic_id);
 CREATE INDEX IDX_call__parent ON call(parent_id);
 CREATE INDEX IDX_call__block ON call(block_id);
