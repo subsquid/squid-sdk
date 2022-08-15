@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-metadata",
-      "comment": "fix and rework xcm type definitions",
+      "comment": "throw error on unknown signed extension",
       "type": "minor"
     }
   ],

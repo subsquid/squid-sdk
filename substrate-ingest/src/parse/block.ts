@@ -55,6 +55,8 @@ export class BlockParser {
             height: this.raw.blockHeight,
             hash: this.raw.blockHash,
             parent_hash: this.raw.block.header.parentHash,
+            state_root: this.raw.block.header.stateRoot,
+            extrinsics_root: this.raw.block.header.extrinsicsRoot,
             timestamp: new Date(this.timestamp()),
             validator: this.validator(),
             spec_id: '' // to be set later

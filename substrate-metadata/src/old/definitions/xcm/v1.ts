@@ -2,7 +2,7 @@ import {OldTypes} from "../../types"
 
 
 export const V1: OldTypes['types'] = {
-    AssetInstanceV1: {
+    XcmAssetInstanceV1: {
         _enum: {
             Undefined: 'Null',
             Index: 'Compact<u128>',
@@ -13,25 +13,25 @@ export const V1: OldTypes['types'] = {
             Blob: 'Bytes'
         }
     },
-    FungibilityV1: {
+    XcmFungibilityV1: {
         _enum: {
             Fungible: 'Compact<u128>',
-            NonFungible: 'AssetInstanceV1'
+            NonFungible: 'XcmAssetInstanceV1'
         }
     },
-    JunctionV1: {
+    XcmJunctionV1: {
         _enum: {
             Parachain: 'Compact<u32>',
             AccountId32: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 id: '[u8; 32]'
             },
             AccountIndex64: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 index: 'Compact<u64>'
             },
             AccountKey20: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 key: '[u8; 20]'
             },
             PalletInstance: 'u8',
@@ -39,28 +39,28 @@ export const V1: OldTypes['types'] = {
             GeneralKey: 'Vec<u8>',
             OnlyChild: 'Null',
             Plurality: {
-                id: 'BodyIdV0',
-                part: 'BodyPartV0'
+                id: 'XcmBodyIdV0',
+                part: 'XcmBodyPartV0'
             }
         }
     },
-    JunctionsV1: {
+    XcmJunctionsV1: {
         _enum: {
             Here: 'Null',
-            X1: 'JunctionV1',
-            X2: '(JunctionV1, JunctionV1)',
-            X3: '(JunctionV1, JunctionV1, JunctionV1)',
-            X4: '(JunctionV1, JunctionV1, JunctionV1, JunctionV1)',
-            X5: '(JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1)',
-            X6: '(JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1)',
-            X7: '(JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1)',
-            X8: '(JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1, JunctionV1)'
+            X1: 'XcmJunctionV1',
+            X2: '(XcmJunctionV1, XcmJunctionV1)',
+            X3: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)',
+            X4: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)',
+            X5: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)',
+            X6: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)',
+            X7: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)',
+            X8: '(XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1, XcmJunctionV1)'
         }
     },
     MultiAssetsV1: 'Vec<MultiAssetV1>',
     MultiAssetV1: {
         id: 'XcmAssetIdV1',
-        fungibility: 'FungibilityV1'
+        fungibility: 'XcmFungibilityV1'
     },
     XcmAssetIdV1: {
         _enum: {
@@ -71,27 +71,28 @@ export const V1: OldTypes['types'] = {
     MultiAssetFilterV1: {
         _enum: {
             Definite: 'MultiAssetsV1',
-            Wild: 'WildMultiAssetV1'
+            Wild: 'XcmWildMultiAssetV1'
         }
     },
     MultiLocationV1: {
         parents: 'u8',
-        interior: 'JunctionsV1'
+        interior: 'XcmJunctionsV1'
     },
-    ResponseV1: {
+    XcmResponseV1: {
         _enum: {
-            Assets: 'MultiAssetsV1'
+            Assets: 'MultiAssetsV1',
+            Version: 'XcmVersion'
         }
     },
-    WildFungibilityV1: {
+    XcmWildFungibilityV1: {
         _enum: ['Fungible', 'NonFungible']
     },
-    WildMultiAssetV1: {
+    XcmWildMultiAssetV1: {
         _enum: {
             All: 'Null',
             AllOf: {
                 id: 'XcmAssetIdV1',
-                fungibility: 'WildFungibilityV1'
+                fungibility: 'XcmWildFungibilityV1'
             }
         }
     },
@@ -111,7 +112,7 @@ export const V1: OldTypes['types'] = {
             },
             QueryResponse: {
                 queryId: 'Compact<u64>',
-                response: 'ResponseV1'
+                response: 'XcmResponseV1'
             },
             TransferAsset: {
                 assets: 'MultiAssetsV1',
@@ -123,7 +124,7 @@ export const V1: OldTypes['types'] = {
                 effects: 'Vec<XcmOrderV1>'
             },
             Transact: {
-                originType: 'OriginKindV0',
+                originType: 'XcmOriginKindV0',
                 requireWeightAtMost: 'u64',
                 call: 'Vec<u8>'
             },
@@ -224,6 +225,13 @@ export const V1: OldTypes['types'] = {
                 haltOnError: 'bool',
                 instructions: 'Vec<XcmV1>'
             }
+        }
+    },
+    XcmOutcomeV1: {
+        _enum: {
+            Complete: "u64",
+            Incomplete: "(u64, XcmErrorV1)",
+            Error: "XcmErrorV1"
         }
     }
 }
