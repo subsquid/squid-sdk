@@ -20,10 +20,10 @@ export interface Spec {
 export namespace sub {
     export interface BlockHeader {
         digest: {logs: string[]}
-        extrinsicRoot: string
         number: string
         parentHash: string
         stateRoot: string
+        extrinsicsRoot: string
     }
 
 
