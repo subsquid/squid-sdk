@@ -193,7 +193,7 @@ export const V0: OldTypes['types'] = {
             UntrustedTeleportLocation: 'Null',
             DestinationBufferOverflow: 'Null',
             SendFailed: 'Null',
-            CannotReachDestination: '(MultiLocation, Xcm)',
+            CannotReachDestination: '(MultiLocationV0, XcmV0)',
             MultiLocationFull: 'Null',
             FailedToDecode: 'Null',
             BadOrigin: 'Null',
