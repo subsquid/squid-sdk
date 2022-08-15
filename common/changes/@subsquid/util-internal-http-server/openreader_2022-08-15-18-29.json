@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-http-server",
+      "comment": "introduce `listen()` function",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-http-server"
+}

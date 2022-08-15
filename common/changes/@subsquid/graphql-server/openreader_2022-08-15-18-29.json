@@ -1,0 +1,30 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "new reworked implementation",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "temporarily disable fulltext search queries",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "support GraphQL subscriptions",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "support `--sql-statement-timeout` option",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "support `--max-request-size` option",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
