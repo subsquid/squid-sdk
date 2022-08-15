@@ -156,7 +156,7 @@ function getTransactionData(ctx: CallContext): {tx: UnsignedTransaction, signatu
                             toHex(a.address),
                             a.storageKeys.map((k) => toHex(k))
                         ]) as [string, string[]][],
-                        type: 2,
+                        type: 1,
                     },
                     signature: {
                         r: toHex(data.r),
