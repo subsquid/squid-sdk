@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "abi functions decoding support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

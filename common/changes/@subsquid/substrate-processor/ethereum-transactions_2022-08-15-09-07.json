@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "ethereum transactions handling",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
