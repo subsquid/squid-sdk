@@ -3,7 +3,7 @@ import {Progress, Speed} from "@subsquid/util-internal-counters"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning, EvmLog} from "./model"
-import {extractEthereumTxContract} from "./parse/util"
+import {extractEthereumTxContract, extractEthCallContract} from "./parse/util"
 import {toJSON, toJsonString} from "./util"
 import WritableStream = NodeJS.WritableStream
 
@@ -177,6 +177,10 @@ export class PostgresSink implements Sink {
         switch(call.name) {
             case 'Ethereum.transact':
                 return {...call, contract: extractEthereumTxContract(call.args.transaction)}
+            case 'EVM.call':
+                return {...call, contract: toHex(call.args.target)}
+            case 'EVM.eth_call':
+                return {...call, contract: extractEthCallContract(call.args)}
             default:
                 return call
         }

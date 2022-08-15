@@ -130,3 +130,11 @@ export function extractEthereumTxContract(tx: any): string | undefined {
         return toHex(action.value)
     }
 }
+
+
+export function extractEthCallContract(args: any): string | undefined {
+    let action = assertNotNull(args.action)
+    if (action.__kind == 'Call') {
+        return toHex(action.value)
+    }
+}
