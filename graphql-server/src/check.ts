@@ -1,4 +1,4 @@
-import {Model} from "@subsquid/openreader/dist/model"
+import {Model} from "@subsquid/openreader/lib/model"
 import {assertNotNull} from "@subsquid/util-internal"
 import {PluginDefinition} from "apollo-server-core"
 import {GraphQLSchema, OperationDefinitionNode} from "graphql"

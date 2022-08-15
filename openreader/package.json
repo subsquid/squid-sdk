@@ -17,7 +17,7 @@
   },
   "files": [
     "bin",
-    "dist",
+    "lib",
     "src"
   ],
   "scripts": {

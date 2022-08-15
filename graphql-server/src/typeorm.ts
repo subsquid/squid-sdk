@@ -1,10 +1,10 @@
-import type {OpenreaderContext} from "@subsquid/openreader/dist/context"
-import type {Database} from "@subsquid/openreader/dist/db"
-import type {Dialect} from "@subsquid/openreader/dist/dialect"
-import type {Query} from "@subsquid/openreader/dist/sql/query"
-import {Subscription} from "@subsquid/openreader/dist/subscription"
-import {withErrorContext} from "@subsquid/openreader/dist/util/error-handling"
-import {LazyTransaction} from "@subsquid/openreader/dist/util/lazy-transaction"
+import type {OpenreaderContext} from "@subsquid/openreader/lib/context"
+import type {Database} from "@subsquid/openreader/lib/db"
+import type {Dialect} from "@subsquid/openreader/lib/dialect"
+import type {Query} from "@subsquid/openreader/lib/sql/query"
+import {Subscription} from "@subsquid/openreader/lib/subscription"
+import {withErrorContext} from "@subsquid/openreader/lib/util/error-handling"
+import {LazyTransaction} from "@subsquid/openreader/lib/util/lazy-transaction"
 import type {DataSource, EntityManager} from "typeorm"
 
 
