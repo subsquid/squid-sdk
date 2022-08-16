@@ -7932,9 +7932,16 @@ packages:
     dev: false
 
   file:projects/substrate-explorer.tgz:
-    resolution: {integrity: sha512-izW6v0C9/zepJdZo6A1qJGo+qNDDMStoh1AlBI6nf5Z99z6SCULHM2esG2a+MoNqhBlLNK4xUI1a+06OnebB4A==, tarball: file:projects/substrate-explorer.tgz}
+    resolution: {integrity: sha512-1YzJnsJC03gvswYCgSRvmii7Ae9goyyiEohdOXcRAVtyVLIZgzt4412VQsuSRGcTzjgSgItQQVgfIyuFnpna7g==, tarball: file:projects/substrate-explorer.tgz}
     name: '@rush-temp/substrate-explorer'
     version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.41
+      '@types/pg': 8.6.5
+      pg: 8.7.3
+      typescript: 4.7.4
+    transitivePeerDependencies:
+      - pg-native
     dev: false
 
   file:projects/substrate-ingest.tgz:
