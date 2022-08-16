@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "index `block.state_root`, `block.extrinsics_root`",
+      "comment": "postgres sink schema changes",
       "type": "major"
     }
   ],
