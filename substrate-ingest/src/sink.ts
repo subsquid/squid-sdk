@@ -1,9 +1,11 @@
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {toHex} from "@subsquid/util-internal-hex"
+import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning, EvmLog} from "./model"
 import {toJSON, toJsonString} from "./util"
+import {extractMethodSelector} from "./parse/util"
 import WritableStream = NodeJS.WritableStream
 
 
@@ -39,6 +41,20 @@ interface GearMessage {
 interface ContractsContractEmitted {
     event_id: string
     contract: string
+}
+
+
+interface AcalaEvmCall {
+    call_id: string
+    contract: string
+    selector?: string
+}
+
+
+interface AcalaEvmEthCall {
+    call_id: string
+    contract: string
+    selector?: string
 }
 
 
@@ -144,6 +160,18 @@ export class PostgresSink implements Sink {
         program: {cast: 'text'}
     })
 
+    private acalaEvmCall = new Insert<AcalaEvmCall>('acala_evm_call', {
+        call_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        selector: {cast: 'text'}
+    })
+
+    private acalaEvmEthCall = new Insert<AcalaEvmEthCall>('acala_evm_eth_call', {
+        call_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        selector: {cast: 'text'},
+    })
+
     private db: pg.ClientBase
     private speed?: Speed
     private progress?: Progress
@@ -222,6 +250,25 @@ export class PostgresSink implements Sink {
     private insertCalls(calls: Call[]): void {
         for (let call of calls) {
             this.callInsert.add(call)
+            switch(call.name) {
+                case 'EVM.eth_call':
+                    let action = assertNotNull(call.args.action)
+                    if (action.__kind == 'Call') {
+                        this.acalaEvmEthCall.add({
+                            call_id: call.id,
+                            contract: toHex(action.value),
+                            selector: extractMethodSelector(call.args.input)
+                        })
+                    }
+                    break
+                case 'EVM.call':
+                    this.acalaEvmCall.add({
+                        call_id: call.id,
+                        contract: toHex(call.args.target),
+                        selector: extractMethodSelector(call.args.input)
+                    })
+                    break
+            }
         }
     }
 

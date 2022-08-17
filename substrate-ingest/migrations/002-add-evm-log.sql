@@ -13,3 +13,17 @@ CREATE TABLE evm_log (
 CREATE INDEX IDX_evm_log__contract__topic0 ON evm_log(contract, topic0);
 CREATE INDEX IDX_evm_log__contract ON evm_log(contract);
 CREATE INDEX IDX_evm_log__topic0 ON evm_log(topic0);
+
+
+CREATE TABLE acala_evm_eth_call (
+    call_id varchar(30) primary key references call,
+    contract varchar not null,
+    selector char(10)
+);
+
+
+CREATE TABLE acala_evm_call (
+    call_id varchar(30) primary key references call,
+    contract varchar not null,
+    selector char(10)
+);

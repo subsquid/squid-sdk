@@ -138,3 +138,10 @@ export function extractEthCallContract(args: any): string | undefined {
         return toHex(action.value)
     }
 }
+
+
+export function extractMethodSelector(input: Uint8Array): string | undefined {
+    if (input) {
+        return toHex(input.subarray(0, 4))
+    }
+}
