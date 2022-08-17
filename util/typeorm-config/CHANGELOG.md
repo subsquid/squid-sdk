@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+
+## 2.0.0
+Wed, 17 Aug 2022 17:33:52 GMT
+
+### Breaking changes
+
+- move connection options to a separate module
 
 ## 1.1.0
 Fri, 24 Jun 2022 22:07:05 GMT
