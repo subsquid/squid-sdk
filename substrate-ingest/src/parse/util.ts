@@ -142,6 +142,8 @@ export function extractEthCallContract(args: any): string | undefined {
 
 export function extractMethodSelector(input: Uint8Array): string | undefined {
     if (input) {
+        // A method selector specified by the first four bytes of input data.
+        // https://www.4byte.directory/
         return toHex(input.subarray(0, 4))
     }
 }
