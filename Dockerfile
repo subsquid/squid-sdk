@@ -40,5 +40,5 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate
 FROM node AS substrate-explorer
 COPY --from=substrate-explorer-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-explorer
-ENTRYPOINT [ "npx", "openreader", "schema.graphql"]
+ENTRYPOINT [ "node", "lib/main.js"]
 EXPOSE 3000

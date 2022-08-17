@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "support error stack in pretty format",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}

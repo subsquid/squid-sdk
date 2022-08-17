@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "postgres sink schema changes",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

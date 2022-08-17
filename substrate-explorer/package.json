@@ -5,12 +5,24 @@
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "files": [
-    "schema.graphql"
+    "schema.graphql",
+    "lib",
+    "src"
   ],
   "scripts": {
-    "build": ""
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/openreader": "^1.0.3"
+    "@subsquid/logger": "^0.0.2",
+    "@subsquid/openreader": "^1.0.3",
+    "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal-http-server": "^0.0.1",
+    "@subsquid/typeorm-config": "^1.1.0",
+    "pg": "^8.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.41",
+    "@types/pg": "^8.6.5",
+    "typescript": "~4.7.4"
   }
 }

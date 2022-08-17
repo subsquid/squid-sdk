@@ -8,6 +8,7 @@
     "strict": true,
     "declaration": true,
     "sourceMap": true,
+    "declarationMap": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
