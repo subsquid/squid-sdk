@@ -27,7 +27,7 @@ up:
 
 
 down:
-	@docker-compose down
+	@docker-compose down -v
 
 
 build:
