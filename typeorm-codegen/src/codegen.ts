@@ -199,7 +199,7 @@ export function generateOrmModels(model: Model, dir: OutDir, rdbmsType: Database
             case 'String':
                 return 'text'
             case 'Int':
-                if (rdbmsType === 'better-sqlite3') return 'int8'
+                if (rdbmsType === 'better-sqlite3') return 'int'
                 return 'int4'
             case 'Float':
                 return 'numeric'
