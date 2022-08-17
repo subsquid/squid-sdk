@@ -446,12 +446,6 @@
     //   // "versionPolicyName": ""
     // },
     {
-      "packageName": "@subsquid/cli",
-      "projectFolder": "cli",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,

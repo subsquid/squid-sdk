@@ -38,4 +38,4 @@ jobs:
           cd cli && npx oclif manifest
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/firesquid --publish --tag next
+        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/firesquid --publish --tag latest
