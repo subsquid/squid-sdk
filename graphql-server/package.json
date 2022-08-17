@@ -23,15 +23,22 @@
   "dependencies": {
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
+    "@graphql-tools/schema": "^8",
     "@subsquid/openreader": "^1.0.3",
     "@subsquid/typeorm-config": "^1.1.0",
+    "@subsquid/logger": "^0.0.2",
     "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal-commander": "^0.0.0",
+    "@subsquid/util-internal-http-server": "^0.0.1",
     "apollo-server-core": "^3.9.0",
     "apollo-server-express": "^3.9.0",
+    "commander": "^9.3.0",
     "dotenv": "^10.0.0",
     "express": "^4.18.1",
     "graphql": "^15.8.0",
-    "pg": "^8.7.3"
+    "graphql-ws": "^5.9.1",
+    "pg": "^8.7.3",
+    "ws": "^8.6.0"
   },
   "peerDependencies": {
     "class-validator": "^0.13.2",
@@ -54,6 +61,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^16.11.41",
     "@types/pg": "8.6.5",
+    "@types/ws": "^8.5.3",
     "expect": "^27.5.1",
     "gql-test-client": "^0.0.0",
     "mocha": "^9.2.2",

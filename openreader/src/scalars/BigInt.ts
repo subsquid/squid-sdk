@@ -1,5 +1,5 @@
 import {GraphQLScalarType} from "graphql"
-import {invalidFormat} from "../../util"
+import {invalidFormat} from "../util/util"
 
 
 export const BigIntScalar = new GraphQLScalarType({

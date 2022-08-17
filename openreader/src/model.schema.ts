@@ -18,8 +18,8 @@ import {
     parse,
     validateSchema
 } from "graphql"
-import {Index, Model, Prop, PropType} from "../model"
-import {validateModel} from "../model.tools"
+import {Index, Model, Prop, PropType, Scalar} from "./model"
+import {validateModel} from "./model.tools"
 import {customScalars} from "./scalars"
 
 
@@ -29,6 +29,8 @@ const baseSchema = buildASTSchema(parse(`
     directive @unique on FIELD_DEFINITION
     directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
     directive @fulltext(query: String!) on FIELD_DEFINITION
+    directive @cardinality(value: Int!) on FIELD_DEFINITION
+    directive @byteWeight(value: Float!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
     scalar ID
@@ -120,6 +122,10 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
         let derivedFrom = checkDerivedFrom(type, f)
         let index = checkFieldIndex(type, f)
         let unique = index?.unique || false
+        let limits = {
+            ...checkByteWeightDirective(type, f),
+            ...checkCardinalityLimitDirective(type, f)
+        }
 
         if (index) {
             indexes.push(index)
@@ -137,10 +143,11 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
             properties[key] = {
                 type: wrapWithList(list.nulls, {
                     kind: 'scalar',
-                    name: fieldType.name
+                    name: fieldType.name as Scalar
                 }),
                 nullable,
-                description
+                description,
+                ...limits
             }
         } else if (fieldType instanceof GraphQLEnumType) {
             addEnum(model, fieldType)
@@ -150,7 +157,8 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                     name: fieldType.name
                 }),
                 nullable,
-                description
+                description,
+                ...limits
             }
         } else if (fieldType instanceof GraphQLUnionType) {
             addUnion(model, fieldType)
@@ -160,7 +168,8 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                     name: fieldType.name
                 }),
                 nullable,
-                description
+                description,
+                ...limits
             }
         } else if (fieldType instanceof GraphQLObjectType) {
             if (isEntityType(fieldType)) {
@@ -205,7 +214,8 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                                 field: derivedFrom.field
                             },
                             nullable: false,
-                            description
+                            description,
+                            ...limits
                         }
                         break
                     default:
@@ -219,7 +229,8 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                         name: fieldType.name
                     }),
                     nullable,
-                    description
+                    description,
+                    ...limits
                 }
             }
         } else {
@@ -453,6 +464,38 @@ function checkDerivedFrom(type: GraphQLNamedType, f: GraphQLField<any, any>): {f
     let fieldArg = assertNotNull(d.arguments?.find(arg => arg.name.value == 'field'))
     assert(fieldArg.value.kind == 'StringValue')
     return {field: fieldArg.value.value}
+}
+
+
+function checkCardinalityLimitDirective(type: GraphQLNamedType, f: GraphQLField<any, any>): {cardinality?: number} {
+    let directives = f.astNode?.directives?.filter(d => d.name.value == 'cardinality') || []
+    if (directives.length > 1) throw new SchemaError(
+        `Multiple @cardinality where applied to ${type.name}.${f.name}`
+    )
+    if (directives.length == 0) return {}
+    let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
+    assert(arg.value.kind == 'IntValue')
+    let cardinality = parseInt(arg.value.value, 10)
+    if (cardinality < 0) throw new SchemaError(
+        `Incorrect @cardinality where applied to ${type.name}.${f.name}. Cardinality value must be positive.`
+    )
+    return {cardinality}
+}
+
+
+function checkByteWeightDirective(type: GraphQLNamedType, f: GraphQLField<any, any>): {byteWeight?: number} {
+    let directives = f.astNode?.directives?.filter(d => d.name.value == 'byteWeight') || []
+    if (directives.length > 1) throw new SchemaError(
+        `Multiple @byteWeight where applied to ${type.name}.${f.name}`
+    )
+    if (directives.length == 0) return {}
+    let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
+    assert(arg.value.kind == 'FloatValue')
+    let byteWeight = parseFloat(arg.value.value)
+    if (byteWeight < 0) throw new SchemaError(
+        `Incorrect @byteWeight where applied to ${type.name}.${f.name}. Byte weight value must be positive.`
+    )
+    return {byteWeight}
 }
 
 

@@ -1,4 +1,4 @@
-import {Model} from "@subsquid/openreader/dist/model"
+import {Model} from "@subsquid/openreader/lib/model"
 import {assertNotNull} from "@subsquid/util-internal"
 import {PluginDefinition} from "apollo-server-core"
 import {GraphQLSchema, OperationDefinitionNode} from "graphql"
@@ -47,10 +47,10 @@ export function createCheckPlugin(requestCheck: RequestCheckFunction, model: Mod
                     })
                     if (typeof ok == 'string') {
                         return {errors: [{message: ok}]}
-                    }
-                    if (ok) return null
-                    return {
-                        errors: [{message: 'not allowed'}]
+                    } else if (ok) {
+                        return null
+                    } else {
+                        return {errors: [{message: 'not allowed'}]}
                     }
                 }
             }

@@ -1,17 +1,17 @@
-import {decodeHex, isHex} from "@subsquid/util-internal-hex"
+import {decodeHex, isHex, toHex} from "@subsquid/util-internal-hex"
 import {GraphQLScalarType} from "graphql"
-import {invalidFormat} from "../../util"
+import {invalidFormat} from "../util/util"
 
 
 export const BytesScalar = new GraphQLScalarType({
     name: 'Bytes',
     description: 'Binary data encoded as a hex string always prefixed with 0x',
-    serialize(value: string | Buffer) {
+    serialize(value: string | Uint8Array) {
         if (typeof value == 'string') {
             if (!isHex(value)) throw invalidFormat('Bytes', value)
             return value.toLowerCase()
         } else {
-            return '0x' + value.toString('hex')
+            return toHex(value)
         }
     },
     parseValue(value: string) {

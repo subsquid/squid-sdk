@@ -1,4 +1,4 @@
-import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
+import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/lib/tools"
 import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
 import {Command} from "commander"
