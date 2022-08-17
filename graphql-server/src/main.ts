@@ -16,7 +16,7 @@ runProgram(async () => {
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
-    program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
+    program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 5000)
     program.option('--subscription-sql-statement-timeout <ms>', 'sql statement timeout for polling queries', nat)
 
     let opts = program.parse().opts() as {
