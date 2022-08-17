@@ -33,9 +33,7 @@ jobs:
         run: node common/scripts/install-run-rush.js install
 
       - name: Build project
-        run: |
-          node common/scripts/install-run-rush.js build
-          cd cli && npx oclif manifest
+        run: node common/scripts/install-run-rush.js build
 
       - name: Publish npm packages
         run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/firesquid --publish --tag latest

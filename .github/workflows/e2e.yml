@@ -13,9 +13,7 @@ jobs:
         run: node common/scripts/install-run-rush.js install
 
       - name: Build project
-        run: |
-          node common/scripts/install-run-rush.js build
-          cd cli && npx oclif manifest
+        run: node common/scripts/install-run-rush.js build
 
       - name: Run tests
         run: test/e2e-suite/e2e.sh
