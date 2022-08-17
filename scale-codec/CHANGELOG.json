@@ -2,6 +2,18 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "1.0.3",
+      "tag": "@subsquid/scale-codec_v1.0.3",
+      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/scale-codec_v1.0.2",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

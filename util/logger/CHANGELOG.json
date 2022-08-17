@@ -2,6 +2,23 @@
   "name": "@subsquid/logger",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/logger_v0.1.0",
+      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Support `SQD_LOG_LABELS` env variable to control `.level` output in JSON lines format"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "support error stack in pretty format"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/logger_v0.0.2",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

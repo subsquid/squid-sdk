@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Aug 2022 17:07:45 GMT and should not be manually modified.
+
+## 1.0.3
+Wed, 17 Aug 2022 17:07:45 GMT
+
+### Patches
+
+- always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`
 
 ## 1.0.2
 Fri, 24 Jun 2022 22:07:05 GMT
