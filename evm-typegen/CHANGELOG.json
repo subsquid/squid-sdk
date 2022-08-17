@@ -2,18 +2,6 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
-      "version": "1.2.0",
-      "tag": "@subsquid/evm-typegen_v1.2.0",
-      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
-      "comments": {
-        "minor": [
-          {
-            "comment": "generate typed `eth_call` facades"
-          }
-        ]
-      }
-    },
-    {
       "version": "1.1.0",
       "tag": "@subsquid/evm-typegen_v1.1.0",
       "date": "Tue, 19 Jul 2022 03:09:10 GMT",

@@ -2,41 +2,6 @@
   "name": "@subsquid/substrate-explorer",
   "entries": [
     {
-      "version": "1.0.0",
-      "tag": "@subsquid/substrate-explorer_v1.0.0",
-      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
-      "comments": {
-        "major": [
-          {
-            "comment": "expose newly indexed `block.state_root`, `block.extrinsics_root`"
-          },
-          {
-            "comment": "backed by new openreader"
-          },
-          {
-            "comment": "set sql statement timeout to 2 seconds"
-          },
-          {
-            "comment": "limit request size to 64kb"
-          }
-        ],
-        "dependency": [
-          {
-            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.2` to `^0.1.0`"
-          },
-          {
-            "comment": "Updating dependency \"@subsquid/openreader\" from `^1.0.3` to `^2.0.0`"
-          },
-          {
-            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.0.1` to `^0.1.0`"
-          },
-          {
-            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^1.1.0` to `^2.0.0`"
-          }
-        ]
-      }
-    },
-    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-explorer_v0.0.0",
       "date": "Sun, 26 Jun 2022 21:17:38 GMT",

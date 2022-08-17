@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "2.0.0",
+  "version": "1.0.3",
   "description": "GraphQL server for postgres-compatible databases",
   "keywords": [
     "graphql",
@@ -27,11 +27,11 @@
   "dependencies": {
     "@graphql-tools/merge": "^8",
     "@subsquid/graphiql-console": "^0.2.0",
-    "@subsquid/logger": "^0.1.0",
+    "@subsquid/logger": "^0.0.2",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-commander": "^0.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
-    "@subsquid/util-internal-http-server": "^0.1.0",
+    "@subsquid/util-internal-http-server": "^0.0.1",
     "@subsquid/util-naming": "^0.0.1",
     "apollo-server-core": "^3.9.0",
     "apollo-server-express": "^3.9.0",

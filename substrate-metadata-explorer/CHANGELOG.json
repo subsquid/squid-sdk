@@ -2,18 +2,6 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
-      "version": "1.0.6",
-      "tag": "@subsquid/substrate-metadata-explorer_v1.0.6",
-      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
-      "comments": {
-        "dependency": [
-          {
-            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.2` to `^0.1.0`"
-          }
-        ]
-      }
-    },
-    {
       "version": "1.0.5",
       "tag": "@subsquid/substrate-metadata-explorer_v1.0.5",
       "date": "Thu, 04 Aug 2022 06:00:53 GMT",

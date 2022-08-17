@@ -1,13 +1,6 @@
 # Change Log - @subsquid/util-internal-http-server
 
-This log was last generated on Wed, 17 Aug 2022 17:07:45 GMT and should not be manually modified.
-
-## 0.1.0
-Wed, 17 Aug 2022 17:07:45 GMT
-
-### Minor changes
-
-- introduce `listen()` function
+This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
 
 ## 0.0.1
 Fri, 24 Jun 2022 22:07:05 GMT

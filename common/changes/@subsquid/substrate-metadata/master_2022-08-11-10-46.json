@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "fix and rework xcm type definitions",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

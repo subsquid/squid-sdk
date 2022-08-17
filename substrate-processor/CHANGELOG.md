@@ -1,20 +1,6 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 17 Aug 2022 17:07:45 GMT and should not be manually modified.
-
-## 1.6.0
-Wed, 17 Aug 2022 17:07:45 GMT
-
-### Minor changes
-
-- support gear network events
-
-### Patches
-
-- fix: not all evm log handlers where fired due to incorrect topic filtering
-- fix evm log fields in gateway request
-- remove `id`, `pos`, `name` fields from data selection types as expected by the gateway
-- adapt for new `EVM.Log` event arguments
+This log was last generated on Thu, 04 Aug 2022 06:00:53 GMT and should not be manually modified.
 
 ## 1.5.1
 Thu, 04 Aug 2022 06:00:53 GMT

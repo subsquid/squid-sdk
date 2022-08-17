@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

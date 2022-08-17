@@ -1,11 +1,6 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 17 Aug 2022 17:07:45 GMT and should not be manually modified.
-
-## 1.1.1
-Wed, 17 Aug 2022 17:07:45 GMT
-
-_Version update only_
+This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
 
 ## 1.1.0
 Fri, 24 Jun 2022 22:07:05 GMT

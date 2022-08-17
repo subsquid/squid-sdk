@@ -2,18 +2,6 @@
   "name": "@subsquid/typeorm-migration",
   "entries": [
     {
-      "version": "0.1.2",
-      "tag": "@subsquid/typeorm-migration_v0.1.2",
-      "date": "Wed, 17 Aug 2022 17:07:45 GMT",
-      "comments": {
-        "dependency": [
-          {
-            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^1.1.0` to `^2.0.0`"
-          }
-        ]
-      }
-    },
-    {
       "version": "0.1.1",
       "tag": "@subsquid/typeorm-migration_v0.1.1",
       "date": "Wed, 06 Jul 2022 09:25:54 GMT",

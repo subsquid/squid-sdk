@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "index `block.state_root`, `block.extrinsics_root`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
