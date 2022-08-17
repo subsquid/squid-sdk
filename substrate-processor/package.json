@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,24 +17,24 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/logger": "^0.0.2",
+    "@subsquid/logger": "^0.1.0",
     "@subsquid/rpc-client": "^1.0.2",
-    "@subsquid/scale-codec": "^1.0.2",
-    "@subsquid/substrate-metadata": "^1.0.2",
-    "@subsquid/typeorm-config": "^1.1.0",
+    "@subsquid/scale-codec": "^1.0.3",
+    "@subsquid/substrate-metadata": "^1.1.0",
+    "@subsquid/typeorm-config": "^2.0.0",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.2",
     "@subsquid/util-internal-counters": "^0.0.1",
     "@subsquid/util-internal-gql-request": "^0.1.0",
     "@subsquid/util-internal-hex": "^0.0.1",
-    "@subsquid/util-internal-prometheus-server": "^0.0.1",
+    "@subsquid/util-internal-prometheus-server": "^0.0.2",
     "@subsquid/util-xxhash": "^0.1.1",
     "blake2b": "^2.1.4",
     "prom-client": "^14.0.1"
   },
   "peerDependencies": {
-    "@subsquid/typeorm-store": "^0.1.1"
+    "@subsquid/typeorm-store": "^0.1.2"
   },
   "peerDependenciesMeta": {
     "@subsquid/typeorm-store": {
