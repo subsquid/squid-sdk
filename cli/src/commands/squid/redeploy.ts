@@ -4,7 +4,7 @@ import { CliCommand } from '../../command';
 import {
     parseNameAndVersion,
 } from '../../utils';
-import { getEnv, mergeEnvWithFile } from './release';
+import { parseEnvs } from './release';
 
 
 export default class Redeploy extends CliCommand {
@@ -38,15 +38,7 @@ export default class Redeploy extends CliCommand {
             this
         );
 
-        let envs: Record<string, string> = {};
-        
-        flags.env?.forEach((e: string)=>{
-            const { name, value } = getEnv(e);
-            envs[name] = value;
-        });
-        
-        if (flags.envFile != undefined)
-            envs = mergeEnvWithFile(envs, flags.envFile);
+        const envs = parseEnvs(flags.env, flags.envFile);
 
         await redeploySquid(squidName, versionName, envs);
     }
