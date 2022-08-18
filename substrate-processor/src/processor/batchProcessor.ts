@@ -6,7 +6,7 @@ import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
 import {Chain} from "../chain"
 import {BlockData} from "../ingest"
-import type {BlockRangeOption, EvmLogOptions, EvmExecutedOptions} from "../interfaces/dataHandlers"
+import type {BlockRangeOption, EvmLogOptions, AcalaEvmExecutedOptions} from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
     AddEventItem,
@@ -359,23 +359,23 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *
      * @example
      * // request ERC20 transfers from Karura contract
-     * processor.addAcalaEvmExecuted('0x0000000000000000000100000000000000000084', {
+     * processor.addAcalaEvmExecuted('0x0000000000000000000100000000000000000080', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * })
      */
     addAcalaEvmExecuted(
         contractAddress: string,
-        options?: EvmExecutedOptions & NoDataSelection
+        options?: AcalaEvmExecutedOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
 
     addAcalaEvmExecuted<R extends EventDataRequest>(
         contractAddress: string,
-        options: EvmExecutedOptions & DataSelection<R>
+        options: AcalaEvmExecutedOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
 
     addAcalaEvmExecuted(
         contractAddress: string,
-        options?: EvmExecutedOptions & MayBeDataSelection<EventDataRequest>
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()

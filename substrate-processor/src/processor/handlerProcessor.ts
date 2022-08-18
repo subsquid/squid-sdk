@@ -17,9 +17,9 @@ import type {
     ContractsContractEmittedHandler,
     EventHandler,
     EvmLogHandler,
-    EvmExecutedHandler,
+    AcalaEvmExecutedHandler,
     EvmLogOptions,
-    EvmExecutedOptions,
+    AcalaEvmExecutedOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
@@ -41,7 +41,6 @@ import type {
     EvmExecutedEvent,
     SubstrateCall,
     SubstrateEvent,
-    EvmExecutedLog
 } from "../interfaces/substrate"
 import {withErrorContext} from "../util/misc"
 import type {Range} from "../util/range"
@@ -70,7 +69,7 @@ export class SubstrateProcessor<Store> {
         event: [],
         call: [],
         evmLog: [],
-        evmExecuted: [],
+        acalaEvmExecuted: [],
         contractsContractEmitted: [],
         gearMessageEnqueued: [],
         gearUserMessageSent: [],
@@ -643,43 +642,43 @@ export class SubstrateProcessor<Store> {
      * 
      * `EVM.Executed` event contains all the logs emitted during a contract call
      * and this handler selects events by evm log contract address and topics
-     * contained in them.
+     * contained in it.
      *
      * @example
      * // process ERC20 transfers from Karura contract
-     * processor.addEvmExecutedHandler('0x0000000000000000000100000000000000000084', {
+     * processor.addAcalaEvmExecutedHandler('0x0000000000000000000100000000000000000080', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * }, async ctx => {})
      */
-    addEvmExecutedHandler(
+    addAcalaEvmExecutedHandler(
         contractAddress: string,
-        fn: EvmExecutedHandler<Store>
+        fn: AcalaEvmExecutedHandler<Store>
     ): this
-    addEvmExecutedHandler(
+    addAcalaEvmExecutedHandler(
         contractAddress: string,
-        options: EvmExecutedOptions & NoDataSelection,
-        fn: EvmExecutedHandler<Store>
+        options: AcalaEvmExecutedOptions & NoDataSelection,
+        fn: AcalaEvmExecutedHandler<Store>
     ): this
-    addEvmExecutedHandler<R extends EventDataRequest>(
+    addAcalaEvmExecutedHandler<R extends EventDataRequest>(
         contractAddress: string,
-        options: EvmExecutedOptions & DataSelection<R>,
-        fn: EvmExecutedHandler<Store, R>
+        options: AcalaEvmExecutedOptions & DataSelection<R>,
+        fn: AcalaEvmExecutedHandler<Store, R>
     ): this
-    addEvmExecutedHandler(
+    addAcalaEvmExecutedHandler(
         contractAddress: string,
-        fnOrOptions: EvmExecutedOptions & MayBeDataSelection<EventDataRequest> | EvmExecutedHandler<Store>,
-        fn?: EvmExecutedHandler<Store>
+        fnOrOptions: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest> | AcalaEvmExecutedHandler<Store>,
+        fn?: AcalaEvmExecutedHandler<Store>
     ): this {
         this.assertNotRunning()
-        let handler: EvmExecutedHandler<Store>
-        let options: EvmExecutedOptions = {}
+        let handler: AcalaEvmExecutedHandler<Store>
+        let options: AcalaEvmExecutedOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.evmExecuted.push({
+        this.hooks.acalaEvmExecuted.push({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
@@ -750,10 +749,10 @@ export class SubstrateProcessor<Store> {
             batches.push({range, request})
         })
 
-        this.hooks.evmExecuted.forEach(hook => {
+        this.hooks.acalaEvmExecuted.forEach(hook => {
             let range = getRange(hook)
             let request = new DataHandlers()
-            request.evmExecuted = {
+            request.acalaEvmExecuted = {
                 [hook.contractAddress]: [{
                     filter: hook.filter,
                     handler: hook.handler
@@ -922,7 +921,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         })
                         log.debug('end')
                     }
-                    for (let handler of this.getEvmExecutedHandlers(handlers.evmExecuted, item.event)) {
+                    for (let handler of this.getAcalaEvmExecutedHandlers(handlers.acalaEvmExecuted, item.event)) {
                         let event = item.event as EvmExecutedEvent
                         let log = blockLog.child({
                             hook: 'evm-executed',
@@ -1065,11 +1064,11 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         return true
     }
 
-    private *getEvmExecutedHandlers(evmExecuted: DataHandlers["evmExecuted"], event: SubstrateEvent): Generator<EvmExecutedHandler<any>> {
+    private *getAcalaEvmExecutedHandlers(evmExecuted: DataHandlers["acalaEvmExecuted"], event: SubstrateEvent): Generator<AcalaEvmExecutedHandler<any>> {
         if (event.name != 'EVM.Executed') return
         let e = event as EvmExecutedEvent
 
-        let handlers = new Set<EvmExecutedHandler<any>>()
+        let handlers = new Set<AcalaEvmExecutedHandler<any>>()
         for (let log of e.args.logs) {
             let logHandlers = evmExecuted[log.address]
             if (logHandlers == null) continue
@@ -1086,7 +1085,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
     }
 
-    private evmExecutedHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmExecutedLog): boolean {
+    private evmExecutedHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: any): boolean {
         if (handler.filter == null) return true
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]

@@ -51,7 +51,7 @@ export interface BatchRequest {
     getEvents(): EventReq[]
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
-    getEvmExecuted(): EvmExecutedReq[]
+    getAcalaEvmExecuted(): EvmExecutedReq[]
     getContractsEvents(): ContractsEventsReq[]
     getGearMessagesEnqueued(): GearMessagesEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessagesSentReq[]
@@ -80,7 +80,7 @@ export class PlainBatchRequest implements BatchRequest {
         return this.evmLogs
     }
 
-    getEvmExecuted(): EvmExecutedReq[] {
+    getAcalaEvmExecuted(): EvmExecutedReq[] {
         return this.evmExecuted
     }
 

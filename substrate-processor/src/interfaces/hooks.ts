@@ -8,7 +8,7 @@ import {
     GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
-    EvmExecutedHandler,
+    AcalaEvmExecutedHandler,
     EvmTopicSet
 } from "./dataHandlers"
 import {CallDataRequest, EventDataRequest} from "./dataSelection"
@@ -48,8 +48,8 @@ export interface EvmLogHook {
 }
 
 
-export interface EvmExecutedHook {
-    handler: EvmExecutedHandler<any>
+export interface AcalaEvmExecutedHook {
+    handler: AcalaEvmExecutedHandler<any>
     contractAddress: string
     filter?: EvmTopicSet[]
     data?: EventDataRequest
@@ -87,7 +87,7 @@ export interface Hooks {
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
-    evmExecuted: EvmExecutedHook[]
+    acalaEvmExecuted: AcalaEvmExecutedHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]
