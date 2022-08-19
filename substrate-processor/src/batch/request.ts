@@ -1,4 +1,4 @@
-import {EvmTopicSet} from "../interfaces/dataHandlers"
+import {EvmSelector, EvmTopicSet} from "../interfaces/dataHandlers"
 import {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 
 
@@ -15,13 +15,6 @@ type CallReq = {
 
 
 type EvmLogReq = {
-    contract: string
-    filter?: EvmTopicSet[]
-    data?: EventDataRequest
-}
-
-
-type EvmExecutedReq = {
     contract: string
     filter?: EvmTopicSet[]
     data?: EventDataRequest
@@ -46,15 +39,38 @@ type GearUserMessagesSentReq = {
 }
 
 
+type AcalaEvmExecutedReq = {
+    contract: string
+    filter?: EvmTopicSet[]
+    data?: EventDataRequest
+}
+
+
+type AcalaEvmCallReq = {
+    contract: string
+    selector?: EvmSelector
+    data?: CallDataRequest
+}
+
+
+type AcalaEvmEthCallReq = {
+    contract: string
+    selector?: EvmSelector
+    data?: CallDataRequest
+}
+
+
 export interface BatchRequest {
     getIncludeAllBlocks(): boolean
     getEvents(): EventReq[]
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
-    getAcalaEvmExecuted(): EvmExecutedReq[]
     getContractsEvents(): ContractsEventsReq[]
     getGearMessagesEnqueued(): GearMessagesEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessagesSentReq[]
+    getAcalaEvmExecuted(): AcalaEvmExecutedReq[]
+    getAcalaEvmCall(): AcalaEvmCallReq[]
+    getAcalaEvmEthCall(): AcalaEvmEthCallReq[]
 }
 
 
@@ -62,10 +78,12 @@ export class PlainBatchRequest implements BatchRequest {
     events: EventReq[] = []
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
-    evmExecuted: EvmExecutedReq[] = []
     contractsEvents: ContractsEventsReq[] = []
     gearMessagesEnqueued: GearMessagesEnqueuedReq[] = []
     gearUserMessagesSent: GearUserMessagesSentReq[] = []
+    acalaEvmExecuted: AcalaEvmExecutedReq[] = []
+    acalaEvmCall: AcalaEvmCallReq[] = []
+    acalaEvmEthCall: AcalaEvmEthCallReq[] = []
     includeAllBlocks = false
 
     getEvents(): EventReq[] {
@@ -78,10 +96,6 @@ export class PlainBatchRequest implements BatchRequest {
 
     getEvmLogs(): EvmLogReq[] {
         return this.evmLogs
-    }
-
-    getAcalaEvmExecuted(): EvmExecutedReq[] {
-        return this.evmExecuted
     }
 
     getContractsEvents(): ContractsEventsReq[] {
@@ -100,16 +114,30 @@ export class PlainBatchRequest implements BatchRequest {
         return this.includeAllBlocks
     }
 
+    getAcalaEvmExecuted(): AcalaEvmExecutedReq[] {
+        return this.acalaEvmExecuted
+    }
+
+    getAcalaEvmCall(): AcalaEvmCallReq[] {
+        return this.acalaEvmCall
+    }
+
+    getAcalaEvmEthCall(): AcalaEvmEthCallReq[] {
+        return this.acalaEvmEthCall
+    }
+
     merge(other: PlainBatchRequest): PlainBatchRequest {
         let result = new PlainBatchRequest()
         result.includeAllBlocks = this.includeAllBlocks || other.includeAllBlocks
         result.events = this.events.concat(other.events)
         result.calls = this.calls.concat(other.calls)
         result.evmLogs = this.evmLogs.concat(other.evmLogs)
-        result.evmExecuted = this.evmExecuted.concat(other.evmExecuted)
         result.contractsEvents = this.contractsEvents.concat(other.contractsEvents)
         result.gearMessagesEnqueued = this.gearMessagesEnqueued.concat(other.gearMessagesEnqueued)
         result.gearUserMessagesSent = this.gearUserMessagesSent.concat(other.gearUserMessagesSent)
+        result.acalaEvmExecuted = this.acalaEvmExecuted.concat(other.acalaEvmExecuted)
+        result.acalaEvmCall = this.acalaEvmCall.concat(other.acalaEvmCall)
+        result.acalaEvmEthCall = this.acalaEvmEthCall.concat(other.acalaEvmEthCall)
         return result
     }
 }

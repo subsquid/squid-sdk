@@ -5,7 +5,7 @@ import * as erc20 from "./erc20"
 import {Owner, Transfer} from "./model"
 
 
-const CONTRACT_ADDRESS = '0x0000000000000000000100000000000000000084'
+const CONTRACT_ADDRESS = '0x0000000000000000000100000000000000000080' // KAR
 
 
 const processor = new SubstrateBatchProcessor()

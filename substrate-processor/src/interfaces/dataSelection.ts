@@ -1,5 +1,7 @@
 import type {
     ContractsContractEmittedEvent,
+    EvmCall,
+    EvmEthCall,
     EvmLogEvent,
     GearMessageEnqueuedEvent,
     GearUserMessageSentEvent,
@@ -31,7 +33,7 @@ export type WithProp<K extends string, V> = [V] extends [never] ? {} : {
 }
 
 
-type CallScalars = Omit<SubstrateCall, 'parent'>
+type CallScalars<T=SubstrateCall> = Omit<T, 'parent'>
 type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 
@@ -62,9 +64,31 @@ type CallFields<R extends CallRequest> = Select<CallScalars, R> & (
 )
 
 
-export type CallType<R> = R extends true
+export type CommonCallType<R> = R extends true
     ? SubstrateCall
     : R extends CallRequest ? CallFields<R> : never
+
+
+type AcalaEvmCallType<R> = R extends true
+    ? EvmCall
+    : R extends CallRequest
+        ? Select<CallScalars<EvmCall>, R>
+        : never
+
+
+type AcalaEvmEthCallType<R> = R extends true
+    ? EvmEthCall
+    : R extends CallRequest
+        ? Select<CallScalars<EvmEthCall>, R>
+        : never
+
+
+export type CallType<R, N> =
+    N extends 'EVM.call'
+        ? AcalaEvmCallType<R>
+        : N extends 'EVM.eth_call'
+            ? AcalaEvmEthCallType<R>
+            : CommonCallType<R>
 
 
 type ExtrinsicFields<R extends ExtrinsicRequest> = Select<ExtrinsicScalars, R> & (
@@ -171,8 +195,8 @@ export interface CallDataRequest {
 }
 
 
-export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}> =
-    WithProp<"call", CallType<R["call"]>> &
+export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}, N = string> =
+    WithProp<"call", CallType<R["call"], N>> &
     WithProp<"extrinsic", ExtrinsicType<R["extrinsic"]>>
 
 

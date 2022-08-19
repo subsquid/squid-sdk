@@ -9,7 +9,10 @@ import {
     EventHandler,
     EvmLogHandler,
     AcalaEvmExecutedHandler,
-    EvmTopicSet
+    AcalaEvmCallHandler,
+    AcalaEvmEthCallHandler,
+    EvmTopicSet,
+    EvmSelector
 } from "./dataHandlers"
 import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
@@ -57,6 +60,24 @@ export interface AcalaEvmExecutedHook {
 }
 
 
+export interface AcalaEvmCallHook {
+    handler: AcalaEvmCallHandler<any>
+    contractAddress: string
+    selector?: EvmSelector
+    data?: CallDataRequest
+    range?: Range
+}
+
+
+export interface AcalaEvmEthCallHook {
+    handler: AcalaEvmEthCallHandler<any>
+    contractAddress: string
+    selector?: EvmSelector
+    data?: CallDataRequest
+    range?: Range
+}
+
+
 export interface ContractsContractEmittedHook {
     handler: ContractsContractEmittedHandler<any>,
     contractAddress: string
@@ -87,8 +108,10 @@ export interface Hooks {
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
-    acalaEvmExecuted: AcalaEvmExecutedHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]
+    acalaEvmExecuted: AcalaEvmExecutedHook[]
+    acalaEvmCall: AcalaEvmCallHook[]
+    acalaEvmEthCall: AcalaEvmEthCallHook[]
 }

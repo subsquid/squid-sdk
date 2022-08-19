@@ -8,7 +8,10 @@ import type {
     EventHandler,
     EvmLogHandler,
     AcalaEvmExecutedHandler,
-    EvmTopicSet
+    EvmTopicSet,
+    EvmSelector,
+    AcalaEvmCallHandler,
+    AcalaEvmEthCallHandler
 } from "../interfaces/dataHandlers"
 import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 import type {QualifiedName} from "../interfaces/substrate"
@@ -37,10 +40,12 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
-    acalaEvmExecuted: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: AcalaEvmExecutedHandler<any>}[]> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
+    acalaEvmExecuted: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: AcalaEvmExecutedHandler<any>}[]> = {}
+    acalaEvmCall: Record<ContractAddress, {selector?: EvmSelector, data?: CallDataRequest, handler: AcalaEvmCallHandler<any>}[]> = {}
+    acalaEvmEthCall: Record<ContractAddress, {selector?: EvmSelector, data?: CallDataRequest, handler: AcalaEvmEthCallHandler<any>}[]> = {}
 
     merge(other: DataHandlers): DataHandlers {
         let res = new DataHandlers()
@@ -49,10 +54,12 @@ export class DataHandlers implements BatchRequest {
         res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
-        res.acalaEvmExecuted = mergeMaps(this.acalaEvmExecuted, other.acalaEvmExecuted, (ha, hb) => ha.concat(hb))
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
+        res.acalaEvmExecuted = mergeMaps(this.acalaEvmExecuted, other.acalaEvmExecuted, (ha, hb) => ha.concat(hb))
+        res.acalaEvmCall = mergeMaps(this.acalaEvmCall, other.acalaEvmCall, (ha, hb) => ha.concat(hb))
+        res.acalaEvmEthCall = mergeMaps(this.acalaEvmEthCall, other.acalaEvmEthCall, (ha, hb) => ha.concat(hb))
         return res
     }
 
@@ -166,18 +173,6 @@ export class DataHandlers implements BatchRequest {
         })
     }
 
-    getAcalaEvmExecuted() {
-        return Object.entries(this.acalaEvmExecuted).flatMap(([contract, hs]) => {
-            return hs.map(h => {
-                return {
-                    contract,
-                    filter: h.filter,
-                    data: h.data
-                }
-            })
-        })
-    }
-
     getContractsEvents() {
         return Object.entries(this.contractsContractEmitted).map(([contract, {data}]) => {
             return {
@@ -202,6 +197,42 @@ export class DataHandlers implements BatchRequest {
                 program,
                 data
             }
+        })
+    }
+
+    getAcalaEvmExecuted() {
+        return Object.entries(this.acalaEvmExecuted).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                return {
+                    contract,
+                    filter: h.filter,
+                    data: h.data
+                }
+            })
+        })
+    }
+
+    getAcalaEvmCall() {
+        return Object.entries(this.acalaEvmCall).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                return {
+                    contract,
+                    selector: h.selector,
+                    data: h.data
+                }
+            })
+        })
+    }
+
+    getAcalaEvmEthCall() {
+        return Object.entries(this.acalaEvmEthCall).flatMap(([contract, hs]) => {
+            return hs.map(h => {
+                return {
+                    contract,
+                    selector: h.selector,
+                    data: h.data
+                }
+            })
         })
     }
 }

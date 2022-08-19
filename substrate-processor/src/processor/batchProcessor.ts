@@ -6,7 +6,13 @@ import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
 import {Chain} from "../chain"
 import {BlockData} from "../ingest"
-import type {BlockRangeOption, EvmLogOptions, AcalaEvmExecutedOptions} from "../interfaces/dataHandlers"
+import type {
+    BlockRangeOption,
+    EvmLogOptions,
+    AcalaEvmExecutedOptions,
+    AcalaEvmCallOptions,
+    AcalaEvmEthCallOptions
+} from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
     AddEventItem,
@@ -379,9 +385,82 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.evmExecuted.push({
+        req.acalaEvmExecuted.push({
             contract: contractAddress.toLowerCase(),
             filter: options?.filter,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addCall},
+     * but requests `EVM.call` calls belonging to particular contract
+     * with an option to filter them by selector.
+     *
+     * @example
+     * // request ERC20 transfers from Acala contract
+     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000001', {
+     *     selector: '0x095ea7b3'
+     * })
+     */
+    addAcalaEvmCall(
+        contractAddress: string,
+        options?: AcalaEvmCallOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", true>>>
+
+    addAcalaEvmCall<R extends CallDataRequest>(
+        contractAddress: string,
+        options: AcalaEvmCallOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", R>>>
+
+    addAcalaEvmCall(
+        contractAddress: string,
+        options?: AcalaEvmCallOptions & MayBeDataSelection<CallDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.acalaEvmCall.push({
+            contract: contractAddress.toLowerCase(),
+            selector: options?.selector,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+
+    /**
+     * Similar to {@link .addCall},
+     * but requests `EVM.eth_call` calls belonging to particular contract
+     * with an option to filter them by selector.
+     *
+     * @example
+     * // request ERC20 transfers from Karura contract
+     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000080', {
+     *     selector: '0x095ea7b3'
+     * })
+     */
+    addAcalaEvmEthCall(
+        contractAddress: string,
+        options?: AcalaEvmEthCallOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", true>>>
+
+    addAcalaEvmEthCall<R extends CallDataRequest>(
+        contractAddress: string,
+        options: AcalaEvmEthCallOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", R>>>
+
+    addAcalaEvmEthCall(
+        contractAddress: string,
+        options?: AcalaEvmEthCallOptions & MayBeDataSelection<CallDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.acalaEvmCall.push({
+            contract: contractAddress.toLowerCase(),
+            selector: options?.selector,
             data: options?.data
         })
         this.add(req, options?.range)

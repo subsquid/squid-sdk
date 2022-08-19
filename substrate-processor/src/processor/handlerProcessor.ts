@@ -23,6 +23,11 @@ import type {
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
+    AcalaEvmCallHandler,
+    AcalaEvmCallOptions,
+    AcalaEvmEthCallHandler,
+    AcalaEvmEthCallOptions,
+    EvmSelector,
 } from "../interfaces/dataHandlers"
 import type {
     CallDataRequest,
@@ -39,6 +44,8 @@ import type {
     GearUserMessageSentEvent,
     EvmLogEvent,
     EvmExecutedEvent,
+    EvmCall,
+    EvmEthCall,
     SubstrateCall,
     SubstrateEvent,
 } from "../interfaces/substrate"
@@ -69,10 +76,12 @@ export class SubstrateProcessor<Store> {
         event: [],
         call: [],
         evmLog: [],
-        acalaEvmExecuted: [],
         contractsContractEmitted: [],
         gearMessageEnqueued: [],
         gearUserMessageSent: [],
+        acalaEvmExecuted: [],
+        acalaEvmCall: [],
+        acalaEvmEthCall: [],
     }
     private blockRange: Range = {from: 0}
     private batchSize = 100
@@ -686,6 +695,104 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `EVM.call` call handler.
+     *
+     * This method is similar to {@link .addCallHandler},
+     * but provides specialised {@link EvmCall | call type} and selects
+     * calls by contract address and function selector.
+     *
+     * @example
+     * // process ERC20 approves from Acala contract
+     * processor.addAcalaEvmCallHandler('0x0000000000000000000100000000000000000001', {
+     *     selector: '0x095ea7b3'
+     * }, async ctx => {})
+     */
+    addAcalaEvmCallHandler(
+        contractAddress: string,
+        fn: AcalaEvmCallHandler<Store>
+    ): this
+    addAcalaEvmCallHandler(
+        contractAddress: string,
+        options: AcalaEvmCallOptions & NoDataSelection,
+        fn: AcalaEvmCallHandler<Store>
+    ): this
+    addAcalaEvmCallHandler<R extends CallDataRequest>(
+        contractAddress: string,
+        options: AcalaEvmCallOptions & DataSelection<R>,
+        fn: AcalaEvmCallHandler<Store, R>
+    ): this
+    addAcalaEvmCallHandler(
+        contractAddress: string,
+        fnOrOptions: AcalaEvmCallOptions & MayBeDataSelection<CallDataRequest> | AcalaEvmCallHandler<Store>,
+        fn?: AcalaEvmCallHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: AcalaEvmCallHandler<Store>
+        let options: AcalaEvmCallOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.acalaEvmCall.push({
+            handler,
+            contractAddress: contractAddress.toLowerCase(),
+            ...options
+        })
+        return this
+    }
+
+    /**
+     * Registers `EVM.eth_call` call handler.
+     *
+     * This method is similar to {@link .addCallHandler},
+     * but provides specialised {@link EvmEthCall | call type} and selects
+     * calls by contract address and function selector.
+     *
+     * @example
+     * // process ERC20 approves from Karura contract
+     * processor.addAcalaEvmEthCallHandler('0x0000000000000000000100000000000000000080', {
+     *     selector: '0x095ea7b3'
+     * }, async ctx => {})
+     */
+    addAcalaEvmEthCallHandler(
+        contractAddress: string,
+        fn: AcalaEvmEthCallHandler<Store>
+    ): this
+    addAcalaEvmEthCallHandler(
+        contractAddress: string,
+        options: AcalaEvmEthCallOptions & NoDataSelection,
+        fn: AcalaEvmEthCallHandler<Store>
+    ): this
+    addAcalaEvmEthCallHandler<R extends CallDataRequest>(
+        contractAddress: string,
+        options: AcalaEvmEthCallOptions & DataSelection<R>,
+        fn: AcalaEvmEthCallHandler<Store, R>
+    ): this
+    addAcalaEvmEthCallHandler(
+        contractAddress: string,
+        fnOrOptions: AcalaEvmEthCallOptions & MayBeDataSelection<CallDataRequest> | AcalaEvmEthCallHandler<Store>,
+        fn?: AcalaEvmEthCallHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: AcalaEvmEthCallHandler<Store>
+        let options: AcalaEvmEthCallOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.acalaEvmEthCall.push({
+            handler,
+            contractAddress: contractAddress.toLowerCase(),
+            ...options
+        })
+        return this
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -749,18 +856,6 @@ export class SubstrateProcessor<Store> {
             batches.push({range, request})
         })
 
-        this.hooks.acalaEvmExecuted.forEach(hook => {
-            let range = getRange(hook)
-            let request = new DataHandlers()
-            request.acalaEvmExecuted = {
-                [hook.contractAddress]: [{
-                    filter: hook.filter,
-                    handler: hook.handler
-                }]
-            }
-            batches.push({range, request})
-        })
-
         this.hooks.contractsContractEmitted.forEach(hook => {
             let range = getRange(hook)
             let request = new DataHandlers()
@@ -784,6 +879,42 @@ export class SubstrateProcessor<Store> {
             let request = new DataHandlers()
             request.gearUserMessageSent = {
                 [hook.programId]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.acalaEvmExecuted.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.acalaEvmExecuted = {
+                [hook.contractAddress]: [{
+                    filter: hook.filter,
+                    handler: hook.handler
+                }]
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.acalaEvmCall.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.acalaEvmCall = {
+                [hook.contractAddress]: [{
+                    selector: hook.selector,
+                    handler: hook.handler
+                }]
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.acalaEvmEthCall.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.acalaEvmEthCall = {
+                [hook.contractAddress]: [{
+                    selector: hook.selector,
+                    handler: hook.handler
+                }]
             }
             batches.push({range, request})
         })
@@ -921,7 +1052,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         })
                         log.debug('end')
                     }
-                    for (let handler of this.getAcalaEvmExecutedHandlers(handlers.acalaEvmExecuted, item.event)) {
+                    for (let handler of this.getAcalaEvmExecutedHandlers(handlers, item.event)) {
                         let event = item.event as EvmExecutedEvent
                         let log = blockLog.child({
                             hook: 'evm-executed',
@@ -996,6 +1127,38 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                             log.debug('end')
                         }
                     }
+                    for (let handler of this.getAcalaEvmCallHandlers(handlers, item.call)) {
+                        let call = item.call as EvmCall
+                        let log = blockLog.child({
+                            hook: 'call',
+                            callName: item.call.name,
+                            callId: item.call.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            call,
+                            extrinsic: item.extrinsic
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getAcalaEvmEthCallHandlers(handlers, item.call)) {
+                        let call = item.call as EvmEthCall
+                        let log = blockLog.child({
+                            hook: 'call',
+                            callName: item.call.name,
+                            callId: item.call.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            call,
+                            extrinsic: item.extrinsic
+                        })
+                        log.debug('end')
+                    }
                     break
                 default:
                     throw unexpectedCase()
@@ -1042,59 +1205,22 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         if (contractHandlers == null) return
 
         for (let h of contractHandlers) {
-            if (this.evmHandlerMatches(h, log)) {
+            if (this.topicsMatch(h, log.args.topics)) {
                 yield h.handler
             }
         }
     }
 
-    private evmHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmLogEvent): boolean {
+    private topicsMatch(handler: {filter?: EvmTopicSet[]}, topics: string[]): boolean {
         if (handler.filter == null) return true
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
             if (Array.isArray(set)) {
-                if (!set.includes(log.args.topics[i])) {
+                if (!set.includes(topics[i])) {
                     return false
                 }
-            } else if (set !== log.args.topics[i]) {
-                return false
-            }
-        }
-        return true
-    }
-
-    private *getAcalaEvmExecutedHandlers(evmExecuted: DataHandlers["acalaEvmExecuted"], event: SubstrateEvent): Generator<AcalaEvmExecutedHandler<any>> {
-        if (event.name != 'EVM.Executed') return
-        let e = event as EvmExecutedEvent
-
-        let handlers = new Set<AcalaEvmExecutedHandler<any>>()
-        for (let log of e.args.logs) {
-            let logHandlers = evmExecuted[log.address]
-            if (logHandlers == null) continue
-
-            for (let h of logHandlers) {
-                if (this.evmExecutedHandlerMatches(h, log)) {
-                    handlers.add(h.handler)
-                }
-            }
-        }
-
-        for (let h of handlers) {
-            yield h
-        }
-    }
-
-    private evmExecutedHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: any): boolean {
-        if (handler.filter == null) return true
-        for (let i = 0; i < handler.filter.length; i++) {
-            let set = handler.filter[i]
-            if (set == null) continue
-            if (Array.isArray(set)) {
-                if (!set.includes(log.topics[i])) {
-                    return false
-                }
-            } else if (set !== log.topics[i]) {
+            } else if (set !== topics[i]) {
                 return false
             }
         }
@@ -1135,5 +1261,63 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let h of hs.handlers) {
             yield h
         }
+    }
+
+    private *getAcalaEvmExecutedHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<AcalaEvmExecutedHandler<any>> {
+        if (event.name != 'EVM.Executed') return
+        let e = event as EvmExecutedEvent
+
+        let eventHandlers = new Set<AcalaEvmExecutedHandler<any>>()
+        for (let log of e.args.logs) {
+            let logHandlers = handlers.acalaEvmExecuted[log.address]
+            if (logHandlers == null) continue
+
+            for (let h of logHandlers) {
+                if (this.topicsMatch(h, log.topics)) {
+                    eventHandlers.add(h.handler)
+                }
+            }
+        }
+
+        for (let h of eventHandlers) {
+            yield h
+        }
+    }
+
+    private *getAcalaEvmCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<AcalaEvmCallHandler<any>> {
+        if (call.name != 'EVM.call') return
+        let c = call as EvmCall
+
+        let contractAddress = assertNotNull(call.args.target)
+        let contractHandlers = handlers.acalaEvmCall[contractAddress]
+        if (contractHandlers == null) return
+
+        for (let h of contractHandlers) {
+            let input = assertNotNull(call.args.input)
+            if (this.selectorMatch(h, input)) {
+                yield h.handler
+            }
+        }
+    }
+
+    private *getAcalaEvmEthCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<AcalaEvmEthCallHandler<any>> {
+        if (call.name != 'EVM.eth_call') return
+        let c = call as EvmEthCall
+
+        let contractAddress = assertNotNull(call.args.action.value)
+        let contractHandlers = handlers.acalaEvmEthCall[contractAddress]
+        if (contractHandlers == null) return
+
+        for (let h of contractHandlers) {
+            let input = assertNotNull(call.args.input)
+            if (this.selectorMatch(h, input)) {
+                yield h.handler
+            }
+        }
+    }
+
+    private selectorMatch(handler: {selector?: EvmSelector}, input: string): boolean {
+        if (handler.selector == null) return true
+        return handler.selector == input.slice(0, 10)
     }
 }

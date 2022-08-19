@@ -135,6 +135,24 @@ export interface AcalaEvmExecutedHandler<S, R extends EventDataRequest = {event:
 }
 
 
+export type AcalaEvmCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
+    = CommonHandlerContext<S> & CallData<R, 'EVM.call'>
+
+
+export interface AcalaEvmCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
+    (ctx: AcalaEvmCallHandlerContext<S, R>): Promise<void>
+}
+
+
+export type AcalaEvmEthCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
+    = CommonHandlerContext<S> & CallData<R, 'EVM.eth_call'>
+
+
+export interface AcalaEvmEthCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
+    (ctx: AcalaEvmEthCallHandlerContext<S, R>): Promise<void>
+}
+
+
 export interface BlockRangeOption {
     range?: Range
 }
@@ -165,7 +183,24 @@ export interface AcalaEvmExecutedOptions extends BlockRangeOption {
 }
 
 
+export interface AcalaEvmCallOptions extends BlockRangeOption {
+    /**
+     * EVM function selector like here https://www.4byte.directory/signatures/
+     */
+    selector?: EvmSelector
+}
+
+
+export interface AcalaEvmEthCallOptions extends BlockRangeOption {
+    /**
+     * EVM function selector like here https://www.4byte.directory/signatures/
+     */
+    selector?: EvmSelector
+}
+
+
 export type EvmTopicSet = string | null | undefined | string[]
+export type EvmSelector = string
 
 
 export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest = {event: true}>
