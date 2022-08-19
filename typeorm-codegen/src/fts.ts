@@ -1,4 +1,4 @@
-import type {FTS_Query, Model} from '@subsquid/openreader/dist/model'
+import type {FTS_Query, Model} from '@subsquid/openreader/lib/model'
 import {OutDir} from '@subsquid/util-internal-code-printer'
 import {toSnakeCase} from "@subsquid/util-naming"
 

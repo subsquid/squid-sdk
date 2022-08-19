@@ -188,7 +188,7 @@ export class Ingest<R extends BatchRequest> {
             return {
                 contract,
                 filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
-                data: toGatewayFields(data)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
@@ -292,8 +292,8 @@ const CONTEXT_NESTING_SHAPE = (() => {
 })();
 
 
-function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any | undefined {
-    if (req == null || !req) return undefined
+function toGatewayFields(req: any | undefined, shape: Record<string, any> | null): any | undefined {
+    if (!req) return undefined
     if (req === true) return shape ? {_all: true} : true
     let fields: any = {}
     for (let key in req) {

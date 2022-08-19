@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-metadata_v1.1.0",
+      "date": "Wed, 17 Aug 2022 17:33:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "fix and rework xcm type definitions"
+          },
+          {
+            "comment": "throw error on unknown signed extension"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.2` to `^1.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/substrate-metadata_v1.0.2",
       "date": "Thu, 04 Aug 2022 06:00:53 GMT",

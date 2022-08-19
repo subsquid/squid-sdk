@@ -446,12 +446,6 @@
     //   // "versionPolicyName": ""
     // },
     {
-      "packageName": "@subsquid/cli",
-      "projectFolder": "cli",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,
@@ -602,6 +596,12 @@
     {
       "packageName": "@subsquid/util-internal-code-printer",
       "projectFolder": "util/util-internal-code-printer",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-commander",
+      "projectFolder": "util/util-internal-commander",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

@@ -54,6 +54,8 @@ export class BlockParser {
             height: this.raw.blockHeight,
             hash: this.raw.blockHash,
             parent_hash: this.raw.block.header.parentHash,
+            state_root: this.raw.block.header.stateRoot,
+            extrinsics_root: this.raw.block.header.extrinsicsRoot,
             timestamp: new Date(this.timestamp()),
             validator: this.validator(),
             spec_id: '' // to be set later
@@ -81,7 +83,7 @@ export class BlockParser {
         for (let i = 0; i < extrinsics.length; i++) {
             let ex = extrinsics[i]
             if (ex.call.__kind == 'Timestamp' && ex.call.value.__kind == 'set') {
-                return ex.call.value.now
+                return Number(ex.call.value.now)
             }
         }
         return 0

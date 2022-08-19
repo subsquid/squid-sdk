@@ -448,8 +448,7 @@ class FromOld {
             case 'ValidateEquivocationReport':
                 return undefined
             default:
-                console.error('WARNING: Unknown signed extension: ' + name)
-                return undefined
+                throw new Error('Unknown signed extension: ' + name)
         }
     }
 

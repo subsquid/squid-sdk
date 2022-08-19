@@ -1,19 +1,12 @@
-import assert from "assert"
-import {DocumentNode, parse} from "graphql"
-import {buildTypeDefsAndResolvers, ContainerType, ResolverData, ResolversMap} from "type-graphql"
+import {GraphQLSchema} from "graphql"
+import {buildSchema, ContainerType, ResolverData} from "type-graphql"
 import type {EntityManager} from "typeorm"
 import {BigInteger, Bytes, DateTime} from "./scalars"
-import {TypeormTransaction} from "./typeorm"
+import {TypeormOpenreaderContext} from "./typeorm"
 
 
-export interface CustomResolvers {
-    typeDefs: DocumentNode
-    resolvers: ResolversMap
-}
-
-
-export async function loadCustomResolvers(mod: string): Promise<CustomResolvers> {
-    let {typeDefs, resolvers} = await buildTypeDefsAndResolvers({
+export async function loadCustomResolvers(mod: string): Promise<GraphQLSchema> {
+    return buildSchema({
         resolvers: [mod],
         scalarsMap: [
             { type: Date, scalar: DateTime },
@@ -22,10 +15,6 @@ export async function loadCustomResolvers(mod: string): Promise<CustomResolvers>
         ],
         container: resolverData => new CustomResolversContainer(resolverData)
     })
-    return {
-        resolvers,
-        typeDefs: parse(typeDefs)
-    }
 }
 
 
@@ -35,15 +24,13 @@ export interface CustomResolverClass {
 
 
 class CustomResolversContainer implements ContainerType {
-    private transaction: TypeormTransaction
+    private ctx: TypeormOpenreaderContext
 
-    constructor(resolverData: ResolverData<any>) {
-        let transaction = resolverData.context.openReaderTransaction
-        assert(typeof transaction?.getEntityManager == 'function', 'expected typeorm transaction in the context')
-        this.transaction = transaction
+    constructor(resolverData: ResolverData<{openreader: TypeormOpenreaderContext}>) {
+        this.ctx = resolverData.context.openreader
     }
 
     get(resolverClass: CustomResolverClass): CustomResolverClass {
-        return new resolverClass(() => this.transaction.getEntityManager())
+        return new resolverClass(() => this.ctx.getEntityManager())
     }
 }

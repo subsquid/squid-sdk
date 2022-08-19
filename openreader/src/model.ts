@@ -50,6 +50,14 @@ export interface Prop {
      * Whether the values in the column must be unique. Applicable only to entities.
      */
     unique?: boolean
+    /**
+     * Characteristic number of elements in a `list-lookup` or in a `list` of objects
+     */
+    cardinality?: number
+    /**
+     * Relative byte size of a scalar value or scalar list
+     */
+    byteWeight?: number
 }
 
 
@@ -66,8 +74,11 @@ export type PropType =
 
 export interface ScalarPropType {
     kind: 'scalar'
-    name: Name
+    name: Scalar
 }
+
+
+export type Scalar = 'ID' | 'String' | 'Int' | 'Float' | 'Boolean' | 'DateTime' | 'BigInt' | 'JSON' | 'Bytes'
 
 
 export interface EnumPropType {
