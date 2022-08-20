@@ -27,19 +27,19 @@ type EthereumTransactionReq = {
 }
 
 
-type ContractsEventsReq = {
+type ContractsEventReq = {
     contract: string
     data?: EventDataRequest
 }
 
 
-type GearMessagesEnqueuedReq = {
+type GearMessageEnqueuedReq = {
     program: string
     data?: EventDataRequest
 }
 
 
-type GearUserMessagesSentReq = {
+type GearUserMessageSentReq = {
     program: string
     data?: EventDataRequest
 }
@@ -51,9 +51,9 @@ export interface BatchRequest {
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
     getEthereumTransactions(): EthereumTransactionReq[]
-    getContractsEvents(): ContractsEventsReq[]
-    getGearMessagesEnqueued(): GearMessagesEnqueuedReq[]
-    getGearUserMessagesSent(): GearUserMessagesSentReq[]
+    getContractsEvents(): ContractsEventReq[]
+    getGearMessagesEnqueued(): GearMessageEnqueuedReq[]
+    getGearUserMessagesSent(): GearUserMessageSentReq[]
 }
 
 
@@ -62,9 +62,9 @@ export class PlainBatchRequest implements BatchRequest {
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
     ethereumTransactions: EthereumTransactionReq[] = []
-    contractsEvents: ContractsEventsReq[] = []
-    gearMessagesEnqueued: GearMessagesEnqueuedReq[] = []
-    gearUserMessagesSent: GearUserMessagesSentReq[] = []
+    contractsEvents: ContractsEventReq[] = []
+    gearMessagesEnqueued: GearMessageEnqueuedReq[] = []
+    gearUserMessagesSent: GearUserMessageSentReq[] = []
     includeAllBlocks = false
 
     getEvents(): EventReq[] {
@@ -83,15 +83,15 @@ export class PlainBatchRequest implements BatchRequest {
         return this.ethereumTransactions
     }
 
-    getContractsEvents(): ContractsEventsReq[] {
+    getContractsEvents(): ContractsEventReq[] {
         return this.contractsEvents
     }
 
-    getGearMessagesEnqueued(): GearMessagesEnqueuedReq[] {
+    getGearMessagesEnqueued(): GearMessageEnqueuedReq[] {
         return this.gearMessagesEnqueued
     }
 
-    getGearUserMessagesSent(): GearUserMessagesSentReq[] {
+    getGearUserMessagesSent(): GearUserMessageSentReq[] {
         return this.gearUserMessagesSent
     }
 

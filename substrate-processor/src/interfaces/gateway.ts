@@ -9,7 +9,7 @@ export interface BatchRequest {
     events?: ObjectRequest[]
     calls?: ObjectRequest[]
     evmLogs?: EvmLogRequest[]
-    ethereumTransactCalls?: EthereumTransactRequest[]
+    ethereumTransactions?: EthereumTransactionRequest[]
     contractsEvents?: ContractsEventRequest[]
     gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
@@ -28,7 +28,7 @@ export interface EvmLogRequest {
     data?: any
 }
 
-export interface EthereumTransactRequest {
+export interface EthereumTransactionRequest {
     contract: string
     data?: any
 }
