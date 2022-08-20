@@ -1,5 +1,5 @@
-import {EvmTopicSet} from "../interfaces/dataHandlers"
-import {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
+import {EvmTopicSet} from '../interfaces/dataHandlers'
+import {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
 
 
 type EventReq = {
@@ -21,7 +21,7 @@ type EvmLogReq = {
 }
 
 
-type EthereumTransactionsReq = {
+type EthereumTransactionReq = {
     contract: string
     data?: CallDataRequest
 }
@@ -50,7 +50,7 @@ export interface BatchRequest {
     getEvents(): EventReq[]
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
-    getEthereumTransactions(): EthereumTransactionsReq[]
+    getEthereumTransactions(): EthereumTransactionReq[]
     getContractsEvents(): ContractsEventsReq[]
     getGearMessagesEnqueued(): GearMessagesEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessagesSentReq[]
@@ -61,7 +61,7 @@ export class PlainBatchRequest implements BatchRequest {
     events: EventReq[] = []
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
-    ethereumTransactions: EthereumTransactionsReq[] = []
+    ethereumTransactions: EthereumTransactionReq[] = []
     contractsEvents: ContractsEventsReq[] = []
     gearMessagesEnqueued: GearMessagesEnqueuedReq[] = []
     gearUserMessagesSent: GearUserMessagesSentReq[] = []
@@ -79,7 +79,7 @@ export class PlainBatchRequest implements BatchRequest {
         return this.evmLogs
     }
 
-    getEthereumTransactions(): EthereumTransactionsReq[] {
+    getEthereumTransactions(): EthereumTransactionReq[] {
         return this.ethereumTransactions
     }
 

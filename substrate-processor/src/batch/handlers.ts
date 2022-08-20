@@ -3,16 +3,15 @@ import type {
     BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
-    GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
-    EthereumTransactionHandler,
     EventHandler,
     EvmLogHandler,
-    EvmTopicSet
-} from "../interfaces/dataHandlers"
-import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
-import type {QualifiedName} from "../interfaces/substrate"
-import type {BatchRequest} from "./request"
+    EvmTopicSet,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler
+} from '../interfaces/dataHandlers'
+import type {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
+import type {QualifiedName} from '../interfaces/substrate'
+import type {BatchRequest} from './request'
 
 
 type ContractAddress = string
@@ -30,11 +29,6 @@ export interface CallHandlerEntry {
     triggerForFailedCalls?: boolean
 }
 
-export interface EthereumTransactionHandlerEntry {
-    handler: EthereumTransactionHandler<any>
-    triggerForFailedCalls?: boolean
-}
-
 
 export class DataHandlers implements BatchRequest {
     pre: HandlerList<BlockHandler<any>, BlockHandlerDataRequest> = {handlers: [], data: {includeAllBlocks: false}}
@@ -42,7 +36,7 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
-    ethereumTransactions: Record<ContractAddress, HandlerList<EthereumTransactionHandlerEntry, CallDataRequest>> = {}
+    ethereumTransactions: Record<ContractAddress, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}

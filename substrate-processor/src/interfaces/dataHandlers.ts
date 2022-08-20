@@ -1,6 +1,6 @@
-import {Logger} from "@subsquid/logger"
-import {Chain} from "../chain"
-import {Range} from "../util/range"
+import {Logger} from '@subsquid/logger'
+import {Chain} from '../chain'
+import {Range} from '../util/range'
 import {
     CallData,
     CallDataRequest,
@@ -9,9 +9,8 @@ import {
     EventDataRequest,
     EventItem,
     EventRequest
-} from "./dataSelection"
-import {EthereumTransactionRequest} from "./gateway"
-import {SubstrateBlock} from "./substrate"
+} from './dataSelection'
+import {SubstrateBlock} from './substrate'
 
 
 export interface CommonHandlerContext<S> {
@@ -126,14 +125,6 @@ export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: EvmLogHandlerContext<S,  R>): Promise<void>
 }
 
-export type EthereumTransactionHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
-    = CommonHandlerContext<S> & CallData<R, 'Ethereum.transact'>
-
-
-export interface EthereumTransactionHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
-    (ctx: EthereumTransactionHandlerContext<S,  R>): Promise<void>
-}
-
 
 export interface BlockRangeOption {
     range?: Range
@@ -155,8 +146,6 @@ export interface EvmLogOptions extends BlockRangeOption {
      */
     filter?: EvmTopicSet[]
 }
-
-export type EthereumTransactionOptions = CallHandlerOptions
 
 
 export type EvmTopicSet = string | null | undefined | string[]

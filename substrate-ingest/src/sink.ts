@@ -1,3 +1,4 @@
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
@@ -27,6 +28,13 @@ interface FrontierEvmLog {
     topic1?: string
     topic2?: string
     topic3?: string
+}
+
+
+interface FrontierEthereumTransaction {
+    call_id: string
+    contract: string
+    sighash?: string
 }
 
 
@@ -118,6 +126,12 @@ export class PostgresSink implements Sink {
         topic3: {cast: 'text'}
     })
 
+    private frontierEthereumTransactionInsert = new Insert<FrontierEthereumTransaction>('frontier_ethereum_transaction', {
+        call_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        sighash: {cast: 'text'}
+    })
+
     private contractsContractEmittedInsert = new Insert<ContractsContractEmitted>('contracts_contract_emitted', {
         event_id: {cast: 'text'},
         contract: {cast: 'text'}
@@ -204,7 +218,32 @@ export class PostgresSink implements Sink {
     private insertCalls(calls: Call[]): void {
         for (let call of calls) {
             this.callInsert.add(call)
+            switch(call.name) {
+                case 'Ethereum.transact':
+                    this.insertEthereumTransaction(call)
+                    break
+            }
         }
+    }
+
+    private insertEthereumTransaction(call: Call): void {
+        let tx = assertNotNull(call.args.transaction.value || call.args.transaction)
+        let contract: string
+        switch(tx.action?.__kind) {
+            case 'Create':
+                return
+            case 'Call':
+                contract = toHex(tx.action.value)
+                break
+            default:
+                throw unexpectedCase(tx.action?.__kind)
+        }
+        let sighash = toHex(tx.input.subarray(0, 4))
+        this.frontierEthereumTransactionInsert.add({
+            call_id: call.id,
+            contract,
+            sighash
+        })
     }
 
     private async submit(lastBlock: number): Promise<void> {
@@ -217,6 +256,7 @@ export class PostgresSink implements Sink {
         let eventInsert = this.eventInsert.take()
         let warningInsert = this.warningInsert.take()
         let frontierEvmLogInsert = this.frontierEvmLogInsert.take()
+        let frontierEthereumTransactionInsert = this.frontierEthereumTransactionInsert.take()
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
@@ -228,6 +268,7 @@ export class PostgresSink implements Sink {
             await eventInsert.query(this.db)
             await warningInsert.query(this.db)
             await frontierEvmLogInsert.query(this.db)
+            await frontierEthereumTransactionInsert.query(this.db)
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)

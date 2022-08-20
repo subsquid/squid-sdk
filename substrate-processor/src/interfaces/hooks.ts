@@ -1,18 +1,17 @@
-import {Range} from "../util/range"
+import {Range} from '../util/range'
 import {
-    BlockHandlerDataRequest,
     BlockHandler,
+    BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
-    GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet,
-    EthereumTransactionHandler
-} from "./dataHandlers"
-import {CallDataRequest, EventDataRequest} from "./dataSelection"
-import {QualifiedName} from "./substrate"
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler
+} from './dataHandlers'
+import {CallDataRequest, EventDataRequest} from './dataSelection'
+import {QualifiedName} from './substrate'
 
 
 export interface BlockHook {
@@ -47,6 +46,7 @@ export interface EvmLogHook {
     range?: Range
 }
 
+
 export interface EvmLogHook {
     handler: EvmLogHandler<any>
     contractAddress: string
@@ -56,12 +56,13 @@ export interface EvmLogHook {
 }
 
 export interface EthereumTransactionHook {
-    handler: EthereumTransactionHandler<any>
+    handler: CallHandler<any>
     contractAddress: string
     triggerForFailedCalls?: boolean
     data?: CallDataRequest
     range?: Range
 }
+
 
 export interface ContractsContractEmittedHook {
     handler: ContractsContractEmittedHandler<any>,
@@ -93,7 +94,7 @@ export interface Hooks {
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
-    ethereumTransactions: EthereumTransactionHook[]
+    ethereumTransaction: EthereumTransactionHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]

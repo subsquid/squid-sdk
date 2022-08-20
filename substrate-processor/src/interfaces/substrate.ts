@@ -154,11 +154,6 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
 }
 
 
-export interface EthereumTransactCall extends SubstrateCall {
-    name: 'Ethereum.transact'
-}
-
-
 export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEvent {
     name: 'Contracts.ContractEmitted',
     args: {

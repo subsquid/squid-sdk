@@ -1,6 +1,5 @@
 import type {
     ContractsContractEmittedEvent,
-    EthereumTransactCall,
     EvmLogEvent,
     GearMessageEnqueuedEvent,
     GearUserMessageSentEvent,
@@ -9,7 +8,7 @@ import type {
     SubstrateExtrinsic,
     SubstrateFinalizationEvent,
     SubstrateInitializationEvent
-} from "./substrate"
+} from './substrate'
 
 
 type Req<T> = {
@@ -63,22 +62,9 @@ type CallFields<R extends CallRequest> = Select<CallScalars, R> & (
 )
 
 
-export type CommonCallType<R> = R extends true
+export type CallType<R> = R extends true
     ? SubstrateCall
     : R extends CallRequest ? CallFields<R> : never
-
-
-type EthereumTransactCallType<R> = R extends true
-    ? EthereumTransactCall
-    : R extends CallRequest
-        ? Select<CallScalars<EthereumTransactCall>, R>
-        : never
-
-
-export type CallType<R, N> =
-    N extends 'Ethereum.tansact'
-            ? EthereumTransactCallType<R>
-            : CommonCallType<R>
 
 
 type ExtrinsicFields<R extends ExtrinsicRequest> = Select<ExtrinsicScalars, R> & (
@@ -185,8 +171,8 @@ export interface CallDataRequest {
 }
 
 
-export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}, N = string> =
-    WithProp<"call", CallType<R["call"], N>> &
+export type CallData<R extends CallDataRequest = {call: true, extrinsic: true}> =
+    WithProp<"call", CallType<R["call"]>> &
     WithProp<"extrinsic", ExtrinsicType<R["extrinsic"]>>
 
 

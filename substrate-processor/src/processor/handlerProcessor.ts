@@ -1,11 +1,11 @@
-import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
-import {CallHandlerEntry, DataHandlers, EthereumTransactionHandlerEntry} from "../batch/handlers"
-import type {Chain} from "../chain"
-import type {BlockData} from "../ingest"
+import {createLogger, Logger} from '@subsquid/logger'
+import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {assertNotNull, def, runProgram, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
+import {CallHandlerEntry, DataHandlers} from '../batch/handlers'
+import type {Chain} from '../chain'
+import type {BlockData} from '../ingest'
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -15,36 +15,33 @@ import type {
     CallHandlerOptions,
     CommonHandlerContext,
     ContractsContractEmittedHandler,
-    EthereumTransactionHandler,
-    EthereumTransactionOptions,
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
-} from "../interfaces/dataHandlers"
+    GearUserMessageSentHandler
+} from '../interfaces/dataHandlers'
 import type {
     CallDataRequest,
     DataSelection,
     EventDataRequest,
     MayBeDataSelection,
     NoDataSelection
-} from "../interfaces/dataSelection"
-import type {Database} from "../interfaces/db"
-import type {Hooks} from "../interfaces/hooks"
+} from '../interfaces/dataSelection'
+import type {Database} from '../interfaces/db'
+import type {Hooks} from '../interfaces/hooks'
 import type {
     ContractsContractEmittedEvent,
+    EvmLogEvent,
     GearMessageEnqueuedEvent,
     GearUserMessageSentEvent,
-    EvmLogEvent,
     SubstrateCall,
-    EthereumTransactCall,
-    SubstrateEvent,
-} from "../interfaces/substrate"
-import {withErrorContext} from "../util/misc"
-import type {Range} from "../util/range"
-import {Options, Runner} from "./runner"
+    SubstrateEvent
+} from '../interfaces/substrate'
+import {withErrorContext} from '../util/misc'
+import type {Range} from '../util/range'
+import {Options, Runner} from './runner'
 
 
 export interface DataSource {
@@ -69,7 +66,7 @@ export class SubstrateProcessor<Store> {
         event: [],
         call: [],
         evmLog: [],
-        ethereumTransactions: [],
+        ethereumTransaction: [],
         contractsContractEmitted: [],
         gearMessageEnqueued: [],
         gearUserMessageSent: [],
@@ -457,7 +454,7 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
-     * Registers `EVM.Log` event handler.
+     * Registers frontier `EVM.Log` event handler.
      *
      * This method is similar to {@link .addEventHandler},
      * but provides specialised {@link EvmLogEvent | event type} and selects
@@ -507,33 +504,33 @@ export class SubstrateProcessor<Store> {
 
     addEthereumTransactionHandler(
         contractAddress: string,
-        fn: EthereumTransactionHandler<Store>
+        fn: CallHandler<Store>
     ): this
     addEthereumTransactionHandler(
         contractAddress: string,
-        options: EthereumTransactionOptions & NoDataSelection,
-        fn: EthereumTransactionHandler<Store>
+        options: CallHandlerOptions & NoDataSelection,
+        fn: CallHandler<Store>
     ): this
     addEthereumTransactionHandler<R extends CallDataRequest>(
         contractAddress: string,
-        options: EthereumTransactionOptions & DataSelection<R>,
-        fn: EthereumTransactionHandler<Store, R>
+        options: CallHandlerOptions & DataSelection<R>,
+        fn: CallHandler<Store, R>
     ): this
     addEthereumTransactionHandler(
         contractAddress: string,
-        fnOrOptions: EthereumTransactionOptions & MayBeDataSelection<CallDataRequest> | EthereumTransactionHandler<Store>,
-        fn?: EthereumTransactionHandler<Store>
+        fnOrOptions: CallHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
+        fn?: CallHandler<Store>
     ): this {
         this.assertNotRunning()
-        let handler: EthereumTransactionHandler<Store>
-        let options: EthereumTransactionOptions = {}
+        let handler: CallHandler<Store>
+        let options: CallHandlerOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.ethereumTransactions.push({
+        this.hooks.ethereumTransaction.push({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
@@ -733,7 +730,7 @@ export class SubstrateProcessor<Store> {
             batches.push({range, request})
         })
 
-        this.hooks.ethereumTransactions.forEach(hook => {
+        this.hooks.ethereumTransaction.forEach(hook => {
             let range = getRange(hook)
             let request = new DataHandlers()
             request.ethereumTransactions = {
@@ -968,10 +965,10 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                             log.debug('end')
                         }
                     }
-                    for (let handler of this.getEthereumTranscationHandlers(handlers, item.call)) {
+                    for (let handler of this.getEthereumTransactionHandlers(handlers, item.call)) {
                         if (item.call.success || handler.triggerForFailedCalls) {
                             let log = blockLog.child({
-                                hook: 'call',
+                                hook: 'ethereum-transaction',
                                 callName: item.call.name,
                                 callId: item.call.id
                             })
@@ -1018,12 +1015,12 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
     }
 
-    private *getEthereumTranscationHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<EthereumTransactionHandlerEntry, any, any> {
+    private *getEthereumTransactionHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
         if (call.name != 'Ethereum.transact') return
-        let transaction = call as EthereumTransactCall
 
-        let contractAddress = assertNotNull(transaction.args?.transaction.action?.value
-            || transaction.args?.transaction.value.action?.value)
+        let contractAddress = call.args?.transaction.value.action?.value || call.args?.transaction.action?.value
+        if (contractAddress == null) return
+
         let hs = handlers.ethereumTransactions[contractAddress]
         if (hs == null) return
 
