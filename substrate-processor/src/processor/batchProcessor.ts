@@ -270,22 +270,23 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
 
     addEthereumTransaction(
         contractAddress: string,
-        options?: BlockRangeOption & NoDataSelection
+        options?: {range?: Range, sighash?: string} & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", true>>>
 
     addEthereumTransaction<R extends CallDataRequest>(
         contractAddress: string,
-        options: BlockRangeOption & DataSelection<R>
+        options: {range?: Range, sighash?: string} & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", R>>>
 
     addEthereumTransaction(
         contractAddress: string,
-        options?: BlockRangeOption & MayBeDataSelection<CallDataRequest>
+        options?: {range?: Range, sighash?: string} & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.ethereumTransactions.push({
             contract: contractAddress.toLowerCase(),
+            sighash: options?.sighash,
             data: options?.data
         })
         this.add(req, options?.range)

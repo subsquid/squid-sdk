@@ -23,6 +23,7 @@ type EvmLogReq = {
 
 type EthereumTransactionReq = {
     contract: string
+    sighash?: string
     data?: CallDataRequest
 }
 

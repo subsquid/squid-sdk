@@ -6,6 +6,7 @@ import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
 import {CallHandlerEntry, DataHandlers} from '../batch/handlers'
 import type {Chain} from '../chain'
 import type {BlockData} from '../ingest'
+import {EthereumTransactionHandlerOptions} from '../interfaces/dataHandlers'
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -508,22 +509,22 @@ export class SubstrateProcessor<Store> {
     ): this
     addEthereumTransactionHandler(
         contractAddress: string,
-        options: CallHandlerOptions & NoDataSelection,
+        options: EthereumTransactionHandlerOptions & NoDataSelection,
         fn: CallHandler<Store>
     ): this
     addEthereumTransactionHandler<R extends CallDataRequest>(
         contractAddress: string,
-        options: CallHandlerOptions & DataSelection<R>,
+        options: EthereumTransactionHandlerOptions & DataSelection<R>,
         fn: CallHandler<Store, R>
     ): this
     addEthereumTransactionHandler(
         contractAddress: string,
-        fnOrOptions: CallHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
+        fnOrOptions: EthereumTransactionHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
         fn?: CallHandler<Store>
     ): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options: CallHandlerOptions = {}
+        let options: EthereumTransactionHandlerOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -735,11 +736,13 @@ export class SubstrateProcessor<Store> {
             let request = new DataHandlers()
             request.ethereumTransactions = {
                 [hook.contractAddress]: {
-                    data: hook.data,
-                    handlers: [{
-                        handler: hook.handler,
-                        triggerForFailedCalls: hook.triggerForFailedCalls
-                    }]
+                    [hook.sighash || '*']: {
+                        data: hook.data,
+                        handlers: [{
+                            handler: hook.handler,
+                            triggerForFailedCalls: hook.triggerForFailedCalls
+                        }]
+                    }
                 }
             }
             batches.push({range, request})
@@ -994,40 +997,32 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
     }
 
     private *getEventHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<EventHandler<any>, any, any> {
-        let hs = handlers.events['*']
-        if (hs) {
-            yield* hs.handlers
-        }
-        hs = handlers.events[event.name]
-        if (hs) {
+        for (let hs of extract(handlers.events, event.name)) {
             yield* hs.handlers
         }
     }
 
     private *getCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
-        let hs = handlers.calls['*']
-        if (hs) {
-            yield* hs.handlers
-        }
-        hs = handlers.calls[call.name]
-        if (hs) {
-            yield* hs.handlers
-        }
+       for (let hs of extract(handlers.calls, call.name)) {
+           yield* hs.handlers
+       }
     }
 
     private *getEthereumTransactionHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
         if (call.name != 'Ethereum.transact') return
+        let tx = assertNotNull(call.args.transaction.value || call.args.transaction)
 
-        let contractAddress = call.args?.transaction.value.action?.value || call.args?.transaction.action?.value
+        let contractAddress = tx.action.value
         if (contractAddress == null) return
+        let sighash = tx.input.slice(0, 10)
 
-        let hs = handlers.ethereumTransactions[contractAddress]
-        if (hs == null) return
-
-        for (let h of hs.handlers) {
-            yield h
+        for (let sighashMap of extract(handlers.ethereumTransactions, contractAddress)) {
+            for (let hs of extract(sighashMap, sighash)) {
+                yield* hs.handlers
+            }
         }
     }
+
 
     private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler<any>> {
         if (event.name != 'EVM.Log') return
@@ -1095,4 +1090,12 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
             yield h
         }
     }
+}
+
+
+function* extract<T>(map: Record<string, T>, key: string): Generator<T> {
+    let item = map['*']
+    if (item) yield item
+    item = map[key]
+    if (item) yield item
 }

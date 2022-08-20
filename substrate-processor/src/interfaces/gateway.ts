@@ -28,10 +28,13 @@ export interface EvmLogRequest {
     data?: any
 }
 
+
 export interface EthereumTransactionRequest {
     contract: string
+    sighash?: string
     data?: any
 }
+
 
 export interface ContractsEventRequest {
     contract: string

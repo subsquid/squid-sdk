@@ -16,6 +16,7 @@ import type {BatchRequest} from './request'
 
 type ContractAddress = string
 type ProgramId = string
+type Sighash = string
 
 
 interface HandlerList<H, R = any> {
@@ -36,7 +37,7 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
-    ethereumTransactions: Record<ContractAddress, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
+    ethereumTransactions: Record<ContractAddress, Record<Sighash, HandlerList<CallHandlerEntry, CallDataRequest>>> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
@@ -48,7 +49,7 @@ export class DataHandlers implements BatchRequest {
         res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
-        res.ethereumTransactions = mergeMaps(this.ethereumTransactions, other.ethereumTransactions, mergeItemHandlerLists)
+        res.ethereumTransactions = mergeMaps(this.ethereumTransactions, other.ethereumTransactions, (a, b) => mergeMaps(a, b, mergeItemHandlerLists))
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
@@ -166,11 +167,14 @@ export class DataHandlers implements BatchRequest {
     }
 
     getEthereumTransactions() {
-        return Object.entries(this.ethereumTransactions).map(([contract, {data}]) => {
-            return {
-                contract,
-                data
-            }
+        return Object.entries(this.ethereumTransactions).flatMap(([contract, sighashMap]) => {
+            return Object.entries(sighashMap).map(([sighash, {data}]) => {
+                return {
+                    contract,
+                    sighash: sighash == '*' ? undefined : sighash,
+                    data
+                }
+            })
         })
     }
 

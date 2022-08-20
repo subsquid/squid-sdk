@@ -140,6 +140,11 @@ export interface CallHandlerOptions extends BlockRangeOption {
 }
 
 
+export interface EthereumTransactionHandlerOptions extends CallHandlerOptions {
+    sighash?: string
+}
+
+
 export interface EvmLogOptions extends BlockRangeOption {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters

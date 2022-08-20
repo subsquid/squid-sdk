@@ -58,6 +58,7 @@ export interface EvmLogHook {
 export interface EthereumTransactionHook {
     handler: CallHandler<any>
     contractAddress: string
+    sighash?: string
     triggerForFailedCalls?: boolean
     data?: CallDataRequest
     range?: Range
