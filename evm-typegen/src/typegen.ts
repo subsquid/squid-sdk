@@ -80,7 +80,7 @@ export class Typegen {
         for (const func of this.getFunctions()) {
             for (let i = 0; i < func.overloads.length; i++) {
                 if (func.overloads[i].inputs.length === 0) continue
-                this.out.line(`export type ${func.name}${i}Function = ${getTupleType(func.overloads[i].inputs)}`)
+                this.out.line(`export type ${upperCaseFirst(func.name)}${i}Function = ${getTupleType(func.overloads[i].inputs)}`)
                 this.out.line()
             }
         }
@@ -97,7 +97,7 @@ export class Typegen {
                     this.out.block(`"${signature}":`, () => {
                         this.out.line(`sighash: abi.getSighash("${signature}"),`)
                         if (func.overloads[i].inputs.length > 0)
-                            this.out.block(`decode(input: string): ${func.name}${i}Function`, () => {
+                            this.out.block(`decode(input: string): ${upperCaseFirst(func.name)}${i}Function`, () => {
                                 this.out.line(`return decodeFunction(input)`)
                             })
                     })
@@ -279,6 +279,7 @@ function getType(param: ParamType): string {
     throw new Error("unknown type")
 }
 
+
 function getTupleType(params: ParamType[]) {
     let tuple = '[' + params.map(p => {
         return p.name ? `${p.name}: ${getType(p)}` : getType(p)
@@ -292,6 +293,7 @@ function getTupleType(params: ParamType[]) {
     return `(${tuple} & ${struct})`
 }
 
+
 // https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/abi/src.ts/coders/tuple.ts#L29
 function getStructFields(params: ParamType[]): ParamType[] {
     let array: any = []
@@ -304,9 +306,11 @@ function getStructFields(params: ParamType[]): ParamType[] {
     return params.filter(p => counts[p.name] == 1)
 }
 
+
 function createSignature(name: string, inputs: ParamType[]) {
     return `${name}(${inputs.map((i) => i.type).join(`,`)})`
 }
+
 
 interface AbiEvent {
     name: string
@@ -315,6 +319,7 @@ interface AbiEvent {
     }[]
 }
 
+
 interface AbiFunction {
     name: string
     overloads: {
@@ -322,10 +327,16 @@ interface AbiFunction {
     }[]
 }
 
+
 interface AbiCall {
     name: string
     overloads: {
         inputs: ParamType[]
         outputs: ParamType[]
     }[]
+}
+
+
+function upperCaseFirst(s: string): string {
+    return s[0].toUpperCase() + s.slice(1)
 }

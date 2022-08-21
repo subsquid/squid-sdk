@@ -37,11 +37,11 @@ export const events = {
   ,
 }
 
-export type approve0Function = ([_spender: string, _value: ethers.BigNumber] & {_spender: string, _value: ethers.BigNumber})
+export type Approve0Function = ([_spender: string, _value: ethers.BigNumber] & {_spender: string, _value: ethers.BigNumber})
 
-export type transferFrom0Function = ([_from: string, _to: string, _value: ethers.BigNumber] & {_from: string, _to: string, _value: ethers.BigNumber})
+export type TransferFrom0Function = ([_from: string, _to: string, _value: ethers.BigNumber] & {_from: string, _to: string, _value: ethers.BigNumber})
 
-export type transfer0Function = ([_to: string, _value: ethers.BigNumber] & {_to: string, _value: ethers.BigNumber})
+export type Transfer0Function = ([_to: string, _value: ethers.BigNumber] & {_to: string, _value: ethers.BigNumber})
 
 
 function decodeFunction(data: string): any {
@@ -51,21 +51,21 @@ function decodeFunction(data: string): any {
 export const functions = {
   "approve(address,uint256)": {
     sighash: abi.getSighash("approve(address,uint256)"),
-    decode(input: string): approve0Function {
+    decode(input: string): Approve0Function {
       return decodeFunction(input)
     }
   }
   ,
   "transferFrom(address,address,uint256)": {
     sighash: abi.getSighash("transferFrom(address,address,uint256)"),
-    decode(input: string): transferFrom0Function {
+    decode(input: string): TransferFrom0Function {
       return decodeFunction(input)
     }
   }
   ,
   "transfer(address,uint256)": {
     sighash: abi.getSighash("transfer(address,uint256)"),
-    decode(input: string): transfer0Function {
+    decode(input: string): Transfer0Function {
       return decodeFunction(input)
     }
   }
