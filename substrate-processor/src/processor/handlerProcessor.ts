@@ -455,11 +455,10 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
-     * Registers frontier `EVM.Log` event handler.
+     * Registers `EVM.Log` event handler.
      *
      * This method is similar to {@link .addEventHandler},
-     * but provides specialised {@link EvmLogEvent | event type} and selects
-     * events by evm log contract address and topics.
+     * but selects events by evm log contract address and topics.
      *
      * @example
      * // process ERC721 transfers from Moonsama contract
@@ -503,6 +502,25 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `Ethereum.transact` call handler.
+     *
+     * This method is similar to {@link .addCallHandler},
+     * but selects calls by contract address and sighash.
+     * Only "EVM call" transactions are selected.
+     *
+     * Note, that there is a difference between success of substrate call
+     * and successful execution of its EVM transaction.
+     * {@link EthereumTransactionHandlerOptions.triggerForFailedCalls}
+     * option refers to success of substrate call.
+     *
+     * @example
+     * // process EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
+     * process.addEthereumTransactionHandler('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98', async ctx => {})
+     *
+     * // process all EVM calls with signature `transfer(address,uint256)`
+     * process.addEthereumTransactionHandler('*', {sighash: '0xa9059cbb'}, async ctx => {})
+     */
     addEthereumTransactionHandler(
         contractAddress: string,
         fn: CallHandler<Store>

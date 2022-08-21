@@ -268,6 +268,18 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return this
     }
 
+    /**
+     * Similar to {@link .addCall},
+     * but requests `Ethereum.transact` calls holding an EVM call transaction
+     * with an option to filter them by contract address and sighash.
+     *
+     * @example
+     * // request all EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
+     * processor.addEthereumTransaction('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98')
+     *
+     * // request all EVM calls with signature `transfer(address,uint256)`
+     * processor.addEthereumTransaction('*', {sighash: '0xa9059cbb'})
+     */
     addEthereumTransaction(
         contractAddress: string,
         options?: {range?: Range, sighash?: string} & NoDataSelection
