@@ -1010,7 +1010,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
 
     private *getEthereumTransactionHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
         if (call.name != 'Ethereum.transact') return
-        let tx = assertNotNull(call.args.transaction.value || call.args.transaction)
+        let tx = call.args.transaction.value.action ? call.args.transaction.value : call.args.transaction
 
         let contractAddress = tx.action.value
         if (contractAddress == null) return

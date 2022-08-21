@@ -51,7 +51,7 @@ astar:
 		-e wss://astar.api.onfinality.io/public-ws \
 		-e wss://astar-rpc.dwellir.com \
 		--write-batch-size 20 \
-		--start-block 214823
+		--start-block 234198
 
 
 shibuya:

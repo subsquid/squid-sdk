@@ -227,7 +227,7 @@ export class PostgresSink implements Sink {
     }
 
     private insertEthereumTransaction(call: Call): void {
-        let tx = assertNotNull(call.args.transaction.value || call.args.transaction)
+        let tx = call.args.transaction.value.action ? call.args.transaction.value : call.args.transaction
         let contract: string
         switch(tx.action?.__kind) {
             case 'Create':

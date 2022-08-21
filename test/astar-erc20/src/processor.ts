@@ -13,7 +13,7 @@ const processor = new SubstrateProcessor(new TypeormDatabase())
 
 
 processor.setDataSource({
-    archive: 'https://astar.archive.subsquid.io/graphql',
+    archive: 'http://localhost:2938/graphql',
     chain: 'wss://public-rpc.pinknode.io/astar'
 })
 

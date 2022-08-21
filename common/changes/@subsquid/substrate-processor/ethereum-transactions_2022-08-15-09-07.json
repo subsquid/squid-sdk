@@ -2,8 +2,13 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "ethereum transactions handling",
+      "comment": "Add specialized support for `Ethereum.transact` calls",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Throw a proper error when required metadata is absent in archive",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/substrate-processor"

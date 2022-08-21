@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "abi functions decoding support",
+      "comment": "Generate code for function calls decoding",
       "type": "minor"
     }
   ],
