@@ -242,6 +242,14 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * processor.addEvmLog('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * })
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addEvmLog([
+     *     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98'
+     * ], {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * })
      */
     addEvmLog(
         contractAddress: string | string[],
@@ -280,6 +288,14 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      *
      * // request all EVM calls with signature `transfer(address,uint256)`
      * processor.addEthereumTransaction('*', {sighash: '0xa9059cbb'})
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addEthereumTransaction([
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+     *     '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+     * ], {
+     *     sighash: '0xa9059cbb'
+     * })
      */
     addEthereumTransaction(
         contractAddress: string | string[],

@@ -465,6 +465,14 @@ export class SubstrateProcessor<Store> {
      * processor.addEvmLogHandler('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * }, async ctx => {})
+     *
+     * // subscribe to multiple contracts at once
+     * processor.addEvmLogHandler([
+     *     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98'
+     * ], {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * }, async ctx => {})
      */
     addEvmLogHandler(
         contractAddress: string | string[],
@@ -521,6 +529,14 @@ export class SubstrateProcessor<Store> {
      *
      * // process all EVM calls with signature `transfer(address,uint256)`
      * process.addEthereumTransactionHandler('*', {sighash: '0xa9059cbb'}, async ctx => {})
+     *
+     * // subscribe to multiple contracts at once
+     * processor.addEthereumTransaction([
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+     *     '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+     * ], {
+     *     sighash: '0xa9059cbb'
+     * }, async ctx => {})
      */
     addEthereumTransactionHandler(
         contractAddress: string | string[],
