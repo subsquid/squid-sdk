@@ -8,10 +8,12 @@ import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 
 runProgram(async () => {
     program.description('Revert the last applied migration')
-    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type', 'postgres')
-    let {rdbmsType} = program.parse().opts() as {rdbmsType: DatabaseType}
+    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type')
 
     dotenv.config()
+
+    let { rdbmsType: rdbmsTypeCli } = program.parse().opts() as {rdbmsType: DatabaseType}
+    let rdbmsType = rdbmsTypeCli || process.env.RDBMS_TYPE || 'postgres'
 
     let connection = new DataSource({
         ...createOrmConfig({rdbmsType}),

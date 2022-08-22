@@ -12,11 +12,13 @@ import {SqlInMemory} from "typeorm/driver/SqlInMemory"
 runProgram(async () => {
     program.description('Analyze the current database state and generate migration to match the target schema')
     program.option('-n, --name <name>', 'name suffix for new migration', 'Data')
-    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type', 'postgres')
-
-    let {name, rdbmsType} = program.parse().opts() as {name: string, rdbmsType: DatabaseType}
+    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type')
 
     dotenv.config()
+
+    let { name, rdbmsType: rdbmsTypeCli } = program.parse().opts() as { name: string, rdbmsType: DatabaseType }
+
+    let rdbmsType = rdbmsTypeCli || process.env.RDBMS_TYPE || 'postgres'
 
     let connection = new DataSource({
         ...createOrmConfig({rdbmsType}),
