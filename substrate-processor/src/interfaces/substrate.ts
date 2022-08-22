@@ -154,21 +154,6 @@ export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
 }
 
 
-export interface EvmExecutedEvent extends SubstrateApplyExtrinsicEvent {
-    name: 'EVM.Executed'
-}
-
-
-export interface EvmCall extends SubstrateCall {
-    name: 'EVM.call'
-}
-
-
-export interface EvmEthCall extends SubstrateCall {
-    name: 'EVM.eth_call'
-}
-
-
 export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEvent {
     name: 'Contracts.ContractEmitted',
     args: {

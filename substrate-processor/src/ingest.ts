@@ -192,14 +192,6 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
-        args.evmExecuted = req.getAcalaEvmExecuted().map(({contract, filter, data}) => {
-            return {
-                contract,
-                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
-                data: toGatewayFields(data)
-            }
-        })
-
         args.contractsEvents = req.getContractsEvents().map(({contract, data}) => {
             return {
                 contract,
@@ -217,6 +209,30 @@ export class Ingest<R extends BatchRequest> {
         args.gearUserMessagesSent = req.getGearUserMessagesSent().map(({program, data}) => {
             return {
                 program,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.acalaEvmExecuted = req.getAcalaEvmExecuted().map(({contract, filter, data}) => {
+            return {
+                contract,
+                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                data: toGatewayFields(data)
+            }
+        })
+
+        args.acalaEvmCall = req.getAcalaEvmCall().map(({contract, sighash, data}) => {
+            return {
+                contract,
+                sighash,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.acalaEvmEthCall = req.getAcalaEvmEthCall().map(({contract, sighash, data}) => {
+            return {
+                contract,
+                sighash,
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })

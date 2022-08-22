@@ -136,7 +136,7 @@ export interface AcalaEvmExecutedHandler<S, R extends EventDataRequest = {event:
 
 
 export type AcalaEvmCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
-    = CommonHandlerContext<S> & CallData<R, 'EVM.call'>
+    = CommonHandlerContext<S> & CallData<R>
 
 
 export interface AcalaEvmCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
@@ -145,7 +145,7 @@ export interface AcalaEvmCallHandler<S, R extends CallDataRequest = {call: true,
 
 
 export type AcalaEvmEthCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
-    = CommonHandlerContext<S> & CallData<R, 'EVM.eth_call'>
+    = CommonHandlerContext<S> & CallData<R>
 
 
 export interface AcalaEvmEthCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
@@ -167,6 +167,16 @@ export interface CallHandlerOptions extends BlockRangeOption {
 }
 
 
+export interface AcalaEvmCallHandlerOptions extends CallHandlerOptions {
+    sighash?: string
+}
+
+
+export interface AcalaEvmEthCallHandlerOptions extends CallHandlerOptions {
+    sighash?: string
+}
+
+
 export interface EvmLogOptions extends BlockRangeOption {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
@@ -183,24 +193,7 @@ export interface AcalaEvmExecutedOptions extends BlockRangeOption {
 }
 
 
-export interface AcalaEvmCallOptions extends BlockRangeOption {
-    /**
-     * EVM function selector like here https://www.4byte.directory/signatures/
-     */
-    selector?: EvmSelector
-}
-
-
-export interface AcalaEvmEthCallOptions extends BlockRangeOption {
-    /**
-     * EVM function selector like here https://www.4byte.directory/signatures/
-     */
-    selector?: EvmSelector
-}
-
-
 export type EvmTopicSet = string | null | undefined | string[]
-export type EvmSelector = string
 
 
 export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest = {event: true}>

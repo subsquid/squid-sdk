@@ -1,4 +1,4 @@
-import {EvmSelector, EvmTopicSet} from "../interfaces/dataHandlers"
+import {EvmTopicSet} from "../interfaces/dataHandlers"
 import {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
 
 
@@ -48,14 +48,14 @@ type AcalaEvmExecutedReq = {
 
 type AcalaEvmCallReq = {
     contract: string
-    selector?: EvmSelector
+    sighash?: string
     data?: CallDataRequest
 }
 
 
 type AcalaEvmEthCallReq = {
     contract: string
-    selector?: EvmSelector
+    sighash?: string
     data?: CallDataRequest
 }
 

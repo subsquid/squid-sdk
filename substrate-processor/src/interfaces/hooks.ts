@@ -12,7 +12,6 @@ import {
     AcalaEvmCallHandler,
     AcalaEvmEthCallHandler,
     EvmTopicSet,
-    EvmSelector
 } from "./dataHandlers"
 import {CallDataRequest, EventDataRequest} from "./dataSelection"
 import {QualifiedName} from "./substrate"
@@ -51,33 +50,6 @@ export interface EvmLogHook {
 }
 
 
-export interface AcalaEvmExecutedHook {
-    handler: AcalaEvmExecutedHandler<any>
-    contractAddress: string
-    filter?: EvmTopicSet[]
-    data?: EventDataRequest
-    range?: Range
-}
-
-
-export interface AcalaEvmCallHook {
-    handler: AcalaEvmCallHandler<any>
-    contractAddress: string
-    selector?: EvmSelector
-    data?: CallDataRequest
-    range?: Range
-}
-
-
-export interface AcalaEvmEthCallHook {
-    handler: AcalaEvmEthCallHandler<any>
-    contractAddress: string
-    selector?: EvmSelector
-    data?: CallDataRequest
-    range?: Range
-}
-
-
 export interface ContractsContractEmittedHook {
     handler: ContractsContractEmittedHandler<any>,
     contractAddress: string
@@ -98,6 +70,35 @@ export interface GearUserMessageSentHook {
     handler: GearUserMessageSentHandler<any>,
     programId: string
     data?: EventDataRequest
+    range?: Range
+}
+
+
+export interface AcalaEvmExecutedHook {
+    handler: AcalaEvmExecutedHandler<any>
+    contractAddress: string
+    filter?: EvmTopicSet[]
+    data?: EventDataRequest
+    range?: Range
+}
+
+
+export interface AcalaEvmCallHook {
+    handler: AcalaEvmCallHandler<any>
+    contractAddress: string
+    sighash?: string
+    triggerForFailedCalls?: boolean
+    data?: CallDataRequest
+    range?: Range
+}
+
+
+export interface AcalaEvmEthCallHook {
+    handler: AcalaEvmEthCallHandler<any>
+    contractAddress: string
+    sighash?: string
+    triggerForFailedCalls?: boolean
+    data?: CallDataRequest
     range?: Range
 }
 

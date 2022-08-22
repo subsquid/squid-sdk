@@ -9,10 +9,12 @@ export interface BatchRequest {
     events?: ObjectRequest[]
     calls?: ObjectRequest[]
     evmLogs?: EvmLogRequest[]
-    evmExecuted?: EvmExecutedRequest[]
     contractsEvents?: ContractsEventRequest[]
     gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
+    acalaEvmExecuted?: AcalaEvmExecutedRequest[]
+    acalaEvmCall?: AcalaEvmCallRequest[]
+    acalaEvmEthCall?: AcalaEvmEthCallRequest[]
 }
 
 
@@ -23,13 +25,6 @@ export interface ObjectRequest {
 
 
 export interface EvmLogRequest {
-    contract: string
-    filter?: string[][]
-    data?: any
-}
-
-
-export interface EvmExecutedRequest {
     contract: string
     filter?: string[][]
     data?: any
@@ -50,6 +45,27 @@ export interface GearMessageEnqueuedRequest {
 
 export interface GearUserMessageSentRequest {
     program: string
+    data?: any
+}
+
+
+export interface AcalaEvmExecutedRequest {
+    contract: string
+    filter?: string[][]
+    data?: any
+}
+
+
+export interface AcalaEvmCallRequest {
+    contract: string
+    sighash?: string
+    data?: any
+}
+
+
+export interface AcalaEvmEthCallRequest {
+    contract: string
+    sighash?: string
     data?: any
 }
 

@@ -10,8 +10,8 @@ import type {
     BlockRangeOption,
     EvmLogOptions,
     AcalaEvmExecutedOptions,
-    AcalaEvmCallOptions,
-    AcalaEvmEthCallOptions
+    AcalaEvmCallHandlerOptions,
+    AcalaEvmEthCallHandlerOptions
 } from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
@@ -397,33 +397,34 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     /**
      * Similar to {@link .addCall},
      * but requests `EVM.call` calls belonging to particular contract
-     * with an option to filter them by selector.
+     * with an option to filter them by contract address and sighash.
      *
      * @example
-     * // request ERC20 transfers from Acala contract
-     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000001', {
-     *     selector: '0x095ea7b3'
-     * })
+     * // process EVM calls to Acala ERC20 contract `0x0000000000000000000100000000000000000001`
+     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000001')
+     *
+     * // process EVM calls with signature `approve(address,uint256)`
+     * processor.addAcalaEvmCall('*', {sighash: '0x095ea7b3'})
      */
     addAcalaEvmCall(
         contractAddress: string,
-        options?: AcalaEvmCallOptions & NoDataSelection
+        options?: AcalaEvmCallHandlerOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", true>>>
 
     addAcalaEvmCall<R extends CallDataRequest>(
         contractAddress: string,
-        options: AcalaEvmCallOptions & DataSelection<R>
+        options: AcalaEvmCallHandlerOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", R>>>
 
     addAcalaEvmCall(
         contractAddress: string,
-        options?: AcalaEvmCallOptions & MayBeDataSelection<CallDataRequest>
+        options?: AcalaEvmCallHandlerOptions & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.acalaEvmCall.push({
             contract: contractAddress.toLowerCase(),
-            selector: options?.selector,
+            sighash: options?.sighash,
             data: options?.data
         })
         this.add(req, options?.range)
@@ -434,33 +435,34 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     /**
      * Similar to {@link .addCall},
      * but requests `EVM.eth_call` calls belonging to particular contract
-     * with an option to filter them by selector.
+     * with an option to filter them by contract address and sighash.
      *
      * @example
-     * // request ERC20 transfers from Karura contract
-     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000080', {
-     *     selector: '0x095ea7b3'
-     * })
+     * // process EVM calls to Karura ERC20 contract `0x0000000000000000000100000000000000000080`
+     * processor.addAcalaEvmEthCallHandler('0x0000000000000000000100000000000000000080')
+     *
+     * // process EVM calls with signature `approve(address,uint256)`
+     * processor.addAcalaEvmEthCallHandler('*', {sighash: '0x095ea7b3'})
      */
     addAcalaEvmEthCall(
         contractAddress: string,
-        options?: AcalaEvmEthCallOptions & NoDataSelection
+        options?: AcalaEvmEthCallHandlerOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", true>>>
 
     addAcalaEvmEthCall<R extends CallDataRequest>(
         contractAddress: string,
-        options: AcalaEvmEthCallOptions & DataSelection<R>
+        options: AcalaEvmEthCallHandlerOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", R>>>
 
     addAcalaEvmEthCall(
         contractAddress: string,
-        options?: AcalaEvmEthCallOptions & MayBeDataSelection<CallDataRequest>
+        options?: AcalaEvmEthCallHandlerOptions & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         req.acalaEvmCall.push({
             contract: contractAddress.toLowerCase(),
-            selector: options?.selector,
+            sighash: options?.sighash,
             data: options?.data
         })
         this.add(req, options?.range)
