@@ -1,0 +1,17 @@
+name: tag npm packages
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: A tag to add to all npm packages
+        required: true
+
+jobs:
+  test:
+    name: tag npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Add tags
+        run: ./ops/npm-tag.sh ${{ inputs.tag }}

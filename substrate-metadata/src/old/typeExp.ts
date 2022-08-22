@@ -137,7 +137,7 @@ class TypeExpParser {
     private namedType(): NamedType | null {
         let name: string
         let trait: string | undefined
-        let item: string | undefined
+        let item: string | undefined | null
         if (this.tok('<')) {
             name = this.assertNamedType().name
             this.assertTok('as')
@@ -148,9 +148,7 @@ class TypeExpParser {
             if (nameTok == null) return null
             name = nameTok
         }
-        while (this.tok('::')) {
-            item = this.assertName()
-        }
+        while (this.tok('::') && (item = this.name())) {}
         if (name == 'InherentOfflineReport' && name == trait && item == 'Inherent') {
         } else if (name == 'exec' && item == 'StorageKey') {
             name = 'ContractStorageKey'

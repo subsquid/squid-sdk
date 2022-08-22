@@ -18,7 +18,9 @@ import type {
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
-    EvmTopicSet
+    EvmTopicSet,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
 } from "../interfaces/dataHandlers"
 import type {
     CallDataRequest,
@@ -29,7 +31,14 @@ import type {
 } from "../interfaces/dataSelection"
 import type {Database} from "../interfaces/db"
 import type {Hooks} from "../interfaces/hooks"
-import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateCall, SubstrateEvent} from "../interfaces/substrate"
+import type {
+    ContractsContractEmittedEvent,
+    GearMessageEnqueuedEvent,
+    GearUserMessageSentEvent,
+    EvmLogEvent,
+    SubstrateCall,
+    SubstrateEvent
+} from "../interfaces/substrate"
 import {withErrorContext} from "../util/misc"
 import type {Range} from "../util/range"
 import {Options, Runner} from "./runner"
@@ -51,7 +60,16 @@ export interface DataSource {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateProcessor<Store> {
-    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: [], contractsContractEmitted: []}
+    protected hooks: Hooks = {
+        pre: [],
+        post: [],
+        event: [],
+        call: [],
+        evmLog: [],
+        contractsContractEmitted: [],
+        gearMessageEnqueued: [],
+        gearUserMessageSent: [],
+    }
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -526,6 +544,92 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `Gear.MessageEnqueued` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearMessageEnqueuedEvent | event type} and selects
+     * events by program id.
+     */
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearMessageEnqueuedHandler<Store, R>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fnOrOptions: GearMessageEnqueuedHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearMessageEnqueuedHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: GearMessageEnqueuedHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearMessageEnqueued.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
+    }
+
+    /**
+     * Registers `Gear.UserMessageSent` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearUserMessageSentEvent | event type} and selects
+     * events by program id.
+     */
+    addGearUserMessageSentHandler(
+        programId: string,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearUserMessageSentHandler<Store, R>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        fnOrOptions: GearUserMessageSentHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearUserMessageSentHandler<Store>
+    ): this{
+        this.assertNotRunning()
+        let handler: GearUserMessageSentHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearUserMessageSent.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -594,6 +698,24 @@ export class SubstrateProcessor<Store> {
             let request = new DataHandlers()
             request.contractsContractEmitted = {
                 [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearMessageEnqueued.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearMessageEnqueued = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearUserMessageSent.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearUserMessageSent = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
             }
             batches.push({range, request})
         })
@@ -720,7 +842,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let event = item.event as EvmLogEvent
                         let log = blockLog.child({
                             hook: 'evm-log',
-                            contractAddress: event.args.address,
+                            contractAddress: event.args.address || event.args.log.address,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -736,6 +858,36 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let log = blockLog.child({
                             hook: 'contract-emitted',
                             contractAddress: event.args.contract,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getGearMessageEnqueuedHandlers(handlers, item.event)) {
+                        let event = item.event as GearMessageEnqueuedEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-enqueued',
+                            programId: event.args.destination,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getGearUserMessageSentHandlers(handlers, item.event)) {
+                        let event = item.event as GearUserMessageSentEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-sent',
+                            programId: event.args.message.source,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -802,7 +954,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractAddress = assertNotNull(log.args?.address)
+        let contractAddress = assertNotNull(log.args.address || log.args.log.address)
         let contractHandlers = evmLogs[contractAddress]
         if (contractHandlers == null) return
 
@@ -818,8 +970,10 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
-            if (Array.isArray(set) && !set.includes(log.args.topics[i])) {
-                return false
+            if (Array.isArray(set)) {
+                if (!set.includes(log.args.topics[i])) {
+                    return false
+                }
             } else if (set !== log.args.topics[i]) {
                 return false
             }
@@ -832,6 +986,30 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         let e = event as ContractsContractEmittedEvent
 
         let hs = handlers.contractsContractEmitted[e.args.contract]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+
+    private *getGearMessageEnqueuedHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearMessageEnqueuedHandler<any>> {
+        if (event.name != 'Gear.MessageEnqueued') return
+        let e = event as GearMessageEnqueuedEvent
+
+        let hs = handlers.gearMessageEnqueued[e.args.destination]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+
+    private *getGearUserMessageSentHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearUserMessageSentHandler<any>> {
+        if (event.name != 'Gear.UserMessageSent') return
+        let e = event as GearUserMessageSentEvent
+
+        let hs = handlers.gearUserMessageSent[e.args.message.source]
         if (hs == null) return
 
         for (let h of hs.handlers) {

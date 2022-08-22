@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "dist",
+        "outDir": "lib",
         "module": "commonjs",
         "target": "ES2020",
         "strict": true,
@@ -9,7 +9,11 @@
         "sourceMap": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "noImplicitAny": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "experimentalDecorators": true
     },
     "include": ["src"],
     "exclude": ["node_modules"]

@@ -69,7 +69,7 @@ describe('transfer tests', function () {
         })
     })
 
-    it('can find transfers by full-text search', function () {
+    it.skip('can find transfers by full-text search', function () {
         return gql.test(`
             query {
                 comments: commentSearch(text: "transfer" limit: 1) {

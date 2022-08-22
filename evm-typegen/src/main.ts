@@ -1,9 +1,9 @@
-import {program} from "commander";
-import process from "process";
-import path from "path";
-import fs from "fs";
-import {Output} from "@subsquid/util-internal-code-printer";
-import {EventFragment, FunctionFragment, Interface, ParamType} from "@ethersproject/abi";
+import {EventFragment, Interface, ParamType} from "@ethersproject/abi"
+import {Output} from "@subsquid/util-internal-code-printer"
+import {program} from "commander"
+import fs from "fs"
+import path from "path"
+import process from "process"
 
 export function run(): void {
     program.description(`
@@ -55,9 +55,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     const typeNames: {[key: string]: number} = {};
 
     const abiEvents: Array<AbiEvent> = Object.values(abi.events).map((event: EventFragment): AbiEvent => {
-        let signature = `${event.name}(`;
         let eventTypeName = `${event.name}`;
-
         if (typeNames[event.name]) {
             eventTypeName += typeNames[event.name].toString();
             typeNames[event.name]++;
@@ -65,16 +63,16 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             eventTypeName += "0";
             typeNames[event.name] = 1;
         }
+        eventTypeName += 'Event'
 
+        let signature = `${event.name}(`;
         if (event.inputs.length > 0) {
             signature += event.inputs[0].type;
         }
-
         for (let i = 1; i < event.inputs.length; ++i) {
             const input = event.inputs[i];
             signature += `,${input.type}`;
         }
-
         signature += ")";
 
         return {
@@ -85,11 +83,7 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
     });
 
     for (const decl of abiEvents) {
-        output.block(`export interface ${decl.eventTypeName}Event`, () => {
-            for (const input of decl.inputs) {
-                output.line(`${input.name}: ${getType(input)};`);
-            }
-        });
+        output.line(`export type ${decl.eventTypeName} = ${getTupleType(decl.inputs)}`)
         output.line("");
     }
 
@@ -100,24 +94,24 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.line();
 
+    output.block(`function decodeEvent(signature: string, data: EvmEvent): any`, () => {
+        output.line(`return abi.decodeEventLog(`);
+        output.indentation(() => {
+            output.line(`abi.getEvent(signature),`);
+            output.line(`data.data || "",`);
+            output.line("data.topics");
+        });
+        output.line(");");
+    });
+
+    output.line();
+
     output.block("export const events =", () => {
         for (const decl of abiEvents) {
-            output.block(`"${decl.signature}": `, () => {
+            output.block(`"${decl.signature}":`, () => {
                 output.line(`topic: abi.getEventTopic("${decl.signature}"),`);
-                output.block(`decode(data: EvmEvent): ${decl.eventTypeName}Event`, () => {
-                    output.line(`const result = abi.decodeEventLog(`);
-                    output.indentation(() => {
-                        output.line(`abi.getEvent("${decl.signature}"),`);
-                        output.line(`data.data || "",`);
-                        output.line("data.topics");
-                    });
-                    output.line(");");
-                    output.block("return ", () => {
-                        for (let i = 0; i < decl.inputs.length; ++i) {
-                            const input = decl.inputs[i];
-                            output.line(`${input.name}: ${`result[${i}]`},`);
-                        }
-                    });
+                output.block(`decode(data: EvmEvent): ${decl.eventTypeName}`, () => {
+                    output.line(`return decodeEvent("${decl.signature}", data)`);
                 });
             });
             output.line(",");
@@ -126,15 +120,27 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 
     output.line();
 
-    const abiFunctions: Array<AbiFunction> = Object.values(abi.functions)
-        .filter((func: FunctionFragment) => func.constant && func.outputs != null)
-        .map((func): AbiFunction => {
-            return {
+    let abiFunctions: Map<string, AbiFunction> = new Map()
+    for (let func of Object.values(abi.functions)) {
+        if (!func.constant || func.outputs == null) continue
+
+        let abiFunction = abiFunctions.get(func.name)
+        if (abiFunction == null) {
+            abiFunction = {
                 name: func.name,
-                inputs: func.inputs,
-                outputs: func.outputs || []
-            };
-        });
+                overloads: []
+            }
+            abiFunctions.set(func.name, abiFunction)
+        }
+
+        let returnTypeName = func.outputs.length == 1 ? getType(func.outputs[0]) : getTupleType(func.outputs)
+
+        abiFunction.overloads.push({
+            inputs: func.inputs,
+            outputs: func.outputs || [],
+            returnTypeName
+        })
+    }
 
     output.block("interface ChainContext ", () => {
         output.line(`_chain: Chain`);
@@ -175,32 +181,33 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
             })
         })
         output.line();
-        output.block(`private async call(name: string, args: any[]) : Promise<ReadonlyArray<any>>`, () => {
+        for (const decl of abiFunctions.values()) {
+            if (decl.overloads.length > 1) {
+                for (let overload of decl.overloads) {
+                    const args = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
+                    const returnType = overload.returnTypeName
+                    output.line(`async ${decl.name}(${args}): Promise<${returnType}>`)
+                }
+                output.block(`async ${decl.name}(...args: any[])`, () => {
+                    output.line(`return this.call("${decl.name}", args)`);
+                });
+            } else {
+                const overload = decl.overloads[0]
+                const params = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
+                const returnType = overload.returnTypeName
+                output.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
+                    output.line(`return this.call("${decl.name}", [${overload.inputs.map((i, n) => `${i.name || `arg${n}`}`).join(`, `)}])`);
+                });
+            }
+            output.line();
+        }
+        output.block(`private async call(name: string, args: any[]) : Promise<any>`, () => {
             output.line(`const fragment = abi.getFunction(name)`);
             output.line(`const data = abi.encodeFunctionData(fragment, args)`);
             output.line(`const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`);
-            output.line(`return abi.decodeFunctionResult(fragment, result)`);
+            output.line(`const decoded = abi.decodeFunctionResult(fragment, result)`);
+            output.line(`return decoded.length > 1 ? decoded : decoded[0]`);
         })
-        for (const decl of abiFunctions) {
-            const params = decl.inputs.map((i) => `${i.name}: ${getType(i)}`)
-            const returnType = decl.outputs.length > 1
-                ? `{${decl.outputs.map((i) => `${i.name}: ${getType(i)}`)}}`
-                : getType(decl.outputs[0])
-            output.line();
-            output.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
-                output.line(`const result = await this.call("${decl.name}", [${decl.inputs.map((i) => `${i.name}`).join(`, `)}])`);
-                if (decl.outputs.length > 1) {
-                    output.block("return ", () => {
-                        for (let i = 0; i < decl.outputs.length; ++i) {
-                            const out = decl.outputs[i];
-                            output.line(`${out.name}: ${`result[${i}]`},`);
-                        }
-                    });
-                } else {
-                    output.line(`return result[0]`);
-                }
-            });
-        }
     })
 
     output.line();
@@ -215,25 +222,22 @@ function generateTsFromAbi(inputPathRaw: string, outputPathRaw: string): void {
 }
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
-function getType(param: ParamType, flexible?: boolean): string {
-    if (param.type === "address" || param.type === "string") {return "string";}
+function getType(param: ParamType): string {
+    if (param.type === "address" || param.type === "string") {
+        return "string"
+    }
 
-    if (param.type === "bool") {return "boolean"}
+    if (param.type === "bool") {
+        return "boolean"
+    }
 
     if (param.type.substring(0, 5) === "bytes") {
-        if (flexible) {
-            return "string | ethers.utils.BytesLike";
-        }
         return "string"
     }
 
     let match = param.type.match(/^(u?int)([0-9]+)$/)
     if (match) {
-        if (flexible) {
-            return "ethers.BigNumberish";
-        }
-        if (parseInt(match[2]) < 53) {return 'number';}
-        return 'ethers.BigNumber';
+        return parseInt(match[2]) < 53 ? 'number' : 'ethers.BigNumber'
     }
 
     if (param.baseType === "array") {
@@ -241,11 +245,35 @@ function getType(param: ParamType, flexible?: boolean): string {
     }
 
     if (param.baseType === "tuple") {
-        let struct = param.components.map((p, i) => `${p.name || "p_" + i}: ${getType(p, flexible)}`);
-        return "{ " + struct.join(", ") + " }";
+        return getTupleType(param.components);
     }
 
     throw new Error("unknown type");
+}
+
+function getTupleType(params: ParamType[]) {
+    let tuple = '[' + params.map(p => {
+        return p.name ? `${p.name}: ${getType(p)}` : getType(p)
+    }).join(', ') + ']'
+
+    let fields = getStructFields(params)
+    if (fields.length == 0) return tuple
+
+    let struct = '{' + fields.map(f => `${f.name}: ${getType(f)}`).join(', ') + '}'
+
+    return `(${tuple} & ${struct})`
+}
+
+// https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/abi/src.ts/coders/tuple.ts#L29
+function getStructFields(params: ParamType[]): ParamType[] {
+    let array: any = []
+    let counts: Record<string, number> = {}
+    for (let p of params) {
+        if (p.name && array[p.name] == null) {
+            counts[p.name] = (counts[p.name] || 0) + 1
+        }
+    }
+    return params.filter(p => counts[p.name] == 1)
 }
 
 interface AbiEvent {
@@ -256,6 +284,9 @@ interface AbiEvent {
 
 interface AbiFunction {
     name: string;
-    inputs: ParamType[];
-    outputs: ParamType[];
+    overloads: {
+        inputs: ParamType[];
+        outputs: ParamType[];
+        returnTypeName?: string;
+    }[]
 }

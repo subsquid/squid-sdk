@@ -1,5 +1,5 @@
 import {DatabaseType} from "typeorm/driver/types/DatabaseType";
-import type {Entity, Enum, JsonObject, Model, Prop, Union} from "@subsquid/openreader/dist/model"
+import type {Entity, Enum, JsonObject, Model, Prop, Union} from "@subsquid/openreader/lib/model"
 import {unexpectedCase} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"

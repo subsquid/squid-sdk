@@ -2,6 +2,44 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/graphql-server_v2.0.0",
+      "date": "Wed, 17 Aug 2022 17:33:52 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "new reworked implementation"
+          },
+          {
+            "comment": "temporarily disable fulltext search queries"
+          },
+          {
+            "comment": "support GraphQL subscriptions"
+          },
+          {
+            "comment": "support `--sql-statement-timeout` option"
+          },
+          {
+            "comment": "support `--max-request-size` option"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^1.0.3` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.2` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/graphql-server_v1.1.0",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

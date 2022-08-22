@@ -1,9 +1,8 @@
-import {toHex} from "@subsquid/util-internal-hex"
 import {Progress, Speed} from "@subsquid/util-internal-counters"
+import {toHex} from "@subsquid/util-internal-hex"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
-import {extractEthereumTxContract} from "./parse/util"
 import {toJSON, toJsonString} from "./util"
 import WritableStream = NodeJS.WritableStream
 
@@ -21,13 +20,25 @@ export interface PostgresSinkOptions {
 }
 
 
-interface IndexedEvent extends Event {
-    contract?: string
+interface FrontierEvmLog {
+    event_id: string
+    contract: string
+    topic0: string
+    topic1?: string
+    topic2?: string
+    topic3?: string
 }
 
 
-interface IndexedCall extends Call {
-    contract?: string
+interface GearMessage {
+    event_id: string
+    program: string
+}
+
+
+interface ContractsContractEmitted {
+    event_id: string
+    contract: string
 }
 
 
@@ -46,6 +57,8 @@ export class PostgresSink implements Sink {
         height: {cast: 'int'},
         hash: {cast: 'text'},
         parent_hash: {cast: 'text'},
+        state_root: {cast: 'text'},
+        extrinsics_root: {cast: 'text'},
         timestamp: {cast: 'timestamptz'},
         spec_id: {cast: 'text'},
         validator: {cast: 'text'}
@@ -66,7 +79,7 @@ export class PostgresSink implements Sink {
         hash: {cast: 'text', map: toJSON}
     })
 
-    private callInsert = new Insert<IndexedCall>('call', {
+    private callInsert = new Insert<Call>('call', {
         id: {cast: 'text'},
         parent_id: {cast: 'text'},
         block_id: {cast: 'text'},
@@ -76,11 +89,10 @@ export class PostgresSink implements Sink {
         args: {map: toJsonString, cast: 'jsonb'},
         success: {cast: 'bool'},
         error: {map: toJsonString, cast: 'jsonb'},
-        pos: {cast: 'int'},
-        contract: {cast: 'text'}
+        pos: {cast: 'int'}
     })
 
-    private eventInsert = new Insert<IndexedEvent>('event', {
+    private eventInsert = new Insert<Event>('event', {
         id: {cast: 'text'},
         block_id: {cast: 'text'},
         index_in_block: {cast: 'int'},
@@ -89,13 +101,36 @@ export class PostgresSink implements Sink {
         call_id: {cast: 'text'},
         name: {cast: 'text'},
         args: {map: toJsonString, cast: 'jsonb'},
-        pos: {cast: 'int'},
-        contract: {cast: 'text'}
+        pos: {cast: 'int'}
     })
 
     private warningInsert = new Insert<Warning>('warning', {
         block_id: {cast: 'text'},
         message: {cast: 'text'}
+    })
+
+    private frontierEvmLogInsert = new Insert<FrontierEvmLog>('frontier_evm_log', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
+    })
+
+    private contractsContractEmittedInsert = new Insert<ContractsContractEmitted>('contracts_contract_emitted', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'}
+    })
+
+    private gearMessageEnqueuedInsert = new Insert<GearMessage>('gear_message_enqueued', {
+        event_id: {cast: 'text'},
+        program: {cast: 'text'}
+    })
+
+    private gearUserMessageSentInsert = new Insert<GearMessage>('gear_user_message_sent', {
+        event_id: {cast: 'text'},
+        program: {cast: 'text'}
     })
 
     private db: pg.ClientBase
@@ -128,37 +163,47 @@ export class PostgresSink implements Sink {
 
     private insertEvents(events: Event[]): void {
         for (let event of events) {
-            this.eventInsert.add(this.mapEvent(event))
-        }
-    }
-
-    private mapEvent(event: Event): IndexedEvent {
-        switch(event.name) {
-            case 'EVM.Log':
-                return {...event, contract: toHex(event.args.address)}
-            case 'Contracts.ContractEmitted':
-                return {...event, contract: toHex(event.args.contract)}
-            case 'Gear.MessageEnqueued':
-                return {...event, contract: toHex(event.args.destination)}
-            case 'Gear.UserMessageSent':
-                return {...event, contract: toHex(event.args.message.source)}
-            default:
-                return event
+            this.eventInsert.add(event)
+            switch(event.name) {
+                case 'EVM.Log': {
+                    let log: {
+                        address: Uint8Array,
+                        topics: Uint8Array[]
+                    } = event.args.address ? event.args : event.args.log
+                    this.frontierEvmLogInsert.add({
+                        event_id: event.id,
+                        contract: toHex(log.address),
+                        topic0: log.topics[0] && toHex(log.topics[0]),
+                        topic1: log.topics[1] && toHex(log.topics[1]),
+                        topic2: log.topics[2] && toHex(log.topics[2]),
+                        topic3: log.topics[3] && toHex(log.topics[3])
+                    })
+                    break
+                }
+                case 'Contracts.ContractEmitted':
+                    this.contractsContractEmittedInsert.add({
+                        event_id: event.id,
+                        contract: toHex(event.args.contract)
+                    })
+                    break
+                case 'Gear.MessageEnqueued':
+                    this.gearMessageEnqueuedInsert.add({
+                        event_id: event.id,
+                        program: toHex(event.args.destination)
+                    })
+                    break
+                case 'Gear.UserMessageSent':
+                    this.gearUserMessageSentInsert.add({
+                        event_id: event.id,
+                        program: toHex(event.args.message.source)
+                    })
+            }
         }
     }
 
     private insertCalls(calls: Call[]): void {
         for (let call of calls) {
-            this.callInsert.add(this.mapCall(call))
-        }
-    }
-
-    private mapCall(call: Call): IndexedCall {
-        switch(call.name) {
-            case 'Ethereum.transact':
-                return {...call, contract: extractEthereumTxContract(call.args.transaction)}
-            default:
-                return call
+            this.callInsert.add(call)
         }
     }
 
@@ -171,6 +216,10 @@ export class PostgresSink implements Sink {
         let callInsert = this.callInsert.take()
         let eventInsert = this.eventInsert.take()
         let warningInsert = this.warningInsert.take()
+        let frontierEvmLogInsert = this.frontierEvmLogInsert.take()
+        let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
+        let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
+        let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
         await this.tx(async () => {
             await metadataInsert.query(this.db)
             await headerInsert.query(this.db)
@@ -178,6 +227,10 @@ export class PostgresSink implements Sink {
             await callInsert.query(this.db)
             await eventInsert.query(this.db)
             await warningInsert.query(this.db)
+            await frontierEvmLogInsert.query(this.db)
+            await contractsContractEmittedInsert.query(this.db)
+            await gearMessageEnqueuedInsert.query(this.db)
+            await gearUserMessageSentInsert.query(this.db)
         })
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()

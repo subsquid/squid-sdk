@@ -151,11 +151,6 @@ export interface SubstrateCall {
 export interface EvmLogEvent extends SubstrateApplyExtrinsicEvent {
     name: 'EVM.Log'
     evmTxHash: string
-    args: {
-        address: string
-        topics: string[]
-        data: string
-    }
 }
 
 
@@ -165,4 +160,14 @@ export interface ContractsContractEmittedEvent extends SubstrateApplyExtrinsicEv
         contract: string,
         data: string,
     }
+}
+
+
+export interface GearMessageEnqueuedEvent extends SubstrateApplyExtrinsicEvent {
+    name: 'Gear.MessageEnqueued'
+}
+
+
+export interface GearUserMessageSentEvent extends SubstrateFinalizationEvent {
+    name: 'Gear.UserMessageSent'
 }

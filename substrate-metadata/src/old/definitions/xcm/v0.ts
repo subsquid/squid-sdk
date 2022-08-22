@@ -2,7 +2,7 @@ import {OldTypes} from "../../types"
 
 
 export const V0: OldTypes['types'] = {
-    AssetInstanceV0: {
+    XcmAssetInstanceV0: {
         _enum: {
             Undefined: 'Null',
             Index8: 'u8',
@@ -17,7 +17,7 @@ export const V0: OldTypes['types'] = {
             Blob: 'Vec<u8>'
         }
     },
-    NetworkIdV0: {
+    XcmNetworkIdV0: {
         _enum: {
             Any: 'Null',
             Named: 'Vec<u8>',
@@ -25,7 +25,7 @@ export const V0: OldTypes['types'] = {
             Kusama: 'Null'
         }
     },
-    BodyIdV0: {
+    XcmBodyIdV0: {
         _enum: {
             Unit: 'Null',
             Named: 'Vec<u8>',
@@ -36,7 +36,7 @@ export const V0: OldTypes['types'] = {
             Judicial: 'Null'
         }
     },
-    BodyPartV0: {
+    XcmBodyPartV0: {
         _enum: {
             Voice: 'Null',
             Members: 'Compact<u32>',
@@ -54,20 +54,20 @@ export const V0: OldTypes['types'] = {
             }
         }
     },
-    JunctionV0: {
+    XcmJunctionV0: {
         _enum: {
             Parent: 'Null',
             Parachain: 'Compact<u32>',
             AccountId32: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 id: '[u8; 32]'
             },
             AccountIndex64: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 index: 'Compact<u64>'
             },
             AccountKey20: {
-                network: 'NetworkIdV0',
+                network: 'XcmNetworkIdV0',
                 key: '[u8; 20]'
             },
             PalletInstance: 'u8',
@@ -75,8 +75,8 @@ export const V0: OldTypes['types'] = {
             GeneralKey: 'Vec<u8>',
             OnlyChild: 'Null',
             Plurality: {
-                id: 'BodyIdV0',
-                part: 'BodyPartV0'
+                id: 'XcmBodyIdV0',
+                part: 'XcmBodyPartV0'
             }
         }
     },
@@ -96,7 +96,7 @@ export const V0: OldTypes['types'] = {
             },
             AbstractNonFungible: {
                 class: 'Vec<u8>',
-                instance: 'AssetInstanceV0'
+                instance: 'XcmAssetInstanceV0'
             },
             ConcreteFungible: {
                 id: 'MultiLocationV0',
@@ -104,27 +104,27 @@ export const V0: OldTypes['types'] = {
             },
             ConcreteNonFungible: {
                 class: 'MultiLocationV0',
-                instance: 'AssetInstanceV0'
+                instance: 'XcmAssetInstanceV0'
             }
         }
     },
     MultiLocationV0: {
         _enum: {
             Here: 'Null',
-            X1: 'JunctionV0',
-            X2: '(JunctionV0, JunctionV0)',
-            X3: '(JunctionV0, JunctionV0, JunctionV0)',
-            X4: '(JunctionV0, JunctionV0, JunctionV0, JunctionV0)',
-            X5: '(JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0)',
-            X6: '(JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0)',
-            X7: '(JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0)',
-            X8: '(JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0, JunctionV0)'
+            X1: 'XcmJunctionV0',
+            X2: '(XcmJunctionV0, XcmJunctionV0)',
+            X3: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)',
+            X4: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)',
+            X5: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)',
+            X6: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)',
+            X7: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)',
+            X8: '(XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0, XcmJunctionV0)'
         }
     },
-    OriginKindV0: {
+    XcmOriginKindV0: {
         _enum: ['Native', 'SovereignAccount', 'Superuser', 'Xcm']
     },
-    ResponseV0: {
+    XcmResponseV0: {
         _enum: {
             Assets: 'Vec<MultiAssetV0>'
         }
@@ -139,13 +139,13 @@ export const V0: OldTypes['types'] = {
                 assets: 'Vec<MultiAssetV0>',
                 effects: 'Vec<XcmOrderV0>'
             },
-            ReceiveTeleportedAsset: {
+            TeleportAsset: {
                 assets: 'Vec<MultiAssetV0>',
                 effects: 'Vec<XcmOrderV0>'
             },
             QueryResponse: {
                 queryId: 'Compact<u64>',
-                response: 'ResponseV0'
+                response: 'XcmResponseV0'
             },
             TransferAsset: {
                 assets: 'Vec<MultiAssetV0>',
@@ -157,7 +157,7 @@ export const V0: OldTypes['types'] = {
                 effects: 'Vec<XcmOrderV0>'
             },
             Transact: {
-                originType: 'OriginKindV0',
+                originType: 'XcmOriginKindV0',
                 requireWeightAtMost: 'u64',
                 call: 'Vec<u8>'
             },
@@ -193,7 +193,7 @@ export const V0: OldTypes['types'] = {
             UntrustedTeleportLocation: 'Null',
             DestinationBufferOverflow: 'Null',
             SendFailed: 'Null',
-            CannotReachDestination: '(MultiLocation, Xcm)',
+            CannotReachDestination: '(MultiLocationV0, XcmV0)',
             MultiLocationFull: 'Null',
             FailedToDecode: 'Null',
             BadOrigin: 'Null',
@@ -250,6 +250,13 @@ export const V0: OldTypes['types'] = {
                 haltOnError: 'bool',
                 xcm: 'Vec<XcmV0>'
             }
+        }
+    },
+    XcmOutcomeV0: {
+        _enum: {
+            Complete: "u64",
+            Incomplete: "(u64, XcmErrorV0)",
+            Error: "XcmErrorV0"
         }
     }
 }

@@ -1,159 +1,129 @@
-import {mergeResolvers} from "@graphql-tools/merge"
-import {createPoolConfig, PoolTransaction} from "@subsquid/openreader/dist/db"
-import {Dialect} from "@subsquid/openreader/dist/dialect"
-import {buildServerSchema} from "@subsquid/openreader/dist/gql/opencrud"
-import type {Model} from "@subsquid/openreader/dist/model"
-import {buildResolvers, ResolverContext} from "@subsquid/openreader/dist/resolver"
-import {listen, ListeningServer, setupGraphiqlConsole} from "@subsquid/openreader/dist/server"
-import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/dist/tools"
-import {assertNotNull, def} from "@subsquid/util-internal"
-import {ApolloServerPluginDrainHttpServer, PluginDefinition} from "apollo-server-core"
-import {ApolloServer, ApolloServerExpressConfig} from "apollo-server-express"
+import {mergeSchemas} from "@graphql-tools/schema"
+import {Logger} from "@subsquid/logger"
+import {Context} from "@subsquid/openreader/lib/context"
+import {PoolOpenreaderContext} from "@subsquid/openreader/lib/db"
+import {Dialect} from "@subsquid/openreader/lib/dialect"
+import type {Model} from "@subsquid/openreader/lib/model"
+import {SchemaBuilder} from "@subsquid/openreader/lib/opencrud/schema"
+import {addServerCleanup, Dispose, runApollo} from "@subsquid/openreader/lib/server"
+import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/lib/tools"
+import {def} from "@subsquid/util-internal"
+import {ListeningServer} from "@subsquid/util-internal-http-server"
+import {PluginDefinition} from "apollo-server-core"
 import assert from "assert"
-import express from "express"
-import * as http from "http"
+import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from "graphql"
 import * as path from "path"
 import {Pool} from "pg"
 import * as process from "process"
 import type {DataSource} from "typeorm"
 import {createCheckPlugin, RequestCheckFunction} from "./check"
-import type {CustomResolvers} from "./resolvers"
-import {TypeormTransaction} from "./typeorm"
+import {loadCustomResolvers} from "./resolvers"
+import {TypeormOpenreaderContext} from "./typeorm"
+
+
+export interface ServerOptions {
+    dir?: string
+    log?: Logger
+    maxRequestSizeBytes?: number
+    sqlStatementTimeout?: number
+    squidStatus?: boolean
+    subscriptions?: boolean
+    subscriptionPollInterval?: number
+    subscriptionSqlStatementTimeout?: number
+}
 
 
 export class Server {
     private dir: string
-    private db?: Pool | DataSource
+    private disposals: Dispose[] = []
 
-    constructor(dir?: string) {
-        this.dir = path.resolve(dir || process.cwd())
-    }
-
-    path(name: string): string {
-        return path.join(this.dir, name)
-    }
-
-    run(): void {
-        this.start().then(
-            s => {
-                console.log(`Squid graphql server is listening on port ${s.port}`)
-            },
-            err => {
-                console.error(err)
-                process.exit(1)
-            }
-        )
-    }
-
-    private getPort(): number | string {
-        return process.env.GQL_PORT || process.env.GRAPHQL_SERVER_PORT || 4000
+    constructor(private options: ServerOptions = {}) {
+        this.dir = path.resolve(options.dir || process.cwd())
     }
 
     @def
-    async start(): Promise<ListeningServer> {
-        let app = this.app()
-        let cfg = await this.config()
-        let apollo = new ApolloServer(cfg)
-
-        await apollo.start()
-
-        try {
-            setupGraphiqlConsole(app)
-            apollo.applyMiddleware({app})
-            return await listen(apollo, this.httpServer(), this.getPort())
-        } catch(e: any) {
-            await apollo.stop().catch(err => {
-                e = new Error(e.stack + '\n\n' + err.stack)
-            })
-            throw e
-        }
+    start(): Promise<ListeningServer> {
+        return addServerCleanup(this.disposals, this.bootstrap(), this.options.log)
     }
 
-    @def
-    app(): express.Application {
-        return express()
-    }
-
-    @def
-    httpServer(): http.Server {
-        return http.createServer(this.app())
-    }
-
-    @def
-    async config(): Promise<ApolloServerExpressConfig> {
+    private async bootstrap(): Promise<ListeningServer> {
+        let schema = await this.schema()
+        let context = await this.context()
         let plugins: PluginDefinition[] = []
-        let typeDefs = [buildServerSchema(this.model(), this.dialect())]
-        let resolvers = buildResolvers(this.model(), this.dialect())
 
         let requestCheck = this.customCheck()
         if (requestCheck) {
             plugins.push(createCheckPlugin(requestCheck, this.model()))
         }
 
-        let context: () => ResolverContext
-
-        let customResolvers = await this.customResolvers()
-        if (customResolvers) {
-            typeDefs.push(customResolvers.typeDefs)
-            resolvers = mergeResolvers([resolvers, customResolvers.resolvers])
-            context = () => this.createTypeormResolverContext()
-        } else {
-            context = () => this.createPoolResolverContext()
-        }
-
-        plugins.push({
-            serverWillStart: async () => {
-                if (customResolvers) {
-                    this.db = await this.typeormConnection()
-                } else {
-                    this.db = this.pgPool()
-                }
-                return {
-                    serverWillStop: async () => {
-                        if (this.db == null) return
-                        if (this.db instanceof Pool) {
-                            await this.db.end()
-                        } else {
-                            await this.db.close()
-                        }
-                    }
-                }
-            },
-            async requestDidStart() {
-                return {
-                    willSendResponse(req: any) {
-                        return req.context.openReaderTransaction.close()
-                    }
-                }
-            }
-        })
-
-        plugins.push(
-            ApolloServerPluginDrainHttpServer({httpServer: this.httpServer()})
-        )
-
-        return {
-            typeDefs,
-            resolvers,
+        return runApollo({
+            port: this.port(),
+            disposals: this.disposals,
+            schema,
             context,
-            plugins
-        }
-    }
-
-    private createTypeormResolverContext(): ResolverContext {
-        let db = assertNotNull(this.db)
-        assert(!(db instanceof Pool))
-        return {openReaderTransaction: new TypeormTransaction(db)}
-    }
-
-    private createPoolResolverContext(): ResolverContext {
-        let db = assertNotNull(this.db)
-        assert(db instanceof Pool)
-        return {openReaderTransaction: new PoolTransaction(db)}
+            plugins,
+            log: this.options.log,
+            subscriptions: this.options.subscriptions,
+            graphiqlConsole: true,
+            maxRequestSizeBytes: this.options.maxRequestSizeBytes
+        })
     }
 
     @def
-    async customResolvers(): Promise<CustomResolvers | undefined> {
+    private async schema(): Promise<GraphQLSchema> {
+        let schemas = [
+            new SchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions}).build()
+        ]
+
+        if (this.options.squidStatus !== false) {
+            schemas.push(this.squidStatusSchema())
+        }
+
+        let customResolvers = await this.customResolvers()
+        if (customResolvers) {
+            schemas.push(customResolvers)
+        }
+
+        return mergeSchemas({schemas})
+    }
+
+    @def
+    private squidStatusSchema(): GraphQLSchema {
+        let statusQuery = {
+            sql: `SELECT height FROM squid_processor.status WHERE id = 0`,
+            params: [],
+            map(rows: any[][]): {height: number} {
+                assert(rows.length == 1)
+                let height = parseInt(rows[0][0], 10)
+                return {height}
+            }
+        }
+
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: {
+                    squidStatus: {
+                        type: new GraphQLObjectType({
+                            name: 'SquidStatus',
+                            fields: {
+                                height: {
+                                    type: GraphQLInt,
+                                    description: 'The height of the processed part of the chain'
+                                }
+                            }
+                        }),
+                        resolve(source, args, context: Context) {
+                            return context.openreader.executeQuery(statusQuery)
+                        }
+                    }
+                }
+            })
+        })
+    }
+
+    @def
+    private async customResolvers(): Promise<GraphQLSchema | undefined> {
         let loc = this.module('lib/server-extension/resolvers')
         if (loc == null) return undefined
         let {loadCustomResolvers} = await import('./resolvers')
@@ -161,7 +131,7 @@ export class Server {
     }
 
     @def
-    customCheck(): RequestCheckFunction | undefined {
+    private customCheck(): RequestCheckFunction | undefined {
         let loc = this.module('lib/server-extension/check')
         if (loc == null) return undefined
         let mod = require(loc)
@@ -181,22 +151,69 @@ export class Server {
     }
 
     @def
-    pgPool() {
-        let cfg = createPoolConfig()
-        return new Pool(cfg)
+    private async context(): Promise<() => Context> {
+        let dialect = this.dialect()
+        if (await this.customResolvers()) {
+            let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
+            this.disposals.push(() => con.destroy())
+            let subscriptionCon = con
+            if (this.options.subscriptions) {
+                subscriptionCon = await this.createTypeormConnection({
+                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
+                })
+                this.disposals.push(() => subscriptionCon.destroy())
+            }
+            return () => {
+                return {
+                    openreader: new TypeormOpenreaderContext(dialect, con, subscriptionCon, this.options.subscriptionPollInterval)
+                }
+            }
+        } else {
+            let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
+            this.disposals.push(() => pool.end())
+            let subscriptionPool = pool
+            if (this.options.subscriptions) {
+                subscriptionPool = await this.createPgPool({
+                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
+                })
+                this.disposals.push(() => subscriptionPool.end())
+            }
+            return () => {
+                return {
+                    openreader: new PoolOpenreaderContext(dialect, pool, subscriptionPool, this.options.subscriptionPollInterval)
+                }
+            }
+        }
     }
 
-    @def
-    async typeormConnection(): Promise<DataSource> {
+    private async createTypeormConnection(options?: ConnectionOptions): Promise<DataSource> {
         let {createOrmConfig} = await import('@subsquid/typeorm-config')
         let {DataSource} = await import('typeorm')
-        let cfg = createOrmConfig({projectDir: this.dir})
+        let cfg = {
+            ...createOrmConfig({projectDir: this.dir}),
+            extra: {
+                statement_timeout: options?.sqlStatementTimeout || undefined
+            }
+        }
         let con = new DataSource(cfg)
         await con.initialize()
         return con
     }
 
-    dialect(): Dialect {
+    private async createPgPool(options?: ConnectionOptions): Promise<Pool> {
+        let {createConnectionOptions} = await import('@subsquid/typeorm-config/lib/connectionOptions')
+        let params = createConnectionOptions()
+        return new Pool({
+            host: params.host,
+            port: params.port,
+            database: params.database,
+            user: params.username,
+            password: params.password,
+            statement_timeout: options?.sqlStatementTimeout || undefined
+        })
+    }
+
+    private dialect(): Dialect {
         let type = process.env.DB_TYPE
         if (!type) return 'postgres'
         switch(type) {
@@ -210,8 +227,21 @@ export class Server {
     }
 
     @def
-    model(): Model {
+    private model(): Model {
         let file = resolveGraphqlSchema(this.dir)
         return loadModel(file)
     }
+
+    private port(): number | string {
+        return process.env.GQL_PORT || process.env.GRAPHQL_SERVER_PORT || 4000
+    }
+
+    private path(name: string): string {
+        return path.join(this.dir, name)
+    }
+}
+
+
+interface ConnectionOptions {
+    sqlStatementTimeout?: number
 }

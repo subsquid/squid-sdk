@@ -2,29 +2,28 @@ import {OldTypes} from "../../types"
 
 
 export const V2: OldTypes['types'] = {
-    ResponseV2: {
+    XcmResponseV2: {
         _enum: {
             Null: 'Null',
             Assets: 'MultiAssetsV1',
-            ExecutionResult: 'ResponseV2Result'
+            ExecutionResult: 'Option<(u32, XcmErrorV2)>',
+            Version: 'XcmVersion'
         }
     },
-    ResponseV2Error: '(u32, XcmErrorV2)',
-    ResponseV2Result: 'Result<Null, ResponseV2Error>',
-    WeightLimitV2: {
+    XcmWeightLimitV2: {
         _enum: {
             Unlimited: 'Null',
             Limited: 'Compact<u64>'
         }
     },
-    InstructionV2: {
+    XcmInstructionV2: {
         _enum: {
             WithdrawAsset: 'MultiAssetsV1',
             ReserveAssetDeposited: 'MultiAssetsV1',
             ReceiveTeleportedAsset: 'MultiAssetsV1',
             QueryResponse: {
                 queryId: 'Compact<u64>',
-                response: 'ResponseV2',
+                response: 'XcmResponseV2',
                 maxWeight: 'Compact<u64>'
             },
             TransferAsset: {
@@ -37,8 +36,8 @@ export const V2: OldTypes['types'] = {
                 xcm: 'XcmV2'
             },
             Transact: {
-                originType: 'OriginKindV0',
-                requireWeightAtMost: 'u64',
+                originType: 'XcmOriginKindV0',
+                requireWeightAtMost: 'Compact<u64>',
                 call: 'Vec<u8>'
             },
             HrmpNewChannelOpenRequest: {
@@ -55,7 +54,7 @@ export const V2: OldTypes['types'] = {
                 recipient: 'Compact<u32>'
             },
             ClearOrigin: 'Null',
-            DescendOrigin: 'JunctionsV1',
+            DescendOrigin: 'XcmJunctionsV1',
             ReportError: {
                 queryId: 'Compact<u64>',
                 dest: 'MultiLocationV1',
@@ -63,12 +62,12 @@ export const V2: OldTypes['types'] = {
             },
             DepositAsset: {
                 assets: 'MultiAssetFilterV1',
-                maxAssets: 'u32',
+                maxAssets: 'Compact<u32>',
                 beneficiary: 'MultiLocationV1'
             },
             DepositReserveAsset: {
                 assets: 'MultiAssetFilterV1',
-                maxAssets: 'u32',
+                maxAssets: 'Compact<u32>',
                 dest: 'MultiLocationV1',
                 xcm: 'XcmV2'
             },
@@ -94,7 +93,7 @@ export const V2: OldTypes['types'] = {
             },
             BuyExecution: {
                 fees: 'MultiAssetV1',
-                weightLimit: 'WeightLimitV2'
+                weightLimit: 'XcmWeightLimitV2'
             },
             RefundSurplus: 'Null',
             SetErrorHandler: 'XcmV2',
@@ -104,10 +103,15 @@ export const V2: OldTypes['types'] = {
                 assets: 'MultiAssetsV1',
                 ticket: 'MultiLocationV1'
             },
-            Trap: 'u64'
+            Trap: 'Compact<u64>',
+            SubscribeVersion: {
+                queryId: 'Compact<u64>',
+                maxResponseWeight: 'Compact<u64>'
+            },
+            UnsubscribeVersion: 'Null'
         }
     },
-    XcmV2: 'Vec<InstructionV2>',
+    XcmV2: 'Vec<XcmInstructionV2>',
     XcmErrorV2: {
         _enum: {
             Undefined: 'Null',
@@ -144,6 +148,13 @@ export const V2: OldTypes['types'] = {
             Trap: 'u64',
             UnknownClaim: 'Null',
             InvalidLocation: 'Null'
+        }
+    },
+    XcmOutcomeV1: {
+        _enum: {
+            Complete: "u64",
+            Incomplete: "(u64, XcmErrorV2)",
+            Error: "XcmErrorV2"
         }
     }
 }

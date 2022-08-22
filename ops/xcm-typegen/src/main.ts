@@ -7,7 +7,10 @@ import {OutDir} from "@subsquid/util-internal-code-printer"
 
 runProgram(async () => {
     let registry = new OldTypeRegistry(definitions)
-    let versionXcm = registry.use('VersionedXcm')
+    let xcmTypes: Set<number> = new Set()
+    for (let key in definitions.types) {
+        xcmTypes.add(registry.use(key))
+    }
     let types = registry.getTypes()
 
     let nameAssignment = new Map<number, string>()
@@ -20,7 +23,9 @@ runProgram(async () => {
 
     let out = new OutDir(__dirname).file('../../../substrate-metadata/src/xcm/interfaces.ts')
     let ifs = new Interfaces(types, nameAssignment)
-    ifs.use(versionXcm)
+    for (let type of xcmTypes) {
+        ifs.use(type)
+    }
     ifs.generate(out)
     out.write()
 })
