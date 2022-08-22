@@ -467,21 +467,21 @@ export class SubstrateProcessor<Store> {
      * }, async ctx => {})
      */
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: EvmLogHandler<Store>
     ): this
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
     ): this
     addEvmLogHandler<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
     ): this
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: EvmLogOptions & MayBeDataSelection<EventDataRequest> | EvmLogHandler<Store>,
         fn?: EvmLogHandler<Store>
     ): this {
@@ -494,11 +494,12 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.evmLog.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.evmLog.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
         return this
     }
 
@@ -522,21 +523,21 @@ export class SubstrateProcessor<Store> {
      * process.addEthereumTransactionHandler('*', {sighash: '0xa9059cbb'}, async ctx => {})
      */
     addEthereumTransactionHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: CallHandler<Store>
     ): this
     addEthereumTransactionHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EthereumTransactionHandlerOptions & NoDataSelection,
         fn: CallHandler<Store>
     ): this
     addEthereumTransactionHandler<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EthereumTransactionHandlerOptions & DataSelection<R>,
         fn: CallHandler<Store, R>
     ): this
     addEthereumTransactionHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: EthereumTransactionHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
         fn?: CallHandler<Store>
     ): this {
@@ -549,11 +550,12 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.ethereumTransaction.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.ethereumTransaction.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
         return this
     }
 

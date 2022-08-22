@@ -244,26 +244,27 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * })
      */
     addEvmLog(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: EvmLogOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", true>>>
 
     addEvmLog<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", R>>>
 
     addEvmLog(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: EvmLogOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.evmLogs.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.evmLogs.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             filter: options?.filter,
             data: options?.data
-        })
+        })))
         this.add(req, options?.range)
         return this
     }
@@ -281,26 +282,27 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * processor.addEthereumTransaction('*', {sighash: '0xa9059cbb'})
      */
     addEthereumTransaction(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: {range?: Range, sighash?: string} & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", true>>>
 
     addEthereumTransaction<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: {range?: Range, sighash?: string} & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", R>>>
 
     addEthereumTransaction(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: {range?: Range, sighash?: string} & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.ethereumTransactions.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.ethereumTransactions.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             sighash: options?.sighash,
             data: options?.data
-        })
+        })))
         this.add(req, options?.range)
         return this
     }

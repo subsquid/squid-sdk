@@ -19,7 +19,7 @@ processor.setDataSource({
 
 
 processor.addEthereumTransactionHandler(
-    '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+    ['0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98', '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'],
     async ctx => {
         let data = getTransactionData(ctx)
         let serializedTransaction = ethers.utils.serializeTransaction(data.tx, data.signature)
