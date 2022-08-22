@@ -3,6 +3,8 @@ import type {
     BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet
@@ -13,6 +15,7 @@ import type {BatchRequest} from "./request"
 
 
 type ContractAddress = string
+type ProgramId = string
 
 
 interface HandlerList<H, R = any> {
@@ -34,6 +37,8 @@ export class DataHandlers implements BatchRequest {
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
+    gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
+    gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
 
     merge(other: DataHandlers): DataHandlers {
         let res = new DataHandlers()
@@ -43,6 +48,8 @@ export class DataHandlers implements BatchRequest {
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
+        res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
+        res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
         return res
     }
 
@@ -160,6 +167,24 @@ export class DataHandlers implements BatchRequest {
         return Object.entries(this.contractsContractEmitted).map(([contract, {data}]) => {
             return {
                 contract,
+                data
+            }
+        })
+    }
+
+    getGearMessagesEnqueued() {
+        return Object.entries(this.gearMessageEnqueued).map(([program, {data}]) => {
+            return {
+                program,
+                data
+            }
+        })
+    }
+
+    getGearUserMessagesSent() {
+        return Object.entries(this.gearUserMessageSent).map(([program, {data}]) => {
+            return {
+                program,
                 data
             }
         })

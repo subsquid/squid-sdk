@@ -1,56 +1,134 @@
-import {ApolloServerPluginDrainHttpServer} from "apollo-server-core"
+import type {Logger} from "@subsquid/logger"
+import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
+import {PluginDefinition} from "apollo-server-core"
 import {ApolloServer} from "apollo-server-express"
-import assert from "assert"
 import express from "express"
 import fs from "fs"
+import {GraphQLSchema} from "graphql"
+import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
 import http from "http"
 import path from "path"
 import type {Pool} from "pg"
-import {PoolTransaction} from "./db"
-import {Dialect} from "./dialect"
-import {buildServerSchema} from "./gql/opencrud"
+import {WebSocketServer} from "ws"
+import {Context} from "./context"
+import {PoolOpenreaderContext} from "./db"
+import type {Dialect} from "./dialect"
 import type {Model} from "./model"
-import {buildResolvers} from "./resolver"
-
-
-export interface ListeningServer {
-    readonly port: number
-    stop(): Promise<void>
-}
+import {SchemaBuilder} from "./opencrud/schema"
+import {logGraphQLError} from "./util/error-handling"
 
 
 export interface ServerOptions {
-    model: Model
-    db: Pool
     port: number | string
+    model: Model
+    connection: Pool
     dialect?: Dialect
+    subscriptions?: boolean
+    subscriptionPollInterval?: number
+    subscriptionConnection?: Pool
     graphiqlConsole?: boolean
+    log?: Logger
+    maxRequestSizeBytes?: number
 }
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {model, db} = options
+    let {connection, subscriptionConnection, subscriptionPollInterval} = options
     let dialect = options.dialect ?? 'postgres'
-    let resolvers = buildResolvers(model, dialect)
-    let typeDefs = buildServerSchema(model, dialect)
+
+    let schema = new SchemaBuilder(options).build()
+    let context = () => {
+        return {
+            openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection, subscriptionPollInterval)
+        }
+    }
+    let disposals: Dispose[] = []
+
+    return addServerCleanup(disposals, runApollo({
+        port: options.port,
+        schema,
+        context,
+        disposals,
+        subscriptions: options.subscriptions,
+        log: options.log,
+        graphiqlConsole: options.graphiqlConsole,
+        maxRequestSizeBytes: options.maxRequestSizeBytes
+    }), options.log)
+}
+
+
+export type Dispose = () => Promise<void>
+
+
+export interface ApolloOptions {
+    port: number | string
+    disposals: Dispose[]
+    context: () => Context
+    schema: GraphQLSchema
+    plugins?: PluginDefinition[]
+    subscriptions?: boolean
+    graphiqlConsole?: boolean
+    log?: Logger
+    maxRequestSizeBytes?: number
+}
+
+
+export async function runApollo(options: ApolloOptions): Promise<ListeningServer> {
+    let {disposals, context, schema, log} = options
+    let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
     let app = express()
     let server = http.createServer(app)
 
+    if (options.subscriptions) {
+        let wsServer = new WebSocketServer({
+            server,
+            path: '/graphql',
+            maxPayload: maxRequestSizeBytes
+        })
+        let wsServerCleanup = useWsServer(
+            {
+                schema,
+                context,
+                onError(ctx, message, errors) {
+                    if (log) {
+                        // FIXME: we don't want to log client errors
+                        for (let err of errors) {
+                            logGraphQLError(log, err)
+                        }
+                    }
+                },
+                onNext(_ctx, _message, args, result) {
+                    args.contextValue.openreader.close()
+                    return result
+                }
+            },
+            wsServer
+        )
+        disposals.push(async () => wsServerCleanup.dispose())
+    }
+
     let apollo = new ApolloServer({
-        typeDefs,
-        resolvers,
-        context: () => ({openReaderTransaction: new PoolTransaction(db)}),
+        schema,
+        context,
+        stopOnTerminationSignals: false,
         plugins: [
+            ...options.plugins || [],
             {
                 async requestDidStart() {
                     return {
                         willSendResponse(req: any) {
-                            return req.context.openReaderTransaction.close()
+                            return req.context.openreader.close()
+                        },
+                        async didEncounterErrors(req) {
+                            if (req.operation && log) {
+                                for (let err of req.errors) {
+                                    logGraphQLError(log, err)
+                                }
+                            }
                         }
                     }
                 }
-            },
-            ApolloServerPluginDrainHttpServer({httpServer: server})
+            }
         ]
     })
 
@@ -58,38 +136,40 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         setupGraphiqlConsole(app)
     }
 
+
     await apollo.start()
-    apollo.applyMiddleware({app})
-    return listen(apollo, server, options.port)
+    disposals.push(() => apollo.stop())
+
+    apollo.applyMiddleware({
+        app,
+        bodyParserConfig: {
+            limit: maxRequestSizeBytes
+        }
+    })
+
+    return listen(server, options.port)
 }
 
 
-export function listen(apollo: ApolloServer, server: http.Server, port: number | string): Promise<ListeningServer> {
-    return new Promise((resolve, reject) => {
-        function onerror(err: Error) {
-            cleanup()
-            reject(err)
+export function addServerCleanup(disposals: Dispose[], server: Promise<ListeningServer>, log?: Logger): Promise<ListeningServer> {
+    async function cleanup() {
+        for (let i = disposals.length - 1; i >= 0; i--) {
+            await disposals[i]().catch(err => log?.error(err))
         }
+    }
 
-        function onlistening() {
-            cleanup()
-            let address = server.address()
-            assert(address != null && typeof address == 'object')
-            resolve({
-                port: address.port,
-                stop: () => apollo.stop()
-            })
+    return server.then(
+        s => {
+            return {
+                port: s.port,
+                close: () => s.close().finally(cleanup)
+            }
+        },
+        async err => {
+            await cleanup()
+            throw err
         }
-
-        function cleanup() {
-            server.removeListener('error', onerror)
-            server.removeListener('listening', onlistening)
-        }
-
-        server.on('error', onerror)
-        server.on('listening', onlistening)
-        server.listen(port)
-    })
+    )
 }
 
 

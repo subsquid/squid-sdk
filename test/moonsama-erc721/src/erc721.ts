@@ -3,75 +3,44 @@ import assert from "assert";
 
 export const abi = new ethers.utils.Interface(getJsonAbi());
 
-export interface Approval0Event {
-  owner: string;
-  approved: string;
-  tokenId: ethers.BigNumber;
-}
+export type Approval0Event = ([owner: string, approved: string, tokenId: ethers.BigNumber] & {owner: string, approved: string, tokenId: ethers.BigNumber})
 
-export interface ApprovalForAll0Event {
-  owner: string;
-  operator: string;
-  approved: boolean;
-}
+export type ApprovalForAll0Event = ([owner: string, operator: string, approved: boolean] & {owner: string, operator: string, approved: boolean})
 
-export interface Transfer0Event {
-  from: string;
-  to: string;
-  tokenId: ethers.BigNumber;
-}
+export type Transfer0Event = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
 export interface EvmEvent {
   data: string;
   topics: string[];
 }
 
+function decodeEvent(signature: string, data: EvmEvent): any {
+  return abi.decodeEventLog(
+    abi.getEvent(signature),
+    data.data || "",
+    data.topics
+  );
+}
+
 export const events = {
-  "Approval(address,address,uint256)":  {
+  "Approval(address,address,uint256)": {
     topic: abi.getEventTopic("Approval(address,address,uint256)"),
     decode(data: EvmEvent): Approval0Event {
-      const result = abi.decodeEventLog(
-        abi.getEvent("Approval(address,address,uint256)"),
-        data.data || "",
-        data.topics
-      );
-      return  {
-        owner: result[0],
-        approved: result[1],
-        tokenId: result[2],
-      }
+      return decodeEvent("Approval(address,address,uint256)", data)
     }
   }
   ,
-  "ApprovalForAll(address,address,bool)":  {
+  "ApprovalForAll(address,address,bool)": {
     topic: abi.getEventTopic("ApprovalForAll(address,address,bool)"),
     decode(data: EvmEvent): ApprovalForAll0Event {
-      const result = abi.decodeEventLog(
-        abi.getEvent("ApprovalForAll(address,address,bool)"),
-        data.data || "",
-        data.topics
-      );
-      return  {
-        owner: result[0],
-        operator: result[1],
-        approved: result[2],
-      }
+      return decodeEvent("ApprovalForAll(address,address,bool)", data)
     }
   }
   ,
-  "Transfer(address,address,uint256)":  {
+  "Transfer(address,address,uint256)": {
     topic: abi.getEventTopic("Transfer(address,address,uint256)"),
     decode(data: EvmEvent): Transfer0Event {
-      const result = abi.decodeEventLog(
-        abi.getEvent("Transfer(address,address,uint256)"),
-        data.data || "",
-        data.topics
-      );
-      return  {
-        from: result[0],
-        to: result[1],
-        tokenId: result[2],
-      }
+      return decodeEvent("Transfer(address,address,uint256)", data)
     }
   }
   ,
@@ -116,71 +85,60 @@ export class Contract  {
     }
   }
 
-  private async call(name: string, args: any[]) : Promise<ReadonlyArray<any>> {
-    const fragment = abi.getFunction(name)
-    const data = abi.encodeFunctionData(fragment, args)
-    const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
-    return abi.decodeFunctionResult(fragment, result)
-  }
-
   async balanceOf(owner: string): Promise<ethers.BigNumber> {
-    const result = await this.call("balanceOf", [owner])
-    return result[0]
+    return this.call("balanceOf", [owner])
   }
 
   async baseURI(): Promise<string> {
-    const result = await this.call("baseURI", [])
-    return result[0]
+    return this.call("baseURI", [])
   }
 
   async getApproved(tokenId: ethers.BigNumber): Promise<string> {
-    const result = await this.call("getApproved", [tokenId])
-    return result[0]
+    return this.call("getApproved", [tokenId])
   }
 
   async isApprovedForAll(owner: string, operator: string): Promise<boolean> {
-    const result = await this.call("isApprovedForAll", [owner, operator])
-    return result[0]
+    return this.call("isApprovedForAll", [owner, operator])
   }
 
   async name(): Promise<string> {
-    const result = await this.call("name", [])
-    return result[0]
+    return this.call("name", [])
   }
 
   async ownerOf(tokenId: ethers.BigNumber): Promise<string> {
-    const result = await this.call("ownerOf", [tokenId])
-    return result[0]
+    return this.call("ownerOf", [tokenId])
   }
 
   async supportsInterface(interfaceId: string): Promise<boolean> {
-    const result = await this.call("supportsInterface", [interfaceId])
-    return result[0]
+    return this.call("supportsInterface", [interfaceId])
   }
 
   async symbol(): Promise<string> {
-    const result = await this.call("symbol", [])
-    return result[0]
+    return this.call("symbol", [])
   }
 
   async tokenByIndex(index: ethers.BigNumber): Promise<ethers.BigNumber> {
-    const result = await this.call("tokenByIndex", [index])
-    return result[0]
+    return this.call("tokenByIndex", [index])
   }
 
   async tokenOfOwnerByIndex(owner: string, index: ethers.BigNumber): Promise<ethers.BigNumber> {
-    const result = await this.call("tokenOfOwnerByIndex", [owner, index])
-    return result[0]
+    return this.call("tokenOfOwnerByIndex", [owner, index])
   }
 
   async tokenURI(tokenId: ethers.BigNumber): Promise<string> {
-    const result = await this.call("tokenURI", [tokenId])
-    return result[0]
+    return this.call("tokenURI", [tokenId])
   }
 
   async totalSupply(): Promise<ethers.BigNumber> {
-    const result = await this.call("totalSupply", [])
-    return result[0]
+    return this.call("totalSupply", [])
+  }
+
+  private async call(name: string, args: any[]) : Promise<any> {
+    const fragment = abi.getFunction(name)
+    const data = abi.encodeFunctionData(fragment, args)
+    const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
+    const decoded = abi.decodeFunctionResult(fragment, result)
+    return decoded.length > 1 ? decoded : decoded[0]
   }
 }
 

@@ -1,6 +1,21 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+
+## 1.1.0
+Wed, 17 Aug 2022 17:33:52 GMT
+
+### Minor changes
+
+- fix and rework xcm type definitions
+- throw error on unknown signed extension
+
+## 1.0.2
+Thu, 04 Aug 2022 06:00:53 GMT
+
+### Patches
+
+- fix parsing of `Struct::<T>` type expressions in old metadata
 
 ## 1.0.1
 Fri, 24 Jun 2022 22:07:05 GMT

@@ -2,11 +2,11 @@ import * as path from "path"
 import * as process from "process"
 import 'dotenv/config'
 import type {DataSourceOptions as OrmConfig} from "typeorm"
+import {createConnectionOptions} from "./connectionOptions"
 import {SnakeNamingStrategy} from "./namingStrategy"
 import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import {MixedList} from "typeorm/common/MixedList";
 import {EntitySchema} from "typeorm/entity-schema/EntitySchema";
-
 
 export interface ConnectionOptions {
     host: string
@@ -51,7 +51,6 @@ export function createConnectionOptions(rdbmsType: DatabaseType, customDbName?: 
     }
 
 }
-
 
 export interface OrmOptions {
     projectDir?: string

@@ -32,4 +32,4 @@ jobs:
           ref: release/firesquid
 
       - name: Build and Publish
-        run: ./ops/docker-publish.sh firesquid next
+        run: ./ops/docker-publish.sh firesquid latest

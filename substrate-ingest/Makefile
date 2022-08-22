@@ -4,14 +4,12 @@ DB="postgres://postgres:postgres@localhost:29387/archive"
 kusama:
 	@node lib/main.js --out $(DB) \
 		-e wss://kusama-rpc.polkadot.io \
-		-c 10 \
-		-e wss://kusama-rpc.dwellir.com \
-		-c 10 \
+		-c 20 \
 		-e wss://kusama.api.onfinality.io/public-ws \
-		-c 10 \
+		-c 20 \
 		--prom-port 0 \
 		--write-batch-size 30 \
-		--start-block 13617006
+		--start-block 13846889
 
 
 kintsugi:
@@ -63,6 +61,18 @@ shibuya:
 		--write-batch-size 20 \
 		--start-block 816402
 
+
+crab:
+	@node lib/main.js --out $(DB) \
+		-e wss://crab-rpc.darwinia.network \
+		-c 50 \
+		--types-bundle crab.temp.json
+
+
+mangata:
+	@node lib/main.js --out $(DB) \
+		-e wss://mangata-x.api.onfinality.io/public-ws
+		-c 10
 
 up:
 	@docker-compose up -d

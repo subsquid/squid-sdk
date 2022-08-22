@@ -2,7 +2,14 @@ import assert from "assert"
 import {ByteSink, HexSink, Sink} from "./sink"
 import {Src} from "./src"
 import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
-import {CodecBytesArrayType, CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
+import {
+    CodecBytesArrayType,
+    CodecCompactType,
+    CodecStructType,
+    CodecType,
+    CodecVariantType,
+    toCodecTypes
+} from "./types-codec"
 import {throwUnexpectedCase} from "./util"
 
 
@@ -38,7 +45,7 @@ export class Codec {
             case TypeKind.Primitive:
                 return decodePrimitive(def.primitive, src)
             case TypeKind.Compact:
-                return src.compact()
+                return decodeCompact(def, src)
             case TypeKind.BitSequence:
                 return decodeBitSequence(src)
             case TypeKind.Array:
@@ -306,6 +313,19 @@ function encodeBooleanOption(val: unknown, sink: Sink): void {
     } else {
         assert(typeof val == 'boolean')
         sink.u8(val ? 1 : 2)
+    }
+}
+
+
+function decodeCompact(type: CodecCompactType, src: Src): number | bigint {
+    let n = src.compact()
+    switch(type.integer) {
+        case "U8":
+        case "U16":
+        case "U32":
+            return n
+        default:
+            return BigInt(n)
     }
 }
 

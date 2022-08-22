@@ -4,6 +4,8 @@ import {
     BlockHandler,
     CallHandler,
     ContractsContractEmittedHandler,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
     EvmTopicSet
@@ -53,6 +55,22 @@ export interface ContractsContractEmittedHook {
 }
 
 
+export interface GearMessageEnqueuedHook {
+    handler: GearMessageEnqueuedHandler<any>,
+    programId: string
+    data?: EventDataRequest
+    range?: Range
+}
+
+
+export interface GearUserMessageSentHook {
+    handler: GearUserMessageSentHandler<any>,
+    programId: string
+    data?: EventDataRequest
+    range?: Range
+}
+
+
 export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
@@ -60,4 +78,6 @@ export interface Hooks {
     call: CallHook[]
     evmLog: EvmLogHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
+    gearMessageEnqueued: GearMessageEnqueuedHook[]
+    gearUserMessageSent: GearUserMessageSentHook[]
 }

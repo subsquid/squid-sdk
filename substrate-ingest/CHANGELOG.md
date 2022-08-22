@@ -1,6 +1,41 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 20 Jul 2022 13:59:43 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+
+## 1.0.0
+Wed, 17 Aug 2022 17:33:52 GMT
+
+### Breaking changes
+
+- index `block.state_root`, `block.extrinsics_root`
+- postgres sink schema changes
+
+### Minor changes
+
+- extract fees from `TransactionPayment.TransactionFeePaid` when possible
+
+### Patches
+
+- always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`
+- adapt for new `EVM.Log` event arguments
+
+## 0.3.1
+Thu, 04 Aug 2022 06:15:02 GMT
+
+### Patches
+
+- fix shebang in executable
+
+## 0.3.0
+Thu, 04 Aug 2022 06:00:53 GMT
+
+### Minor changes
+
+- Omit non-executed extrinsics from Mangata chain
+
+### Patches
+
+- throw correct object on storage error
 
 ## 0.2.0
 Wed, 20 Jul 2022 13:59:43 GMT

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-typegen",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "CLI for generating typescript types and decode implementations for evm logs",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
