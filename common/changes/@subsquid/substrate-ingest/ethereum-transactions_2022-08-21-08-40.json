@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "add specialized index for `Ethereum.transact` calls",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

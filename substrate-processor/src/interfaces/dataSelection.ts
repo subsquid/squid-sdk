@@ -8,7 +8,7 @@ import type {
     SubstrateExtrinsic,
     SubstrateFinalizationEvent,
     SubstrateInitializationEvent
-} from "./substrate"
+} from './substrate'
 
 
 type Req<T> = {
@@ -31,7 +31,7 @@ export type WithProp<K extends string, V> = [V] extends [never] ? {} : {
 }
 
 
-type CallScalars = Omit<SubstrateCall, 'parent'>
+type CallScalars<T=SubstrateCall> = Omit<T, 'parent'>
 type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 

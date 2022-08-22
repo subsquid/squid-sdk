@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "Generate code for function calls decoding",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

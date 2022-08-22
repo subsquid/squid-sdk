@@ -1,0 +1,20 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Add specialized support for `Ethereum.transact` calls",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Allow to pass multiple contract addresses to `.addEvmLog()`, `.addEthereumTransaction()` and their handler counterparts",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Throw a proper error when required metadata is absent in archive",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

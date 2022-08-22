@@ -192,6 +192,14 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
+        args.ethereumTransactions = req.getEthereumTransactions().map(({contract, sighash, data}) => {
+            return {
+                contract,
+                sighash,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
         args.contractsEvents = req.getContractsEvents().map(({contract, data}) => {
             return {
                 contract,

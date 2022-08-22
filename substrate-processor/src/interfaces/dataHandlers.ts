@@ -1,6 +1,6 @@
-import {Logger} from "@subsquid/logger"
-import {Chain} from "../chain"
-import {Range} from "../util/range"
+import {Logger} from '@subsquid/logger'
+import {Chain} from '../chain'
+import {Range} from '../util/range'
 import {
     CallData,
     CallDataRequest,
@@ -9,8 +9,8 @@ import {
     EventDataRequest,
     EventItem,
     EventRequest
-} from "./dataSelection"
-import {SubstrateBlock} from "./substrate"
+} from './dataSelection'
+import {SubstrateBlock} from './substrate'
 
 
 export interface CommonHandlerContext<S> {
@@ -137,6 +137,11 @@ export interface CallHandlerOptions extends BlockRangeOption {
      * This option allows to trigger the handler for all calls.
      */
     triggerForFailedCalls?: boolean
+}
+
+
+export interface EthereumTransactionHandlerOptions extends CallHandlerOptions {
+    sighash?: string
 }
 
 

@@ -15,8 +15,8 @@ migration:
 
 
 typegen:
-	@npx squid-evm-typegen --abi erc721.json --output src/erc721.ts
-	@npx squid-evm-typegen --abi raresama.json --output src/raresama.ts
+	@npx squid-evm-typegen --abi erc20.json --output src/erc20.ts
+	@npx squid-substrate-typegen typegen.json
 
 
 codegen:
@@ -28,7 +28,7 @@ up:
 
 
 down:
-	@docker-compose down -v
+	@docker-compose down
 
 
 build:
