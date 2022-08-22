@@ -1,5 +1,6 @@
 import * as path from "path"
 import * as process from "process"
+import 'dotenv/config'
 import type {DataSourceOptions as OrmConfig} from "typeorm"
 import {SnakeNamingStrategy} from "./namingStrategy"
 import {DatabaseType} from "typeorm/driver/types/DatabaseType";
