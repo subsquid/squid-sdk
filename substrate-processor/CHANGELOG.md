@@ -1,6 +1,18 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Mon, 22 Aug 2022 15:27:06 GMT and should not be manually modified.
+
+## 1.7.0
+Mon, 22 Aug 2022 15:27:06 GMT
+
+### Minor changes
+
+- Add specialized support for `Ethereum.transact` calls
+- Allow to pass multiple contract addresses to `.addEvmLog()`, `.addEthereumTransaction()` and their handler counterparts
+
+### Patches
+
+- Throw a proper error when required metadata is absent in archive
 
 ## 1.6.0
 Wed, 17 Aug 2022 17:33:52 GMT
