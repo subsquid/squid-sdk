@@ -2,7 +2,7 @@ import {decodeExtrinsic} from "@subsquid/substrate-metadata"
 import {assertNotNull, def} from "@subsquid/util-internal"
 import {toHex} from "@subsquid/util-internal-hex"
 import {Spec, sub} from "../interfaces"
-import {Block, BlockData, Call, Event, EvmLog, Extrinsic, Warning} from "../model"
+import {Block, BlockData, Call, Event, Extrinsic, Warning} from "../model"
 import {blake2bHash} from "../util"
 import {CallParser} from "./call"
 import {FeeCalc} from "./feeCalc"
@@ -13,7 +13,6 @@ import {
     unwrapArguments
 } from "./util"
 import {Account, getBlockValidator} from "./validator"
-import {EvmLogExtractor} from "./evmLog"
 
 
 export interface RawBlock {
@@ -118,11 +117,6 @@ export class BlockParser {
                 pos: -1
             }
         })
-    }
-
-    @def
-    logs(): EvmLog[] {
-        return new EvmLogExtractor(this.events(), this.raw.blockHeight).logs
     }
 
     @def
@@ -239,7 +233,6 @@ export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock):
         header: bp.header(),
         extrinsics: bp.extrinsics(),
         events: bp.events(),
-        logs: bp.logs(),
         calls: bp.calls(),
         warnings: bp.warnings()
     }

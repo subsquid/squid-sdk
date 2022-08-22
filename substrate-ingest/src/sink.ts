@@ -3,9 +3,9 @@ import {toHex} from "@subsquid/util-internal-hex"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import * as pg from "pg"
-import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning, EvmLog} from "./model"
+import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
 import {toJSON, toJsonString} from "./util"
-import {extractMethodSelector} from "./parse/util"
+import {extractMethodSelector, formatId} from "./parse/util"
 import WritableStream = NodeJS.WritableStream
 
 
@@ -41,6 +41,17 @@ interface GearMessage {
 interface ContractsContractEmitted {
     event_id: string
     contract: string
+}
+
+
+interface AcalaEvmLog {
+    id: string
+    event_id: string
+    contract: string
+    topic0?: string
+    topic1?: string
+    topic2?: string
+    topic3?: string
 }
 
 
@@ -120,17 +131,6 @@ export class PostgresSink implements Sink {
         pos: {cast: 'int'}
     })
 
-    private evmLogInsert = new Insert<EvmLog>('evm_log', {
-        id: {cast: 'text'},
-        block_id: {cast: 'text'},
-        event_id: {cast: 'text'},
-        contract: {cast: 'text'},
-        topic0: {cast: 'text'},
-        topic1: {cast: 'text'},
-        topic2: {cast: 'text'},
-        topic3: {cast: 'text'}
-    })
-
     private warningInsert = new Insert<Warning>('warning', {
         block_id: {cast: 'text'},
         message: {cast: 'text'}
@@ -158,6 +158,16 @@ export class PostgresSink implements Sink {
     private gearUserMessageSentInsert = new Insert<GearMessage>('gear_user_message_sent', {
         event_id: {cast: 'text'},
         program: {cast: 'text'}
+    })
+
+    private acalaEvmLogInsert = new Insert<AcalaEvmLog>('acala_evm_log', {
+        id: {cast: 'text'},
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
     })
 
     private acalaEvmCall = new Insert<AcalaEvmCall>('acala_evm_call', {
@@ -192,7 +202,6 @@ export class PostgresSink implements Sink {
         this.extrinsicInsert.addMany(block.extrinsics)
         this.insertCalls(block.calls)
         this.insertEvents(block.events)
-        this.insertLogs(block.logs)
         if (block.warnings) {
             this.warningInsert.addMany(block.warnings)
         }
@@ -220,6 +229,22 @@ export class PostgresSink implements Sink {
                     })
                     break
                 }
+                case 'EVM.Executed': {
+                    let idx = 0
+                    let height = Number(event.id.slice(0, 10))
+                    let hash = event.id.slice(18)
+                    for (let log of event.args.logs) {
+                        this.acalaEvmLogInsert.add({
+                            id: formatId(height, hash, idx++),
+                            contract: toHex(log.address),
+                            event_id: event.id,
+                            topic0: log.topics[0] && toHex(log.topics[0]),
+                            topic1: log.topics[1] && toHex(log.topics[1]),
+                            topic2: log.topics[2] && toHex(log.topics[2]),
+                            topic3: log.topics[3] && toHex(log.topics[3]),
+                        })
+                    }
+                }
                 case 'Contracts.ContractEmitted':
                     this.contractsContractEmittedInsert.add({
                         event_id: event.id,
@@ -238,12 +263,6 @@ export class PostgresSink implements Sink {
                         program: toHex(event.args.message.source)
                     })
             }
-        }
-    }
-
-    private insertLogs(logs: EvmLog[]): void {
-        for (let log of logs) {
-            this.evmLogInsert.add(log)
         }
     }
 
@@ -285,7 +304,9 @@ export class PostgresSink implements Sink {
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
-        let evmLogInsert = this.evmLogInsert.take()
+        let acalaEvmLogInsert = this.acalaEvmLogInsert.take()
+        let acalaEvmCallInsert = this.acalaEvmCall.take()
+        let acalaEvmEthCallInsert = this.acalaEvmEthCall.take()
         await this.tx(async () => {
             await metadataInsert.query(this.db)
             await headerInsert.query(this.db)
@@ -297,7 +318,9 @@ export class PostgresSink implements Sink {
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)
-            await evmLogInsert.query(this.db)
+            await acalaEvmLogInsert.query(this.db)
+            await acalaEvmCallInsert.query(this.db)
+            await acalaEvmEthCallInsert.query(this.db)
         })
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()
