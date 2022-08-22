@@ -28,13 +28,6 @@ export function formatId(height: number, hash: string, index?: number): string {
 }
 
 
-export function formatEvmLogId(height: number, index: number): string {
-    const blockPart = `${String(height).padStart(10, "0")}`
-    const indexPart = `${String(index).padStart(6, "0")}`
-    return `${blockPart}-${indexPart}`
-}
-
-
 export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, "__kind"> {
     let {__kind, ...props} = obj
     return props
@@ -128,22 +121,5 @@ export function extractEthereumTxContract(tx: any): string | undefined {
     let action = assertNotNull(tx.action || tx.value.action)
     if (action.__kind == 'Call') {
         return toHex(action.value)
-    }
-}
-
-
-export function extractEthCallContract(args: any): string | undefined {
-    let action = assertNotNull(args.action)
-    if (action.__kind == 'Call') {
-        return toHex(action.value)
-    }
-}
-
-
-export function extractMethodSelector(input: Uint8Array): string | undefined {
-    if (input) {
-        // A method selector specified by the first four bytes of input data.
-        // https://www.4byte.directory/
-        return toHex(input.subarray(0, 4))
     }
 }

@@ -5,7 +5,7 @@ import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
 import {toJSON, toJsonString} from "./util"
-import {extractMethodSelector, formatId} from "./parse/util"
+import {formatId} from "./parse/util"
 import WritableStream = NodeJS.WritableStream
 
 
@@ -58,14 +58,14 @@ interface AcalaEvmLog {
 interface AcalaEvmCall {
     call_id: string
     contract: string
-    selector?: string
+    sighash?: string
 }
 
 
 interface AcalaEvmEthCall {
     call_id: string
     contract: string
-    selector?: string
+    sighash?: string
 }
 
 
@@ -173,13 +173,13 @@ export class PostgresSink implements Sink {
     private acalaEvmCall = new Insert<AcalaEvmCall>('acala_evm_call', {
         call_id: {cast: 'text'},
         contract: {cast: 'text'},
-        selector: {cast: 'text'}
+        sighash: {cast: 'text'}
     })
 
     private acalaEvmEthCall = new Insert<AcalaEvmEthCall>('acala_evm_eth_call', {
         call_id: {cast: 'text'},
         contract: {cast: 'text'},
-        selector: {cast: 'text'},
+        sighash: {cast: 'text'},
     })
 
     private db: pg.ClientBase
@@ -276,7 +276,7 @@ export class PostgresSink implements Sink {
                         this.acalaEvmEthCall.add({
                             call_id: call.id,
                             contract: toHex(action.value),
-                            selector: extractMethodSelector(call.args.input)
+                            sighash: toHex(call.args.input.subarray(0, 4))
                         })
                     }
                     break
@@ -284,7 +284,7 @@ export class PostgresSink implements Sink {
                     this.acalaEvmCall.add({
                         call_id: call.id,
                         contract: toHex(call.args.target),
-                        selector: extractMethodSelector(call.args.input)
+                        sighash: toHex(call.args.input.subarray(0, 4))
                     })
                     break
             }

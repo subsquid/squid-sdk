@@ -17,7 +17,7 @@ CREATE INDEX IDX_acala_evm_log__topic0__id ON evm_log (topic0, id);
 CREATE TABLE acala_evm_call (
     call_id varchar(30) primary key references call,
     contract char(42) not null,
-    selector char(10)
+    sighash char(10)
 );
 
 
