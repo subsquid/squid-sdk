@@ -1,6 +1,32 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 04 Aug 2022 06:00:53 GMT and should not be manually modified.
+This log was last generated on Mon, 22 Aug 2022 15:27:06 GMT and should not be manually modified.
+
+## 1.7.0
+Mon, 22 Aug 2022 15:27:06 GMT
+
+### Minor changes
+
+- Add specialized support for `Ethereum.transact` calls
+- Allow to pass multiple contract addresses to `.addEvmLog()`, `.addEthereumTransaction()` and their handler counterparts
+
+### Patches
+
+- Throw a proper error when required metadata is absent in archive
+
+## 1.6.0
+Wed, 17 Aug 2022 17:33:52 GMT
+
+### Minor changes
+
+- support gear network events
+
+### Patches
+
+- fix: not all evm log handlers where fired due to incorrect topic filtering
+- fix evm log fields in gateway request
+- remove `id`, `pos`, `name` fields from data selection types as expected by the gateway
+- adapt for new `EVM.Log` event arguments
 
 ## 1.5.1
 Thu, 04 Aug 2022 06:00:53 GMT

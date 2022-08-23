@@ -2,6 +2,72 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.7.0",
+      "tag": "@subsquid/substrate-processor_v1.7.0",
+      "date": "Mon, 22 Aug 2022 15:27:06 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add specialized support for `Ethereum.transact` calls"
+          },
+          {
+            "comment": "Allow to pass multiple contract addresses to `.addEvmLog()`, `.addEthereumTransaction()` and their handler counterparts"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Throw a proper error when required metadata is absent in archive"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.6.0",
+      "tag": "@subsquid/substrate-processor_v1.6.0",
+      "date": "Wed, 17 Aug 2022 17:33:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support gear network events"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix: not all evm log handlers where fired due to incorrect topic filtering"
+          },
+          {
+            "comment": "fix evm log fields in gateway request"
+          },
+          {
+            "comment": "remove `id`, `pos`, `name` fields from data selection types as expected by the gateway"
+          },
+          {
+            "comment": "adapt for new `EVM.Log` event arguments"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.2` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.2` to `^1.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.2` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^0.1.1` to `^0.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.1",
       "tag": "@subsquid/substrate-processor_v1.5.1",
       "date": "Thu, 04 Aug 2022 06:00:53 GMT",

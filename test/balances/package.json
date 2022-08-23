@@ -6,19 +6,19 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^1.1.0",
+    "@subsquid/graphql-server": "^2.0.0",
     "@subsquid/ss58": "^0.1.1",
-    "@subsquid/substrate-processor": "^1.5.1",
-    "@subsquid/typeorm-migration": "^0.1.1",
-    "@subsquid/typeorm-store": "^0.1.1",
+    "@subsquid/substrate-processor": "^1.7.0",
+    "@subsquid/typeorm-migration": "^0.1.2",
+    "@subsquid/typeorm-store": "^0.1.2",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.3.6"
   },
   "devDependencies": {
-    "@subsquid/substrate-metadata-explorer": "^1.0.5",
-    "@subsquid/substrate-typegen": "^1.2.1",
-    "@subsquid/typeorm-codegen": "^0.1.0",
+    "@subsquid/substrate-metadata-explorer": "^1.0.6",
+    "@subsquid/substrate-typegen": "^1.2.2",
+    "@subsquid/typeorm-codegen": "^0.1.1",
     "@types/node": "^16.11.41",
     "typescript": "~4.7.4"
   }

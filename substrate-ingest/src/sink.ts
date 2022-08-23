@@ -1,6 +1,6 @@
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {Progress, Speed} from "@subsquid/util-internal-counters"
 import {toHex} from "@subsquid/util-internal-hex"
-import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
 import * as pg from "pg"
 import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
@@ -29,6 +29,13 @@ interface FrontierEvmLog {
     topic1?: string
     topic2?: string
     topic3?: string
+}
+
+
+interface FrontierEthereumTransaction {
+    call_id: string
+    contract: string
+    sighash?: string
 }
 
 
@@ -143,6 +150,12 @@ export class PostgresSink implements Sink {
         topic1: {cast: 'text'},
         topic2: {cast: 'text'},
         topic3: {cast: 'text'}
+    })
+
+    private frontierEthereumTransactionInsert = new Insert<FrontierEthereumTransaction>('frontier_ethereum_transaction', {
+        call_id: {cast: 'text'},
+        contract: {cast: 'text'},
+        sighash: {cast: 'text'}
     })
 
     private contractsContractEmittedInsert = new Insert<ContractsContractEmitted>('contracts_contract_emitted', {
@@ -270,6 +283,16 @@ export class PostgresSink implements Sink {
         for (let call of calls) {
             this.callInsert.add(call)
             switch(call.name) {
+                case 'Ethereum.transact':
+                    this.insertEthereumTransaction(call)
+                    break
+                case 'EVM.call':
+                    this.acalaEvmCall.add({
+                        call_id: call.id,
+                        contract: toHex(call.args.target),
+                        sighash: toHex(call.args.input.subarray(0, 4))
+                    })
+                    break
                 case 'EVM.eth_call':
                     let action = assertNotNull(call.args.action)
                     if (action.__kind == 'Call') {
@@ -280,15 +303,28 @@ export class PostgresSink implements Sink {
                         })
                     }
                     break
-                case 'EVM.call':
-                    this.acalaEvmCall.add({
-                        call_id: call.id,
-                        contract: toHex(call.args.target),
-                        sighash: toHex(call.args.input.subarray(0, 4))
-                    })
-                    break
             }
         }
+    }
+
+    private insertEthereumTransaction(call: Call): void {
+        let tx = call.args.transaction.value.action ? call.args.transaction.value : call.args.transaction
+        let contract: string
+        switch(tx.action?.__kind) {
+            case 'Create':
+                return
+            case 'Call':
+                contract = toHex(tx.action.value)
+                break
+            default:
+                throw unexpectedCase(tx.action?.__kind)
+        }
+        let sighash = toHex(tx.input.subarray(0, 4))
+        this.frontierEthereumTransactionInsert.add({
+            call_id: call.id,
+            contract,
+            sighash
+        })
     }
 
     private async submit(lastBlock: number): Promise<void> {
@@ -301,6 +337,7 @@ export class PostgresSink implements Sink {
         let eventInsert = this.eventInsert.take()
         let warningInsert = this.warningInsert.take()
         let frontierEvmLogInsert = this.frontierEvmLogInsert.take()
+        let frontierEthereumTransactionInsert = this.frontierEthereumTransactionInsert.take()
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
@@ -315,6 +352,7 @@ export class PostgresSink implements Sink {
             await eventInsert.query(this.db)
             await warningInsert.query(this.db)
             await frontierEvmLogInsert.query(this.db)
+            await frontierEthereumTransactionInsert.query(this.db)
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)

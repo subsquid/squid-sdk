@@ -446,12 +446,6 @@
     //   // "versionPolicyName": ""
     // },
     {
-      "packageName": "@subsquid/cli",
-      "projectFolder": "cli",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,
@@ -725,6 +719,11 @@
     {
       "packageName": "gear-nft",
       "projectFolder": "test/gear-nft",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "astar-erc20",
+      "projectFolder": "test/astar-erc20",
       "shouldPublish": false
     }
   ]

@@ -8,7 +8,6 @@ WORKDIR /squid
 ADD . .
 RUN node common/scripts/install-run-rush.js install
 RUN node common/scripts/install-run-rush.js build
-RUN cd cli && npx oclif manifest
 
 
 FROM builder AS substrate-ingest-builder

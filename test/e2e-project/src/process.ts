@@ -142,7 +142,7 @@ processor.addPostHook({
         items: {
             events: {
                 'System.ExtrinsicSuccess': {
-                    event: {extrinsic: {signature: true, call: {name: true}}}
+                    event: {extrinsic: {signature: true, call: {}}}
                 }
             }
         }

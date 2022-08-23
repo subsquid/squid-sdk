@@ -1,6 +1,20 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Tue, 19 Jul 2022 03:09:10 GMT and should not be manually modified.
+This log was last generated on Mon, 22 Aug 2022 15:27:06 GMT and should not be manually modified.
+
+## 1.3.0
+Mon, 22 Aug 2022 15:27:06 GMT
+
+### Minor changes
+
+- Generate code for function calls decoding
+
+## 1.2.0
+Wed, 17 Aug 2022 17:33:52 GMT
+
+### Minor changes
+
+- generate typed `eth_call` facades
 
 ## 1.1.0
 Tue, 19 Jul 2022 03:09:10 GMT

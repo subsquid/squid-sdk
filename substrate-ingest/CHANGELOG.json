@@ -2,6 +2,60 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-ingest_v1.1.0",
+      "date": "Mon, 22 Aug 2022 15:27:06 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add specialized index for `Ethereum.transact` calls"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-ingest_v1.0.0",
+      "date": "Wed, 17 Aug 2022 17:33:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extract fees from `TransactionPayment.TransactionFeePaid` when possible"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "always decode big compacts (`Compact<Uxx>` where `xx > 32`) as `bigint`"
+          },
+          {
+            "comment": "adapt for new `EVM.Log` event arguments"
+          }
+        ],
+        "major": [
+          {
+            "comment": "index `block.state_root`, `block.extrinsics_root`"
+          },
+          {
+            "comment": "postgres sink schema changes"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.2` to `^1.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.0.2` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.0.2` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.1",
       "tag": "@subsquid/substrate-ingest_v0.3.1",
       "date": "Thu, 04 Aug 2022 06:15:02 GMT",

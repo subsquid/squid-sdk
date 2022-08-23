@@ -1,20 +1,18 @@
-import {Range} from "../util/range"
+import {Range} from '../util/range'
 import {
-    BlockHandlerDataRequest,
     BlockHandler,
+    BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
-    GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
-    AcalaEvmExecutedHandler,
-    AcalaEvmCallHandler,
-    AcalaEvmEthCallHandler,
     EvmTopicSet,
-} from "./dataHandlers"
-import {CallDataRequest, EventDataRequest} from "./dataSelection"
-import {QualifiedName} from "./substrate"
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
+    AcalaEvmExecutedHandler,
+} from './dataHandlers'
+import {CallDataRequest, EventDataRequest} from './dataSelection'
+import {QualifiedName} from './substrate'
 
 
 export interface BlockHook {
@@ -46,6 +44,24 @@ export interface EvmLogHook {
     contractAddress: string
     filter?: EvmTopicSet[]
     data?: EventDataRequest
+    range?: Range
+}
+
+
+export interface EvmLogHook {
+    handler: EvmLogHandler<any>
+    contractAddress: string
+    filter?: EvmTopicSet[]
+    data?: EventDataRequest
+    range?: Range
+}
+
+export interface EthereumTransactionHook {
+    handler: CallHandler<any>
+    contractAddress: string
+    sighash?: string
+    triggerForFailedCalls?: boolean
+    data?: CallDataRequest
     range?: Range
 }
 
@@ -84,7 +100,7 @@ export interface AcalaEvmExecutedHook {
 
 
 export interface AcalaEvmCallHook {
-    handler: AcalaEvmCallHandler<any>
+    handler: CallHandler<any>
     contractAddress: string
     sighash?: string
     triggerForFailedCalls?: boolean
@@ -94,7 +110,7 @@ export interface AcalaEvmCallHook {
 
 
 export interface AcalaEvmEthCallHook {
-    handler: AcalaEvmEthCallHandler<any>
+    handler: CallHandler<any>
     contractAddress: string
     sighash?: string
     triggerForFailedCalls?: boolean
@@ -109,6 +125,7 @@ export interface Hooks {
     event: EventHook[]
     call: CallHook[]
     evmLog: EvmLogHook[]
+    ethereumTransaction: EthereumTransactionHook[]
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]

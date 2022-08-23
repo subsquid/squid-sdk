@@ -3,18 +3,18 @@ import type {
     BlockHandlerDataRequest,
     CallHandler,
     ContractsContractEmittedHandler,
-    GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
     EventHandler,
     EvmLogHandler,
-    AcalaEvmExecutedHandler,
     EvmTopicSet,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler,
+    AcalaEvmExecutedHandler,
     AcalaEvmCallHandler,
     AcalaEvmEthCallHandler
-} from "../interfaces/dataHandlers"
-import type {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
-import type {QualifiedName} from "../interfaces/substrate"
-import type {BatchRequest} from "./request"
+} from '../interfaces/dataHandlers'
+import type {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
+import type {QualifiedName} from '../interfaces/substrate'
+import type {BatchRequest} from './request'
 
 
 type ContractAddress = string
@@ -40,6 +40,7 @@ export class DataHandlers implements BatchRequest {
     events: Record<QualifiedName, HandlerList<EventHandler<any>, EventDataRequest>> = {}
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
+    ethereumTransactions: Record<ContractAddress, Record<Sighash, HandlerList<CallHandlerEntry, CallDataRequest>>> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
@@ -54,6 +55,7 @@ export class DataHandlers implements BatchRequest {
         res.events = mergeMaps(this.events, other.events, mergeItemHandlerLists)
         res.calls = mergeMaps(this.calls, other.calls, mergeItemHandlerLists)
         res.evmLogs = mergeMaps(this.evmLogs, other.evmLogs, (ha, hb) => ha.concat(hb))
+        res.ethereumTransactions = mergeMaps(this.ethereumTransactions, other.ethereumTransactions, (a, b) => mergeMaps(a, b, mergeItemHandlerLists))
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
@@ -168,6 +170,18 @@ export class DataHandlers implements BatchRequest {
                     contract,
                     filter: h.filter,
                     data: h.data
+                }
+            })
+        })
+    }
+
+    getEthereumTransactions() {
+        return Object.entries(this.ethereumTransactions).flatMap(([contract, sighashMap]) => {
+            return Object.entries(sighashMap).map(([sighash, {data}]) => {
+                return {
+                    contract,
+                    sighash: sighash == '*' ? undefined : sighash,
+                    data
                 }
             })
         })

@@ -1,6 +1,6 @@
-import {Logger} from "@subsquid/logger"
-import {Chain} from "../chain"
-import {Range} from "../util/range"
+import {Logger} from '@subsquid/logger'
+import {Chain} from '../chain'
+import {Range} from '../util/range'
 import {
     CallData,
     CallDataRequest,
@@ -9,8 +9,8 @@ import {
     EventDataRequest,
     EventItem,
     EventRequest
-} from "./dataSelection"
-import {SubstrateBlock} from "./substrate"
+} from './dataSelection'
+import {SubstrateBlock} from './substrate'
 
 
 export interface CommonHandlerContext<S> {
@@ -135,24 +135,6 @@ export interface AcalaEvmExecutedHandler<S, R extends EventDataRequest = {event:
 }
 
 
-export type AcalaEvmCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
-    = CommonHandlerContext<S> & CallData<R>
-
-
-export interface AcalaEvmCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
-    (ctx: AcalaEvmCallHandlerContext<S, R>): Promise<void>
-}
-
-
-export type AcalaEvmEthCallHandlerContext<S, R extends CallDataRequest = {call: true, extrinsic: true}>
-    = CommonHandlerContext<S> & CallData<R>
-
-
-export interface AcalaEvmEthCallHandler<S, R extends CallDataRequest = {call: true, extrinsic: true}> {
-    (ctx: AcalaEvmEthCallHandlerContext<S, R>): Promise<void>
-}
-
-
 export interface BlockRangeOption {
     range?: Range
 }
@@ -164,6 +146,11 @@ export interface CallHandlerOptions extends BlockRangeOption {
      * This option allows to trigger the handler for all calls.
      */
     triggerForFailedCalls?: boolean
+}
+
+
+export interface EthereumTransactionHandlerOptions extends CallHandlerOptions {
+    sighash?: string
 }
 
 

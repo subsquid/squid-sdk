@@ -133,7 +133,13 @@ export class Printer {
                 case 'msg':
                     break
                 default:
-                    this.property(key + ':', (rec as any)[key])
+                    if (key == 'err' && rec.err instanceof Error) {
+                        // already printed the stack trace above
+                        // print only the rest of props
+                        this.property('err:', {...rec.err})
+                    } else {
+                        this.property(key + ':', (rec as any)[key])
+                    }
             }
         }
         this.end()

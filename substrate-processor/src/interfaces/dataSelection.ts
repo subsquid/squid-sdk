@@ -8,7 +8,7 @@ import type {
     SubstrateExtrinsic,
     SubstrateFinalizationEvent,
     SubstrateInitializationEvent
-} from "./substrate"
+} from './substrate'
 
 
 type Req<T> = {
@@ -36,17 +36,17 @@ type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 
 
-export type CallRequest = PlainReq<CallScalars> & {
+export type CallRequest = Omit<PlainReq<CallScalars>, 'id' | 'pos' | 'name'> & {
     parent?: PlainReq<SubstrateCall> | boolean
 }
 
 
-export type ExtrinsicRequest = PlainReq<ExtrinsicScalars> & {
+export type ExtrinsicRequest = Omit<PlainReq<ExtrinsicScalars>, 'id' | 'pos'> & {
     call?: CallRequest | boolean
 }
 
 
-export type EventRequest = PlainReq<EventScalars> & {
+export type EventRequest = Omit<PlainReq<EventScalars>, 'id' | 'pos' | 'name'> & {
     call?: CallRequest | boolean
     extrinsic?: ExtrinsicRequest | boolean
     evmTxHash?: boolean

@@ -9,12 +9,12 @@ export type ApprovalForAll0Event = ([owner: string, operator: string, approved: 
 
 export type Transfer0Event = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
-export interface EvmEvent {
+export interface EvmLog {
   data: string;
   topics: string[];
 }
 
-function decodeEvent(signature: string, data: EvmEvent): any {
+function decodeEvent(signature: string, data: EvmLog): any {
   return abi.decodeEventLog(
     abi.getEvent(signature),
     data.data || "",
@@ -25,22 +25,75 @@ function decodeEvent(signature: string, data: EvmEvent): any {
 export const events = {
   "Approval(address,address,uint256)": {
     topic: abi.getEventTopic("Approval(address,address,uint256)"),
-    decode(data: EvmEvent): Approval0Event {
+    decode(data: EvmLog): Approval0Event {
       return decodeEvent("Approval(address,address,uint256)", data)
     }
   }
   ,
   "ApprovalForAll(address,address,bool)": {
     topic: abi.getEventTopic("ApprovalForAll(address,address,bool)"),
-    decode(data: EvmEvent): ApprovalForAll0Event {
+    decode(data: EvmLog): ApprovalForAll0Event {
       return decodeEvent("ApprovalForAll(address,address,bool)", data)
     }
   }
   ,
   "Transfer(address,address,uint256)": {
     topic: abi.getEventTopic("Transfer(address,address,uint256)"),
-    decode(data: EvmEvent): Transfer0Event {
+    decode(data: EvmLog): Transfer0Event {
       return decodeEvent("Transfer(address,address,uint256)", data)
+    }
+  }
+  ,
+}
+
+export type approve0Function = ([to: string, tokenId: ethers.BigNumber] & {to: string, tokenId: ethers.BigNumber})
+
+export type safeTransferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
+
+export type safeTransferFrom1Function = ([from: string, to: string, tokenId: ethers.BigNumber, _data: string] & {from: string, to: string, tokenId: ethers.BigNumber, _data: string})
+
+export type setApprovalForAll0Function = ([operator: string, approved: boolean] & {operator: string, approved: boolean})
+
+export type transferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
+
+
+function decodeFunction(data: string): any {
+  return abi.decodeFunctionData(data.slice(0, 10), data)
+}
+
+export const functions = {
+  "approve(address,uint256)": {
+    sighash: abi.getSighash("approve(address,uint256)"),
+    decode(input: string): approve0Function {
+      return decodeFunction(input)
+    }
+  }
+  ,
+  "safeTransferFrom(address,address,uint256)": {
+    sighash: abi.getSighash("safeTransferFrom(address,address,uint256)"),
+    decode(input: string): safeTransferFrom0Function {
+      return decodeFunction(input)
+    }
+  }
+  ,
+  "safeTransferFrom(address,address,uint256,bytes)": {
+    sighash: abi.getSighash("safeTransferFrom(address,address,uint256,bytes)"),
+    decode(input: string): safeTransferFrom1Function {
+      return decodeFunction(input)
+    }
+  }
+  ,
+  "setApprovalForAll(address,bool)": {
+    sighash: abi.getSighash("setApprovalForAll(address,bool)"),
+    decode(input: string): setApprovalForAll0Function {
+      return decodeFunction(input)
+    }
+  }
+  ,
+  "transferFrom(address,address,uint256)": {
+    sighash: abi.getSighash("transferFrom(address,address,uint256)"),
+    decode(input: string): transferFrom0Function {
+      return decodeFunction(input)
     }
   }
   ,
