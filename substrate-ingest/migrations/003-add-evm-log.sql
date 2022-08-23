@@ -9,9 +9,9 @@ CREATE TABLE acala_evm_log (
 );
 
 
-CREATE INDEX IDX_acala_evm_log__contract__topic0__id ON evm_log (contract, topic0, id);
-CREATE INDEX IDX_acala_evm_log__contract__id ON evm_log (contract, id);
-CREATE INDEX IDX_acala_evm_log__topic0__id ON evm_log (topic0, id);
+CREATE INDEX IDX_acala_evm_log__contract__topic0__id ON acala_evm_log (contract, topic0, id);
+CREATE INDEX IDX_acala_evm_log__contract__id ON acala_evm_log (contract, id);
+CREATE INDEX IDX_acala_evm_log__topic0__id ON acala_evm_log (topic0, id);
 
 
 CREATE TABLE acala_evm_call (
