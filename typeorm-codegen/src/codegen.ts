@@ -59,17 +59,26 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             out.line('@PrimaryColumn_()')
                         } else {
                             addIndexAnnotation(entity, key, imports, out)
-                            if (prop.type.name === 'BigInt') {
-                                imports.useMarshal()
-                                out.line(
-                                    `@Column_("numeric", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                                )
-                            } else {
-                                out.line(
-                                    `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                        prop.nullable
-                                    }})`
-                                )
+                            switch (prop.type.name) {
+                                case 'BigInt':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
+                                    )
+                                    break
+                                case 'BigDecimal':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigdecimalTransformer, nullable: ${prop.nullable}})`
+                                    )
+                                    break
+                                default:
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {nullable: ${
+                                            prop.nullable
+                                        }})`
+                                    )
+                                    break
                             }
                         }
                         break
@@ -181,6 +190,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             case 'DateTime':
                 return 'timestamp with time zone'
             case 'BigInt':
+            case 'BigDecimal':
                 return 'numeric'
             case 'Bytes':
                 return 'bytea'
@@ -440,6 +450,8 @@ function getScalarJsType(typeName: string): string {
             return 'Date'
         case 'BigInt':
             return 'bigint'
+        case 'BigDecimal':
+            return 'marshal.BigDecimal'
         case 'Bytes':
             return 'Uint8Array'
         case 'JSON':
