@@ -1,21 +1,22 @@
-import type {Logger} from "@subsquid/logger"
-import {listen, ListeningServer} from "@subsquid/util-internal-http-server"
-import {PluginDefinition} from "apollo-server-core"
-import {ApolloServer} from "apollo-server-express"
-import express from "express"
-import fs from "fs"
-import {GraphQLSchema} from "graphql"
-import {useServer as useWsServer} from "graphql-ws/lib/use/ws"
-import http from "http"
-import path from "path"
-import type {Pool} from "pg"
-import {WebSocketServer} from "ws"
-import {Context} from "./context"
-import {PoolOpenreaderContext} from "./db"
-import type {Dialect} from "./dialect"
-import type {Model} from "./model"
-import {SchemaBuilder} from "./opencrud/schema"
-import {logGraphQLError} from "./util/error-handling"
+import type {Logger} from '@subsquid/logger'
+import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
+import {PluginDefinition} from 'apollo-server-core'
+import {ApolloServer} from 'apollo-server-express'
+import express from 'express'
+import fs from 'fs'
+import {GraphQLSchema} from 'graphql'
+import {useServer as useWsServer} from 'graphql-ws/lib/use/ws'
+import http from 'http'
+import path from 'path'
+import type {Pool} from 'pg'
+import {WebSocketServer} from 'ws'
+import {Context, OpenreaderContext} from './context'
+import {PoolOpenreaderContext} from './db'
+import type {Dialect} from './dialect'
+import type {Model} from './model'
+import {SchemaBuilder} from './opencrud/schema'
+import {logGraphQLError} from './util/error-handling'
+import {ResponseSizeLimit} from './util/limit'
 
 
 export interface ServerOptions {
@@ -23,23 +24,41 @@ export interface ServerOptions {
     model: Model
     connection: Pool
     dialect?: Dialect
-    subscriptions?: boolean
-    subscriptionPollInterval?: number
-    subscriptionConnection?: Pool
     graphiqlConsole?: boolean
     log?: Logger
     maxRequestSizeBytes?: number
+    maxResponseNodes?: number
+    subscriptions?: boolean
+    subscriptionPollInterval?: number
+    subscriptionConnection?: Pool
+    subscriptionMaxResponseNodes?: number
 }
 
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {connection, subscriptionConnection, subscriptionPollInterval} = options
+    let {connection, subscriptionConnection, subscriptionPollInterval, maxResponseNodes, subscriptionMaxResponseNodes} = options
     let dialect = options.dialect ?? 'postgres'
 
     let schema = new SchemaBuilder(options).build()
     let context = () => {
+        let openreader: OpenreaderContext = new PoolOpenreaderContext(
+            dialect,
+            connection,
+            subscriptionConnection,
+            subscriptionPollInterval
+        )
+
+        if (maxResponseNodes) {
+            openreader.responseSizeLimit = new ResponseSizeLimit(maxResponseNodes)
+            openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(maxResponseNodes)
+        }
+
+        if (subscriptionMaxResponseNodes) {
+            openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(subscriptionMaxResponseNodes)
+        }
+
         return {
-            openreader: new PoolOpenreaderContext(dialect, connection, subscriptionConnection, subscriptionPollInterval)
+            openreader
         }
     }
     let disposals: Dispose[] = []

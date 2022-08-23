@@ -29,7 +29,7 @@ const baseSchema = buildASTSchema(parse(`
     directive @unique on FIELD_DEFINITION
     directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
     directive @fulltext(query: String!) on FIELD_DEFINITION
-    directive @cardinality(value: Int!) on FIELD_DEFINITION
+    directive @cardinality(value: Int!) on OBJECT | FIELD_DEFINITION
     directive @byteWeight(value: Float!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
