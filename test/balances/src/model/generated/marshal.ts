@@ -126,6 +126,19 @@ export const bigintTransformer = {
 }
 
 
+export const {BigDecimal: _BigDecimal} = require('@subsquid/big-decimal')
+export type BigDecimal = typeof _BigDecimal
+
+export const bigdecimalTransformer = {
+    to(x?: BigDecimal) {
+        return x?.toFixed()
+    },
+    from(s?: string): BigDecimal | undefined {
+        return s == null ? undefined : _BigDecimal(s)
+    }
+}
+
+
 export function enumFromJson<E extends object>(json: unknown, enumObject: E): E[keyof E] {
     assert(typeof json == 'string', 'invalid enum value')
     let val = (enumObject as any)[json]

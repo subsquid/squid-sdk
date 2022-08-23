@@ -1,3 +1,4 @@
+import {BigDecimal} from "@subsquid/big-decimal"
 import * as ss58 from "@subsquid/ss58"
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
@@ -45,14 +46,14 @@ processor.run(new TypeormDatabase(), async ctx => {
         history.push(new HistoricalBalance({
             id: t.id + "-from",
             account: from,
-            balance: from.balance,
+            balance: BigDecimal(from.balance.toString()).div('1000000000000000000'),
             timestamp: t.timestamp
         }))
 
         history.push(new HistoricalBalance({
             id: t.id + "-to",
             account: to,
-            balance: to.balance,
+            balance: BigDecimal(to.balance.toString()).div('1000000000000000000'),
             timestamp: t.timestamp
         }))
     }
