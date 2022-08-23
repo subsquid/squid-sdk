@@ -1,7 +1,7 @@
 import {GraphQLSchema} from "graphql"
 import {buildSchema, ContainerType, ResolverData} from "type-graphql"
 import type {EntityManager} from "typeorm"
-import {BigInteger, Bytes, DateTime} from "./scalars"
+import {BigDecimal, BigInteger, Bytes, DateTime} from "./scalars"
 import {TypeormOpenreaderContext} from "./typeorm"
 
 
@@ -11,7 +11,8 @@ export async function loadCustomResolvers(mod: string): Promise<GraphQLSchema> {
         scalarsMap: [
             { type: Date, scalar: DateTime },
             { type: BigInt, scalar: BigInteger },
-            { type: Buffer, scalar: Bytes }
+            { type: Buffer, scalar: Bytes },
+            { type: String, scalar: BigDecimal },
         ],
         container: resolverData => new CustomResolversContainer(resolverData)
     })

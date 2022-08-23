@@ -77,6 +77,8 @@ export class SchemaBuilder {
                 return customScalars.DateTime
             case 'BigInt':
                 return customScalars.BigInt
+            case 'BigDecimal':
+                return customScalars.BigDecimal
             case 'Bytes':
                 return customScalars.Bytes
             case 'JSON':
@@ -261,6 +263,7 @@ export class SchemaBuilder {
                     case 'Float':
                     case 'DateTime':
                     case 'BigInt':
+                    case 'BigDecimal':
                         fields[`${key}_gt`] = {type}
                         fields[`${key}_gte`] = {type}
                         fields[`${key}_lt`] = {type}
