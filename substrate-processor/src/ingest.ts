@@ -225,7 +225,7 @@ export class Ingest<R extends BatchRequest> {
             return {
                 contract,
                 filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
-                data: toGatewayFields(data)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 

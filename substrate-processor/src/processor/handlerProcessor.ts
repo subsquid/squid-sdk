@@ -726,21 +726,21 @@ export class SubstrateProcessor<Store> {
      * }, async ctx => {})
      */
     addAcalaEvmExecutedHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: AcalaEvmExecutedHandler<Store>
     ): this
     addAcalaEvmExecutedHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmExecutedOptions & NoDataSelection,
         fn: AcalaEvmExecutedHandler<Store>
     ): this
     addAcalaEvmExecutedHandler<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmExecutedOptions & DataSelection<R>,
         fn: AcalaEvmExecutedHandler<Store, R>
     ): this
     addAcalaEvmExecutedHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest> | AcalaEvmExecutedHandler<Store>,
         fn?: AcalaEvmExecutedHandler<Store>
     ): this {
@@ -753,11 +753,12 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.acalaEvmExecuted.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.acalaEvmExecuted.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
         return this
     }
 
@@ -775,21 +776,21 @@ export class SubstrateProcessor<Store> {
      * processor.addAcalaEvmCallHandler('*', {sighash: '0x095ea7b3'}, async ctx => {})
      */
     addAcalaEvmCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: CallHandler<Store>
     ): this
     addAcalaEvmCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmCallHandlerOptions & NoDataSelection,
         fn: CallHandler<Store>
     ): this
     addAcalaEvmCallHandler<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmCallHandlerOptions & DataSelection<R>,
         fn: CallHandler<Store, R>
     ): this
     addAcalaEvmCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: AcalaEvmCallHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
         fn?: CallHandler<Store>
     ): this {
@@ -802,11 +803,12 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.acalaEvmCall.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.acalaEvmCall.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
         return this
     }
 
@@ -824,21 +826,21 @@ export class SubstrateProcessor<Store> {
      * processor.addAcalaEvmEthCallHandler('*', {sighash: '0x095ea7b3'}, async ctx => {})
      */
     addAcalaEvmEthCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: CallHandler<Store>
     ): this
     addAcalaEvmEthCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmEthCallHandlerOptions & NoDataSelection,
         fn: CallHandler<Store>
     ): this
     addAcalaEvmEthCallHandler<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmEthCallHandlerOptions & DataSelection<R>,
         fn: CallHandler<Store, R>
     ): this
     addAcalaEvmEthCallHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: AcalaEvmEthCallHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
         fn?: CallHandler<Store>
     ): this {
@@ -851,11 +853,12 @@ export class SubstrateProcessor<Store> {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.acalaEvmEthCall.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.acalaEvmEthCall.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
         return this
     }
 

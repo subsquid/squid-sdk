@@ -425,26 +425,27 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * })
      */
     addAcalaEvmExecuted(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmExecutedOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
 
     addAcalaEvmExecuted<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmExecutedOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
 
     addAcalaEvmExecuted(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.acalaEvmExecuted.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.acalaEvmExecuted.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             filter: options?.filter,
             data: options?.data
-        })
+        })))
         this.add(req, options?.range)
         return this
     }
@@ -462,26 +463,27 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * processor.addAcalaEvmCall('*', {sighash: '0x095ea7b3'})
      */
     addAcalaEvmCall(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmCallHandlerOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", true>>>
 
     addAcalaEvmCall<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmCallHandlerOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", R>>>
 
     addAcalaEvmCall(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmCallHandlerOptions & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.acalaEvmCall.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.acalaEvmCall.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             sighash: options?.sighash,
             data: options?.data
-        })
+        })))
         this.add(req, options?.range)
         return this
     }
@@ -500,26 +502,27 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * processor.addAcalaEvmEthCallHandler('*', {sighash: '0x095ea7b3'})
      */
     addAcalaEvmEthCall(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmEthCallHandlerOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", true>>>
 
     addAcalaEvmEthCall<R extends CallDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: AcalaEvmEthCallHandlerOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", R>>>
 
     addAcalaEvmEthCall(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: AcalaEvmEthCallHandlerOptions & MayBeDataSelection<CallDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.acalaEvmCall.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.acalaEvmCall.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             sighash: options?.sighash,
             data: options?.data
-        })
+        })))
         this.add(req, options?.range)
         return this
     }

@@ -9,8 +9,6 @@ import type {
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
     AcalaEvmExecutedHandler,
-    AcalaEvmCallHandler,
-    AcalaEvmEthCallHandler
 } from '../interfaces/dataHandlers'
 import type {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
 import type {QualifiedName} from '../interfaces/substrate'
