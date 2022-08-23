@@ -36,6 +36,14 @@ export interface SubstrateBlock {
      * Account address of block validator
      */
     validator?: string
+    /**
+     * Root hash of the extrinsics merkle tree
+     */
+    extrinsicsRoot: string
+    /**
+     * Root hash of the state merkle tree
+     */
+    stateRoot: string
 }
 
 
