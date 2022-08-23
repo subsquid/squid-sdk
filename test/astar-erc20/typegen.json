@@ -1,0 +1,7 @@
+{
+  "outDir": "src/types",
+  "specVersions": "https://astar.archive.subsquid.io/graphql",
+  "calls": [
+    "Ethereum.transact"
+  ]
+}

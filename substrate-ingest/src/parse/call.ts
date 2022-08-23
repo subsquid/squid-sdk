@@ -152,12 +152,18 @@ export class CallParser {
             this.extrinsic = this.extrinsics[i]
             this.visitExtrinsic(calls[i])
         }
-        assert(this.pos == 0)
+        assert(this.pos >= 0)
     }
 
     private visitExtrinsic(call: Call): void {
+        let event = this.tryNext()
+        if (event == null) {
+            // non-executed extrinsic from Mangata chain
+            this.takePos()
+            this.extrinsic.pos = -1
+            return
+        }
         this.extrinsic.pos = this.takePos()
-        let event = this.next()
         switch(event.name) {
             case 'System.ExtrinsicSuccess':
                 this.extrinsic.success = true

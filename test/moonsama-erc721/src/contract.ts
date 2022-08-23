@@ -1,7 +1,5 @@
 import {assertNotNull} from "@subsquid/substrate-processor"
 import type {Store} from "@subsquid/typeorm-store"
-import {ethers} from "ethers"
-import * as erc721 from "./erc721"
 import {Contract} from "./model"
 
 export const contractAddress = '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a'

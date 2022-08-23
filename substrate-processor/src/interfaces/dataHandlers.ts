@@ -1,6 +1,6 @@
-import {Logger} from "@subsquid/logger"
-import {Chain} from "../chain"
-import {Range} from "../util/range"
+import {Logger} from '@subsquid/logger'
+import {Chain} from '../chain'
+import {Range} from '../util/range'
 import {
     CallData,
     CallDataRequest,
@@ -9,8 +9,8 @@ import {
     EventDataRequest,
     EventItem,
     EventRequest
-} from "./dataSelection"
-import {SubstrateBlock} from "./substrate"
+} from './dataSelection'
+import {SubstrateBlock} from './substrate'
 
 
 export interface CommonHandlerContext<S> {
@@ -140,6 +140,11 @@ export interface CallHandlerOptions extends BlockRangeOption {
 }
 
 
+export interface EthereumTransactionHandlerOptions extends CallHandlerOptions {
+    sighash?: string
+}
+
+
 export interface EvmLogOptions extends BlockRangeOption {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
@@ -157,4 +162,22 @@ export type ContractsContractEmittedHandlerContext<S, R extends EventDataRequest
 
 export interface ContractsContractEmittedHandler<S, R extends EventDataRequest = {event: true}> {
     (ctx: ContractsContractEmittedHandlerContext<S, R>): Promise<void>
+}
+
+
+export type GearMessageEnqueuedHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R, 'Gear.MessageEnqueued'>
+
+
+export interface GearMessageEnqueuedHandler<S, R extends EventDataRequest = {event: true}> {
+    (ctx: GearMessageEnqueuedHandlerContext<S, R>): Promise<void>
+}
+
+
+export type GearUserMessageSentHandlerContext<S, R extends EventDataRequest = {event: true}>
+    = CommonHandlerContext<S> & EventData<R, 'Gear.UserMessageSent'>
+
+
+export interface GearUserMessageSentHandler<S, R extends EventDataRequest = {event: true}> {
+    (ctx: GearUserMessageSentHandlerContext<S, R>): Promise<void>
 }

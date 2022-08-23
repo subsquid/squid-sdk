@@ -7,6 +7,8 @@ export interface Block {
     height: number
     hash: string
     parent_hash: string
+    state_root: string
+    extrinsics_root: string
     timestamp: Date
     spec_id: string
     validator?: string

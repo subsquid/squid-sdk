@@ -54,6 +54,8 @@ export class BlockParser {
             height: this.raw.blockHeight,
             hash: this.raw.blockHash,
             parent_hash: this.raw.block.header.parentHash,
+            state_root: this.raw.block.header.stateRoot,
+            extrinsics_root: this.raw.block.header.extrinsicsRoot,
             timestamp: new Date(this.timestamp()),
             validator: this.validator(),
             spec_id: '' // to be set later
@@ -77,11 +79,11 @@ export class BlockParser {
 
     @def
     timestamp(): number {
-        let extrinsics = this.extrinsics()
+        let extrinsics = this._extrinsics()
         for (let i = 0; i < extrinsics.length; i++) {
             let ex = extrinsics[i]
             if (ex.call.__kind == 'Timestamp' && ex.call.value.__kind == 'set') {
-                return ex.call.value.now
+                return Number(ex.call.value.now)
             }
         }
         return 0
@@ -119,6 +121,13 @@ export class BlockParser {
 
     @def
     extrinsics(): ExtrinsicExt[] {
+        this.parseCalls()
+        this.setExtrinsicFees()
+        return this._extrinsics().filter(e => e.pos >= 0)
+    }
+
+    @def
+    private _extrinsics(): ExtrinsicExt[] {
         let block_id = this.id()
         return this.raw.block.extrinsics.map((hex, idx) => {
             let id = formatId(this.raw.blockHeight, this.raw.blockHash, idx)
@@ -141,22 +150,42 @@ export class BlockParser {
         })
     }
 
-    @def
-    setExtrinsicFees(): void {
+    private setExtrinsicFees(): void {
+        if (this.spec.events.definitions['TransactionPayment.TransactionFeePaid']) {
+            this.setExtrinsicFeesFromPaidEvent()
+        } else {
+            this.calcExtrinsicFees()
+        }
+    }
+
+    private setExtrinsicFeesFromPaidEvent(): void {
+        let extrinsics = this._extrinsics()
+        for (let e of this.events()) {
+            if (e.name == 'TransactionPayment.TransactionFeePaid') {
+                let ex = extrinsics[assertNotNull(e.extrinsicIdx)]
+                let actualFee = BigInt(e.args.actualFee)
+                let tip = BigInt(e.args.tip)
+                ex.fee = actualFee - tip
+                ex.tip = tip
+            }
+        }
+    }
+
+    private calcExtrinsicFees(): void {
         if (this.raw.feeMultiplier == null) return
         let calc = FeeCalc.get(this.spec, this.raw.feeMultiplier)
         if (calc == null) return
         for (let e of this.events()) {
             switch(e.name) {
                 case 'System.ExtrinsicSuccess':
-                    this.setFee(
+                    this.calcFee(
                         calc,
                         assertNotNull(e.extrinsicIdx),
                         getDispatchInfoFromExtrinsicSuccess(e.args)
                     )
                     break
                 case 'System.ExtrinsicFailed':
-                    this.setFee(
+                    this.calcFee(
                         calc,
                         assertNotNull(e.extrinsicIdx),
                         getDispatchInfoFromExtrinsicFailed(e.args)
@@ -166,15 +195,15 @@ export class BlockParser {
         }
     }
 
-    private setFee(calc: FeeCalc, extrinsicIdx: number, dispatchInfo: sub.DispatchInfo): void {
-        let extrinsic = this.extrinsics()[extrinsicIdx]
+    private calcFee(calc: FeeCalc, extrinsicIdx: number, dispatchInfo: sub.DispatchInfo): void {
+        let extrinsic = this._extrinsics()[extrinsicIdx]
         if (extrinsic.signature == null) return
         let len = this.raw.block.extrinsics[extrinsicIdx].length / 2 - 1
         extrinsic.fee = calc.calcFee(dispatchInfo, len)
     }
 
     @def
-    parseCalls(): CallParser {
+    private parseCalls(): CallParser {
         let p = new CallParser(
             {
                 spec: this.spec,
@@ -182,7 +211,7 @@ export class BlockParser {
                 blockHash: this.raw.blockHash
             },
             this.events(),
-            this.extrinsics()
+            this._extrinsics()
         )
         p.calls.sort((a, b) => a.pos - b.pos)
         return p
@@ -200,7 +229,6 @@ export class BlockParser {
 
 export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock): BlockData {
     let bp = new BlockParser(spec, validators, raw)
-    bp.setExtrinsicFees()
     return  {
         header: bp.header(),
         extrinsics: bp.extrinsics(),

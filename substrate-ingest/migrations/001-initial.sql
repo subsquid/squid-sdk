@@ -14,6 +14,8 @@ CREATE TABLE block (
     height integer not null,
     hash char(66) not null,
     parent_hash char(66) not null,
+    state_root char(66) not null,
+    extrinsics_root char(66) not null,
     timestamp timestamptz not null,
     validator varchar,
     spec_id text not null
@@ -77,13 +79,11 @@ CREATE TABLE event (
     call_id varchar(30) references call,
     name varchar not null,
     args jsonb,
-    pos integer not null,
-    contract varchar
+    pos integer not null
 );
 
 
 CREATE INDEX IDX_event__name__block ON event(name, block_id);
-CREATE INDEX IDX_event__contract__block ON event(contract, block_id);
 CREATE INDEX IDX_event__block__index ON event(block_id, index_in_block);
 CREATE INDEX IDX_event__extrinsic ON event(extrinsic_id);
 CREATE INDEX IDX_event__call ON event(call_id);
@@ -94,3 +94,45 @@ CREATE TABLE warning (
     block_id char(16),
     message varchar
 );
+
+
+CREATE TABLE frontier_evm_log (
+    event_id char(23) primary key REFERENCES event,
+    contract char(42) not null,
+    topic0 char(66),
+    topic1 char(66),
+    topic2 char(66),
+    topic3 char(66)
+);
+
+
+CREATE INDEX IDX_evm_log__contract__event ON frontier_evm_log (contract, event_id);
+CREATE INDEX IDX_evm_log__contract__topic0__event ON frontier_evm_log (contract, topic0, event_id);
+CREATE INDEX IDX_evm_log__topic0__event ON frontier_evm_log (topic0, event_id);
+
+
+CREATE TABLE gear_message_enqueued (
+    event_id char(23) primary key REFERENCES event,
+    program varchar not null
+);
+
+
+CREATE INDEX IDX_gear_message_enqueued__program__event ON gear_message_enqueued(program, event_id);
+
+
+CREATE TABLE gear_user_message_sent (
+   event_id char(23) primary key REFERENCES event,
+   program varchar not null
+);
+
+
+CREATE INDEX IDX_gear_user_message_sent__program__event ON gear_user_message_sent(program, event_id);
+
+
+CREATE TABLE contracts_contract_emitted (
+    event_id char(23) primary key REFERENCES event,
+    contract varchar not null
+);
+
+
+CREATE INDEX IDX_contract_emitted__contract__event ON contracts_contract_emitted(contract, event_id);

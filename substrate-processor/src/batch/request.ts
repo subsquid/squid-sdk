@@ -1,5 +1,5 @@
-import {EvmTopicSet} from "../interfaces/dataHandlers"
-import {CallDataRequest, EventDataRequest} from "../interfaces/dataSelection"
+import {EvmTopicSet} from '../interfaces/dataHandlers'
+import {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
 
 
 type EventReq = {
@@ -21,8 +21,27 @@ type EvmLogReq = {
 }
 
 
-type ContractsEventsReq = {
+type EthereumTransactionReq = {
     contract: string
+    sighash?: string
+    data?: CallDataRequest
+}
+
+
+type ContractsEventReq = {
+    contract: string
+    data?: EventDataRequest
+}
+
+
+type GearMessageEnqueuedReq = {
+    program: string
+    data?: EventDataRequest
+}
+
+
+type GearUserMessageSentReq = {
+    program: string
     data?: EventDataRequest
 }
 
@@ -32,7 +51,10 @@ export interface BatchRequest {
     getEvents(): EventReq[]
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
-    getContractsEvents(): ContractsEventsReq[]
+    getEthereumTransactions(): EthereumTransactionReq[]
+    getContractsEvents(): ContractsEventReq[]
+    getGearMessagesEnqueued(): GearMessageEnqueuedReq[]
+    getGearUserMessagesSent(): GearUserMessageSentReq[]
 }
 
 
@@ -40,7 +62,10 @@ export class PlainBatchRequest implements BatchRequest {
     events: EventReq[] = []
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
-    contractsEvents: ContractsEventsReq[] = []
+    ethereumTransactions: EthereumTransactionReq[] = []
+    contractsEvents: ContractsEventReq[] = []
+    gearMessagesEnqueued: GearMessageEnqueuedReq[] = []
+    gearUserMessagesSent: GearUserMessageSentReq[] = []
     includeAllBlocks = false
 
     getEvents(): EventReq[] {
@@ -55,8 +80,20 @@ export class PlainBatchRequest implements BatchRequest {
         return this.evmLogs
     }
 
-    getContractsEvents(): ContractsEventsReq[] {
+    getEthereumTransactions(): EthereumTransactionReq[] {
+        return this.ethereumTransactions
+    }
+
+    getContractsEvents(): ContractsEventReq[] {
         return this.contractsEvents
+    }
+
+    getGearMessagesEnqueued(): GearMessageEnqueuedReq[] {
+        return this.gearMessagesEnqueued
+    }
+
+    getGearUserMessagesSent(): GearUserMessageSentReq[] {
+        return this.gearUserMessagesSent
     }
 
     getIncludeAllBlocks(): boolean {
@@ -69,7 +106,10 @@ export class PlainBatchRequest implements BatchRequest {
         result.events = this.events.concat(other.events)
         result.calls = this.calls.concat(other.calls)
         result.evmLogs = this.evmLogs.concat(other.evmLogs)
+        result.ethereumTransactions = this.ethereumTransactions.concat(other.ethereumTransactions)
         result.contractsEvents = this.contractsEvents.concat(other.contractsEvents)
+        result.gearMessagesEnqueued = this.gearMessagesEnqueued.concat(other.gearMessagesEnqueued)
+        result.gearUserMessagesSent = this.gearUserMessagesSent.concat(other.gearUserMessagesSent)
         return result
     }
 }

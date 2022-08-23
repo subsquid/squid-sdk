@@ -6,7 +6,7 @@ function tsvector(columns: string[]) {
 }
 
 
-isCockroach() || describe('full text search', function () {
+isCockroach() || describe.skip('full text search', function () {
     useDatabase([
         `create table foo (
             id text primary key, 

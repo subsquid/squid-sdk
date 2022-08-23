@@ -1,12 +1,14 @@
 import type {
     ContractsContractEmittedEvent,
     EvmLogEvent,
+    GearMessageEnqueuedEvent,
+    GearUserMessageSentEvent,
     SubstrateCall,
     SubstrateEvent,
     SubstrateExtrinsic,
     SubstrateFinalizationEvent,
     SubstrateInitializationEvent
-} from "./substrate"
+} from './substrate'
 
 
 type Req<T> = {
@@ -29,22 +31,22 @@ export type WithProp<K extends string, V> = [V] extends [never] ? {} : {
 }
 
 
-type CallScalars = Omit<SubstrateCall, 'parent'>
+type CallScalars<T=SubstrateCall> = Omit<T, 'parent'>
 type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 
 
-export type CallRequest = PlainReq<CallScalars> & {
+export type CallRequest = Omit<PlainReq<CallScalars>, 'id' | 'pos' | 'name'> & {
     parent?: PlainReq<SubstrateCall> | boolean
 }
 
 
-export type ExtrinsicRequest = PlainReq<ExtrinsicScalars> & {
+export type ExtrinsicRequest = Omit<PlainReq<ExtrinsicScalars>, 'id' | 'pos'> & {
     call?: CallRequest | boolean
 }
 
 
-export type EventRequest = PlainReq<EventScalars> & {
+export type EventRequest = Omit<PlainReq<EventScalars>, 'id' | 'pos' | 'name'> & {
     call?: CallRequest | boolean
     extrinsic?: ExtrinsicRequest | boolean
     evmTxHash?: boolean
@@ -128,12 +130,30 @@ type ContractsContractEmittedEventType<R> = R extends true
         : never
 
 
+type GearMessageEnqueuedEventType<R> = R extends true
+    ? GearMessageEnqueuedEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearMessageEnqueuedEvent>, R>
+        : never
+
+
+type GearUserMessageSentEventType<R> = R extends true
+    ? GearUserMessageSentEvent
+    : R extends EventRequest
+        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearUserMessageSentEvent>, R>
+        : never
+
+
 export type EventType<R, N = string> =
     N extends 'Contracts.ContractEmitted'
         ? ContractsContractEmittedEventType<R>
         : N extends 'EVM.Log'
             ? EvmLogEventType<R>
-            : CommonEventType<R>
+            : N extends 'Gear.MessageEnqueued'
+                ? GearMessageEnqueuedEventType<R>
+                : N extends 'Gear.UserMessageSent'
+                    ? GearUserMessageSentEventType<R>
+                    : CommonEventType<R>
 
 
 export interface EventDataRequest {

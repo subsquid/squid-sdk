@@ -242,28 +242,83 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * processor.addEvmLog('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * })
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addEvmLog([
+     *     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98'
+     * ], {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * })
      */
     addEvmLog(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: EvmLogOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", true>>>
 
     addEvmLog<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Log", R>>>
 
     addEvmLog(
-        contractAddress: string,
+        contractAddress: string | string[],
         options?: EvmLogOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
-        req.evmLogs.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.evmLogs.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
             filter: options?.filter,
             data: options?.data
-        })
+        })))
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addCall},
+     * but requests `Ethereum.transact` calls holding an EVM call transaction
+     * with an option to filter them by contract address and sighash.
+     *
+     * @example
+     * // request all EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
+     * processor.addEthereumTransaction('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98')
+     *
+     * // request all EVM calls with signature `transfer(address,uint256)`
+     * processor.addEthereumTransaction('*', {sighash: '0xa9059cbb'})
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addEthereumTransaction([
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+     *     '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+     * ], {
+     *     sighash: '0xa9059cbb'
+     * })
+     */
+    addEthereumTransaction(
+        contractAddress: string | string[],
+        options?: {range?: Range, sighash?: string} & NoDataSelection
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", true>>>
+
+    addEthereumTransaction<R extends CallDataRequest>(
+        contractAddress: string | string[],
+        options: {range?: Range, sighash?: string} & DataSelection<R>
+    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", R>>>
+
+    addEthereumTransaction(
+        contractAddress: string | string[],
+        options?: {range?: Range, sighash?: string} & MayBeDataSelection<CallDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.ethereumTransactions.push(...contractAddresses.map((contractAddress) => ({
+            contract: contractAddress.toLowerCase(),
+            sighash: options?.sighash,
+            data: options?.data
+        })))
         this.add(req, options?.range)
         return this
     }
@@ -290,6 +345,62 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         let req = new PlainBatchRequest()
         req.contractsEvents.push({
             contract: contractAddress.toLowerCase(),
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.MessageEnqueued` events belonging to particular program.
+     */
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", true>>>
+
+    addGearMessageEnqueued<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.MessageEnqueued", R>>>
+
+    addGearMessageEnqueued(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearMessagesEnqueued.push({
+            program: programId,
+            data: options?.data
+        })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `Gear.UserMessageSent` events belonging to particular program.
+     */
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", true>>>
+
+    addGearUserMessageSent<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Gear.UserMessageSent", R>>>
+
+    addGearUserMessageSent(
+        programId: string,
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        req.gearUserMessagesSent.push({
+            program: programId,
             data: options?.data
         })
         this.add(req, options?.range)

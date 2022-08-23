@@ -188,13 +188,35 @@ export class Ingest<R extends BatchRequest> {
             return {
                 contract,
                 filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
-                data: toGatewayFields(data)
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.ethereumTransactions = req.getEthereumTransactions().map(({contract, sighash, data}) => {
+            return {
+                contract,
+                sighash,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
         args.contractsEvents = req.getContractsEvents().map(({contract, data}) => {
             return {
                 contract,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.gearMessagesEnqueued = req.getGearMessagesEnqueued().map(({program, data}) => {
+            return {
+                program,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.gearUserMessagesSent = req.getGearUserMessagesSent().map(({program, data}) => {
+            return {
+                program,
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
@@ -273,8 +295,8 @@ const CONTEXT_NESTING_SHAPE = (() => {
 })();
 
 
-function toGatewayFields(req: any | undefined, shape?: Record<string, any>): any | undefined {
-    if (req == null || !req) return undefined
+function toGatewayFields(req: any | undefined, shape: Record<string, any> | null): any | undefined {
+    if (!req) return undefined
     if (req === true) return shape ? {_all: true} : true
     let fields: any = {}
     for (let key in req) {

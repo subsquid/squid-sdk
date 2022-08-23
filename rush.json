@@ -446,12 +446,6 @@
     //   // "versionPolicyName": ""
     // },
     {
-      "packageName": "@subsquid/cli",
-      "projectFolder": "cli",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,
@@ -606,6 +600,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-commander",
+      "projectFolder": "util/util-internal-commander",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-counters",
       "projectFolder": "util/util-internal-counters",
       "shouldPublish": true,
@@ -709,6 +709,16 @@
     {
       "packageName": "shibuya-erc20",
       "projectFolder": "test/shibuya-erc20",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "gear-nft",
+      "projectFolder": "test/gear-nft",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "astar-erc20",
+      "projectFolder": "test/astar-erc20",
       "shouldPublish": false
     }
   ]

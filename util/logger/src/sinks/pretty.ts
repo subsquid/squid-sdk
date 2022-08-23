@@ -88,8 +88,14 @@ export class Printer {
                     } else {
                         this.visited.add(val)
                     }
+                    let props: any
+                    if (val instanceof Error) {
+                        props = {...val, stack: val.stack || val.toString()}
+                    } else {
+                        props = val
+                    }
                     let has = false
-                    for (let key in val) {
+                    for (let key in props) {
                         if (!has) {
                             if (prefix == '  -') {
                                 this.begin(prefix)
@@ -99,7 +105,7 @@ export class Printer {
                             }
                         }
                         has = true
-                        this.property(key + ':', (val as any)[key])
+                        this.property(key + ':', props[key])
                     }
                     if (has) {
                         this.end()
@@ -127,7 +133,13 @@ export class Printer {
                 case 'msg':
                     break
                 default:
-                    this.property(key + ':', (rec as any)[key])
+                    if (key == 'err' && rec.err instanceof Error) {
+                        // already printed the stack trace above
+                        // print only the rest of props
+                        this.property('err:', {...rec.err})
+                    } else {
+                        this.property(key + ':', (rec as any)[key])
+                    }
             }
         }
         this.end()

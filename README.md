@@ -36,8 +36,7 @@ Similarly, [squid-evm-typegen(1)](evm-typegen) generates facade TypeScript class
 
 ### Postgres
 
-`substrate-processor` is designed to be able to load the processed data into an arbitrary database and indeed one can  
-run it without a persistent store. 
+`substrate-processor` is designed to be able to load the processed data into an arbitrary database and indeed one can run it without a persistent store. 
 
 However, extra tooling for data modeling and serving the data with GraphQL is available when a processor is run against a postgres-compatible database. In such a case, the Subsquid framework suggests the following dev flow:
 

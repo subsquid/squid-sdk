@@ -91,12 +91,13 @@ export class ChainManager {
                 }
             }
         `)
+        if (res.batch.length == 0) throw new Error(`Block ${height} not found in archive`)
         assert(res.batch.length === 1)
         return res.batch[0].header.specId
     }
 
     private getSpecMetadata(specId: SpecId): Promise<SpecMetadata> {
-        return this.options.archiveRequest<{metadataById: SpecMetadata}>(`
+        return this.options.archiveRequest<{metadataById: SpecMetadata | null}>(`
             query {
                 metadataById(id: "${specId}") {
                     id
@@ -106,7 +107,13 @@ export class ChainManager {
                     hex
                 }
             }
-        `).then(res => res.metadataById)
+        `).then(res => {
+            if (res.metadataById == null) {
+                throw new Error(`Metadata for spec ${specId} not found in archive`)
+            } else {
+                return res.metadataById
+            }
+        })
     }
 }
 

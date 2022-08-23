@@ -1,11 +1,12 @@
-import {createLogger, Logger} from "@subsquid/logger"
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {assertNotNull, def, runProgram, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
-import {CallHandlerEntry, DataHandlers} from "../batch/handlers"
-import type {Chain} from "../chain"
-import type {BlockData} from "../ingest"
+import {createLogger, Logger} from '@subsquid/logger'
+import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {assertNotNull, def, runProgram, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
+import {CallHandlerEntry, DataHandlers} from '../batch/handlers'
+import type {Chain} from '../chain'
+import type {BlockData} from '../ingest'
+import {EthereumTransactionHandlerOptions} from '../interfaces/dataHandlers'
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -18,21 +19,30 @@ import type {
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
-    EvmTopicSet
-} from "../interfaces/dataHandlers"
+    EvmTopicSet,
+    GearMessageEnqueuedHandler,
+    GearUserMessageSentHandler
+} from '../interfaces/dataHandlers'
 import type {
     CallDataRequest,
     DataSelection,
     EventDataRequest,
     MayBeDataSelection,
     NoDataSelection
-} from "../interfaces/dataSelection"
-import type {Database} from "../interfaces/db"
-import type {Hooks} from "../interfaces/hooks"
-import type {ContractsContractEmittedEvent, EvmLogEvent, SubstrateCall, SubstrateEvent} from "../interfaces/substrate"
-import {withErrorContext} from "../util/misc"
-import type {Range} from "../util/range"
-import {Options, Runner} from "./runner"
+} from '../interfaces/dataSelection'
+import type {Database} from '../interfaces/db'
+import type {Hooks} from '../interfaces/hooks'
+import type {
+    ContractsContractEmittedEvent,
+    EvmLogEvent,
+    GearMessageEnqueuedEvent,
+    GearUserMessageSentEvent,
+    SubstrateCall,
+    SubstrateEvent
+} from '../interfaces/substrate'
+import {withErrorContext} from '../util/misc'
+import type {Range} from '../util/range'
+import {Options, Runner} from './runner'
 
 
 export interface DataSource {
@@ -51,7 +61,17 @@ export interface DataSource {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateProcessor<Store> {
-    protected hooks: Hooks = {pre: [], post: [], event: [], call: [], evmLog: [], contractsContractEmitted: []}
+    protected hooks: Hooks = {
+        pre: [],
+        post: [],
+        event: [],
+        call: [],
+        evmLog: [],
+        ethereumTransaction: [],
+        contractsContractEmitted: [],
+        gearMessageEnqueued: [],
+        gearUserMessageSent: [],
+    }
     private blockRange: Range = {from: 0}
     private batchSize = 100
     private prometheusPort?: number | string
@@ -233,7 +253,7 @@ export class SubstrateProcessor<Store> {
     addPreHook(fn: BlockHandler<Store>): this
     addPreHook(options: BlockRangeOption & NoDataSelection, fn: BlockHandler<Store>): this
     addPreHook<R extends BlockHandlerDataRequest>(options: BlockRangeOption & DataSelection<R>, fn: BlockHandler<Store, R>): this
-    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> , fn?: BlockHandler<Store>): this {
+    addPreHook(fnOrOptions: BlockHandler<Store> | BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest>, fn?: BlockHandler<Store>): this {
         this.assertNotRunning()
         let handler: BlockHandler<Store>
         let options: BlockRangeOption & MayBeDataSelection<BlockHandlerDataRequest> = {}
@@ -358,7 +378,7 @@ export class SubstrateProcessor<Store> {
      */
     addEventHandler(eventName: QualifiedName, fn: EventHandler<Store>): this
     addEventHandler(eventName: QualifiedName, options: BlockRangeOption & NoDataSelection, fn: EventHandler<Store>): this
-    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R> ): this
+    addEventHandler<R extends EventDataRequest>(eventName: QualifiedName, options: BlockRangeOption & DataSelection<R>, fn: EventHandler<Store, R>): this
     addEventHandler(eventName: QualifiedName, fnOrOptions: BlockRangeOption & MayBeDataSelection<EventDataRequest> | EventHandler<Store>, fn?: EventHandler<Store>): this {
         this.assertNotRunning()
         let handler: EventHandler<Store>
@@ -419,7 +439,7 @@ export class SubstrateProcessor<Store> {
     addCallHandler(callName: QualifiedName, fnOrOptions: CallHandler<Store> | CallHandlerOptions & MayBeDataSelection<CallDataRequest>, fn?: CallHandler<Store>): this {
         this.assertNotRunning()
         let handler: CallHandler<Store>
-        let options:  CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
+        let options: CallHandlerOptions & MayBeDataSelection<CallDataRequest> = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
@@ -438,48 +458,120 @@ export class SubstrateProcessor<Store> {
      * Registers `EVM.Log` event handler.
      *
      * This method is similar to {@link .addEventHandler},
-     * but provides specialised {@link EvmLogEvent | event type} and selects
-     * events by evm log contract address and topics.
+     * but selects events by evm log contract address and topics.
      *
      * @example
      * // process ERC721 transfers from Moonsama contract
      * processor.addEvmLogHandler('0xb654611f84a8dc429ba3cb4fda9fad236c505a1a', {
      *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
      * }, async ctx => {})
+     *
+     * // subscribe to multiple contracts at once
+     * processor.addEvmLogHandler([
+     *     '0xb654611f84a8dc429ba3cb4fda9fad236c505a1a',
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98'
+     * ], {
+     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * }, async ctx => {})
      */
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fn: EvmLogHandler<Store>
     ): this
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & NoDataSelection,
         fn: EvmLogHandler<Store>
     ): this
     addEvmLogHandler<R extends EventDataRequest>(
-        contractAddress: string,
+        contractAddress: string | string[],
         options: EvmLogOptions & DataSelection<R>,
         fn: EvmLogHandler<Store, R>
     ): this
     addEvmLogHandler(
-        contractAddress: string,
+        contractAddress: string | string[],
         fnOrOptions: EvmLogOptions & MayBeDataSelection<EventDataRequest> | EvmLogHandler<Store>,
         fn?: EvmLogHandler<Store>
     ): this {
         this.assertNotRunning()
         let handler: EvmLogHandler<Store>
-        let options:  EvmLogOptions= {}
+        let options: EvmLogOptions = {}
         if (typeof fnOrOptions == 'function') {
             handler = fnOrOptions
         } else {
             handler = assertNotNull(fn)
             options = {...fnOrOptions}
         }
-        this.hooks.evmLog.push({
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.evmLog.push(...contractAddresses.map((contractAddress) => ({
             handler,
             contractAddress: contractAddress.toLowerCase(),
             ...options
-        })
+        })))
+        return this
+    }
+
+    /**
+     * Registers `Ethereum.transact` call handler.
+     *
+     * This method is similar to {@link .addCallHandler},
+     * but selects calls by contract address and sighash.
+     * Only "EVM call" transactions are selected.
+     *
+     * Note, that there is a difference between success of substrate call
+     * and successful execution of its EVM transaction.
+     * {@link EthereumTransactionHandlerOptions.triggerForFailedCalls}
+     * option refers to success of substrate call.
+     *
+     * @example
+     * // process EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
+     * process.addEthereumTransactionHandler('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98', async ctx => {})
+     *
+     * // process all EVM calls with signature `transfer(address,uint256)`
+     * process.addEthereumTransactionHandler('*', {sighash: '0xa9059cbb'}, async ctx => {})
+     *
+     * // subscribe to multiple contracts at once
+     * processor.addEthereumTransaction([
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+     *     '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+     * ], {
+     *     sighash: '0xa9059cbb'
+     * }, async ctx => {})
+     */
+    addEthereumTransactionHandler(
+        contractAddress: string | string[],
+        fn: CallHandler<Store>
+    ): this
+    addEthereumTransactionHandler(
+        contractAddress: string | string[],
+        options: EthereumTransactionHandlerOptions & NoDataSelection,
+        fn: CallHandler<Store>
+    ): this
+    addEthereumTransactionHandler<R extends CallDataRequest>(
+        contractAddress: string | string[],
+        options: EthereumTransactionHandlerOptions & DataSelection<R>,
+        fn: CallHandler<Store, R>
+    ): this
+    addEthereumTransactionHandler(
+        contractAddress: string | string[],
+        fnOrOptions: EthereumTransactionHandlerOptions & MayBeDataSelection<CallDataRequest> | CallHandler<Store>,
+        fn?: CallHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: CallHandler<Store>
+        let options: EthereumTransactionHandlerOptions = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        this.hooks.ethereumTransaction.push(...contractAddresses.map((contractAddress) => ({
+            handler,
+            contractAddress: contractAddress.toLowerCase(),
+            ...options
+        })))
         return this
     }
 
@@ -526,6 +618,92 @@ export class SubstrateProcessor<Store> {
         return this
     }
 
+    /**
+     * Registers `Gear.MessageEnqueued` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearMessageEnqueuedEvent | event type} and selects
+     * events by program id.
+     */
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearMessageEnqueuedHandler<Store>
+    ): this
+    addGearMessageEnqueuedHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearMessageEnqueuedHandler<Store, R>
+    ): this
+    addGearMessageEnqueuedHandler(
+        programId: string,
+        fnOrOptions: GearMessageEnqueuedHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearMessageEnqueuedHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: GearMessageEnqueuedHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearMessageEnqueued.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
+    }
+
+    /**
+     * Registers `Gear.UserMessageSent` event handler.
+     *
+     * This method is similar to {@link .addEventHandler},
+     * but provides specialised {@link GearUserMessageSentEvent | event type} and selects
+     * events by program id.
+     */
+    addGearUserMessageSentHandler(
+        programId: string,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        options: BlockRangeOption & NoDataSelection,
+        fn: GearUserMessageSentHandler<Store>
+    ): this
+    addGearUserMessageSentHandler<R extends EventDataRequest>(
+        programId: string,
+        options: BlockRangeOption & DataSelection<R>,
+        fn: GearUserMessageSentHandler<Store, R>
+    ): this
+    addGearUserMessageSentHandler(
+        programId: string,
+        fnOrOptions: GearUserMessageSentHandler<Store> | BlockRangeOption & MayBeDataSelection<EventDataRequest>,
+        fn?: GearUserMessageSentHandler<Store>
+    ): this {
+        this.assertNotRunning()
+        let handler: GearUserMessageSentHandler<Store>
+        let options: BlockRangeOption & MayBeDataSelection<EventDataRequest> = {}
+        if (typeof fnOrOptions == 'function') {
+            handler = fnOrOptions
+        } else {
+            handler = assertNotNull(fn)
+            options = {...fnOrOptions}
+        }
+        this.hooks.gearUserMessageSent.push({
+            handler,
+            programId,
+            ...options
+        })
+        return this
+    }
+
     protected assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -535,7 +713,7 @@ export class SubstrateProcessor<Store> {
     private createBatches(blockRange: Range) {
         let batches: Batch<DataHandlers>[] = []
 
-        function getRange(hook: { range?: Range }): Range{
+        function getRange(hook: {range?: Range}): Range {
             return hook.range || {from: 0}
         }
 
@@ -589,11 +767,46 @@ export class SubstrateProcessor<Store> {
             batches.push({range, request})
         })
 
+        this.hooks.ethereumTransaction.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.ethereumTransactions = {
+                [hook.contractAddress]: {
+                    [hook.sighash || '*']: {
+                        data: hook.data,
+                        handlers: [{
+                            handler: hook.handler,
+                            triggerForFailedCalls: hook.triggerForFailedCalls
+                        }]
+                    }
+                }
+            }
+            batches.push({range, request})
+        })
+
         this.hooks.contractsContractEmitted.forEach(hook => {
             let range = getRange(hook)
             let request = new DataHandlers()
             request.contractsContractEmitted = {
                 [hook.contractAddress]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearMessageEnqueued.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearMessageEnqueued = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
+            }
+            batches.push({range, request})
+        })
+
+        this.hooks.gearUserMessageSent.forEach(hook => {
+            let range = getRange(hook)
+            let request = new DataHandlers()
+            request.gearUserMessageSent = {
+                [hook.programId]: {data: hook.data, handlers: [hook.handler]}
             }
             batches.push({range, request})
         })
@@ -704,7 +917,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
 
         for (let item of block.items) {
-            switch(item.kind) {
+            switch (item.kind) {
                 case 'event':
                     for (let handler of this.getEventHandlers(handlers, item.event)) {
                         let log = blockLog.child({
@@ -720,7 +933,7 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         let event = item.event as EvmLogEvent
                         let log = blockLog.child({
                             hook: 'evm-log',
-                            contractAddress: event.args.address,
+                            contractAddress: event.args.address || event.args.log.address,
                             eventId: event.id
                         })
                         log.debug('begin')
@@ -746,12 +959,55 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
                         })
                         log.debug('end')
                     }
+                    for (let handler of this.getGearMessageEnqueuedHandlers(handlers, item.event)) {
+                        let event = item.event as GearMessageEnqueuedEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-enqueued',
+                            programId: event.args.destination,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
+                    for (let handler of this.getGearUserMessageSentHandlers(handlers, item.event)) {
+                        let event = item.event as GearUserMessageSentEvent
+                        let log = blockLog.child({
+                            hook: 'gear-message-sent',
+                            programId: event.args.message.source,
+                            eventId: event.id
+                        })
+                        log.debug('begin')
+                        await handler({
+                            ...ctx,
+                            log,
+                            event
+                        })
+                        log.debug('end')
+                    }
                     break
                 case 'call':
                     for (let handler of this.getCallHandlers(handlers, item.call)) {
                         if (item.call.success || handler.triggerForFailedCalls) {
                             let log = blockLog.child({
                                 hook: 'call',
+                                callName: item.call.name,
+                                callId: item.call.id
+                            })
+                            let {kind, ...data} = item
+                            log.debug('begin')
+                            await handler.handler({...ctx, log, ...data})
+                            log.debug('end')
+                        }
+                    }
+                    for (let handler of this.getEthereumTransactionHandlers(handlers, item.call)) {
+                        if (item.call.success || handler.triggerForFailedCalls) {
+                            let log = blockLog.child({
+                                hook: 'ethereum-transaction',
                                 callName: item.call.name,
                                 callId: item.call.id
                             })
@@ -777,32 +1033,38 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
     }
 
     private *getEventHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<EventHandler<any>, any, any> {
-        let hs = handlers.events['*']
-        if (hs) {
-            yield* hs.handlers
-        }
-        hs = handlers.events[event.name]
-        if (hs) {
+        for (let hs of extract(handlers.events, event.name)) {
             yield* hs.handlers
         }
     }
 
     private *getCallHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
-        let hs = handlers.calls['*']
-        if (hs) {
-            yield* hs.handlers
-        }
-        hs = handlers.calls[call.name]
-        if (hs) {
-            yield* hs.handlers
+       for (let hs of extract(handlers.calls, call.name)) {
+           yield* hs.handlers
+       }
+    }
+
+    private *getEthereumTransactionHandlers(handlers: DataHandlers, call: SubstrateCall): Generator<CallHandlerEntry, any, any> {
+        if (call.name != 'Ethereum.transact') return
+        let tx = call.args.transaction.value.action ? call.args.transaction.value : call.args.transaction
+
+        let contractAddress = tx.action.value
+        if (contractAddress == null) return
+        let sighash = tx.input.slice(0, 10)
+
+        for (let sighashMap of extract(handlers.ethereumTransactions, contractAddress)) {
+            for (let hs of extract(sighashMap, sighash)) {
+                yield* hs.handlers
+            }
         }
     }
+
 
     private *getEvmLogHandlers(evmLogs: DataHandlers["evmLogs"], event: SubstrateEvent): Generator<EvmLogHandler<any>> {
         if (event.name != 'EVM.Log') return
         let log = event as EvmLogEvent
 
-        let contractAddress = assertNotNull(log.args?.address)
+        let contractAddress = assertNotNull(log.args.address || log.args.log.address)
         let contractHandlers = evmLogs[contractAddress]
         if (contractHandlers == null) return
 
@@ -818,8 +1080,10 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
-            if (Array.isArray(set) && !set.includes(log.args.topics[i])) {
-                return false
+            if (Array.isArray(set)) {
+                if (!set.includes(log.args.topics[i])) {
+                    return false
+                }
             } else if (set !== log.args.topics[i]) {
                 return false
             }
@@ -838,4 +1102,36 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
             yield h
         }
     }
+
+    private *getGearMessageEnqueuedHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearMessageEnqueuedHandler<any>> {
+        if (event.name != 'Gear.MessageEnqueued') return
+        let e = event as GearMessageEnqueuedEvent
+
+        let hs = handlers.gearMessageEnqueued[e.args.destination]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+
+    private *getGearUserMessageSentHandlers(handlers: DataHandlers, event: SubstrateEvent): Generator<GearUserMessageSentHandler<any>> {
+        if (event.name != 'Gear.UserMessageSent') return
+        let e = event as GearUserMessageSentEvent
+
+        let hs = handlers.gearUserMessageSent[e.args.message.source]
+        if (hs == null) return
+
+        for (let h of hs.handlers) {
+            yield h
+        }
+    }
+}
+
+
+function* extract<T>(map: Record<string, T>, key: string): Generator<T> {
+    let item = map['*']
+    if (item) yield item
+    item = map[key]
+    if (item) yield item
 }
