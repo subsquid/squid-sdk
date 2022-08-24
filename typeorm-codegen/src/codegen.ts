@@ -451,7 +451,7 @@ function getScalarJsType(typeName: string): string {
         case 'BigInt':
             return 'bigint'
         case 'BigDecimal':
-            return 'marshal.BigDecimal'
+            return 'BigDecimal'
         case 'Bytes':
             return 'Uint8Array'
         case 'JSON':
@@ -515,6 +515,7 @@ class ImportRegistry {
     private typeorm = new Set<string>()
     private model = new Set<string>()
     private marshal = false
+    private bigdecimal = true
     private assert = false
 
     constructor(private owner: string) {
@@ -535,6 +536,10 @@ class ImportRegistry {
         this.marshal = true
     }
 
+    useBigDecimal() {
+        this.bigdecimal = true
+    }
+
     useAssert() {
         this.assert = true
     }
@@ -551,6 +556,9 @@ class ImportRegistry {
         }
         if (this.marshal) {
             out.line(`import * as marshal from "./marshal"`)
+        }
+        if (this.bigdecimal) {
+            out.line(`import {BigDecimal} from "@subsquid/big-decimal"`)
         }
         for (const name of this.model) {
             switch(model[name].kind) {

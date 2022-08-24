@@ -126,15 +126,12 @@ export const bigintTransformer = {
 }
 
 
-export const {BigDecimal: _BigDecimal} = require('@subsquid/big-decimal')
-export type BigDecimal = typeof _BigDecimal
-
 export const bigdecimalTransformer = {
-    to(x?: BigDecimal) {
+    to(x?: any) {
         return x?.toFixed()
     },
-    from(s?: string): BigDecimal | undefined {
-        return s == null ? undefined : _BigDecimal(s)
+    from(s?: any): any | undefined {
+        return s == null ? undefined : require('@subsquid/big-decimal').BigDecimal(s)
     }
 }
 

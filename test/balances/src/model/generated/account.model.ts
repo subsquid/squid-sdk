@@ -1,5 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
+import {BigDecimal} from "@subsquid/big-decimal"
 import {HistoricalBalance} from "./historicalBalance.model"
 
 @Entity_()
