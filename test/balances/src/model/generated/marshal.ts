@@ -125,13 +125,22 @@ export const bigintTransformer = {
     }
 }
 
+const decimal = {
+    get BigDecimal(): any {
+       throw new Error('Package `@subsquid/big-decimal` is not installed')
+    }
+ }
+ 
+try {
+    Object.defineProperty(decimal, "BigDecimal", require('@subsquid/big-decimal'))
+} catch (e) {}
 
 export const bigdecimalTransformer = {
     to(x?: any) {
         return x?.toFixed()
     },
     from(s?: any): any | undefined {
-        return s == null ? undefined : require('@subsquid/big-decimal').BigDecimal(s)
+        return s == null ? undefined : decimal.BigDecimal(s)
     }
 }
 
