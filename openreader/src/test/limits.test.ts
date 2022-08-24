@@ -1,3 +1,4 @@
+import expect from 'expect'
 import {useDatabase, useServer} from './setup'
 
 
@@ -56,6 +57,14 @@ describe('response size limits', function() {
                 }
             }
         `)
+        expect(result).toMatchObject({
+            data: {
+                order1s: null
+            },
+            errors: [
+                expect.objectContaining({message: 'requested data size limit exceeded', path: ['order1s']})
+            ]
+        })
     })
 
     it('limited requests work', function() {
@@ -72,11 +81,53 @@ describe('response size limits', function() {
         })
     })
 
+    it('entity level cardinalities are respected', function() {
+        return client.test(`
+            query {
+                order2s {
+                    id
+                }
+            }
+        `, {
+            order2s: []
+        })
+    })
+
     it('item cardinalities are respected', function() {
         return client.test(`
             query {
                 order3s(limit: 1) {
                     items { id }
+                }
+            }
+        `, {
+            order3s: []
+        })
+    })
+
+    it('@byteWeight annotations are respected', async function() {
+        let result = await client.query(`
+            query {
+                order3s(limit: 1) {
+                    items(limit: 8) { name }
+                }
+            }
+        `)
+        expect(result).toEqual({
+            data: {
+                order3s: null
+            },
+            errors: [
+                expect.objectContaining({
+                    message: 'requested data size limit exceeded',
+                    path: ['order3s']
+                })
+            ]
+        })
+        await client.test(`
+            query {
+                order3s(limit: 1) {
+                    items(limit: 4) { name }
                 }
             }
         `, {
