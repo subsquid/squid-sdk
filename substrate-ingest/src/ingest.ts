@@ -33,6 +33,7 @@ export interface IngestOptions {
     client: Client
     typesBundle?: OldTypesBundle
     startBlock?: number
+    lastSpecId?: string
     log?: Logger
 }
 
@@ -42,6 +43,7 @@ export class Ingest {
         return new Ingest(options).loop()
     }
 
+    private lastSpecId: string | undefined
     private client: Client
     private typesBundle?: OldTypesBundle
     private maxStrides = 20
@@ -64,6 +66,7 @@ export class Ingest {
             this.stridesHead = 0
         }
         this.log = options.log
+        this.lastSpecId = options.lastSpecId
     }
 
     private async *loop(): AsyncGenerator<BlockData> {
@@ -94,7 +97,7 @@ export class Ingest {
         let validators = await this.validators.get(raw.blockHeight)
         let block = parseRawBlock(prevSpec, validators, raw)
         let currentSpec = await this.specs.get(raw.blockHeight)
-        if (raw.blockHeight == 0 || currentSpec.specId != prevSpec.specId) {
+        if (currentSpec.specId != this.lastSpecId) {
             let [spec_name, spec_version] = splitSpecId(currentSpec.specId)
             block.metadata = {
                 id: currentSpec.specId,
@@ -105,7 +108,7 @@ export class Ingest {
                 hex: currentSpec.rawMetadata,
             }
         }
-        block.header.spec_id = currentSpec.specId
+        block.header.spec_id = this.lastSpecId = currentSpec.specId
         block.last = this.chainHeight === block.header.height
         return block
     }

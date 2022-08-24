@@ -89,6 +89,7 @@ runProgram(async () => {
         : readOldTypesBundle(options.typesBundle)
 
     let startBlock = options.startBlock || 0
+    let lastSpecId: string | undefined = undefined
     let writeSpeed = new Speed()
     let progress = new Progress({
         initialValue: startBlock,
@@ -114,6 +115,8 @@ runProgram(async () => {
                 startBlock = Math.max(startBlock, height + 1)
                 log.info(`continuing from block ${startBlock}`)
             }
+
+            lastSpecId = await getLastSpecId(db)
 
             progress.setCurrentValue(startBlock)
             sink = new PostgresSink({
@@ -160,6 +163,7 @@ runProgram(async () => {
         client,
         typesBundle,
         startBlock,
+        lastSpecId,
         log
     })
 
@@ -173,6 +177,16 @@ async function getDbHeight(db: pg.ClientBase): Promise<number | undefined> {
     let res = await db.query("SELECT height FROM block ORDER BY height DESC LIMIT 1")
     if (res.rowCount) {
         return parseInt(res.rows[0].height)
+    } else {
+        return undefined
+    }
+}
+
+
+async function getLastSpecId(db: pg.ClientBase): Promise<string | undefined> {
+    let res = await db.query("SELECT id FROM metadata ORDER BY block_height DESC LIMIT 1")
+    if (res.rowCount) {
+        return res.rows[0].id
     } else {
         return undefined
     }
