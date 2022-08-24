@@ -1,24 +1,21 @@
+import {UserInputError} from 'apollo-server-core'
 import assert from 'assert'
 
 
 export class Limit {
-    private err?: Error
-
-    constructor(private name: string, private value: number) {
+    constructor(private error: Error, private value: number) {
         assert(this.value > 0)
     }
 
     get left(): number {
-        return this.value
+        return Math.max(this.value, 0)
     }
 
     check(cb: (left: number) => number): void {
-        if (this.err) throw this.err
+        if (this.value < 0) throw this.error
         let left = this.value - cb(this.value)
         if (left < 0) {
-            this.value = 0
-            this.err = new Error(`${this.name} limit exceeded`)
-            throw this.err
+            throw this.error
         } else {
             this.value = left
         }
@@ -26,8 +23,12 @@ export class Limit {
 }
 
 
+const SIZE_LIMIT = new UserInputError('response size limit exceeded')
+SIZE_LIMIT.stack = undefined
+
+
 export class ResponseSizeLimit extends Limit {
     constructor(maxNodes: number) {
-        super('requested data size', maxNodes)
+        super(SIZE_LIMIT, maxNodes)
     }
 }

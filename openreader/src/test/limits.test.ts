@@ -62,7 +62,7 @@ describe('response size limits', function() {
                 order1s: null
             },
             errors: [
-                expect.objectContaining({message: 'requested data size limit exceeded', path: ['order1s']})
+                expect.objectContaining({message: 'response size limit exceeded', path: ['order1s']})
             ]
         })
     })
@@ -119,7 +119,7 @@ describe('response size limits', function() {
             },
             errors: [
                 expect.objectContaining({
-                    message: 'requested data size limit exceeded',
+                    message: 'response size limit exceeded',
                     path: ['order3s']
                 })
             ]
