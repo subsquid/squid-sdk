@@ -6,7 +6,7 @@
  */
 ;(function (GLOBAL) {
     'use strict';
-    var Big,
+    var BigDecimal,
   
   
   /************************************** EDITABLE DEFAULTS *****************************************/
@@ -30,7 +30,7 @@
        */
       RM = 1,             // 0, 1, 2 or 3
   
-      // The maximum value of DP and Big.DP.
+      // The maximum value of DP and BigDecimal.DP.
       MAX_DP = 1E6,       // 0 to 1000000
   
       // The maximum magnitude of the exponent argument to the pow method.
@@ -39,20 +39,20 @@
       /*
        * The negative exponent (NE) at and beneath which toString returns exponential notation.
        * (JavaScript numbers: -7)
-       * -1000000 is the minimum recommended exponent value of a Big.
+       * -1000000 is the minimum recommended exponent value of a BigDecimal.
        */
       NE = -7,            // 0 to -1000000
   
       /*
        * The positive exponent (PE) at and above which toString returns exponential notation.
        * (JavaScript numbers: 21)
-       * 1000000 is the maximum recommended exponent value of a Big, but this limit is not enforced.
+       * 1000000 is the maximum recommended exponent value of a BigDecimal, but this limit is not enforced.
        */
       PE = 21,            // 0 to 1000000
   
       /*
-       * When true, an error will be thrown if a primitive number is passed to the Big constructor,
-       * or if valueOf is called, or if toNumber is called on a Big which cannot be converted to a
+       * When true, an error will be thrown if a primitive number is passed to the BigDecimal constructor,
+       * or if valueOf is called, or if toNumber is called on a BigDecimal which cannot be converted to a
        * primitive number without a loss of precision.
        */
       STRICT = false,     // true or false
@@ -75,30 +75,30 @@
   
   
     /*
-     * Create and return a Big constructor.
+     * Create and return a BigDecimal constructor.
      */
-    function _Big_() {
+    function _BigDecimal_() {
   
       /*
-       * The Big constructor and exported function.
-       * Create and return a new instance of a Big number object.
+       * The BigDecimal constructor and exported function.
+       * Create and return a new instance of a BigDecimal number object.
        *
-       * n {number|string|Big} A numeric value.
+       * n {number|string|BigDecimal} A numeric value.
        */
-      function Big(n) {
+      function BigDecimal(n) {
         var x = this;
   
         // Enable constructor usage without new.
-        if (!(x instanceof Big)) return n === UNDEFINED ? _Big_() : new Big(n);
+        if (!(x instanceof BigDecimal)) return n === UNDEFINED ? _BigDecimal_() : new BigDecimal(n);
   
         // Duplicate.
-        if (n instanceof Big) {
+        if (n instanceof BigDecimal) {
           x.s = n.s;
           x.e = n.e;
           x.c = n.c.slice();
         } else {
           if (typeof n !== 'string') {
-            if (Big.strict === true && typeof n !== 'bigint') {
+            if (BigDecimal.strict === true && typeof n !== 'bigint') {
               throw TypeError(INVALID + 'value');
             }
   
@@ -109,30 +109,30 @@
           parse(x, n);
         }
   
-        // Retain a reference to this Big constructor.
-        // Shadow Big.prototype.constructor which points to Object.
-        x.constructor = Big;
+        // Retain a reference to this BigDecimal constructor.
+        // Shadow BigDecimal.prototype.constructor which points to Object.
+        x.constructor = BigDecimal;
       }
   
-      Big.prototype = P;
-      Big.DP = DP;
-      Big.RM = RM;
-      Big.NE = NE;
-      Big.PE = PE;
-      Big.strict = STRICT;
-      Big.roundDown = 0;
-      Big.roundHalfUp = 1;
-      Big.roundHalfEven = 2;
-      Big.roundUp = 3;
+      BigDecimal.prototype = P;
+      BigDecimal.DP = DP;
+      BigDecimal.RM = RM;
+      BigDecimal.NE = NE;
+      BigDecimal.PE = PE;
+      BigDecimal.strict = STRICT;
+      BigDecimal.roundDown = 0;
+      BigDecimal.roundHalfUp = 1;
+      BigDecimal.roundHalfEven = 2;
+      BigDecimal.roundUp = 3;
   
-      return Big;
+      return BigDecimal;
     }
   
   
     /*
-     * Parse the number or string value passed to a Big constructor.
+     * Parse the number or string value passed to a BigDecimal constructor.
      *
-     * x {Big} A Big number instance.
+     * x {BigDecimal} A BigDecimal number instance.
      * n {number|string} A numeric value.
      */
     function parse(x, n) {
@@ -186,9 +186,9 @@
   
   
     /*
-     * Round Big x to a maximum of sd significant digits using rounding mode rm.
+     * Round BigDecimal x to a maximum of sd significant digits using rounding mode rm.
      *
-     * x {Big} The Big to round.
+     * x {BigDecimal} The BigDecimal to round.
      * sd {number} Significant digits: integer, 0 to MAX_DP inclusive.
      * rm {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
      * [more] {boolean} Whether the result of division was truncated.
@@ -255,7 +255,7 @@
   
   
     /*
-     * Return a string representing the value of Big x in normal or exponential notation.
+     * Return a string representing the value of BigDecimal x in normal or exponential notation.
      * Handles P.toExponential, P.toFixed, P.toJSON, P.toPrecision, P.toString and P.valueOf.
      */
     function stringify(x, doExponential, isNonzero) {
@@ -289,7 +289,7 @@
   
   
     /*
-     * Return a new Big whose value is the absolute value of this Big.
+     * Return a new BigDecimal whose value is the absolute value of this BigDecimal.
      */
     P.abs = function () {
       var x = new this.constructor(this);
@@ -299,8 +299,8 @@
   
   
     /*
-     * Return 1 if the value of this Big is greater than the value of Big y,
-     *       -1 if the value of this Big is less than the value of Big y, or
+     * Return 1 if the value of this BigDecimal is greater than the value of BigDecimal y,
+     *       -1 if the value of this BigDecimal is less than the value of BigDecimal y, or
      *        0 if they have the same value.
      */
     P.cmp = function (y) {
@@ -337,16 +337,16 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big divided by the value of Big y, rounded,
-     * if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.
+     * Return a new BigDecimal whose value is the value of this BigDecimal divided by the value of BigDecimal y, rounded,
+     * if necessary, to a maximum of BigDecimal.DP decimal places using rounding mode BigDecimal.RM.
      */
     P.div = function (y) {
       var x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         a = x.c,                  // dividend
-        b = (y = new Big(y)).c,   // divisor
+        b = (y = new BigDecimal(y)).c,   // divisor
         k = x.s == y.s ? 1 : -1,
-        dp = Big.DP;
+        dp = BigDecimal.DP;
   
       if (dp !== ~~dp || dp < 0 || dp > MAX_DP) {
         throw Error(INVALID_DP);
@@ -441,14 +441,14 @@
       }
   
       // Round?
-      if (qi > p) round(q, p, Big.RM, r[0] !== UNDEFINED);
+      if (qi > p) round(q, p, BigDecimal.RM, r[0] !== UNDEFINED);
   
       return q;
     };
   
   
     /*
-     * Return true if the value of this Big is equal to the value of Big y, otherwise return false.
+     * Return true if the value of this BigDecimal is equal to the value of BigDecimal y, otherwise return false.
      */
     P.eq = function (y) {
       return this.cmp(y) === 0;
@@ -456,7 +456,7 @@
   
   
     /*
-     * Return true if the value of this Big is greater than the value of Big y, otherwise return
+     * Return true if the value of this BigDecimal is greater than the value of BigDecimal y, otherwise return
      * false.
      */
     P.gt = function (y) {
@@ -465,7 +465,7 @@
   
   
     /*
-     * Return true if the value of this Big is greater than or equal to the value of Big y, otherwise
+     * Return true if the value of this BigDecimal is greater than or equal to the value of BigDecimal y, otherwise
      * return false.
      */
     P.gte = function (y) {
@@ -474,7 +474,7 @@
   
   
     /*
-     * Return true if the value of this Big is less than the value of Big y, otherwise return false.
+     * Return true if the value of this BigDecimal is less than the value of BigDecimal y, otherwise return false.
      */
     P.lt = function (y) {
       return this.cmp(y) < 0;
@@ -482,7 +482,7 @@
   
   
     /*
-     * Return true if the value of this Big is less than or equal to the value of Big y, otherwise
+     * Return true if the value of this BigDecimal is less than or equal to the value of BigDecimal y, otherwise
      * return false.
      */
     P.lte = function (y) {
@@ -491,14 +491,14 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big minus the value of Big y.
+     * Return a new BigDecimal whose value is the value of this BigDecimal minus the value of BigDecimal y.
      */
     P.minus = P.sub = function (y) {
       var i, j, t, xlty,
         x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         a = x.s,
-        b = (y = new Big(y)).s;
+        b = (y = new BigDecimal(y)).s;
   
       // Signs differ?
       if (a != b) {
@@ -516,7 +516,7 @@
         if (yc[0]) {
           y.s = -b;
         } else if (xc[0]) {
-          y = new Big(x);
+          y = new BigDecimal(x);
         } else {
           y.s = 1;
         }
@@ -601,14 +601,14 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big modulo the value of Big y.
+     * Return a new BigDecimal whose value is the value of this BigDecimal modulo the value of BigDecimal y.
      */
     P.mod = function (y) {
       var ygtx,
         x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         a = x.s,
-        b = (y = new Big(y)).s;
+        b = (y = new BigDecimal(y)).s;
   
       if (!y.c[0]) {
         throw Error(DIV_BY_ZERO);
@@ -619,21 +619,21 @@
       x.s = a;
       y.s = b;
   
-      if (ygtx) return new Big(x);
+      if (ygtx) return new BigDecimal(x);
   
-      a = Big.DP;
-      b = Big.RM;
-      Big.DP = Big.RM = 0;
+      a = BigDecimal.DP;
+      b = BigDecimal.RM;
+      BigDecimal.DP = BigDecimal.RM = 0;
       x = x.div(y);
-      Big.DP = a;
-      Big.RM = b;
+      BigDecimal.DP = a;
+      BigDecimal.RM = b;
   
       return this.minus(x.times(y));
     };
     
     
     /*
-     * Return a new Big whose value is the value of this Big negated.
+     * Return a new BigDecimal whose value is the value of this BigDecimal negated.
      */
     P.neg = function () {
       var x = new this.constructor(this);
@@ -643,14 +643,14 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big plus the value of Big y.
+     * Return a new BigDecimal whose value is the value of this BigDecimal plus the value of BigDecimal y.
      */
     P.plus = P.add = function (y) {
       var e, k, t,
         x = this,
-        Big = x.constructor;
+        BigDecimal = x.constructor;
   
-      y = new Big(y);
+      y = new BigDecimal(y);
   
       // Signs differ?
       if (x.s != y.s) {
@@ -667,7 +667,7 @@
       if (!xc[0] || !yc[0]) {
         if (!yc[0]) {
           if (xc[0]) {
-            y = new Big(x);
+            y = new BigDecimal(x);
           } else {
             y.s = x.s;
           }
@@ -723,9 +723,9 @@
   
   
     /*
-     * Return a Big whose value is the value of this Big raised to the power n.
-     * If n is negative, round to a maximum of Big.DP decimal places using rounding
-     * mode Big.RM.
+     * Return a BigDecimal whose value is the value of this BigDecimal raised to the power n.
+     * If n is negative, round to a maximum of BigDecimal.DP decimal places using rounding
+     * mode BigDecimal.RM.
      *
      * n {number} Integer, -MAX_POWER to MAX_POWER inclusive.
      */
@@ -753,8 +753,8 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big rounded to a maximum precision of sd
-     * significant digits using rounding mode rm, or Big.RM if rm is not specified.
+     * Return a new BigDecimal whose value is the value of this BigDecimal rounded to a maximum precision of sd
+     * significant digits using rounding mode rm, or BigDecimal.RM if rm is not specified.
      *
      * sd {number} Significant digits: integer, 1 to MAX_DP inclusive.
      * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
@@ -768,8 +768,8 @@
   
   
     /*
-     * Return a new Big whose value is the value of this Big rounded to a maximum of dp decimal places
-     * using rounding mode rm, or Big.RM if rm is not specified.
+     * Return a new BigDecimal whose value is the value of this BigDecimal rounded to a maximum of dp decimal places
+     * using rounding mode rm, or BigDecimal.RM if rm is not specified.
      * If dp is negative, round to an integer which is a multiple of 10**-dp.
      * If dp is not specified, round to 0 decimal places.
      *
@@ -786,19 +786,19 @@
   
   
     /*
-     * Return a new Big whose value is the square root of the value of this Big, rounded, if
-     * necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.
+     * Return a new BigDecimal whose value is the square root of the value of this BigDecimal, rounded, if
+     * necessary, to a maximum of BigDecimal.DP decimal places using rounding mode BigDecimal.RM.
      */
     P.sqrt = function () {
       var r, c, t,
         x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         s = x.s,
         e = x.e,
-        half = new Big('0.5');
+        half = new BigDecimal('0.5');
   
       // Zero?
-      if (!x.c[0]) return new Big(x);
+      if (!x.c[0]) return new BigDecimal(x);
   
       // Negative?
       if (s < 0) {
@@ -815,12 +815,12 @@
         if (!(c.length + e & 1)) c += '0';
         s = Math.sqrt(c);
         e = ((e + 1) / 2 | 0) - (e < 0 || e & 1);
-        r = new Big((s == 1 / 0 ? '5e' : (s = s.toExponential()).slice(0, s.indexOf('e') + 1)) + e);
+        r = new BigDecimal((s == 1 / 0 ? '5e' : (s = s.toExponential()).slice(0, s.indexOf('e') + 1)) + e);
       } else {
-        r = new Big(s + '');
+        r = new BigDecimal(s + '');
       }
   
-      e = r.e + (Big.DP += 4);
+      e = r.e + (BigDecimal.DP += 4);
   
       // Newton-Raphson iteration.
       do {
@@ -828,19 +828,19 @@
         r = half.times(t.plus(x.div(t)));
       } while (t.c.slice(0, e).join('') !== r.c.slice(0, e).join(''));
   
-      return round(r, (Big.DP -= 4) + r.e + 1, Big.RM);
+      return round(r, (BigDecimal.DP -= 4) + r.e + 1, BigDecimal.RM);
     };
   
   
     /*
-     * Return a new Big whose value is the value of this Big times the value of Big y.
+     * Return a new BigDecimal whose value is the value of this BigDecimal times the value of BigDecimal y.
      */
     P.times = P.mul = function (y) {
       var c,
         x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         xc = x.c,
-        yc = (y = new Big(y)).c,
+        yc = (y = new BigDecimal(y)).c,
         a = xc.length,
         b = yc.length,
         i = x.e,
@@ -904,8 +904,8 @@
   
   
     /*
-     * Return a string representing the value of this Big in exponential notation rounded to dp fixed
-     * decimal places using rounding mode rm, or Big.RM if rm is not specified.
+     * Return a string representing the value of this BigDecimal in exponential notation rounded to dp fixed
+     * decimal places using rounding mode rm, or BigDecimal.RM if rm is not specified.
      *
      * dp? {number} Decimal places: integer, 0 to MAX_DP inclusive.
      * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
@@ -927,8 +927,8 @@
   
   
     /*
-     * Return a string representing the value of this Big in normal notation rounded to dp fixed
-     * decimal places using rounding mode rm, or Big.RM if rm is not specified.
+     * Return a string representing the value of this BigDecimal in normal notation rounded to dp fixed
+     * decimal places using rounding mode rm, or BigDecimal.RM if rm is not specified.
      *
      * dp? {number} Decimal places: integer, 0 to MAX_DP inclusive.
      * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
@@ -955,20 +955,20 @@
   
   
     /*
-     * Return a string representing the value of this Big.
-     * Return exponential notation if this Big has a positive exponent equal to or greater than
-     * Big.PE, or a negative exponent equal to or less than Big.NE.
+     * Return a string representing the value of this BigDecimal.
+     * Return exponential notation if this BigDecimal has a positive exponent equal to or greater than
+     * BigDecimal.PE, or a negative exponent equal to or less than BigDecimal.NE.
      * Omit the sign for negative zero.
      */
     P.toJSON = P.toString = function () {
       var x = this,
-        Big = x.constructor;
-      return stringify(x, x.e <= Big.NE || x.e >= Big.PE, !!x.c[0]);
+        BigDecimal = x.constructor;
+      return stringify(x, x.e <= BigDecimal.NE || x.e >= BigDecimal.PE, !!x.c[0]);
     };
   
   
     /*
-     * Return the value of this Big as a primitve number.
+     * Return the value of this BigDecimal as a primitve number.
      */
     P.toNumber = function () {
       var n = Number(stringify(this, true, true));
@@ -980,8 +980,8 @@
   
   
     /*
-     * Return a string representing the value of this Big rounded to sd significant digits using
-     * rounding mode rm, or Big.RM if rm is not specified.
+     * Return a string representing the value of this BigDecimal rounded to sd significant digits using
+     * rounding mode rm, or BigDecimal.RM if rm is not specified.
      * Use exponential notation if sd is less than the number of digits necessary to represent
      * the integer part of the value in normal notation.
      *
@@ -990,55 +990,55 @@
      */
     P.toPrecision = function (sd, rm) {
       var x = this,
-        Big = x.constructor,
+        BigDecimal = x.constructor,
         n = x.c[0];
   
       if (sd !== UNDEFINED) {
         if (sd !== ~~sd || sd < 1 || sd > MAX_DP) {
           throw Error(INVALID + 'precision');
         }
-        x = round(new Big(x), sd, rm);
+        x = round(new BigDecimal(x), sd, rm);
         for (; x.c.length < sd;) x.c.push(0);
       }
   
-      return stringify(x, sd <= x.e || x.e <= Big.NE || x.e >= Big.PE, !!n);
+      return stringify(x, sd <= x.e || x.e <= BigDecimal.NE || x.e >= BigDecimal.PE, !!n);
     };
   
   
     /*
-     * Return a string representing the value of this Big.
-     * Return exponential notation if this Big has a positive exponent equal to or greater than
-     * Big.PE, or a negative exponent equal to or less than Big.NE.
+     * Return a string representing the value of this BigDecimal.
+     * Return exponential notation if this BigDecimal has a positive exponent equal to or greater than
+     * BigDecimal.PE, or a negative exponent equal to or less than BigDecimal.NE.
      * Include the sign for negative zero.
      */
     P.valueOf = function () {
       var x = this,
-        Big = x.constructor;
-      if (Big.strict === true) {
+        BigDecimal = x.constructor;
+      if (BigDecimal.strict === true) {
         throw Error(NAME + 'valueOf disallowed');
       }
-      return stringify(x, x.e <= Big.NE || x.e >= Big.PE, true);
+      return stringify(x, x.e <= BigDecimal.NE || x.e >= BigDecimal.PE, true);
     };
   
   
     // Export
   
   
-    Big = _Big_();
+    BigDecimal = _BigDecimal_();
   
-    Big['default'] = Big.Big = Big;
+    BigDecimal['default'] = BigDecimal.BigDecimal = BigDecimal;
   
     //AMD.
     if (typeof define === 'function' && define.amd) {
-      define(function () { return Big; });
+      define(function () { return BigDecimal; });
   
     // Node and other CommonJS-like environments that support module.exports.
     } else if (typeof module !== 'undefined' && module.exports) {
-      module.exports = Big;
+      module.exports = BigDecimal;
   
     //Browser.
     } else {
-      GLOBAL.Big = Big;
+      GLOBAL.BigDecimal = BigDecimal;
     }
   })(this);
   
