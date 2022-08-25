@@ -16,7 +16,6 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "big.js":"~6.2.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",
