@@ -21,6 +21,7 @@
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.3.6",
-    "typescript": "~4.7.4"
+    "typescript": "~4.7.4",
+    "@subsquid/big-decimal": "~0.0.0"
   }
 }
