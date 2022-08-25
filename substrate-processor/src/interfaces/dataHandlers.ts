@@ -126,15 +126,6 @@ export interface EvmLogHandler<S, R extends EventDataRequest = {event: true}> {
 }
 
 
-export type AcalaEvmExecutedHandlerContext<S, R extends EventDataRequest = {event: true}>
-    = CommonHandlerContext<S> & EventData<R, 'EVM.Executed'>
-
-
-export interface AcalaEvmExecutedHandler<S, R extends EventDataRequest = {event: true}> {
-    (ctx: AcalaEvmExecutedHandlerContext<S, R>): Promise<void>
-}
-
-
 export interface BlockRangeOption {
     range?: Range
 }
@@ -154,16 +145,6 @@ export interface EthereumTransactionHandlerOptions extends CallHandlerOptions {
 }
 
 
-export interface AcalaEvmCallHandlerOptions extends CallHandlerOptions {
-    sighash?: string
-}
-
-
-export interface AcalaEvmEthCallHandlerOptions extends CallHandlerOptions {
-    sighash?: string
-}
-
-
 export interface EvmLogOptions extends BlockRangeOption {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
@@ -172,11 +153,17 @@ export interface EvmLogOptions extends BlockRangeOption {
 }
 
 
-export interface AcalaEvmExecutedOptions extends BlockRangeOption {
+export interface AcalaEvmLog {
+    contract?: string
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
      */
     filter?: EvmTopicSet[]
+}
+
+
+export interface AcalaEvmExecutedOptions extends BlockRangeOption {
+    logs?: AcalaEvmLog[]
 }
 
 

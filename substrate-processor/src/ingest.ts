@@ -221,26 +221,24 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
-        args.acalaEvmExecuted = req.getAcalaEvmExecuted().map(({contract, filter, data}) => {
+        args.acalaEvmExecuted = req.getAcalaEvmExecuted().map(({contract, logs, data}) => {
             return {
                 contract,
-                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f])
+                })),
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
 
-        args.acalaEvmCall = req.getAcalaEvmCall().map(({contract, sighash, data}) => {
+        args.acalaEvmExecutedFailed = req.getAcalaEvmExecutedFailed().map(({contract, logs, data}) => {
             return {
                 contract,
-                sighash,
-                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
-            }
-        })
-
-        args.acalaEvmEthCall = req.getAcalaEvmEthCall().map(({contract, sighash, data}) => {
-            return {
-                contract,
-                sighash,
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f])
+                })),
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })

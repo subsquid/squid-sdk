@@ -9,7 +9,6 @@ import {
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
-    AcalaEvmExecutedHandler,
 } from './dataHandlers'
 import {CallDataRequest, EventDataRequest} from './dataSelection'
 import {QualifiedName} from './substrate'
@@ -90,35 +89,6 @@ export interface GearUserMessageSentHook {
 }
 
 
-export interface AcalaEvmExecutedHook {
-    handler: AcalaEvmExecutedHandler<any>
-    contractAddress: string
-    filter?: EvmTopicSet[]
-    data?: EventDataRequest
-    range?: Range
-}
-
-
-export interface AcalaEvmCallHook {
-    handler: CallHandler<any>
-    contractAddress: string
-    sighash?: string
-    triggerForFailedCalls?: boolean
-    data?: CallDataRequest
-    range?: Range
-}
-
-
-export interface AcalaEvmEthCallHook {
-    handler: CallHandler<any>
-    contractAddress: string
-    sighash?: string
-    triggerForFailedCalls?: boolean
-    data?: CallDataRequest
-    range?: Range
-}
-
-
 export interface Hooks {
     pre: BlockHook[]
     post: BlockHook[]
@@ -129,7 +99,4 @@ export interface Hooks {
     contractsContractEmitted: ContractsContractEmittedHook[]
     gearMessageEnqueued: GearMessageEnqueuedHook[]
     gearUserMessageSent: GearUserMessageSentHook[]
-    acalaEvmExecuted: AcalaEvmExecutedHook[]
-    acalaEvmCall: AcalaEvmCallHook[]
-    acalaEvmEthCall: AcalaEvmEthCallHook[]
 }

@@ -182,12 +182,12 @@ export class PostgresSink implements Sink {
         topic3: {cast: 'text'}
     })
 
-    private acalaEvmExecutedFailedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed', {
+    private acalaEvmExecutedFailedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed_failed', {
         event_id: {cast: 'text'},
         contract: {cast: 'text'}
     })
 
-    private acalaEvmExecutedFailedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_log', {
+    private acalaEvmExecutedFailedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_failed_log', {
         id: {cast: 'text'},
         event_id: {cast: 'text'},
         event_contract: {cast: 'text'},
@@ -315,7 +315,7 @@ export class PostgresSink implements Sink {
         for (let idx = 0; idx < event.args.logs.length; idx++) {
             const log = event.args.logs[idx];
             logInsert.add({
-                id: formatId(height, hash, idx++),
+                id: formatId(height, hash, idx),
                 event_id: event.id,
                 event_contract: contract,
                 contract: toHex(log.address),

@@ -46,24 +46,23 @@ type GearUserMessageSentReq = {
 }
 
 
+type AcalaEvmLog = {
+    contract?: string
+    filter?: EvmTopicSet[]
+}
+
+
 type AcalaEvmExecutedReq = {
     contract: string
-    filter?: EvmTopicSet[]
+    logs?: AcalaEvmLog[]
     data?: EventDataRequest
 }
 
 
-type AcalaEvmCallReq = {
+type AcalaEvmExecutedFailedReq = {
     contract: string
-    sighash?: string
-    data?: CallDataRequest
-}
-
-
-type AcalaEvmEthCallReq = {
-    contract: string
-    sighash?: string
-    data?: CallDataRequest
+    logs?: AcalaEvmLog[]
+    data?: EventDataRequest
 }
 
 
@@ -77,8 +76,7 @@ export interface BatchRequest {
     getGearMessagesEnqueued(): GearMessageEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessageSentReq[]
     getAcalaEvmExecuted(): AcalaEvmExecutedReq[]
-    getAcalaEvmCall(): AcalaEvmCallReq[]
-    getAcalaEvmEthCall(): AcalaEvmEthCallReq[]
+    getAcalaEvmExecutedFailed(): AcalaEvmExecutedFailedReq[]
 }
 
 
@@ -91,8 +89,7 @@ export class PlainBatchRequest implements BatchRequest {
     gearMessagesEnqueued: GearMessageEnqueuedReq[] = []
     gearUserMessagesSent: GearUserMessageSentReq[] = []
     acalaEvmExecuted: AcalaEvmExecutedReq[] = []
-    acalaEvmCall: AcalaEvmCallReq[] = []
-    acalaEvmEthCall: AcalaEvmEthCallReq[] = []
+    acalaEvmExecutedFailed: AcalaEvmExecutedFailedReq[] = []
     includeAllBlocks = false
 
     getEvents(): EventReq[] {
@@ -131,12 +128,8 @@ export class PlainBatchRequest implements BatchRequest {
         return this.acalaEvmExecuted
     }
 
-    getAcalaEvmCall(): AcalaEvmCallReq[] {
-        return this.acalaEvmCall
-    }
-
-    getAcalaEvmEthCall(): AcalaEvmEthCallReq[] {
-        return this.acalaEvmEthCall
+    getAcalaEvmExecutedFailed(): AcalaEvmExecutedFailedReq[] {
+        return this.acalaEvmExecutedFailed
     }
 
     merge(other: PlainBatchRequest): PlainBatchRequest {
@@ -150,8 +143,7 @@ export class PlainBatchRequest implements BatchRequest {
         result.gearMessagesEnqueued = this.gearMessagesEnqueued.concat(other.gearMessagesEnqueued)
         result.gearUserMessagesSent = this.gearUserMessagesSent.concat(other.gearUserMessagesSent)
         result.acalaEvmExecuted = this.acalaEvmExecuted.concat(other.acalaEvmExecuted)
-        result.acalaEvmCall = this.acalaEvmCall.concat(other.acalaEvmCall)
-        result.acalaEvmEthCall = this.acalaEvmEthCall.concat(other.acalaEvmEthCall)
+        result.acalaEvmExecutedFailed = this.acalaEvmExecutedFailed.concat(other.acalaEvmExecutedFailed)
         return result
     }
 }

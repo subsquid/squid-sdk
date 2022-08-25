@@ -10,8 +10,6 @@ import type {
     BlockRangeOption,
     EvmLogOptions,
     AcalaEvmExecutedOptions,
-    AcalaEvmCallHandlerOptions,
-    AcalaEvmEthCallHandlerOptions
 } from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
@@ -416,13 +414,25 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     /**
      * Similar to {@link .addEvent},
      * but requests `EVM.Executed` events containing logs from particular contract
-     * with an option to filter them by topic.
+     * with an option to filter them by log address and topic.
      *
      * @example
-     * // request ERC20 transfers from Karura contract
-     * processor.addAcalaEvmExecuted('0x0000000000000000000100000000000000000080', {
-     *     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     * // request all `EVM.Executed` events from contract `0xae9d7fe007b3327aa64a32824aaac52c42a6e624`
+     * processor.addAcalaEvmExecuted('0xae9d7fe007b3327aa64a32824aaac52c42a6e624')
+     *
+     * // request all `EVM.Executed` events containing ERC20 transfers from contract `0x0000000000000000000100000000000000000080`
+     * processor.addAcalaEvmExecuted('*', {
+     *     logs: [{
+     *         contract: '0x0000000000000000000100000000000000000080',
+     *         filter: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     *     }]
      * })
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addAcalaEvmExecuted([
+     *     '0xae9d7fe007b3327aa64a32824aaac52c42a6e624',
+     *     '0x1aafb0d5aab9ffbe09d4d30c9fd90d695c4f0881',
+     * ])
      */
     addAcalaEvmExecuted(
         contractAddress: string | string[],
@@ -443,7 +453,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
         req.acalaEvmExecuted.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
-            filter: options?.filter,
+            logs: options?.logs,
             data: options?.data
         })))
         this.add(req, options?.range)
@@ -451,76 +461,29 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     }
 
     /**
-     * Similar to {@link .addCall},
-     * but requests `EVM.call` calls belonging to particular contract
-     * with an option to filter them by contract address and sighash.
-     *
-     * @example
-     * // process EVM calls to Acala ERC20 contract `0x0000000000000000000100000000000000000001`
-     * processor.addAcalaEvmCall('0x0000000000000000000100000000000000000001')
-     *
-     * // process EVM calls with signature `approve(address,uint256)`
-     * processor.addAcalaEvmCall('*', {sighash: '0x095ea7b3'})
+     * Similar to {@link .addAcalaEvmExecuted},
+     * but requests `EVM.ExecutedFailed` events from failed EVM calls (`EVM.call`, `EVM.eth_call`, etc).
      */
-    addAcalaEvmCall(
+    addAcalaEvmExecutedFailed(
         contractAddress: string | string[],
-        options?: AcalaEvmCallHandlerOptions & NoDataSelection
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", true>>>
+        options?: AcalaEvmExecutedOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
 
-    addAcalaEvmCall<R extends CallDataRequest>(
+    addAcalaEvmExecutedFailed<R extends EventDataRequest>(
         contractAddress: string | string[],
-        options: AcalaEvmCallHandlerOptions & DataSelection<R>
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.call", R>>>
+        options: AcalaEvmExecutedOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
 
-    addAcalaEvmCall(
+    addAcalaEvmExecutedFailed(
         contractAddress: string | string[],
-        options?: AcalaEvmCallHandlerOptions & MayBeDataSelection<CallDataRequest>
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
         let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
-        req.acalaEvmCall.push(...contractAddresses.map((contractAddress) => ({
+        req.acalaEvmExecutedFailed.push(...contractAddresses.map((contractAddress) => ({
             contract: contractAddress.toLowerCase(),
-            sighash: options?.sighash,
-            data: options?.data
-        })))
-        this.add(req, options?.range)
-        return this
-    }
-
-
-    /**
-     * Similar to {@link .addCall},
-     * but requests `EVM.eth_call` calls belonging to particular contract
-     * with an option to filter them by contract address and sighash.
-     *
-     * @example
-     * // process EVM calls to Karura ERC20 contract `0x0000000000000000000100000000000000000080`
-     * processor.addAcalaEvmEthCallHandler('0x0000000000000000000100000000000000000080')
-     *
-     * // process EVM calls with signature `approve(address,uint256)`
-     * processor.addAcalaEvmEthCallHandler('*', {sighash: '0x095ea7b3'})
-     */
-    addAcalaEvmEthCall(
-        contractAddress: string | string[],
-        options?: AcalaEvmEthCallHandlerOptions & NoDataSelection
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", true>>>
-
-    addAcalaEvmEthCall<R extends CallDataRequest>(
-        contractAddress: string | string[],
-        options: AcalaEvmEthCallHandlerOptions & DataSelection<R>
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"EVM.eth_call", R>>>
-
-    addAcalaEvmEthCall(
-        contractAddress: string | string[],
-        options?: AcalaEvmEthCallHandlerOptions & MayBeDataSelection<CallDataRequest>
-    ): SubstrateBatchProcessor<any> {
-        this.assertNotRunning()
-        let req = new PlainBatchRequest()
-        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
-        req.acalaEvmCall.push(...contractAddresses.map((contractAddress) => ({
-            contract: contractAddress.toLowerCase(),
-            sighash: options?.sighash,
+            logs: options?.logs,
             data: options?.data
         })))
         this.add(req, options?.range)

@@ -13,11 +13,17 @@ const processor = new SubstrateBatchProcessor()
         archive: 'http://0.0.0.0:8000/graphql',
         chain: 'wss://karura.api.onfinality.io/public-ws'
     })
-    .addAcalaEvmExecuted(CONTRACT_ADDRESS, {
+    .addAcalaEvmExecuted('*', {
+        logs: [{
+            contract: CONTRACT_ADDRESS,
+            filter: [[
+                erc20.events['Transfer(address,address,uint256)'].topic
+            ]]
+        }],
         data: {
-            event: {args: true}
+            event: {args: true, call: {args: true}},
         }
-    } as const)
+    })
 
 
 type Item = BatchProcessorItem<typeof processor>

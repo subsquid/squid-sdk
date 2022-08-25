@@ -8,7 +8,7 @@ import type {
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler,
-    AcalaEvmExecutedHandler,
+    AcalaEvmLog,
 } from '../interfaces/dataHandlers'
 import type {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
 import type {QualifiedName} from '../interfaces/substrate'
@@ -42,9 +42,8 @@ export class DataHandlers implements BatchRequest {
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
-    acalaEvmExecuted: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: AcalaEvmExecutedHandler<any>}[]> = {}
-    acalaEvmCall: Record<ContractAddress, Record<Sighash, HandlerList<CallHandlerEntry, CallDataRequest>>> = {}
-    acalaEvmEthCall: Record<ContractAddress, Record<Sighash, HandlerList<CallHandlerEntry, CallDataRequest>>> = {}
+    acalaEvmExecuted: Record<ContractAddress, {logs?: AcalaEvmLog[], data?: EventDataRequest, handler: EventHandler<any>}[]> = {}
+    acalaEvmExecutedFailed: Record<ContractAddress, {logs?: AcalaEvmLog[], data?: EventDataRequest, handler: EventHandler<any>}[]> = {}
 
     merge(other: DataHandlers): DataHandlers {
         let res = new DataHandlers()
@@ -58,8 +57,7 @@ export class DataHandlers implements BatchRequest {
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
         res.acalaEvmExecuted = mergeMaps(this.acalaEvmExecuted, other.acalaEvmExecuted, (ha, hb) => ha.concat(hb))
-        res.acalaEvmCall = mergeMaps(this.acalaEvmCall, other.acalaEvmCall, (a, b) => mergeMaps(a, b, mergeItemHandlerLists))
-        res.acalaEvmEthCall = mergeMaps(this.acalaEvmEthCall, other.acalaEvmEthCall, (a, b) => mergeMaps(a, b, mergeItemHandlerLists))
+        res.acalaEvmExecutedFailed = mergeMaps(this.acalaEvmExecutedFailed, other.acalaEvmExecutedFailed, (ha, hb) => ha.concat(hb))
         return res
     }
 
@@ -217,32 +215,20 @@ export class DataHandlers implements BatchRequest {
             return hs.map(h => {
                 return {
                     contract,
-                    filter: h.filter,
+                    logs: h.logs,
                     data: h.data
                 }
             })
         })
     }
 
-    getAcalaEvmCall() {
-        return Object.entries(this.acalaEvmCall).flatMap(([contract, sighashMap]) => {
-            return Object.entries(sighashMap).map(([sighash, {data}]) => {
+    getAcalaEvmExecutedFailed() {
+        return Object.entries(this.acalaEvmExecutedFailed).flatMap(([contract, hs]) => {
+            return hs.map(h => {
                 return {
                     contract,
-                    sighash: sighash == '*' ? undefined : sighash,
-                    data
-                }
-            })
-        })
-    }
-
-    getAcalaEvmEthCall() {
-        return Object.entries(this.acalaEvmEthCall).flatMap(([contract, sighashMap]) => {
-            return Object.entries(sighashMap).map(([sighash, {data}]) => {
-                return {
-                    contract,
-                    sighash: sighash == '*' ? undefined : sighash,
-                    data
+                    logs: h.logs,
+                    data: h.data
                 }
             })
         })
