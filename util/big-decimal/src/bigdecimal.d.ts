@@ -3,7 +3,6 @@
 // Definitions by: Steve Ognibene <https://github.com/nycdotnet>
 //                 Roman Nuritdinov (Ky6uk) <https://github.com/Ky6uk>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
 export type BigDecimalSource = number | bigint | string | BigDecimal;
 
 // eslint-disable-next-line no-const-enum
@@ -74,7 +73,7 @@ export interface BigDecimalConstructor {
      *
      * @throws `NaN` on an invalid value.
      */
-    new (value: BigDecimalSource): BigDecimal;
+    new(value: BigDecimalSource): BigDecimal;
 
     /**
      * Returns a new instance of a BigDecimal number object
@@ -156,6 +155,8 @@ export interface BigDecimalConstructor {
      * Rounds away from zero.
      */
     readonly roundUp: 3;
+
+    fromBigInt: (n: bigint, d: number) => BigDecimal
 }
 
 export interface BigDecimal {

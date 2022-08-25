@@ -1,1 +1,1 @@
-export {BigDecimal, BigDecimalSource} from './big.js'
+export * from './bigdecimal'

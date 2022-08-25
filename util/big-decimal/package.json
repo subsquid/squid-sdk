@@ -13,7 +13,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc && cp src/bigdecimal.d.ts lib/bigdecimal.d.ts"
   },
   "dependencies": {
   },

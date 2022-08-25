@@ -6,7 +6,6 @@ import {In} from "typeorm"
 import {Account, HistoricalBalance, Transfer} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
-
 const processor = new SubstrateBatchProcessor()
     .setBatchSize(500)
     .setDataSource({
@@ -62,7 +61,7 @@ processor.run(new TypeormDatabase(), async ctx => {
             id: t.id,
             from: from,
             to: to,
-            amount: BigDecimal(t.amount).div(1000000000000n),
+            amount: BigDecimal.fromBigInt(t.amount, 12),
             timestamp: t.timestamp
         }))
     }
