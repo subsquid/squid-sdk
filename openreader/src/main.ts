@@ -26,6 +26,7 @@ GraphQL server for postgres-compatible databases
     )
     program.option('-p, --port <number>', 'port to listen on', nat, 3000)
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
+    program.option('--max-root-fields <count>', 'max number of root fields in a query', nat)
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
@@ -39,6 +40,7 @@ GraphQL server for postgres-compatible databases
         dbType: Dialect
         port: number
         maxRequestSize: number
+        maxRootFields?: number
         maxResponseSize?: number
         sqlStatementTimeout?: number
         subscriptions?: boolean
@@ -69,6 +71,7 @@ GraphQL server for postgres-compatible databases
         port: opts.port,
         log: LOG,
         maxRequestSizeBytes: opts.maxRequestSize * 1024,
+        maxRootFields: opts.maxRootFields,
         maxResponseNodes: opts.maxResponseSize,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,

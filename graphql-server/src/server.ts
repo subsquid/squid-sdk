@@ -26,6 +26,7 @@ export interface ServerOptions {
     dir?: string
     log?: Logger
     maxRequestSizeBytes?: number
+    maxRootFields?: number
     maxResponseNodes?: number
     sqlStatementTimeout?: number
     squidStatus?: boolean
@@ -68,7 +69,8 @@ export class Server {
             log: this.options.log,
             subscriptions: this.options.subscriptions,
             graphiqlConsole: true,
-            maxRequestSizeBytes: this.options.maxRequestSizeBytes
+            maxRequestSizeBytes: this.options.maxRequestSizeBytes,
+            maxRootFields: this.options.maxRootFields
         })
     }
 

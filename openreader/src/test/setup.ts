@@ -71,6 +71,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
             dialect: isCockroach() ? 'cockroach' : 'postgres',
             subscriptions: true,
             subscriptionPollInterval: 500,
+            maxRootFields: 10,
             ...options
         })
         client.endpoint = `http://localhost:${info.port}/graphql`

@@ -4,7 +4,7 @@ import {PluginDefinition} from 'apollo-server-core'
 import {ApolloServer} from 'apollo-server-express'
 import express from 'express'
 import fs from 'fs'
-import {GraphQLSchema} from 'graphql'
+import {ExecutionArgs, GraphQLSchema} from 'graphql'
 import {useServer as useWsServer} from 'graphql-ws/lib/use/ws'
 import http from 'http'
 import path from 'path'
@@ -16,6 +16,7 @@ import type {Dialect} from './dialect'
 import type {Model} from './model'
 import {SchemaBuilder} from './opencrud/schema'
 import {logGraphQLError} from './util/error-handling'
+import {executeWithLimit} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
 
 
@@ -27,6 +28,7 @@ export interface ServerOptions {
     graphiqlConsole?: boolean
     log?: Logger
     maxRequestSizeBytes?: number
+    maxRootFields?: number
     maxResponseNodes?: number
     subscriptions?: boolean
     subscriptionPollInterval?: number
@@ -40,6 +42,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let dialect = options.dialect ?? 'postgres'
 
     let schema = new SchemaBuilder(options).build()
+
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
             dialect,
@@ -61,6 +64,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
             openreader
         }
     }
+
     let disposals: Dispose[] = []
 
     return addServerCleanup(disposals, runApollo({
@@ -71,7 +75,8 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         subscriptions: options.subscriptions,
         log: options.log,
         graphiqlConsole: options.graphiqlConsole,
-        maxRequestSizeBytes: options.maxRequestSizeBytes
+        maxRequestSizeBytes: options.maxRequestSizeBytes,
+        maxRootFields: options.maxRootFields
     }), options.log)
 }
 
@@ -89,14 +94,20 @@ export interface ApolloOptions {
     graphiqlConsole?: boolean
     log?: Logger
     maxRequestSizeBytes?: number
+    maxRootFields?: number
 }
 
 
 export async function runApollo(options: ApolloOptions): Promise<ListeningServer> {
-    let {disposals, context, schema, log} = options
+    const {disposals, context, schema, log, maxRootFields} = options
+
     let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
     let app = express()
     let server = http.createServer(app)
+
+    const execute = maxRootFields
+            ? (args: ExecutionArgs) => executeWithLimit(maxRootFields, args)
+            : undefined
 
     if (options.subscriptions) {
         let wsServer = new WebSocketServer({
@@ -108,6 +119,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
             {
                 schema,
                 context,
+                execute,
                 onError(ctx, message, errors) {
                     if (log) {
                         // FIXME: we don't want to log client errors
@@ -130,6 +142,16 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         schema,
         context,
         stopOnTerminationSignals: false,
+        executor: execute && (async req => {
+            return execute({
+                schema,
+                document: req.document,
+                rootValue: {},
+                contextValue: req.context,
+                variableValues: req.request.variables,
+                operationName: req.operationName
+            })
+        }),
         plugins: [
             ...options.plugins || [],
             {
@@ -154,7 +176,6 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     if (options.graphiqlConsole !== false) {
         setupGraphiqlConsole(app)
     }
-
 
     await apollo.start()
     disposals.push(() => apollo.stop())

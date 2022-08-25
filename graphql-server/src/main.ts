@@ -14,6 +14,7 @@ runProgram(async () => {
     program.description(`GraphQL server for squids`)
     program.option('--no-squid-status', 'disable .squidStatus query')
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
+    program.option('--max-root-fields <count>', 'max number of root fields in a query', nat)
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
@@ -23,6 +24,7 @@ runProgram(async () => {
 
     let opts = program.parse().opts() as {
         maxRequestSize: number
+        maxRootFields?: number
         maxResponseSize?: number
         squidStatus?: boolean
         sqlStatementTimeout?: number

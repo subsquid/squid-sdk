@@ -1,5 +1,5 @@
-import {UserInputError} from 'apollo-server-core'
 import assert from 'assert'
+import {GraphQLError} from 'graphql'
 
 
 export class Limit {
@@ -23,7 +23,7 @@ export class Limit {
 }
 
 
-const SIZE_LIMIT = new UserInputError('response size limit exceeded')
+const SIZE_LIMIT = new GraphQLError('response might exceed the size limit')
 SIZE_LIMIT.stack = undefined
 
 

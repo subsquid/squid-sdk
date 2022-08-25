@@ -46,7 +46,8 @@ describe('response size limits', function() {
             name: String @byteWeight(value: 10.0)
         }
     `, {
-        maxResponseNodes: 50
+        maxResponseNodes: 50,
+        maxRootFields: 3
     })
 
     it('unlimited requests fail', async function() {
@@ -62,7 +63,7 @@ describe('response size limits', function() {
                 order1s: null
             },
             errors: [
-                expect.objectContaining({message: 'response size limit exceeded', path: ['order1s']})
+                expect.objectContaining({message: 'response might exceed the size limit', path: ['order1s']})
             ]
         })
     })
@@ -119,7 +120,7 @@ describe('response size limits', function() {
             },
             errors: [
                 expect.objectContaining({
-                    message: 'response size limit exceeded',
+                    message: 'response might exceed the size limit',
                     path: ['order3s']
                 })
             ]
@@ -132,6 +133,23 @@ describe('response size limits', function() {
             }
         `, {
             order3s: []
+        })
+    })
+
+    it('root query fields limit', async function() {
+        return client.errorTest(`
+            query {
+                a: order1ById(id: "1") { id }
+                b: order1ById(id: "1") { id }
+                c: order1ById(id: "1") { id }
+                d: order1ById(id: "1") { id }
+            }
+        `, {
+            errors: [
+                expect.objectContaining({
+                    message: 'only 3 root query fields allowed, but got 4'
+                })
+            ]
         })
     })
 })
