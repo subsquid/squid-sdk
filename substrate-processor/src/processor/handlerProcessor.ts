@@ -21,7 +21,7 @@ import type {
     EthereumTransactionHandlerOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
+    GearUserMessageSentHandler
 } from '../interfaces/dataHandlers'
 import type {
     CallDataRequest,

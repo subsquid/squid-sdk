@@ -8,7 +8,7 @@ import {
     EvmLogHandler,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
+    GearUserMessageSentHandler
 } from './dataHandlers'
 import {CallDataRequest, EventDataRequest} from './dataSelection'
 import {QualifiedName} from './substrate'

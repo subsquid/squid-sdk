@@ -62,11 +62,6 @@ type CallFields<R extends CallRequest> = Select<CallScalars, R> & (
 )
 
 
-export type CommonCallType<R> = R extends true
-    ? SubstrateCall
-    : R extends CallRequest ? CallFields<R> : never
-
-
 export type CallType<R> = R extends true
     ? SubstrateCall
     : R extends CallRequest ? CallFields<R> : never

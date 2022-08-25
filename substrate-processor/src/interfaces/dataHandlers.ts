@@ -162,7 +162,7 @@ export interface AcalaEvmLog {
 }
 
 
-export interface AcalaEvmExecutedOptions extends BlockRangeOption {
+export interface AcalaEvmEventOptions extends BlockRangeOption {
     logs?: AcalaEvmLog[]
 }
 

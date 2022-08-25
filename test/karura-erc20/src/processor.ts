@@ -21,7 +21,7 @@ const processor = new SubstrateBatchProcessor()
             ]]
         }],
         data: {
-            event: {args: true, call: {args: true}},
+            event: {args: true},
         }
     })
 
