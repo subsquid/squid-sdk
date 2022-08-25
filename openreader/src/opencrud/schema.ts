@@ -415,7 +415,7 @@ export class SchemaBuilder {
             let tree = getResolveTree(info)
             let fields = parseResolveTree(model, entityName, info.schema, tree)
             let args = parseEntityListArguments(model, entityName, tree.args)
-            limit?.check(() => getEntityListSize(model, entityName, fields, args.limit) + 1)
+            limit?.check(() => getEntityListSize(model, entityName, fields, args.limit, args.where) + 1)
             return new EntityListQuery(
                 model,
                 context.openreader.dialect,

@@ -136,6 +136,18 @@ describe('response size limits', function() {
         })
     })
 
+    it('id_in conditions are understood', function() {
+        return client.test(`
+            query {
+                order1s(where: {id_in: ["1", "2", "3"]}) {
+                    id
+                }
+            }
+        `, {
+            order1s: []
+        })
+    })
+
     it('root query fields limit', async function() {
         return client.errorTest(`
             query {
