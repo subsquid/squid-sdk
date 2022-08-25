@@ -51,28 +51,21 @@ interface ContractsContractEmitted {
 }
 
 
+interface AcalaEvmEvent {
+    event_id: string
+    contract: string
+}
+
+
 interface AcalaEvmLog {
     id: string
     event_id: string
+    event_contract: string
     contract: string
     topic0?: string
     topic1?: string
     topic2?: string
     topic3?: string
-}
-
-
-interface AcalaEvmCall {
-    call_id: string
-    contract: string
-    sighash?: string
-}
-
-
-interface AcalaEvmEthCall {
-    call_id: string
-    contract: string
-    sighash?: string
 }
 
 
@@ -173,9 +166,15 @@ export class PostgresSink implements Sink {
         program: {cast: 'text'}
     })
 
-    private acalaEvmLogInsert = new Insert<AcalaEvmLog>('acala_evm_log', {
+    private acalaEvmExecutedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'}
+    })
+
+    private acalaEvmExecutedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_log', {
         id: {cast: 'text'},
         event_id: {cast: 'text'},
+        event_contract: {cast: 'text'},
         contract: {cast: 'text'},
         topic0: {cast: 'text'},
         topic1: {cast: 'text'},
@@ -183,16 +182,20 @@ export class PostgresSink implements Sink {
         topic3: {cast: 'text'}
     })
 
-    private acalaEvmCall = new Insert<AcalaEvmCall>('acala_evm_call', {
-        call_id: {cast: 'text'},
-        contract: {cast: 'text'},
-        sighash: {cast: 'text'}
+    private acalaEvmExecutedFailedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'}
     })
 
-    private acalaEvmEthCall = new Insert<AcalaEvmEthCall>('acala_evm_eth_call', {
-        call_id: {cast: 'text'},
+    private acalaEvmExecutedFailedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_log', {
+        id: {cast: 'text'},
+        event_id: {cast: 'text'},
+        event_contract: {cast: 'text'},
         contract: {cast: 'text'},
-        sighash: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
     })
 
     private db: pg.ClientBase
@@ -242,22 +245,12 @@ export class PostgresSink implements Sink {
                     })
                     break
                 }
-                case 'EVM.Executed': {
-                    let idx = 0
-                    let height = Number(event.id.slice(0, 10))
-                    let hash = event.id.slice(18)
-                    for (let log of event.args.logs) {
-                        this.acalaEvmLogInsert.add({
-                            id: formatId(height, hash, idx++),
-                            contract: toHex(log.address),
-                            event_id: event.id,
-                            topic0: log.topics[0] && toHex(log.topics[0]),
-                            topic1: log.topics[1] && toHex(log.topics[1]),
-                            topic2: log.topics[2] && toHex(log.topics[2]),
-                            topic3: log.topics[3] && toHex(log.topics[3]),
-                        })
-                    }
-                }
+                case 'EVM.Executed':
+                    this.insertAcalaEvmEvent(event, this.acalaEvmExecutedInsert, this.acalaEvmExecutedLogInsert)
+                    break
+                case 'EVM.ExecutedFailed':
+                    this.insertAcalaEvmEvent(event, this.acalaEvmExecutedFailedInsert, this.acalaEvmExecutedFailedLogInsert)
+                    break
                 case 'Contracts.ContractEmitted':
                     this.contractsContractEmittedInsert.add({
                         event_id: event.id,
@@ -286,23 +279,6 @@ export class PostgresSink implements Sink {
                 case 'Ethereum.transact':
                     this.insertEthereumTransaction(call)
                     break
-                case 'EVM.call':
-                    this.acalaEvmCall.add({
-                        call_id: call.id,
-                        contract: toHex(call.args.target),
-                        sighash: toHex(call.args.input.subarray(0, 4))
-                    })
-                    break
-                case 'EVM.eth_call':
-                    let action = assertNotNull(call.args.action)
-                    if (action.__kind == 'Call') {
-                        this.acalaEvmEthCall.add({
-                            call_id: call.id,
-                            contract: toHex(action.value),
-                            sighash: toHex(call.args.input.subarray(0, 4))
-                        })
-                    }
-                    break
             }
         }
     }
@@ -327,6 +303,30 @@ export class PostgresSink implements Sink {
         })
     }
 
+    private insertAcalaEvmEvent(event: Event, insert: Insert<AcalaEvmEvent>, logInsert: Insert<AcalaEvmLog>): void {
+        let contract = toHex(event.args.contract)
+        insert.add({
+            event_id: event.id,
+            contract
+        })
+
+        let height = Number(event.id.slice(0, 10))
+        let hash = event.id.slice(18)
+        for (let idx = 0; idx < event.args.logs.length; idx++) {
+            const log = event.args.logs[idx];
+            logInsert.add({
+                id: formatId(height, hash, idx++),
+                event_id: event.id,
+                event_contract: contract,
+                contract: toHex(log.address),
+                topic0: log.topics[0] && toHex(log.topics[0]),
+                topic1: log.topics[1] && toHex(log.topics[1]),
+                topic2: log.topics[2] && toHex(log.topics[2]),
+                topic3: log.topics[3] && toHex(log.topics[3]),
+            })
+        }
+    }
+
     private async submit(lastBlock: number): Promise<void> {
         this.speed?.start()
         let size = this.headerInsert.size
@@ -341,9 +341,10 @@ export class PostgresSink implements Sink {
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
-        let acalaEvmLogInsert = this.acalaEvmLogInsert.take()
-        let acalaEvmCallInsert = this.acalaEvmCall.take()
-        let acalaEvmEthCallInsert = this.acalaEvmEthCall.take()
+        let acalaEvmExecutedInsert = this.acalaEvmExecutedInsert.take()
+        let acalaEvmExecutedLogInsert = this.acalaEvmExecutedLogInsert.take()
+        let acalaEvmExecutedFailedInsert = this.acalaEvmExecutedFailedInsert.take()
+        let acalaEvmExecutedFailedLogInsert = this.acalaEvmExecutedFailedLogInsert.take()
         await this.tx(async () => {
             await metadataInsert.query(this.db)
             await headerInsert.query(this.db)
@@ -356,9 +357,10 @@ export class PostgresSink implements Sink {
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)
-            await acalaEvmLogInsert.query(this.db)
-            await acalaEvmCallInsert.query(this.db)
-            await acalaEvmEthCallInsert.query(this.db)
+            await acalaEvmExecutedInsert.query(this.db)
+            await acalaEvmExecutedLogInsert.query(this.db)
+            await acalaEvmExecutedFailedInsert.query(this.db)
+            await acalaEvmExecutedFailedLogInsert.query(this.db)
         })
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()

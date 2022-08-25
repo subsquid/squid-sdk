@@ -1,6 +1,18 @@
-CREATE TABLE acala_evm_log (
-    id char(17) primary key,
+
+CREATE TABLE acala_evm_executed (
+    event_id char(23) primary key references event,
+    contract char(42) not null
+);
+
+
+CREATE INDEX IDX_acala_evm_executed__contract__event
+    ON acala_evm_executed (contract, event_id);
+
+
+CREATE TABLE acala_evm_executed_log (
+    id char(23) primary key,
     event_id char(23) not null references event on delete cascade,
+    event_contract char(42) not null,
     contract char(42) not null,
     topic0 char(66),
     topic1 char(66),
@@ -9,30 +21,56 @@ CREATE TABLE acala_evm_log (
 );
 
 
-CREATE INDEX IDX_acala_evm_log__contract__topic0__id ON acala_evm_log (contract, topic0, id);
-CREATE INDEX IDX_acala_evm_log__contract__id ON acala_evm_log (contract, id);
-CREATE INDEX IDX_acala_evm_log__topic0__id ON acala_evm_log (topic0, id);
+CREATE INDEX IDX_acala_evm_executed_log__event_contract__contract__topic0__id
+    ON acala_evm_executed_log (event_contract, contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_log__event_contract__topic0__id
+    ON acala_evm_executed_log (event_contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_log__contract__topic0__id
+    ON acala_evm_executed_log (contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_log__contract__id
+    ON acala_evm_executed_log (contract, id);
+
+CREATE INDEX IDX_acala_evm_executed_log__topic0__id
+    ON acala_evm_executed_log (topic0, id);
 
 
-CREATE TABLE acala_evm_call (
-    call_id varchar(30) primary key references call,
-    contract char(42) not null,
-    sighash char(10)
+CREATE TABLE acala_evm_executed_failed (
+    event_id char(23) primary key references event,
+    contract char(42) not null
 );
 
 
-CREATE INDEX IDX_acala_evm_call__contract__sighash__call ON acala_evm_call (contract, sighash, call_id);
-CREATE INDEX IDX_acala_evm_call__contract__call ON acala_evm_call (contract, call_id);
-CREATE INDEX IDX_acala_evm_call__sighash__call ON acala_evm_call (sighash, call_id);
+CREATE INDEX IDX_acala_evm_executed_failed__contract__event
+    ON acala_evm_executed_failed (contract, event_id);
 
 
-CREATE TABLE acala_evm_eth_call (
-    call_id varchar(30) primary key references call,
+CREATE TABLE acala_evm_executed_failed_log (
+    id char(23) primary key,
+    event_id char(23) not null references event on delete cascade,
+    event_contract char(42) not null,
     contract char(42) not null,
-    sighash char(10)
+    topic0 char(66),
+    topic1 char(66),
+    topic2 char(66),
+    topic3 char(66)
 );
 
 
-CREATE INDEX IDX_acala_evm_eth_call__contract__sighash__call ON acala_evm_eth_call (contract, sighash, call_id);
-CREATE INDEX IDX_acala_evm_eth_call__contract__call ON acala_evm_eth_call (contract, call_id);
-CREATE INDEX IDX_acala_evm_eth_call__sighash__call ON acala_evm_eth_call (sighash, call_id);
+CREATE INDEX IDX_acala_evm_executed_failed_log__event_contract__contract__topic0__id
+    ON acala_evm_executed_failed_log (event_contract, contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_failed_log__event_contract__topic0__id
+    ON acala_evm_executed_failed_log (event_contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_failed_log__contract__topic0__id
+    ON acala_evm_executed_failed_log (contract, topic0, id);
+
+CREATE INDEX IDX_acala_evm_executed_failed_log__contract__id
+    ON acala_evm_executed_failed_log (contract, id);
+
+CREATE INDEX IDX_acala_evm_executed_failed_log__topic0__id
+    ON acala_evm_executed_failed_log (topic0, id);
+
