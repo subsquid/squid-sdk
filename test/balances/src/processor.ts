@@ -3,7 +3,7 @@ import * as ss58 from "@subsquid/ss58"
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
-import {Account, HistoricalBalance} from "./model"
+import {Account, HistoricalBalance, Transfer} from "./model"
 import {BalancesTransferEvent} from "./types/events"
 
 
@@ -22,10 +22,10 @@ type Ctx = BatchContext<Store, Item>
 
 
 processor.run(new TypeormDatabase(), async ctx => {
-    let transfers = getTransfers(ctx)
+    let transfersData = getTransfers(ctx)
 
     let accountIds = new Set<string>()
-    for (let t of transfers) {
+    for (let t of transfersData) {
         accountIds.add(t.from)
         accountIds.add(t.to)
     }
@@ -35,8 +35,9 @@ processor.run(new TypeormDatabase(), async ctx => {
     })
 
     let history: HistoricalBalance[] = []
+    let transfers: Transfer[] = []
 
-    for (let t of transfers) {
+    for (let t of transfersData) {
         let from = getAccount(accounts, t.from)
         let to = getAccount(accounts, t.to)
 
@@ -46,20 +47,29 @@ processor.run(new TypeormDatabase(), async ctx => {
         history.push(new HistoricalBalance({
             id: t.id + "-from",
             account: from,
-            balance: BigDecimal(from.balance.toString()).div('1000000000000000000'),
+            balance: from.balance,
             timestamp: t.timestamp
         }))
 
         history.push(new HistoricalBalance({
             id: t.id + "-to",
             account: to,
-            balance: BigDecimal(to.balance.toString()).div('1000000000000000000'),
+            balance: to.balance,
+            timestamp: t.timestamp
+        }))
+
+        transfers.push(new Transfer({
+            id: t.id,
+            from: from,
+            to: to,
+            amount: BigDecimal(t.amount).div(1000000000000n),
             timestamp: t.timestamp
         }))
     }
 
     await ctx.store.save(Array.from(accounts.values()))
     await ctx.store.insert(history)
+    await ctx.store.insert(transfers)
 })
 
 

@@ -8,6 +8,14 @@ type Account @entity {
 type HistoricalBalance @entity {
   id: ID!
   account: Account!
-  balance: BigDecimal!
+  balance: BigInt!
   timestamp: BigInt!
+}
+
+type Transfer @entity {
+  id: ID!
+  timestamp: BigInt! @index
+  from: Account!
+  to: Account!
+  amount: BigDecimal! @index
 }

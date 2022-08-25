@@ -16,8 +16,8 @@ export class HistoricalBalance {
   @ManyToOne_(() => Account, {nullable: true})
   account!: Account
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  balance!: BigDecimal
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+  balance!: bigint
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
   timestamp!: bigint
