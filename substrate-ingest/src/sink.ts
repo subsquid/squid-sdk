@@ -227,6 +227,9 @@ export class PostgresSink implements Sink {
     }
 
     private insertEvents(events: Event[]): void {
+        let executedLogIndex = 0;
+        let executedFailedLogIndex = 0;
+
         for (let event of events) {
             this.eventInsert.add(event)
             switch(event.name) {
@@ -246,10 +249,20 @@ export class PostgresSink implements Sink {
                     break
                 }
                 case 'EVM.Executed':
-                    this.insertAcalaEvmEvent(event, this.acalaEvmExecutedInsert, this.acalaEvmExecutedLogInsert)
+                    executedLogIndex = this.insertAcalaEvmEvent(
+                        event,
+                        this.acalaEvmExecutedInsert,
+                        this.acalaEvmExecutedLogInsert,
+                        executedLogIndex
+                    )
                     break
                 case 'EVM.ExecutedFailed':
-                    this.insertAcalaEvmEvent(event, this.acalaEvmExecutedFailedInsert, this.acalaEvmExecutedFailedLogInsert)
+                    executedFailedLogIndex = this.insertAcalaEvmEvent(
+                        event,
+                        this.acalaEvmExecutedFailedInsert,
+                        this.acalaEvmExecutedFailedLogInsert,
+                        executedFailedLogIndex
+                    )
                     break
                 case 'Contracts.ContractEmitted':
                     this.contractsContractEmittedInsert.add({
@@ -303,7 +316,7 @@ export class PostgresSink implements Sink {
         })
     }
 
-    private insertAcalaEvmEvent(event: Event, insert: Insert<AcalaEvmEvent>, logInsert: Insert<AcalaEvmLog>): void {
+    private insertAcalaEvmEvent(event: Event, insert: Insert<AcalaEvmEvent>, logInsert: Insert<AcalaEvmLog>, logIndex: number) {
         let contract = toHex(event.args.contract)
         insert.add({
             event_id: event.id,
@@ -312,10 +325,9 @@ export class PostgresSink implements Sink {
 
         let height = Number(event.id.slice(0, 10))
         let hash = event.id.slice(18)
-        for (let idx = 0; idx < event.args.logs.length; idx++) {
-            const log = event.args.logs[idx];
+        for (let log of event.args.logs) {
             logInsert.add({
-                id: formatId(height, hash, idx),
+                id: formatId(height, hash, logIndex++),
                 event_id: event.id,
                 event_contract: contract,
                 contract: toHex(log.address),
@@ -325,6 +337,7 @@ export class PostgresSink implements Sink {
                 topic3: log.topics[3] && toHex(log.topics[3]),
             })
         }
+        return logIndex
     }
 
     private async submit(lastBlock: number): Promise<void> {
