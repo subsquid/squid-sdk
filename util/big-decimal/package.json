@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc && cp src/bigdecimal.d.ts lib/bigdecimal.d.ts"
   },
   "dependencies": {
+    "big.js":"~6.2.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",
