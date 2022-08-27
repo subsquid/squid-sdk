@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "support subscriptions in built-in graphql playground",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

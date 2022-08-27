@@ -58,7 +58,7 @@ specifiers:
   '@rush-temp/util-timeout': file:./projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
-  '@subsquid/graphiql-console': ^0.2.0
+  '@subsquid/graphiql-console': ^0.3.0
   '@substrate/calc': ^0.2.8
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.13
@@ -166,7 +166,7 @@ dependencies:
   '@rush-temp/util-timeout': file:projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
-  '@subsquid/graphiql-console': 0.2.0
+  '@subsquid/graphiql-console': 0.3.0
   '@substrate/calc': 0.2.8
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.13
@@ -1131,8 +1131,8 @@ packages:
     resolution: {integrity: sha512-O3uyB/JbkAEMZaP3YqyHH7TMnex7tWyCbCI4EfJdOCoN6HIhqdJBWTM6aCCiWQ/5f5wxjgU735QAIpJbjDvmzg==}
     dev: false
 
-  /@subsquid/graphiql-console/0.2.0:
-    resolution: {integrity: sha512-Wh2Oxi9JkK79Y728yDEeY7JelcY1cGiQTbzVIRMFLT2tjkkoQ69goAGXdh9QmM/ANAVrHQkBUNJOLd5oAg//oQ==}
+  /@subsquid/graphiql-console/0.3.0:
+    resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
     dev: false
 
   /@subsquid/scale-codec/0.4.2:
@@ -4152,7 +4152,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-4MXE5ZWHxsOkIAA8BUIdQLBa4PwhIcVo/OzcMN+gdtmXusxoAbJqFHZZUK9A7ONBmOZ0upqw6B7ULFXe9vXZJQ==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-57tMk63QRDUyWZiYlO4RCcK2oWm31XzTVDm5atVS8Oy45krF0cd829CBF/snoBJWBqiNiqdxUhufZ3nL6inWYg==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -4187,7 +4187,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-5iRl7iJudqU8chMoEdIxODnUcQHpWhMaVnxH0TF4m6vlyAFDb6KZiqIcNI/FNmNrBsvOJlM1zlfgkDef/ND8/Q==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-FHQoExOqnmMFZrBE1zTjGosJKqa/Jum5n9Gmx7yl2XlAcZ4SVAVGwe7xzdbp9tMjPUsubJ7fJFPTLyqY+ixqyw==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -4246,7 +4246,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-WkRuVMvVS+Ew7h4rcCWSbjo4gDm63DuX76RKV95+Z6clTb0yiXta8d0l+mlP6214Vau1WoVGLCLVdyLwvhxHjg==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-MY4f4X4y/p/fI48QRDRXV32MAP9WSZvRJY5+n/yUnnXUMr32DUBNvpVNezyTo7jE4fj5rNaqQYB5nEkavaGjnQ==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -4310,7 +4310,7 @@ packages:
     dev: false
 
   file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615:
-    resolution: {integrity: sha512-zNpCZNrvf/AI6vM0S247LSArjhRP3sXR7/e4g7tfQX9Y/CBqGQw3WGhZSyPBr6hKvBs9Bpp+KDwSOMYIPLjIxA==, tarball: file:projects/gear-nft.tgz}
+    resolution: {integrity: sha512-6v/RqDf7TheLbUECTndsj5Gek2y2qWydVTxgCCnCH2FwJLWNP8cs92VEsj6ueC9CfTGAR3dK8tFiryT41gIIwA==, tarball: file:projects/gear-nft.tgz}
     id: file:projects/gear-nft.tgz
     name: '@rush-temp/gear-nft'
     version: 0.0.0
@@ -4455,7 +4455,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-pGYyJQNuMMezda0qSu7RxsZ8h2+tqTx8/yV8X/l/bia8BDO60A2EMuuVeIu4ADcIQKpuBvY+UBr60IEtxEY4ng==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-FMCv0eKN1UbHOB6AAWe9t9TlweF3epm2Uu/gwMGBgmlTQNm7fIBEzkAmQTFMLuZ3gdOxQ/l1sGpM8u017NkKvQ==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -4489,14 +4489,14 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-YvZ1cITc/Y30HYQG0grf+8NNXWVuUCMnjpNxDndOrlqr+rVGM5GHV3rwvJrvhg/rhOEdBh+ZAuVxgC1oAxrIwA==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-EAQmomuzIRvsIpQguFeW4S4MHmVer9c3Vi/RfpfDVaBQYMHPJKKxVKizlAmTyK2+W3idPDMP6/s+GAQb4mlnqQ==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
     dependencies:
       '@graphql-tools/merge': 8.2.14_graphql@15.8.0
       '@graphql-tools/utils': 8.6.13_graphql@15.8.0
-      '@subsquid/graphiql-console': 0.2.0
+      '@subsquid/graphiql-console': 0.3.0
       '@types/deep-equal': 1.0.1
       '@types/express': 4.17.13
       '@types/mocha': 9.1.1
@@ -4558,7 +4558,7 @@ packages:
     dev: false
 
   file:projects/shibuya-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-/KsZnKxoiQok4QBh+UhLkuD8OqPc5n7i0PLRXOMTzv87QF8EeHX9ttAYCaKUbbFGGutQt+GU4NJipaZpGzb43A==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-x/BwJrSvKqBKMixq6A6BeQ45rA+lkP+QynRygf/cYLKtR2cIxIM4YRLA+tHHtqKSiMB5aJdm5KVMQeRrUw3DKg==, tarball: file:projects/shibuya-erc20.tgz}
     id: file:projects/shibuya-erc20.tgz
     name: '@rush-temp/shibuya-erc20'
     version: 0.0.0
