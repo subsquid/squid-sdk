@@ -4480,7 +4480,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-5htxi03iNFSWeoe9NdvyKaw+HRSLSjZfPoFp3YRRG9JJMRE1V1G84C2WXe7Vwg6EcSiiUqemy3QLgJfaxBKsPQ==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-FMCv0eKN1UbHOB6AAWe9t9TlweF3epm2Uu/gwMGBgmlTQNm7fIBEzkAmQTFMLuZ3gdOxQ/l1sGpM8u017NkKvQ==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
