@@ -61,7 +61,7 @@ processor.run(new TypeormDatabase(), async ctx => {
             id: t.id,
             from: from,
             to: to,
-            amount: BigDecimal.fromBigInt(t.amount, 12),
+            amount: BigDecimal(t.amount, 12),
             timestamp: t.timestamp
         }))
     }

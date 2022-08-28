@@ -73,90 +73,8 @@ export interface BigDecimalConstructor {
      *
      * @throws `NaN` on an invalid value.
      */
-    new(value: BigDecimalSource): BigDecimal;
-
-    /**
-     * Returns a new instance of a BigDecimal number object
-     *
-     * String values may be in exponential, as well as normal (non-exponential) notation.
-     * There is no limit to the number of digits of a string value (other than that of Javascript's maximum array size), but the largest recommended exponent magnitude is 1e+6.
-     * Infinity, NaN and hexadecimal literal strings, e.g. '0xff', are not valid.
-     * String values in octal literal form will be interpreted as decimals, e.g. '011' is 11, not 9.
-     *
-     * @throws `NaN` on an invalid value.
-     */
     (value: BigDecimalSource): BigDecimal;
-
-    /**
-     * Create an additional BigDecimal number constructor
-     *
-     * Values created with the returned constructor will have a separate set of configuration values.
-     * This can be used to create BigDecimal objects with different DP and RM values.
-     * BigDecimal numbers created by different constructors can be used together in operations, and it is the DP and RM setting of the BigDecimal number that an operation is called upon that will apply.
-     * In the interest of memory efficiency, all BigDecimal number constructors share the same prototype object,
-     * so while the DP and RM (and any other own properties) of a constructor are isolated and untouchable by another, its prototype methods are not.
-     */
-    (): BigDecimalConstructor;
-
-    /**
-     * The maximum number of decimal places of the results of operations involving division.
-     * It is relevant only to the div and sqrt methods, and the pow method when the exponent is negative.
-     *
-     * 0 to 1e+6 inclusive
-     * Default value: 20
-     */
-    DP: number;
-    /**
-     * The rounding mode used in the above operations and by round, toExponential, toFixed and toPrecision.
-     * Default value: 1
-     */
-    RM: number;
-    /**
-     * The negative exponent value at and below which toString returns exponential notation.
-     *
-     * -1e+6 to 0 inclusive
-     * Default value: -7
-     */
-    NE: number;
-    /**
-     * The positive exponent value at and above which toString returns exponential notation.
-     *
-     * 0 to 1e+6 inclusive
-     * Default value: 21
-     */
-    PE: number;
-    /**
-     * When set to true, an error will be thrown if a primitive number is passed to the BigDecimal constructor,
-     * or if valueOf is called, or if toNumber is called on a BigDecimal which cannot be converted to a primitive number without a loss of precision.
-     *
-     * true|false
-     * Default value: false
-     */
-    strict: boolean;
-
-    /** Readonly rounding modes */
-
-    /**
-     * Rounds towards zero.
-     * I.e. truncate, no rounding.
-     */
-    readonly roundDown: 0;
-    /**
-     * Rounds towards nearest neighbour.
-     * If equidistant, rounds away from zero.
-     */
-    readonly roundHalfUp: 1;
-    /**
-     * Rounds towards nearest neighbour.
-     * If equidistant, rounds towards even neighbour.
-     */
-    readonly roundHalfEven: 2;
-    /**
-     * Rounds away from zero.
-     */
-    readonly roundUp: 3;
-
-    fromBigInt: (n: bigint, d: number) => BigDecimal
+    (value: bigint, decimals: number): BigDecimal;
 }
 
 export interface BigDecimal {
@@ -392,18 +310,3 @@ export interface BigDecimal {
 // - The BigDecimal interface, when used in a type context.
 // - The BigDecimalConstructor instance, when used in a value context.
 export const BigDecimal: BigDecimalConstructor;
-
-// The default export is the same as type/value combo symbol 'BigDecimal'.
-export default BigDecimal;
-
-// If you pull in big.js via a <script> tag, the global symbol 'BigDecimal' is automatically defined.
-// To let TypeScript know that, add this to your project's global types file, e.g. "types.d.ts":
-//
-// import BigDecimalJs from 'big.js';
-// declare global {
-//     const BigDecimal = BigDecimalJs;
-//     type BigDecimal = BigDecimalJs;
-// }
-//
-// There is a way to have TypeScript know to do this automatically (using "export as namespace"),
-// but I couldn't get it working correctly.

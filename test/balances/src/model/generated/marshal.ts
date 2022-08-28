@@ -132,12 +132,12 @@ const decimal = {
  }
  
 try {
-    Object.defineProperty(decimal, "BigDecimal", require('@subsquid/big-decimal'))
+    Object.defineProperty(decimal, "BigDecimal", require('@subsquid/big-decimal').BigDecimal)
 } catch (e) {}
 
 export const bigdecimalTransformer = {
     to(x?: any) {
-        return x?.toFixed()
+        return x?.toString()
     },
     from(s?: any): any | undefined {
         return s == null ? undefined : decimal.BigDecimal(s)
