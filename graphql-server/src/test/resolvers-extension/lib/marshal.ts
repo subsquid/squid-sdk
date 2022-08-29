@@ -1,3 +1,4 @@
+import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
 
 export interface Marshal<T, S> {
@@ -104,5 +105,14 @@ export const bigintTransformer = {
   },
   from(s?: string): bigint | undefined {
     return s == null ? undefined : BigInt(s)
+  }
+}
+
+export const bigdecimalTransformer = {
+  to(x?: BigDecimal) {
+    return x?.toString()
+  },
+  from(s?: string): BigDecimal | undefined {
+    return s == null ? undefined : BigDecimal(s)
   }
 }
