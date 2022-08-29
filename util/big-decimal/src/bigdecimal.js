@@ -25,6 +25,7 @@ function BigDecimal(value, decimals) {
 
 
 BigDecimal.prototype = Base.prototype
+Object.assign(BigDecimal, Base)
 
 
 module.exports.BigDecimal = BigDecimal
