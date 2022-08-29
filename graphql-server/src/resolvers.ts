@@ -1,7 +1,8 @@
+import {BigDecimal} from "@subsquid/big-decimal"
 import {GraphQLSchema} from "graphql"
 import {buildSchema, ContainerType, ResolverData} from "type-graphql"
 import type {EntityManager} from "typeorm"
-import {BigDecimal, BigInteger, Bytes, DateTime} from "./scalars"
+import {BigDecimalScalar, BigInteger, Bytes, DateTime} from "./scalars"
 import {TypeormOpenreaderContext} from "./typeorm"
 
 
@@ -12,7 +13,7 @@ export async function loadCustomResolvers(mod: string): Promise<GraphQLSchema> {
             { type: Date, scalar: DateTime },
             { type: BigInt, scalar: BigInteger },
             { type: Buffer, scalar: Bytes },
-            { type: String, scalar: BigDecimal },
+            { type: BigDecimal, scalar: BigDecimalScalar },
         ],
         container: resolverData => new CustomResolversContainer(resolverData)
     })
