@@ -59,9 +59,8 @@ specifiers:
   '@rush-temp/util-timeout': file:./projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
-  '@subsquid/graphiql-console': ^0.2.0
+  '@subsquid/graphiql-console': ^0.3.0
   '@substrate/calc': ^0.2.8
-  '@types/big.js': ~6.1.5
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
@@ -170,9 +169,8 @@ dependencies:
   '@rush-temp/util-timeout': file:projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
-  '@subsquid/graphiql-console': 0.2.0
+  '@subsquid/graphiql-console': 0.3.0
   '@substrate/calc': 0.2.8
-  '@types/big.js': 6.1.5
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.13
   '@types/inflected': 1.1.29
@@ -1137,8 +1135,8 @@ packages:
     resolution: {integrity: sha512-O3uyB/JbkAEMZaP3YqyHH7TMnex7tWyCbCI4EfJdOCoN6HIhqdJBWTM6aCCiWQ/5f5wxjgU735QAIpJbjDvmzg==}
     dev: false
 
-  /@subsquid/graphiql-console/0.2.0:
-    resolution: {integrity: sha512-Wh2Oxi9JkK79Y728yDEeY7JelcY1cGiQTbzVIRMFLT2tjkkoQ69goAGXdh9QmM/ANAVrHQkBUNJOLd5oAg//oQ==}
+  /@subsquid/graphiql-console/0.3.0:
+    resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
     dev: false
 
   /@subsquid/scale-codec/0.4.2:
@@ -4201,7 +4199,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-FHQoExOqnmMFZrBE1zTjGosJKqa/Jum5n9Gmx7yl2XlAcZ4SVAVGwe7xzdbp9tMjPUsubJ7fJFPTLyqY+ixqyw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-IOC93cK63D3cTJ9MlgHygOqgdCZUuEhYdmBR0N3HEJFJ4gTxeIekZHZLm4ZzY882qUQ8F9qa1V+mWkkBMBV1/w==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -4232,7 +4230,7 @@ packages:
     dev: false
 
   file:projects/big-decimal.tgz:
-    resolution: {integrity: sha512-l1o2owZ1tdVeZ6NlRyLX0XsJs+vmxYLmR3r5UGWhUbU1bR4yyoa4Xqo32g799SMUSPbZCjzbkiBdVw0g2c8gpA==, tarball: file:projects/big-decimal.tgz}
+    resolution: {integrity: sha512-nNYg9f6XDbDcGLQV7Xxkk3n0X8sWCNGBZEAhgGxDOolJJ7/PbOZoXpQhmy3u5EDHsPjI/lwYUrxwqS2BIBQLDw==, tarball: file:projects/big-decimal.tgz}
     name: '@rush-temp/big-decimal'
     version: 0.0.0
     dependencies:
@@ -4271,7 +4269,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-MY4f4X4y/p/fI48QRDRXV32MAP9WSZvRJY5+n/yUnnXUMr32DUBNvpVNezyTo7jE4fj5rNaqQYB5nEkavaGjnQ==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-Or/rJOyOGRXOFlMAEfMvPrUaIA6mK9f7OV9hP+uhtcbVAOnfthZpfmcNKtM3JUBt9djscY/xd7e6pdv0vrT2AQ==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -4390,7 +4388,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-IGE6sIL1rXnfbZ/QmSt2KQhS2LPNcYTRj/WDYix4ianyFpO84hXriC0Bx0RZbMd8W1sQbpvtuDK+Kzl5cgLPYg==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-l476C5KzfpqH7r61glgxpET0+fb8ZhHIjFuhgYz32ddIO4mebQ16aXopzwm8grZySCZ4F4vM/snaVeOX+kPt0A==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -4514,14 +4512,14 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-YvZ1cITc/Y30HYQG0grf+8NNXWVuUCMnjpNxDndOrlqr+rVGM5GHV3rwvJrvhg/rhOEdBh+ZAuVxgC1oAxrIwA==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-ccldfi+1S9NKt/pw4tSHQ4Nlg4l7RQ07lJ3/atu53q7x+JJUOsHjbS65mZTz+JUpJaFOuOJ1vu2XDenYFDzZtw==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
     dependencies:
       '@graphql-tools/merge': 8.2.14_graphql@15.8.0
       '@graphql-tools/utils': 8.6.13_graphql@15.8.0
-      '@subsquid/graphiql-console': 0.2.0
+      '@subsquid/graphiql-console': 0.3.0
       '@types/deep-equal': 1.0.1
       '@types/express': 4.17.13
       '@types/mocha': 9.1.1
@@ -4714,7 +4712,7 @@ packages:
     dev: false
 
   file:projects/typeorm-codegen.tgz:
-    resolution: {integrity: sha512-LubIhvsrLz1NbwWASLM8on5iYbX3U/KjChJg2nmLlbouZ8DlwIlNpDOOfh/u5ZgIm2fM5+GQ9lhnKZRuZMFK3Q==, tarball: file:projects/typeorm-codegen.tgz}
+    resolution: {integrity: sha512-ie2KgNynK9qvOoRpclG1lkULw/rx1qefip7ql8DwEylylkZgn4/UM0K+MR6bl9DzIqKeksz7wxoNFGwsYgixtA==, tarball: file:projects/typeorm-codegen.tgz}
     name: '@rush-temp/typeorm-codegen'
     version: 0.0.0
     dependencies:
