@@ -3,7 +3,7 @@ process: migrate
 
 
 serve:
-	@npx squid-graphql-server
+	@npx squid-graphql-server --subscriptions
 
 
 migrate:
@@ -27,7 +27,7 @@ up:
 
 
 down:
-	@docker-compose down
+	@docker-compose down -v
 
 
 .PHONY: process serve start codegen migration migrate up down

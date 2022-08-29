@@ -9,6 +9,7 @@ export interface Entity extends TypeMeta {
     properties: Record<Name, Prop>
     interfaces?: Name[]
     indexes?: Index[]
+    cardinality?: number
 }
 
 

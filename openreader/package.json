@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@graphql-tools/merge": "^8",
-    "@subsquid/graphiql-console": "^0.2.0",
+    "@subsquid/graphiql-console": "^0.3.0",
     "@subsquid/logger": "^0.1.0",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-commander": "^0.0.0",

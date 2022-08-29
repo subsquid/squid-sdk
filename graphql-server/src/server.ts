@@ -1,35 +1,39 @@
-import {mergeSchemas} from "@graphql-tools/schema"
-import {Logger} from "@subsquid/logger"
-import {Context} from "@subsquid/openreader/lib/context"
-import {PoolOpenreaderContext} from "@subsquid/openreader/lib/db"
-import {Dialect} from "@subsquid/openreader/lib/dialect"
-import type {Model} from "@subsquid/openreader/lib/model"
-import {SchemaBuilder} from "@subsquid/openreader/lib/opencrud/schema"
-import {addServerCleanup, Dispose, runApollo} from "@subsquid/openreader/lib/server"
-import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/lib/tools"
-import {def} from "@subsquid/util-internal"
-import {ListeningServer} from "@subsquid/util-internal-http-server"
-import {PluginDefinition} from "apollo-server-core"
-import assert from "assert"
-import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from "graphql"
-import * as path from "path"
-import {Pool} from "pg"
-import * as process from "process"
-import type {DataSource} from "typeorm"
-import {createCheckPlugin, RequestCheckFunction} from "./check"
-import {loadCustomResolvers} from "./resolvers"
-import {TypeormOpenreaderContext} from "./typeorm"
+import {mergeSchemas} from '@graphql-tools/schema'
+import {Logger} from '@subsquid/logger'
+import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
+import {PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
+import {Dialect} from '@subsquid/openreader/lib/dialect'
+import type {Model} from '@subsquid/openreader/lib/model'
+import {SchemaBuilder} from '@subsquid/openreader/lib/opencrud/schema'
+import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
+import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
+import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
+import {def} from '@subsquid/util-internal'
+import {ListeningServer} from '@subsquid/util-internal-http-server'
+import {PluginDefinition} from 'apollo-server-core'
+import assert from 'assert'
+import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from 'graphql'
+import * as path from 'path'
+import {Pool} from 'pg'
+import * as process from 'process'
+import type {DataSource} from 'typeorm'
+import {createCheckPlugin, RequestCheckFunction} from './check'
+import {loadCustomResolvers} from './resolvers'
+import {TypeormOpenreaderContext} from './typeorm'
 
 
 export interface ServerOptions {
     dir?: string
     log?: Logger
     maxRequestSizeBytes?: number
+    maxRootFields?: number
+    maxResponseNodes?: number
     sqlStatementTimeout?: number
     squidStatus?: boolean
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionSqlStatementTimeout?: number
+    subscriptionMaxResponseNodes?: number
 }
 
 
@@ -65,7 +69,8 @@ export class Server {
             log: this.options.log,
             subscriptions: this.options.subscriptions,
             graphiqlConsole: true,
-            maxRequestSizeBytes: this.options.maxRequestSizeBytes
+            maxRequestSizeBytes: this.options.maxRequestSizeBytes,
+            maxRootFields: this.options.maxRootFields
         })
     }
 
@@ -153,6 +158,7 @@ export class Server {
     @def
     private async context(): Promise<() => Context> {
         let dialect = this.dialect()
+        let createOpenreader: () => OpenreaderContext
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
@@ -163,10 +169,8 @@ export class Server {
                 })
                 this.disposals.push(() => subscriptionCon.destroy())
             }
-            return () => {
-                return {
-                    openreader: new TypeormOpenreaderContext(dialect, con, subscriptionCon, this.options.subscriptionPollInterval)
-                }
+            createOpenreader = () => {
+                return new TypeormOpenreaderContext(dialect, con, subscriptionCon, this.options.subscriptionPollInterval)
             }
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
@@ -178,11 +182,23 @@ export class Server {
                 })
                 this.disposals.push(() => subscriptionPool.end())
             }
-            return () => {
-                return {
-                    openreader: new PoolOpenreaderContext(dialect, pool, subscriptionPool, this.options.subscriptionPollInterval)
-                }
+            createOpenreader = () => {
+                return new PoolOpenreaderContext(dialect, pool, subscriptionPool, this.options.subscriptionPollInterval)
             }
+        }
+        return () => {
+            let openreader = createOpenreader()
+
+            if (this.options.maxResponseNodes) {
+                openreader.responseSizeLimit = new ResponseSizeLimit(this.options.maxResponseNodes)
+                openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(this.options.maxResponseNodes)
+            }
+
+            if (this.options.subscriptionMaxResponseNodes) {
+                openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(this.options.subscriptionMaxResponseNodes)
+            }
+
+            return {openreader}
         }
     }
 
