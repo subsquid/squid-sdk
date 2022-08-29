@@ -1,15 +1,14 @@
 import {Big} from 'big.js'
-import assert from 'assert'
 
-Big.DP = 1E6
-Big.NE = 0
-Big.PE = 0
+Big.DP = 34
+Big.NE = -6144
+Big.PE = 6144
 
 const BigDecimal = (n, d) => {
     if (d != null) {
-        assert(typeof n === 'bigint')
+        d = BigInt(d)
         let decimals = 1n
-        for (let i = 0; i < d; i++) decimals *= 10n
+        for (let i = 0n; i < d; i++) decimals *= 10n
         return Big(n).div(decimals)
     } else {
         return Big(n)

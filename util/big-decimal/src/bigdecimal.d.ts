@@ -74,7 +74,7 @@ export interface BigDecimalConstructor {
      * @throws `NaN` on an invalid value.
      */
     (value: BigDecimalSource): BigDecimal;
-    (value: bigint, decimals: number): BigDecimal;
+    (value: BigDecimalSource, decimals: number | bigint): BigDecimal;
 }
 
 export interface BigDecimal {
