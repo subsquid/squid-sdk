@@ -72,6 +72,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                                         `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigdecimalTransformer, nullable: ${prop.nullable}})`
                                     )
                                     break
+                                case 'Float':
+                                    imports.useMarshal()
+                                    out.line(
+                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.floatTransformer, nullable: ${prop.nullable}})`
+                                    )
+                                    break
                                 default:
                                     out.line(
                                         `@Column_("${getDbType(prop.type.name)}", {nullable: ${
@@ -190,6 +196,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             case 'DateTime':
                 return 'timestamp with time zone'
             case 'BigInt':
+                return 'numeric'
             case 'BigDecimal':
                 return 'numeric'
             case 'Bytes':
