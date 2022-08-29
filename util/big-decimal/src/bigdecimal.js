@@ -1,18 +1,30 @@
-import {Big} from 'big.js'
+const assert = require('assert')
+const Big = require('big.js').Big
 
-Big.DP = 34
-Big.NE = -6144
-Big.PE = 6144
+// fresh Big class
+const Base = Big()
 
-const BigDecimal = (n, d) => {
-    if (d != null) {
-        d = BigInt(d)
-        let decimals = 1n
-        for (let i = 0n; i < d; i++) decimals *= 10n
-        return Big(n).div(decimals)
+
+// adjust settings
+Base.DP = 80
+
+
+function BigDecimal(value, decimals) {
+    if (this instanceof BigDecimal) {
+        Base.call(this, value)
+        this.constructor = BigDecimal
+        if (decimals) {
+            const e = Number(decimals) // bigint case
+            assert(Number.isSafeInteger(e))
+            return this.div(BigDecimal(10).pow(e))
+        }
     } else {
-        return Big(n)
+        return new BigDecimal(value, decimals)
     }
 }
 
-export {BigDecimal}
+
+BigDecimal.prototype = Base.prototype
+
+
+module.exports.BigDecimal = BigDecimal
