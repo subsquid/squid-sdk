@@ -252,13 +252,13 @@ describe('scalars', function() {
                 scalars: [
                     {
                         id: '20',
-                        bigdecimal: '0.00000000000000000000000000000000002',
-                        deep: {bigdecimal: '0.00000000000000000000000000000000002'}
+                        bigdecimal: '2e-35',
+                        deep: {bigdecimal: '2e-35'}
                     },
                     {
                         id: '21',
-                        bigdecimal: '0.00000000000000000000000000000000001',
-                        deep: {bigdecimal: '0.00000000000000000000000000000000001'}
+                        bigdecimal: '1e-35',
+                        deep: {bigdecimal: '1e-35'}
                     },
                     {
                         id: '22',
