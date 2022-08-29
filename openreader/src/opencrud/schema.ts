@@ -29,11 +29,13 @@ import {
 } from "graphql/type/definition"
 import {Context} from "../context"
 import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connection"
+import {getEntityListSize, getRelaySize, getSize} from '../limit.size'
 import {Entity, Interface, JsonObject, Model, Prop} from "../model"
 import {getObject, getUnionProps} from "../model.tools"
 import {customScalars} from "../scalars"
 import {EntityByIdQuery, EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
 import {Subscription} from "../subscription"
+import {Limit} from '../util/limit'
 import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
 import {ensureArray, identity} from "../util/util"
 import {getOrderByMapping, parseOrderBy} from "./orderBy"
@@ -409,10 +411,11 @@ export class SchemaBuilder {
         let outputType = new GraphQLList(new GraphQLNonNull(this.get(entityName)))
         let argsType = this.entityListArguments(entityName)
 
-        function createQuery(context: Context, info: GraphQLResolveInfo) {
+        function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
             let fields = parseResolveTree(model, entityName, info.schema, tree)
             let args = parseEntityListArguments(model, entityName, tree.args)
+            limit?.check(() => getEntityListSize(model, entityName, fields, args.limit, args.where) + 1)
             return new EntityListQuery(
                 model,
                 context.openreader.dialect,
@@ -426,7 +429,7 @@ export class SchemaBuilder {
             type: outputType,
             args: argsType,
             resolve(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.responseSizeLimit)
                 return context.openreader.executeQuery(q)
             }
         }
@@ -436,7 +439,7 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
                 return context.openreader.subscription(q)
             }
         }
@@ -449,9 +452,10 @@ export class SchemaBuilder {
             id: {type: new GraphQLNonNull(GraphQLString)}
         }
 
-        function createQuery(context: Context, info: GraphQLResolveInfo) {
+        function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
             let fields = parseResolveTree(model, entityName, info.schema, tree)
+            limit?.check(() => getSize(model, fields) + 1)
             return new EntityByIdQuery(
                 model,
                 context.openreader.dialect,
@@ -465,7 +469,7 @@ export class SchemaBuilder {
             type: this.get(entityName),
             args: argsType,
             async resolve(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.responseSizeLimit)
                 return context.openreader.executeQuery(q)
             }
         }
@@ -475,7 +479,7 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
                 return context.openreader.subscription(q)
             }
         }
@@ -493,6 +497,7 @@ export class SchemaBuilder {
             async resolve(source, args, context, info) {
                 let tree = getResolveTree(info)
                 let fields = parseResolveTree(model, entityName, info.schema, tree)
+                context.openreader.responseSizeLimit?.check(() => getSize(model, fields) + 1)
                 let query = new EntityListQuery(
                     model,
                     context.openreader.dialect,
@@ -576,6 +581,8 @@ export class SchemaBuilder {
                         req.edgeNode = parseResolveTree(model, entityName, info.schema, nodeTree)
                     }
                 }
+
+                context.openreader.responseSizeLimit?.check(() => getRelaySize(model, entityName, req) + 1)
 
                 let result = await context.openreader.executeQuery(new EntityConnectionQuery(
                     model,
