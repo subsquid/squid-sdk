@@ -42,7 +42,8 @@
     "graphql-parse-resolve-info": "^4.12.3",
     "graphql-ws": "^5.9.1",
     "pg": "^8.7.3",
-    "ws": "^8.8.1"
+    "ws": "^8.8.1",
+    "@subsquid/big-decimal": "~0.0.0"
   },
   "devDependencies": {
     "@types/deep-equal": "^1.0.1",

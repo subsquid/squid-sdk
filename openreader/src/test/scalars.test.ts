@@ -23,8 +23,8 @@ describe('scalars', function() {
         `insert into scalar (id, "enum") values ('17', 'C')`,
         `insert into scalar (id, "json") values ('18', '{"key1": "value1"}'::jsonb)`,
         `insert into scalar (id, "json") values ('19', '{"key2": "value2"}'::jsonb)`,
-        `insert into scalar (id, "bigdecimal", deep) values ('20', 0.00000000000000000000000000000000001, '{"bigdecimal": "0.00000000000000000000000000000000001"}'::jsonb)`,
-        `insert into scalar (id, "bigdecimal", deep) values ('21', 0.00000000000000000000000000000000002, '{"bigdecimal": "0.00000000000000000000000000000000002"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('20', 0.00000000000000000000000000000000002, '{"bigdecimal": "0.00000000000000000000000000000000002"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('21', 0.00000000000000000000000000000000001, '{"bigdecimal": "0.00000000000000000000000000000000001"}'::jsonb)`,
         `insert into scalar (id, "bigdecimal", deep) values ('22', 5, '{"bigdecimal": "5"}'::jsonb)`,
     ])
 
@@ -252,13 +252,13 @@ describe('scalars', function() {
                 scalars: [
                     {
                         id: '20',
-                        bigdecimal: '0.00000000000000000000000000000000001',
-                        deep: {bigdecimal: '0.00000000000000000000000000000000001'}
+                        bigdecimal: '0.00000000000000000000000000000000002',
+                        deep: {bigdecimal: '0.00000000000000000000000000000000002'}
                     },
                     {
                         id: '21',
-                        bigdecimal: '0.00000000000000000000000000000000002',
-                        deep: {bigdecimal: '0.00000000000000000000000000000000002'}
+                        bigdecimal: '0.00000000000000000000000000000000001',
+                        deep: {bigdecimal: '0.00000000000000000000000000000000001'}
                     },
                     {
                         id: '22',
@@ -282,14 +282,14 @@ describe('scalars', function() {
                     not_in: scalars(where: {bigdecimal_not_in: [0.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
                 }
             `, {
-                eq: [{id: '21'}],
-                not_eq: [{id: '20'}, {id: '22'}],
-                gt: [{id: '21'}, {id: '22'}],
-                gte: [{id: '21'}, {id: '22'}],
-                lt: [{id: '20'}],
+                eq: [{id: '20'}],
+                not_eq: [{id: '21'}, {id: '22'}],
+                gt: [{id: '20'}, {id: '22'}],
+                gte: [{id: '20'}, {id: '22'}],
+                lt: [{id: '21'}],
                 lte: [{id: '20'}, {id: '21'}],
-                in: [{id: '20'}, {id: '22'}],
-                not_in: [{id: '21'}]
+                in: [{id: '21'}, {id: '22'}],
+                not_in: [{id: '20'}]
             })
         })
 
@@ -302,8 +302,8 @@ describe('scalars', function() {
                 }
             `, {
                 scalars: [
-                    {id: '20'},
                     {id: '21'},
+                    {id: '20'},
                     {id: '22'}
                 ]
             })

@@ -1,3 +1,4 @@
+import {BigDecimal} from "@subsquid/big-decimal"
 import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {Dialect} from "../dialect"
@@ -273,7 +274,11 @@ export class EntityListQueryPrinter {
     }
 
     private param(value: any): string {
-        return "$" + this.params.push(value)
+        if (value instanceof BigDecimal) {
+            return "$" + this.params.push(value.toString()) + '::numeric'
+        } else {
+            return "$" + this.params.push(value)
+        }
     }
 
     private ident(name: string): string {
