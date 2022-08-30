@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-explorer
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Tue, 30 Aug 2022 09:15:59 GMT and should not be manually modified.
+
+## 1.1.0
+Tue, 30 Aug 2022 09:15:59 GMT
+
+### Minor changes
+
+- setup response size limits
 
 ## 1.0.0
 Wed, 17 Aug 2022 17:33:52 GMT

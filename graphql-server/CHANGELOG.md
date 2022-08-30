@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Tue, 30 Aug 2022 09:15:59 GMT and should not be manually modified.
+
+## 2.1.0
+Tue, 30 Aug 2022 09:15:59 GMT
+
+### Minor changes
+
+- add support for response size limits
 
 ## 2.0.0
 Wed, 17 Aug 2022 17:33:52 GMT
