@@ -408,7 +408,7 @@ export class SchemaBuilder {
     private installEntityList(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
         let queryName = toPlural(toCamelCase(entityName))
-        let outputType = new GraphQLList(new GraphQLNonNull(this.get(entityName)))
+        let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(entityName))))
         let argsType = this.entityListArguments(entityName)
 
         function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {

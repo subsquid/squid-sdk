@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-explorer",
+      "comment": "setup response size limits",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-explorer"
+}

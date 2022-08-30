@@ -59,9 +59,7 @@ describe('response size limits', function() {
             }
         `)
         expect(result).toMatchObject({
-            data: {
-                order1s: null
-            },
+            data: null,
             errors: [
                 expect.objectContaining({message: 'response might exceed the size limit', path: ['order1s']})
             ]
@@ -115,9 +113,7 @@ describe('response size limits', function() {
             }
         `)
         expect(result).toEqual({
-            data: {
-                order3s: null
-            },
+            data: null,
             errors: [
                 expect.objectContaining({
                     message: 'response might exceed the size limit',
