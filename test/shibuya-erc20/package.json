@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@subsquid/ss58": "^0.1.1",
-    "@subsquid/graphql-server": "^2.0.0",
+    "@subsquid/graphql-server": "^2.1.0",
     "@subsquid/substrate-processor": "^1.7.0",
     "@subsquid/typeorm-migration": "^0.1.2",
     "@subsquid/typeorm-store": "^0.1.2",
