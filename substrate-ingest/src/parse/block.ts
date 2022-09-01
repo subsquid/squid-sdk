@@ -164,7 +164,7 @@ export class BlockParser {
             if (e.name == 'TransactionPayment.TransactionFeePaid') {
                 let ex = extrinsics[assertNotNull(e.extrinsicIdx)]
                 let actualFee = BigInt(e.args.actualFee)
-                let tip = BigInt(e.args.tip)
+                let tip = BigInt(e.args.tip ?? e.args.actualTip)
                 ex.fee = actualFee - tip
                 ex.tip = tip
             }
