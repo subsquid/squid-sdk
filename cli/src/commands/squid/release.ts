@@ -35,6 +35,20 @@ export function mergeEnvWithFile(envs: Record<string, string>, path: string) {
         }, { ...envs })
 }
 
+export function parseEnvs(envFlags: string[] | undefined, envFilePath: string | undefined) {
+    let envs: Record<string, string> = {} 
+        
+    envFlags?.forEach((e: string)=>{
+        const { name, value } = getEnv(e);
+        envs[name] = value;
+    });
+    
+    if (envFilePath != undefined)
+        envs = mergeEnvWithFile(envs, envFilePath)
+    
+    return envs
+}
+
 export default class Release extends CliCommand {
     static description = 'Create a new squid version';
     static args = [
@@ -82,15 +96,7 @@ export default class Release extends CliCommand {
             this
         );
 
-        let envs: Record<string, string> = {} 
-        
-        flags.env?.forEach((e: string)=>{
-            const { name, value } = getEnv(e);
-            envs[name] = value;
-        });
-        
-        if (flags.envFile != undefined)
-            envs = mergeEnvWithFile(envs, flags.envFile)
+        const envs = parseEnvs(flags.env, flags.envFile);
 
         let deployUrl = flags.source;
         if (!deployUrl) {
@@ -104,6 +110,7 @@ export default class Release extends CliCommand {
                           : ''
                   }`;
         }
+        
         this.log(`🦑 Releasing the squid at ${deployUrl}`);
         const result = await releaseSquid(
             squidName,

@@ -8,7 +8,7 @@ import {
     parseNameAndVersion,
     pollDeployPipelines,
 } from '../../utils';
-import { getEnv, mergeEnvWithFile } from './release';
+import { parseEnvs } from './release';
 
 const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
@@ -63,23 +63,7 @@ export default class Update extends CliCommand {
             this
         );
         
-        let envs: Record<string, string> = {} 
-        
-        flags.env?.forEach((e: string)=>{
-            const { name, value } = getEnv(e);
-            envs[name] = value;
-        });
-        
-        if (flags.envFile != undefined)
-            envs = mergeEnvWithFile(envs, flags.envFile)
-
-        if (flags.envFile != undefined && existsSync(flags.envFile)) {
-            const envFile = readFileSync(flags.envFile);
-            envFile.toString().replace(/\r\n/g,'\n').split('\n').forEach((e: string) => {
-                const v = getEnv(e);
-                envs[v.name] = v.value;
-            });
-        }
+        const envs = parseEnvs(flags.env, flags.envFile);
 
         let deployUrl = flags.source;
         if (!deployUrl) {
