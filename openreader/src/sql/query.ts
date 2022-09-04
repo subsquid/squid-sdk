@@ -1,7 +1,7 @@
-import {assertNotNull} from "@subsquid/util-internal"
-import assert from "assert"
-import type {Dialect} from "../dialect"
-import type {EntityListArguments, Where} from "../ir/args"
+import {assertNotNull} from '@subsquid/util-internal'
+import assert from 'assert'
+import type {Dialect} from '../dialect'
+import type {EntityListArguments, Where} from '../ir/args'
 import {
     decodeRelayConnectionCursor,
     encodeRelayConnectionCursor,
@@ -9,12 +9,12 @@ import {
     RelayConnectionPageInfo,
     RelayConnectionRequest,
     RelayConnectionResponse
-} from "../ir/connection"
-import type {FieldRequest} from "../ir/fields"
-import type {Model} from "../model"
-import {toSafeInteger} from "../util/util"
-import {mapRows} from "./mapping"
-import {EntityListQueryPrinter} from "./printer"
+} from '../ir/connection'
+import type {FieldRequest} from '../ir/fields'
+import type {Model} from '../model'
+import {toSafeInteger} from '../util/util'
+import {mapRow, mapRows} from './mapping'
+import {EntityListQueryPrinter} from './printer'
 
 
 export interface Query<T> {
@@ -40,6 +40,82 @@ export class EntityListQuery implements Query<any[]> {
 
     map(rows: any[][]): any[] {
         return mapRows(rows, this.fields)
+    }
+}
+
+
+export class QueryableListQuery implements Query<any[]> {
+    public readonly sql: string
+    public readonly params: unknown[] = []
+
+    constructor(
+        model: Model,
+        dialect: Dialect,
+        private fields: Record<string, FieldRequest[]>,
+        args: EntityListArguments
+    ) {
+        let union: string[] = []
+        let orders: string[] = []
+
+        for (let entityName in this.fields) {
+            let fields = this.fields[entityName]
+
+            let printer = new EntityListQueryPrinter(
+                model,
+                dialect,
+                entityName,
+                this.params,
+                {where: args.where},
+                fields
+            )
+
+            let cols = []
+            cols.push(`'${entityName}' AS e`)
+            if (fields.length) {
+                cols.push(printer.printColumnListAsJsonArray() + ' AS d')
+            } else {
+                cols.push('nil AS d')
+            }
+
+            if (args.orderBy) {
+                orders.length = 0
+                printer.traverseOrderBy(args.orderBy, (col, order) => {
+                    orders.push(order)
+                    cols.push(`${col} AS o${orders.length}`)
+                })
+            }
+
+            union.push(`SELECT ${cols.join(', ')} ${printer.printFrom()}`)
+        }
+
+        let from = union.join('\nUNION ALL\n')
+        if (orders.length > 0 || args.limit || args.offset) {
+            this.sql = `SELECT e, d FROM (\n${from}\n) AS src`
+            if (orders.length) {
+                this.sql += '\nORDER BY ' + orders.map((o, idx) => `o${idx + 1} ${o}`).join(', ')
+            }
+            if (args.offset) {
+                this.sql += `\nOFFSET ${args.offset}`
+            }
+            if (args.limit) {
+                this.sql += `\nLIMIT ${args.limit}`
+            }
+        } else {
+            this.sql = from
+        }
+    }
+
+    map(rows: any[][]): any[] {
+        let result: any[] = new Array(rows.length)
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i]
+            let entityName = row[0]
+            let fields = this.fields[entityName]
+            let rec = mapRow(row[1], fields)
+            rec._isTypeOf = entityName
+            result[i] = rec
+        }
+        return result
     }
 }
 

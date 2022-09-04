@@ -29,11 +29,19 @@ import {
 } from "graphql/type/definition"
 import {Context} from "../context"
 import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connection"
+import {FieldRequest} from '../ir/fields'
 import {getEntityListSize, getRelaySize, getSize} from '../limit.size'
 import {Entity, Interface, JsonObject, Model, Prop} from "../model"
-import {getObject, getUnionProps} from "../model.tools"
+import {getObject, getQueryableEntities, getUnionProps, getUniversalProperties} from '../model.tools'
 import {customScalars} from "../scalars"
-import {EntityByIdQuery, EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
+import {
+    EntityByIdQuery,
+    EntityConnectionQuery,
+    EntityCountQuery,
+    EntityListQuery,
+    Query,
+    QueryableListQuery
+} from '../sql/query'
 import {Subscription} from "../subscription"
 import {Limit} from '../util/limit'
 import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
@@ -111,7 +119,8 @@ export class SchemaBuilder {
                 return new GraphQLInterfaceType({
                     name,
                     description: item.description,
-                    fields: () => this.buildObjectFields(item)
+                    fields: () => this.buildObjectFields(item),
+                    resolveType: item.queryable ? (value: any) => value._isTypeOf : undefined
                 })
             case "enum":
                 return new GraphQLEnumType({
@@ -170,7 +179,7 @@ export class SchemaBuilder {
                 type = new GraphQLList(this.getPropType(prop.type.item))
                 break
             case "fk":
-                type = this.get(prop.type.foreignEntity)
+                type = this.get(prop.type.entity)
                 break
             case "lookup":
                 return this.get(prop.type.entity)
@@ -200,37 +209,24 @@ export class SchemaBuilder {
         }
     }
 
-    private getWhere(name: string): GraphQLInputType {
-        let where = this.where.get(name)
+    private getWhere(typeName: string): GraphQLInputType {
+        let where = this.where.get(typeName)
         if (where) return where
 
-        const object = this.model[name]
-        switch(object.kind) {
-            case "entity":
-            case "object":
-            case "union":
-                break
-            default:
-                throw unexpectedCase(object.kind)
-        }
+        let object = this.model[typeName]
+        let properties = getUniversalProperties(this.model, typeName)
 
         where = new GraphQLInputObjectType({
-            name: `${name}WhereInput`,
+            name: `${typeName}WhereInput`,
             fields: () => {
                 let fields: GraphQLInputFieldConfigMap = {}
-                let properties
-                if (object.kind == 'union') {
-                    properties = getUnionProps(this.model, name).properties
-                } else {
-                    properties = object.properties
-                }
 
                 for (let key in properties) {
                     this.buildPropWhereFilters(key, properties[key], fields)
                 }
 
-                if (object.kind == 'entity') {
-                    let whereList = new GraphQLList(new GraphQLNonNull(this.getWhere(name)))
+                if (object.kind == 'entity' || object.kind == 'interface') {
+                    let whereList = new GraphQLList(new GraphQLNonNull(this.getWhere(typeName)))
                     fields['AND'] = {
                         type: whereList
                     }
@@ -242,7 +238,8 @@ export class SchemaBuilder {
                 return fields
             }
         })
-        this.where.set(name, where)
+
+        this.where.set(typeName, where)
         return where
     }
 
@@ -320,10 +317,8 @@ export class SchemaBuilder {
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
             case "fk":
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
-                fields[key] = {type: this.getWhere(prop.type.foreignEntity)}
-                break
             case "lookup":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
                 fields[key] = {type: this.getWhere(prop.type.entity)}
                 break
             case "list-lookup": {
@@ -355,24 +350,24 @@ export class SchemaBuilder {
         return false
     }
 
-    private getOrderBy(entityName: string): GraphQLInputType {
-        let orderBy = this.orderBy.get(entityName)
+    private getOrderBy(typeName: string): GraphQLInputType {
+        let orderBy = this.orderBy.get(typeName)
         if (orderBy) return orderBy
 
         let values: GraphQLEnumValueConfigMap = {}
-        for (let variant of getOrderByMapping(this.model, entityName).keys()) {
+        for (let variant of getOrderByMapping(this.model, typeName).keys()) {
             values[variant] = {}
         }
 
         orderBy = new GraphQLList(
             new GraphQLNonNull(
                 new GraphQLEnumType({
-                    name: `${entityName}OrderByInput`,
+                    name: `${typeName}OrderByInput`,
                     values
                 })
             )
         )
-        this.orderBy.set(entityName, orderBy)
+        this.orderBy.set(typeName, orderBy)
         return orderBy
     }
 
@@ -385,10 +380,15 @@ export class SchemaBuilder {
             let item = this.model[name]
             switch(item.kind) {
                 case "entity":
-                    this.installEntityList(name, query, subscription)
+                    this.installListQuery(name, query, subscription)
                     this.installEntityById(name, query, subscription)
                     this.installEntityByUniqueInput(name, query)
                     this.installRelayConnection(name, query)
+                    break
+                case 'interface':
+                    if (item.queryable) {
+                        this.installListQuery(name, query, subscription)
+                    }
                     break
             }
         }
@@ -405,24 +405,51 @@ export class SchemaBuilder {
         })
     }
 
-    private installEntityList(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
+    private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = toPlural(toCamelCase(entityName))
-        let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(entityName))))
-        let argsType = this.entityListArguments(entityName)
+        let isEntity = model[typeName].kind == 'entity'
+        let queryName = toPlural(toCamelCase(typeName))
+        let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
+        let argsType = this.entityListArguments(typeName)
 
         function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
-            let fields = parseResolveTree(model, entityName, info.schema, tree)
-            let args = parseEntityListArguments(model, entityName, tree.args)
-            limit?.check(() => getEntityListSize(model, entityName, fields, args.limit, args.where) + 1)
-            return new EntityListQuery(
-                model,
-                context.openreader.dialect,
-                entityName,
-                fields,
-                args
-            )
+            let args = parseEntityListArguments(model, typeName, tree.args)
+
+            if (isEntity) {
+                let fields = parseResolveTree(model, typeName, info.schema, tree)
+                limit?.check(() => getEntityListSize(model, typeName, fields, args.limit, args.where) + 1)
+                return new EntityListQuery(
+                    model,
+                    context.openreader.dialect,
+                    typeName,
+                    fields,
+                    args
+                )
+            } else {
+                let fieldsByEntity: Record<string, FieldRequest[]> = {}
+                for (let entityName of getQueryableEntities(model, typeName)) {
+                    fieldsByEntity[entityName] = parseResolveTree(model, entityName, info.schema, tree)
+                }
+                limit?.check(() => {
+                    let total = 1
+                    for (let name in fieldsByEntity) {
+                        let size = getEntityListSize(model, name, fieldsByEntity[name], args.limit, args.where)
+                        if (Number.isFinite(size)) {
+                            total = Math.max(total, size)
+                        } else {
+                            return size
+                        }
+                    }
+                    return total + 1
+                })
+                return new QueryableListQuery(
+                    model,
+                    context.openreader.dialect,
+                    fieldsByEntity,
+                    args
+                )
+            }
         }
 
         query[queryName] = {

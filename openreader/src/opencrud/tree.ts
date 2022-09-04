@@ -83,7 +83,7 @@ export function parseResolveTree(
                     type: prop.type,
                     prop,
                     index: 0,
-                    children: parseResolveTree(model, prop.type.foreignEntity, schema, f)
+                    children: parseResolveTree(model, prop.type.entity, schema, f)
                 })
                 break
             case "lookup":

@@ -1,5 +1,5 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
 import {
     buildASTSchema,
     DocumentNode,
@@ -17,14 +17,15 @@ import {
     GraphQLUnionType,
     parse,
     validateSchema
-} from "graphql"
-import {Index, Model, Prop, PropType, Scalar} from "./model"
-import {validateModel} from "./model.tools"
-import {customScalars} from "./scalars"
+} from 'graphql'
+import {Index, Model, Prop, PropType, Scalar} from './model'
+import {validateModel} from './model.tools'
+import {customScalars} from './scalars'
 
 
 const baseSchema = buildASTSchema(parse(`
     directive @entity on OBJECT
+    directive @query on INTERFACE
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
     directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
@@ -88,7 +89,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
             model[type.name] = {kind, properties, description, interfaces}
             break
         case 'interface':
-            model[type.name] = {kind, properties, description}
+            model[type.name] = {kind, properties, description, queryable: isQueryableInterface(type)}
             break
         default:
             throw unexpectedCase(kind)
@@ -173,7 +174,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                 ...limits
             }
         } else if (fieldType instanceof GraphQLObjectType) {
-            if (isEntityType(fieldType)) {
+            if (isEntityType(fieldType) && kind != 'interface') {
                 switch(list.nulls.length) {
                     case 0:
                         if (derivedFrom) {
@@ -196,7 +197,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                             properties[key] = {
                                 type: {
                                     kind: 'fk',
-                                    foreignEntity: fieldType.name
+                                    entity: fieldType.name
                                 },
                                 nullable,
                                 unique,
@@ -516,6 +517,12 @@ function checkByteWeightDirective(type: GraphQLNamedType, f: GraphQLField<any, a
         `Incorrect @byteWeight where applied to ${type.name}.${f.name}. Byte weight value must be positive.`
     )
     return {byteWeight}
+}
+
+
+function isQueryableInterface(type: GraphQLOutputType): boolean {
+    return type instanceof GraphQLInterfaceType
+        && !!type.astNode?.directives?.find(d => d.name.value == 'query')
 }
 
 

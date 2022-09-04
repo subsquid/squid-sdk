@@ -23,6 +23,7 @@ export interface JsonObject extends TypeMeta {
 export interface Interface extends TypeMeta {
     kind: 'interface'
     properties: Record<Name, Prop>
+    queryable?: boolean
 }
 
 
@@ -108,7 +109,7 @@ export interface ListPropType {
 
 export interface FkPropType {
     kind: 'fk'
-    foreignEntity: Name
+    entity: Name
 }
 
 

@@ -87,7 +87,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             imports.useTypeorm('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
-                                `@OneToOne_(() => ${prop.type.foreignEntity}, {nullable: false})`
+                                `@OneToOne_(() => ${prop.type.entity}, {nullable: false})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
@@ -97,7 +97,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             }
                             // Make foreign entity references always nullable
                             out.line(
-                                `@ManyToOne_(() => ${prop.type.foreignEntity}, {nullable: true})`
+                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true})`
                             )
                         }
                         break
@@ -261,8 +261,6 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                 imports.useModel(prop.type.name)
                 break
             case 'fk':
-                imports.useModel(prop.type.foreignEntity)
-                break
             case 'lookup':
             case 'list-lookup':
                 imports.useModel(prop.type.entity)
@@ -397,7 +395,7 @@ function getPropJsType(owner: 'entity' | 'object', prop: Prop): string {
             break
         case 'fk':
             if (owner === 'entity') {
-                type = prop.type.foreignEntity
+                type = prop.type.entity
             } else {
                 type = 'string'
             }

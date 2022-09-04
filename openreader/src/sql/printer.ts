@@ -1,11 +1,11 @@
-import {unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {Dialect} from "../dialect"
-import {EntityListArguments, OrderBy, Where} from "../ir/args"
-import {FieldRequest} from "../ir/fields"
-import {Model} from "../model"
-import {Cursor, EntityCursor} from "./cursor"
-import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from "./util"
+import {unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Dialect} from '../dialect'
+import {EntityListArguments, OrderBy, SortOrder, Where} from '../ir/args'
+import {FieldRequest} from '../ir/fields'
+import {Model} from '../model'
+import {Cursor, EntityCursor} from './cursor'
+import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from './util'
 
 
 export class EntityListQueryPrinter {
@@ -43,7 +43,9 @@ export class EntityListQueryPrinter {
             this.populateWhere(this.root, args.where, this.where)
         }
         if (args.orderBy) {
-            this.populateOrderBy(this.root, args.orderBy)
+            this.traverseOrderBy(args.orderBy, (field, order) => {
+                this.orderBy.push(field + ' ' + order)
+            })
         }
     }
 
@@ -128,7 +130,9 @@ export class EntityListQueryPrinter {
                 break
             }
             case "isNull": {
-                let f = cursor.ref(where.field)
+                let f = cursor.prop(where.field).type.kind == 'lookup'
+                    ? cursor.child(where.field).ref('id')
+                    : cursor.ref(where.field)
                 if (where.yes) {
                     exps.push(`${f} IS NULL`)
                 } else {
@@ -261,13 +265,17 @@ export class EntityListQueryPrinter {
         return printClause("AND", exps)
     }
 
-    private populateOrderBy(cursor: Cursor, orderBy: OrderBy): void {
+    traverseOrderBy(orderBy: OrderBy, cb: (field: string, order: SortOrder) => void) {
+        this.visitOrderBy(this.root, orderBy, cb)
+    }
+
+    private visitOrderBy(cursor: Cursor, orderBy: OrderBy, cb: (field: string, order: SortOrder) => void) {
         for (let field in orderBy) {
             let spec = orderBy[field]
             if (typeof spec == "string") {
-                this.orderBy.push(`${cursor.native(field)} ${spec}`)
+                cb(cursor.native(field), spec)
             } else {
-                this.populateOrderBy(cursor.child(field), spec)
+                this.visitOrderBy(cursor.child(field), spec, cb)
             }
         }
     }
