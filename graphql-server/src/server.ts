@@ -32,7 +32,6 @@ export interface ServerOptions {
     squidStatus?: boolean
     subscriptions?: boolean
     subscriptionPollInterval?: number
-    subscriptionSqlStatementTimeout?: number
     subscriptionMaxResponseNodes?: number
 }
 
@@ -162,28 +161,14 @@ export class Server {
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
-            let subscriptionCon = con
-            if (this.options.subscriptions) {
-                subscriptionCon = await this.createTypeormConnection({
-                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
-                })
-                this.disposals.push(() => subscriptionCon.destroy())
-            }
             createOpenreader = () => {
-                return new TypeormOpenreaderContext(dialect, con, subscriptionCon, this.options.subscriptionPollInterval)
+                return new TypeormOpenreaderContext(dialect, con, con, this.options.subscriptionPollInterval)
             }
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => pool.end())
-            let subscriptionPool = pool
-            if (this.options.subscriptions) {
-                subscriptionPool = await this.createPgPool({
-                    sqlStatementTimeout: this.options.subscriptionSqlStatementTimeout || this.options.sqlStatementTimeout
-                })
-                this.disposals.push(() => subscriptionPool.end())
-            }
             createOpenreader = () => {
-                return new PoolOpenreaderContext(dialect, pool, subscriptionPool, this.options.subscriptionPollInterval)
+                return new PoolOpenreaderContext(dialect, pool, pool, this.options.subscriptionPollInterval)
             }
         }
         return () => {
@@ -208,7 +193,9 @@ export class Server {
         let cfg = {
             ...createOrmConfig({projectDir: this.dir}),
             extra: {
-                statement_timeout: options?.sqlStatementTimeout || undefined
+                statement_timeout: options?.sqlStatementTimeout || undefined,
+                max: this.connectionPoolSize(),
+                min: this.connectionPoolSize()
             }
         }
         let con = new DataSource(cfg)
@@ -225,8 +212,15 @@ export class Server {
             database: params.database,
             user: params.username,
             password: params.password,
-            statement_timeout: options?.sqlStatementTimeout || undefined
+            statement_timeout: options?.sqlStatementTimeout || undefined,
+            max: this.connectionPoolSize(),
+            min: this.connectionPoolSize()
         })
+    }
+
+    @def
+    private connectionPoolSize(): number {
+        return envNat('GQL_DB_CONNECTION_POOL_SIZE') || 5
     }
 
     private dialect(): Dialect {
@@ -260,4 +254,13 @@ export class Server {
 
 interface ConnectionOptions {
     sqlStatementTimeout?: number
+}
+
+
+function envNat(name: string): number | undefined {
+    let env = process.env[name]
+    if (!env) return undefined
+    let val = parseInt(env, 10)
+    if (Number.isSafeInteger(val) && val >= 0) return val
+    throw new Error(`Invalid env variable ${name}: ${env}. Expected positive integer`)
 }

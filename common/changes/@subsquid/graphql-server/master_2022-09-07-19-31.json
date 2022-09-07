@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "fix connection pool size (default 5, customizable via `GQL_DB_CONNECTION_POOL_SIZE`)",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "remove `--subscription-sql-statement-timeout` option",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
