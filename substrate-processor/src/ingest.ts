@@ -234,6 +234,8 @@ export class Ingest<R extends BatchRequest> {
                     q.line('parentHash')
                     q.line('timestamp')
                     q.line('specId')
+                    q.line('stateRoot')
+                    q.line('extrinsicsRoot')
                 })
                 q.line('events')
                 q.line('calls')
