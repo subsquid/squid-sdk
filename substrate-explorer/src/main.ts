@@ -34,6 +34,7 @@ runProgram(async () => {
 
     let connectionOptions = createConnectionOptions()
     let connectionUrl = createConnectionUrl(connectionOptions)
+    let connectionsCount = envNat('DB_CONNECTIONS') || 5
 
     let pool = new Pool({
         host: connectionOptions.host,
@@ -41,7 +42,9 @@ runProgram(async () => {
         database: connectionOptions.database,
         user: connectionOptions.username,
         password: connectionOptions.password,
-        statement_timeout: 2000
+        statement_timeout: envNat('DB_STATEMENT_TIMEOUT_MS'),
+        max: connectionsCount,
+        min: connectionsCount
     })
 
     await pool.connect().then(con => {
