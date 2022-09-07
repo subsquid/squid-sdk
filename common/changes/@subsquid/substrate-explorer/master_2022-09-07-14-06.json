@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-explorer",
+      "comment": "remove default sql statement timeout (customizable via `DB_STATEMENT_TIMEOUT_MS`)",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/substrate-explorer",
+      "comment": "fix the number of open db connections (defaults to 5, customizable via `DB_CONNECTIONS`)",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-explorer"
+}
