@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "add 'stateRoot' and 'extrinsicsRoot' fields to block",
+      "comment": "add `.stateRoot` and `.extrinsicsRoot` fields to block header",
       "type": "minor"
     }
   ],
