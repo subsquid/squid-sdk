@@ -1,6 +1,5 @@
 import assert from 'assert'
 import {Chain, ChainContext, EventContext, Event, Result} from './support'
-import * as v1 from './v1'
 
 export class BalancesTransferEvent {
   private readonly _chain: Chain
@@ -25,7 +24,7 @@ export class BalancesTransferEvent {
   /**
    *  Transfer succeeded. \[from, to, value\]
    */
-  get asV1(): [v1.AccountId, v1.AccountId, v1.Balance] {
+  get asV1(): [Uint8Array, Uint8Array, bigint] {
     assert(this.isV1)
     return this._chain.decodeEvent(this.event)
   }
