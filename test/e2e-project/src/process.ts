@@ -41,6 +41,9 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     assert(aliceAccounts[0].data.free > 0)
     assert(aliceAccounts[0].data.free === aliceAccounts[1]?.data.free)
 
+    let allAccounts = await accounts.getAllAsV1()
+    assert(allAccounts.length > 0)
+
     let maxBlockLength = new SystemMaximumBlockLengthConstant(ctx).asV1
     assert(maxBlockLength > 0)
 

@@ -24,14 +24,19 @@ export class SystemAccountStorage {
   /**
    *  The full account information for a particular account ID.
    */
-  async getAsV1(key: v1.AccountId): Promise<v1.AccountInfo> {
+  async getAsV1(key: Uint8Array): Promise<v1.AccountInfo> {
     assert(this.isV1)
     return this._chain.getStorage(this.blockHash, 'System', 'Account', key)
   }
 
-  async getManyAsV1(keys: v1.AccountId[]): Promise<(v1.AccountInfo)[]> {
+  async getManyAsV1(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]> {
     assert(this.isV1)
     return this._chain.queryStorage(this.blockHash, 'System', 'Account', keys.map(k => [k]))
+  }
+
+  async getAllAsV1(): Promise<(v1.AccountInfo)[]> {
+    assert(this.isV1)
+    return this._chain.queryStorage(this.blockHash, 'System', 'Account')
   }
 
   /**
