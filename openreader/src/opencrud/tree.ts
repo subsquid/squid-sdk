@@ -2,7 +2,7 @@ import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import {GraphQLSchema} from "graphql"
 import {ResolveTree} from "graphql-parse-resolve-info"
-import {EntityListArguments} from "../ir/args"
+import {SqlArguments} from "../ir/args"
 import {FieldRequest, OpaqueRequest} from "../ir/fields"
 import {Model} from "../model"
 import {simplifyResolveTree} from "../util/resolve-tree"
@@ -118,8 +118,8 @@ export function parseResolveTree(
 }
 
 
-export function parseEntityListArguments(model: Model, entityName: string, gqlArgs: any): EntityListArguments {
-    let args: EntityListArguments = {}
+export function parseEntityListArguments(model: Model, entityName: string, gqlArgs: any): SqlArguments {
+    let args: SqlArguments = {}
 
     let where = parseWhere(gqlArgs.where)
     if (where) {

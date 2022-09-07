@@ -9,7 +9,7 @@ import {
     ScalarPropType,
     UnionPropType
 } from "../model"
-import {EntityListArguments} from "./args"
+import {SqlArguments} from "./args"
 
 
 export type FieldRequest = EntityListRequest | ObjectRequest | OpaqueRequest
@@ -28,7 +28,7 @@ type Base<T> = T extends PropType ? {
 
 export type EntityListRequest = Base<ListLookupPropType> & {
     children: FieldRequest[]
-    args?: EntityListArguments
+    args?: SqlArguments
 }
 
 

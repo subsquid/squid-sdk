@@ -1,7 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import type {Dialect} from '../dialect'
-import type {EntityListArguments, Where} from '../ir/args'
+import type {SqlArguments, Where} from '../ir/args'
 import {
     decodeRelayConnectionCursor,
     encodeRelayConnectionCursor,
@@ -14,7 +14,7 @@ import type {FieldRequest} from '../ir/fields'
 import type {Model} from '../model'
 import {toSafeInteger} from '../util/util'
 import {mapRow, mapRows} from './mapping'
-import {EntityListQueryPrinter} from './printer'
+import {EntitySqlPrinter, QueryableSqlPrinter} from './printer'
 
 
 export interface Query<T> {
@@ -33,9 +33,9 @@ export class EntityListQuery implements Query<any[]> {
         dialect: Dialect,
         entityName: string,
         private fields: FieldRequest[],
-        args: EntityListArguments
+        args: SqlArguments
     ) {
-        this.sql = new EntityListQueryPrinter(model, dialect, entityName, this.params, args, fields).print()
+        this.sql = new EntitySqlPrinter(model, dialect, entityName, this.params, args, fields).print()
     }
 
     map(rows: any[][]): any[] {
@@ -51,58 +51,11 @@ export class QueryableListQuery implements Query<any[]> {
     constructor(
         model: Model,
         dialect: Dialect,
+        queryableName: string,
         private fields: Record<string, FieldRequest[]>,
-        args: EntityListArguments
+        args: SqlArguments
     ) {
-        let union: string[] = []
-        let orders: string[] = []
-
-        for (let entityName in this.fields) {
-            let fields = this.fields[entityName]
-
-            let printer = new EntityListQueryPrinter(
-                model,
-                dialect,
-                entityName,
-                this.params,
-                {where: args.where},
-                fields
-            )
-
-            let cols = []
-            cols.push(`'${entityName}' AS e`)
-            if (fields.length) {
-                cols.push(printer.printColumnListAsJsonArray() + ' AS d')
-            } else {
-                cols.push('nil AS d')
-            }
-
-            if (args.orderBy) {
-                orders.length = 0
-                printer.traverseOrderBy(args.orderBy, (col, order) => {
-                    orders.push(order)
-                    cols.push(`${col} AS o${orders.length}`)
-                })
-            }
-
-            union.push(`SELECT ${cols.join(', ')} ${printer.printFrom()}`)
-        }
-
-        let from = union.join('\nUNION ALL\n')
-        if (orders.length > 0 || args.limit || args.offset) {
-            this.sql = `SELECT e, d FROM (\n${from}\n) AS src`
-            if (orders.length) {
-                this.sql += '\nORDER BY ' + orders.map((o, idx) => `o${idx + 1} ${o}`).join(', ')
-            }
-            if (args.offset) {
-                this.sql += `\nOFFSET ${args.offset}`
-            }
-            if (args.limit) {
-                this.sql += `\nLIMIT ${args.limit}`
-            }
-        } else {
-            this.sql = from
-        }
+        this.sql = new QueryableSqlPrinter(model, dialect, queryableName, this.params, args, this.fields).print()
     }
 
     map(rows: any[][]): any[] {
@@ -131,7 +84,7 @@ export class EntityByIdQuery {
         private fields: FieldRequest[],
         id: string
     ) {
-        this.sql = new EntityListQueryPrinter(
+        this.sql = new EntitySqlPrinter(
             model,
             dialect,
             entityName,
@@ -158,7 +111,7 @@ export class EntityCountQuery implements Query<number> {
         entityName: string,
         where?: Where
     ) {
-        this.sql = 'SELECT count(*) ' + new EntityListQueryPrinter(model, dialect, entityName, this.params, {where}).printFrom()
+        this.sql = new EntitySqlPrinter(model, dialect, entityName, this.params, {where}).printAsCount()
     }
 
     map(rows: any[][]): number {
@@ -181,14 +134,14 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
         model: Model,
         dialect: Dialect,
         entityName: string,
-        req: RelayConnectionRequest
+        req: RelayConnectionRequest<FieldRequest[]>
     ) {
         this.setOffsetAndLimit(req)
         this.edgeCursor = req.edgeCursor
         this.pageInfo = req.pageInfo
         this.totalCount = req.totalCount
 
-        let printer = new EntityListQueryPrinter(model, dialect, entityName, this.params, {
+        let printer = new EntitySqlPrinter(model, dialect, entityName, this.params, {
             orderBy: req.orderBy,
             where: req.where,
             offset: this.offset,
@@ -199,11 +152,11 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
             this.edgeNode = req.edgeNode
             this.sql = printer.print()
         } else {
-            this.sql = `SELECT count(*) FROM (SELECT true ${printer.printFrom()}) AS rows`
+            this.sql = printer.printAsCount()
         }
     }
 
-    private setOffsetAndLimit(req: RelayConnectionRequest): void {
+    private setOffsetAndLimit(req: RelayConnectionRequest<unknown>): void {
         if (req.after != null) {
             this.offset = assertNotNull(decodeRelayConnectionCursor(req.after))
         }

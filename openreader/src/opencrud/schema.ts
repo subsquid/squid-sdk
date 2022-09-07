@@ -1,7 +1,7 @@
-import {def, unexpectedCase} from "@subsquid/util-internal"
-import {toCamelCase, toPlural} from "@subsquid/util-naming"
-import {UserInputError} from "apollo-server-core"
-import assert from "assert"
+import {def, unexpectedCase} from '@subsquid/util-internal'
+import {toCamelCase, toPlural} from '@subsquid/util-naming'
+import {UserInputError} from 'apollo-server-core'
+import assert from 'assert'
 import {
     GraphQLBoolean,
     GraphQLEnumType,
@@ -20,20 +20,20 @@ import {
     GraphQLSchema,
     GraphQLString,
     GraphQLUnionType
-} from "graphql"
+} from 'graphql'
 import {
     GraphQLEnumValueConfigMap,
     GraphQLFieldConfigArgumentMap,
     GraphQLFieldConfigMap,
     GraphQLInputFieldConfigMap
-} from "graphql/type/definition"
-import {Context} from "../context"
-import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connection"
+} from 'graphql/type/definition'
+import {Context} from '../context'
+import {decodeRelayConnectionCursor, RelayConnectionRequest} from '../ir/connection'
 import {FieldRequest} from '../ir/fields'
 import {getEntityListSize, getRelaySize, getSize} from '../limit.size'
-import {Entity, Interface, JsonObject, Model, Prop} from "../model"
-import {getObject, getQueryableEntities, getUnionProps, getUniversalProperties} from '../model.tools'
-import {customScalars} from "../scalars"
+import {Entity, Interface, JsonObject, Model, Prop} from '../model'
+import {getObject, getQueryableEntities, getUniversalProperties} from '../model.tools'
+import {customScalars} from '../scalars'
 import {
     EntityByIdQuery,
     EntityConnectionQuery,
@@ -42,13 +42,13 @@ import {
     Query,
     QueryableListQuery
 } from '../sql/query'
-import {Subscription} from "../subscription"
+import {Subscription} from '../subscription'
 import {Limit} from '../util/limit'
-import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
-import {ensureArray, identity} from "../util/util"
-import {getOrderByMapping, parseOrderBy} from "./orderBy"
-import {parseEntityListArguments, parseResolveTree} from "./tree"
-import {parseWhere} from "./where"
+import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from '../util/resolve-tree'
+import {ensureArray, identity} from '../util/util'
+import {getOrderByMapping, parseOrderBy} from './orderBy'
+import {parseEntityListArguments, parseResolveTree} from './tree'
+import {parseWhere} from './where'
 
 
 type GqlFieldMap = GraphQLFieldConfigMap<unknown, Context>
@@ -446,6 +446,7 @@ export class SchemaBuilder {
                 return new QueryableListQuery(
                     model,
                     context.openreader.dialect,
+                    typeName,
                     fieldsByEntity,
                     args
                 )
@@ -573,7 +574,7 @@ export class SchemaBuilder {
                     throw new UserInputError('orderBy argument is required for connection')
                 }
 
-                let req: RelayConnectionRequest = {
+                let req: RelayConnectionRequest<FieldRequest[]> = {
                     orderBy: parseOrderBy(model, entityName, orderByArg),
                     where: parseWhere(args.where)
                 }
