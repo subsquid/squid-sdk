@@ -1,6 +1,14 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Wed, 07 Sep 2022 20:52:29 GMT and should not be manually modified.
+
+## 0.1.3
+Wed, 07 Sep 2022 20:52:29 GMT
+
+### Patches
+
+- fix: `Store.save()` can clear foreign keys on multi-row update
+- don't open transaction for noop operations
 
 ## 0.1.2
 Wed, 17 Aug 2022 17:33:52 GMT
