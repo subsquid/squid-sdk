@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "fix: `Store.save()` can clear foreign keys on multi-row update",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
