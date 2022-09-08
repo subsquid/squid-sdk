@@ -267,7 +267,7 @@ export class Typegen {
 
                     if (isEmptyVariant(v.chain.description.types[v.def.value])) {
                         // Meaning storage item can't hold any value
-                        // Let's just silently omit .get methods for this case
+                        // Let's just silently omit `asVxx` getter for this case
                     } else {
                         out.line()
                         out.blockComment(v.def.docs)
