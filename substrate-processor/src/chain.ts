@@ -1,5 +1,5 @@
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, JsonCodec, Src} from "@subsquid/scale-codec"
 import {
     ChainDescription, Constant,
     decodeMetadata,
@@ -221,6 +221,24 @@ export class Chain {
         })
     }
 
+    async getKeys(blockHash: string, prefix: string, name: string): Promise<any[]>
+    async getKeys(blockHash: string, prefix: string, name: string, count: number, startKey?: any[]): Promise<any[]>
+    async getKeys(blockHash: string, prefix: string, name: string, count?: number, startKey?: any[]): Promise<any[]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+
+        let res: string[]
+        if (count != null) {
+            let startKeyHash = startKey != null ? storageHash + this.getStorageItemKeysHash(item, startKey) : storageHash
+            res = await this.client.call('state_getKeysPaged', [storageHash, count, startKeyHash, blockHash])
+        } else {
+            res = await this.client.call('state_getKeys', [storageHash, blockHash])
+        }
+        return res.map(k => {
+            return this.decodeStorageKey(item, k)
+        })
+    }
+
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {
@@ -238,6 +256,34 @@ export class Chain {
         return this.scaleCodec.decodeBinary(item.value, value)
     }
 
+    private decodeStorageKey(item: StorageItem, key: string) {
+        let res: any[] = []
+        let src = new Src(key)
+        src.u256()
+        for (let i = 0; i < item.keys.length; i++) {
+            switch(item.hashers[i]) {
+                case 'Identity':
+                    break
+                case 'Blake2_128Concat':
+                    src.bytes(16)
+                    break
+                case 'Twox64Concat':
+                    src.bytes(8)
+                    break
+                case 'Blake2_128':
+                case 'Twox128':
+                case 'Blake2_256':
+                case 'Twox256':
+                    throw new Error('Irreversible hash')
+                default:
+                    throw unexpectedCase(item.hashers[i])
+            }
+            res.push(this.scaleCodec.decode(item.keys[i], src))
+        }
+        src.assertEOF()
+        return res
+    }
+ 
     private getStorageItemKeysHash(item: StorageItem, keys: any[]) {
         let hash = ''
         for (let i = 0; i < keys.length; i++) {
