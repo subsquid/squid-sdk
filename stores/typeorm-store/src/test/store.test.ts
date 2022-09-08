@@ -90,10 +90,12 @@ describe("Store", function() {
             `CREATE TABLE item (id text primary key , name text)`,
             `CREATE TABLE "order" (id text primary key, item_id text REFERENCES item, qty int4)`,
             `INSERT INTO item (id, name) values ('1', 'a')`,
-            `INSERT INTO "order" (id, item_id, qty) values ('1', '1', 3)`
+            `INSERT INTO "order" (id, item_id, qty) values ('1', '1', 3)`,
+            `INSERT INTO item (id, name) values ('2', 'b')`,
+            `INSERT INTO "order" (id, item_id, qty) values ('2', '2', 3)`
         ])
 
-        it(".save() doesn't clear reference", async function() {
+        it(".save() doesn't clear reference (single row update)", async function() {
             let store = createStore()
             let order = assertNotNull(await store.get(Order, '1'))
             order.qty = 5
@@ -106,6 +108,43 @@ describe("Store", function() {
             })
             expect(newOrder.qty).toEqual(5)
             expect(newOrder.item.id).toEqual('1')
+        })
+
+        it(".save() doesn't clear reference (multi row update)", async function() {
+            let store = createStore()
+            let orders = await store.find(Order, {order: {id: 'ASC'}})
+            let items = await store.find(Item, {order: {id: 'ASC'}})
+
+            orders[0].qty = 5
+            orders[1].qty = 1
+            orders[1].item = items[0]
+            await store.save(orders)
+
+            let newOrders = await store.find(Order, {
+                relations: {
+                    item: true
+                },
+                order: {id: 'ASC'}
+            })
+
+            expect(newOrders).toEqual([
+                {
+                    id: '1',
+                    item: {
+                        id: '1',
+                        name: 'a'
+                    },
+                    qty: 5
+                },
+                {
+                    id: '2',
+                    item: {
+                        id: '1',
+                        name: 'a'
+                    },
+                    qty: 1
+                }
+            ])
         })
     })
 })

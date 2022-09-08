@@ -20,7 +20,6 @@ runProgram(async () => {
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 5000)
     program.option('--subscription-max-response-size <nodes>', 'max response size measured in nodes', nat)
-    program.option('--subscription-sql-statement-timeout <ms>', 'sql statement timeout for polling queries', nat)
 
     let opts = program.parse().opts() as {
         maxRequestSize: number
@@ -30,7 +29,6 @@ runProgram(async () => {
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
-        subscriptionSqlStatementTimeout?: number
         subscriptionMaxResponseSize?: number
     }
 

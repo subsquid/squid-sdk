@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Mon, 22 Aug 2022 15:27:06 GMT and should not be manually modified.
+This log was last generated on Thu, 01 Sep 2022 09:27:14 GMT and should not be manually modified.
+
+## 1.1.1
+Thu, 01 Sep 2022 09:27:14 GMT
+
+### Patches
+
+- fix fees calculation for acala network
 
 ## 1.1.0
 Mon, 22 Aug 2022 15:27:06 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/substrate-ingest_v1.1.1",
+      "date": "Thu, 01 Sep 2022 09:27:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix fees calculation for acala network"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/substrate-ingest_v1.1.0",
       "date": "Mon, 22 Aug 2022 15:27:06 GMT",
