@@ -2,7 +2,7 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Dialect} from '../dialect'
 import {SqlArguments, OrderBy, SortOrder, Where} from '../ir/args'
-import {FieldRequest} from '../ir/fields'
+import {FieldRequest, FieldsByEntity} from '../ir/fields'
 import {Model} from '../model'
 import {getQueryableEntities} from '../model.tools'
 import {Cursor, EntityCursor} from './cursor'
@@ -360,7 +360,7 @@ export class QueryableSqlPrinter {
         private queryableName: string,
         private params: unknown[],
         private args: SqlArguments = {},
-        fields?: Record<string, FieldRequest[]>
+        fields?: FieldsByEntity
     ) {
         for (let entityName of getQueryableEntities(this.model, this.queryableName)) {
             let entityFields = fields?.[entityName]
@@ -421,10 +421,10 @@ export class QueryableSqlPrinter {
         let from = union.join('\nUNION ALL\n')
         let args = this.printArgs()
         if (args) {
-            from = `SELECT true FROM (\n${from}\n) AS u` + args
+            from = `SELECT true FROM (\n${from}\n) AS src` + args
         }
 
-        return `SELECT count(*) FROM (\n${from}\n) AS src`
+        return `SELECT count(*) FROM (\n${from}\n) AS rows`
     }
 
     private printArgs(): string {

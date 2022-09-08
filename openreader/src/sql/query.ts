@@ -10,10 +10,10 @@ import {
     RelayConnectionRequest,
     RelayConnectionResponse
 } from '../ir/connection'
-import type {FieldRequest} from '../ir/fields'
+import type {FieldRequest, FieldsByEntity} from '../ir/fields'
 import type {Model} from '../model'
 import {toSafeInteger} from '../util/util'
-import {mapRow, mapRows} from './mapping'
+import {mapQueryableRows, mapRows} from './mapping'
 import {EntitySqlPrinter, QueryableSqlPrinter} from './printer'
 
 
@@ -52,23 +52,14 @@ export class QueryableListQuery implements Query<any[]> {
         model: Model,
         dialect: Dialect,
         queryableName: string,
-        private fields: Record<string, FieldRequest[]>,
+        private fields: FieldsByEntity,
         args: SqlArguments
     ) {
         this.sql = new QueryableSqlPrinter(model, dialect, queryableName, this.params, args, this.fields).print()
     }
 
     map(rows: any[][]): any[] {
-        let result: any[] = new Array(rows.length)
-        for (let i = 0; i < rows.length; i++) {
-            let row = rows[i]
-            let entityName = row[0]
-            let fields = this.fields[entityName]
-            let rec = mapRow(row[1], fields)
-            rec._isTypeOf = entityName
-            result[i] = rec
-        }
-        return result
+        return mapQueryableRows(rows, this.fields)
     }
 }
 

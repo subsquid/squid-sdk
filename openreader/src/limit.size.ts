@@ -4,9 +4,10 @@ import {RelayConnectionRequest} from './ir/connection'
 import {FieldRequest} from './ir/fields'
 import {Model} from './model'
 import {getEntity} from './model.tools'
+import {AnyFields} from './opencrud/tree'
 
 
-export function getSize(model: Model, fields: FieldRequest[]): number {
+export function getObjectSize(model: Model, fields: FieldRequest[]): number {
     let total = 0
     for (let req of fields) {
         let size = getFieldSize(model, req)
@@ -31,7 +32,7 @@ function getFieldSize(model: Model, req: FieldRequest): number {
         case "fk":
         case "lookup":
         case "union":
-            return getSize(model, req.children) + 1
+            return getObjectSize(model, req.children) + 1
         case "list-lookup":
             return getEntityListSize(
                 model,
@@ -59,7 +60,7 @@ export function getEntityListSize(
         getWhereCardinality(where)
     )
     if (Number.isFinite(cardinality)) {
-        return cardinality * Math.max(getSize(model, fields), 1)
+        return cardinality * Math.max(getObjectSize(model, fields), 1)
     } else {
         return Infinity
     }
@@ -102,15 +103,16 @@ function getWhereCardinality(where?: Where): number {
 }
 
 
-export function getRelaySize(model: Model, entityName: string, req: RelayConnectionRequest): number {
-    let total = 0
+export function getEntityConnectionSize(model: Model, entityName: string, req: RelayConnectionRequest<FieldRequest[]>): number {
     let limit = Math.min(
         getEntityCardinality(model, entityName),
         req.first ?? 100,
         getWhereCardinality(req.where)
     )
+
+    let total = 0
     if (req.edgeNode) {
-        total += limit * Math.max(getSize(model, req.edgeNode), 1)
+        total += limit * Math.max(getObjectSize(model, req.edgeNode), 1)
     }
     if (req.edgeCursor) {
         total += limit

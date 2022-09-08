@@ -1,5 +1,4 @@
-import {OrderBy, Where} from "./args"
-import {FieldRequest} from "./fields"
+import {OrderBy, Where} from './args'
 
 
 export interface RelayConnectionRequest<R> {

@@ -38,3 +38,6 @@ export type ObjectRequest = Base<FkPropType | LookupPropType | ObjectPropType | 
 
 
 export type OpaqueRequest = Base<ScalarPropType | EnumPropType | ListPropType>
+
+
+export type FieldsByEntity = Record<string, FieldRequest[]>
