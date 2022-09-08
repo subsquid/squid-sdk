@@ -33,15 +33,15 @@ processor.addPreHook({range: {from: 0, to: 0}}, ctx => loadInitialData(ctx.store
 processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     let accounts = new SystemAccountStorage(ctx)
     let aliceAddress = ss58.decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY').bytes
-    let aliceAccount = await accounts.getAsV1(aliceAddress)
+    let aliceAccount = await accounts.asV1.get(aliceAddress)
     assert(aliceAccount.data.free > 0)
-    let aliceAccounts = await accounts.getManyAsV1([aliceAddress, aliceAddress])
+    let aliceAccounts = await accounts.asV1.getMany([aliceAddress, aliceAddress])
     assert(aliceAccounts.length === 2)
     assert(aliceAccounts[0] != null)
     assert(aliceAccounts[0].data.free > 0)
     assert(aliceAccounts[0].data.free === aliceAccounts[1]?.data.free)
 
-    let allAccounts = await accounts.getAllAsV1()
+    let allAccounts = await accounts.asV1.getAll()
     assert(allAccounts.length > 0)
 
     let maxBlockLength = new SystemMaximumBlockLengthConstant(ctx).asV1

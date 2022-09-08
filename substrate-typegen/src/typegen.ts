@@ -249,6 +249,8 @@ export class Typegen {
                     out.line(`this.blockHash = block.hash`)
                     out.line(`this._chain = ctx._chain`)
                 })
+
+                let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
@@ -281,25 +283,34 @@ export class Typegen {
                             }
                         })
 
-                        let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
-                        out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
-                            out.line(`assert(this.is${versionName})`)
-                            out.line(`return this._chain.getStorage(${args.concat(keyNames).join(', ')})`)
+                        out.block(`get as${versionName}():`, () => {
+                            out.indentation(() => {
+                                out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
+                                if (keyNames.length > 0) {
+                                    out.line(`getMany(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`)
+                                    out.line(`getAll(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`)
+                                }
+                            })
+                            out.line(`} {`)
+                            out.indentation(() => {
+                                out.line(`assert(this.is${versionName})`)
+                                out.line(`return this as any`)
+                            })
                         })
-                        if (keyNames.length > 0) {
-                            out.line()
-                            out.block(`async getManyAs${versionName}(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
-                                out.line(`return this._chain.queryStorage(${args.concat(query).join(', ')})`)
-                            })
-                            out.line()
-                            out.block(`async getAllAs${versionName}(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                out.line(`return this._chain.queryStorage(${args.join(', ')})`)
-                            })
-                        }
                     }
+                    out.line()
+                })
+                out.block(`private async get(...keys: any[]): Promise<any>`, () => {
+                    out.line(`return this._chain.getStorage(${args.join(', ')}, ...keys)`)
+                })
+                out.line()
+                out.block(`private async getMany(keyList: any[]): Promise<any[]>`, () => {
+                    out.line(`let query = Array.isArray(keyList[0]) ? keyList : keyList.map(k => [k])`)
+                    out.line(`return this._chain.queryStorage(${args.join(', ')}, query)`)
+                })
+                out.line()
+                out.block(`private async getAll(): Promise<any[]>`, () => {
+                    out.line(`return this._chain.queryStorage(${args.join(', ')})`)
                 })
                 out.line()
                 out.blockComment([
