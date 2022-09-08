@@ -234,6 +234,7 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
+        
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
@@ -266,7 +267,7 @@ export class Typegen {
 
                     if (isEmptyVariant(v.chain.description.types[v.def.value])) {
                         // Meaning storage item can't hold any value
-                        // Let's just silently omit .get method for this case
+                        // Let's just silently omit .get methods for this case
                     } else {
                         out.line()
                         out.blockComment(v.def.docs)
@@ -282,13 +283,12 @@ export class Typegen {
                                 return `key${idx + 1}`
                             }
                         })
-
                         out.block(`get as${versionName}():`, () => {
                             out.indentation(() => {
                                 out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
                                 if (keyNames.length > 0) {
                                     out.line(`getMany(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`)
-                                    out.line(`getAll(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`)
+                                    out.line(`getAll(): Promise<${qualifiedTypes[qualifiedTypes.length - 1]}[]>`)
                                 }
                             })
                             out.line(`} {`)
@@ -298,20 +298,24 @@ export class Typegen {
                             })
                         })
                     }
-                    out.line()
                 })
+
+                out.line()
                 out.block(`private async get(...keys: any[]): Promise<any>`, () => {
                     out.line(`return this._chain.getStorage(${args.join(', ')}, ...keys)`)
                 })
+
                 out.line()
                 out.block(`private async getMany(keyList: any[]): Promise<any[]>`, () => {
                     out.line(`let query = Array.isArray(keyList[0]) ? keyList : keyList.map(k => [k])`)
                     out.line(`return this._chain.queryStorage(${args.join(', ')}, query)`)
                 })
+
                 out.line()
                 out.block(`private async getAll(): Promise<any[]>`, () => {
                     out.line(`return this._chain.queryStorage(${args.join(', ')})`)
                 })
+
                 out.line()
                 out.blockComment([
                     'Checks whether the storage item is defined for the current chain version.'

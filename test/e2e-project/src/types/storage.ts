@@ -27,7 +27,7 @@ export class SystemAccountStorage {
   get asV1(): {
       get(key: Uint8Array): Promise<v1.AccountInfo>
       getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
-      getAll(): Promise<(v1.AccountInfo)[]>
+      getAll(): Promise<v1.AccountInfo[]>
     } {
       assert(this.isV1)
       return this as any
