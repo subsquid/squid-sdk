@@ -1,7 +1,9 @@
 import type {Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
-import {PluginDefinition} from 'apollo-server-core'
+import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
+import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
 import {ApolloServer} from 'apollo-server-express'
+import { assert } from 'console'
 import express from 'express'
 import fs from 'fs'
 import {ExecutionArgs, GraphQLSchema} from 'graphql'
@@ -33,7 +35,11 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
-    subscriptionMaxResponseNodes?: number
+    subscriptionMaxResponseNodes?: number,
+    // in Mb
+    cacheSize?: number,
+    // in milliseconds
+    cacheTTL?: number
 }
 
 
@@ -76,7 +82,9 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         log: options.log,
         graphiqlConsole: options.graphiqlConsole,
         maxRequestSizeBytes: options.maxRequestSizeBytes,
-        maxRootFields: options.maxRootFields
+        maxRootFields: options.maxRootFields,
+        cacheSize: options.cacheSize,
+        cacheTTL: options.cacheTTL
     }), options.log)
 }
 
@@ -95,6 +103,8 @@ export interface ApolloOptions {
     log?: Logger
     maxRequestSizeBytes?: number
     maxRootFields?: number
+    cacheSize?: number
+    cacheTTL?: number
 }
 
 
@@ -141,6 +151,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     let apollo = new ApolloServer({
         schema,
         context,
+        cache: makeCache(options),
         stopOnTerminationSignals: false,
         executor: execute && (async req => {
             return execute({
@@ -190,6 +201,19 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     return listen(server, options.port)
 }
 
+function makeCache({cacheSize, cacheTTL}: ApolloOptions): KeyValueCache | undefined {
+    if (cacheSize == undefined || cacheSize == 0) {
+        return undefined
+    }
+    assert(cacheSize > 0)
+
+    return new InMemoryLRUCache({
+        // convert to bytes
+        maxSize: cacheSize * 1024 * 1024,
+        // one second by default
+        ttl: cacheTTL ?? 1000,
+    })
+}
 
 export function addServerCleanup(disposals: Dispose[], server: Promise<ListeningServer>, log?: Logger): Promise<ListeningServer> {
     async function cleanup() {
