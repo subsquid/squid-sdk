@@ -33,6 +33,17 @@ export class SystemAccountStorage {
       return this as any
   }
 
+  /**
+   *  The full account information for a particular account ID.
+   */
+  get asLatest(): {
+      get(key: Uint8Array): Promise<v1.AccountInfo>
+      getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
+      getAll(): Promise<v1.AccountInfo[]>
+    } {
+      return this as any
+  }
+
   private async get(...keys: any[]): Promise<any> {
     return this._chain.getStorage(this.blockHash, 'System', 'Account', ...keys)
   }

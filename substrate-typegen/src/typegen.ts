@@ -100,7 +100,7 @@ export class Typegen {
                     out.line(`this._chain = ctx._chain`)
                     out.line(`this.${ctx} = ${ctx}`)
                 })
-                versions.forEach(v => {
+                versions.forEach((v, i) => {
                     let versionName = this.getVersionName(v.chain)
                     let ifs = this.getInterface(v.chain)
                     let unqualifiedTypeExp: string
@@ -122,6 +122,14 @@ export class Typegen {
                         out.line(`assert(this.is${versionName})`)
                         out.line(`return this._chain.decode${fix}(this.${ctx})`)
                     })
+
+                    if (i === versions.length - 1) {
+                        out.line()
+                        out.blockComment(v.def.docs)
+                        out.block(`get asLatest(): ${typeExp}`, () => {
+                            out.line(`return this._chain.decode${fix}(this.${ctx})`)
+                        })
+                    }
                 })
             })
         })
@@ -171,7 +179,7 @@ export class Typegen {
                 out.block(`constructor(ctx: ChainContext)`, () => {
                     out.line(`this._chain = ctx._chain`)
                 })
-                versions.forEach(v => {
+                versions.forEach((v, i) => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getTypeHash(v.chain.description.types, v.def.type)
                     let ifs = this.getInterface(v.chain)
@@ -190,6 +198,14 @@ export class Typegen {
                         out.line(`assert(this.is${versionName})`)
                         out.line(`return this._chain.getConstant('${pallet}', '${name}')`)
                     })
+
+                    if (i === versions.length - 1) {
+                        out.line()
+                        out.blockComment(v.def.docs)
+                        out.block(`get asLatest(): ${qualifiedType}`, () => {
+                            out.line(`return this._chain.getConstant('${pallet}', '${name}')`)
+                        })
+                    }
                 })
                 out.line()
                 out.blockComment([
@@ -252,7 +268,7 @@ export class Typegen {
                 })
 
                 let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
-                versions.forEach(v => {
+                versions.forEach((v, i) => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
                     let ifs = this.getInterface(v.chain)
@@ -269,8 +285,6 @@ export class Typegen {
                         // Meaning storage item can't hold any value
                         // Let's just silently omit `asVxx` getter for this case
                     } else {
-                        out.line()
-                        out.blockComment(v.def.docs)
                         let returnType = qualifiedTypes[qualifiedTypes.length - 1]
                         if (v.def.modifier == 'Optional') {
                             returnType = `${returnType} | undefined`
@@ -283,6 +297,8 @@ export class Typegen {
                                 return `key${idx + 1}`
                             }
                         })
+                        out.line()
+                        out.blockComment(v.def.docs)
                         out.block(`get as${versionName}():`, () => {
                             out.indentation(() => {
                                 out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
@@ -297,6 +313,24 @@ export class Typegen {
                                 out.line(`return this as any`)
                             })
                         })
+
+                        if (i === versions.length - 1) {
+                            out.line()
+                            out.blockComment(v.def.docs)
+                            out.block(`get asLatest():`, () => {
+                                out.indentation(() => {
+                                    out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
+                                    if (keyNames.length > 0) {
+                                        out.line(`getMany(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`)
+                                        out.line(`getAll(): Promise<${qualifiedTypes[qualifiedTypes.length - 1]}[]>`)
+                                    }
+                                })
+                                out.line(`} {`)
+                                out.indentation(() => {
+                                    out.line(`return this as any`)
+                                })
+                            })
+                        }
                     }
                 })
 
