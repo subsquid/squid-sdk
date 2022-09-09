@@ -287,7 +287,10 @@ export class PostgresSink implements Sink {
             await this.db.query('COMMIT')
             return result
         } catch(e: any) {
-            await this.db.query('ROLLBACK').catch(() => {})
+            await Promise.race([
+                this.db.query('ROLLBACK').catch(() => {}),
+                new Promise((resolve) => setTimeout(resolve, 5000))
+            ])
             throw e
         }
     }
