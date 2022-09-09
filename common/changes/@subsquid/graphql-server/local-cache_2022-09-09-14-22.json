@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "support global in-memory cache for graphql-server",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

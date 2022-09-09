@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/openreader",
-      "comment": "add support for in-memory cache to openreader",
+      "comment": "add support for cache to openreader",
       "type": "minor"
     }
   ],
