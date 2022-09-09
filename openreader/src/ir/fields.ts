@@ -1,3 +1,4 @@
+import assert from 'assert'
 import {
     EnumPropType,
     FkPropType,
@@ -40,4 +41,20 @@ export type ObjectRequest = Base<FkPropType | LookupPropType | ObjectPropType | 
 export type OpaqueRequest = Base<ScalarPropType | EnumPropType | ListPropType>
 
 
+
 export type FieldsByEntity = Record<string, FieldRequest[]>
+
+
+export type AnyFields = FieldRequest[] | FieldsByEntity
+
+
+export function asEntityFields(fields: AnyFields): FieldRequest[] {
+    assert(Array.isArray(fields))
+    return fields
+}
+
+
+export function asQueryableFields(fields: AnyFields): FieldsByEntity {
+    assert(!Array.isArray(fields))
+    return fields
+}

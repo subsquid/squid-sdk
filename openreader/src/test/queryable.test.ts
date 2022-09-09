@@ -116,4 +116,76 @@ describe('queryable interfaces', function() {
             ]
         })
     })
+
+    it('pagination', function() {
+        return client.test(`
+            query {
+                page1: entitiesConnection(orderBy: id_ASC, first: 2) {
+                    ...fields
+                }
+                page2: entitiesConnection(orderBy: id_ASC, first: 2, after: "2") {
+                    ...fields
+                }
+                page3: entitiesConnection(orderBy: id_ASC, first: 2, after: "4") {
+                    ...fields
+                }
+            }
+            
+            fragment fields on EntitiesConnection {
+                edges {
+                    cursor
+                    node { 
+                        ... on Foo { foo }
+                        ... on Bar { bar }
+                    }
+                }
+                pageInfo { 
+                    hasNextPage 
+                    hasPreviousPage 
+                    startCursor 
+                    endCursor 
+                }
+                totalCount
+            }
+        `, {
+            page1: {
+                edges: [
+                    {cursor: '1', node: {bar: 10}},
+                    {cursor: '2', node: {bar: 20}},
+                ],
+                pageInfo: {
+                    hasNextPage: true,
+                    hasPreviousPage: false,
+                    startCursor: '1',
+                    endCursor: '2'
+                },
+                totalCount: 5
+            },
+            page2: {
+                edges: [
+                    {cursor: '3', node: {}},
+                    {cursor: '4', node: {foo: 1}},
+                ],
+                pageInfo: {
+                    hasNextPage: true,
+                    hasPreviousPage: true,
+                    startCursor: '3',
+                    endCursor: '4'
+                },
+                totalCount: 5
+            },
+            page3: {
+                edges: [
+                    {cursor: '5', node: {foo: 2}},
+                ],
+                pageInfo: {
+                    hasNextPage: false,
+                    hasPreviousPage: true,
+                    startCursor: '5',
+                    endCursor: '5'
+                },
+                totalCount: 5
+            }
+        })
+    })
 })

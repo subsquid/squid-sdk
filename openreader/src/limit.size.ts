@@ -1,10 +1,10 @@
 import {unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
 import {Where} from './ir/args'
 import {RelayConnectionRequest} from './ir/connection'
-import {FieldRequest} from './ir/fields'
+import {AnyFields, FieldRequest} from './ir/fields'
 import {Model} from './model'
-import {getEntity} from './model.tools'
-import {AnyFields} from './opencrud/tree'
+import {getEntity, getQueryableEntities} from './model.tools'
 
 
 export function getObjectSize(model: Model, fields: FieldRequest[]): number {
@@ -34,7 +34,7 @@ function getFieldSize(model: Model, req: FieldRequest): number {
         case "union":
             return getObjectSize(model, req.children) + 1
         case "list-lookup":
-            return getEntityListSize(
+            return getListSize(
                 model,
                 req.type.entity,
                 req.children,
@@ -47,22 +47,55 @@ function getFieldSize(model: Model, req: FieldRequest): number {
 }
 
 
-export function getEntityListSize(
+export function getListSize(
     model: Model,
-    entityName: string,
-    fields: FieldRequest[],
+    typeName: string,
+    fields: AnyFields,
     limit?: number,
     where?: Where
 ): number {
-    let cardinality = Math.min(
-        getEntityCardinality(model, entityName),
-        limit ?? Infinity,
-        getWhereCardinality(where)
-    )
-    if (Number.isFinite(cardinality)) {
-        return cardinality * Math.max(getObjectSize(model, fields), 1)
-    } else {
-        return Infinity
+    let cardinality = getCardinality(model, typeName, limit, where)
+    if (!Number.isFinite(cardinality)) return Infinity
+    let type = model[typeName]
+    switch(type.kind) {
+        case 'entity': {
+            assert(Array.isArray(fields))
+            return cardinality * Math.max(getObjectSize(model, fields), 1)
+        }
+        case 'interface': {
+            assert(!Array.isArray(fields))
+            let weight = 1
+            for (let entity of getQueryableEntities(model, typeName)) {
+                weight = Math.max(weight, getObjectSize(model, fields[entity] || []))
+            }
+            return cardinality * weight
+        }
+        default:
+            throw unexpectedCase(type.kind)
+    }
+}
+
+
+function getCardinality(
+    model: Model,
+    typeName: string,
+    limit?: number,
+    where?: Where
+): number  {
+    let type = model[typeName]
+    switch(type.kind) {
+        case 'entity':
+            return Math.min(type.cardinality ?? Infinity, limit ?? Infinity, getWhereCardinality(where))
+        case 'interface': {
+            let whereCardinality = getWhereCardinality(where)
+            let cardinality = 0
+            for (let entity of getQueryableEntities(model, typeName)) {
+                cardinality += Math.min(getEntity(model, entity).cardinality ?? Infinity, whereCardinality)
+            }
+            return Math.min(cardinality, limit ?? Infinity)
+        }
+        default:
+            throw unexpectedCase(type.kind)
     }
 }
 
@@ -103,19 +136,14 @@ function getWhereCardinality(where?: Where): number {
 }
 
 
-export function getEntityConnectionSize(model: Model, entityName: string, req: RelayConnectionRequest<FieldRequest[]>): number {
-    let limit = Math.min(
-        getEntityCardinality(model, entityName),
-        req.first ?? 100,
-        getWhereCardinality(req.where)
-    )
-
+export function getConnectionSize(model: Model, typeName: string, req: RelayConnectionRequest<AnyFields>): number {
+    let first = req.first ?? 100
     let total = 0
     if (req.edgeNode) {
-        total += limit * Math.max(getObjectSize(model, req.edgeNode), 1)
+        total += getListSize(model, typeName, req.edgeNode, first, req.where)
     }
     if (req.edgeCursor) {
-        total += limit
+        total += getCardinality(model, typeName, first, req.where)
     }
     if (req.pageInfo) {
         total += 4
@@ -124,9 +152,4 @@ export function getEntityConnectionSize(model: Model, entityName: string, req: R
         total += 1
     }
     return total
-}
-
-
-function getEntityCardinality(model: Model, entityName: string): number {
-    return getEntity(model, entityName).cardinality ?? Infinity
 }

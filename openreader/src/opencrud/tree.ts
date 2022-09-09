@@ -3,7 +3,7 @@ import assert from 'assert'
 import {GraphQLSchema} from 'graphql'
 import {ResolveTree} from 'graphql-parse-resolve-info'
 import {SqlArguments} from '../ir/args'
-import {FieldRequest, FieldsByEntity, OpaqueRequest} from '../ir/fields'
+import {AnyFields, FieldRequest, FieldsByEntity, OpaqueRequest} from '../ir/fields'
 import {Model} from '../model'
 import {getQueryableEntities} from '../model.tools'
 import {simplifyResolveTree} from '../util/resolve-tree'
@@ -157,9 +157,6 @@ export function parseQueryableTree(
     }
     return fields
 }
-
-
-export type AnyFields = FieldRequest[] | FieldsByEntity
 
 
 export function parseAnyTree(

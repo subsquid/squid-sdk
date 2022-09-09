@@ -395,7 +395,7 @@ export class QueryableSqlPrinter {
             if (printer.hasColumns()) {
                 cols.push(printer.printColumnListAsJsonArray() + ' AS d')
             } else {
-                cols.push('nil AS d')
+                cols.push('null AS d')
             }
             cols.push(...this.orderColumns[idx])
             return `SELECT ${cols.join(', ')} ${printer.printFrom()}`
