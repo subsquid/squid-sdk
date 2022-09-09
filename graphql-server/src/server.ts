@@ -33,6 +33,8 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
+    cacheSize?: number,
+    cacheTtl?: number
 }
 
 
@@ -69,7 +71,9 @@ export class Server {
             subscriptions: this.options.subscriptions,
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
-            maxRootFields: this.options.maxRootFields
+            maxRootFields: this.options.maxRootFields,
+            cacheSize: this.options.cacheSize,
+            cacheTtl: this.options.cacheTtl
         })
     }
 

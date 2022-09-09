@@ -1,4 +1,4 @@
-import type {Logger} from '@subsquid/logger'
+import {createLogger, Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
 import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
@@ -21,6 +21,7 @@ import {logGraphQLError} from './util/error-handling'
 import {executeWithLimit} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
 
+const LOG = createLogger('sqd:openreader:server')
 
 export interface ServerOptions {
     port: number | string
@@ -39,7 +40,7 @@ export interface ServerOptions {
     // in Mb
     cacheSize?: number,
     // in milliseconds
-    cacheTTL?: number
+    cacheTtl?: number
 }
 
 
@@ -84,7 +85,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         maxRequestSizeBytes: options.maxRequestSizeBytes,
         maxRootFields: options.maxRootFields,
         cacheSize: options.cacheSize,
-        cacheTTL: options.cacheTTL
+        cacheTtl: options.cacheTtl
     }), options.log)
 }
 
@@ -104,7 +105,7 @@ export interface ApolloOptions {
     maxRequestSizeBytes?: number
     maxRootFields?: number
     cacheSize?: number
-    cacheTTL?: number
+    cacheTtl?: number
 }
 
 
@@ -201,18 +202,22 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     return listen(server, options.port)
 }
 
-function makeCache({cacheSize, cacheTTL}: ApolloOptions): KeyValueCache | undefined {
+function makeCache({cacheSize, cacheTtl}: ApolloOptions): KeyValueCache | undefined {
     if (cacheSize == undefined || cacheSize == 0) {
         return undefined
     }
     assert(cacheSize > 0)
 
-    return new InMemoryLRUCache({
+    let cacheOpts = {
         // convert to bytes
         maxSize: cacheSize * 1024 * 1024,
         // one second by default
-        ttl: cacheTTL ?? 1000,
-    })
+        ttl: cacheTtl ?? 1000,
+    }
+
+    LOG.info(`Using in-memory cache. Size: ${cacheSize}Mb, ttl: ${cacheOpts.ttl}ms`)
+
+    return new InMemoryLRUCache(cacheOpts)
 }
 
 export function addServerCleanup(disposals: Dispose[], server: Promise<ListeningServer>, log?: Logger): Promise<ListeningServer> {

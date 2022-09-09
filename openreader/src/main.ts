@@ -43,6 +43,8 @@ GraphQL server for postgres-compatible databases
         maxRequestSize: number
         maxRootFields?: number
         maxResponseSize?: number
+        cacheSize?: number,
+        cacheTtl?: number,
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
@@ -67,7 +69,9 @@ GraphQL server for postgres-compatible databases
         maxResponseNodes: opts.maxResponseSize,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
-        subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize
+        subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize,
+        cacheSize: opts.cacheSize,
+        cacheTtl: opts.cacheTtl
     })
 
     LOG.info(`listening on port ${server.port}`)
