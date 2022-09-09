@@ -15,7 +15,7 @@ import {
 import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
+import {getStorageItemTypeHash, isStorageKeyDecodable} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
@@ -254,6 +254,42 @@ export class Typegen {
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
+            versions.forEach(v => {
+                let versionName = this.getVersionName(v.chain)
+                let ifs = this.getInterface(v.chain)
+                let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
+                let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
+
+                if (isEmptyVariant(v.chain.description.types[v.def.value])) {
+                    // Meaning storage item can't hold any value
+                    // Let's just silently omit interface for this case
+                } else {
+                    let returnType = qualifiedTypes[qualifiedTypes.length - 1]
+                    let maybeOptionalReturnType = v.def.modifier == 'Optional' ? `${returnType} | undefined` : returnType
+                    let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
+                    let keyNames = keyTypes.map((type, idx) => {
+                        if (qualifiedTypes.length == 2) {
+                            return `key`
+                        } else {
+                            return `key${idx + 1}`
+                        }
+                    })
+                    let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
+                    out.line()
+                    out.blockComment(v.def.docs)
+                    out.block(`interface ${prefix}${name}Storage${versionName}`, () => {
+                        out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${maybeOptionalReturnType}>`)
+                        if (keyNames.length > 0) {
+                            out.line(`getMany(keys: ${keyTypesString}[]): Promise<(${maybeOptionalReturnType})[]>`)
+                            out.line(`getAll(): Promise<${returnType}[]>`)
+                            if (isStorageKeyDecodable(v.def)) {
+                                out.line(`getKeys(): Promise<${keyTypesString}[]>`)
+                                out.line(`getKeys(count: number, startKey: ${keyTypesString}): Promise<${keyTypesString}[]>`)
+                            }
+                        }
+                    })
+                }
+            })
             out.line()
             out.block(`export class ${prefix}${name}Storage`, () => {
                 out.line(`private readonly _chain: Chain`)
@@ -286,9 +322,7 @@ export class Typegen {
                         // Let's just silently omit `asVxx` getter for this case
                     } else {
                         let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                        if (v.def.modifier == 'Optional') {
-                            returnType = `${returnType} | undefined`
-                        }
+                        let maybeOptionalReturnType = v.def.modifier == 'Optional' ? `${returnType} | undefined` : returnType
                         let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
                         let keyNames = keyTypes.map((type, idx) => {
                             if (qualifiedTypes.length == 2) {
@@ -297,38 +331,19 @@ export class Typegen {
                                 return `key${idx + 1}`
                             }
                         })
+                        let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
                         out.line()
                         out.blockComment(v.def.docs)
-                        out.block(`get as${versionName}():`, () => {
-                            out.indentation(() => {
-                                out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
-                                if (keyNames.length > 0) {
-                                    out.line(`getMany(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`)
-                                    out.line(`getAll(): Promise<${qualifiedTypes[qualifiedTypes.length - 1]}[]>`)
-                                }
-                            })
-                            out.line(`} {`)
-                            out.indentation(() => {
-                                out.line(`assert(this.is${versionName})`)
-                                out.line(`return this as any`)
-                            })
+                        out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
+                            out.line(`assert(this.is${versionName})`)
+                            out.line(`return this as any`)
                         })
 
                         if (i === versions.length - 1) {
                             out.line()
                             out.blockComment(v.def.docs)
-                            out.block(`get asLatest():`, () => {
-                                out.indentation(() => {
-                                    out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`)
-                                    if (keyNames.length > 0) {
-                                        out.line(`getMany(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`)
-                                        out.line(`getAll(): Promise<${qualifiedTypes[qualifiedTypes.length - 1]}[]>`)
-                                    }
-                                })
-                                out.line(`} {`)
-                                out.indentation(() => {
-                                    out.line(`return this as any`)
-                                })
+                            out.block(`get asLatest(): ${prefix}${name}Storage${versionName}`, () => {
+                                out.line(`return this as any`)
                             })
                         }
                     }
@@ -349,6 +364,10 @@ export class Typegen {
                 out.block(`private async getAll(): Promise<any[]>`, () => {
                     out.line(`return this._chain.queryStorage(${args.join(', ')})`)
                 })
+                out.line()
+                out.block(`private async getKeys(count?: number, startKey?: any): Promise<any[]>`, () => {
+                    out.line(`return this._chain.getKeys(${args.join(', ')}, count, startKey)`)
+                })
 
                 out.line()
                 out.blockComment([
@@ -362,6 +381,7 @@ export class Typegen {
 
         out.write()
     }
+
 
     /**
      * Create a mapping between qualified name and list of unique versions

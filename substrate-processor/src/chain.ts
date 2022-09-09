@@ -228,14 +228,16 @@ export class Chain {
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
 
         let res: string[]
-        if (count != null) {
+        if (count == null) {
+            res = await this.client.call('state_getKeys', [storageHash, blockHash])
+        } else {
             let startKeyHash = startKey != null ? storageHash + this.getStorageItemKeysHash(item, startKey) : storageHash
             res = await this.client.call('state_getKeysPaged', [storageHash, count, startKeyHash, blockHash])
-        } else {
-            res = await this.client.call('state_getKeys', [storageHash, blockHash])
         }
+
         return res.map(k => {
-            return this.decodeStorageKey(item, k)
+            let decodedKey = this.decodeStorageKey(item, k)
+            return item.keys.length > 1 ? decodedKey : decodedKey[0]
         })
     }
 
