@@ -260,7 +260,6 @@ export class Typegen {
                     })
                     let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
                     out.line()
-                    out.blockComment(v.def.docs)
                     out.block(`interface ${prefix}${name}Storage${versionName}`, () => {
                         out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${maybeOptionalReturnType}>`)
                         if (keyNames.length > 0) {
@@ -268,7 +267,7 @@ export class Typegen {
                             out.line(`getAll(): Promise<${returnType}[]>`)
                             if (isStorageKeyDecodable(v.def)) {
                                 out.line(`getKeys(): Promise<${keyTypesString}[]>`)
-                                out.line(`getKeys(count: number, startKey: ${keyTypesString}): Promise<${keyTypesString}[]>`)
+                                out.line(`getKeys(count: number, startKey?: ${keyTypesString}): Promise<${keyTypesString}[]>`)
                             }
                         }
                     })
