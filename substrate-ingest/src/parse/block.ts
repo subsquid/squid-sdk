@@ -1,3 +1,4 @@
+import {createLogger} from "@subsquid/logger"
 import {decodeExtrinsic} from "@subsquid/substrate-metadata"
 import {assertNotNull, def} from "@subsquid/util-internal"
 import {toHex} from "@subsquid/util-internal-hex"
@@ -14,6 +15,7 @@ import {
 } from "./util"
 import {Account, getBlockValidator} from "./validator"
 
+const log = createLogger('sqd:substrate-ingest')
 
 export interface RawBlock {
     blockHash: string
@@ -134,6 +136,14 @@ export class BlockParser {
             let bytes = Buffer.from(hex.slice(2), 'hex')
             let hash = blake2bHash(bytes, 32)
             let ex = decodeExtrinsic(bytes, this.spec.description, this.spec.scaleCodec)
+            let tip = ex.signature?.signedExtensions.ChargeTransactionPayment
+
+            // in general, we expect `tip` has a numeric type, if not then ignore for now
+            if(!["bigint", "number"].includes(typeof tip)) {
+                log.debug(`extrinsic ${id} "tip" has a non-numeric type, ignoring`)
+                tip = undefined
+            }
+
             return {
                 id,
                 block_id,
@@ -143,7 +153,7 @@ export class BlockParser {
                 signature: ex.signature,
                 call_id: id,
                 call: ex.call,
-                tip: ex.signature?.signedExtensions.ChargeTransactionPayment,
+                tip,
                 hash,
                 pos: -1
             }
