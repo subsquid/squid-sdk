@@ -1,9 +1,7 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
-import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
-import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache';
+import { KeyValueCache, PluginDefinition } from 'apollo-server-core'
 import {ApolloServer} from 'apollo-server-express'
-import { assert } from 'console'
 import express from 'express'
 import fs from 'fs'
 import {ExecutionArgs, GraphQLSchema} from 'graphql'
@@ -37,12 +35,8 @@ export interface ServerOptions {
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
     subscriptionMaxResponseNodes?: number,
-    // in Mb
-    cacheSize?: number,
-    // in milliseconds
-    cacheTtl?: number
+    cache?: KeyValueCache
 }
-
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let {connection, subscriptionConnection, subscriptionPollInterval, maxResponseNodes, subscriptionMaxResponseNodes} = options
@@ -84,8 +78,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         graphiqlConsole: options.graphiqlConsole,
         maxRequestSizeBytes: options.maxRequestSizeBytes,
         maxRootFields: options.maxRootFields,
-        cacheSize: options.cacheSize,
-        cacheTtl: options.cacheTtl
+        cache: options.cache,
     }), options.log)
 }
 
@@ -104,8 +97,7 @@ export interface ApolloOptions {
     log?: Logger
     maxRequestSizeBytes?: number
     maxRootFields?: number
-    cacheSize?: number
-    cacheTtl?: number
+    cache?: KeyValueCache
 }
 
 
@@ -149,10 +141,11 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         disposals.push(async () => wsServerCleanup.dispose())
     }
 
+
     let apollo = new ApolloServer({
         schema,
         context,
-        cache: makeCache(options),
+        cache: options.cache,
         stopOnTerminationSignals: false,
         executor: execute && (async req => {
             return execute({
@@ -181,7 +174,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                         }
                     }
                 }
-            }
+            },
         ]
     })
 
@@ -200,24 +193,6 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     })
 
     return listen(server, options.port)
-}
-
-function makeCache({cacheSize, cacheTtl}: ApolloOptions): KeyValueCache | undefined {
-    if (cacheSize == undefined || cacheSize == 0) {
-        return undefined
-    }
-    assert(cacheSize > 0)
-
-    let cacheOpts = {
-        // convert to bytes
-        maxSize: cacheSize * 1024 * 1024,
-        // one second by default
-        ttl: cacheTtl ?? 1000,
-    }
-
-    LOG.info(`Using in-memory cache. Size: ${cacheSize}Mb, ttl: ${cacheOpts.ttl}ms`)
-
-    return new InMemoryLRUCache(cacheOpts)
 }
 
 export function addServerCleanup(disposals: Dispose[], server: Promise<ListeningServer>, log?: Logger): Promise<ListeningServer> {

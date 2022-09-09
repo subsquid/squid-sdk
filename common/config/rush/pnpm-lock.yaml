@@ -78,6 +78,7 @@ specifiers:
   ajv: ^8.11.0
   apollo-server-core: ^3.9.0
   apollo-server-express: ^3.9.0
+  apollo-server-plugin-response-cache: ~3.7.0
   base-x: ^3.0.9
   blake2b: ^2.1.4
   camelcase: ^6.3.0
@@ -188,6 +189,7 @@ dependencies:
   ajv: 8.11.0
   apollo-server-core: 3.10.2_graphql@15.8.0
   apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
+  apollo-server-plugin-response-cache: 3.7.0_graphql@15.8.0
   base-x: 3.0.9
   blake2b: 2.1.4
   camelcase: 6.3.0
@@ -1581,6 +1583,20 @@ packages:
     peerDependencies:
       graphql: ^15.3.0 || ^16.0.0
     dependencies:
+      apollo-server-types: 3.6.2_graphql@15.8.0
+      graphql: 15.8.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /apollo-server-plugin-response-cache/3.7.0_graphql@15.8.0:
+    resolution: {integrity: sha512-WeQw+YgV+3+iyCGpK/ycLudp+qmyw1m7dyJ7G0I/6m7Pj4dCY/E/Eoyd9/iCSiEMeagWIGp9fBq3R9VqUHdxFA==}
+    engines: {node: '>=12.0'}
+    peerDependencies:
+      graphql: ^15.3.0 || ^16.0.0
+    dependencies:
+      '@apollo/utils.keyvaluecache': 1.0.1
+      apollo-server-plugin-base: 3.6.2_graphql@15.8.0
       apollo-server-types: 3.6.2_graphql@15.8.0
       graphql: 15.8.0
     transitivePeerDependencies:
@@ -4395,11 +4411,12 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-OgWvwWrj29sk+hs5I3hd+eiEs6t5lSsvRAMgLlAqmsXd/KcnBjC8pRD1eqArwvXiupPiv6x5hf30mTYqFnhhew==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-iePHG3MP3Z2FWh7vgDsWQGCalqYhrgGuIVMciIhebi4LIUq33z5lYm1Jo+0V7TJyuzmj41dYUyEWtgZhfxA9jg==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
     dependencies:
+      '@apollo/utils.keyvaluecache': 1.0.1
       '@graphql-tools/merge': 8.3.6_graphql@15.8.0
       '@graphql-tools/schema': 8.5.1_graphql@15.8.0
       '@graphql-tools/utils': 8.12.0_graphql@15.8.0
@@ -4410,6 +4427,7 @@ packages:
       '@types/ws': 8.5.3
       apollo-server-core: 3.10.2_graphql@15.8.0
       apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
+      apollo-server-plugin-response-cache: 3.7.0_graphql@15.8.0
       class-validator: 0.13.2
       commander: 9.4.0
       dotenv: 10.0.0
@@ -4552,12 +4570,11 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-HbMmpWSVXLEf6ow1SZ2bdQk4vf9xEmGGTBqGhhtqVzauuO5EapOmY3GhcmbtdoBlAJDjghqZ++lVq3ZwSeifng==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-EAQmomuzIRvsIpQguFeW4S4MHmVer9c3Vi/RfpfDVaBQYMHPJKKxVKizlAmTyK2+W3idPDMP6/s+GAQb4mlnqQ==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
     dependencies:
-      '@apollo/utils.keyvaluecache': 1.0.1
       '@graphql-tools/merge': 8.3.6_graphql@15.8.0
       '@subsquid/graphiql-console': 0.3.0
       '@types/deep-equal': 1.0.1

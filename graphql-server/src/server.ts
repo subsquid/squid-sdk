@@ -1,5 +1,5 @@
 import {mergeSchemas} from '@graphql-tools/schema'
-import {Logger} from '@subsquid/logger'
+import {createLogger, Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
 import {PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
 import {Dialect} from '@subsquid/openreader/lib/dialect'
@@ -10,7 +10,9 @@ import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
 import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
-import {PluginDefinition} from 'apollo-server-core'
+import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
+import responseCachePlugin from 'apollo-server-plugin-response-cache'
+import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import assert from 'assert'
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from 'graphql'
 import * as path from 'path'
@@ -18,9 +20,9 @@ import {Pool} from 'pg'
 import * as process from 'process'
 import type {DataSource} from 'typeorm'
 import {createCheckPlugin, RequestCheckFunction} from './check'
-import {loadCustomResolvers} from './resolvers'
 import {TypeormOpenreaderContext} from './typeorm'
 
+const LOG = createLogger("graphl-server:server")
 
 export interface ServerOptions {
     dir?: string
@@ -33,10 +35,15 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
-    cacheSize?: number,
-    cacheTtl?: number
+    cache?: CacheOptions
 }
 
+export interface CacheOptions {
+    // in Mb
+    maxSize: number,
+    // in milliseconds
+    ttl: number 
+ }
 
 export class Server {
     private dir: string
@@ -56,6 +63,14 @@ export class Server {
         let context = await this.context()
         let plugins: PluginDefinition[] = []
 
+        if (this.options.cache) {
+            plugins = [
+                responseCachePlugin(),
+                ApolloServerPluginCacheControl({ defaultMaxAge: this.options.cache.ttl / 1000 }),
+                ...plugins
+            ]
+        }
+
         let requestCheck = this.customCheck()
         if (requestCheck) {
             plugins.push(createCheckPlugin(requestCheck, this.model()))
@@ -72,8 +87,7 @@ export class Server {
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
             maxRootFields: this.options.maxRootFields,
-            cacheSize: this.options.cacheSize,
-            cacheTtl: this.options.cacheTtl
+            cache: makeCache(this.options.cache)
         })
     }
 
@@ -268,3 +282,18 @@ function envNat(name: string): number | undefined {
     if (Number.isSafeInteger(val) && val >= 0) return val
     throw new Error(`Invalid env variable ${name}: ${env}. Expected positive integer`)
 }
+
+function makeCache(opts: CacheOptions | undefined): KeyValueCache | undefined {
+    if (opts == undefined) {
+        return undefined
+    }
+    
+    LOG.info(`Using in-memory cache. Size: ${opts.maxSize}Mb, ttl: ${opts.ttl}ms`)
+
+    return new InMemoryLRUCache({
+        // convert to bytes
+        maxSize: opts.maxSize * 1024 * 1024,
+        ttl: opts.ttl,
+    })
+}
+

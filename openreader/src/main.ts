@@ -28,8 +28,6 @@ GraphQL server for postgres-compatible databases
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
     program.option('--max-root-fields <count>', 'max number of root fields in a query', nat)
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
-    program.option('--cache-size <mb>', 'max in-memory cache size in megabytes', nat)
-    program.option('--cache-ttl <ms>', 'cache TTL in ms', nat)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
@@ -43,8 +41,6 @@ GraphQL server for postgres-compatible databases
         maxRequestSize: number
         maxRootFields?: number
         maxResponseSize?: number
-        cacheSize?: number,
-        cacheTtl?: number,
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
@@ -70,8 +66,6 @@ GraphQL server for postgres-compatible databases
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
         subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize,
-        cacheSize: opts.cacheSize,
-        cacheTtl: opts.cacheTtl
     })
 
     LOG.info(`listening on port ${server.port}`)
