@@ -391,10 +391,10 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     items.sort((a, b) => getPos(a) - getPos(b))
 
-    let {timestamp, ...hdr} = block.header
+    let {timestamp, validator, ...hdr} = block.header
 
     return {
-        header: {...hdr, timestamp: new Date(timestamp).valueOf()},
+        header: {...hdr, timestamp: new Date(timestamp).valueOf(), validator: validator ?? undefined},
         items: items
     }
 }
