@@ -236,6 +236,7 @@ export class Ingest<R extends BatchRequest> {
                     q.line('specId')
                     q.line('stateRoot')
                     q.line('extrinsicsRoot')
+                    q.line('validator')
                 })
                 q.line('events')
                 q.line('calls')
