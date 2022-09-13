@@ -1,0 +1,25 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add support for queryable interfaces",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "add support for queryable interfaces",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "remove `--subscription-sql-statement-timeout` option",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "refactor internal data structures used throughout framework",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
