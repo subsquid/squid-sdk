@@ -2,8 +2,9 @@ import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {nat} from '@subsquid/util-internal-commander'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
-import {Command} from 'commander'
-import {CacheOptions, Server} from './server'
+import {Command, Option} from 'commander'
+import assert from 'assert'
+import {CacheOptions, InMemoryCacheOptions, RedisCacheOptions, Server} from './server'
 
 
 const LOG = createLogger('sqd:graphql-server')
@@ -16,7 +17,7 @@ runProgram(async () => {
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
     program.option('--max-root-fields <count>', 'max number of root fields in a query', nat)
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
-    program.option('--in-memory-cache', 'enable in-memory cache')
+    program.addOption(new Option('--cache <type>', 'enable caching').choices(['in-memory', 'redis']))
     program.option('--cache-size <mb>', 'max in-memory cache size in megabytes', nat, 50)
     program.option('--cache-ttl <ms>', 'cache TTL in ms', nat, 1000)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
@@ -30,8 +31,8 @@ runProgram(async () => {
         maxResponseSize?: number
         squidStatus?: boolean
         sqlStatementTimeout?: number
-        inMemoryCache?: boolean
-        cacheSize:number
+        cache?: "in-memory" | "redis"
+        cacheSize: number
         cacheTtl: number
         subscriptions?: boolean
         subscriptionPollInterval: number
@@ -40,18 +41,38 @@ runProgram(async () => {
 
     let {maxRequestSize, maxResponseSize, subscriptionMaxResponseSize, ...rest} = opts
 
+    let cacheOptions: CacheOptions | undefined
+    if (opts.cache) {
+        let cacheOpts: RedisCacheOptions | InMemoryCacheOptions | undefined
     
-    let cache: CacheOptions | undefined = opts.inMemoryCache ? {
-        maxSize: opts.cacheSize,
-        ttl: opts.cacheTtl
-    } : undefined
+        if (opts.cache === "redis") {
+            assert(process.env.REDIS_URL, "REDIS_URL env variable must be set to enable Redis cache")
+            cacheOpts = {
+              url: process.env.REDIS_URL
+            }
+        } else if (opts.cache === "in-memory") {
+            cacheOpts = {
+              maxSizeMb: opts.cacheSize,
+              ttlMs: opts.cacheTtl
+            }
+        } 
+        assert(cacheOpts)
+        cacheOptions = {
+          type: opts.cache,
+          opts: cacheOpts,
+          // while there's a slight difference,
+          // it's reasonable to use the same value 
+          // for maxAge and TTL and re-use this setting
+          maxAgeMs: opts.cacheTtl
+        }
+    }
 
     let server = await new Server({
         log: LOG,
         maxRequestSizeBytes: maxRequestSize * 1024,
         maxResponseNodes: maxResponseSize,
         subscriptionMaxResponseNodes: subscriptionMaxResponseSize,
-        cache,
+        cacheOptions,
         ...rest
     }).start()
 

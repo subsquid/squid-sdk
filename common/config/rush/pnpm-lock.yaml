@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@apollo/utils.keyvadapter': ~1.1.2
   '@apollo/utils.keyvaluecache': ~1.0.1
   '@ethersproject/abi': ^5.6.4
   '@ethersproject/bytes': ^5.6.1
@@ -8,6 +9,7 @@ specifiers:
   '@graphql-tools/merge': ^8
   '@graphql-tools/schema': ^8
   '@graphql-tools/utils': ^8
+  '@keyv/redis': ~2.5.1
   '@polkadot/api': ^7.15.1
   '@polkadot/keyring': ^8.7.1
   '@polkadot/types': ^7.15.1
@@ -94,6 +96,7 @@ specifiers:
   graphql-ws: ^5.9.1
   inflected: ^2.1.0
   jsonc-parser: ^3.0.0
+  keyv: ~4.5.0
   latest-version: ^5.1.0
   mocha: ^9.2.2
   node-fetch: ^2.6.7
@@ -112,6 +115,7 @@ specifiers:
   xxhashjs: ^0.2.2
 
 dependencies:
+  '@apollo/utils.keyvadapter': 1.1.2
   '@apollo/utils.keyvaluecache': 1.0.1
   '@ethersproject/abi': 5.7.0
   '@ethersproject/bytes': 5.7.0
@@ -119,6 +123,7 @@ dependencies:
   '@graphql-tools/merge': 8.3.6_graphql@15.8.0
   '@graphql-tools/schema': 8.5.1_graphql@15.8.0
   '@graphql-tools/utils': 8.12.0_graphql@15.8.0
+  '@keyv/redis': 2.5.1_supports-color@8.1.1
   '@polkadot/api': 7.15.1_supports-color@8.1.1
   '@polkadot/keyring': 8.7.1
   '@polkadot/types': 7.15.1
@@ -205,6 +210,7 @@ dependencies:
   graphql-ws: 5.11.1_graphql@15.8.0
   inflected: 2.1.0
   jsonc-parser: 3.2.0
+  keyv: 4.5.0
   latest-version: 5.1.0
   mocha: 9.2.2
   node-fetch: 2.6.7
@@ -251,6 +257,14 @@ packages:
       graphql: 14.x || 15.x || 16.x
     dependencies:
       graphql: 15.8.0
+    dev: false
+
+  /@apollo/utils.keyvadapter/1.1.2:
+    resolution: {integrity: sha512-vPC5e97uwHuZ2iMHVrEeRsV4dLw0lNx2UY9APhb7StC/RMR3BdnuPwS/+5yR9tUF5IUut+iJZocHkS4y6mR9aA==}
+    dependencies:
+      '@apollo/utils.keyvaluecache': 1.0.1
+      dataloader: 2.1.0
+      keyv: 4.5.0
     dev: false
 
   /@apollo/utils.keyvaluecache/1.0.1:
@@ -758,6 +772,10 @@ packages:
       tslib: 2.4.0
     dev: false
 
+  /@ioredis/commands/1.2.0:
+    resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
+    dev: false
+
   /@jest/types/27.5.1:
     resolution: {integrity: sha512-Cx46iJ9QpwQTjIdq5VJu2QTMMs3QlEjI0x1QbBP5W1+nMzyc2XmimiRR/CbX9TO0cPTeUlxWMOu8mslYsJ8DEw==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
@@ -771,6 +789,15 @@ packages:
 
   /@josephg/resolvable/1.0.1:
     resolution: {integrity: sha512-CtzORUwWTTOTqfVtHaKRJ0I1kNQd1bpn3sUh8I3nJDVY+5/M/Oe1DnEWzPQvqq/xPIIkzzzIP7mfCoAjFRvDhg==}
+    dev: false
+
+  /@keyv/redis/2.5.1_supports-color@8.1.1:
+    resolution: {integrity: sha512-DhmMNVYqObPQy23NLYNPZy9do3XSgNmqyTKjwSLWpinD/n0aW64k0hkCfyS1/JH+9zz0mxLTQMtHIgadaZAmDA==}
+    engines: {node: '>= 12'}
+    dependencies:
+      ioredis: 5.2.3_supports-color@8.1.1
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /@noble/hashes/1.0.0:
@@ -1857,6 +1884,11 @@ packages:
       mimic-response: 1.0.1
     dev: false
 
+  /cluster-key-slot/1.1.0:
+    resolution: {integrity: sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   /color-convert/1.9.3:
     resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
     dependencies:
@@ -1940,6 +1972,10 @@ packages:
     dependencies:
       es5-ext: 0.10.62
       type: 1.2.0
+    dev: false
+
+  /dataloader/2.1.0:
+    resolution: {integrity: sha512-qTcEYLen3r7ojZNgVUaRggOI+KM7jrKxXeSHhogh/TWxYMeONEMqY+hmkobiYQozsGIyg9OYVzO4ZIfoB4I0pQ==}
     dev: false
 
   /date-fns/2.29.3:
@@ -2037,6 +2073,11 @@ packages:
   /delayed-stream/1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+    dev: false
+
+  /denque/2.1.0:
+    resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
+    engines: {node: '>=0.10'}
     dev: false
 
   /depd/2.0.0:
@@ -2681,6 +2722,23 @@ packages:
       side-channel: 1.0.4
     dev: false
 
+  /ioredis/5.2.3_supports-color@8.1.1:
+    resolution: {integrity: sha512-gQNcMF23/NpvjCaa1b5YycUyQJ9rBNH2xP94LWinNpodMWVUPP5Ai/xXANn/SM7gfIvI62B5CCvZxhg5pOgyMw==}
+    engines: {node: '>=12.22.0'}
+    dependencies:
+      '@ioredis/commands': 1.2.0
+      cluster-key-slot: 1.1.0
+      debug: 4.3.4_supports-color@8.1.1
+      denque: 2.1.0
+      lodash.defaults: 4.2.0
+      lodash.isarguments: 3.1.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   /ip-regex/4.3.0:
     resolution: {integrity: sha512-B9ZWJxHHOHUhUjCPrMpLD4xEq35bUTClHM1S6CBU5ixQnkZmwipwgc96vAd7AAGM9TGHvJR+Uss+/Ak6UphK+Q==}
     engines: {node: '>=8'}
@@ -2915,6 +2973,10 @@ packages:
     resolution: {integrity: sha512-CuUqjv0FUZIdXkHPI8MezCnFCdaTAacej1TZYulLoAg1h/PhwkdXFN4V/gzY4g+fMBCOV2xF+rp7t2XD2ns/NQ==}
     dev: false
 
+  /json-buffer/3.0.1:
+    resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
+    dev: false
+
   /json-schema-traverse/1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
     dev: false
@@ -2931,6 +2993,12 @@ packages:
     resolution: {integrity: sha512-9ykJ/46SN/9KPM/sichzQ7OvXyGDYKGTaDlKMGCAlg2UK8KRy4jb0d8sFc+0Tt0YYnThq8X2RZgCg74RPxgcVA==}
     dependencies:
       json-buffer: 3.0.0
+    dev: false
+
+  /keyv/4.5.0:
+    resolution: {integrity: sha512-2YvuMsA+jnFGtBareKqgANOEKe1mk3HKiXu2fRmAfyxG0MJAywNhi5ttWA3PMjl4NmpyjZNbFifR2vNjW1znfA==}
+    dependencies:
+      json-buffer: 3.0.1
     dev: false
 
   /latest-version/5.1.0:
@@ -2951,8 +3019,16 @@ packages:
       p-locate: 5.0.0
     dev: false
 
+  /lodash.defaults/4.2.0:
+    resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
+    dev: false
+
   /lodash.get/4.4.2:
     resolution: {integrity: sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ==}
+    dev: false
+
+  /lodash.isarguments/3.1.0:
+    resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
     dev: false
 
   /lodash.sortby/4.7.0:
@@ -3500,6 +3576,18 @@ packages:
       picomatch: 2.3.1
     dev: false
 
+  /redis-errors/1.2.0:
+    resolution: {integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==}
+    engines: {node: '>=4'}
+    dev: false
+
+  /redis-parser/3.0.0:
+    resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
+    engines: {node: '>=4'}
+    dependencies:
+      redis-errors: 1.2.0
+    dev: false
+
   /reflect-metadata/0.1.13:
     resolution: {integrity: sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==}
     dev: false
@@ -3666,6 +3754,10 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       escape-string-regexp: 2.0.0
+    dev: false
+
+  /standard-as-callback/2.1.0:
+    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
     dev: false
 
   /statuses/2.0.1:
@@ -4411,15 +4503,17 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-iePHG3MP3Z2FWh7vgDsWQGCalqYhrgGuIVMciIhebi4LIUq33z5lYm1Jo+0V7TJyuzmj41dYUyEWtgZhfxA9jg==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-VFnxj8oy3Q8j3X2FqHv9548o7BOHRuwEqV4s/Jqd2DO+/hlufHFe9EcFt+ItVmKw17w8xLL74XARGbVHXapJag==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
     dependencies:
+      '@apollo/utils.keyvadapter': 1.1.2
       '@apollo/utils.keyvaluecache': 1.0.1
       '@graphql-tools/merge': 8.3.6_graphql@15.8.0
       '@graphql-tools/schema': 8.5.1_graphql@15.8.0
       '@graphql-tools/utils': 8.12.0_graphql@15.8.0
+      '@keyv/redis': 2.5.1_supports-color@8.1.1
       '@types/express': 4.17.14
       '@types/mocha': 9.1.1
       '@types/node': 16.11.59
@@ -4435,6 +4529,7 @@ packages:
       express: 4.18.1_supports-color@8.1.1
       graphql: 15.8.0
       graphql-ws: 5.11.1_graphql@15.8.0
+      keyv: 4.5.0
       mocha: 9.2.2
       pg: 8.8.0
       type-graphql: 1.2.0-rc.1_aea24acf06b899fbc466d3b3b949c72d

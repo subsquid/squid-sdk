@@ -11,6 +11,8 @@ import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
+import {KeyvAdapter} from '@apollo/utils.keyvadapter'
+import Keyv from 'keyv'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import assert from 'assert'
@@ -35,14 +37,25 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
-    cache?: CacheOptions
+    cacheOptions?: CacheOptions
 }
 
 export interface CacheOptions {
-    // in Mb
-    maxSize: number,
+    type: "in-memory" | "redis" 
+    opts: InMemoryCacheOptions | RedisCacheOptions
     // in milliseconds
-    ttl: number 
+    maxAgeMs: number 
+}
+
+export interface RedisCacheOptions {
+    url: string
+}
+
+export interface InMemoryCacheOptions {
+    // in Mb
+    maxSizeMb: number,
+    // in milliseconds
+    ttlMs: number 
  }
 
 export class Server {
@@ -63,10 +76,10 @@ export class Server {
         let context = await this.context()
         let plugins: PluginDefinition[] = []
 
-        if (this.options.cache) {
+        if (this.options.cacheOptions) {
             plugins = [
+                ApolloServerPluginCacheControl({ defaultMaxAge: this.options.cacheOptions.maxAgeMs / 1000 }),
                 responseCachePlugin(),
-                ApolloServerPluginCacheControl({ defaultMaxAge: this.options.cache.ttl / 1000 }),
                 ...plugins
             ]
         }
@@ -87,7 +100,7 @@ export class Server {
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
             maxRootFields: this.options.maxRootFields,
-            cache: makeCache(this.options.cache)
+            cache: makeCache(this.options.cacheOptions)
         })
     }
 
@@ -283,17 +296,26 @@ function envNat(name: string): number | undefined {
     throw new Error(`Invalid env variable ${name}: ${env}. Expected positive integer`)
 }
 
-function makeCache(opts: CacheOptions | undefined): KeyValueCache | undefined {
-    if (opts == undefined) {
+function makeCache(cache: CacheOptions | undefined): KeyValueCache | undefined {
+    if (cache == undefined) {
         return undefined
     }
     
-    LOG.info(`Using in-memory cache. Size: ${opts.maxSize}Mb, ttl: ${opts.ttl}ms`)
+    if (cache.type === "in-memory") {
+        let opts = cache.opts as InMemoryCacheOptions
+        LOG.info(`Using in-memory cache. Size: ${opts.maxSizeMb}Mb, ttl: ${opts.ttlMs}ms, maxAge: ${cache.maxAgeMs}ms`)
 
-    return new InMemoryLRUCache({
-        // convert to bytes
-        maxSize: opts.maxSize * 1024 * 1024,
-        ttl: opts.ttl,
-    })
+        return new InMemoryLRUCache({
+            // convert to bytes
+            maxSize: opts.maxSizeMb * 1024 * 1024,
+            ttl: opts.ttlMs,
+        })
+    }
+
+    if (cache.type === "redis") {
+        LOG.info(`Using Redis cache. MaxAge: ${cache.maxAgeMs}ms`)
+        let opts = cache.opts as RedisCacheOptions
+        return new KeyvAdapter(new Keyv(opts.url))
+    }
 }
 
