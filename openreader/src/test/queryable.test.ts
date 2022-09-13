@@ -117,6 +117,24 @@ describe('queryable interfaces', function() {
         })
     })
 
+    it('sorting by entity type', function() {
+        return client.test(`
+            query {
+                entities(orderBy: [_type_DESC, id_ASC]) {
+                    id
+                }
+            }
+        `, {
+            entities: [
+                {id: 'foo-1'},
+                {id: 'foo-2'},
+                {id: 'baz-1'},
+                {id: 'bar-1'},
+                {id: 'bar-2'}
+            ]
+        })
+    })
+
     it('pagination', function() {
         return client.test(`
             query {

@@ -1,7 +1,7 @@
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Dialect} from '../dialect'
-import {SqlArguments, OrderBy, SortOrder, Where} from '../ir/args'
+import {OrderBy, SortOrder, SqlArguments, Where} from '../ir/args'
 import {FieldRequest, FieldsByEntity} from '../ir/fields'
 import {Model} from '../model'
 import {getQueryableEntities} from '../model.tools'
@@ -44,8 +44,8 @@ export class EntitySqlPrinter {
             this.populateWhere(this.root, args.where, this.where)
         }
         if (args.orderBy) {
-            this.traverseOrderBy(args.orderBy, (field, order) => {
-                this.orderBy.push(field + ' ' + order)
+            this.traverseOrderBy(args.orderBy, (field, cursor, order) => {
+                this.orderBy.push(cursor.native(field) + ' ' + order)
             })
         }
     }
@@ -266,15 +266,15 @@ export class EntitySqlPrinter {
         return printClause("AND", exps)
     }
 
-    traverseOrderBy(orderBy: OrderBy, cb: (field: string, order: SortOrder) => void) {
+    traverseOrderBy(orderBy: OrderBy, cb: (field: string, cursor: Cursor, order: SortOrder) => void) {
         this.visitOrderBy(this.root, orderBy, cb)
     }
 
-    private visitOrderBy(cursor: Cursor, orderBy: OrderBy, cb: (field: string, order: SortOrder) => void) {
+    private visitOrderBy(cursor: Cursor, orderBy: OrderBy, cb: (field: string, cursor: Cursor, order: SortOrder) => void) {
         for (let field in orderBy) {
             let spec = orderBy[field]
             if (typeof spec == "string") {
-                cb(cursor.native(field), spec)
+                cb(field, cursor, spec)
             } else {
                 this.visitOrderBy(cursor.child(field), spec, cb)
             }
@@ -377,7 +377,8 @@ export class QueryableSqlPrinter {
             if (this.args.orderBy) {
                 let cols: string[] = []
                 this.orders.length = 0
-                printer.traverseOrderBy(this.args.orderBy, (col, order) => {
+                printer.traverseOrderBy(this.args.orderBy, (field, cursor, order) => {
+                    let col = field == '_type' ? `'${entityName}'` : cursor.native(field)
                     this.orders.push(order)
                     cols.push(`${col} AS o${this.orders.length}`)
                 })

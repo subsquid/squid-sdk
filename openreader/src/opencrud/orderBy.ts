@@ -58,6 +58,10 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
                 break
         }
     }
+    if (model[typeName].kind == 'interface') {
+        m.set('_type_ASC', {_type: 'ASC'})
+        m.set('_type_DESC', {_type: 'DESC'})
+    }
     return m
 }
 
