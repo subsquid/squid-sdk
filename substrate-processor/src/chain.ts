@@ -241,6 +241,33 @@ export class Chain {
         })
     }
 
+    async getPairs(blockHash: string, prefix: string, name: string): Promise<any[][]>
+    async getPairs(blockHash: string, prefix: string, name: string, count: number, startKey?: any[]): Promise<any[][]>
+    async getPairs(blockHash: string, prefix: string, name: string, count?: number, startKey?: any[]): Promise<any[][]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+
+        let query: string[]
+        if (count == null) {
+            query = await this.client.call('state_getKeys', [storageHash, blockHash])
+        } else {
+            let startKeyHash = startKey != null ? storageHash + this.getStorageItemKeysHash(item, startKey) : storageHash
+            query = await this.client.call('state_getKeysPaged', [storageHash, count, startKeyHash, blockHash])
+        }
+
+        if (query.length == 0) return []
+        let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            'state_queryStorageAt',
+            [query, blockHash]
+        )
+        assert(res.length == 1)
+        return res[0].changes.map(v => {
+            let decodedKey = this.decodeStorageKey(item, v[0])
+            let decodedValue = this.decodeStorageValue(item, v[1])
+            return [item.keys.length > 1 ? decodedKey : decodedKey[0], decodedValue]
+        })
+    }
+
     private decodeStorageValue(item: StorageItem, value: any) {
         if (value == null) {
             switch(item.modifier) {

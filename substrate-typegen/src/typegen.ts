@@ -268,6 +268,8 @@ export class Typegen {
                             if (isStorageKeyDecodable(v.def)) {
                                 out.line(`getKeys(): Promise<${keyTypesString}[]>`)
                                 out.line(`getKeys(count: number, startKey?: ${keyTypesString}): Promise<${keyTypesString}[]>`)
+                                out.line(`getPairs(): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
+                                out.line(`getPairs(count: number, startKey?: ${keyTypesString}): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
                             }
                         }
                     })
@@ -304,17 +306,6 @@ export class Typegen {
                         // Meaning storage item can't hold any value
                         // Let's just silently omit `asVxx` getter for this case
                     } else {
-                        let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                        let maybeOptionalReturnType = v.def.modifier == 'Optional' ? `${returnType} | undefined` : returnType
-                        let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
-                        let keyNames = keyTypes.map((type, idx) => {
-                            if (qualifiedTypes.length == 2) {
-                                return `key`
-                            } else {
-                                return `key${idx + 1}`
-                            }
-                        })
-                        let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
                         out.line()
                         out.blockComment(v.def.docs)
                         out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
@@ -322,6 +313,14 @@ export class Typegen {
                             out.line(`return this as any`)
                         })
                     }
+                })
+
+                out.line()
+                out.blockComment([
+                    'Checks whether the storage item is defined for the current chain version.'
+                ])
+                out.block(`get isExists(): boolean`, () => {
+                    out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
                 })
 
                 out.line()
@@ -339,17 +338,15 @@ export class Typegen {
                 out.block(`private async getAll(): Promise<any[]>`, () => {
                     out.line(`return this._chain.queryStorage(${args.join(', ')})`)
                 })
+
                 out.line()
                 out.block(`private async getKeys(count?: number, startKey?: any): Promise<any[]>`, () => {
                     out.line(`return this._chain.getKeys(${args.join(', ')}, count, startKey)`)
                 })
 
                 out.line()
-                out.blockComment([
-                    'Checks whether the storage item is defined for the current chain version.'
-                ])
-                out.block(`get isExists(): boolean`, () => {
-                    out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
+                out.block(`private async getPairs(count?: number, startKey?: any): Promise<any[][]>`, () => {
+                    out.line(`return this._chain.getPairs(${args.join(', ')}, count, startKey)`)
                 })
             })
         })
