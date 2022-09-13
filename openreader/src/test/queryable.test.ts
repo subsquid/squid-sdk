@@ -13,6 +13,15 @@ describe('queryable interfaces', function() {
         `insert into ref (id, name, foo_id, bar_id) values ('1', 'ref-1', 'foo-1', 'bar-2')`,
         `insert into ref (id, name, foo_id, bar_id) values ('2', 'ref-2', 'foo-2', 'bar-1')`,
         `insert into baz (id, name, baz, ref_id) values ('baz-1', 'hello-baz-1', 100, '1')`,
+        `create table one (id text primary key)`,
+        `create table two (id text primary key)`,
+        `create table relation (id text primary key, one_id text references one, two_id text references two)`,
+        `insert into one (id) values ('1-1')`,
+        `insert into one (id) values ('1-2')`,
+        `insert into two (id) values ('2-1')`,
+        `insert into two (id) values ('2-2')`,
+        `insert into relation (id, one_id, two_id) values ('r-1', '1-1', '2-1')`,
+        `insert into relation (id, one_id, two_id) values ('r-2', '1-2', '2-1')`,
     ])
 
     const client = useServer(`
@@ -48,6 +57,27 @@ describe('queryable interfaces', function() {
             name: String
             ref: Ref
             baz: Int
+        }
+        
+        interface Number @query {
+            id: ID!
+            relations: [Relation!]!
+        }
+        
+        type One implements Number @entity {
+            id: ID!
+            relations: [Relation!]! @derivedFrom(field: "one")
+        }
+        
+        type Two implements Number @entity {
+            id: ID!
+            relations: [Relation!]! @derivedFrom(field: "two")
+        }
+        
+        type Relation @entity {
+            id: ID!
+            one: One
+            two: Two
         }
     `)
 
@@ -204,6 +234,25 @@ describe('queryable interfaces', function() {
                 },
                 totalCount: 5
             }
+        })
+    })
+
+    it('list lookup fields in interfaces', function() {
+        return client.test(`
+            query {
+                numbers(orderBy: id_ASC) {
+                    id
+                    relations { id }
+                    __typename
+                }
+            }
+        `, {
+            numbers: [
+                {__typename: 'One', id: '1-1', relations: [{id: 'r-1'}]},
+                {__typename: 'One', id: '1-2', relations: [{id: 'r-2'}]},
+                {__typename: 'Two', id: '2-1', relations: [{id: 'r-1'}, {id: 'r-2'}]},
+                {__typename: 'Two', id: '2-2', relations: []}
+            ]
         })
     })
 })
