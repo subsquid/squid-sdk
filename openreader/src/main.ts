@@ -31,7 +31,6 @@ GraphQL server for postgres-compatible databases
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
-    program.option('--subscription-sql-statement-timeout <ms>', 'sql statement timeout for polling queries', nat)
     program.option('--subscription-max-response-size <nodes>', 'max response size measured in nodes', nat)
 
     let opts = program.parse().opts() as {
@@ -45,7 +44,6 @@ GraphQL server for postgres-compatible databases
         sqlStatementTimeout?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
-        subscriptionSqlStatementTimeout?: number
         subscriptionMaxResponseSize?: number
     }
 
@@ -55,14 +53,6 @@ GraphQL server for postgres-compatible databases
         connectionString: opts.dbUrl,
         statement_timeout: opts.sqlStatementTimeout || undefined
     })
-
-    let subscriptionConnection: Pool | undefined
-    if (opts.subscriptions) {
-        subscriptionConnection = new Pool({
-            connectionString: opts.dbUrl,
-            statement_timeout: opts.subscriptionSqlStatementTimeout || opts.sqlStatementTimeout || undefined
-        })
-    }
 
     let server = await serve({
         model,
@@ -75,7 +65,6 @@ GraphQL server for postgres-compatible databases
         maxResponseNodes: opts.maxResponseSize,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
-        subscriptionConnection,
         subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize
     })
 

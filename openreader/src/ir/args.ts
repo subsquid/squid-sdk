@@ -1,4 +1,4 @@
-export interface EntityListArguments {
+export interface SqlArguments {
     offset?: number
     limit?: number
     orderBy?: OrderBy

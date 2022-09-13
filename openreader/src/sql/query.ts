@@ -1,7 +1,7 @@
-import {assertNotNull} from "@subsquid/util-internal"
-import assert from "assert"
-import type {Dialect} from "../dialect"
-import type {EntityListArguments, Where} from "../ir/args"
+import {assertNotNull} from '@subsquid/util-internal'
+import assert from 'assert'
+import type {Dialect} from '../dialect'
+import type {SqlArguments, Where} from '../ir/args'
 import {
     decodeRelayConnectionCursor,
     encodeRelayConnectionCursor,
@@ -9,12 +9,12 @@ import {
     RelayConnectionPageInfo,
     RelayConnectionRequest,
     RelayConnectionResponse
-} from "../ir/connection"
-import type {FieldRequest} from "../ir/fields"
-import type {Model} from "../model"
-import {toSafeInteger} from "../util/util"
-import {mapRows} from "./mapping"
-import {EntityListQueryPrinter} from "./printer"
+} from '../ir/connection'
+import type {AnyFields, FieldRequest} from '../ir/fields'
+import type {Model} from '../model'
+import {toSafeInteger} from '../util/util'
+import {mapQueryableRows, mapRows} from './mapping'
+import {EntitySqlPrinter, QueryableSqlPrinter} from './printer'
 
 
 export interface Query<T> {
@@ -24,22 +24,32 @@ export interface Query<T> {
 }
 
 
-export class EntityListQuery implements Query<any[]> {
+export class ListQuery implements Query<any[]> {
     public readonly sql: string
     public readonly params: unknown[] = []
 
     constructor(
         model: Model,
         dialect: Dialect,
-        entityName: string,
-        private fields: FieldRequest[],
-        args: EntityListArguments
+        typeName: string,
+        private fields: AnyFields,
+        args: SqlArguments
     ) {
-        this.sql = new EntityListQueryPrinter(model, dialect, entityName, this.params, args, fields).print()
+        if (model[typeName].kind == 'entity') {
+            assert(Array.isArray(fields))
+            this.sql = new EntitySqlPrinter(model, dialect, typeName, this.params, args, fields).print()
+        } else {
+            assert(!Array.isArray(fields))
+            this.sql = new QueryableSqlPrinter(model, dialect, typeName, this.params, args, fields).print()
+        }
     }
 
     map(rows: any[][]): any[] {
-        return mapRows(rows, this.fields)
+        if (Array.isArray(this.fields)) {
+            return mapRows(rows, this.fields)
+        } else {
+            return mapQueryableRows(rows, this.fields)
+        }
     }
 }
 
@@ -55,7 +65,7 @@ export class EntityByIdQuery {
         private fields: FieldRequest[],
         id: string
     ) {
-        this.sql = new EntityListQueryPrinter(
+        this.sql = new EntitySqlPrinter(
             model,
             dialect,
             entityName,
@@ -72,17 +82,18 @@ export class EntityByIdQuery {
 }
 
 
-export class EntityCountQuery implements Query<number> {
+export class CountQuery implements Query<number> {
     public readonly sql: string
     public readonly params: unknown[] = []
 
     constructor(
         model: Model,
         dialect: Dialect,
-        entityName: string,
+        typeName: string,
         where?: Where
     ) {
-        this.sql = 'SELECT count(*) ' + new EntityListQueryPrinter(model, dialect, entityName, this.params, {where}).printFrom()
+        let Printer = model[typeName].kind == 'entity' ? EntitySqlPrinter : QueryableSqlPrinter
+        this.sql = new Printer(model, dialect, typeName, this.params, {where}).printAsCount()
     }
 
     map(rows: any[][]): number {
@@ -91,12 +102,12 @@ export class EntityCountQuery implements Query<number> {
 }
 
 
-export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
+export class ConnectionQuery implements Query<RelayConnectionResponse> {
     public readonly sql: string
     public readonly params: unknown[] = []
     private offset = 0
     private limit = 100
-    private edgeNode?: FieldRequest[]
+    private edgeNode?: AnyFields
     private edgeCursor?: boolean
     private pageInfo?: boolean
     private totalCount?: boolean
@@ -104,30 +115,39 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
     constructor(
         model: Model,
         dialect: Dialect,
-        entityName: string,
-        req: RelayConnectionRequest
+        typeName: string,
+        req: RelayConnectionRequest<AnyFields>
     ) {
         this.setOffsetAndLimit(req)
         this.edgeCursor = req.edgeCursor
         this.pageInfo = req.pageInfo
         this.totalCount = req.totalCount
 
-        let printer = new EntityListQueryPrinter(model, dialect, entityName, this.params, {
+        let args = {
             orderBy: req.orderBy,
             where: req.where,
             offset: this.offset,
             limit: this.limit + 1
-        }, req.edgeNode)
+        }
 
-        if (req.edgeNode?.length) {
+        let printer
+        if (model[typeName].kind == 'entity') {
+            assert(req.edgeNode == null || Array.isArray(req.edgeNode))
+            printer = new EntitySqlPrinter(model, dialect, typeName, this.params, args, req.edgeNode)
+        } else {
+            assert(req.edgeNode == null || !Array.isArray(req.edgeNode))
+            printer = new QueryableSqlPrinter(model, dialect, typeName, this.params, args, req.edgeNode)
+        }
+
+        if (req.edgeNode) {
             this.edgeNode = req.edgeNode
             this.sql = printer.print()
         } else {
-            this.sql = `SELECT count(*) FROM (SELECT true ${printer.printFrom()}) AS rows`
+            this.sql = printer.printAsCount()
         }
     }
 
-    private setOffsetAndLimit(req: RelayConnectionRequest): void {
+    private setOffsetAndLimit(req: RelayConnectionRequest<unknown>): void {
         if (req.after != null) {
             this.offset = assertNotNull(decodeRelayConnectionCursor(req.after))
         }
@@ -140,7 +160,7 @@ export class EntityConnectionQuery implements Query<RelayConnectionResponse> {
     map(rows: any[][]): RelayConnectionResponse {
         let res: RelayConnectionResponse = {}
         if (this.edgeNode) {
-            let nodes = mapRows(rows, this.edgeNode)
+            let nodes = Array.isArray(this.edgeNode) ? mapRows(rows, this.edgeNode) : mapQueryableRows(rows, this.edgeNode)
             let edges: RelayConnectionEdge[] = new Array(Math.min(this.limit, nodes.length))
             for (let i = 0; i < edges.length; i++) {
                 edges[i] = {
