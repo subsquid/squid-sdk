@@ -1,3 +1,4 @@
+import assert from 'assert'
 import {
     EnumPropType,
     FkPropType,
@@ -9,7 +10,7 @@ import {
     ScalarPropType,
     UnionPropType
 } from "../model"
-import {EntityListArguments} from "./args"
+import {SqlArguments} from "./args"
 
 
 export type FieldRequest = EntityListRequest | ObjectRequest | OpaqueRequest
@@ -28,7 +29,7 @@ type Base<T> = T extends PropType ? {
 
 export type EntityListRequest = Base<ListLookupPropType> & {
     children: FieldRequest[]
-    args?: EntityListArguments
+    args?: SqlArguments
 }
 
 
@@ -38,3 +39,22 @@ export type ObjectRequest = Base<FkPropType | LookupPropType | ObjectPropType | 
 
 
 export type OpaqueRequest = Base<ScalarPropType | EnumPropType | ListPropType>
+
+
+
+export type FieldsByEntity = Record<string, FieldRequest[]>
+
+
+export type AnyFields = FieldRequest[] | FieldsByEntity
+
+
+export function asEntityFields(fields: AnyFields): FieldRequest[] {
+    assert(Array.isArray(fields))
+    return fields
+}
+
+
+export function asQueryableFields(fields: AnyFields): FieldsByEntity {
+    assert(!Array.isArray(fields))
+    return fields
+}

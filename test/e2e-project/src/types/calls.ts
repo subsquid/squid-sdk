@@ -1,6 +1,5 @@
 import assert from 'assert'
 import {Chain, ChainContext, CallContext, Call, Result} from './support'
-import * as v1 from './v1'
 
 export class BalancesSetBalanceCall {
   private readonly _chain: Chain
@@ -59,7 +58,7 @@ export class BalancesSetBalanceCall {
    *  - DB Weight: 1 Read, 1 Write to `who`
    *  # </weight>
    */
-  get asV1(): {who: v1.LookupSource, newFree: bigint, newReserved: bigint} {
+  get asV1(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
     assert(this.isV1)
     return this._chain.decodeCall(this.call)
   }

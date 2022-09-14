@@ -1,6 +1,7 @@
 import assert from "assert"
-import type {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from "typeorm"
+import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from "typeorm"
 import {EntityTarget} from "typeorm/common/EntityTarget"
+import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 
 
 export interface EntityClass<T> {
@@ -64,21 +65,54 @@ export class Store {
      */
     save<E extends Entity>(entity: E): Promise<void>
     save<E extends Entity>(entities: E[]): Promise<void>
-    save<E extends Entity>(e: E | E[]): Promise<void> {
-        return this.em().then(async em => {
-            if (Array.isArray(e)) {
-                if (e.length == 0) return
-                let entityClass = e[0].constructor as EntityClass<E>
-                for (let i = 1; i < e.length; i++) {
-                    assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
-                }
-                for (let b of splitIntoBatches(e, 1000)) {
-                    await em.upsert(entityClass, b as any, ['id'])
-                }
-            } else {
-                await em.upsert(e.constructor as EntityClass<E>, e as any, ['id'])
+    async save<E extends Entity>(e: E | E[]): Promise<void> {
+        if (Array.isArray(e)) {
+            if (e.length == 0) return
+            let entityClass = e[0].constructor as EntityClass<E>
+            for (let i = 1; i < e.length; i++) {
+                assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
             }
-        })
+            await this.em().then(em => this.saveMany(em, entityClass, e))
+        } else {
+            await this.em().then(em => em.upsert(e.constructor as EntityClass<E>, e as any, ['id']))
+        }
+    }
+
+    private async saveMany(em: EntityManager, entityClass: EntityClass<any>, entities: any[]): Promise<void> {
+        assert(entities.length > 0)
+        let metadata = em.connection.getMetadata(entityClass)
+        let fk = metadata.columns.filter(c => c.relationMetadata)
+        if (fk.length == 0) return this.upsertMany(em, entityClass, entities)
+        let currentSignature = this.getFkSignature(fk, entities[0])
+        let batch = []
+        for (let e of entities) {
+            let sig = this.getFkSignature(fk, e)
+            if (sig === currentSignature) {
+                batch.push(e)
+            } else {
+                await this.upsertMany(em, entityClass, batch)
+                currentSignature = sig
+                batch = [e]
+            }
+        }
+        if (batch.length) {
+            await this.upsertMany(em, entityClass, batch)
+        }
+    }
+
+    private getFkSignature(fk: ColumnMetadata[], entity: any): bigint {
+        let sig = 0n
+        for (let i = 0; i < fk.length; i++) {
+            let bit = fk[i].getEntityValue(entity) === undefined ? 0n : 1n
+            sig |= (bit << BigInt(i))
+        }
+        return sig
+    }
+
+    private async upsertMany(em: EntityManager, entityClass: EntityClass<any>, entities: any[]): Promise<void> {
+        for (let b of splitIntoBatches(entities, 1000)) {
+            await em.upsert(entityClass, b as any, ['id'])
+        }
     }
 
     /**
@@ -89,21 +123,21 @@ export class Store {
      */
     insert<E extends Entity>(entity: E): Promise<void>
     insert<E extends Entity>(entities: E[]): Promise<void>
-    insert<E extends Entity>(e: E | E[]): Promise<void> {
-        return this.em().then(async em => {
-            if (Array.isArray(e)) {
-                if (e.length == 0) return
-                let entityClass = e[0].constructor as EntityClass<E>
-                for (let i = 1; i < e.length; i++) {
-                    assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
-                }
+    async insert<E extends Entity>(e: E | E[]): Promise<void> {
+        if (Array.isArray(e)) {
+            if (e.length == 0) return
+            let entityClass = e[0].constructor as EntityClass<E>
+            for (let i = 1; i < e.length; i++) {
+                assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
+            }
+            await this.em().then(async em => {
                 for (let b of splitIntoBatches(e, 1000)) {
                     await em.insert(entityClass, b as any)
                 }
-            } else {
-                await em.insert(e.constructor as EntityClass<E>, e as any)
-            }
-        })
+            })
+        } else {
+            await this.em().then(em => em.insert(e.constructor as EntityClass<E>, e as any))
+        }
     }
 
     /**
@@ -114,24 +148,22 @@ export class Store {
     remove<E extends Entity>(entity: E): Promise<void>
     remove<E extends Entity>(entities: E[]): Promise<void>
     remove<E extends Entity>(entityClass: EntityClass<E>, id: string | string[]): Promise<void>
-    remove<E extends Entity>(e: E | E[] | EntityClass<E>, id?: string | string[]): Promise<void>{
-        return this.em().then(async em => {
-            if (id == null) {
-                if (Array.isArray(e)) {
-                    if (e.length == 0) return
-                    let entityClass = e[0].constructor as EntityClass<E>
-                    for (let i = 1; i < e.length; i++) {
-                        assert(entityClass === e[i].constructor, 'mass deletion allowed only for entities of the same class')
-                    }
-                    await em.delete(entityClass, e.map(i => i.id))
-                } else {
-                    let entity = e as E
-                    await em.delete(entity.constructor, entity.id)
+    async remove<E extends Entity>(e: E | E[] | EntityClass<E>, id?: string | string[]): Promise<void>{
+        if (id == null) {
+            if (Array.isArray(e)) {
+                if (e.length == 0) return
+                let entityClass = e[0].constructor as EntityClass<E>
+                for (let i = 1; i < e.length; i++) {
+                    assert(entityClass === e[i].constructor, 'mass deletion allowed only for entities of the same class')
                 }
+                await this.em().then(em => em.delete(entityClass, e.map(i => i.id)))
             } else {
-                await em.delete(e as EntityClass<E>, id)
+                let entity = e as E
+                await this.em().then(em => em.delete(entity.constructor, entity.id))
             }
-        })
+        } else {
+            await this.em().then(em => em.delete(e as EntityClass<E>, id))
+        }
     }
 
     count<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<number> {

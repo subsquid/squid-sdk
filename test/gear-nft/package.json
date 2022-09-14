@@ -6,10 +6,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^2.0.0",
-    "@subsquid/substrate-processor": "^1.7.0",
+    "@subsquid/graphql-server": "^3.0.0",
+    "@subsquid/substrate-processor": "^1.8.0",
     "@subsquid/typeorm-migration": "^0.1.2",
-    "@subsquid/typeorm-store": "^0.1.2",
+    "@subsquid/typeorm-store": "^0.1.3",
     "@gear-js/api": "^0.24.0",
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",

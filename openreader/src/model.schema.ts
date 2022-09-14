@@ -1,5 +1,5 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
 import {
     buildASTSchema,
     DocumentNode,
@@ -17,19 +17,20 @@ import {
     GraphQLUnionType,
     parse,
     validateSchema
-} from "graphql"
-import {Index, Model, Prop, PropType, Scalar} from "./model"
-import {validateModel} from "./model.tools"
-import {customScalars} from "./scalars"
+} from 'graphql'
+import {Index, Model, Prop, PropType, Scalar} from './model'
+import {validateModel} from './model.tools'
+import {customScalars} from './scalars'
 
 
 const baseSchema = buildASTSchema(parse(`
     directive @entity on OBJECT
+    directive @query on INTERFACE
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
     directive @index(fields: [String!] unique: Boolean) on OBJECT | FIELD_DEFINITION
     directive @fulltext(query: String!) on FIELD_DEFINITION
-    directive @cardinality(value: Int!) on FIELD_DEFINITION
+    directive @cardinality(value: Int!) on OBJECT | FIELD_DEFINITION
     directive @byteWeight(value: Float!) on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
@@ -77,17 +78,18 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
     let properties: Record<string, Prop> = {}
     let interfaces: string[] = []
     let indexes: Index[] = type instanceof GraphQLObjectType ? checkEntityIndexes(type) : []
+    let cardinality = checkEntityCardinality(type)
     let description = type.description || undefined
 
     switch(kind) {
         case 'entity':
-            model[type.name] = {kind, properties, description, interfaces, indexes}
+            model[type.name] = {kind, properties, description, interfaces, indexes, ...cardinality}
             break
         case 'object':
             model[type.name] = {kind, properties, description, interfaces}
             break
         case 'interface':
-            model[type.name] = {kind, properties, description}
+            model[type.name] = {kind, properties, description, queryable: isQueryableInterface(type)}
             break
         default:
             throw unexpectedCase(kind)
@@ -172,7 +174,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                 ...limits
             }
         } else if (fieldType instanceof GraphQLObjectType) {
-            if (isEntityType(fieldType)) {
+            if (isEntityType(fieldType) && kind != 'interface') {
                 switch(list.nulls.length) {
                     case 0:
                         if (derivedFrom) {
@@ -195,7 +197,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                             properties[key] = {
                                 type: {
                                     kind: 'fk',
-                                    foreignEntity: fieldType.name
+                                    entity: fieldType.name
                                 },
                                 nullable,
                                 unique,
@@ -467,10 +469,29 @@ function checkDerivedFrom(type: GraphQLNamedType, f: GraphQLField<any, any>): {f
 }
 
 
+function checkEntityCardinality(type: GraphQLObjectType | GraphQLInterfaceType): {cardinality?: number} {
+    let directives = type.astNode?.directives?.filter(d => d.name.value == 'cardinality') || []
+    if (directives.length > 0 && !isEntityType(type)) {
+        throw new SchemaError(`@cardinality directive can be only applied to entities, but were applied to ${type.name}`)
+    }
+    if (directives.length > 1) throw new SchemaError(
+        `Multiple @cardinality directives where applied to ${type.name}`
+    )
+    if (directives.length == 0) return {}
+    let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
+    assert(arg.value.kind == 'IntValue')
+    let cardinality = parseInt(arg.value.value, 10)
+    if (cardinality < 0) throw new SchemaError(
+        `Incorrect @cardinality where applied to ${type.name}. Cardinality value must be positive.`
+    )
+    return {cardinality}
+}
+
+
 function checkCardinalityLimitDirective(type: GraphQLNamedType, f: GraphQLField<any, any>): {cardinality?: number} {
     let directives = f.astNode?.directives?.filter(d => d.name.value == 'cardinality') || []
     if (directives.length > 1) throw new SchemaError(
-        `Multiple @cardinality where applied to ${type.name}.${f.name}`
+        `Multiple @cardinality directives where applied to ${type.name}.${f.name}`
     )
     if (directives.length == 0) return {}
     let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
@@ -486,7 +507,7 @@ function checkCardinalityLimitDirective(type: GraphQLNamedType, f: GraphQLField<
 function checkByteWeightDirective(type: GraphQLNamedType, f: GraphQLField<any, any>): {byteWeight?: number} {
     let directives = f.astNode?.directives?.filter(d => d.name.value == 'byteWeight') || []
     if (directives.length > 1) throw new SchemaError(
-        `Multiple @byteWeight where applied to ${type.name}.${f.name}`
+        `Multiple @byteWeight directives where applied to ${type.name}.${f.name}`
     )
     if (directives.length == 0) return {}
     let arg = assertNotNull(directives[0].arguments?.find(arg => arg.name.value == 'value'))
@@ -496,6 +517,12 @@ function checkByteWeightDirective(type: GraphQLNamedType, f: GraphQLField<any, a
         `Incorrect @byteWeight where applied to ${type.name}.${f.name}. Byte weight value must be positive.`
     )
     return {byteWeight}
+}
+
+
+function isQueryableInterface(type: GraphQLOutputType): boolean {
+    return type instanceof GraphQLInterfaceType
+        && !!type.astNode?.directives?.find(d => d.name.value == 'query')
 }
 
 

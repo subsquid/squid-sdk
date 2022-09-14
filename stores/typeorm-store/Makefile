@@ -7,7 +7,7 @@ up:
 
 
 down:
-	@docker-compose down 2>&1
+	@docker-compose down -v 2>&1
 
 
 .PHONY: test up down

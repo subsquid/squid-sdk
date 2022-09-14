@@ -4,7 +4,7 @@ import {Client} from "gql-test-client"
 import {parse} from "graphql"
 import {Client as PgClient, ClientBase, Pool} from "pg"
 import {buildModel, buildSchema} from "../model.schema"
-import {serve} from "../server"
+import {serve, ServerOptions} from '../server'
 
 
 export function isCockroach(): boolean {
@@ -59,7 +59,7 @@ export function useDatabase(sql: string[]): void {
 }
 
 
-export function useServer(schema: string): Client {
+export function useServer(schema: string, options?: Partial<ServerOptions>): Client {
     let client = new Client('not defined')
     let db = new Pool(db_config)
     let info: ListeningServer | undefined
@@ -69,7 +69,10 @@ export function useServer(schema: string): Client {
             model: buildModel(buildSchema(parse(schema))),
             port: 0,
             dialect: isCockroach() ? 'cockroach' : 'postgres',
-            subscriptions: true
+            subscriptions: true,
+            subscriptionPollInterval: 500,
+            maxRootFields: 10,
+            ...options
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })

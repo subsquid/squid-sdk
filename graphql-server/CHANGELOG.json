@@ -2,6 +2,38 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/graphql-server_v3.0.0",
+      "date": "Wed, 07 Sep 2022 20:52:29 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "fix connection pool size (default 5, customizable via `GQL_DB_CONNECTION_POOL_SIZE`)"
+          },
+          {
+            "comment": "remove `--subscription-sql-statement-timeout` option"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.1.0",
+      "tag": "@subsquid/graphql-server_v2.1.0",
+      "date": "Tue, 30 Aug 2022 09:15:59 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for response size limits"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^2.0.0` to `^2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/graphql-server_v2.0.0",
       "date": "Wed, 17 Aug 2022 17:33:52 GMT",

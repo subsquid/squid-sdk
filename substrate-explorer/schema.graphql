@@ -1,10 +1,10 @@
-type Metadata @entity {
+type Metadata @entity @cardinality(value: 100) {
     id: ID!
     specName: String!
     specVersion: Int
     blockHeight: Int!
     blockHash: String!
-    hex: String!
+    hex: String! @byteWeight(value: 1000.0)
 }
 
 type Block @entity {
@@ -14,12 +14,12 @@ type Block @entity {
     parentHash: String!
     stateRoot: String!
     extrinsicsRoot: String!
-    timestamp: BigInt!
+    timestamp: DateTime!
     spec: Metadata!
     validator: String
-    events: [Event!]! @derivedFrom(field: "block")
-    calls: [Call!]! @derivedFrom(field: "block")
-    extrinsics: [Extrinsic!]! @derivedFrom(field: "block")
+    events: [Event!]! @derivedFrom(field: "block") @cardinality(value: 1000)
+    calls: [Call!]! @derivedFrom(field: "block") @cardinality(value: 1000)
+    extrinsics: [Extrinsic!]! @derivedFrom(field: "block") @cardinality(value: 1000)
 }
 
 type Call @entity {
@@ -31,7 +31,7 @@ type Call @entity {
     error: JSON
     origin: JSON
     name: String!
-    args: JSON
+    args: JSON @byteWeight(value: 5.0)
     pos: Int!
 }
 
@@ -43,7 +43,7 @@ type Event @entity {
     extrinsic: Extrinsic
     call: Call
     name: String!
-    args: JSON
+    args: JSON @byteWeight(value: 5.0)
     pos: Int!
 }
 
@@ -60,5 +60,5 @@ type Extrinsic @entity {
     tip: Int
     hash: String!
     pos: Int!
-    calls: [Call!] @derivedFrom(field: "extrinsic")
+    calls: [Call!] @derivedFrom(field: "extrinsic") @cardinality(value: 5)
 }

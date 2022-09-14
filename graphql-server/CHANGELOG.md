@@ -1,6 +1,21 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Wed, 07 Sep 2022 20:52:29 GMT and should not be manually modified.
+
+## 3.0.0
+Wed, 07 Sep 2022 20:52:29 GMT
+
+### Breaking changes
+
+- fix connection pool size (default 5, customizable via `GQL_DB_CONNECTION_POOL_SIZE`)
+- remove `--subscription-sql-statement-timeout` option
+
+## 2.1.0
+Tue, 30 Aug 2022 09:15:59 GMT
+
+### Minor changes
+
+- add support for response size limits
 
 ## 2.0.0
 Wed, 17 Aug 2022 17:33:52 GMT

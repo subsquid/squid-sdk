@@ -1,7 +1,7 @@
-import {def, unexpectedCase} from "@subsquid/util-internal"
-import {toCamelCase, toPlural} from "@subsquid/util-naming"
-import {UserInputError} from "apollo-server-core"
-import assert from "assert"
+import {def, unexpectedCase} from '@subsquid/util-internal'
+import {toCamelCase, toPlural} from '@subsquid/util-naming'
+import {UserInputError} from 'apollo-server-core'
+import assert from 'assert'
 import {
     GraphQLBoolean,
     GraphQLEnumType,
@@ -20,25 +20,28 @@ import {
     GraphQLSchema,
     GraphQLString,
     GraphQLUnionType
-} from "graphql"
+} from 'graphql'
 import {
     GraphQLEnumValueConfigMap,
     GraphQLFieldConfigArgumentMap,
     GraphQLFieldConfigMap,
     GraphQLInputFieldConfigMap
-} from "graphql/type/definition"
-import {Context} from "../context"
-import {decodeRelayConnectionCursor, RelayConnectionRequest} from "../ir/connection"
-import {Entity, Interface, JsonObject, Model, Prop} from "../model"
-import {getObject, getUnionProps} from "../model.tools"
-import {customScalars} from "../scalars"
-import {EntityByIdQuery, EntityConnectionQuery, EntityCountQuery, EntityListQuery, Query} from "../sql/query"
-import {Subscription} from "../subscription"
-import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from "../util/resolve-tree"
-import {ensureArray, identity} from "../util/util"
-import {getOrderByMapping, parseOrderBy} from "./orderBy"
-import {parseEntityListArguments, parseResolveTree} from "./tree"
-import {parseWhere} from "./where"
+} from 'graphql/type/definition'
+import {Context} from '../context'
+import {decodeRelayConnectionCursor, RelayConnectionRequest} from '../ir/connection'
+import {AnyFields} from '../ir/fields'
+import {getConnectionSize, getListSize, getObjectSize} from '../limit.size'
+import {Entity, Interface, JsonObject, Model, Prop} from '../model'
+import {getObject, getUniversalProperties} from '../model.tools'
+import {customScalars} from '../scalars'
+import {ConnectionQuery, CountQuery, EntityByIdQuery, ListQuery, Query} from '../sql/query'
+import {Subscription} from '../subscription'
+import {Limit} from '../util/limit'
+import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from '../util/resolve-tree'
+import {ensureArray, identity} from '../util/util'
+import {getOrderByMapping, parseOrderBy} from './orderBy'
+import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
+import {parseWhere} from './where'
 
 
 type GqlFieldMap = GraphQLFieldConfigMap<unknown, Context>
@@ -109,7 +112,8 @@ export class SchemaBuilder {
                 return new GraphQLInterfaceType({
                     name,
                     description: item.description,
-                    fields: () => this.buildObjectFields(item)
+                    fields: () => this.buildObjectFields(item),
+                    resolveType: item.queryable ? (value: any) => value._isTypeOf : undefined
                 })
             case "enum":
                 return new GraphQLEnumType({
@@ -143,7 +147,7 @@ export class SchemaBuilder {
                 type: this.getPropType(prop)
             }
             if (prop.type.kind == 'list-lookup') {
-                field.args = this.entityListArguments(prop.type.entity)
+                field.args = this.listArguments(prop.type.entity)
             }
             if (object.kind == 'entity' || object.kind == 'object') {
                 switch(prop.type.kind) {
@@ -168,7 +172,7 @@ export class SchemaBuilder {
                 type = new GraphQLList(this.getPropType(prop.type.item))
                 break
             case "fk":
-                type = this.get(prop.type.foreignEntity)
+                type = this.get(prop.type.entity)
                 break
             case "lookup":
                 return this.get(prop.type.entity)
@@ -189,46 +193,33 @@ export class SchemaBuilder {
         return type
     }
 
-    private entityListArguments(entityName: string): GraphQLFieldConfigArgumentMap {
+    private listArguments(typeName: string): GraphQLFieldConfigArgumentMap {
         return {
-            where: {type: this.getWhere(entityName)},
-            orderBy: {type: this.getOrderBy(entityName)},
+            where: {type: this.getWhere(typeName)},
+            orderBy: {type: this.getOrderBy(typeName)},
             offset: {type: GraphQLInt},
             limit: {type: GraphQLInt}
         }
     }
 
-    private getWhere(name: string): GraphQLInputType {
-        let where = this.where.get(name)
+    private getWhere(typeName: string): GraphQLInputType {
+        let where = this.where.get(typeName)
         if (where) return where
 
-        const object = this.model[name]
-        switch(object.kind) {
-            case "entity":
-            case "object":
-            case "union":
-                break
-            default:
-                throw unexpectedCase(object.kind)
-        }
+        let object = this.model[typeName]
+        let properties = getUniversalProperties(this.model, typeName)
 
         where = new GraphQLInputObjectType({
-            name: `${name}WhereInput`,
+            name: `${typeName}WhereInput`,
             fields: () => {
                 let fields: GraphQLInputFieldConfigMap = {}
-                let properties
-                if (object.kind == 'union') {
-                    properties = getUnionProps(this.model, name).properties
-                } else {
-                    properties = object.properties
-                }
 
                 for (let key in properties) {
                     this.buildPropWhereFilters(key, properties[key], fields)
                 }
 
-                if (object.kind == 'entity') {
-                    let whereList = new GraphQLList(new GraphQLNonNull(this.getWhere(name)))
+                if (object.kind == 'entity' || object.kind == 'interface') {
+                    let whereList = new GraphQLList(new GraphQLNonNull(this.getWhere(typeName)))
                     fields['AND'] = {
                         type: whereList
                     }
@@ -240,7 +231,8 @@ export class SchemaBuilder {
                 return fields
             }
         })
-        this.where.set(name, where)
+
+        this.where.set(typeName, where)
         return where
     }
 
@@ -318,10 +310,8 @@ export class SchemaBuilder {
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
             case "fk":
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
-                fields[key] = {type: this.getWhere(prop.type.foreignEntity)}
-                break
             case "lookup":
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
                 fields[key] = {type: this.getWhere(prop.type.entity)}
                 break
             case "list-lookup": {
@@ -353,24 +343,24 @@ export class SchemaBuilder {
         return false
     }
 
-    private getOrderBy(entityName: string): GraphQLInputType {
-        let orderBy = this.orderBy.get(entityName)
+    private getOrderBy(typeName: string): GraphQLInputType {
+        let orderBy = this.orderBy.get(typeName)
         if (orderBy) return orderBy
 
         let values: GraphQLEnumValueConfigMap = {}
-        for (let variant of getOrderByMapping(this.model, entityName).keys()) {
+        for (let variant of getOrderByMapping(this.model, typeName).keys()) {
             values[variant] = {}
         }
 
         orderBy = new GraphQLList(
             new GraphQLNonNull(
                 new GraphQLEnumType({
-                    name: `${entityName}OrderByInput`,
+                    name: `${typeName}OrderByInput`,
                     values
                 })
             )
         )
-        this.orderBy.set(entityName, orderBy)
+        this.orderBy.set(typeName, orderBy)
         return orderBy
     }
 
@@ -383,10 +373,16 @@ export class SchemaBuilder {
             let item = this.model[name]
             switch(item.kind) {
                 case "entity":
-                    this.installEntityList(name, query, subscription)
+                    this.installListQuery(name, query, subscription)
                     this.installEntityById(name, query, subscription)
                     this.installEntityByUniqueInput(name, query)
                     this.installRelayConnection(name, query)
+                    break
+                case 'interface':
+                    if (item.queryable) {
+                        this.installListQuery(name, query, subscription)
+                        this.installRelayConnection(name, query)
+                    }
                     break
             }
         }
@@ -403,20 +399,21 @@ export class SchemaBuilder {
         })
     }
 
-    private installEntityList(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
+    private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = toPlural(toCamelCase(entityName))
-        let outputType = new GraphQLList(new GraphQLNonNull(this.get(entityName)))
-        let argsType = this.entityListArguments(entityName)
+        let queryName = toPlural(toCamelCase(typeName))
+        let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
+        let argsType = this.listArguments(typeName)
 
-        function createQuery(context: Context, info: GraphQLResolveInfo) {
+        function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
-            let fields = parseResolveTree(model, entityName, info.schema, tree)
-            let args = parseEntityListArguments(model, entityName, tree.args)
-            return new EntityListQuery(
+            let args = parseSqlArguments(model, typeName, tree.args)
+            let fields = parseAnyTree(model, typeName, info.schema, tree)
+            limit?.check(() => getListSize(model, typeName, fields, args.limit, args.where) + 1)
+            return new ListQuery(
                 model,
                 context.openreader.dialect,
-                entityName,
+                typeName,
                 fields,
                 args
             )
@@ -426,7 +423,7 @@ export class SchemaBuilder {
             type: outputType,
             args: argsType,
             resolve(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.responseSizeLimit)
                 return context.openreader.executeQuery(q)
             }
         }
@@ -436,7 +433,7 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
                 return context.openreader.subscription(q)
             }
         }
@@ -449,9 +446,10 @@ export class SchemaBuilder {
             id: {type: new GraphQLNonNull(GraphQLString)}
         }
 
-        function createQuery(context: Context, info: GraphQLResolveInfo) {
+        function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
-            let fields = parseResolveTree(model, entityName, info.schema, tree)
+            let fields = parseObjectTree(model, entityName, info.schema, tree)
+            limit?.check(() => getObjectSize(model, fields) + 1)
             return new EntityByIdQuery(
                 model,
                 context.openreader.dialect,
@@ -465,7 +463,7 @@ export class SchemaBuilder {
             type: this.get(entityName),
             args: argsType,
             async resolve(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.responseSizeLimit)
                 return context.openreader.executeQuery(q)
             }
         }
@@ -475,7 +473,7 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info)
+                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
                 return context.openreader.subscription(q)
             }
         }
@@ -492,8 +490,9 @@ export class SchemaBuilder {
             },
             async resolve(source, args, context, info) {
                 let tree = getResolveTree(info)
-                let fields = parseResolveTree(model, entityName, info.schema, tree)
-                let query = new EntityListQuery(
+                let fields = parseObjectTree(model, entityName, info.schema, tree)
+                context.openreader.responseSizeLimit?.check(() => getObjectSize(model, fields) + 1)
+                let query = new ListQuery(
                     model,
                     context.openreader.dialect,
                     entityName,
@@ -507,12 +506,12 @@ export class SchemaBuilder {
         }
     }
 
-    private installRelayConnection(entityName: string, query: GqlFieldMap): void {
+    private installRelayConnection(typeName: string, query: GqlFieldMap): void {
         let model = this.model
-        let outputType = toPlural(entityName) + 'Connection'
-        let edgeType = `${entityName}Edge`
+        let outputType = toPlural(typeName) + 'Connection'
+        let edgeType = `${typeName}Edge`
 
-        query[`${toPlural(toCamelCase(entityName))}Connection`] = {
+        query[`${toPlural(toCamelCase(typeName))}Connection`] = {
             type: new GraphQLNonNull(new GraphQLObjectType({
                 name: outputType,
                 fields: {
@@ -520,7 +519,7 @@ export class SchemaBuilder {
                         type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLObjectType({
                             name: edgeType,
                             fields: {
-                                node: {type: new GraphQLNonNull(this.get(entityName))},
+                                node: {type: new GraphQLNonNull(this.get(typeName))},
                                 cursor: {type: new GraphQLNonNull(GraphQLString)}
                             }
                         }))))
@@ -530,10 +529,10 @@ export class SchemaBuilder {
                 }
             })),
             args: {
-                orderBy: {type: new GraphQLNonNull(this.getOrderBy(entityName))},
+                orderBy: {type: new GraphQLNonNull(this.getOrderBy(typeName))},
                 after: {type: GraphQLString},
                 first: {type: GraphQLInt},
-                where: {type: this.getWhere(entityName)}
+                where: {type: this.getWhere(typeName)}
             },
             async resolve(source, args, context, info) {
                 let orderByArg = ensureArray(args.orderBy)
@@ -541,8 +540,8 @@ export class SchemaBuilder {
                     throw new UserInputError('orderBy argument is required for connection')
                 }
 
-                let req: RelayConnectionRequest = {
-                    orderBy: parseOrderBy(model, entityName, orderByArg),
+                let req: RelayConnectionRequest<AnyFields> = {
+                    orderBy: parseOrderBy(model, typeName, orderByArg),
                     where: parseWhere(args.where)
                 }
 
@@ -573,22 +572,24 @@ export class SchemaBuilder {
                     req.edgeCursor = hasTreeRequest(edgeFields, 'cursor')
                     let nodeTree = getTreeRequest(edgeFields, 'node')
                     if (nodeTree) {
-                        req.edgeNode = parseResolveTree(model, entityName, info.schema, nodeTree)
+                        req.edgeNode = parseAnyTree(model, typeName, info.schema, nodeTree)
                     }
                 }
 
-                let result = await context.openreader.executeQuery(new EntityConnectionQuery(
+                context.openreader.responseSizeLimit?.check(() => getConnectionSize(model, typeName, req) + 1)
+
+                let result = await context.openreader.executeQuery(new ConnectionQuery(
                     model,
                     context.openreader.dialect,
-                    entityName,
+                    typeName,
                     req
                 ))
 
                 if (req.totalCount && result.totalCount == null) {
-                    result.totalCount = await context.openreader.executeQuery(new EntityCountQuery(
+                    result.totalCount = await context.openreader.executeQuery(new CountQuery(
                         model,
                         context.openreader.dialect,
-                        entityName,
+                        typeName,
                         req.where
                     ))
                 }

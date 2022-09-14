@@ -1,12 +1,12 @@
-import {createLogger} from "@subsquid/logger"
-import {Dialect} from "@subsquid/openreader/lib/dialect"
-import {serve} from "@subsquid/openreader/lib/server"
-import {loadModel} from "@subsquid/openreader/lib/tools"
-import {ConnectionOptions, createConnectionOptions} from "@subsquid/typeorm-config/lib/connectionOptions"
-import {runProgram} from "@subsquid/util-internal"
-import {waitForInterruption} from "@subsquid/util-internal-http-server"
-import * as path from "path"
-import {Pool} from "pg"
+import {createLogger} from '@subsquid/logger'
+import {Dialect} from '@subsquid/openreader/lib/dialect'
+import {serve} from '@subsquid/openreader/lib/server'
+import {loadModel} from '@subsquid/openreader/lib/tools'
+import {ConnectionOptions, createConnectionOptions} from '@subsquid/typeorm-config/lib/connectionOptions'
+import {runProgram} from '@subsquid/util-internal'
+import {waitForInterruption} from '@subsquid/util-internal-http-server'
+import * as path from 'path'
+import {Pool} from 'pg'
 
 
 const log = createLogger('sqd:substrate-explorer')
@@ -34,6 +34,7 @@ runProgram(async () => {
 
     let connectionOptions = createConnectionOptions()
     let connectionUrl = createConnectionUrl(connectionOptions)
+    let poolSize = envNat('GQL_DB_CONNECTION_POOL_SIZE') || 5
 
     let pool = new Pool({
         host: connectionOptions.host,
@@ -41,7 +42,9 @@ runProgram(async () => {
         database: connectionOptions.database,
         user: connectionOptions.username,
         password: connectionOptions.password,
-        statement_timeout: 2000
+        statement_timeout: envNat('GQL_DB_STATEMENT_TIMEOUT_MS'),
+        max: poolSize,
+        min: poolSize
     })
 
     await pool.connect().then(con => {
@@ -58,7 +61,9 @@ runProgram(async () => {
         port: 3000,
         graphiqlConsole: true,
         log,
-        maxRequestSizeBytes: 64 * 1024
+        maxRequestSizeBytes: 64 * 1024,
+        maxRootFields: envNat('GQL_MAX_ROOT_FIELDS'),
+        maxResponseNodes: envNat('GQL_MAX_RESPONSE_NODES')
     })
 
     log.info(`listening on port ${server.port}`)
@@ -74,4 +79,13 @@ function createConnectionUrl(options: ConnectionOptions): string {
     url.username = options.username
     url.pathname = options.database
     return url.toString()
+}
+
+
+function envNat(name: string): number | undefined {
+    let env = process.env[name]
+    if (!env) return undefined
+    let val = parseInt(env, 10)
+    if (Number.isSafeInteger(val) && val >= 0) return val
+    throw new Error(`Invalid env variable ${name}: ${env}. Expected positive integer`)
 }

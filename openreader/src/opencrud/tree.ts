@@ -1,29 +1,30 @@
-import {unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {GraphQLSchema} from "graphql"
-import {ResolveTree} from "graphql-parse-resolve-info"
-import {EntityListArguments} from "../ir/args"
-import {FieldRequest, OpaqueRequest} from "../ir/fields"
-import {Model} from "../model"
-import {simplifyResolveTree} from "../util/resolve-tree"
-import {ensureArray} from "../util/util"
-import {parseOrderBy} from "./orderBy"
-import {parseWhere} from "./where"
+import {unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {GraphQLSchema} from 'graphql'
+import {ResolveTree} from 'graphql-parse-resolve-info'
+import {SqlArguments} from '../ir/args'
+import {AnyFields, FieldRequest, FieldsByEntity, OpaqueRequest} from '../ir/fields'
+import {Model} from '../model'
+import {getQueryableEntities} from '../model.tools'
+import {simplifyResolveTree} from '../util/resolve-tree'
+import {ensureArray} from '../util/util'
+import {parseOrderBy} from './orderBy'
+import {parseWhere} from './where'
 
 
-export function parseResolveTree(
+export function parseObjectTree(
     model: Model,
-    objectName: string,
+    typeName: string,
     schema: GraphQLSchema,
     tree: ResolveTree
 ): FieldRequest[] {
 
     let requests: FieldRequest[] = []
     let requestedScalars: Record<string, true> = {}
-    let object = model[objectName]
+    let object = model[typeName]
     assert(object.kind == "entity" || object.kind == "object")
 
-    let fields = simplifyResolveTree(schema, tree, objectName).fields
+    let fields = simplifyResolveTree(schema, tree, typeName).fields
     for (let alias in fields) {
         let f = fields[alias]
         let prop = object.properties[f.name]
@@ -51,7 +52,7 @@ export function parseResolveTree(
                     type: prop.type,
                     prop,
                     index: 0,
-                    children: parseResolveTree(model, prop.type.name, schema, f)
+                    children: parseObjectTree(model, prop.type.name, schema, f)
                 })
                 break
             case "union": {
@@ -59,7 +60,7 @@ export function parseResolveTree(
                 assert(union.kind == "union")
                 let children: FieldRequest[] = []
                 for (let variant of union.variants) {
-                    for (let req of parseResolveTree(model, variant, schema, f)) {
+                    for (let req of parseObjectTree(model, variant, schema, f)) {
                         req.ifType = variant
                         children.push(req)
                     }
@@ -83,7 +84,7 @@ export function parseResolveTree(
                     type: prop.type,
                     prop,
                     index: 0,
-                    children: parseResolveTree(model, prop.type.foreignEntity, schema, f)
+                    children: parseObjectTree(model, prop.type.entity, schema, f)
                 })
                 break
             case "lookup":
@@ -94,7 +95,7 @@ export function parseResolveTree(
                     type: prop.type,
                     prop,
                     index: 0,
-                    children: parseResolveTree(model, prop.type.entity, schema, f)
+                    children: parseObjectTree(model, prop.type.entity, schema, f)
                 })
                 break
             case "list-lookup":
@@ -105,8 +106,8 @@ export function parseResolveTree(
                     type: prop.type,
                     prop,
                     index: 0,
-                    args: parseEntityListArguments(model, prop.type.entity, f.args),
-                    children: parseResolveTree(model, prop.type.entity, schema, f)
+                    args: parseSqlArguments(model, prop.type.entity, f.args),
+                    children: parseObjectTree(model, prop.type.entity, schema, f)
                 })
                 break
             default:
@@ -118,8 +119,8 @@ export function parseResolveTree(
 }
 
 
-export function parseEntityListArguments(model: Model, entityName: string, gqlArgs: any): EntityListArguments {
-    let args: EntityListArguments = {}
+export function parseSqlArguments(model: Model, typeName: string, gqlArgs: any): SqlArguments {
+    let args: SqlArguments = {}
 
     let where = parseWhere(gqlArgs.where)
     if (where) {
@@ -127,7 +128,7 @@ export function parseEntityListArguments(model: Model, entityName: string, gqlAr
     }
 
     if (gqlArgs.orderBy) {
-        args.orderBy = parseOrderBy(model, entityName, ensureArray(gqlArgs.orderBy))
+        args.orderBy = parseOrderBy(model, typeName, ensureArray(gqlArgs.orderBy))
     }
 
     if (gqlArgs.offset) {
@@ -141,4 +142,32 @@ export function parseEntityListArguments(model: Model, entityName: string, gqlAr
     }
 
     return args
+}
+
+
+export function parseQueryableTree(
+    model: Model,
+    queryableName: string,
+    schema: GraphQLSchema,
+    tree: ResolveTree
+): FieldsByEntity {
+    let fields: FieldsByEntity = {}
+    for (let entity of getQueryableEntities(model, queryableName)) {
+        fields[entity] = parseObjectTree(model, entity, schema, tree)
+    }
+    return fields
+}
+
+
+export function parseAnyTree(
+    model: Model,
+    typeName: string,
+    schema: GraphQLSchema,
+    tree: ResolveTree
+): AnyFields {
+    if (model[typeName].kind == 'interface') {
+        return parseQueryableTree(model, typeName, schema, tree)
+    } else {
+        return parseObjectTree(model, typeName, schema, tree)
+    }
 }

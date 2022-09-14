@@ -2,6 +2,26 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/openreader_v2.1.0",
+      "date": "Tue, 30 Aug 2022 09:15:59 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support subscriptions in built-in graphql playground"
+          },
+          {
+            "comment": "add support for response size limits"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "entity lists should be non-nullable"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/openreader_v2.0.0",
       "date": "Wed, 17 Aug 2022 17:33:52 GMT",
