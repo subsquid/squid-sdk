@@ -1,18 +1,18 @@
-import {decodeExtrinsic} from "@subsquid/substrate-metadata"
-import {assertNotNull, def} from "@subsquid/util-internal"
-import {toHex} from "@subsquid/util-internal-hex"
-import {Spec, sub} from "../interfaces"
-import {Block, BlockData, Call, Event, Extrinsic, Warning} from "../model"
-import {blake2bHash} from "../util"
-import {CallParser} from "./call"
-import {FeeCalc} from "./feeCalc"
+import {decodeExtrinsic, Extrinsic as SubstrateExtrinsic} from '@subsquid/substrate-metadata'
+import {assertNotNull, def} from '@subsquid/util-internal'
+import {toHex} from '@subsquid/util-internal-hex'
+import {Spec, sub} from '../interfaces'
+import {Block, BlockData, Call, Event, Extrinsic, Warning} from '../model'
+import {blake2bHash} from '../util'
+import {CallParser} from './call'
+import {FeeCalc} from './feeCalc'
 import {
     formatId,
     getDispatchInfoFromExtrinsicFailed,
     getDispatchInfoFromExtrinsicSuccess,
     unwrapArguments
-} from "./util"
-import {Account, getBlockValidator} from "./validator"
+} from './util'
+import {Account, getBlockValidator} from './validator'
 
 
 export interface RawBlock {
@@ -143,11 +143,26 @@ export class BlockParser {
                 signature: ex.signature,
                 call_id: id,
                 call: ex.call,
-                tip: ex.signature?.signedExtensions.ChargeTransactionPayment,
+                tip: this.getExtrinsicTip(ex),
                 hash,
                 pos: -1
             }
         })
+    }
+
+    private getExtrinsicTip(ex: SubstrateExtrinsic): bigint | undefined {
+        let payment = ex.signature?.signedExtensions.ChargeTransactionPayment
+        switch(typeof payment) {
+            case 'bigint':
+            case 'number':
+                return BigInt(payment)
+            case 'object':
+                switch(typeof payment?.tip) {
+                    case 'bigint':
+                    case 'number': // Nikau network
+                        return BigInt(payment.tip)
+                }
+        }
     }
 
     private setExtrinsicFees(): void {
