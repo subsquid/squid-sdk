@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 07 Sep 2022 20:52:29 GMT and should not be manually modified.
+This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+
+## 1.9.0
+Thu, 15 Sep 2022 20:54:52 GMT
+
+### Minor changes
+
+- Add special support for `EVM.Executed` and `EVM.ExecutedFailed` events from Acala network
+
+### Patches
+
+- retrieve validator from indexer gateway
 
 ## 1.8.0
 Wed, 07 Sep 2022 20:52:29 GMT

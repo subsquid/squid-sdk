@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-explorer",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-explorer_v2.0.1",
+      "date": "Thu, 15 Sep 2022 20:54:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `block.timestamp` type definition in graphql schema"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^2.1.0` to `^3.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-explorer_v2.0.0",
       "date": "Wed, 07 Sep 2022 20:52:29 GMT",

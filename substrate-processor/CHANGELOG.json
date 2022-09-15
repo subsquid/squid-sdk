@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.9.0",
+      "tag": "@subsquid/substrate-processor_v1.9.0",
+      "date": "Thu, 15 Sep 2022 20:54:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add special support for `EVM.Executed` and `EVM.ExecutedFailed` events from Acala network"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "retrieve validator from indexer gateway"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.8.0",
       "tag": "@subsquid/substrate-processor_v1.8.0",
       "date": "Wed, 07 Sep 2022 20:52:29 GMT",
