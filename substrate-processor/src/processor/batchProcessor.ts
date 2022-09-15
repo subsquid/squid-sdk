@@ -9,7 +9,7 @@ import {BlockData} from "../ingest"
 import type {
     BlockRangeOption,
     EvmLogOptions,
-    AcalaEvmEventOptions,
+    AcalaEvmExecutedOptions,
 } from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
@@ -436,17 +436,17 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      */
     addAcalaEvmExecuted(
         contractAddress: string | string[],
-        options?: AcalaEvmEventOptions & NoDataSelection
+        options?: AcalaEvmExecutedOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
 
     addAcalaEvmExecuted<R extends EventDataRequest>(
         contractAddress: string | string[],
-        options: AcalaEvmEventOptions & DataSelection<R>
+        options: AcalaEvmExecutedOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
 
     addAcalaEvmExecuted(
         contractAddress: string | string[],
-        options?: AcalaEvmEventOptions & MayBeDataSelection<EventDataRequest>
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()
@@ -466,17 +466,17 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      */
     addAcalaEvmExecutedFailed(
         contractAddress: string | string[],
-        options?: AcalaEvmEventOptions & NoDataSelection
+        options?: AcalaEvmExecutedOptions & NoDataSelection
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.ExecutedFailed", true>>>
 
     addAcalaEvmExecutedFailed<R extends EventDataRequest>(
         contractAddress: string | string[],
-        options: AcalaEvmEventOptions & DataSelection<R>
+        options: AcalaEvmExecutedOptions & DataSelection<R>
     ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.ExecutedFailed", R>>>
 
     addAcalaEvmExecutedFailed(
         contractAddress: string | string[],
-        options?: AcalaEvmEventOptions & MayBeDataSelection<EventDataRequest>
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
     ): SubstrateBatchProcessor<any> {
         this.assertNotRunning()
         let req = new PlainBatchRequest()

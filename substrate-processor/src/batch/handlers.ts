@@ -7,8 +7,7 @@ import type {
     EvmLogHandler,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
-    GearUserMessageSentHandler,
-    AcalaEvmLog,
+    GearUserMessageSentHandler
 } from '../interfaces/dataHandlers'
 import type {CallDataRequest, EventDataRequest} from '../interfaces/dataSelection'
 import type {QualifiedName} from '../interfaces/substrate'
@@ -42,8 +41,6 @@ export class DataHandlers implements BatchRequest {
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
-    acalaEvmExecuted: Record<ContractAddress, {logs?: AcalaEvmLog[], data?: EventDataRequest, handler: EventHandler<any>}[]> = {}
-    acalaEvmExecutedFailed: Record<ContractAddress, {logs?: AcalaEvmLog[], data?: EventDataRequest, handler: EventHandler<any>}[]> = {}
 
     merge(other: DataHandlers): DataHandlers {
         let res = new DataHandlers()
@@ -56,8 +53,6 @@ export class DataHandlers implements BatchRequest {
         res.contractsContractEmitted = mergeMaps(this.contractsContractEmitted, other.contractsContractEmitted, mergeItemHandlerLists)
         res.gearMessageEnqueued = mergeMaps(this.gearMessageEnqueued, other.gearMessageEnqueued, mergeItemHandlerLists)
         res.gearUserMessageSent = mergeMaps(this.gearUserMessageSent, other.gearUserMessageSent, mergeItemHandlerLists)
-        res.acalaEvmExecuted = mergeMaps(this.acalaEvmExecuted, other.acalaEvmExecuted, (ha, hb) => ha.concat(hb))
-        res.acalaEvmExecutedFailed = mergeMaps(this.acalaEvmExecutedFailed, other.acalaEvmExecutedFailed, (ha, hb) => ha.concat(hb))
         return res
     }
 
@@ -211,27 +206,11 @@ export class DataHandlers implements BatchRequest {
     }
 
     getAcalaEvmExecuted() {
-        return Object.entries(this.acalaEvmExecuted).flatMap(([contract, hs]) => {
-            return hs.map(h => {
-                return {
-                    contract,
-                    logs: h.logs,
-                    data: h.data
-                }
-            })
-        })
+        return []
     }
 
     getAcalaEvmExecutedFailed() {
-        return Object.entries(this.acalaEvmExecutedFailed).flatMap(([contract, hs]) => {
-            return hs.map(h => {
-                return {
-                    contract,
-                    logs: h.logs,
-                    data: h.data
-                }
-            })
-        })
+        return []
     }
 }
 
