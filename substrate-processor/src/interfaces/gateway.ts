@@ -56,7 +56,7 @@ export interface GearUserMessageSentRequest {
 }
 
 
-export interface AcalaEvmLog {
+export interface AcalaEvmLogFilter {
     contract?: string
     filter?: string[][]
 }
@@ -64,14 +64,14 @@ export interface AcalaEvmLog {
 
 export interface AcalaEvmExecutedRequest {
     contract: string
-    logs?: AcalaEvmLog[]
+    logs?: AcalaEvmLogFilter[]
     data?: any
 }
 
 
 export interface AcalaEvmExecutedFailedRequest {
     contract: string
-    logs?: AcalaEvmLog[]
+    logs?: AcalaEvmLogFilter[]
     data?: any
 }
 
