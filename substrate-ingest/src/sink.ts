@@ -1,11 +1,11 @@
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {Progress, Speed} from "@subsquid/util-internal-counters"
-import {toHex} from "@subsquid/util-internal-hex"
-import assert from "assert"
-import * as pg from "pg"
-import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
-import {toJSON, toJsonString} from "./util"
-import {formatId} from "./parse/util"
+import {unexpectedCase} from '@subsquid/util-internal'
+import {Progress, Speed} from '@subsquid/util-internal-counters'
+import {toHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+import * as pg from 'pg'
+import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from './model'
+import {formatId} from './parse/util'
+import {toJSON, toJsonString} from './util'
 import WritableStream = NodeJS.WritableStream
 
 
@@ -77,7 +77,7 @@ export class PostgresSink implements Sink {
         block_height: {cast: 'int'},
         block_hash: {cast: 'text'},
         hex: {cast: 'text'}
-    })
+    }, true)
 
     private headerInsert = new Insert<Block>('block', {
         id: {cast: 'text'},
@@ -405,7 +405,7 @@ class Insert<E> {
     private sql: string
     private columns: Record<string, unknown[]>
 
-    constructor(private table: string, private mapping: TableColumns<E>, sql?: string, columns?: Record<string, unknown[]>) {
+    constructor(private table: string, private mapping: TableColumns<E>, ignoreDuplicates?: boolean, sql?: string, columns?: Record<string, unknown[]>) {
         if (sql == null) {
             let names = Object.keys(mapping) as (keyof E)[]
             let args = names.map((name, idx) => {
@@ -428,6 +428,9 @@ class Insert<E> {
                 }
             })
             this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT ${cols.join(', ')} FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
+            if (ignoreDuplicates) {
+                this.sql += ' ON CONFLICT DO NOTHING'
+            }
         } else {
             this.sql = sql
         }
@@ -461,7 +464,7 @@ class Insert<E> {
     }
 
     take(): Insert<E> {
-        let insert = new Insert(this.table, this.mapping, this.sql, this.columns)
+        let insert = new Insert(this.table, this.mapping, undefined, this.sql, this.columns)
         this.columns = this.makeColumns()
         return insert
     }

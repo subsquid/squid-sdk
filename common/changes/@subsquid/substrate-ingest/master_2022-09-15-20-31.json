@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "save missing metadata at the start of processing (resolves #78)",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
