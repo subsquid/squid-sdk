@@ -30,6 +30,7 @@
     "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-prometheus-server": "^0.0.2",
     "@subsquid/util-xxhash": "^0.1.1",
+    "better-sqlite3": "^7.6.2",
     "blake2b": "^2.1.4",
     "prom-client": "^14.0.1"
   },

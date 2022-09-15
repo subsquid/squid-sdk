@@ -3,15 +3,20 @@ import {runProgram} from "@subsquid/util-internal"
 import {program} from "commander"
 import * as dotenv from "dotenv"
 import {DataSource} from "typeorm"
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 
 
 runProgram(async () => {
-    program.description('Revert the last applied migration').parse()
+    program.description('Revert the last applied migration')
+    program.option('-rdbms, --rdbmsType <type>', 'RDBMS type')
 
     dotenv.config()
 
+    let { rdbmsType: rdbmsTypeCli } = program.parse().opts() as {rdbmsType: DatabaseType}
+    let rdbmsType = rdbmsTypeCli || process.env.RDBMS_TYPE || 'postgres'
+
     let connection = new DataSource({
-        ...createOrmConfig(),
+        ...createOrmConfig({rdbmsType}),
         subscribers: [],
         synchronize: false,
         migrationsRun: false,

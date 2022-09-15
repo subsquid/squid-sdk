@@ -1,6 +1,8 @@
+import {DatabaseType} from "typeorm/driver/types/DatabaseType";
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {assertNotNull} from "@subsquid/util-internal"
 import assert from "assert"
+import 'dotenv/config'
 import {DataSource, EntityManager} from "typeorm"
 import {Store} from "./store"
 import {createTransaction, Tx} from "./tx"
@@ -11,48 +13,61 @@ export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE REA
 
 export interface TypeormDatabaseOptions {
     stateSchema?: string
+    stateTable?: string
     isolationLevel?: IsolationLevel
+    rdbmsType: DatabaseType
 }
 
 
 class BaseDatabase<S> {
     protected statusSchema: string
+    protected statusTableFullPath: string
     protected isolationLevel: IsolationLevel
     protected con?: DataSource
     protected lastCommitted = -1
+    protected rdbmsType = 'postgres'
 
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema ? `"${options.stateSchema}"` : 'squid_processor'
+        this.statusTableFullPath = options?.rdbmsType === 'better-sqlite3'
+            ? options?.stateTable || '__squid_processor_state_status'
+            : `${this.statusSchema}.${options?.stateTable || 'status'}`
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
+        this.rdbmsType = options?.rdbmsType || process.env.RDBMS_TYPE || 'postgres'
     }
 
     async connect(): Promise<number> {
         if (this.con != null) {
             throw new Error('Already connected')
         }
-        let cfg = createOrmConfig()
+        let cfg = createOrmConfig({rdbmsType: this.rdbmsType as DatabaseType})
         let con = new DataSource(cfg)
         await con.initialize()
+        this.con = con
+
         try {
             let height = await con.transaction('SERIALIZABLE', async em => {
-                await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
+                if (this.rdbmsType !== 'better-sqlite3')
+                    await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
+
                 await em.query(`
-                    CREATE TABLE IF NOT EXISTS ${this.statusSchema}.status (
+                    CREATE TABLE IF NOT EXISTS ${this.statusTableFullPath} (
                         id int primary key,
                         height int not null
                     )
                 `)
+
                 let status: {height: number}[] = await em.query(
-                    `SELECT height FROM ${this.statusSchema}.status WHERE id = 0`
+                    `SELECT height FROM ${this.statusTableFullPath} WHERE id = 0`
                 )
+
                 if (status.length == 0) {
-                    await em.query(`INSERT INTO ${this.statusSchema}.status (id, height) VALUES (0, -1)`)
+                    await em.query(`INSERT INTO ${this.statusTableFullPath} (id, height) VALUES (0, -1)`)
                     return -1
                 } else {
                     return status[0].height
                 }
             })
-            this.con = con
             return height
         } catch(e: any) {
             await con.destroy().catch(() => {}) // ignore error
@@ -89,17 +104,42 @@ class BaseDatabase<S> {
     }
 
     protected async updateHeight(em: EntityManager, from: number, to: number): Promise<void> {
-        return em.query(
-            `UPDATE ${this.statusSchema}.status SET height = $2 WHERE id = 0 AND height < $1`,
+        let queryResult: [data: any[], rowsChanged: number] | number = this.rdbmsType === 'better-sqlite3' ?
+            await em.query(
+            `UPDATE ${this.statusTableFullPath} SET height = ? WHERE id = 0 AND height < ?`,
+            [to, from]
+        ) : await em.query(
+            `UPDATE ${this.statusTableFullPath} SET height = $2 WHERE id = 0 AND height < $1`,
             [from, to]
-        ).then((result: [data: any[], rowsChanged: number]) => {
-            let rowsChanged = result[1]
-            assert.strictEqual(
-                rowsChanged,
-                1,
-                'status table was updated by foreign process, make sure no other processor is running'
-            )
-        })
+        )
+
+        /**
+         * If (this.rdbmsType === 'better-sqlite3') => result: number
+         */
+        let rowsChanged = Array.isArray(queryResult) ? queryResult[1] : queryResult
+
+        /**
+         * Check by updated rows doesn't work for better-sqlite3 RDBMS as we are writing content and status data to the
+         * same DB (the same connection instance)
+         */
+        if (this.rdbmsType === 'better-sqlite3') return;
+
+        /**
+         * Issue with SQLIte3 - result doesn't contain real count of updated rows -
+         * https://github.com/typeorm/typeorm/issues/2660
+         * so check below doesn't work for all cases:
+         *
+         *   assert.strictEqual(
+         *       rowsChanged,
+         *       1,
+         *       'status table was updated by foreign process, make sure no other processor is running'
+         *   )
+         */
+        assert.equal(
+            (rowsChanged <= 1),
+            true,
+            'status table was updated by foreign process, make sure no other processor is running'
+        )
     }
 }
 
@@ -149,6 +189,7 @@ export class TypeormDatabase extends BaseDatabase<Store> {
     private async createTx(from: number, to: number): Promise<Tx> {
         let con = assertNotNull(this.con, 'not connected')
         let tx = await createTransaction(con, this.isolationLevel)
+
         try {
             await this.updateHeight(tx.em, from, to)
             return tx
