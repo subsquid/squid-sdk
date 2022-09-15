@@ -46,7 +46,7 @@ type GearUserMessageSentReq = {
 }
 
 
-type AcalaEvmLog = {
+type AcalaEvmLogFilter = {
     contract?: string
     filter?: EvmTopicSet[]
 }
@@ -54,14 +54,14 @@ type AcalaEvmLog = {
 
 type AcalaEvmExecutedReq = {
     contract: string
-    logs?: AcalaEvmLog[]
+    logs?: AcalaEvmLogFilter[]
     data?: EventDataRequest
 }
 
 
 type AcalaEvmExecutedFailedReq = {
     contract: string
-    logs?: AcalaEvmLog[]
+    logs?: AcalaEvmLogFilter[]
     data?: EventDataRequest
 }
 
