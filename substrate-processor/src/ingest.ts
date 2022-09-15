@@ -187,7 +187,7 @@ export class Ingest<R extends BatchRequest> {
         args.evmLogs = req.getEvmLogs().map(({contract, filter, data}) => {
             return {
                 contract,
-                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                filter: filter?.map(ensureArray),
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
@@ -217,6 +217,28 @@ export class Ingest<R extends BatchRequest> {
         args.gearUserMessagesSent = req.getGearUserMessagesSent().map(({program, data}) => {
             return {
                 program,
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.acalaEvmExecuted = req.getAcalaEvmExecuted().map(({contract, logs, data}) => {
+            return {
+                contract,
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(ensureArray)
+                })),
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.acalaEvmExecutedFailed = req.getAcalaEvmExecutedFailed().map(({contract, logs, data}) => {
+            return {
+                contract,
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(ensureArray)
+                })),
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
@@ -422,4 +444,11 @@ function getPos(item: Item): number {
         default:
             throw unexpectedCase()
     }
+}
+
+
+function ensureArray<T>(val?: T | T[] | null): T[] {
+    if (Array.isArray(val)) return val
+    if (val == null) return []
+    return [val]
 }

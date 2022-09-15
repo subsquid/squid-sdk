@@ -13,6 +13,8 @@ export interface BatchRequest {
     contractsEvents?: ContractsEventRequest[]
     gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
+    acalaEvmExecuted?: AcalaEvmExecutedRequest[]
+    acalaEvmExecutedFailed?: AcalaEvmExecutedFailedRequest[]
 }
 
 
@@ -50,6 +52,26 @@ export interface GearMessageEnqueuedRequest {
 
 export interface GearUserMessageSentRequest {
     program: string
+    data?: any
+}
+
+
+export interface AcalaEvmLogFilter {
+    contract?: string
+    filter?: string[][]
+}
+
+
+export interface AcalaEvmExecutedRequest {
+    contract: string
+    logs?: AcalaEvmLogFilter[]
+    data?: any
+}
+
+
+export interface AcalaEvmExecutedFailedRequest {
+    contract: string
+    logs?: AcalaEvmLogFilter[]
     data?: any
 }
 
