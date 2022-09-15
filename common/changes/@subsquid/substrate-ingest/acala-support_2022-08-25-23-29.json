@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "Expand acala EVM.Executed and EVM.ExecutedFailed to extra tables",
+      "comment": "Index `EVM.Executed` and `EVM.ExecutedFailed` events from Acala network",
       "type": "minor"
     }
   ],
