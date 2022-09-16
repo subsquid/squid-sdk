@@ -51,7 +51,7 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     let pairs = await accounts.asV1.getPairs()
     assert(pairs.length === allAccounts.length)
     let maybeAliceAccount = pairs.find(([key,]) => toHex(key) === toHex(aliceAddress))?.[1]
-    assert.equal(maybeAliceAccount, aliceAccount)
+    assert.deepEqual(maybeAliceAccount, aliceAccount)
 
     let maxBlockLength = new SystemMaximumBlockLengthConstant(ctx).asV1
     assert(maxBlockLength > 0)
