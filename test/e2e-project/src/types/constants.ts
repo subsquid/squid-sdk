@@ -24,13 +24,6 @@ export class SystemMaximumBlockLengthConstant {
   }
 
   /**
-   *  The maximum length of a block (in bytes).
-   */
-  get asLatest(): number {
-    return this._chain.getConstant('System', 'MaximumBlockLength')
-  }
-
-  /**
    * Checks whether the constant is defined for the current chain version.
    */
   get isExists(): boolean {

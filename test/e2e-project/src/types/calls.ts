@@ -62,30 +62,6 @@ export class BalancesSetBalanceCall {
     assert(this.isV1)
     return this._chain.decodeCall(this.call)
   }
-
-  /**
-   *  Set the balances of a given account.
-   * 
-   *  This will alter `FreeBalance` and `ReservedBalance` in storage. it will
-   *  also decrease the total issuance of the system (`TotalIssuance`).
-   *  If the new free or reserved balance is below the existential deposit,
-   *  it will reset the account nonce (`frame_system::AccountNonce`).
-   * 
-   *  The dispatch origin for this call is `root`.
-   * 
-   *  # <weight>
-   *  - Independent of the arguments.
-   *  - Contains a limited number of reads and writes.
-   *  ---------------------
-   *  - Base Weight:
-   *      - Creating: 27.56 µs
-   *      - Killing: 35.11 µs
-   *  - DB Weight: 1 Read, 1 Write to `who`
-   *  # </weight>
-   */
-  get asLatest(): {who: Uint8Array, newFree: bigint, newReserved: bigint} {
-    return this._chain.decodeCall(this.call)
-  }
 }
 
 export class TimestampSetCall {
@@ -141,27 +117,6 @@ export class TimestampSetCall {
    */
   get asV1(): {now: bigint} {
     assert(this.isV1)
-    return this._chain.decodeCall(this.call)
-  }
-
-  /**
-   *  Set the current time.
-   * 
-   *  This call should be invoked exactly once per block. It will panic at the finalization
-   *  phase, if this call hasn't been invoked by that time.
-   * 
-   *  The timestamp should be greater than the previous one by the amount specified by
-   *  `MinimumPeriod`.
-   * 
-   *  The dispatch origin for this call must be `Inherent`.
-   * 
-   *  # <weight>
-   *  - `O(T)` where `T` complexity of `on_timestamp_set`
-   *  - 1 storage read and 1 storage mutation (codec `O(1)`). (because of `DidUpdate::take` in `on_finalize`)
-   *  - 1 event handler `on_timestamp_set` `O(T)`.
-   *  # </weight>
-   */
-  get asLatest(): {now: bigint} {
     return this._chain.decodeCall(this.call)
   }
 }

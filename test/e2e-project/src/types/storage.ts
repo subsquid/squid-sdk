@@ -2,6 +2,16 @@ import assert from 'assert'
 import {Block, Chain, ChainContext, BlockContext, Result} from './support'
 import * as v1 from './v1'
 
+interface SystemAccountStorageV1 {
+  get(key: Uint8Array): Promise<v1.AccountInfo>
+  getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
+  getAll(): Promise<v1.AccountInfo[]>
+  getKeys(): Promise<Uint8Array[]>
+  getKeys(count: number, startKey?: Uint8Array): Promise<Uint8Array[]>
+  getPairs(): Promise<[key: Uint8Array, value: v1.AccountInfo][]>
+  getPairs(count: number, startKey?: Uint8Array): Promise<[key: Uint8Array, value: v1.AccountInfo][]>
+}
+
 export class SystemAccountStorage {
   private readonly _chain: Chain
   private readonly blockHash: string
@@ -18,30 +28,22 @@ export class SystemAccountStorage {
    *  The full account information for a particular account ID.
    */
   get isV1() {
-    return this._chain.getStorageItemTypeHash('System', 'Account') === 'eb40f1d91f26d72e29c60e034d53a72b9b529014c7e108f422d8ad5f03f0c902'
+    return this._chain.getStorageItemTypeHash('System', 'Account') === '899e5c31d20a5a43d06c9d35f416f0077331a2fd9bd7798124c5797c0ff72d26'
   }
 
   /**
    *  The full account information for a particular account ID.
    */
-  get asV1(): {
-      get(key: Uint8Array): Promise<v1.AccountInfo>
-      getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
-      getAll(): Promise<v1.AccountInfo[]>
-    } {
-      assert(this.isV1)
-      return this as any
+  get asV1(): SystemAccountStorageV1 {
+    assert(this.isV1)
+    return this as any
   }
 
   /**
-   *  The full account information for a particular account ID.
+   * Checks whether the storage item is defined for the current chain version.
    */
-  get asLatest(): {
-      get(key: Uint8Array): Promise<v1.AccountInfo>
-      getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
-      getAll(): Promise<v1.AccountInfo[]>
-    } {
-      return this as any
+  get isExists(): boolean {
+    return this._chain.getStorageItemTypeHash('System', 'Account') != null
   }
 
   private async get(...keys: any[]): Promise<any> {
@@ -57,10 +59,11 @@ export class SystemAccountStorage {
     return this._chain.queryStorage(this.blockHash, 'System', 'Account')
   }
 
-  /**
-   * Checks whether the storage item is defined for the current chain version.
-   */
-  get isExists(): boolean {
-    return this._chain.getStorageItemTypeHash('System', 'Account') != null
+  private async getKeys(count?: number, startKey?: any): Promise<any[]> {
+    return this._chain.getKeys(this.blockHash, 'System', 'Account', count, startKey)
+  }
+
+  private async getPairs(count?: number, startKey?: any): Promise<any[][]> {
+    return this._chain.getPairs(this.blockHash, 'System', 'Account', count, startKey)
   }
 }

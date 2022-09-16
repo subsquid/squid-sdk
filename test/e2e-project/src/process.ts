@@ -44,6 +44,15 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     let allAccounts = await accounts.asV1.getAll()
     assert(allAccounts.length > 0)
 
+    let storageKeys = await accounts.asV1.getKeys()
+    assert(storageKeys.length === allAccounts.length)
+    assert(storageKeys.find(key => toHex(key) === toHex(aliceAddress)) != null)
+
+    let pairs = await accounts.asV1.getPairs()
+    assert(pairs.length === allAccounts.length)
+    let maybeAliceAccount = pairs.find(([key,]) => toHex(key) === toHex(aliceAddress))?.[1]
+    assert.equal(maybeAliceAccount, aliceAccount)
+
     let maxBlockLength = new SystemMaximumBlockLengthConstant(ctx).asV1
     assert(maxBlockLength > 0)
 

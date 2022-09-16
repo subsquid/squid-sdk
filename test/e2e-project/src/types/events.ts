@@ -28,11 +28,4 @@ export class BalancesTransferEvent {
     assert(this.isV1)
     return this._chain.decodeEvent(this.event)
   }
-
-  /**
-   *  Transfer succeeded. \[from, to, value\]
-   */
-  get asLatest(): [Uint8Array, Uint8Array, bigint] {
-    return this._chain.decodeEvent(this.event)
-  }
 }
