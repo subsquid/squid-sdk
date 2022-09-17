@@ -1,6 +1,25 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Mon, 22 Aug 2022 15:27:06 GMT and should not be manually modified.
+This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+
+## 1.2.0
+Thu, 15 Sep 2022 20:54:52 GMT
+
+### Minor changes
+
+- Index `EVM.Executed` and `EVM.ExecutedFailed` events from Acala network
+- save missing metadata at the start of processing (resolves #78)
+
+### Patches
+
+- handle `ChargeTransactionPayment` signed extension from Nikau network
+
+## 1.1.1
+Thu, 01 Sep 2022 09:27:14 GMT
+
+### Patches
+
+- fix fees calculation for acala network
 
 ## 1.1.0
 Mon, 22 Aug 2022 15:27:06 GMT

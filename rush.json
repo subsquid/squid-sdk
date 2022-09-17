@@ -717,6 +717,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "karura-erc20",
+      "projectFolder": "test/karura-erc20",
+      "shouldPublish": false
+    },
+    {
       "packageName": "gear-nft",
       "projectFolder": "test/gear-nft",
       "shouldPublish": false

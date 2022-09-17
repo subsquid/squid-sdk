@@ -1,5 +1,5 @@
 import {unexpectedCase} from "@subsquid/util-internal"
-import {FieldRequest} from "../ir/fields"
+import {FieldRequest, FieldsByEntity} from '../ir/fields'
 
 
 export function mapRows(rows: any[][], fields: FieldRequest[]): any[] {
@@ -62,5 +62,22 @@ export function mapRow(row: any[], fields: FieldRequest[], ifType?: string): any
             }
         }
     }
+    return rec
+}
+
+
+export function mapQueryableRows(rows: any[][], fields: FieldsByEntity): any[] {
+    let result = new Array(rows.length)
+    for (let i = 0; i < rows.length; i++) {
+        result[i] = mapQueryableRow(rows[i], fields)
+    }
+    return result
+}
+
+
+export function mapQueryableRow(row: any[], fields: FieldsByEntity): any {
+    let entity = row[0]
+    let rec = mapRow(row[1], fields[entity])
+    rec._isTypeOf = entity
     return rec
 }

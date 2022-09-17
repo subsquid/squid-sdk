@@ -1,6 +1,6 @@
 import assert from "assert"
 import type {Model} from "../model"
-import {getUnionProps} from "../model.tools"
+import {getUnionProps, getUniversalProperties} from '../model.tools'
 import {OrderBy} from "../ir/args"
 
 
@@ -19,27 +19,23 @@ export type OpenCrud_OrderBy_Mapping = ReadonlyMap<OpenCrudOrderByValue, OrderBy
 const MAPPING_CACHE = new WeakMap<Model, Record<string, OpenCrud_OrderBy_Mapping>>()
 
 
-export function getOrderByMapping(model: Model, entityName: string): OpenCrud_OrderBy_Mapping {
+export function getOrderByMapping(model: Model, typeName: string): OpenCrud_OrderBy_Mapping {
     let cache = MAPPING_CACHE.get(model)
     if (cache == null) {
         cache = {}
         MAPPING_CACHE.set(model, cache)
     }
-    if (cache[entityName]) return cache[entityName]
-    return cache[entityName] = buildOrderByMapping(model, entityName, 2)
+    if (cache[typeName]) return cache[typeName]
+    return cache[typeName] = buildOrderByMapping(model, typeName, 2)
 }
 
 
 function buildOrderByMapping(model: Model, typeName: string, depth: number): OpenCrud_OrderBy_Mapping {
     if (depth <= 0) return new Map()
-    let object = model[typeName]
-    if (object.kind == 'union') {
-        object = getUnionProps(model, typeName)
-    }
-    assert(object.kind == 'entity' || object.kind == 'object')
+    let properties = getUniversalProperties(model, typeName)
     let m = new Map<string, OrderBy>()
-    for (let key in object.properties) {
-        let propType = object.properties[key].type
+    for (let key in properties) {
+        let propType = properties[key].type
         switch(propType.kind) {
             case 'scalar':
             case 'enum':
@@ -55,10 +51,6 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
                 }
                 break
             case 'fk':
-                for (let [name, spec] of buildOrderByMapping(model, propType.foreignEntity, depth - 1)) {
-                    m.set(key + '_' + name, {[key]: spec})
-                }
-                break
             case 'lookup':
                 for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1)) {
                     m.set(key + '_' + name, {[key]: spec})
@@ -66,12 +58,16 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
                 break
         }
     }
+    if (model[typeName].kind == 'interface') {
+        m.set('_type_ASC', {_type: 'ASC'})
+        m.set('_type_DESC', {_type: 'DESC'})
+    }
     return m
 }
 
 
-export function parseOrderBy(model: Model, entityName: string, input: OpenCrudOrderByValue[]): OrderBy {
-    let mapping = getOrderByMapping(model, entityName)
+export function parseOrderBy(model: Model, typeName: string, input: OpenCrudOrderByValue[]): OrderBy {
+    let mapping = getOrderByMapping(model, typeName)
     return mergeOrderBy(
         input.map(value => {
             let spec = mapping.get(value)

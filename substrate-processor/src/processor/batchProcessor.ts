@@ -6,7 +6,11 @@ import {applyRangeBound, Batch, mergeBatches} from "../batch/generic"
 import {PlainBatchRequest} from "../batch/request"
 import {Chain} from "../chain"
 import {BlockData} from "../ingest"
-import type {BlockRangeOption, EvmLogOptions} from "../interfaces/dataHandlers"
+import type {
+    BlockRangeOption,
+    EvmLogOptions,
+    AcalaEvmExecutedOptions,
+} from "../interfaces/dataHandlers"
 import type {
     AddCallItem,
     AddEventItem,
@@ -403,6 +407,85 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
             program: programId,
             data: options?.data
         })
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
+     * but requests `EVM.Executed` events containing logs from particular contract
+     * with an option to filter them by log address and topic.
+     *
+     * @example
+     * // request all `EVM.Executed` events from contract `0xae9d7fe007b3327aa64a32824aaac52c42a6e624`
+     * processor.addAcalaEvmExecuted('0xae9d7fe007b3327aa64a32824aaac52c42a6e624')
+     *
+     * // request all `EVM.Executed` events containing ERC20 transfers from contract `0x0000000000000000000100000000000000000080`
+     * processor.addAcalaEvmExecuted('*', {
+     *     logs: [{
+     *         contract: '0x0000000000000000000100000000000000000080',
+     *         filter: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
+     *     }]
+     * })
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addAcalaEvmExecuted([
+     *     '0xae9d7fe007b3327aa64a32824aaac52c42a6e624',
+     *     '0x1aafb0d5aab9ffbe09d4d30c9fd90d695c4f0881',
+     * ])
+     */
+    addAcalaEvmExecuted(
+        contractAddress: string | string[],
+        options?: AcalaEvmExecutedOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", true>>>
+
+    addAcalaEvmExecuted<R extends EventDataRequest>(
+        contractAddress: string | string[],
+        options: AcalaEvmExecutedOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.Executed", R>>>
+
+    addAcalaEvmExecuted(
+        contractAddress: string | string[],
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.acalaEvmExecuted.push(...contractAddresses.map((contractAddress) => ({
+            contract: contractAddress.toLowerCase(),
+            logs: options?.logs,
+            data: options?.data
+        })))
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addAcalaEvmExecuted},
+     * but requests `EVM.ExecutedFailed` events from failed EVM calls (`EVM.call`, `EVM.eth_call`, etc).
+     */
+    addAcalaEvmExecutedFailed(
+        contractAddress: string | string[],
+        options?: AcalaEvmExecutedOptions & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.ExecutedFailed", true>>>
+
+    addAcalaEvmExecutedFailed<R extends EventDataRequest>(
+        contractAddress: string | string[],
+        options: AcalaEvmExecutedOptions & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"EVM.ExecutedFailed", R>>>
+
+    addAcalaEvmExecutedFailed(
+        contractAddress: string | string[],
+        options?: AcalaEvmExecutedOptions & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.acalaEvmExecutedFailed.push(...contractAddresses.map((contractAddress) => ({
+            contract: contractAddress.toLowerCase(),
+            logs: options?.logs,
+            data: options?.data
+        })))
         this.add(req, options?.range)
         return this
     }

@@ -1,5 +1,6 @@
-import assert from "assert"
-import {Entity, FTS_Query, JsonObject, Model, Prop, PropType} from "./model"
+import {unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Entity, FTS_Query, Interface, JsonObject, Model, Prop, PropType} from './model'
 
 
 const UNION_MAPS = new WeakMap<Model, Record<string, JsonObject>>()
@@ -20,8 +21,7 @@ export function buildUnionProps(model: Model, unionName: string): JsonObject {
     let union = model[unionName]
     assert(union.kind == 'union')
     let properties: Record<string, Prop> = {}
-    for (let i = 0; i < union.variants.length; i++) {
-        let objectName = union.variants[i]
+    for (let objectName of union.variants) {
         let object = model[objectName]
         assert(object.kind == 'object')
         Object.assign(properties, object.properties)
@@ -34,12 +34,106 @@ export function buildUnionProps(model: Model, unionName: string): JsonObject {
 }
 
 
+const QUERYABLE_ENTITIES = new WeakMap<Model, Record<string, string[]>>()
+
+
+export function getQueryableEntities(model: Model, queryableName: string): string[] {
+    let cache = QUERYABLE_ENTITIES.get(model)
+    if (cache == null) {
+        cache = {}
+        QUERYABLE_ENTITIES.set(model, cache)
+    }
+    let entities = cache[queryableName]
+    if (entities) return entities
+    entities = cache[queryableName] = []
+    for (let name in model) {
+        let item = model[name]
+        if (item.kind == 'entity' && item.interfaces?.includes(queryableName)) {
+            entities.push(name)
+        }
+    }
+    return entities
+}
+
+
+export function getQueryableProperties(model: Model, queryableName: string): Record<string, Prop> {
+    let queryable = getInterface(model, queryableName)
+    let props: Record<string, Prop> = {}
+    for (let entityName of getQueryableEntities(model, queryableName)) {
+        let entity = getEntity(model, entityName)
+        for (let key in queryable.properties) {
+            let ep = entity.properties[key]
+            if (ep == null) throw new Error(
+                `Entity ${entityName} doesn't implement ${queryableName} properly: .${key} property is missing`
+            )
+            let prop = matchWithQueryableProp(queryable.properties[key], ep)
+            if (prop == null) throw new Error(
+                `Entity ${entityName} doesn't implement ${queryableName} properly: .${key} property types are incompatible`
+            )
+            props[key] = prop
+        }
+    }
+    return props
+}
+
+
+function matchWithQueryableProp(queryableProp: Prop, entityProp: Prop): Prop | undefined {
+    if (!queryableProp.nullable && entityProp.nullable) return undefined
+    let qt = queryableProp.type
+    let et = entityProp.type
+    switch(et.kind) {
+        case 'fk':
+        case 'lookup':
+            if (qt.kind == 'object' && qt.name == et.entity) {
+                return {
+                    type: et,
+                    nullable: queryableProp.nullable,
+                    description: queryableProp.description
+                }
+            }
+            return undefined
+        case 'list-lookup':
+            if (qt.kind == 'list' && qt.item.type.kind == 'object' && qt.item.type.name == et.entity) {
+                return {
+                    type: et,
+                    nullable: false,
+                    description: queryableProp.description
+                }
+            }
+            return undefined
+        default:
+            if (propTypeEquals(et, qt)) {
+                return queryableProp
+            }
+            return undefined
+    }
+}
+
+
+export function getUniversalProperties(model: Model, typeName: string): Record<string, Prop> {
+    let item = model[typeName]
+    switch(item.kind) {
+        case 'entity':
+        case 'object':
+            return item.properties
+        case 'union':
+            return getUnionProps(model, typeName).properties
+        case 'interface':
+            assert(item.queryable)
+            return getQueryableProperties(model, typeName)
+        default:
+            throw unexpectedCase(item.kind)
+    }
+}
+
+
 export function validateModel(model: Model) {
     // TODO: check all invariants we assume
     validateNames(model)
     validateUnionTypes(model)
     validateLookups(model)
     validateIndexes(model)
+    validateQueryableInterfaces(model)
 }
 
 
@@ -119,7 +213,7 @@ export function validateLookups(model: Model): void {
                     if (prop.type.kind == 'lookup' || prop.type.kind == 'list-lookup') {
                         let lookupEntity = getEntity(model, prop.type.entity)
                         let lookupProperty = lookupEntity.properties[prop.type.field]
-                        if (lookupProperty?.type.kind != 'fk' || lookupProperty.type.foreignEntity != name) {
+                        if (lookupProperty?.type.kind != 'fk' || lookupProperty.type.entity != name) {
                             throw invalidProperty(name, key, `${prop.type.entity}.${prop.type.field} is not a foreign key pointing to ${name}`)
                         }
                         if (prop.type.kind == 'lookup' && !lookupProperty.unique) {
@@ -142,7 +236,7 @@ export function validateIndexes(model: Model): void {
             index.fields.forEach(f => {
                 let prop = item.properties[f.name]
                 if (prop == null) throw new Error(
-                    `Entity ${name} doesn't have a property ${f.name}, but is a part of index`
+                    `Entity ${name} doesn't have a property ${f.name}, but it is a part of index`
                 )
                 switch(prop.type.kind) {
                     case "scalar":
@@ -160,6 +254,16 @@ export function validateIndexes(model: Model): void {
 }
 
 
+export function validateQueryableInterfaces(model: Model): void {
+    for (let name in model) {
+        let item = model[name]
+        if (item.kind == 'interface' && item.queryable) {
+            getQueryableProperties(model, name)
+        }
+    }
+}
+
+
 function invalidProperty(item: string, key: string, msg: string): Error {
     return new Error(`Invalid property ${item}.${key}: ${msg}`)
 }
@@ -167,10 +271,12 @@ function invalidProperty(item: string, key: string, msg: string): Error {
 
 export function propTypeEquals(a: PropType, b: PropType): boolean {
     if (a.kind != b.kind) return false
-    if (a.kind == 'list') return propTypeEquals(a.item.type, (b as typeof a).item.type)
     switch(a.kind) {
+        case 'list':
+            return a.item.nullable == (b as typeof a).item.nullable
+                && propTypeEquals(a.item.type, (b as typeof a).item.type)
         case 'fk':
-            return a.foreignEntity == (b as typeof a).foreignEntity
+            return a.entity == (b as typeof a).entity
         case 'lookup':
         case 'list-lookup':
             return a.entity == (b as typeof a).entity && a.field == (b as typeof a).field
@@ -191,6 +297,13 @@ export function getObject(model: Model, name: string): JsonObject {
     let object = model[name]
     assert(object.kind == 'object', `${name} expected to be an object`)
     return object
+}
+
+
+export function getInterface(model: Model, name: string): Interface {
+    let i = model[name]
+    assert(i.kind == 'interface', `${name} expected to be an interface`)
+    return i
 }
 
 

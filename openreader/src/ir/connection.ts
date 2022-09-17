@@ -1,13 +1,12 @@
-import {OrderBy, Where} from "./args"
-import {FieldRequest} from "./fields"
+import {OrderBy, Where} from './args'
 
 
-export interface RelayConnectionRequest {
+export interface RelayConnectionRequest<R> {
     orderBy: OrderBy
     where?: Where
     first?: number
     after?: string
-    edgeNode?: FieldRequest[]
+    edgeNode?: R
     edgeCursor?: boolean
     pageInfo?: boolean
     totalCount?: boolean

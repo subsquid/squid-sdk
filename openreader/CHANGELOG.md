@@ -1,6 +1,30 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+
+## 3.0.0
+Thu, 15 Sep 2022 20:54:52 GMT
+
+### Breaking changes
+
+- remove `--subscription-sql-statement-timeout` option
+- refactor internal data structures used throughout framework
+
+### Minor changes
+
+- add support for queryable interfaces
+
+## 2.1.0
+Tue, 30 Aug 2022 09:15:59 GMT
+
+### Minor changes
+
+- support subscriptions in built-in graphql playground
+- add support for response size limits
+
+### Patches
+
+- entity lists should be non-nullable
 
 ## 2.0.0
 Wed, 17 Aug 2022 17:33:52 GMT

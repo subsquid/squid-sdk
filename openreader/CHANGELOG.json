@@ -2,6 +2,46 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/openreader_v3.0.0",
+      "date": "Thu, 15 Sep 2022 20:54:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for queryable interfaces"
+          }
+        ],
+        "major": [
+          {
+            "comment": "remove `--subscription-sql-statement-timeout` option"
+          },
+          {
+            "comment": "refactor internal data structures used throughout framework"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.1.0",
+      "tag": "@subsquid/openreader_v2.1.0",
+      "date": "Tue, 30 Aug 2022 09:15:59 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support subscriptions in built-in graphql playground"
+          },
+          {
+            "comment": "add support for response size limits"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "entity lists should be non-nullable"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/openreader_v2.0.0",
       "date": "Wed, 17 Aug 2022 17:33:52 GMT",

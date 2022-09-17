@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "GraphQL server for postgres-compatible databases",
   "keywords": [
     "graphql",
@@ -21,7 +21,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf lib && tsc",
     "test": "make up && sleep 2 && make test test-cockroach && make down || (make down && exit 1)"
   },
   "dependencies": {

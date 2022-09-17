@@ -14,7 +14,7 @@ type Block @entity {
     parentHash: String!
     stateRoot: String!
     extrinsicsRoot: String!
-    timestamp: BigInt!
+    timestamp: DateTime!
     spec: Metadata!
     validator: String
     events: [Event!]! @derivedFrom(field: "block") @cardinality(value: 1000)

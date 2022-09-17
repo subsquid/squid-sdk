@@ -1,10 +1,11 @@
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {Progress, Speed} from "@subsquid/util-internal-counters"
-import {toHex} from "@subsquid/util-internal-hex"
-import assert from "assert"
-import * as pg from "pg"
-import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from "./model"
-import {toJSON, toJsonString} from "./util"
+import {unexpectedCase} from '@subsquid/util-internal'
+import {Progress, Speed} from '@subsquid/util-internal-counters'
+import {toHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+import * as pg from 'pg'
+import {Block, BlockData, Call, Event, Extrinsic, Metadata, Warning} from './model'
+import {formatId} from './parse/util'
+import {toJSON, toJsonString} from './util'
 import WritableStream = NodeJS.WritableStream
 
 
@@ -50,6 +51,24 @@ interface ContractsContractEmitted {
 }
 
 
+interface AcalaEvmEvent {
+    event_id: string
+    contract: string
+}
+
+
+interface AcalaEvmLog {
+    id: string
+    event_id: string
+    event_contract: string
+    contract: string
+    topic0?: string
+    topic1?: string
+    topic2?: string
+    topic3?: string
+}
+
+
 export class PostgresSink implements Sink {
     private metadataInsert = new Insert<Metadata>('metadata', {
         id: {cast: 'text'},
@@ -58,7 +77,7 @@ export class PostgresSink implements Sink {
         block_height: {cast: 'int'},
         block_hash: {cast: 'text'},
         hex: {cast: 'text'}
-    })
+    }, true)
 
     private headerInsert = new Insert<Block>('block', {
         id: {cast: 'text'},
@@ -147,6 +166,38 @@ export class PostgresSink implements Sink {
         program: {cast: 'text'}
     })
 
+    private acalaEvmExecutedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'}
+    })
+
+    private acalaEvmExecutedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_log', {
+        id: {cast: 'text'},
+        event_id: {cast: 'text'},
+        event_contract: {cast: 'text'},
+        contract: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
+    })
+
+    private acalaEvmExecutedFailedInsert = new Insert<AcalaEvmEvent>('acala_evm_executed_failed', {
+        event_id: {cast: 'text'},
+        contract: {cast: 'text'}
+    })
+
+    private acalaEvmExecutedFailedLogInsert = new Insert<AcalaEvmLog>('acala_evm_executed_failed_log', {
+        id: {cast: 'text'},
+        event_id: {cast: 'text'},
+        event_contract: {cast: 'text'},
+        contract: {cast: 'text'},
+        topic0: {cast: 'text'},
+        topic1: {cast: 'text'},
+        topic2: {cast: 'text'},
+        topic3: {cast: 'text'}
+    })
+
     private db: pg.ClientBase
     private speed?: Speed
     private progress?: Progress
@@ -176,6 +227,9 @@ export class PostgresSink implements Sink {
     }
 
     private insertEvents(events: Event[]): void {
+        let executedLogIndex = 0;
+        let executedFailedLogIndex = 0;
+
         for (let event of events) {
             this.eventInsert.add(event)
             switch(event.name) {
@@ -194,6 +248,22 @@ export class PostgresSink implements Sink {
                     })
                     break
                 }
+                case 'EVM.Executed':
+                    executedLogIndex = this.insertAcalaEvmEvent(
+                        event,
+                        this.acalaEvmExecutedInsert,
+                        this.acalaEvmExecutedLogInsert,
+                        executedLogIndex
+                    )
+                    break
+                case 'EVM.ExecutedFailed':
+                    executedFailedLogIndex = this.insertAcalaEvmEvent(
+                        event,
+                        this.acalaEvmExecutedFailedInsert,
+                        this.acalaEvmExecutedFailedLogInsert,
+                        executedFailedLogIndex
+                    )
+                    break
                 case 'Contracts.ContractEmitted':
                     this.contractsContractEmittedInsert.add({
                         event_id: event.id,
@@ -246,6 +316,30 @@ export class PostgresSink implements Sink {
         })
     }
 
+    private insertAcalaEvmEvent(event: Event, insert: Insert<AcalaEvmEvent>, logInsert: Insert<AcalaEvmLog>, logIndex: number) {
+        let contract = toHex(event.args.contract)
+        insert.add({
+            event_id: event.id,
+            contract
+        })
+
+        let height = Number(event.id.slice(0, 10))
+        let hash = event.id.slice(18)
+        for (let log of event.args.logs) {
+            logInsert.add({
+                id: formatId(height, hash, logIndex++),
+                event_id: event.id,
+                event_contract: contract,
+                contract: toHex(log.address),
+                topic0: log.topics[0] && toHex(log.topics[0]),
+                topic1: log.topics[1] && toHex(log.topics[1]),
+                topic2: log.topics[2] && toHex(log.topics[2]),
+                topic3: log.topics[3] && toHex(log.topics[3]),
+            })
+        }
+        return logIndex
+    }
+
     private async submit(lastBlock: number): Promise<void> {
         this.speed?.start()
         let size = this.headerInsert.size
@@ -260,6 +354,10 @@ export class PostgresSink implements Sink {
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
+        let acalaEvmExecutedInsert = this.acalaEvmExecutedInsert.take()
+        let acalaEvmExecutedLogInsert = this.acalaEvmExecutedLogInsert.take()
+        let acalaEvmExecutedFailedInsert = this.acalaEvmExecutedFailedInsert.take()
+        let acalaEvmExecutedFailedLogInsert = this.acalaEvmExecutedFailedLogInsert.take()
         await this.tx(async () => {
             await metadataInsert.query(this.db)
             await headerInsert.query(this.db)
@@ -272,6 +370,10 @@ export class PostgresSink implements Sink {
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)
+            await acalaEvmExecutedInsert.query(this.db)
+            await acalaEvmExecutedLogInsert.query(this.db)
+            await acalaEvmExecutedFailedInsert.query(this.db)
+            await acalaEvmExecutedFailedLogInsert.query(this.db)
         })
         if (this.speed || this.progress) {
             let time = process.hrtime.bigint()
@@ -303,7 +405,7 @@ class Insert<E> {
     private sql: string
     private columns: Record<string, unknown[]>
 
-    constructor(private table: string, private mapping: TableColumns<E>, sql?: string, columns?: Record<string, unknown[]>) {
+    constructor(private table: string, private mapping: TableColumns<E>, ignoreDuplicates?: boolean, sql?: string, columns?: Record<string, unknown[]>) {
         if (sql == null) {
             let names = Object.keys(mapping) as (keyof E)[]
             let args = names.map((name, idx) => {
@@ -326,6 +428,9 @@ class Insert<E> {
                 }
             })
             this.sql = `INSERT INTO ${table} (${names.join(', ')}) SELECT ${cols.join(', ')} FROM unnest(${args.join(', ')}) AS i(${names.join(', ')})`
+            if (ignoreDuplicates) {
+                this.sql += ' ON CONFLICT DO NOTHING'
+            }
         } else {
             this.sql = sql
         }
@@ -359,7 +464,7 @@ class Insert<E> {
     }
 
     take(): Insert<E> {
-        let insert = new Insert(this.table, this.mapping, this.sql, this.columns)
+        let insert = new Insert(this.table, this.mapping, undefined, this.sql, this.columns)
         this.columns = this.makeColumns()
         return insert
     }

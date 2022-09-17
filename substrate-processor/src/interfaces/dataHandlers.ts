@@ -153,6 +153,25 @@ export interface EvmLogOptions extends BlockRangeOption {
 }
 
 
+export interface AcalaEvmLogFilter {
+    contract?: string
+    /**
+     * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
+     */
+    filter?: EvmTopicSet[]
+}
+
+
+export interface AcalaEvmExecutedOptions extends BlockRangeOption {
+    /**
+     * When specified, instructs to include only events
+     * which contain at least one EVM log record
+     * matching one of the provided filters.
+     */
+    logs?: AcalaEvmLogFilter[]
+}
+
+
 export type EvmTopicSet = string | null | undefined | string[]
 
 

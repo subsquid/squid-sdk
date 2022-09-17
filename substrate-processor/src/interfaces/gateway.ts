@@ -13,6 +13,8 @@ export interface BatchRequest {
     contractsEvents?: ContractsEventRequest[]
     gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
+    acalaEvmExecuted?: AcalaEvmExecutedRequest[]
+    acalaEvmExecutedFailed?: AcalaEvmExecutedFailedRequest[]
 }
 
 
@@ -54,8 +56,28 @@ export interface GearUserMessageSentRequest {
 }
 
 
+export interface AcalaEvmLogFilter {
+    contract?: string
+    filter?: string[][]
+}
+
+
+export interface AcalaEvmExecutedRequest {
+    contract: string
+    logs?: AcalaEvmLogFilter[]
+    data?: any
+}
+
+
+export interface AcalaEvmExecutedFailedRequest {
+    contract: string
+    logs?: AcalaEvmLogFilter[]
+    data?: any
+}
+
+
 export interface BatchBlock {
-    header: Omit<SubstrateBlock, 'timestamp'> & {timestamp: string}
+    header: Omit<SubstrateBlock, 'timestamp' | 'validator'> & {timestamp: string} & {validator: string | null}
     events: Event[]
     calls: Call[]
     extrinsics: Extrinsic[]

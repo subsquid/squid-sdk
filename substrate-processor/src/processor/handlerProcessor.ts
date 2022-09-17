@@ -6,7 +6,6 @@ import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
 import {CallHandlerEntry, DataHandlers} from '../batch/handlers'
 import type {Chain} from '../chain'
 import type {BlockData} from '../ingest'
-import {EthereumTransactionHandlerOptions} from '../interfaces/dataHandlers'
 import type {
     BlockHandler,
     BlockHandlerContext,
@@ -19,6 +18,7 @@ import type {
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
+    EthereumTransactionHandlerOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler

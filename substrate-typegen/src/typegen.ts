@@ -293,6 +293,11 @@ export class Typegen {
                                 let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
                                 out.line(`return this._chain.queryStorage(${args.concat(query).join(', ')})`)
                             })
+                            out.line()
+                            out.block(`async getAllAs${versionName}(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`, () => {
+                                out.line(`assert(this.is${versionName})`)
+                                out.line(`return this._chain.queryStorage(${args.join(', ')})`)
+                            })
                         }
                     }
                 })
