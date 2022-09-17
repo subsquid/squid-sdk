@@ -1,14 +1,15 @@
-import {unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {Dialect} from "../dialect"
-import {EntityListArguments, OrderBy, Where} from "../ir/args"
-import {FieldRequest} from "../ir/fields"
-import {Model} from "../model"
-import {Cursor, EntityCursor} from "./cursor"
-import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from "./util"
+import {unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Dialect} from '../dialect'
+import {OrderBy, SortOrder, SqlArguments, Where} from '../ir/args'
+import {FieldRequest, FieldsByEntity} from '../ir/fields'
+import {Model} from '../model'
+import {getQueryableEntities} from '../model.tools'
+import {Cursor, EntityCursor} from './cursor'
+import {AliasSet, ColumnSet, escapeIdentifier, JoinSet, printClause} from './util'
 
 
-export class EntityListQueryPrinter {
+export class EntitySqlPrinter {
     private aliases: AliasSet
     private join: JoinSet
     private root: EntityCursor
@@ -19,9 +20,9 @@ export class EntityListQueryPrinter {
     constructor(
         private model: Model,
         private dialect: Dialect,
-        private entityName: string,
+        public readonly entityName: string,
         private params: unknown[],
-        private args: EntityListArguments = {},
+        private args: SqlArguments = {},
         fields?: FieldRequest[],
         aliases?: AliasSet
     ) {
@@ -43,12 +44,14 @@ export class EntityListQueryPrinter {
             this.populateWhere(this.root, args.where, this.where)
         }
         if (args.orderBy) {
-            this.populateOrderBy(this.root, args.orderBy)
+            this.traverseOrderBy(args.orderBy, (field, cursor, order) => {
+                this.orderBy.push(cursor.native(field) + ' ' + order)
+            })
         }
     }
 
-    private sub(entityName: string, args?: EntityListArguments, fields?: FieldRequest[]): EntityListQueryPrinter {
-        return new EntityListQueryPrinter(this.model, this.dialect, entityName, this.params, args, fields, this.aliases)
+    private sub(entityName: string, args?: SqlArguments, fields?: FieldRequest[]): EntitySqlPrinter {
+        return new EntitySqlPrinter(this.model, this.dialect, entityName, this.params, args, fields, this.aliases)
     }
 
     private populateColumns(cursor: Cursor, fields: FieldRequest[]): void {
@@ -128,7 +131,9 @@ export class EntityListQueryPrinter {
                 break
             }
             case "isNull": {
-                let f = cursor.ref(where.field)
+                let f = cursor.prop(where.field).type.kind == 'lookup'
+                    ? cursor.child(where.field).ref('id')
+                    : cursor.ref(where.field)
                 if (where.yes) {
                     exps.push(`${f} IS NULL`)
                 } else {
@@ -261,13 +266,17 @@ export class EntityListQueryPrinter {
         return printClause("AND", exps)
     }
 
-    private populateOrderBy(cursor: Cursor, orderBy: OrderBy): void {
+    traverseOrderBy(orderBy: OrderBy, cb: (field: string, cursor: Cursor, order: SortOrder) => void) {
+        this.visitOrderBy(this.root, orderBy, cb)
+    }
+
+    private visitOrderBy(cursor: Cursor, orderBy: OrderBy, cb: (field: string, cursor: Cursor, order: SortOrder) => void) {
         for (let field in orderBy) {
             let spec = orderBy[field]
             if (typeof spec == "string") {
-                this.orderBy.push(`${cursor.native(field)} ${spec}`)
+                cb(field, cursor, spec)
             } else {
-                this.populateOrderBy(cursor.child(field), spec)
+                this.visitOrderBy(cursor.child(field), spec, cb)
             }
         }
     }
@@ -280,14 +289,18 @@ export class EntityListQueryPrinter {
         return escapeIdentifier(this.dialect, name)
     }
 
-    addWhereDerivedFrom(field: string, parentIdExp: string): this {
+    private addWhereDerivedFrom(field: string, parentIdExp: string): this {
         this.where.push(`${this.root.native(field)} = ${parentIdExp}`)
         return this
     }
 
+    hasColumns(): boolean {
+        return this.columns.size() > 0
+    }
+
     printColumnList(options?: {withAliases?: boolean}): string {
+        assert(this.hasColumns())
         let names = this.columns.names()
-        assert(names.length > 0)
         if (options?.withAliases) {
             names = names.map((name, idx) => `${name} AS _c${idx}`)
         }
@@ -322,7 +335,110 @@ export class EntityListQueryPrinter {
         return `SELECT ${this.printColumnList({withAliases: true})} ${this.printFrom()}`
     }
 
-    printAsJsonRows(): string {
+    printAsCount(): string {
+        if (this.args.offset || this.args.limit) {
+            return `SELECT count(*) FROM (SELECT true ${this.printFrom()}) AS rows`
+        } else {
+            return `SELECT count(*) ${this.printFrom()}`
+        }
+    }
+
+    private printAsJsonRows(): string {
         return `SELECT ${this.printColumnListAsJsonArray()} AS row ${this.printFrom()}`
+    }
+}
+
+
+export class QueryableSqlPrinter {
+    private printers: EntitySqlPrinter[] = []
+    private orders: SortOrder[] = []
+    private orderColumns: string[][] = []
+
+    constructor(
+        private model: Model,
+        private dialect: Dialect,
+        private queryableName: string,
+        private params: unknown[],
+        private args: SqlArguments = {},
+        fields?: FieldsByEntity
+    ) {
+        for (let entityName of getQueryableEntities(this.model, this.queryableName)) {
+            let entityFields = fields?.[entityName]
+
+            let printer = new EntitySqlPrinter(
+                model,
+                dialect,
+                entityName,
+                this.params,
+                {where: args.where},
+                entityFields
+            )
+
+            if (this.args.orderBy) {
+                let cols: string[] = []
+                this.orders.length = 0
+                printer.traverseOrderBy(this.args.orderBy, (field, cursor, order) => {
+                    let col = field == '_type' ? `'${entityName}'` : cursor.native(field)
+                    this.orders.push(order)
+                    cols.push(`${col} AS o${this.orders.length}`)
+                })
+                this.orderColumns.push(cols)
+            }
+
+            this.printers.push(printer)
+        }
+    }
+
+    print(): string {
+        let from = this.printers.map((printer, idx) => {
+            let cols: string[] = []
+            cols.push(`'${printer.entityName}' AS e`)
+            if (printer.hasColumns()) {
+                cols.push(printer.printColumnListAsJsonArray() + ' AS d')
+            } else {
+                cols.push('null AS d')
+            }
+            cols.push(...this.orderColumns[idx])
+            return `SELECT ${cols.join(', ')} ${printer.printFrom()}`
+        }).join('\nUNION ALL\n')
+
+        let args = this.printArgs()
+        if (args) {
+            return `SELECT e, d FROM (\n${from}\n) AS rows` + args
+        } else {
+            return from
+        }
+    }
+
+    printAsCount(): string {
+        let union = this.orders.length
+            ? this.printers.map((printer, idx) => {
+                return `SELECT ${this.orderColumns[idx].join(', ')} ${printer.printFrom()}`
+            })
+            : this.printers.map(printer => {
+                return `SELECT true ${printer.printFrom()}`
+            })
+
+        let from = union.join('\nUNION ALL\n')
+        let args = this.printArgs()
+        if (args) {
+            from = `SELECT true FROM (\n${from}\n) AS src` + args
+        }
+
+        return `SELECT count(*) FROM (\n${from}\n) AS rows`
+    }
+
+    private printArgs(): string {
+        let sql = ''
+        if (this.orders.length) {
+            sql += '\nORDER BY ' + this.orders.map((o, idx) => `o${idx + 1} ${o}`).join(', ')
+        }
+        if (this.args.offset) {
+            sql += `\nOFFSET ${this.args.offset}`
+        }
+        if (this.args.limit) {
+            sql += `\nLIMIT ${this.args.limit}`
+        }
+        return sql
     }
 }

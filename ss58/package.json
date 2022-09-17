@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ss58",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SS58 registry and codec",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

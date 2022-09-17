@@ -187,7 +187,7 @@ export class Ingest<R extends BatchRequest> {
         args.evmLogs = req.getEvmLogs().map(({contract, filter, data}) => {
             return {
                 contract,
-                filter: filter?.map(f => f == null ? [] : Array.isArray(f) ? f : [f]),
+                filter: filter?.map(ensureArray),
                 data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
             }
         })
@@ -221,6 +221,28 @@ export class Ingest<R extends BatchRequest> {
             }
         })
 
+        args.acalaEvmExecuted = req.getAcalaEvmExecuted().map(({contract, logs, data}) => {
+            return {
+                contract,
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(ensureArray)
+                })),
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
+        args.acalaEvmExecutedFailed = req.getAcalaEvmExecutedFailed().map(({contract, logs, data}) => {
+            return {
+                contract,
+                logs: logs?.map(log => ({
+                    ...log,
+                    filter: log.filter?.map(ensureArray)
+                })),
+                data: toGatewayFields(data, CONTEXT_NESTING_SHAPE)
+            }
+        })
+
         let q = new Output()
         q.block(`query`, () => {
             q.block(`status`, () => {
@@ -236,6 +258,7 @@ export class Ingest<R extends BatchRequest> {
                     q.line('specId')
                     q.line('stateRoot')
                     q.line('extrinsicsRoot')
+                    q.line('validator')
                 })
                 q.line('events')
                 q.line('calls')
@@ -390,10 +413,10 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     items.sort((a, b) => getPos(a) - getPos(b))
 
-    let {timestamp, ...hdr} = block.header
+    let {timestamp, validator, ...hdr} = block.header
 
     return {
-        header: {...hdr, timestamp: new Date(timestamp).valueOf()},
+        header: {...hdr, timestamp: new Date(timestamp).valueOf(), validator: validator ?? undefined},
         items: items
     }
 }
@@ -421,4 +444,11 @@ function getPos(item: Item): number {
         default:
             throw unexpectedCase()
     }
+}
+
+
+function ensureArray<T>(val?: T | T[] | null): T[] {
+    if (Array.isArray(val)) return val
+    if (val == null) return []
+    return [val]
 }

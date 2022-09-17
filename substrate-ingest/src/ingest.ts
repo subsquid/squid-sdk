@@ -1,5 +1,5 @@
-import type {Logger} from "@subsquid/logger"
-import {Codec, HexSink, Src} from "@subsquid/scale-codec"
+import type {Logger} from '@subsquid/logger'
+import {Codec, HexSink, Src} from '@subsquid/scale-codec'
 import {
     decodeMetadata,
     getChainDescriptionFromMetadata,
@@ -7,17 +7,17 @@ import {
     isPreV14,
     OldTypes,
     OldTypesBundle
-} from "@subsquid/substrate-metadata"
-import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, wait} from "@subsquid/util-internal"
-import assert from "assert"
-import {Client} from "./client"
-import {Spec, sub} from "./interfaces"
-import {BlockData} from "./model"
-import {parseRawBlock, RawBlock} from "./parse/block"
-import {Account} from "./parse/validator"
-import {Shooter} from "./shooter"
+} from '@subsquid/substrate-metadata'
+import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {assertNotNull, wait} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Client} from './client'
+import {Spec, sub} from './interfaces'
+import {BlockData} from './model'
+import {parseRawBlock, RawBlock} from './parse/block'
+import {Account} from './parse/validator'
+import {Shooter} from './shooter'
 import {
     addErrorContext,
     EVENT_STORAGE_KEY,
@@ -26,7 +26,7 @@ import {
     splitSpecId,
     VALIDATORS_STORAGE_KEY,
     withErrorContext
-} from "./util"
+} from './util'
 
 
 export interface IngestOptions {
@@ -53,6 +53,7 @@ export class Ingest {
     private chainHeight = 0
     private specs = this.createSpecsShooter()
     private validators = this.createValidatorsShooter()
+    private firstBlock = true
 
     private constructor(options: IngestOptions) {
         this.client = options.client
@@ -104,7 +105,18 @@ export class Ingest {
                 block_height: raw.blockHeight,
                 hex: currentSpec.rawMetadata,
             }
+        } else if (this.firstBlock) {
+            let [spec_name, spec_version] = splitSpecId(prevSpec.specId)
+            block.metadata = {
+                id: prevSpec.specId,
+                spec_name,
+                spec_version,
+                block_hash: await this.getBlockHash(raw.blockHeight - 1),
+                block_height: raw.blockHeight - 1,
+                hex: prevSpec.rawMetadata
+            }
         }
+        this.firstBlock = false
         block.header.spec_id = currentSpec.specId
         block.last = this.chainHeight === block.header.height
         return block
@@ -135,11 +147,7 @@ export class Ingest {
         let storagePromises = new Array<Promise<Error | any[]>>(size)
 
         let last = height + size - 1
-        let blockHash = await this.client
-            .call<string>(height, "chain_getBlockHash", [last])
-            .catch(withErrorContext({
-                blockHeight: last
-            }))
+        let blockHash = await this.getBlockHash(last, height)
 
         for (let i = size - 1; i >= 0; i--) {
             let blockHeight = height + i
@@ -187,6 +195,14 @@ export class Ingest {
             }
         }
         return result
+    }
+
+    private getBlockHash(blockHeight: number, priority?: number): Promise<string> {
+        return this.client
+            .call<string>(priority ?? blockHeight, "chain_getBlockHash", [blockHeight])
+            .catch(withErrorContext({
+                blockHeight
+            }))
     }
 
     private createValidatorsShooter() {
@@ -267,10 +283,6 @@ export class Ingest {
             blockHash,
             specId: `${rt.specName}@${rt.specVersion}`
         }
-    }
-
-    private getBlockHash(height: number): Promise<string> {
-        return this.client.call<string>(height, "chain_getBlockHash", [height])
     }
 
     private async getChainHeight(): Promise<number> {

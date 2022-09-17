@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Wed, 07 Sep 2022 20:52:29 GMT and should not be manually modified.
+
+## 1.3.0
+Wed, 07 Sep 2022 20:52:29 GMT
+
+### Minor changes
+
+- support `storage.getAll...()` API
 
 ## 1.2.2
 Wed, 17 Aug 2022 17:33:52 GMT

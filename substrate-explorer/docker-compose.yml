@@ -13,7 +13,7 @@ services:
       # set DB_TYPE to cockroach when using cockroach
       # DB_TYPE: cockroach
       # setup sensible limits for production
-      DB_STATEMENT_TIMEOUT_MS: 2000
+      GQL_DB_STATEMENT_TIMEOUT_MS: 2000
       GQL_MAX_ROOT_FIELDS: 200
       GQL_MAX_RESPONSE_NODES: 300000
 

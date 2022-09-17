@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+
+## 0.1.2
+Thu, 15 Sep 2022 20:54:52 GMT
+
+### Patches
+
+- adapt for new openreader upgrade
 
 ## 0.1.1
 Wed, 17 Aug 2022 17:33:52 GMT

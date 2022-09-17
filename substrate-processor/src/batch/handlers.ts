@@ -204,6 +204,14 @@ export class DataHandlers implements BatchRequest {
             }
         })
     }
+
+    getAcalaEvmExecuted() {
+        return []
+    }
+
+    getAcalaEvmExecutedFailed() {
+        return []
+    }
 }
 
 
