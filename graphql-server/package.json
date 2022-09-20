@@ -38,7 +38,12 @@
     "graphql": "^15.8.0",
     "graphql-ws": "^5.9.1",
     "pg": "^8.7.3",
-    "ws": "^8.8.1"
+    "ws": "^8.8.1",
+    "@apollo/utils.keyvaluecache": "~1.0.1",
+    "apollo-server-plugin-response-cache": "~3.7.0",
+    "@apollo/utils.keyvadapter": "~1.1.2",
+    "@keyv/redis": "~2.5.1",
+    "keyv": "~4.5.0"
   },
   "peerDependencies": {
     "class-validator": "^0.13.2",

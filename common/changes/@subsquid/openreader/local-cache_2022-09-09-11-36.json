@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add cache option to `runApollo()`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

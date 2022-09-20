@@ -1,6 +1,6 @@
-import type {Logger} from '@subsquid/logger'
+import {Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
-import {PluginDefinition} from 'apollo-server-core'
+import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import {ApolloServer} from 'apollo-server-express'
 import express from 'express'
 import fs from 'fs'
@@ -33,9 +33,9 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
-    subscriptionMaxResponseNodes?: number
+    subscriptionMaxResponseNodes?: number,
+    cache?: KeyValueCache
 }
-
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let {connection, subscriptionConnection, subscriptionPollInterval, maxResponseNodes, subscriptionMaxResponseNodes} = options
@@ -76,7 +76,8 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         log: options.log,
         graphiqlConsole: options.graphiqlConsole,
         maxRequestSizeBytes: options.maxRequestSizeBytes,
-        maxRootFields: options.maxRootFields
+        maxRootFields: options.maxRootFields,
+        cache: options.cache,
     }), options.log)
 }
 
@@ -95,6 +96,7 @@ export interface ApolloOptions {
     log?: Logger
     maxRequestSizeBytes?: number
     maxRootFields?: number
+    cache?: KeyValueCache
 }
 
 
@@ -138,9 +140,11 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         disposals.push(async () => wsServerCleanup.dispose())
     }
 
+
     let apollo = new ApolloServer({
         schema,
         context,
+        cache: options.cache,
         stopOnTerminationSignals: false,
         executor: execute && (async req => {
             return execute({
@@ -169,7 +173,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                         }
                     }
                 }
-            }
+            },
         ]
     })
 
@@ -189,7 +193,6 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
 
     return listen(server, options.port)
 }
-
 
 export function addServerCleanup(disposals: Dispose[], server: Promise<ListeningServer>, log?: Logger): Promise<ListeningServer> {
     async function cleanup() {
