@@ -15,7 +15,7 @@
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
-  "dependencies": {"@subsquid/substrate-metadata":"~1.1.0"
+  "dependencies": {"@subsquid/substrate-metadata":"~1.1.0","@ethersproject/transactions":"~5.7.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",

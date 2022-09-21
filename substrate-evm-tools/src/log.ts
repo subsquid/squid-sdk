@@ -13,18 +13,18 @@ export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
 
     switch (ctx._chain.getEventHash('EVM.Log')) {
         case registry.getHash('EVM.LogV0'):
-            return getAsV1(event.args)
+            return getAsV0(event.args)
         case registry.getHash('EVM.LogV1'):
-            return getAsV2(event.args)
+            return getAsV1(event.args)
         default:
             throw new Error()
     }
 }
 
-function getAsV1(args: any): EvmLog {
+function getAsV0(args: any): EvmLog {
     return args
 }
 
-function getAsV2(args: any): EvmLog {
+function getAsV1(args: any): EvmLog {
     return args.log
 }

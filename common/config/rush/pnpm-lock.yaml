@@ -3,6 +3,7 @@ lockfileVersion: 5.3
 specifiers:
   '@ethersproject/abi': ^5.6.4
   '@ethersproject/bytes': ^5.6.1
+  '@ethersproject/transactions': ~5.7.0
   '@gear-js/api': ^0.24.0
   '@graphql-tools/merge': ^8
   '@graphql-tools/schema': ^8
@@ -113,6 +114,7 @@ specifiers:
 dependencies:
   '@ethersproject/abi': 5.7.0
   '@ethersproject/bytes': 5.7.0
+  '@ethersproject/transactions': 5.7.0
   '@gear-js/api': 0.24.2_@polkadot+api@7.15.1
   '@graphql-tools/merge': 8.3.6_graphql@15.8.0
   '@graphql-tools/schema': 8.5.1_graphql@15.8.0
@@ -4272,12 +4274,13 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-QnqgaobD4tfpfTFx24nZKdQe2NMK3L2kauH2L48y/ZQgTzbWPKg858CPohoaU0/kY3mSmBWc4Hh4SFn3HrwHXQ==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-IN70n57okn7xQJrzkK8FmICxvB/dco65SXBjUBGuWCegea4Wr2224xWEWtB2aNPWWzVBtVHAxuFthzOdsWQFMA==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
     dependencies:
       '@ethersproject/bytes': 5.7.0
+      '@ethersproject/transactions': 5.7.0
       '@types/node': 16.11.59
       dotenv: 10.0.0
       ethers: 5.7.1
@@ -4763,10 +4766,11 @@ packages:
     dev: false
 
   file:projects/substrate-evm-tools.tgz:
-    resolution: {integrity: sha512-wo21B2rXGSyKV8mkAKRxYYhuEdfj2c6/n1Exb/qhbS40PhwPaKNJ0dgkQVBCf8oxH3CCXGCRiJiESa5GpbIftw==, tarball: file:projects/substrate-evm-tools.tgz}
+    resolution: {integrity: sha512-/D8Ay7YsDE+NSSlLkUizToyNuiupduA8cYYwsbE+2CTyRR8wcLqEtSTa1LzSWUguY/Ib0158aoOGGa7pdaZGwQ==, tarball: file:projects/substrate-evm-tools.tgz}
     name: '@rush-temp/substrate-evm-tools'
     version: 0.0.0
     dependencies:
+      '@ethersproject/transactions': 5.7.0
       '@types/node': 16.11.59
       typescript: 4.7.4
     dev: false

@@ -1,88 +1,17 @@
 import {OldTypes} from '@subsquid/substrate-metadata';
 import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry'
+import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions//substrate'
 import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
 
 const types: OldTypes = {
     types: {
-        H160: "[u8; 20; H160]",
-        H256: "[u8; 32; H256]",
-        EvmLog: {
-            address: 'H160',
-            topics: 'Vec<H256>',
-            data: 'Bytes',
-        },
+        ...substrateBundle.types,
         EVM: {
             _enum: {
                 LogV0: 'EvmLog',
                 LogV1: {
                     log: 'EvmLog',
                 },
-            },
-        },
-        EthTransactionAction: {
-            '_enum': {
-                'Call': 'H160',
-                'Create': 'Null'
-            }
-        },
-        "EthTransactionSignature": {
-            "v": "u64",
-            "r": "H256",
-            "s": "H256"
-        },
-        LegacyTransaction: {
-            nonce: 'U256',
-            gasPrice: 'U256',
-            gasLimit: 'U256',
-            action: 'EthTransactionAction',
-            value: 'U256',
-            input: 'Bytes',
-            signature: 'EthTransactionSignature',
-        },
-        TransactionV0: 'LegacyTransaction',
-        "EthAccessListItem": {
-            "address": "Vec<u8>",
-            "slots": "Vec<H256>"
-        },
-        "EthAccessList": "Vec<EthAccessListItem>",
-        EIP2930Transaction: {
-            chainId: 'u64',
-            nonce: 'U256',
-            gasPrice: 'U256',
-            gasLimit: 'U256',
-            action: 'EthTransactionAction',
-            value: 'U256',
-            input: 'Bytes',
-            accessList: 'EthAccessList',
-            oddYParity: 'bool',
-            r: 'H256',
-            s: 'H256',
-        },
-        TransactionV1: {
-            _enum: {
-                Legacy: 'LegacyTransaction',
-                EIP2930: 'EIP2930Transaction',
-            },
-        },
-        EIP1559Transaction: {
-            chainId: 'u64',
-            nonce: 'U256',
-            maxPriorityFeePerGas: 'U256',
-            maxFeePerGas: 'U256',
-            gasLimit: 'U256',
-            action: 'EthTransactionAction',
-            value: 'U256',
-            input: 'Bytes',
-            accessList: 'EthAccessList',
-            oddYParity: 'bool',
-            r: 'H256',
-            s: 'H256',
-        },
-        TransactionV2: {
-            _enum: {
-                Legacy: 'LegacyTransaction',
-                EIP2930: 'EIP2930Transaction',
-                EIP1559: 'EIP1559Transaction',
             },
         },
         Ethereum: {
@@ -101,7 +30,7 @@ const types: OldTypes = {
         V14EthTransactionAction: {
             '_enum': {
                 'Call': 'H160',
-                'Create': 'Null'
+                'Create': null
             }
         },
         V14LegacyTransaction: {
@@ -114,6 +43,11 @@ const types: OldTypes = {
             signature: 'EthTransactionSignature',
         },
         V14TransactionV0: 'V14LegacyTransaction',
+        "V14EthAccessListItem": {
+            "address": "H160",
+            "storageKeys": "Vec<H256>"
+        },
+        "V14EthAccessList": "Vec<V14EthAccessListItem>",
         V14EIP2930Transaction: {
             chainId: 'u64',
             nonce: '[u64; 4]',
@@ -122,7 +56,7 @@ const types: OldTypes = {
             action: 'V14EthTransactionAction',
             value: '[u64; 4]',
             input: 'Bytes',
-            accessList: 'EthAccessList',
+            accessList: 'V14EthAccessList',
             oddYParity: 'bool',
             r: 'H256',
             s: 'H256',
@@ -142,7 +76,7 @@ const types: OldTypes = {
             action: 'V14EthTransactionAction',
             value: '[u64; 4]',
             input: 'Bytes',
-            accessList: 'EthAccessList',
+            accessList: 'V14EthAccessList',
             oddYParity: 'bool',
             r: 'H256',
             s: 'H256',
@@ -182,7 +116,7 @@ const pallets = typeRegistry.use('P');
 
 export const registry = new Registry(typeRegistry.getTypes(), pallets);
 
-console.log(registry.getHash('Ethereum.transactV0'))
-console.log(registry.getHash('V14Ethereum.transactV0'))
-console.log(registry.getHash('V14Ethereum.transactV1'))
-console.log(registry.getHash('V14Ethereum.transactV2'))
+// console.log(registry.getHash('Ethereum.transactV0'))
+// console.log(registry.getHash('V14Ethereum.transactV0'))
+// console.log(registry.getHash('V14Ethereum.transactV1'))
+// console.log(registry.getHash('V14Ethereum.transactV2'))
