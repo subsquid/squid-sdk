@@ -672,6 +672,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/big-decimal",
+      "projectFolder": "util/big-decimal",
+      "shouldPublish": true
+    },
+    {
       "packageName": "balances",
       "projectFolder": "test/balances",
       "shouldPublish": false

@@ -1,3 +1,4 @@
+import {BigDecimal} from "@subsquid/big-decimal"
 import {Field, ObjectType, Query, Resolver} from "type-graphql"
 import {EntityManager} from "typeorm"
 import {Json} from "../../../../index"
@@ -16,7 +17,10 @@ export class ScalarRow {
     date?: Date
 
     @Field()
-    bigNumber?: bigint
+    bigInt?: bigint
+
+    @Field(() => BigDecimal)
+    bigDecimal?: BigDecimal
 
     @Field()
     bytes?: Buffer

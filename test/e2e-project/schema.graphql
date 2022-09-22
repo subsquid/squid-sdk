@@ -172,6 +172,7 @@ type ScalarRaw @entity {
   float: Float
   nested: NestedScalars
   json: JSON
+  bigdecimal: BigDecimal
 }
 
 
@@ -179,6 +180,7 @@ type NestedScalars {
   float: Float
   json: JSON
   enumInJson: EnumInJson
+  bigdecimal: BigDecimal
 }
 
 

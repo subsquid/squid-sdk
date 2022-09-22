@@ -252,6 +252,8 @@ export class ObjectCursor implements Cursor {
                         return `(${this.string(field)})::bool`
                     case 'BigInt':
                         return `(${this.string(field)})::numeric`
+                    case 'BigDecimal':
+                        return `(${this.string(field)})::numeric`
                     case 'Bytes':
                         return `decode(substr(${this.string(field)}, 3), 'hex')`
                     case 'DateTime':

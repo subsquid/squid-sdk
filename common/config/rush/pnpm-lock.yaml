@@ -15,6 +15,7 @@ specifiers:
   '@polkadot/types': ^7.15.1
   '@rush-temp/astar-erc20': file:./projects/astar-erc20.tgz
   '@rush-temp/balances': file:./projects/balances.tgz
+  '@rush-temp/big-decimal': file:./projects/big-decimal.tgz
   '@rush-temp/chain-status-service': file:./projects/chain-status-service.tgz
   '@rush-temp/data-test': file:./projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
@@ -82,6 +83,7 @@ specifiers:
   apollo-server-express: ^3.9.0
   apollo-server-plugin-response-cache: ~3.7.0
   base-x: ^3.0.9
+  big.js: ~6.2.1
   blake2b: ^2.1.4
   camelcase: ^6.3.0
   commander: ^9.3.0
@@ -129,6 +131,7 @@ dependencies:
   '@polkadot/types': 7.15.1
   '@rush-temp/astar-erc20': file:projects/astar-erc20.tgz_supports-color@8.1.1
   '@rush-temp/balances': file:projects/balances.tgz_supports-color@8.1.1
+  '@rush-temp/big-decimal': file:projects/big-decimal.tgz
   '@rush-temp/chain-status-service': file:projects/chain-status-service.tgz_supports-color@8.1.1
   '@rush-temp/data-test': file:projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_supports-color@8.1.1
@@ -196,6 +199,7 @@ dependencies:
   apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
   apollo-server-plugin-response-cache: 3.7.0_graphql@15.8.0
   base-x: 3.0.9
+  big.js: 6.2.1
   blake2b: 2.1.4
   camelcase: 6.3.0
   commander: 9.4.0
@@ -221,7 +225,7 @@ dependencies:
   stoppable: 1.1.0
   supports-color: 8.1.1
   type-fest: 2.19.0
-  typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+  typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
   typescript: 4.7.4
   websocket: 1.0.34_supports-color@8.1.1
   ws: 8.8.1
@@ -1693,6 +1697,10 @@ packages:
 
   /bech32/1.1.4:
     resolution: {integrity: sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==}
+    dev: false
+
+  /big.js/6.2.1:
+    resolution: {integrity: sha512-bCtHMwL9LeDIozFn+oNhhFoq+yQ3BNdnsLSASUxLciOb1vgvpHsIO1dsENiGMgbb4SkP5TrzWzRiLddn8ahVOQ==}
     dev: false
 
   /binary-extensions/2.2.0:
@@ -3928,8 +3936,8 @@ packages:
       is-typedarray: 1.0.0
     dev: false
 
-  /typeorm/0.3.9_pg@8.8.0+supports-color@8.1.1:
-    resolution: {integrity: sha512-xNcE44D4hn74n7pjuMog9hRgep+BiO3IBpjEaQZ8fb56zsDz7xHT1GAeWwmGuuU+4nDEELp2mIqgSCR+zxR7Jw==}
+  /typeorm/0.3.10_pg@8.8.0+supports-color@8.1.1:
+    resolution: {integrity: sha512-VMKiM84EpJQ+Mz9xDIPqnfplWhyUy1d8ccaKdMY9obifxJOTFnv8GYVyPsGwG8Lk7Nb8MlttHyHWENGAhBA3WA==}
     engines: {node: '>= 12.9.0'}
     hasBin: true
     peerDependencies:
@@ -4299,7 +4307,7 @@ packages:
       dotenv: 10.0.0
       ethers: 5.7.1
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4324,7 +4332,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-xdErvAfCvRIm7boOM+5LEI++g/q0lLlUX37JFWmfGVMISTAz5HKHVbjli+B4vtDOuZVEEpKqHYFCjg1TkAW3OA==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-sZmV94sstt53AGf+de0UggWcIPG7Cccu2ZdbXGUIxqj5BgiBaHyAnLfUmemqRrVguXq1UvpWTdAL7ElmtQj7LQ==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -4332,7 +4340,7 @@ packages:
       '@types/node': 16.11.59
       dotenv: 10.0.0
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4352,6 +4360,16 @@ packages:
       - supports-color
       - ts-node
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/big-decimal.tgz:
+    resolution: {integrity: sha512-nNYg9f6XDbDcGLQV7Xxkk3n0X8sWCNGBZEAhgGxDOolJJ7/PbOZoXpQhmy3u5EDHsPjI/lwYUrxwqS2BIBQLDw==, tarball: file:projects/big-decimal.tgz}
+    name: '@rush-temp/big-decimal'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.59
+      big.js: 6.2.1
+      typescript: 4.7.4
     dev: false
 
   file:projects/chain-status-service.tgz_supports-color@8.1.1:
@@ -4383,7 +4401,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-5OLk9lTwyJ3ykAb+kZ2Ccf2lMNVuQ1aOsLkSPk/FSS89S2mUccuF6zwRWgDQehE9u/uvnwGKqBjTYIhnPOC9cA==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-zYNzrPyQaATEaTviTsGGGkL33sEJxviSpvaiyLNPob9BbtqcrYG8M6GxY2hvjKCsXBht4bPr6ow1lgMMOD9WzA==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -4391,7 +4409,7 @@ packages:
       '@types/node': 16.11.59
       dotenv: 10.0.0
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4456,7 +4474,7 @@ packages:
       '@types/node': 16.11.59
       dotenv: 10.0.0
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4503,7 +4521,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-VFnxj8oy3Q8j3X2FqHv9548o7BOHRuwEqV4s/Jqd2DO+/hlufHFe9EcFt+ItVmKw17w8xLL74XARGbVHXapJag==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-T8RbJrdAL43FLCXuO/923vIAtjQb/Bsa+8X/6Ay3k+mYdnfnPcLRsZsXYShm1UG2bQhNpZlNPxVRk98TfoWAqQ==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -4533,7 +4551,7 @@ packages:
       mocha: 9.2.2
       pg: 8.8.0
       type-graphql: 1.2.0-rc.1_aea24acf06b899fbc466d3b3b949c72d
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
       ws: 8.8.1
     transitivePeerDependencies:
@@ -4592,7 +4610,7 @@ packages:
       dotenv: 10.0.0
       ethers: 5.7.1
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4640,7 +4658,7 @@ packages:
       dotenv: 10.0.0
       ethers: 5.7.1
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4665,7 +4683,7 @@ packages:
     dev: false
 
   file:projects/openreader.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-EAQmomuzIRvsIpQguFeW4S4MHmVer9c3Vi/RfpfDVaBQYMHPJKKxVKizlAmTyK2+W3idPDMP6/s+GAQb4mlnqQ==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-ccldfi+1S9NKt/pw4tSHQ4Nlg4l7RQ07lJ3/atu53q7x+JJUOsHjbS65mZTz+JUpJaFOuOJ1vu2XDenYFDzZtw==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
@@ -4741,7 +4759,7 @@ packages:
       '@types/node': 16.11.59
       dotenv: 10.0.0
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4864,7 +4882,7 @@ packages:
     dev: false
 
   file:projects/typeorm-codegen.tgz:
-    resolution: {integrity: sha512-2dRLWeH57caVJDs1sLYow+2uNdS47nOc4twJcllSgVo4B2JVt5J4jrGZz/3Hq+w+nmjqzWdIGwkWC00rypXf3A==, tarball: file:projects/typeorm-codegen.tgz}
+    resolution: {integrity: sha512-BDMYJkY9xB5Pz/+65C2jlBkBAGis5h0IZ5TjqL3+9aQEt3zbMsUOIiJUnKBK3sZeUqtd6J9zYc4hv5NY/8QHCw==, tarball: file:projects/typeorm-codegen.tgz}
     name: '@rush-temp/typeorm-codegen'
     version: 0.0.0
     dependencies:
@@ -4880,7 +4898,7 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.59
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4912,7 +4930,7 @@ packages:
       '@types/node': 16.11.59
       commander: 9.4.0
       dotenv: 10.0.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -4947,7 +4965,7 @@ packages:
       expect: 27.5.1
       mocha: 9.2.2
       pg: 8.8.0
-      typeorm: 0.3.9_pg@8.8.0+supports-color@8.1.1
+      typeorm: 0.3.10_pg@8.8.0+supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'

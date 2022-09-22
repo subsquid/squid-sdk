@@ -46,11 +46,15 @@
     "keyv": "~4.5.0"
   },
   "peerDependencies": {
+    "@subsquid/big-decimal": "^0.0.0",
     "class-validator": "^0.13.2",
     "type-graphql": "^1.2.0-rc.1",
     "typeorm": "^0.3.6"
   },
   "peerDependenciesMeta": {
+    "@subsquid/big-decimal": {
+      "optional": true
+    },
     "class-validator": {
       "optional": true
     },

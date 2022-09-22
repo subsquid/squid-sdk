@@ -80,7 +80,7 @@ export interface ScalarPropType {
 }
 
 
-export type Scalar = 'ID' | 'String' | 'Int' | 'Float' | 'Boolean' | 'DateTime' | 'BigInt' | 'JSON' | 'Bytes'
+export type Scalar = 'ID' | 'String' | 'Int' | 'Float' | 'Boolean' | 'DateTime' | 'BigInt' | 'JSON' | 'Bytes' | 'BigDecimal'
 
 
 export interface EnumPropType {
