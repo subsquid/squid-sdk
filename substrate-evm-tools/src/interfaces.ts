@@ -19,4 +19,3 @@ export interface Call {
     name: string
     args: any
 }
-

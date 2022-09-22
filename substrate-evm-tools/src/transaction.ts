@@ -1,7 +1,8 @@
-import {assert} from "console"
+import assert from "assert"
 import {Call, ChainContext, Event} from "./interfaces"
 import {registry} from "./registry"
 import {serialize, parse} from "@ethersproject/transactions"
+import {clearUndefinedFields, normalizeU256} from "./util"
 
 export enum TransactionType {
     Legacy,
@@ -9,173 +10,154 @@ export enum TransactionType {
     EIP1559,
 }
 
-export interface Transaction {
-    hash?: string;
-
-    to?: string;
-    from?: string;
-    nonce: number;
-
-    gasLimit: bigint;
-    gasPrice?: bigint;
-
-    data: string;
-    value: bigint;
-    chainId: number;
-
-    r?: string;
-    s?: string;
-    v?: number;
-
-    // Typed-Transaction features
-    type?: TransactionType | null;
-
-    // EIP-2930; Type 1 & EIP-1559; Type 2
-    accessList?: {address: string, storageKeys: string[]}[];
-
-    // EIP-1559; Type 2
-    maxPriorityFeePerGas?: bigint;
-    maxFeePerGas?: bigint;
+interface BaseTransaction {
+    hash: string
+    to?: string
+    from: string
+    nonce: bigint
+    gasLimit: bigint
+    input: string
+    value: bigint
+    r: string
+    s: string
+    v: bigint
+    type: TransactionType
 }
 
-export function getTransaction(ctx: ChainContext, call: Call): Transaction {
-    assert(call.name === 'Ethereum.transact')
+export interface LegacyTransaction extends BaseTransaction {
+    type: TransactionType.Legacy
+    gasPrice: bigint
+}
 
-    let transaction: any
-    switch (ctx._chain.getCallHash('Ethereum.transact')) {
-        case registry.getHash('Ethereum.transactV0'):
-        case registry.getHash('V14Ethereum.transactV0'):
-            transaction = getAsV0(call.args)
-            break
-        case registry.getHash('Ethereum.transactV1'):
-        case registry.getHash('V14Ethereum.transactV1'):
-        case registry.getHash('Ethereum.transactV2'):
-        case registry.getHash('V14Ethereum.transactV2'):
-            transaction = getAsV1(call.args)
-            break
+export interface EIP2930Transaction extends BaseTransaction {
+    type: TransactionType.EIP2930
+    gasPrice: bigint
+    accessList: {address: string; storageKeys: string[]}[]
+    chainId: bigint
+}
+
+export interface EIP1559Transaction extends BaseTransaction {
+    type: TransactionType.EIP1559
+    accessList: {address: string; storageKeys: string[]}[]
+    maxPriorityFeePerGas?: bigint
+    maxFeePerGas?: bigint
+    chainId: bigint
+}
+
+export type Transaction =
+    | LegacyTransaction
+    | EIP2930Transaction
+    | EIP1559Transaction
+
+export function getTransaction(ctx: ChainContext, call: Call): Transaction {
+    assert(call.name === "Ethereum.transact")
+
+    switch (ctx._chain.getCallHash("Ethereum.transact")) {
+        case registry.getHash("Ethereum.transactV0"):
+        case registry.getHash("V14Ethereum.transactV0"):
+            return getAsV0(call.args)
+        case registry.getHash("Ethereum.transactV1"):
+        case registry.getHash("Ethereum.transactV2"):
+        case registry.getHash("V14Ethereum.transactV1"):
+        case registry.getHash("V14Ethereum.transactV2"):
+            return getAsV1(call.args)
         default:
             throw new Error()
     }
-
-    let serializedTransaction = serialize(transaction.tx, transaction.signature)
-    const {gasLimit, gasPrice, maxPriorityFeePerGas, maxFeePerGas, value, ...tx} = parse(serializedTransaction)
-    return {
-        ...tx,
-        gasLimit: gasLimit.toBigInt(),
-        gasPrice: gasPrice?.toBigInt(),
-        maxFeePerGas: maxFeePerGas?.toBigInt(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas?.toBigInt(),
-        value: value?.toBigInt()
-    }
 }
 
-function getAsV0(args: any): any {
+function getAsV0(args: any): Transaction {
     const data = args.transaction
-    return {
-        tx: {
-            to: data.action.value,
-            nonce: Number(normalizeU256(data.nonce)),
-            gasLimit: normalizeU256(data.gasLimit),
-            gasPrice: normalizeU256(data.gasPrice),
-            value: normalizeU256(data.value),
-            data: data.input,
-        },
-        signature: {
-            v: Number(data.signature.v),
-            r: data.signature.r,
-            s: data.signature.s,
-        }
-    }
+    return normalizeTransaction({
+        to: data.action.value,
+        nonce: normalizeU256(data.nonce),
+        gasLimit: normalizeU256(data.gasLimit),
+        gasPrice: normalizeU256(data.gasPrice),
+        value: normalizeU256(data.value),
+        input: data.input,
+        type: TransactionType.Legacy,
+        v: data.signature.v,
+        r: data.signature.r,
+        s: data.signature.s,
+    })
 }
 
-function getAsV1(args: any): any {
+function getAsV1(args: any): Transaction {
     const transaction = args.transaction
     const data = transaction.value
-    const to = data.action.value
-    const nonce = Number(normalizeU256(data.nonce))
-    const value = normalizeU256(data.value)
-    const input = data.input
-    const gasLimit = normalizeU256(data.gasLimit)
-    switch (transaction.__kind) {
-        case 'Legacy': {
-            return {
-                tx: {
-                    to,
-                    nonce,
-                    value,
-                    data: input,
-                    gasLimit,
-                    gasPrice: normalizeU256(data.gasPrice),
-                    type: TransactionType.Legacy,
-                },
-                signature: {
-                    v: Number(data.signature.v),
-                    r: data.signature.r,
-                    s: data.signature.s,
-                }
-            }
-        }
-        case 'EIP1559': {
-            return {
-                tx: {
-                    to,
-                    nonce,
-                    value,
-                    data: input,
-                    gasLimit,
-                    maxFeePerGas: normalizeU256(data.maxFeePerGas),
-                    maxPriorityFeePerGas: normalizeU256(data.maxPriorityFeePerGas),
-                    chainId: Number(data.chainId),
-                    accessList: data.accessList,
-                    type: TransactionType.EIP1559,
-                },
-                signature: {
-                    r: data.r,
-                    s: data.s,
-                    v: Number(data.chainId),
-                }
-            }
-        }
-        case 'EIP2930': {
-            const data = transaction.value
-            return {
-                tx: {
-                    to,
-                    nonce,
-                    value,
-                    data: input,
-                    gasLimit,
-                    gasPrice: normalizeU256(data.gasPrice),
-                    chainId: Number(data.chainId),
-                    accessList: data.accessList.map((a: any) => [
-                        a.address,
-                        a.storageKeys
-                    ]),
-                    type: TransactionType.EIP2930,
-                },
-                signature: {
-                    r: data.r,
-                    s: data.s,
-                    v: Number(data.chainId),
-                }
-            }
-        }
-    }
+    const signature = data.signature || {
+        v: data.v,
+        r: data.r,
+        s: data.s,
+    } 
+    return normalizeTransaction({
+        type:
+            transaction.__kind === "Legacy"
+                ? 0
+                : transaction.__kind === "EIP2930"
+                    ? 1
+                    : 2,
+        to: data.action.value,
+        nonce: normalizeU256(data.nonce),
+        gasLimit: normalizeU256(data.gasLimit),
+        gasPrice: data.gasPrice ? normalizeU256(data.gasPrice) : undefined,
+        value: normalizeU256(data.value),
+        maxFeePerGas: data.maxFeePerGas ? normalizeU256(data.maxFeePerGas) : undefined,
+        maxPriorityFeePerGas: data.maxPriorityFeePerGas ? normalizeU256(data.maxPriorityFeePerGas) : undefined,
+        chainId: data.chainId ? BigInt(data.chainId) : undefined,
+        accessList: data.accessList,
+        input: data.input,
+        v: BigInt(signature.v ?? data.chainId),
+        r: signature.r,
+        s: signature.s,
+    })
 }
 
-function normalizeU256(value: bigint | bigint[]): bigint {
-    if (Array.isArray(value)) {
-        assert(value.length === 4)
-        return toU256(toU128(value[0], value[1]), toU128(value[2], value[3]))
-    } else {
-        return BigInt(value)
-    }
+interface TransactionData {
+    to?: string
+    nonce: bigint
+    gasLimit: bigint
+    input: string
+    value: bigint
+    r: string
+    s: string
+    v: bigint
+    type: TransactionType
+    gasPrice?: bigint
+    accessList?: {address: string; storageKeys: string[]}[]
+    maxPriorityFeePerGas?: bigint
+    maxFeePerGas?: bigint
+    chainId?: bigint
 }
 
-function toU128(a: bigint, b: bigint) {
-    return BigInt(a) + (BigInt(b) << 64n)
-}
+function normalizeTransaction(tx: TransactionData): Transaction {
+    let serializedTransaction = serialize(
+        clearUndefinedFields({
+            to: tx.to,
+            nonce: Number(tx.nonce),
+            gasLimit: tx.gasLimit,
+            data: tx.input,
+            value: tx.value,
+            type: tx.type,
+            gasPrice: tx.gasPrice,
+            accessList: tx.accessList,
+            maxFeePerGas: tx.maxFeePerGas,
+            maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+            chainId: tx.chainId ? Number(tx.chainId): undefined,
+        }),
+        {
+            v: Number(tx.v),
+            s: tx.s,
+            r: tx.r,
+        }
+    )
+    const {from, hash} = parse(serializedTransaction)
+    assert(from != null)
+    assert(hash != null)
 
-function toU256(a: bigint, b: bigint) {
-    return BigInt(a) + (BigInt(b) << 128n)
+    return {
+        ...tx,
+        from: from.toLowerCase(),
+        hash,
+    } as any
 }
