@@ -123,7 +123,7 @@ interface TransactionData {
 }
 
 function normalizeTransaction(tx: TransactionData): Transaction {
-    let serializedTransaction = serialize(
+    const serializedTransaction = serialize(
         clearUndefinedFields({
             to: tx.to,
             nonce: Number(tx.nonce),

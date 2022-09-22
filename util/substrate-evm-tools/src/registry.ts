@@ -115,8 +115,3 @@ const typeRegistry = new OldTypeRegistry(types)
 const pallets = typeRegistry.use('P')
 
 export const registry = new Registry(typeRegistry.getTypes(), pallets)
-
-// console.log(registry.getHash('Ethereum.transactV0'))
-// console.log(registry.getHash('V14Ethereum.transactV0'))
-// console.log(registry.getHash('V14Ethereum.transactV1'))
-// console.log(registry.getHash('V14Ethereum.transactV2'))
