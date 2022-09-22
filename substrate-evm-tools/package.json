@@ -15,10 +15,15 @@
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
-  "dependencies": {"@subsquid/substrate-metadata":"~1.1.0","@ethersproject/transactions":"~5.7.0"
+  "dependencies": {
+    "@ethersproject/transactions": "^5.7.0",
+    "@subsquid/substrate-metadata": "^1.1.0"
   },
   "devDependencies": {
+    "@types/mocha": "^9.1.1",
     "@types/node": "^16.11.41",
-    "typescript": "~4.7.4"
+    "typescript": "^4.7.4",
+    "mocha": "^10.0.0",
+    "expect": "^29.0.3"
   }
 }

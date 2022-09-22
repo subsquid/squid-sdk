@@ -21,10 +21,10 @@ export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
     }
 }
 
-function getAsV0(args: any): EvmLog {
+export function getAsV0(args: any): EvmLog {
     return args
 }
 
-function getAsV1(args: any): EvmLog {
+export function getAsV1(args: any): EvmLog {
     return args.log
 }

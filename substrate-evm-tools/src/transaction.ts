@@ -66,23 +66,23 @@ export function getTransaction(ctx: ChainContext, call: Call): Transaction {
     }
 }
 
-function getAsV0(args: any): Transaction {
+export function getAsV0(args: any): Transaction {
     const data = args.transaction
     return normalizeTransaction({
-        to: data.action.value,
+        to: data.action.value || undefined,
         nonce: normalizeU256(data.nonce),
         gasLimit: normalizeU256(data.gasLimit),
         gasPrice: normalizeU256(data.gasPrice),
         value: normalizeU256(data.value),
         input: data.input,
         type: TransactionType.Legacy,
-        v: data.signature.v,
+        v: BigInt(data.signature.v),
         r: data.signature.r,
         s: data.signature.s,
     })
 }
 
-function getAsV1(args: any): Transaction {
+export function getAsV1(args: any): Transaction {
     const transaction = args.transaction
     const data = transaction.value
     const signature = data.signature || {
@@ -97,7 +97,7 @@ function getAsV1(args: any): Transaction {
                 : transaction.__kind === "EIP2930"
                     ? 1
                     : 2,
-        to: data.action.value,
+        to: data.action.value || undefined,
         nonce: normalizeU256(data.nonce),
         gasLimit: normalizeU256(data.gasLimit),
         gasPrice: data.gasPrice ? normalizeU256(data.gasPrice) : undefined,
