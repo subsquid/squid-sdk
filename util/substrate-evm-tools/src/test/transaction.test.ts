@@ -1,5 +1,5 @@
 import * as transaction from "../transaction";
-import {expect} from "expect";
+import expect from "expect";
 
 describe("Transaction", () => {
     describe("V0", () => {

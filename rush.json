@@ -517,7 +517,7 @@
     },
     {
       "packageName": "@subsquid/substrate-evm-tools",
-      "projectFolder": "substrate-evm-tools",
+      "projectFolder": "util/substrate-evm-tools",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

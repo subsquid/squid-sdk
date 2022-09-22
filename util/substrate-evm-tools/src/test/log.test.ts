@@ -1,5 +1,5 @@
 import * as log from '../log'
-import {expect} from 'expect'
+import expect from 'expect'
 
 describe('EvmLog', () => {
     it('V0', () => {
