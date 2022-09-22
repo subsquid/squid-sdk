@@ -558,6 +558,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/big-decimal",
+      "projectFolder": "util/big-decimal",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "chain-status-service",
       "projectFolder": "util/chain-status-service",
       "shouldPublish": true,
@@ -670,11 +676,6 @@
       "projectFolder": "util/util-xxhash",
       "shouldPublish": true,
       "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/big-decimal",
-      "projectFolder": "util/big-decimal",
-      "shouldPublish": true
     },
     {
       "packageName": "balances",
