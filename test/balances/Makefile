@@ -3,7 +3,9 @@ process: migrate
 
 
 serve:
-	@SQD_DEBUG=graphl-server:server npx squid-graphql-server --subscriptions --cache redis --cache-ttl 5000 --subscription-poll-interval 1000
+	@npx squid-graphql-server \
+		--subscriptions --subscription-poll-interval 1000 \
+		--dumb-cache redis
 
 
 migrate:
