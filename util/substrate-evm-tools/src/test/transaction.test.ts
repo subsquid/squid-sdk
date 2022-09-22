@@ -3,7 +3,7 @@ import expect from 'expect'
 
 describe('Transaction', () => {
     describe('V0', () => {
-        it('Common transaction', () => {
+        it('Common', () => {
             expect(
                 transaction.getAsV0({
                     transaction: {
@@ -39,7 +39,7 @@ describe('Transaction', () => {
             })
         })
 
-        it('Contract creation transaction', () => {
+        it('Contract creation', () => {
             expect(
                 transaction.getAsV0({
                     transaction: {
@@ -76,7 +76,7 @@ describe('Transaction', () => {
     })
 
     describe('V1/V2', () => {
-        it('Legacy transaction', () => {
+        it('Legacy', () => {
             expect(
                 transaction.getAsV1({
                     transaction: {
@@ -115,7 +115,50 @@ describe('Transaction', () => {
             })
         })
 
-        it('EIP1559 transaction', () => {
+        it('EIP1559 1', () => {
+            expect(
+                transaction.getAsV1({
+                    transaction: {
+                        __kind: 'EIP1559',
+                        value: {
+                            accessList: [],
+                            action: {
+                                __kind: 'Call',
+                                value: '0x6a2d262d56735dba19dd70682b39f6be9a931d98',
+                            },
+                            chainId: '592',
+                            gasLimit: ['45037', '0', '0', '0'],
+                            input: '0xa9059cbb000000000000000000000000acc4be41088e09cd68bb19d63ded3ae5385b406c000000000000000000000000000000000000000000000000000000000005a30b',
+                            maxFeePerGas: ['9414057000', '0', '0', '0'],
+                            maxPriorityFeePerGas: ['8214057000', '0', '0', '0'],
+                            nonce: ['157', '0', '0', '0'],
+                            oddYParity: false,
+                            r: '0x93e142dcfff8c1293f8123336f342c22ce833b816dccee9a6a420013741c01e5',
+                            s: '0x6aeefc932ed9045ce13db45ddfe6b0387f1c7213b38467ce8a9ffc76d3511839',
+                            value: ['0', '0', '0', '0'],
+                        },
+                    },
+                })
+            ).toEqual({
+                to: '0x6a2d262d56735dba19dd70682b39f6be9a931d98',
+                accessList: [],
+                chainId: 592n,
+                gasLimit: 45037n,
+                input: '0xa9059cbb000000000000000000000000acc4be41088e09cd68bb19d63ded3ae5385b406c000000000000000000000000000000000000000000000000000000000005a30b',
+                nonce: 157n,
+                r: '0x93e142dcfff8c1293f8123336f342c22ce833b816dccee9a6a420013741c01e5',
+                s: '0x6aeefc932ed9045ce13db45ddfe6b0387f1c7213b38467ce8a9ffc76d3511839',
+                v: 0n,
+                value: 0n,
+                from: '0xa31d63ff5db5a6e238a7e73539dc95ed5cce2f45',
+                hash: '0x54a4b229448782ae737cb57c7887ec19a5b0d7c3bc30c9f42cf6a15df96cb924',
+                maxFeePerGas: 9414057000n,
+                maxPriorityFeePerGas: 8214057000n,
+                type: 2,
+            })
+        })
+
+        it('EIP1559 2', () => {
             expect(
                 transaction.getAsV1({
                     transaction: {
@@ -148,7 +191,7 @@ describe('Transaction', () => {
                 nonce: 188n,
                 r: '0xe6d5ae3a46583455ab3e0373f2c24c961f7fdf45ab5ed4b4c896e77266ab559b',
                 s: '0x2d25b6a8f721e2161bffc6339684be700675723447f1993d1eec67f6a1ab225a',
-                v: 1285n,
+                v: 0n,
                 value: 0n,
                 from: '0x4ec72cc0e9ae109e8828d0d0ca9e2969a0fe8a12',
                 hash: '0xfd8084438f3593d38ce16dc2231b5528a5a7aa5f02f8a195f34753d6a63ee3c5',

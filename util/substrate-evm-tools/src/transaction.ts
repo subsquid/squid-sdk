@@ -99,7 +99,7 @@ export function getAsV1(args: any): Transaction {
         chainId: data.chainId ? BigInt(data.chainId) : undefined,
         accessList: data.accessList,
         input: data.input,
-        v: BigInt(signature.v ?? data.chainId),
+        v: BigInt(signature.v || 0n),
         r: signature.r,
         s: signature.s,
     })
