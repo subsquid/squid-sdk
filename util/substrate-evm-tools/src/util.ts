@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from 'assert'
 
 export function normalizeU256(value: bigint | bigint[]): bigint {
     if (Array.isArray(value)) {
@@ -18,6 +18,6 @@ function toU256(a: bigint, b: bigint) {
 }
 
 export function clearUndefinedFields<T extends Record<string, any>>(obj: T): T {
-    Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key])
+    Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key])
     return obj
 }

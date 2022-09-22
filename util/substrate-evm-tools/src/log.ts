@@ -1,10 +1,10 @@
-import {assert} from "console"
-import {ChainContext, Event} from "./interfaces"
-import {registry} from "./registry"
+import {assert} from 'console'
+import {ChainContext, Event} from './interfaces'
+import {registry} from './registry'
 
 export interface EvmLog {
-    address: string,
-    data: string,
+    address: string
+    data: string
     topics: string[]
 }
 

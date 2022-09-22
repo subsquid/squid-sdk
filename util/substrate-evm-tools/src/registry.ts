@@ -1,4 +1,4 @@
-import {OldTypes} from '@subsquid/substrate-metadata';
+import {OldTypes} from '@subsquid/substrate-metadata'
 import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry'
 import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions//substrate'
 import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
@@ -17,21 +17,21 @@ const types: OldTypes = {
         Ethereum: {
             _enum: {
                 transactV0: {
-                    transaction: 'TransactionV0'
+                    transaction: 'TransactionV0',
                 },
                 transactV1: {
-                    transaction: 'TransactionV1'
+                    transaction: 'TransactionV1',
                 },
                 transactV2: {
-                    transaction: 'TransactionV2'
+                    transaction: 'TransactionV2',
                 },
             },
         },
         V14EthTransactionAction: {
-            '_enum': {
-                'Call': 'H160',
-                'Create': null
-            }
+            _enum: {
+                Call: 'H160',
+                Create: null,
+            },
         },
         V14LegacyTransaction: {
             nonce: '[u64; 4]',
@@ -43,11 +43,11 @@ const types: OldTypes = {
             signature: 'EthTransactionSignature',
         },
         V14TransactionV0: 'V14LegacyTransaction',
-        "V14EthAccessListItem": {
-            "address": "H160",
-            "storageKeys": "Vec<H256>"
+        V14EthAccessListItem: {
+            address: 'H160',
+            storageKeys: 'Vec<H256>',
         },
-        "V14EthAccessList": "Vec<V14EthAccessListItem>",
+        V14EthAccessList: 'Vec<V14EthAccessListItem>',
         V14EIP2930Transaction: {
             chainId: 'u64',
             nonce: '[u64; 4]',
@@ -91,13 +91,13 @@ const types: OldTypes = {
         V14Ethereum: {
             _enum: {
                 transactV0: {
-                    transaction: 'V14TransactionV0'
+                    transaction: 'V14TransactionV0',
                 },
                 transactV1: {
-                    transaction: 'V14TransactionV1'
+                    transaction: 'V14TransactionV1',
                 },
                 transactV2: {
-                    transaction: 'V14TransactionV2'
+                    transaction: 'V14TransactionV2',
                 },
             },
         },
@@ -108,13 +108,13 @@ const types: OldTypes = {
                 V14Ethereum: 'V14Ethereum',
             },
         },
-    }
-};
+    },
+}
 
-const typeRegistry = new OldTypeRegistry(types);
-const pallets = typeRegistry.use('P');
+const typeRegistry = new OldTypeRegistry(types)
+const pallets = typeRegistry.use('P')
 
-export const registry = new Registry(typeRegistry.getTypes(), pallets);
+export const registry = new Registry(typeRegistry.getTypes(), pallets)
 
 // console.log(registry.getHash('Ethereum.transactV0'))
 // console.log(registry.getHash('V14Ethereum.transactV0'))

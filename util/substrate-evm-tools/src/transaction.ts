@@ -1,8 +1,8 @@
-import assert from "assert"
-import {Call, ChainContext, Event} from "./interfaces"
-import {registry} from "./registry"
-import {serialize, parse} from "@ethersproject/transactions"
-import {clearUndefinedFields, normalizeU256} from "./util"
+import assert from 'assert'
+import {Call, ChainContext, Event} from './interfaces'
+import {registry} from './registry'
+import {serialize, parse} from '@ethersproject/transactions'
+import {clearUndefinedFields, normalizeU256} from './util'
 
 export enum TransactionType {
     Legacy,
@@ -44,22 +44,19 @@ export interface EIP1559Transaction extends BaseTransaction {
     chainId: bigint
 }
 
-export type Transaction =
-    | LegacyTransaction
-    | EIP2930Transaction
-    | EIP1559Transaction
+export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transaction
 
 export function getTransaction(ctx: ChainContext, call: Call): Transaction {
-    assert(call.name === "Ethereum.transact")
+    assert(call.name === 'Ethereum.transact')
 
-    switch (ctx._chain.getCallHash("Ethereum.transact")) {
-        case registry.getHash("Ethereum.transactV0"):
-        case registry.getHash("V14Ethereum.transactV0"):
+    switch (ctx._chain.getCallHash('Ethereum.transact')) {
+        case registry.getHash('Ethereum.transactV0'):
+        case registry.getHash('V14Ethereum.transactV0'):
             return getAsV0(call.args)
-        case registry.getHash("Ethereum.transactV1"):
-        case registry.getHash("Ethereum.transactV2"):
-        case registry.getHash("V14Ethereum.transactV1"):
-        case registry.getHash("V14Ethereum.transactV2"):
+        case registry.getHash('Ethereum.transactV1'):
+        case registry.getHash('Ethereum.transactV2'):
+        case registry.getHash('V14Ethereum.transactV1'):
+        case registry.getHash('V14Ethereum.transactV2'):
             return getAsV1(call.args)
         default:
             throw new Error()
@@ -89,14 +86,9 @@ export function getAsV1(args: any): Transaction {
         v: data.v,
         r: data.r,
         s: data.s,
-    } 
+    }
     return normalizeTransaction({
-        type:
-            transaction.__kind === "Legacy"
-                ? 0
-                : transaction.__kind === "EIP2930"
-                    ? 1
-                    : 2,
+        type: transaction.__kind === 'Legacy' ? 0 : transaction.__kind === 'EIP2930' ? 1 : 2,
         to: data.action.value || undefined,
         nonce: normalizeU256(data.nonce),
         gasLimit: normalizeU256(data.gasLimit),
@@ -143,7 +135,7 @@ function normalizeTransaction(tx: TransactionData): Transaction {
             accessList: tx.accessList,
             maxFeePerGas: tx.maxFeePerGas,
             maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
-            chainId: tx.chainId ? Number(tx.chainId): undefined,
+            chainId: tx.chainId ? Number(tx.chainId) : undefined,
         }),
         {
             v: Number(tx.v),
