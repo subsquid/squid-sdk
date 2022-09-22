@@ -1,3 +1,4 @@
+import {BigDecimal} from "@subsquid/big-decimal"
 import {Column, Entity, PrimaryColumn} from "typeorm"
 import * as marshal from "./marshal"
 
@@ -14,7 +15,10 @@ export class Scalar {
     date?: Date
 
     @Column("numeric", {transformer: marshal.bigintTransformer})
-    bigNumber?: bigint
+    bigInt?: bigint
+
+    @Column("numeric", {transformer: marshal.bigdecimalTransformer})
+    bigDecimal?: BigDecimal
 
     @Column("bytea")
     bytes?: Buffer

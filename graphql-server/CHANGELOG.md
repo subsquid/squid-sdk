@@ -1,6 +1,14 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+This log was last generated on Thu, 22 Sep 2022 15:21:10 GMT and should not be manually modified.
+
+## 3.2.0
+Thu, 22 Sep 2022 15:21:10 GMT
+
+### Minor changes
+
+- support `BigDecimal` type
+- support in-memory and redis-based dumb cache
 
 ## 3.1.0
 Thu, 15 Sep 2022 20:54:52 GMT

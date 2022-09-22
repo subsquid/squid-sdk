@@ -282,7 +282,11 @@ export class EntitySqlPrinter {
     }
 
     private param(value: any): string {
-        return "$" + this.params.push(value)
+        if (value && value.__is_squid_big_decimal) {
+            return "$" + this.params.push(value.toString()) + '::numeric'
+        } else {
+            return "$" + this.params.push(value)
+        }
     }
 
     private ident(name: string): string {

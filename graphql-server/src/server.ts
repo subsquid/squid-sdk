@@ -1,3 +1,5 @@
+import {KeyvAdapter} from '@apollo/utils.keyvadapter'
+import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
@@ -10,15 +12,16 @@ import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
 import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
-import {PluginDefinition} from 'apollo-server-core'
+import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
+import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from 'graphql'
+import Keyv from 'keyv'
 import * as path from 'path'
 import {Pool} from 'pg'
 import * as process from 'process'
 import type {DataSource} from 'typeorm'
 import {createCheckPlugin, RequestCheckFunction} from './check'
-import {loadCustomResolvers} from './resolvers'
 import {TypeormOpenreaderContext} from './typeorm'
 
 
@@ -33,6 +36,22 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
+    dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
+}
+
+
+export interface DumbRedisCacheOptions {
+    kind: 'redis'
+    url: string
+    maxAgeMs: number
+}
+
+
+export interface DumbInMemoryCacheOptions {
+    kind: 'in-memory'
+    maxSizeMb: number
+    ttlMs: number
+    maxAgeMs: number
 }
 
 
@@ -54,6 +73,13 @@ export class Server {
         let context = await this.context()
         let plugins: PluginDefinition[] = []
 
+        if (this.options.dumbCache) {
+            plugins.push(
+                ApolloServerPluginCacheControl({defaultMaxAge: this.options.dumbCache.maxAgeMs / 1000}),
+                responseCachePlugin()
+            )
+        }
+
         let requestCheck = this.customCheck()
         if (requestCheck) {
             plugins.push(createCheckPlugin(requestCheck, this.model()))
@@ -69,7 +95,8 @@ export class Server {
             subscriptions: this.options.subscriptions,
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
-            maxRootFields: this.options.maxRootFields
+            maxRootFields: this.options.maxRootFields,
+            cache: this.cache()
         })
     }
 
@@ -240,6 +267,23 @@ export class Server {
     private model(): Model {
         let file = resolveGraphqlSchema(this.dir)
         return loadModel(file)
+    }
+
+    @def
+    private cache(): KeyValueCache | undefined {
+        let log = this.options.log
+        let opts = this.options.dumbCache
+        switch(opts?.kind) {
+            case 'redis':
+                log?.warn(`enabling dumb redis cache (max-age: ${opts.maxAgeMs}ms)`)
+                return new KeyvAdapter(new Keyv(opts.url))
+            case 'in-memory':
+                log?.warn(`enabling dumb in-memory cache (size: ${opts.maxSizeMb}mb, ttl: ${opts.ttlMs}ms, max-age: ${opts.maxAgeMs}ms)`)
+                return new InMemoryLRUCache({
+                    maxSize: opts.maxSizeMb * 1024 * 1024,
+                    ttl: opts.ttlMs,
+                })
+        }
     }
 
     private port(): number | string {

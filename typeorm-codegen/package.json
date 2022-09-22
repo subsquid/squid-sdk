@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/typeorm-codegen",
   "description": "Generates TypeORM entities from squid GraphQL schema",
-  "version": "0.1.2",
+  "version": "0.2.1",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -19,7 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/openreader": "^3.0.0",
+    "@subsquid/openreader": "^3.1.0",
     "@subsquid/typeorm-config": "^2.0.0",
     "@subsquid/util-internal": "^0.0.1",
     "@subsquid/util-internal-code-printer": "^0.0.2",

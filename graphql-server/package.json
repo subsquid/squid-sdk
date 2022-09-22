@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/graphql-server",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "GraphQL server for squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -24,7 +24,7 @@
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
     "@graphql-tools/schema": "^8",
-    "@subsquid/openreader": "^3.0.0",
+    "@subsquid/openreader": "^3.1.0",
     "@subsquid/typeorm-config": "^2.0.0",
     "@subsquid/logger": "^0.1.0",
     "@subsquid/util-internal": "^0.0.1",
@@ -38,14 +38,23 @@
     "graphql": "^15.8.0",
     "graphql-ws": "^5.9.1",
     "pg": "^8.7.3",
-    "ws": "^8.8.1"
+    "ws": "^8.8.1",
+    "@apollo/utils.keyvaluecache": "~1.0.1",
+    "apollo-server-plugin-response-cache": "~3.7.0",
+    "@apollo/utils.keyvadapter": "~1.1.2",
+    "@keyv/redis": "~2.5.1",
+    "keyv": "~4.5.0"
   },
   "peerDependencies": {
+    "@subsquid/big-decimal": "^0.0.0",
     "class-validator": "^0.13.2",
     "type-graphql": "^1.2.0-rc.1",
     "typeorm": "^0.3.6"
   },
   "peerDependenciesMeta": {
+    "@subsquid/big-decimal": {
+      "optional": true
+    },
     "class-validator": {
       "optional": true
     },

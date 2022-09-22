@@ -27,6 +27,6 @@ export class EventC {
   field3!: string
 
   @Index_()
-  @ManyToOne_(() => ComplexEntity, {nullable: false})
+  @ManyToOne_(() => ComplexEntity, {nullable: true})
   complexField!: ComplexEntity
 }

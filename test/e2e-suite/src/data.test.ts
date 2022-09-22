@@ -121,8 +121,10 @@ describe('data', function () {
             query {
                 scalarRaws(orderBy: id_ASC) {
                     float
+                    bigdecimal
                     nested {
                         float
+                        bigdecimal
                         json
                         enumInJson
                     }
@@ -133,12 +135,14 @@ describe('data', function () {
             scalarRaws: [
                 {
                     float: 0,
-                    nested: {float: 0, json: [1, 2, 3], enumInJson: 'A'},
+                    bigdecimal: '1.23',
+                    nested: {float: 0, bigdecimal: null, json: [1, 2, 3], enumInJson: 'A'},
                     json: {foo: 1}
                 },
                 {
                     float: 0.7,
-                    nested: {float: 0.8, json: null, enumInJson: null},
+                    bigdecimal: null,
+                    nested: {float: 0.8, bigdecimal: '0.01', json: null, enumInJson: null},
                     json: null
                 }
             ]
