@@ -2,6 +2,26 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "3.2.0",
+      "tag": "@subsquid/graphql-server_v3.2.0",
+      "date": "Thu, 22 Sep 2022 15:21:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support `BigDecimal` type"
+          },
+          {
+            "comment": "support in-memory and redis-based dumb cache"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.0.0` to `^3.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.0",
       "tag": "@subsquid/graphql-server_v3.1.0",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "1.9.1",
+      "tag": "@subsquid/substrate-processor_v1.9.1",
+      "date": "Thu, 22 Sep 2022 15:21:10 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix evm log handling issue due to `EVM.Log` event type upgrade"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.9.0",
       "tag": "@subsquid/substrate-processor_v1.9.0",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",
