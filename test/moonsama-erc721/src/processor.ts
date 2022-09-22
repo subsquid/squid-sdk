@@ -1,3 +1,4 @@
+import {getEvmLog} from "@subsquid/substrate-evm-tools"
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contractAddress, createContractEntity, getContractEntity} from "./contract"
@@ -24,10 +25,11 @@ processor.addEvmLogHandler(
     {
         filter: [
             erc721.events['Transfer(address,address,uint256)'].topic
-        ]
+        ],
     },
     async ctx => {
-        let transfer = erc721.events['Transfer(address,address,uint256)'].decode(ctx.event.args)
+        let evmLog = getEvmLog(ctx, ctx.event)
+        let transfer = erc721.events['Transfer(address,address,uint256)'].decode(evmLog)
 
         let from = await ctx.store.get(Owner, transfer.from)
         if (from == null) {
