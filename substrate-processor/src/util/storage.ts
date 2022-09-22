@@ -1,4 +1,4 @@
-import {HexSink} from "@subsquid/scale-codec"
+import {HexSink, Src} from "@subsquid/scale-codec"
 import {StorageHasher} from "@subsquid/substrate-metadata"
 import {unexpectedCase} from "@subsquid/util-internal"
 import {toHex} from "@subsquid/util-internal-hex"
@@ -15,7 +15,7 @@ export function getNameHash(name: string): string {
         let digest = xxhash128().update(name).digest()
         let sink = new HexSink()
         sink.u128(digest)
-        hash = sink.toHex()
+        hash = NAME_HASHES[name] = sink.toHex()
     }
     return hash
 }

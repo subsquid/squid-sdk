@@ -15,7 +15,7 @@ import {
 import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
+import {getStorageItemTypeHash, isStorageKeyDecodable} from "@subsquid/substrate-metadata/lib/storage"
 import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
 import {OutDir, Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
@@ -234,9 +234,47 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
+        
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
+            versions.forEach(v => {
+                let versionName = this.getVersionName(v.chain)
+                let ifs = this.getInterface(v.chain)
+                let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
+                let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
+
+                if (isEmptyVariant(v.chain.description.types[v.def.value])) {
+                    // Meaning storage item can't hold any value
+                    // Let's just silently omit interface for this case
+                } else {
+                    let returnType = qualifiedTypes[qualifiedTypes.length - 1]
+                    let maybeOptionalReturnType = v.def.modifier == 'Optional' ? `${returnType} | undefined` : returnType
+                    let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
+                    let keyNames = keyTypes.map((type, idx) => {
+                        if (qualifiedTypes.length == 2) {
+                            return `key`
+                        } else {
+                            return `key${idx + 1}`
+                        }
+                    })
+                    let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
+                    out.line()
+                    out.block(`interface ${prefix}${name}Storage${versionName}`, () => {
+                        out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${maybeOptionalReturnType}>`)
+                        if (keyNames.length > 0) {
+                            out.line(`getMany(keys: ${keyTypesString}[]): Promise<(${maybeOptionalReturnType})[]>`)
+                            out.line(`getAll(): Promise<${returnType}[]>`)
+                            if (isStorageKeyDecodable(v.def)) {
+                                out.line(`getKeys(): Promise<${keyTypesString}[]>`)
+                                out.line(`getKeys(count: number, startKey?: ${keyTypesString}): Promise<${keyTypesString}[]>`)
+                                out.line(`getPairs(): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
+                                out.line(`getPairs(count: number, startKey?: ${keyTypesString}): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
+                            }
+                        }
+                    })
+                }
+            })
             out.line()
             out.block(`export class ${prefix}${name}Storage`, () => {
                 out.line(`private readonly _chain: Chain`)
@@ -249,6 +287,8 @@ export class Typegen {
                     out.line(`this.blockHash = block.hash`)
                     out.line(`this._chain = ctx._chain`)
                 })
+
+                let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
@@ -264,49 +304,49 @@ export class Typegen {
 
                     if (isEmptyVariant(v.chain.description.types[v.def.value])) {
                         // Meaning storage item can't hold any value
-                        // Let's just silently omit .get method for this case
+                        // Let's just silently omit `asVxx` getter for this case
                     } else {
                         out.line()
                         out.blockComment(v.def.docs)
-                        let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                        if (v.def.modifier == 'Optional') {
-                            returnType = `${returnType} | undefined`
-                        }
-                        let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
-                        let keyNames = keyTypes.map((type, idx) => {
-                            if (qualifiedTypes.length == 2) {
-                                return `key`
-                            } else {
-                                return `key${idx + 1}`
-                            }
-                        })
-
-                        let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
-                        out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                        out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
                             out.line(`assert(this.is${versionName})`)
-                            out.line(`return this._chain.getStorage(${args.concat(keyNames).join(', ')})`)
+                            out.line(`return this as any`)
                         })
-                        if (keyNames.length > 0) {
-                            out.line()
-                            out.block(`async getManyAs${versionName}(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
-                                out.line(`return this._chain.queryStorage(${args.concat(query).join(', ')})`)
-                            })
-                            out.line()
-                            out.block(`async getAllAs${versionName}(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                out.line(`return this._chain.queryStorage(${args.join(', ')})`)
-                            })
-                        }
                     }
                 })
+
                 out.line()
                 out.blockComment([
                     'Checks whether the storage item is defined for the current chain version.'
                 ])
                 out.block(`get isExists(): boolean`, () => {
                     out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
+                })
+
+                out.line()
+                out.block(`private async get(...keys: any[]): Promise<any>`, () => {
+                    out.line(`return this._chain.getStorage(${args.join(', ')}, ...keys)`)
+                })
+
+                out.line()
+                out.block(`private async getMany(keyList: any[]): Promise<any[]>`, () => {
+                    out.line(`let query = Array.isArray(keyList[0]) ? keyList : keyList.map(k => [k])`)
+                    out.line(`return this._chain.queryStorage(${args.join(', ')}, query)`)
+                })
+
+                out.line()
+                out.block(`private async getAll(): Promise<any[]>`, () => {
+                    out.line(`return this._chain.queryStorage(${args.join(', ')})`)
+                })
+
+                out.line()
+                out.block(`private async getKeys(count?: number, startKey?: any): Promise<any[]>`, () => {
+                    out.line(`return this._chain.getKeys(${args.join(', ')}, count, startKey)`)
+                })
+
+                out.line()
+                out.block(`private async getPairs(count?: number, startKey?: any): Promise<any[][]>`, () => {
+                    out.line(`return this._chain.getPairs(${args.join(', ')}, count, startKey)`)
                 })
             })
         })
