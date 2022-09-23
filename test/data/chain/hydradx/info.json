@@ -1,0 +1,4 @@
+{
+  "chain": "wss://archive.snakenet.hydradx.io",
+  "archive": "https://hydradx.indexer.gc.subsquid.io/v4/graphql"
+}

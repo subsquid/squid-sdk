@@ -1,8 +1,0 @@
-{
-  "outDir": "../src/darwinia",
-  "specVersions": "../../data/chain/darwinia/versions.jsonl",
-  "events": true,
-  "calls": true,
-  "storage": true,
-  "constants": true
-}
