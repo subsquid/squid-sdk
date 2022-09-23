@@ -1,4 +1,0 @@
-{
-  "chain": "wss://rpc.shiden.astar.network",
-  "archive": "https://shiden-beta.indexer.gc.subsquid.io/v4/graphql"
-}
