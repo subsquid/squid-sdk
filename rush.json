@@ -516,8 +516,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-evm-tools",
-      "projectFolder": "util/substrate-evm-tools",
+      "packageName": "@subsquid/substrate-frontier-evm",
+      "projectFolder": "util/substrate-frontier-evm",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

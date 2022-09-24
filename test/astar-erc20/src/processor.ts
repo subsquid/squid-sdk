@@ -3,7 +3,7 @@ import {TypeormDatabase} from '@subsquid/typeorm-store'
 import * as erc20 from './erc20'
 import {Transaction} from './model'
 import {toJSON} from '@subsquid/util-internal-json'
-import {getTransaction} from '@subsquid/substrate-evm-tools'
+import {getTransaction} from '@subsquid/substrate-frontier-evm'
 
 
 const processor = new SubstrateProcessor(new TypeormDatabase())

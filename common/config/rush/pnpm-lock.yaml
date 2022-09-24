@@ -37,7 +37,7 @@ specifiers:
   '@rush-temp/shibuya-erc20': file:./projects/shibuya-erc20.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
-  '@rush-temp/substrate-evm-tools': file:./projects/substrate-evm-tools.tgz
+  '@rush-temp/substrate-frontier-evm': file:./projects/substrate-frontier-evm.tgz
   '@rush-temp/substrate-explorer': file:./projects/substrate-explorer.tgz
   '@rush-temp/substrate-ingest': file:./projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
@@ -155,7 +155,7 @@ dependencies:
   '@rush-temp/shibuya-erc20': file:projects/shibuya-erc20.tgz_supports-color@8.1.1
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
-  '@rush-temp/substrate-evm-tools': file:projects/substrate-evm-tools.tgz
+  '@rush-temp/substrate-frontier-evm': file:projects/substrate-frontier-evm.tgz
   '@rush-temp/substrate-explorer': file:projects/substrate-explorer.tgz
   '@rush-temp/substrate-ingest': file:projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
@@ -4896,9 +4896,9 @@ packages:
       typescript: 4.7.4
     dev: false
 
-  file:projects/substrate-evm-tools.tgz:
-    resolution: {integrity: sha512-BZWEXIg3gOLdTR6vjjOu4mw/966mNV0z8dOo4TFPiLaTzBJx2EP/YD07q9wxsfMLSOVmpqd2/ULwQc0tXfnozQ==, tarball: file:projects/substrate-evm-tools.tgz}
-    name: '@rush-temp/substrate-evm-tools'
+  file:projects/substrate-frontier-evm.tgz:
+    resolution: {integrity: sha512-BZWEXIg3gOLdTR6vjjOu4mw/966mNV0z8dOo4TFPiLaTzBJx2EP/YD07q9wxsfMLSOVmpqd2/ULwQc0tXfnozQ==, tarball: file:projects/substrate-frontier-evm.tgz}
+    name: '@rush-temp/substrate-frontier-evm'
     version: 0.0.0
     dependencies:
       '@ethersproject/transactions': 5.7.0

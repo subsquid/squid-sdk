@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/substrate-evm-tools",
+  "name": "@subsquid/substrate-frontier-evm",
   "version": "0.0.0",
   "description": "",
   "license": "GPL-3.0-or-later",
