@@ -249,12 +249,14 @@ export class PostgresSink implements Sink {
                     break
                 }
                 case 'EVM.Executed':
-                    executedLogIndex = this.insertAcalaEvmEvent(
-                        event,
-                        this.acalaEvmExecutedInsert,
-                        this.acalaEvmExecutedLogInsert,
-                        executedLogIndex
-                    )
+                    if (this.isAcalaEvmExecuted(event)) {
+                        executedLogIndex = this.insertAcalaEvmEvent(
+                            event,
+                            this.acalaEvmExecutedInsert,
+                            this.acalaEvmExecutedLogInsert,
+                            executedLogIndex
+                        )
+                    }
                     break
                 case 'EVM.ExecutedFailed':
                     executedFailedLogIndex = this.insertAcalaEvmEvent(
@@ -392,6 +394,10 @@ export class PostgresSink implements Sink {
             await this.db.query('ROLLBACK').catch(() => {})
             throw e
         }
+    }
+
+    private isAcalaEvmExecuted(event: Event) {
+        return 'contract' in event.args && 'logs' in event.args
     }
 }
 
