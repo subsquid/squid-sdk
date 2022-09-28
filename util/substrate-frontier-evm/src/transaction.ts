@@ -59,7 +59,7 @@ export function getTransaction(ctx: ChainContext, call: Call): Transaction {
         case registry.getHash('V14Ethereum.transactV2'):
             return getAsV1(call.args)
         default:
-            throw new Error()
+            throw new Error('Uknown "Ethereum.transact" version')
     }
 }
 
