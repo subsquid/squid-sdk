@@ -17,7 +17,7 @@ export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
         case registry.getHash('EVM.LogV1'):
             return getAsV1(event.args)
         default:
-            throw new Error()
+            throw new Error('Uknown "EVM.Log" version')
     }
 }
 
