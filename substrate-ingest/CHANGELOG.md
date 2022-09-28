@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Thu, 15 Sep 2022 20:54:52 GMT and should not be manually modified.
+This log was last generated on Wed, 28 Sep 2022 07:59:35 GMT and should not be manually modified.
+
+## 1.2.1
+Wed, 28 Sep 2022 07:59:35 GMT
+
+### Patches
+
+- fix naming collision between Acala EVM and frontier
 
 ## 1.2.0
 Thu, 15 Sep 2022 20:54:52 GMT

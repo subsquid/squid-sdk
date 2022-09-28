@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-ingest_v1.2.1",
+      "date": "Wed, 28 Sep 2022 07:59:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix naming collision between Acala EVM and frontier"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-ingest_v1.2.0",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",
