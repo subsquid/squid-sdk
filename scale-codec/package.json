@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/scale-codec",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Scale encoder/decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
