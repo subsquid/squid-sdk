@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Call, ChainContext, Event} from './interfaces'
+import {Call, ChainContext} from './interfaces'
 import {registry} from './registry'
 import {serialize, parse} from '@ethersproject/transactions'
 import {clearUndefinedFields, normalizeU256} from './util'
