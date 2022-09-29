@@ -516,6 +516,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-frontier-evm",
+      "projectFolder": "util/substrate-frontier-evm",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-explorer",
       "projectFolder": "substrate-explorer",
       "shouldPublish": true,
