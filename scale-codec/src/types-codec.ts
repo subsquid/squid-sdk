@@ -184,6 +184,14 @@ export function getCodecType(types: Type[], ti: Ti): CodecType {
                 case TypeKind.Primitive:
                     assert(type.primitive[0] == 'U')
                     return {kind: TypeKind.Compact, integer: type.primitive}
+                case TypeKind.Composite:
+                    return {
+                        kind: TypeKind.Struct,
+                        fields: type.fields.map(f => {
+                            let name = assertNotNull(f.name)
+                            return {name, type: f.type}
+                        })
+                    }
                 default:
                     throwUnexpectedCase(type.kind)
             }
