@@ -259,12 +259,14 @@ export class PostgresSink implements Sink {
                     }
                     break
                 case 'EVM.ExecutedFailed':
-                    executedFailedLogIndex = this.insertAcalaEvmEvent(
-                        event,
-                        this.acalaEvmExecutedFailedInsert,
-                        this.acalaEvmExecutedFailedLogInsert,
-                        executedFailedLogIndex
-                    )
+                    if (this.isAcalaEvmExecuted(event)) {
+                        executedFailedLogIndex = this.insertAcalaEvmEvent(
+                            event,
+                            this.acalaEvmExecutedFailedInsert,
+                            this.acalaEvmExecutedFailedLogInsert,
+                            executedFailedLogIndex
+                        )
+                    }
                     break
                 case 'Contracts.ContractEmitted':
                     this.contractsContractEmittedInsert.add({
