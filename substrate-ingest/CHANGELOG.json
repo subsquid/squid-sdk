@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.2.2",
+      "tag": "@subsquid/substrate-ingest_v1.2.2",
+      "date": "Fri, 30 Sep 2022 14:01:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix naming collision for EVM.ExecutedFailed"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.1",
       "tag": "@subsquid/substrate-ingest_v1.2.1",
       "date": "Wed, 28 Sep 2022 07:59:35 GMT",

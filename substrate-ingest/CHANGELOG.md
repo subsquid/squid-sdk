@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 28 Sep 2022 07:59:35 GMT and should not be manually modified.
+This log was last generated on Fri, 30 Sep 2022 14:01:22 GMT and should not be manually modified.
+
+## 1.2.2
+Fri, 30 Sep 2022 14:01:22 GMT
+
+### Patches
+
+- fix naming collision for EVM.ExecutedFailed
 
 ## 1.2.1
 Wed, 28 Sep 2022 07:59:35 GMT
