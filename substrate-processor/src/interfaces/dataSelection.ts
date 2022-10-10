@@ -1,3 +1,4 @@
+import {SubstrateApplyExtrinsicEvent, SubstrateInitializationEvent} from './substrate'
 import type {
     ContractsContractEmittedEvent,
     EvmLogEvent,
@@ -5,9 +6,7 @@ import type {
     GearUserMessageSentEvent,
     SubstrateCall,
     SubstrateEvent,
-    SubstrateExtrinsic,
-    SubstrateFinalizationEvent,
-    SubstrateInitializationEvent
+    SubstrateExtrinsic
 } from './substrate'
 
 
@@ -59,7 +58,7 @@ type CallFields<R extends CallRequest> = Select<CallScalars, R> & (
         : R['parent'] extends PlainReq<SubstrateCall>
             ? {parent?: CallFields<R['parent']>}
             : {}
-)
+    )
 
 
 export type CallType<R> = R extends true
@@ -73,7 +72,7 @@ type ExtrinsicFields<R extends ExtrinsicRequest> = Select<ExtrinsicScalars, R> &
         : R['call'] extends CallRequest
             ? {call: CallFields<R['call']>}
             : {}
-)
+    )
 
 
 export type ExtrinsicType<R> = R extends true
@@ -81,67 +80,31 @@ export type ExtrinsicType<R> = R extends true
     : R extends ExtrinsicRequest ? ExtrinsicFields<R> : never
 
 
-type ApplyExtrinsicFields<R extends EventRequest> = (
-    R['call'] extends true
-        ? {call: SubstrateCall, phase: 'ApplyExtrinsic'}
-        : R['call'] extends CallRequest
-            ? {call: CallFields<R['call']>, phase: 'ApplyExtrinsic'}
-            : {}
-) & (
+type Optional<T, R> = [undefined] extends T ? undefined : [T] extends undefined ? R | undefined : R
+
+
+type EventFields<R extends EventRequest, E extends SubstrateEvent = SubstrateEvent> = Select<EventScalars<E>, R> & (
+    R['call'] extends true ? {call: E['call']} : R['call'] extends CallRequest
+        ? {call: Optional<E['call'], CallFields<R['call']>>}
+        : {}
+    ) & (
     R['extrinsic'] extends true
-        ? {extrinsic: SubstrateExtrinsic, phase: 'ApplyExtrinsic'}
+        ? {extrinsic: E['extrinsic']}
         : R['extrinsic'] extends ExtrinsicRequest
-            ? {extrinsic: ExtrinsicFields<R['extrinsic']>, phase: 'ApplyExtrinsic'}
+            ? {extrinsic: Optional<E['extrinsic'], ExtrinsicFields<R['extrinsic']>>}
             : {}
-)
-
-
-type EventFields<R extends EventRequest> =
-    (
-        Select<SubstrateInitializationEvent | SubstrateFinalizationEvent, R> &
-        {extrinsic?: undefined, call?: undefined} & (
-            R['call'] extends true | CallRequest
-                ? {phase: 'Initialization' | 'Finalization'}
-                : R['extrinsic'] extends true | ExtrinsicRequest
-                    ? {phase: 'Initialization' | 'Finalization'}
-                    : {}
-        )
-    ) | (
-        Select<EventScalars, R> & ApplyExtrinsicFields<R>
     )
 
 
-type CommonEventType<R> = R extends true
-    ? SubstrateEvent
-    : R extends EventRequest ? EventFields<R> : never
+type GenericEventType<R, E extends SubstrateEvent = SubstrateEvent> = R extends true
+    ? E
+    : R extends EventRequest ? EventFields<R, E> : never
 
 
-type EvmLogEventType<R> = R extends true
-    ? EvmLogEvent
-    : R extends EventRequest
-        ? ApplyExtrinsicFields<R> & Select<EventScalars<EvmLogEvent>, R>
-        : never
-
-
-type ContractsContractEmittedEventType<R> = R extends true
-    ? ContractsContractEmittedEvent
-    : R extends EventRequest
-        ? ApplyExtrinsicFields<R> & Select<EventScalars<ContractsContractEmittedEvent>, R>
-        : never
-
-
-type GearMessageEnqueuedEventType<R> = R extends true
-    ? GearMessageEnqueuedEvent
-    : R extends EventRequest
-        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearMessageEnqueuedEvent>, R>
-        : never
-
-
-type GearUserMessageSentEventType<R> = R extends true
-    ? GearUserMessageSentEvent
-    : R extends EventRequest
-        ? ApplyExtrinsicFields<R> & Select<EventScalars<GearUserMessageSentEvent>, R>
-        : never
+type EvmLogEventType<R> = GenericEventType<R, EvmLogEvent>
+type ContractsContractEmittedEventType<R> = GenericEventType<R, ContractsContractEmittedEvent>
+type GearMessageEnqueuedEventType<R> = GenericEventType<R, GearMessageEnqueuedEvent>
+type GearUserMessageSentEventType<R> = GenericEventType<R, GearUserMessageSentEvent>
 
 
 export type EventType<R, N = string> =
@@ -153,7 +116,7 @@ export type EventType<R, N = string> =
                 ? GearMessageEnqueuedEventType<R>
                 : N extends 'Gear.UserMessageSent'
                     ? GearUserMessageSentEventType<R>
-                    : CommonEventType<R>
+                    : GenericEventType<R>
 
 
 export interface EventDataRequest {
@@ -193,8 +156,8 @@ export type EventItem<N, R = false> = WithKind<
         R extends true ? EventData<{event: true}, N> : R extends EventDataRequest ? EventData<R, N> : EventData<{event: {}}, N>,
         'event',
         N
+        >
     >
->
 
 
 export type CallItem<Name, R = false> = WithKind<
