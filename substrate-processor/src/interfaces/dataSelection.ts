@@ -20,7 +20,7 @@ type PlainReq<T> = {
 
 
 type Select<T, R extends Req<T>> = {
-    [P in keyof T as R[P] extends true ? P : P extends 'id' | 'pos' | 'name' ? P : never]: T[P]
+    [P in keyof T as R[P] extends true ? P : P extends 'id' | 'pos' | 'name' | 'success' ? P : never]: T[P]
 }
 
 
@@ -34,7 +34,7 @@ type ExtrinsicScalars = Omit<SubstrateExtrinsic, 'call'>
 type EventScalars<T=SubstrateEvent> = Omit<T, 'call' | 'extrinsic'>
 
 
-export type CallRequest = Omit<PlainReq<CallScalars>, 'id' | 'pos' | 'name'> & {
+export type CallRequest = Omit<PlainReq<CallScalars>, 'id' | 'pos' | 'name' | 'success'> & {
     parent?: PlainReq<SubstrateCall> | boolean
 }
 

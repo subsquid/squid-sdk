@@ -90,6 +90,7 @@ new SubstrateBatchProcessor()
         if (item.name == 'Staking.Rewarded') {
             let reward: Reward = item.event
             if (reward.call) {
+                console.log(reward.call.success)
                 console.log(reward.extrinsic.hash)
             }
         }
