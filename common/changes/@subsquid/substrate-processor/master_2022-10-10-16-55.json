@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "fix some event type derivation issues, but give up on phase tracking",
+      "comment": "fix some event type derivation issues",
       "type": "patch"
     }
   ],
