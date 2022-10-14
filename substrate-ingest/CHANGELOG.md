@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Fri, 30 Sep 2022 14:01:22 GMT and should not be manually modified.
+This log was last generated on Fri, 14 Oct 2022 13:59:14 GMT and should not be manually modified.
+
+## 1.3.0
+Fri, 14 Oct 2022 13:59:14 GMT
+
+### Minor changes
+
+- support polkadotjs types bundles
 
 ## 1.2.2
 Fri, 30 Sep 2022 14:01:22 GMT

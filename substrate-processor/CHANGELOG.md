@@ -1,6 +1,18 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 22 Sep 2022 15:21:10 GMT and should not be manually modified.
+This log was last generated on Fri, 14 Oct 2022 13:59:14 GMT and should not be manually modified.
+
+## 1.10.0
+Fri, 14 Oct 2022 13:59:14 GMT
+
+### Minor changes
+
+- support polkadotjs types bundles
+
+### Patches
+
+- fix some event type derivation issues
+- fix derived type of `call.success` property, it should be always present regardless of data selection
 
 ## 1.9.1
 Thu, 22 Sep 2022 15:21:10 GMT
