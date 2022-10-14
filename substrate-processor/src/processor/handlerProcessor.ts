@@ -1,5 +1,17 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypes,
+    OldTypesBundle,
+    QualifiedName,
+    readOldTypesBundle
+} from '@subsquid/substrate-metadata'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {
+    eliminatePolkadotjsTypesBundle,
+    PolkadotjsTypesBundle
+} from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
@@ -15,10 +27,10 @@ import type {
     CallHandlerOptions,
     CommonHandlerContext,
     ContractsContractEmittedHandler,
+    EthereumTransactionHandlerOptions,
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
-    EthereumTransactionHandlerOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler
@@ -76,7 +88,7 @@ export class SubstrateProcessor<Store> {
     private batchSize = 100
     private prometheusPort?: number | string
     private src?: DataSource
-    private typesBundle?: OldTypesBundle
+    private typesBundle?: OldTypesBundle | OldSpecsBundle
     private running = false
 
     /**
@@ -107,20 +119,15 @@ export class SubstrateProcessor<Store> {
      * metadata version below 14 and only if we don't have built-in
      * support for the chain in question.
      *
-     * Don't confuse this setting with types bundle from polkadot.js.
-     * Although those two are similar in purpose and structure,
-     * they are not compatible.
+     * Subsquid project has its own types bundle format,
+     * however, most of polkadotjs types bundles will work as well.
      *
-     * Types bundle can be specified in 3 different ways:
+     * Types bundle can be specified in 2 different ways:
      *
-     * 1. as a name of a known chain
-     * 2. as a name of a JSON file structured as {@link OldTypesBundle}
-     * 3. as an {@link OldTypesBundle} object
+     * 1. as a name of a JSON file
+     * 2. as an {@link OldTypesBundle} or {@link OldSpecsBundle} or {@link PolkadotjsTypesBundle} object
      *
      * @example
-     * // known chain
-     * processor.setTypesBundle('kusama')
-     *
      * // A path to a JSON file resolved relative to `cwd`.
      * processor.setTypesBundle('typesBundle.json')
      *
@@ -131,12 +138,12 @@ export class SubstrateProcessor<Store> {
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): this {
+    setTypesBundle(bundle: string | OldTypesBundle | OldSpecsBundle | PolkadotjsTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
             this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
-            this.typesBundle = bundle
+            this.typesBundle = eliminatePolkadotjsTypesBundle(bundle)
         }
         return this
     }
@@ -834,10 +841,20 @@ export class SubstrateProcessor<Store> {
         return this.db
     }
 
-    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle = this.typesBundle || getOldTypesBundle(specName)
-        if (bundle) return bundle
-        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+    private getTypes(specName: string, specVersion: number): OldTypes {
+        let bundle: OldTypesBundle | OldSpecsBundle | undefined
+        if (this.typesBundle != null) {
+            bundle = this.typesBundle
+        } else {
+            bundle = getOldTypesBundle(specName)
+        }
+
+        bundle = assertNotNull(
+            bundle,
+            `Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`
+        )
+
+        return getTypesFromBundle(bundle, specVersion, specName)
     }
 
     private getArchiveEndpoint(): string {

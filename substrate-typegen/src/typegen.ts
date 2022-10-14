@@ -6,6 +6,7 @@ import {
     getOldTypesBundle,
     getTypeHash,
     isPreV14,
+    OldSpecsBundle,
     OldTypes,
     OldTypesBundle,
     QualifiedName,
@@ -27,7 +28,7 @@ import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
 export interface TypegenOptions {
     outDir: string
     specVersions: SpecVersion[]
-    typesBundle?: OldTypesBundle
+    typesBundle?: OldTypesBundle | OldSpecsBundle
     events?: string[] | boolean
     calls?: string[] | boolean
     storage?: string[] | boolean
@@ -378,7 +379,7 @@ export class Typegen {
                     this.options.typesBundle || getOldTypesBundle(v.specName),
                     `types bundle is required for ${v.specName} chain`
                 )
-                oldTypes = getTypesFromBundle(typesBundle, v.specVersion)
+                oldTypes = getTypesFromBundle(typesBundle, v.specVersion, v.specName)
             }
             let d = getChainDescriptionFromMetadata(metadata, oldTypes)
             return {

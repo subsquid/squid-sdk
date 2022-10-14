@@ -1,17 +1,17 @@
-import {createLogger} from "@subsquid/logger"
-import {readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {runProgram} from "@subsquid/util-internal"
-import {Progress, Speed} from "@subsquid/util-internal-counters"
-import assert from "assert"
-import {Command} from "commander"
-import * as fs from "fs"
-import path from "path"
-import * as pg from "pg"
-import {migrate} from "postgres-migrations"
-import {Client} from "./client"
-import {Ingest} from "./ingest"
-import {Metrics} from "./metrics"
-import {PostgresSink, Sink, WritableSink} from "./sink"
+import {createLogger} from '@subsquid/logger'
+import {readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {runProgram} from '@subsquid/util-internal'
+import {Progress, Speed} from '@subsquid/util-internal-counters'
+import assert from 'assert'
+import {Command} from 'commander'
+import * as fs from 'fs'
+import path from 'path'
+import * as pg from 'pg'
+import {migrate} from 'postgres-migrations'
+import {Client} from './client'
+import {Ingest} from './ingest'
+import {Metrics} from './metrics'
+import {PostgresSink, Sink, WritableSink} from './sink'
 
 
 const log = createLogger('sqd:substrate-ingest')
@@ -43,6 +43,7 @@ runProgram(async () => {
         endpointCapacity: string[]
         out?: string
         typesBundle?: string
+        format?: string
         startBlock?: number
         writeBatchSize?: number,
         promPort?: number
@@ -54,7 +55,7 @@ runProgram(async () => {
             assert(Number.isSafeInteger(cap))
             assert(cap > 0)
             return cap
-        } catch(e: any) {
+        } catch (e: any) {
             log.fatal(`Expected positive integer for endpoint capacity, but got: ${s}`)
             process.exit(1)
         }
@@ -64,11 +65,11 @@ runProgram(async () => {
         let u: URL
         try {
             u = new URL(url)
-        } catch(e: any) {
+        } catch (e: any) {
             log.fatal(`Invalid endpoint url: ${url}`)
             process.exit(1)
         }
-        switch(u.protocol) {
+        switch (u.protocol) {
             case 'ws:':
             case 'wss:':
                 break
@@ -191,7 +192,7 @@ function every(ms: number, cb: () => void): void {
         try {
             cb()
             every(ms, cb)
-        } catch(e: any) {
+        } catch (e: any) {
             console.error(e)
             process.exit(1)
         }

@@ -1,6 +1,6 @@
 import {Logger} from "@subsquid/logger"
 import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {OldTypesBundle} from "@subsquid/substrate-metadata"
+import {OldTypes} from "@subsquid/substrate-metadata"
 import {def} from "@subsquid/util-internal"
 import {graphqlRequest} from "@subsquid/util-internal-gql-request"
 import {Batch, getBlocksCount} from "../batch/generic"
@@ -24,7 +24,7 @@ export interface Config<S, R> {
     getLogger(): Logger
     getDatabase(): Database<S>
     getOptions(): Options
-    getTypesBundle(specName: string, specVersion: number): OldTypesBundle
+    getTypes(specName: string, specVersion: number): OldTypes
     getChainEndpoint(): string
     getArchiveEndpoint(): string
     createBatches(blockRange: Range): Batch<R>[]
@@ -140,7 +140,7 @@ export class Runner<S, R extends BatchRequest> {
         return new ChainManager({
             archiveRequest: this.archiveRequest(),
             getChainClient: () => this.chainClient(),
-            getTypesBundle: meta => this.config.getTypesBundle(meta.specName, meta.specVersion)
+            getTypes: meta => this.config.getTypes(meta.specName, meta.specVersion)
         })
     }
 

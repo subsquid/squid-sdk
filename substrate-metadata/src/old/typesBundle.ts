@@ -1,9 +1,23 @@
-import {types as metadataDefinitions} from "./definitions/metadata"
-import {substrateBundle} from "./definitions/substrate"
-import type {OldTypes, OldTypesBundle, SpecVersionRange} from "./types"
+import {assertNotNull} from '@subsquid/util-internal'
+import {types as metadataDefinitions} from './definitions/metadata'
+import {substrateBundle} from './definitions/substrate'
+import type {OldSpecsBundle, OldTypes, OldTypesBundle, SpecVersionRange} from './types'
 
 
-export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes {
+export function getTypesFromBundle(bundle: OldTypesBundle, specVersion: number): OldTypes
+export function getTypesFromBundle(bundleOrSpecs: OldTypesBundle | OldSpecsBundle, specVersion: number, specName: string): OldTypes
+export function getTypesFromBundle(bundleOrSpecs: OldTypesBundle | OldSpecsBundle, specVersion: number, specName?: string): OldTypes {
+    let bundle: OldTypesBundle
+    if (bundleOrSpecs.types == null) {
+        let bundles = bundleOrSpecs as OldSpecsBundle
+        bundle = assertNotNull(
+            bundles[assertNotNull(specName)],
+            `Missing typesBundle for spec ${specName}@${specVersion}`
+        )
+    } else {
+        bundle = bundleOrSpecs as OldTypesBundle
+    }
+
     let types: OldTypes = {
         types: {
             ...metadataDefinitions as any,
@@ -40,3 +54,5 @@ function isWithinRange(range: SpecVersionRange, version: number): boolean {
     let end = range[1] ?? Infinity
     return beg <= version && version <= end
 }
+
+

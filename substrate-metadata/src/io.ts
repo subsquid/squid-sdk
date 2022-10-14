@@ -1,5 +1,6 @@
-import fs from "fs"
-import {OldTypesBundle} from "./old/types"
+import fs from 'fs'
+import {OldSpecsBundle, OldTypesBundle} from './old/types'
+import {eliminatePolkadotjsTypesBundle} from './old/typesBundle-polkadotjs'
 
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
@@ -15,7 +16,7 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'moonbeam':
         case 'moonbase':
         case 'moonriver':
-            return require('./old/definitions/moonsama').bundle
+            return require('./old/definitions/moonbeam').bundle
         case 'polkadot':
             return require('./old/definitions/polkadot').bundle
         case 'acala':
@@ -70,21 +71,15 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
 }
 
 
-export function readOldTypesBundle(file: string): OldTypesBundle {
-    let content: string
+export function readOldTypesBundle(file: string): OldTypesBundle | OldSpecsBundle {
+    let content = fs.readFileSync(file, 'utf-8')
+    let bundle: any
     try {
-        content = fs.readFileSync(file, 'utf-8')
-    } catch(e: any) {
-        throw new OldTypesBundleError(`Failed to read ${file}: ${e}`)
-    }
-    let json: any
-    try {
-        json = JSON.parse(content)
+        bundle = JSON.parse(content)
     } catch(e: any) {
         throw new OldTypesBundleError(`Failed to parse ${file}: ${e}`)
     }
-    // TODO: verify structure
-    return json
+    return eliminatePolkadotjsTypesBundle(bundle)
 }
 
 

@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "fix derived type of `call.success` property, it is always present regardless of data selection",
+      "comment": "fix derived type of `call.success` property, it should be always present regardless of data selection",
       "type": "patch"
     }
   ],

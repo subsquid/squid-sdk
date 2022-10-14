@@ -17,7 +17,7 @@ export interface OldEnumDefinition {
 
 export interface OldSetDefinition {
     _set: {
-        _bitLength: number
+        _bitLength?: number
     }
     _enum?: undefined
 }
@@ -48,3 +48,5 @@ export interface OldTypesWithSpecVersionRange extends OldTypes {
 export interface OldTypesBundle extends OldTypes {
     versions?: OldTypesWithSpecVersionRange[]
 }
+
+export type OldSpecsBundle = Record<string, OldTypesBundle>
