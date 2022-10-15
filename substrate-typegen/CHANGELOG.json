@@ -2,6 +2,24 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "1.4.1",
+      "tag": "@subsquid/substrate-typegen_v1.4.1",
+      "date": "Sat, 15 Oct 2022 11:43:02 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.1.0` to `^0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.4` to `^1.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.0.6` to `^1.0.7`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "tag": "@subsquid/substrate-typegen_v1.4.0",
       "date": "Fri, 14 Oct 2022 13:59:14 GMT",

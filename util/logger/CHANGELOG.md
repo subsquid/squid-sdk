@@ -1,6 +1,13 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Sat, 15 Oct 2022 11:43:02 GMT and should not be manually modified.
+
+## 0.2.0
+Sat, 15 Oct 2022 11:43:02 GMT
+
+### Minor changes
+
+- handle maps and sets in log records
 
 ## 0.1.0
 Wed, 17 Aug 2022 17:33:52 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-json",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-json_v0.2.0",
+      "date": "Sat, 15 Oct 2022 11:43:02 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "handle maps and sets"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/util-internal-json_v0.1.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",
