@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-json",
+      "comment": "handle maps and sets",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-json"
+}

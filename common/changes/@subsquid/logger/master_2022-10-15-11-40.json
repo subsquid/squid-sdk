@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "handle maps and sets in log records",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
