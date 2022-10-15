@@ -22,6 +22,14 @@ export function toJSON(val: unknown): any {
                     json.stack = val.toString()
                 }
                 return json
+            } else if (val instanceof Map) {
+                let entries: {k: unknown, v: unknown}[] = []
+                for (let [k, v] of val.entries()) {
+                    entries.push({k, v})
+                }
+                return toJSON({map: entries})
+            } else if (val instanceof Set) {
+                return toJSON({set: [...val]})
             } else if (Array.isArray(val)) {
                 return toJsonArray(val)
             }  else {
