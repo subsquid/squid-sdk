@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-json",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Extended JSON serialisation for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
