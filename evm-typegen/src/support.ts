@@ -26,11 +26,6 @@ export interface Block {
     height: number
 }
 
-export interface ContractCall<A extends any[], R> {
-    call: (...args: A) => Promise<R>
-    tryCall: (...args: A) => Promise<Result<R>>
-}
-
 export type Result<T> =
     | {
           success: true

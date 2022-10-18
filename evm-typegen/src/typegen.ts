@@ -30,9 +30,7 @@ export class Typegen {
 
         out.line(`import assert from 'assert'`)
         out.line(`import * as ethers from 'ethers'`)
-        out.line(
-            `import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result, ContractCall} from './support'`
-        )
+        out.line(`import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result} from './support'`)
         out.line()
         out.line('export const abi = new ethers.utils.Interface(getJsonAbi());')
         out.line()
@@ -148,7 +146,8 @@ export class Typegen {
                 // if (decl.overloads.length > 1) {
                 for (let i = 0; i < decl.overloads.length; i++) {
                     const overload = decl.overloads[i]
-                    const args = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}: ${getType(inp)}`)
+                    const args = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}: ${getType(inp)}`).join(', ')
+                    const argNames = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}`).join(', ')
                     const returnType =
                         overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
                     const signature = overload.signature
@@ -156,9 +155,11 @@ export class Typegen {
                         out.line(`${decl.name} = this['${signature}']`)
                         out.line()
                     }
-                    out.block(`'${signature}': ContractCall<[${args}], ${returnType}> =`, () => {
-                        out.line(`call: (...args: any[]) => this.call('${signature}', args),`)
-                        out.line(`tryCall: (...args: any[]) => this.tryCall('${signature}', args)`)
+                    out.block(`'${signature}' =`, () => {
+                        out.line(`call: (${args}): Promise<${returnType}> => this.call('${signature}', [${argNames}]),`)
+                        out.line(
+                            `tryCall: (${args}): Promise<Result<${returnType}>> => this.tryCall('${signature}', [${argNames}])`
+                        )
                     })
                 }
             }

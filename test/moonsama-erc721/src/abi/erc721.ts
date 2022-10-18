@@ -1,6 +1,6 @@
 import assert from 'assert'
 import * as ethers from 'ethers'
-import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result, ContractCall} from './support'
+import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result} from './support'
 
 export const abi = new ethers.utils.Interface(getJsonAbi());
 
@@ -122,86 +122,86 @@ export class Contract {
 
   balanceOf = this['balanceOf(address)']
 
-  'balanceOf(address)': ContractCall<[owner: string], ethers.BigNumber> = {
-    call: (...args: any[]) => this.call('balanceOf(address)', args),
-    tryCall: (...args: any[]) => this.tryCall('balanceOf(address)', args)
+  'balanceOf(address)' = {
+    call: (owner: string): Promise<ethers.BigNumber> => this.call('balanceOf(address)', [owner]),
+    tryCall: (owner: string): Promise<Result<ethers.BigNumber>> => this.tryCall('balanceOf(address)', [owner])
   }
 
   baseURI = this['baseURI()']
 
-  'baseURI()': ContractCall<[], string> = {
-    call: (...args: any[]) => this.call('baseURI()', args),
-    tryCall: (...args: any[]) => this.tryCall('baseURI()', args)
+  'baseURI()' = {
+    call: (): Promise<string> => this.call('baseURI()', []),
+    tryCall: (): Promise<Result<string>> => this.tryCall('baseURI()', [])
   }
 
   getApproved = this['getApproved(uint256)']
 
-  'getApproved(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
-    call: (...args: any[]) => this.call('getApproved(uint256)', args),
-    tryCall: (...args: any[]) => this.tryCall('getApproved(uint256)', args)
+  'getApproved(uint256)' = {
+    call: (tokenId: ethers.BigNumber): Promise<string> => this.call('getApproved(uint256)', [tokenId]),
+    tryCall: (tokenId: ethers.BigNumber): Promise<Result<string>> => this.tryCall('getApproved(uint256)', [tokenId])
   }
 
   isApprovedForAll = this['isApprovedForAll(address,address)']
 
-  'isApprovedForAll(address,address)': ContractCall<[owner: string,operator: string], boolean> = {
-    call: (...args: any[]) => this.call('isApprovedForAll(address,address)', args),
-    tryCall: (...args: any[]) => this.tryCall('isApprovedForAll(address,address)', args)
+  'isApprovedForAll(address,address)' = {
+    call: (owner: string, operator: string): Promise<boolean> => this.call('isApprovedForAll(address,address)', [owner, operator]),
+    tryCall: (owner: string, operator: string): Promise<Result<boolean>> => this.tryCall('isApprovedForAll(address,address)', [owner, operator])
   }
 
   name = this['name()']
 
-  'name()': ContractCall<[], string> = {
-    call: (...args: any[]) => this.call('name()', args),
-    tryCall: (...args: any[]) => this.tryCall('name()', args)
+  'name()' = {
+    call: (): Promise<string> => this.call('name()', []),
+    tryCall: (): Promise<Result<string>> => this.tryCall('name()', [])
   }
 
   ownerOf = this['ownerOf(uint256)']
 
-  'ownerOf(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
-    call: (...args: any[]) => this.call('ownerOf(uint256)', args),
-    tryCall: (...args: any[]) => this.tryCall('ownerOf(uint256)', args)
+  'ownerOf(uint256)' = {
+    call: (tokenId: ethers.BigNumber): Promise<string> => this.call('ownerOf(uint256)', [tokenId]),
+    tryCall: (tokenId: ethers.BigNumber): Promise<Result<string>> => this.tryCall('ownerOf(uint256)', [tokenId])
   }
 
   supportsInterface = this['supportsInterface(bytes4)']
 
-  'supportsInterface(bytes4)': ContractCall<[interfaceId: string], boolean> = {
-    call: (...args: any[]) => this.call('supportsInterface(bytes4)', args),
-    tryCall: (...args: any[]) => this.tryCall('supportsInterface(bytes4)', args)
+  'supportsInterface(bytes4)' = {
+    call: (interfaceId: string): Promise<boolean> => this.call('supportsInterface(bytes4)', [interfaceId]),
+    tryCall: (interfaceId: string): Promise<Result<boolean>> => this.tryCall('supportsInterface(bytes4)', [interfaceId])
   }
 
   symbol = this['symbol()']
 
-  'symbol()': ContractCall<[], string> = {
-    call: (...args: any[]) => this.call('symbol()', args),
-    tryCall: (...args: any[]) => this.tryCall('symbol()', args)
+  'symbol()' = {
+    call: (): Promise<string> => this.call('symbol()', []),
+    tryCall: (): Promise<Result<string>> => this.tryCall('symbol()', [])
   }
 
   tokenByIndex = this['tokenByIndex(uint256)']
 
-  'tokenByIndex(uint256)': ContractCall<[index: ethers.BigNumber], ethers.BigNumber> = {
-    call: (...args: any[]) => this.call('tokenByIndex(uint256)', args),
-    tryCall: (...args: any[]) => this.tryCall('tokenByIndex(uint256)', args)
+  'tokenByIndex(uint256)' = {
+    call: (index: ethers.BigNumber): Promise<ethers.BigNumber> => this.call('tokenByIndex(uint256)', [index]),
+    tryCall: (index: ethers.BigNumber): Promise<Result<ethers.BigNumber>> => this.tryCall('tokenByIndex(uint256)', [index])
   }
 
   tokenOfOwnerByIndex = this['tokenOfOwnerByIndex(address,uint256)']
 
-  'tokenOfOwnerByIndex(address,uint256)': ContractCall<[owner: string,index: ethers.BigNumber], ethers.BigNumber> = {
-    call: (...args: any[]) => this.call('tokenOfOwnerByIndex(address,uint256)', args),
-    tryCall: (...args: any[]) => this.tryCall('tokenOfOwnerByIndex(address,uint256)', args)
+  'tokenOfOwnerByIndex(address,uint256)' = {
+    call: (owner: string, index: ethers.BigNumber): Promise<ethers.BigNumber> => this.call('tokenOfOwnerByIndex(address,uint256)', [owner, index]),
+    tryCall: (owner: string, index: ethers.BigNumber): Promise<Result<ethers.BigNumber>> => this.tryCall('tokenOfOwnerByIndex(address,uint256)', [owner, index])
   }
 
   tokenURI = this['tokenURI(uint256)']
 
-  'tokenURI(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
-    call: (...args: any[]) => this.call('tokenURI(uint256)', args),
-    tryCall: (...args: any[]) => this.tryCall('tokenURI(uint256)', args)
+  'tokenURI(uint256)' = {
+    call: (tokenId: ethers.BigNumber): Promise<string> => this.call('tokenURI(uint256)', [tokenId]),
+    tryCall: (tokenId: ethers.BigNumber): Promise<Result<string>> => this.tryCall('tokenURI(uint256)', [tokenId])
   }
 
   totalSupply = this['totalSupply()']
 
-  'totalSupply()': ContractCall<[], ethers.BigNumber> = {
-    call: (...args: any[]) => this.call('totalSupply()', args),
-    tryCall: (...args: any[]) => this.tryCall('totalSupply()', args)
+  'totalSupply()' = {
+    call: (): Promise<ethers.BigNumber> => this.call('totalSupply()', []),
+    tryCall: (): Promise<Result<ethers.BigNumber>> => this.tryCall('totalSupply()', [])
   }
 
   private async call(signature: string, args: any[]) : Promise<any> {
