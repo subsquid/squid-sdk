@@ -1,33 +1,31 @@
-import {getEvmLog} from "@subsquid/substrate-frontier-evm"
-import {SubstrateProcessor} from "@subsquid/substrate-processor"
-import {TypeormDatabase} from "@subsquid/typeorm-store"
-import * as erc721 from "./abi/erc721"
-import {contractAddress, createContractEntity, getContractEntity} from "./contract"
-import {Owner, Token, Transfer} from "./model"
-
+import {getEvmLog} from '@subsquid/substrate-frontier-evm'
+import {SubstrateProcessor} from '@subsquid/substrate-processor'
+import {TypeormDatabase} from '@subsquid/typeorm-store'
+import {BigNumber} from 'ethers'
+import * as erc721 from './abi/erc721'
+import {contractAddress, createContractEntity, getContractEntity} from './contract'
+import {Owner, Token, Transfer} from './model'
 
 const processor = new SubstrateProcessor(new TypeormDatabase())
 
-
 processor.setDataSource({
     archive: 'https://moonriver.archive.subsquid.io/graphql',
-    chain: 'wss://moonriver-rpc.dwellir.com'
+    chain: 'wss://moonriver-rpc.dwellir.com',
 })
 
-
-processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
+processor.addPreHook({range: {from: 0, to: 0}}, async (ctx) => {
     await ctx.store.save(createContractEntity())
 })
-
 
 processor.addEvmLogHandler(
     contractAddress,
     {
-        filter: [
-            erc721.events['Transfer(address,address,uint256)'].topic
-        ],
+        filter: [erc721.events['Transfer(address,address,uint256)'].topic],
+        range: {
+            from: 1_400_000
+        }
     },
-    async ctx => {
+    async (ctx) => {
         let evmLog = getEvmLog(ctx, ctx.event)
         let transfer = erc721.events['Transfer(address,address,uint256)'].decode(evmLog)
 
@@ -43,14 +41,31 @@ processor.addEvmLogHandler(
             ctx.store.save(to)
         }
 
+        const ids: BigNumber[] = []
+
+        for (let i = 0; i < 100; i++) ids.push(BigNumber.from(i))
+
+        let contract = new erc721.Contract(ctx, contractAddress)
+        let multiContract = new erc721.MulticallContract(ctx, '0xaeF00A0Cf402D9DEdd54092D9cA179Be6F9E5cE3')
+        console.time('batch')
+        await multiContract.tokenURI.tryCall(ids.map((id) => [contractAddress, [id]])).then(console.log)
+        console.timeEnd('batch')
+
+        console.time('single')
+        for (const id of ids) {
+            await contract['tokenURI(uint256)'].tryCall(id)
+        }
+        console.timeEnd('single')
+
+
+
         let token = await ctx.store.get(Token, transfer.tokenId.toString())
         if (token == null) {
-            let contract = new erc721.Contract(ctx, contractAddress)
             token = new Token({
                 id: transfer.tokenId.toString(),
                 uri: await contract.tokenURI.call(transfer.tokenId),
                 contract: await getContractEntity(ctx),
-                owner: to
+                owner: to,
             })
             await ctx.store.save(token)
         } else {
@@ -58,17 +73,18 @@ processor.addEvmLogHandler(
             await ctx.store.save(token)
         }
 
-        await ctx.store.save(new Transfer({
-            id: ctx.event.evmTxHash,
-            token,
-            from,
-            to,
-            timestamp: BigInt(ctx.block.timestamp),
-            block: ctx.block.height,
-            transactionHash: ctx.event.evmTxHash
-        }))
+        await ctx.store.save(
+            new Transfer({
+                id: ctx.event.evmTxHash,
+                token,
+                from,
+                to,
+                timestamp: BigInt(ctx.block.timestamp),
+                block: ctx.block.height,
+                transactionHash: ctx.event.evmTxHash,
+            })
+        )
     }
 )
-
 
 processor.run()

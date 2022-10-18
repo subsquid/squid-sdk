@@ -30,23 +30,20 @@ export class Typegen {
 
         out.line(`import assert from 'assert'`)
         out.line(`import * as ethers from 'ethers'`)
-        out.line(`import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result} from './support'`)
+        out.line(
+            `import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result, rawMulticallAbi} from './support'`
+        )
         out.line()
-        out.line('export const abi = new ethers.utils.Interface(getJsonAbi());')
+        out.line(`export const rawAbi = ${abi.format('json')}`)
+        out.line()
+        out.line('export const abi = new ethers.utils.Interface(rawAbi);')
+        out.line('export const multicallAbi = new ethers.utils.Interface(rawMulticallAbi);')
         out.line()
         this.generateEvents(out, this.getEvents(abi))
         out.line()
         this.generateFunctions(out, this.getFunctions(abi))
         out.line()
         this.generateContract(out, this.getCalls(abi))
-        out.line()
-        out.block('function getJsonAbi(): any', () => {
-            ;`return ${abi.format('json')}`.split('\n').forEach((line) => {
-                out.line(line)
-            })
-        })
-        out.line()
-
         out.write()
     }
 
@@ -64,10 +61,6 @@ export class Typegen {
                     out.line()
                     const overload = event.overloads[i]
                     const signature = overload.signature
-                    if (i === 0) {
-                        out.line(`${event.name} = this['${signature}']`)
-                        out.line()
-                    }
                     out.block(`'${signature}' =`, () => {
                         out.line(`topic: abi.getEventTopic('${signature}'),`)
                         if (event.overloads[i].inputs.length == 0) return
@@ -76,6 +69,8 @@ export class Typegen {
                         })
                     })
                 }
+                out.line()
+                out.line(`${event.name} = this['${event.overloads[0].signature}']`)
             }
         })
         out.line()
@@ -98,10 +93,6 @@ export class Typegen {
                     out.line()
                     const overload = func.overloads[i]
                     const signature = overload.signature
-                    if (i === 0) {
-                        out.line(`${func.name} = this['${signature}']`)
-                        out.line()
-                    }
                     out.block(`'${signature}' =`, () => {
                         out.line(`sighash: abi.getSighash('${signature}'),`)
                         if (func.overloads[i].inputs.length == 0) return
@@ -115,6 +106,8 @@ export class Typegen {
                         )
                     })
                 }
+                out.line()
+                out.line(`${func.name} = this['${func.overloads[0].signature}']`)
             }
         })
         out.line()
@@ -143,7 +136,6 @@ export class Typegen {
             })
             for (const decl of calls) {
                 out.line()
-                // if (decl.overloads.length > 1) {
                 for (let i = 0; i < decl.overloads.length; i++) {
                     const overload = decl.overloads[i]
                     const args = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}: ${getType(inp)}`).join(', ')
@@ -151,10 +143,6 @@ export class Typegen {
                     const returnType =
                         overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
                     const signature = overload.signature
-                    if (i == 0) {
-                        out.line(`${decl.name} = this['${signature}']`)
-                        out.line()
-                    }
                     out.block(`'${signature}' =`, () => {
                         out.line(`call: (${args}): Promise<${returnType}> => this.call('${signature}', [${argNames}]),`)
                         out.line(
@@ -162,6 +150,8 @@ export class Typegen {
                         )
                     })
                 }
+                out.line()
+                out.line(`${decl.name} = this['${decl.overloads[0].signature}']`)
             }
             out.line()
             out.block(`private async call(signature: string, args: any[]) : Promise<any>`, () => {
@@ -178,6 +168,104 @@ export class Typegen {
                     `return this.call(signature, args).then(r => ({success: true, value: r})).catch(() => ({success: false}))`
                 )
             })
+        })
+        out.line()
+        out.block('export class MulticallContract', () => {
+            out.line(`private readonly _chain: Chain`)
+            out.line(`private readonly blockHeight: number`)
+            out.line(`readonly address: string`)
+            out.line()
+            out.line(`constructor(ctx: BlockContext, multicallAddress: string)`)
+            out.line(`constructor(ctx: ChainContext, block: Block, multicallAddress: string)`)
+            out.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
+                out.line(`this._chain = ctx._chain`)
+                out.block(`if (typeof blockOrAddress === 'string') `, () => {
+                    out.line(`this.blockHeight = ctx.block.height`)
+                    out.line(`this.address = ethers.utils.getAddress(blockOrAddress)`)
+                })
+                out.block(`else `, () => {
+                    out.line(`assert(address != null)`)
+                    out.line(`this.blockHeight = blockOrAddress.height`)
+                    out.line(`this.address = ethers.utils.getAddress(address)`)
+                })
+            })
+            for (const decl of calls) {
+                out.line()
+                // if (decl.overloads.length > 1) {
+                for (let i = 0; i < decl.overloads.length; i++) {
+                    const overload = decl.overloads[i]
+                    let args = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}: ${getType(inp)}`).join(', ')
+                    // const argNames = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}`).join(', ')
+                    const returnType =
+                        overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
+                    const signature = overload.signature
+                    const hasArgs = overload.inputs.length > 0
+                    out.block(`'${signature}' =`, () => {
+                        out.line(
+                            `call: (args: ${
+                                hasArgs ? `[string, [${args}]]` : `string`
+                            }[]): Promise<${returnType}[]> => this.call('${signature}', ${
+                                hasArgs ? `args` : `args.map((arg) => [arg, []])`
+                            }),`
+                        )
+                        out.line(
+                            `tryCall: (args: ${
+                                hasArgs ? `[string, [${args}]]` : `string`
+                            }[]): Promise<Result<${returnType}>[]> => this.tryCall('${signature}', ${
+                                hasArgs ? `args` : `args.map((arg) => [arg, []])`
+                            })`
+                        )
+                    })
+                    out.line()
+                    out.line(`${decl.name} = this['${decl.overloads[0].signature}']`)
+                }
+            }
+            out.line()
+            out.block(`private async call(signature: string, args: [string, any[]][]) : Promise<any>`, () => {
+                out.line(`const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`)
+                out.line(`const data = multicallAbi.encodeFunctionData('aggregate', [encodedArgs])`)
+                out.line(
+                    `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
+                )
+                out.line(`const batch = multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
+                out.line(`const result: any[] = []`)
+                out.block(`for (const item of batch)`, () => {
+                    out.line(`const decodedItem = abi.decodeFunctionResult(signature, item)`)
+                    out.line(`result.push(decodedItem.length > 1 ? decodedItem : decodedItem[0])`)
+                })
+                out.line(`return result`)
+            })
+            out.line()
+            out.block(
+                `private async tryCall(signature: string, args: [string, any[]][]) : Promise<Result<any>[]>`,
+                () => {
+                    out.line(
+                        `const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`
+                    )
+                    out.line(`const data = multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])`)
+                    out.line(
+                        `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
+                    )
+                    out.line(`const batch = multicallAbi.decodeFunctionResult('tryAggregate', response).returnData`)
+                    out.line(`const result: any[] = []`)
+                    out.block(`for (const item of batch)`, () => {
+                        out.line(`try {`)
+                        out.indentation(() => {
+                            out.line(`if (!item.success) throw new Error()`)
+                            out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
+                            out.line(
+                                `result.push({success:true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]})`
+                            )
+                        })
+                        out.line(`} catch {`)
+                        out.indentation(() => {
+                            out.line(`result.push({success: false})`)
+                        })
+                        out.line(`}`)
+                    })
+                    out.line(`return result`)
+                }
+            )
         })
     }
 
