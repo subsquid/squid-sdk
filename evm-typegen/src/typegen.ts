@@ -1,7 +1,5 @@
 import {Interface, ParamType} from '@ethersproject/abi'
 import {FileOutput, OutDir, Output} from '@subsquid/util-internal-code-printer'
-import {def} from '@subsquid/util-internal'
-import fs from 'fs'
 
 export interface AbiOptions {
     name: string
@@ -33,7 +31,7 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import * as ethers from 'ethers'`)
         out.line(
-            `import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, BaseContract, BaseEvents, BaseFunctions} from './support'`
+            `import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result, ContractCall} from './support'`
         )
         out.line()
         out.line('export const abi = new ethers.utils.Interface(getJsonAbi());')
@@ -45,7 +43,7 @@ export class Typegen {
         this.generateContract(out, this.getCalls(abi))
         out.line()
         out.block('function getJsonAbi(): any', () => {
-            ;`return ${JSON.stringify(abi.fragments, null, 2)}`.split('\n').forEach((line) => {
+            ;`return ${abi.format('json')}`.split('\n').forEach((line) => {
                 out.line(line)
             })
         })
@@ -62,24 +60,28 @@ export class Typegen {
                 out.line()
             }
         }
-        out.line()
-        out.block(`export const events =`, () => {
+        out.block(`class Events`, () => {
             for (const event of events) {
                 for (let i = 0; i < event.overloads.length; i++) {
+                    out.line()
                     const overload = event.overloads[i]
-                    const signature = createSignature(event.name, overload.inputs)
-                    out.block(`"${signature}":`, () => {
+                    const signature = overload.signature
+                    if (i === 0) {
+                        out.line(`${event.name} = this['${signature}']`)
+                        out.line()
+                    }
+                    out.block(`'${signature}' =`, () => {
                         out.line(`topic: abi.getEventTopic('${signature}'),`)
-                        if (event.overloads[i].inputs.length > 0) {
-                            out.block(`decode(data: EvmLog): ${event.name}${i}Event`, () => {
-                                out.line(`return decodeEvent(abi, '${signature}', data)`)
-                            })
-                        }
+                        if (event.overloads[i].inputs.length == 0) return
+                        out.block(`decode(data: EvmLog): ${event.name}${i}Event`, () => {
+                            out.line(`return abi.decodeEventLog('${signature}', data.data, data.topics) as any`)
+                        })
                     })
-                    out.line(',')
                 }
             }
         })
+        out.line()
+        out.line(`export const events = new Events()`)
     }
 
     private generateFunctions(out: FileOutput, functions: AbiFunction[]) {
@@ -92,65 +94,89 @@ export class Typegen {
                 out.line()
             }
         }
-        out.line()
-        out.block(`export const functions =`, () => {
+        out.block(`class Functions`, () => {
             for (const func of functions) {
                 for (let i = 0; i < func.overloads.length; i++) {
+                    out.line()
                     const overload = func.overloads[i]
-                    const signature = createSignature(func.name, overload.inputs)
-                    out.block(`"${signature}":`, () => {
-                        out.line(`sighash: abi.getSighash('${signature}'),`)
-                        if (func.overloads[i].inputs.length > 0)
-                            out.block(
-                                `decode(transaction: EvmTransaction | string): ${upperCaseFirst(
-                                    func.name
-                                )}${i}Function`,
-                                () => {
-                                    out.line(`return decodeFunction(abi, '${signature}', transaction)`)
-                                }
-                            )
-                    })
-                    out.line(',')
-                }
-            }
-        })
-    }
-
-    private generateContract(out: FileOutput, calls: AbiCall[]) {
-        out.block('export class Contract extends BaseContract', () => {
-            out.line(`constructor(ctx: BlockContext, address: string)`)
-            out.line(`constructor(ctx: ChainContext, block: Block, address: string)`)
-            out.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
-                out.line(`super(ctx, blockOrAddress, address)`)
-                out.line(`this._abi = abi`)
-            })
-            out.line()
-            for (const decl of calls) {
-                if (decl.overloads.length > 1) {
-                    for (let overload of decl.overloads) {
-                        const args = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
-                        const returnType =
-                            overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
-                        out.line(`async ${decl.name}(${args}): Promise<${returnType}>`)
+                    const signature = overload.signature
+                    if (i === 0) {
+                        out.line(`${func.name} = this['${signature}']`)
+                        out.line()
                     }
-                    out.block(`async ${decl.name}(...args: any[])`, () => {
-                        out.line(`return this.call("${decl.name}", args)`)
-                    })
-                } else {
-                    const overload = decl.overloads[0]
-                    const params = overload.inputs.map((i, n) => `${i.name || `arg${n}`}: ${getType(i)}`)
-                    const returnType =
-                        overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
-                    out.block(`async ${decl.name}(${params.join(`, `)}): Promise<${returnType}>`, () => {
-                        out.line(
-                            `return this.call("${decl.name}", [${overload.inputs
-                                .map((i, n) => `${i.name || `arg${n}`}`)
-                                .join(`, `)}])`
+                    out.block(`'${signature}' =`, () => {
+                        out.line(`sighash: abi.getSighash('${signature}'),`)
+                        if (func.overloads[i].inputs.length == 0) return
+                        out.block(
+                            `decode(data: EvmTransaction | string): ${upperCaseFirst(func.name)}${i}Function`,
+                            () => {
+                                out.line(
+                                    `return abi.decodeFunctionData('${signature}', typeof data === 'string' ? data : data.input) as any`
+                                )
+                            }
                         )
                     })
                 }
-                out.line()
             }
+        })
+        out.line()
+        out.line(`export const functions = new Functions()`)
+    }
+
+    private generateContract(out: FileOutput, calls: AbiCall[]) {
+        out.block('export class Contract', () => {
+            out.line(`private readonly _chain: Chain`)
+            out.line(`private readonly blockHeight: number`)
+            out.line(`readonly address: string`)
+            out.line()
+            out.line(`constructor(ctx: BlockContext, address: string)`)
+            out.line(`constructor(ctx: ChainContext, block: Block, address: string)`)
+            out.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
+                out.line(`this._chain = ctx._chain`)
+                out.block(`if (typeof blockOrAddress === 'string') `, () => {
+                    out.line(`this.blockHeight = ctx.block.height`)
+                    out.line(`this.address = ethers.utils.getAddress(blockOrAddress)`)
+                })
+                out.block(`else `, () => {
+                    out.line(`assert(address != null)`)
+                    out.line(`this.blockHeight = blockOrAddress.height`)
+                    out.line(`this.address = ethers.utils.getAddress(address)`)
+                })
+            })
+            for (const decl of calls) {
+                out.line()
+                // if (decl.overloads.length > 1) {
+                for (let i = 0; i < decl.overloads.length; i++) {
+                    const overload = decl.overloads[i]
+                    const args = overload.inputs.map((inp, n) => `${inp.name || `arg${n}`}: ${getType(inp)}`)
+                    const returnType =
+                        overload.outputs.length == 1 ? getType(overload.outputs[0]) : getTupleType(overload.outputs)
+                    const signature = overload.signature
+                    if (i == 0) {
+                        out.line(`${decl.name} = this['${signature}']`)
+                        out.line()
+                    }
+                    out.block(`'${signature}': ContractCall<[${args}], ${returnType}> =`, () => {
+                        out.line(`call: (...args: any[]) => this.call('${signature}', args),`)
+                        out.line(`tryCall: (...args: any[]) => this.tryCall('${signature}', args)`)
+                    })
+                }
+            }
+            out.line()
+            out.block(`private async call(signature: string, args: any[]) : Promise<any>`, () => {
+                out.line(`const data = abi.encodeFunctionData(signature, args)`)
+                out.line(
+                    `const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
+                )
+                out.line(`const decoded = abi.decodeFunctionResult(signature, result)`)
+                out.line(`return decoded.length > 1 ? decoded : decoded[0]`)
+            })
+            out.line()
+            out.block(`private async tryCall(signature: string, args: any[]) : Promise<Result<any>>`, () => {
+                out.line(
+                    `return this.call(signature, args).then(r => ({success: true, value: r})).catch(() => ({success: false}))`
+                )
+            })
         })
     }
 
@@ -167,6 +193,7 @@ export class Typegen {
             }
 
             abiEvent.overloads.push({
+                signature: event.format('sighash'),
                 inputs: event.inputs || [],
             })
         }
@@ -189,6 +216,7 @@ export class Typegen {
             }
 
             abiFunc.overloads.push({
+                signature: func.format('sighash'),
                 inputs: func.inputs || [],
             })
         }
@@ -211,6 +239,7 @@ export class Typegen {
             }
 
             abiCall.overloads.push({
+                signature: func.format('sighash'),
                 inputs: func.inputs,
                 outputs: func.outputs || [],
             })
@@ -280,13 +309,10 @@ function getStructFields(params: ParamType[]): ParamType[] {
     return params.filter((p) => counts[p.name] == 1)
 }
 
-function createSignature(name: string, inputs: ParamType[]) {
-    return `${name}(${inputs.map((i) => i.type).join(`,`)})`
-}
-
 interface AbiEvent {
     name: string
     overloads: {
+        signature: string
         inputs: ParamType[]
     }[]
 }
@@ -294,6 +320,7 @@ interface AbiEvent {
 interface AbiFunction {
     name: string
     overloads: {
+        signature: string
         inputs: ParamType[]
     }[]
 }
@@ -301,6 +328,7 @@ interface AbiFunction {
 interface AbiCall {
     name: string
     overloads: {
+        signature: string
         inputs: ParamType[]
         outputs: ParamType[]
     }[]

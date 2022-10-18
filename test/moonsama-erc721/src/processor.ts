@@ -1,8 +1,8 @@
 import {getEvmLog} from "@subsquid/substrate-frontier-evm"
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
+import * as erc721 from "./abi/erc721"
 import {contractAddress, createContractEntity, getContractEntity} from "./contract"
-import * as erc721 from "./erc721"
 import {Owner, Token, Transfer} from "./model"
 
 
@@ -48,7 +48,7 @@ processor.addEvmLogHandler(
             let contract = new erc721.Contract(ctx, contractAddress)
             token = new Token({
                 id: transfer.tokenId.toString(),
-                uri: await contract.tokenURI(transfer.tokenId),
+                uri: await contract.tokenURI.call(transfer.tokenId),
                 contract: await getContractEntity(ctx),
                 owner: to
             })

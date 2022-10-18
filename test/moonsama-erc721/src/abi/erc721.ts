@@ -1,6 +1,6 @@
 import assert from 'assert'
 import * as ethers from 'ethers'
-import {EvmLog, EvmTransaction, ChainContext, BlockContext, BaseContract, decodeEvent, decodeFunction} from './support'
+import {EvmLog, EvmTransaction, Block, ChainContext, BlockContext, Chain, Result, ContractCall} from './support'
 
 export const abi = new ethers.utils.Interface(getJsonAbi());
 
@@ -10,40 +10,39 @@ export type ApprovalForAll0Event = ([owner: string, operator: string, approved: 
 
 export type Transfer0Event = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
+class Events {
 
-export const events = {
-  "Approval(address,address,uint256)": {
+  Approval = this['Approval(address,address,uint256)']
+
+  'Approval(address,address,uint256)' = {
     topic: abi.getEventTopic('Approval(address,address,uint256)'),
     decode(data: EvmLog): Approval0Event {
-      return decodeEvent(abi, 'Approval(address,address,uint256)', data)
+      return abi.decodeEventLog('Approval(address,address,uint256)', data.data, data.topics) as any
     }
   }
-  ,
-  "ApprovalForAll(address,address,bool)": {
+
+  ApprovalForAll = this['ApprovalForAll(address,address,bool)']
+
+  'ApprovalForAll(address,address,bool)' = {
     topic: abi.getEventTopic('ApprovalForAll(address,address,bool)'),
     decode(data: EvmLog): ApprovalForAll0Event {
-      return decodeEvent(abi, 'ApprovalForAll(address,address,bool)', data)
+      return abi.decodeEventLog('ApprovalForAll(address,address,bool)', data.data, data.topics) as any
     }
   }
-  ,
-  "Transfer(address,address,uint256)": {
+
+  Transfer = this['Transfer(address,address,uint256)']
+
+  'Transfer(address,address,uint256)' = {
     topic: abi.getEventTopic('Transfer(address,address,uint256)'),
     decode(data: EvmLog): Transfer0Event {
-      return decodeEvent(abi, 'Transfer(address,address,uint256)', data)
+      return abi.decodeEventLog('Transfer(address,address,uint256)', data.data, data.topics) as any
     }
   }
-  ,
 }
 
+export const events = new Events()
+
 export type Approve0Function = ([to: string, tokenId: ethers.BigNumber] & {to: string, tokenId: ethers.BigNumber})
-
-export type BalanceOf0Function = ([owner: string] & {owner: string})
-
-export type GetApproved0Function = ([tokenId: ethers.BigNumber] & {tokenId: ethers.BigNumber})
-
-export type IsApprovedForAll0Function = ([owner: string, operator: string] & {owner: string, operator: string})
-
-export type OwnerOf0Function = ([tokenId: ethers.BigNumber] & {tokenId: ethers.BigNumber})
 
 export type SafeTransferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
@@ -51,866 +50,173 @@ export type SafeTransferFrom1Function = ([from: string, to: string, tokenId: eth
 
 export type SetApprovalForAll0Function = ([operator: string, approved: boolean] & {operator: string, approved: boolean})
 
-export type SupportsInterface0Function = ([interfaceId: string] & {interfaceId: string})
-
-export type TokenByIndex0Function = ([index: ethers.BigNumber] & {index: ethers.BigNumber})
-
-export type TokenOfOwnerByIndex0Function = ([owner: string, index: ethers.BigNumber] & {owner: string, index: ethers.BigNumber})
-
-export type TokenURI0Function = ([tokenId: ethers.BigNumber] & {tokenId: ethers.BigNumber})
-
 export type TransferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
+class Functions {
 
-export class Functions {
-  static approve = this['approve(address,uint256)']
-  static "approve(address,uint256)" = {
+  approve = this['approve(address,uint256)']
+
+  'approve(address,uint256)' = {
     sighash: abi.getSighash('approve(address,uint256)'),
-    decode(transaction: EvmTransaction | string): Approve0Function {
-      return decodeFunction(abi, 'approve(address,uint256)', transaction)
+    decode(data: EvmTransaction | string): Approve0Function {
+      return abi.decodeFunctionData('approve(address,uint256)', typeof data === 'string' ? data : data.input) as any
     }
   }
 
-  "balanceOf(address)": {
-    sighash: abi.getSighash('balanceOf(address)'),
-    decode(transaction: EvmTransaction | string): BalanceOf0Function {
-      return decodeFunction(abi, 'balanceOf(address)', transaction)
-    }
-  }
-  ,
-  "baseURI()": {
-    sighash: abi.getSighash('baseURI()'),
-  }
-  ,
-  "getApproved(uint256)": {
-    sighash: abi.getSighash('getApproved(uint256)'),
-    decode(transaction: EvmTransaction | string): GetApproved0Function {
-      return decodeFunction(abi, 'getApproved(uint256)', transaction)
-    }
-  }
-  ,
-  "isApprovedForAll(address,address)": {
-    sighash: abi.getSighash('isApprovedForAll(address,address)'),
-    decode(transaction: EvmTransaction | string): IsApprovedForAll0Function {
-      return decodeFunction(abi, 'isApprovedForAll(address,address)', transaction)
-    }
-  }
-  ,
-  "name()": {
-    sighash: abi.getSighash('name()'),
-  }
-  ,
-  "ownerOf(uint256)": {
-    sighash: abi.getSighash('ownerOf(uint256)'),
-    decode(transaction: EvmTransaction | string): OwnerOf0Function {
-      return decodeFunction(abi, 'ownerOf(uint256)', transaction)
-    }
-  }
-  ,
-  "safeTransferFrom(address,address,uint256)": {
+  safeTransferFrom = this['safeTransferFrom(address,address,uint256)']
+
+  'safeTransferFrom(address,address,uint256)' = {
     sighash: abi.getSighash('safeTransferFrom(address,address,uint256)'),
-    decode(transaction: EvmTransaction | string): SafeTransferFrom0Function {
-      return decodeFunction(abi, 'safeTransferFrom(address,address,uint256)', transaction)
+    decode(data: EvmTransaction | string): SafeTransferFrom0Function {
+      return abi.decodeFunctionData('safeTransferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
     }
   }
-  ,
-  "safeTransferFrom(address,address,uint256,bytes)": {
+
+  'safeTransferFrom(address,address,uint256,bytes)' = {
     sighash: abi.getSighash('safeTransferFrom(address,address,uint256,bytes)'),
-    decode(transaction: EvmTransaction | string): SafeTransferFrom1Function {
-      return decodeFunction(abi, 'safeTransferFrom(address,address,uint256,bytes)', transaction)
+    decode(data: EvmTransaction | string): SafeTransferFrom1Function {
+      return abi.decodeFunctionData('safeTransferFrom(address,address,uint256,bytes)', typeof data === 'string' ? data : data.input) as any
     }
   }
-  ,
-  "setApprovalForAll(address,bool)": {
+
+  setApprovalForAll = this['setApprovalForAll(address,bool)']
+
+  'setApprovalForAll(address,bool)' = {
     sighash: abi.getSighash('setApprovalForAll(address,bool)'),
-    decode(transaction: EvmTransaction | string): SetApprovalForAll0Function {
-      return decodeFunction(abi, 'setApprovalForAll(address,bool)', transaction)
+    decode(data: EvmTransaction | string): SetApprovalForAll0Function {
+      return abi.decodeFunctionData('setApprovalForAll(address,bool)', typeof data === 'string' ? data : data.input) as any
     }
   }
-  ,
-  "supportsInterface(bytes4)": {
-    sighash: abi.getSighash('supportsInterface(bytes4)'),
-    decode(transaction: EvmTransaction | string): SupportsInterface0Function {
-      return decodeFunction(abi, 'supportsInterface(bytes4)', transaction)
-    }
-  }
-  ,
-  "symbol()": {
-    sighash: abi.getSighash('symbol()'),
-  }
-  ,
-  "tokenByIndex(uint256)": {
-    sighash: abi.getSighash('tokenByIndex(uint256)'),
-    decode(transaction: EvmTransaction | string): TokenByIndex0Function {
-      return decodeFunction(abi, 'tokenByIndex(uint256)', transaction)
-    }
-  }
-  ,
-  "tokenOfOwnerByIndex(address,uint256)": {
-    sighash: abi.getSighash('tokenOfOwnerByIndex(address,uint256)'),
-    decode(transaction: EvmTransaction | string): TokenOfOwnerByIndex0Function {
-      return decodeFunction(abi, 'tokenOfOwnerByIndex(address,uint256)', transaction)
-    }
-  }
-  ,
-  "tokenURI(uint256)": {
-    sighash: abi.getSighash('tokenURI(uint256)'),
-    decode(transaction: EvmTransaction | string): TokenURI0Function {
-      return decodeFunction(abi, 'tokenURI(uint256)', transaction)
-    }
-  }
-  ,
-  "totalSupply()": {
-    sighash: abi.getSighash('totalSupply()'),
-  }
-  ,
-  "transferFrom(address,address,uint256)": {
+
+  transferFrom = this['transferFrom(address,address,uint256)']
+
+  'transferFrom(address,address,uint256)' = {
     sighash: abi.getSighash('transferFrom(address,address,uint256)'),
-    decode(transaction: EvmTransaction | string): TransferFrom0Function {
-      return decodeFunction(abi, 'transferFrom(address,address,uint256)', transaction)
+    decode(data: EvmTransaction | string): TransferFrom0Function {
+      return abi.decodeFunctionData('transferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
     }
   }
-  ,
 }
 
-export class Contract extends BaseContract {
+export const functions = new Functions()
+
+export class Contract {
+  private readonly _chain: Chain
+  private readonly blockHeight: number
+  readonly address: string
+
   constructor(ctx: BlockContext, address: string)
   constructor(ctx: ChainContext, block: Block, address: string)
   constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string) {
-    super(ctx, blockOrAddress, address)
-    this._abi = abi
+    this._chain = ctx._chain
+    if (typeof blockOrAddress === 'string')  {
+      this.blockHeight = ctx.block.height
+      this.address = ethers.utils.getAddress(blockOrAddress)
+    }
+    else  {
+      assert(address != null)
+      this.blockHeight = blockOrAddress.height
+      this.address = ethers.utils.getAddress(address)
+    }
   }
 
+  balanceOf = this['balanceOf(address)']
+
+  'balanceOf(address)': ContractCall<[owner: string], ethers.BigNumber> = {
+    call: (...args: any[]) => this.call('balanceOf(address)', args),
+    tryCall: (...args: any[]) => this.tryCall('balanceOf(address)', args)
+  }
+
+  baseURI = this['baseURI()']
+
+  'baseURI()': ContractCall<[], string> = {
+    call: (...args: any[]) => this.call('baseURI()', args),
+    tryCall: (...args: any[]) => this.tryCall('baseURI()', args)
+  }
+
+  getApproved = this['getApproved(uint256)']
+
+  'getApproved(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
+    call: (...args: any[]) => this.call('getApproved(uint256)', args),
+    tryCall: (...args: any[]) => this.tryCall('getApproved(uint256)', args)
+  }
+
+  isApprovedForAll = this['isApprovedForAll(address,address)']
+
+  'isApprovedForAll(address,address)': ContractCall<[owner: string,operator: string], boolean> = {
+    call: (...args: any[]) => this.call('isApprovedForAll(address,address)', args),
+    tryCall: (...args: any[]) => this.tryCall('isApprovedForAll(address,address)', args)
+  }
+
+  name = this['name()']
+
+  'name()': ContractCall<[], string> = {
+    call: (...args: any[]) => this.call('name()', args),
+    tryCall: (...args: any[]) => this.tryCall('name()', args)
+  }
+
+  ownerOf = this['ownerOf(uint256)']
+
+  'ownerOf(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
+    call: (...args: any[]) => this.call('ownerOf(uint256)', args),
+    tryCall: (...args: any[]) => this.tryCall('ownerOf(uint256)', args)
+  }
+
+  supportsInterface = this['supportsInterface(bytes4)']
+
+  'supportsInterface(bytes4)': ContractCall<[interfaceId: string], boolean> = {
+    call: (...args: any[]) => this.call('supportsInterface(bytes4)', args),
+    tryCall: (...args: any[]) => this.tryCall('supportsInterface(bytes4)', args)
+  }
+
+  symbol = this['symbol()']
+
+  'symbol()': ContractCall<[], string> = {
+    call: (...args: any[]) => this.call('symbol()', args),
+    tryCall: (...args: any[]) => this.tryCall('symbol()', args)
+  }
+
+  tokenByIndex = this['tokenByIndex(uint256)']
+
+  'tokenByIndex(uint256)': ContractCall<[index: ethers.BigNumber], ethers.BigNumber> = {
+    call: (...args: any[]) => this.call('tokenByIndex(uint256)', args),
+    tryCall: (...args: any[]) => this.tryCall('tokenByIndex(uint256)', args)
+  }
+
+  tokenOfOwnerByIndex = this['tokenOfOwnerByIndex(address,uint256)']
+
+  'tokenOfOwnerByIndex(address,uint256)': ContractCall<[owner: string,index: ethers.BigNumber], ethers.BigNumber> = {
+    call: (...args: any[]) => this.call('tokenOfOwnerByIndex(address,uint256)', args),
+    tryCall: (...args: any[]) => this.tryCall('tokenOfOwnerByIndex(address,uint256)', args)
+  }
+
+  tokenURI = this['tokenURI(uint256)']
+
+  'tokenURI(uint256)': ContractCall<[tokenId: ethers.BigNumber], string> = {
+    call: (...args: any[]) => this.call('tokenURI(uint256)', args),
+    tryCall: (...args: any[]) => this.tryCall('tokenURI(uint256)', args)
+  }
+
+  totalSupply = this['totalSupply()']
+
+  'totalSupply()': ContractCall<[], ethers.BigNumber> = {
+    call: (...args: any[]) => this.call('totalSupply()', args),
+    tryCall: (...args: any[]) => this.tryCall('totalSupply()', args)
+  }
+
+  private async call(signature: string, args: any[]) : Promise<any> {
+    const data = abi.encodeFunctionData(signature, args)
+    const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
+    const decoded = abi.decodeFunctionResult(signature, result)
+    return decoded.length > 1 ? decoded : decoded[0]
+  }
+
+  private async tryCall(signature: string, args: any[]) : Promise<Result<any>> {
+    return this.call(signature, args).then(r => ({success: true, value: r})).catch(() => ({success: false}))
+  }
 }
 
 function getJsonAbi(): any {
-  return [
-    {
-      "name": null,
-      "type": "constructor",
-      "inputs": [
-        {
-          "name": "name",
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        },
-        {
-          "name": "symbol",
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        },
-        {
-          "name": "baseURI",
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "name": "Approval",
-      "anonymous": false,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "approved",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "type": "event",
-      "_isFragment": true
-    },
-    {
-      "name": "ApprovalForAll",
-      "anonymous": false,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "operator",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "approved",
-          "type": "bool",
-          "indexed": false,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bool",
-          "_isParamType": true
-        }
-      ],
-      "type": "event",
-      "_isFragment": true
-    },
-    {
-      "name": "Transfer",
-      "anonymous": false,
-      "inputs": [
-        {
-          "name": "from",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "to",
-          "type": "address",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": true,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "type": "event",
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "approve",
-      "constant": false,
-      "inputs": [
-        {
-          "name": "to",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "balanceOf",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "baseURI",
-      "constant": true,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": null,
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "getApproved",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "isApprovedForAll",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "operator",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "bool",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bool",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "name",
-      "constant": true,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": null,
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "ownerOf",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "safeTransferFrom",
-      "constant": false,
-      "inputs": [
-        {
-          "name": "from",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "to",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "safeTransferFrom",
-      "constant": false,
-      "inputs": [
-        {
-          "name": "from",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "to",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        },
-        {
-          "name": "_data",
-          "type": "bytes",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bytes",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "setApprovalForAll",
-      "constant": false,
-      "inputs": [
-        {
-          "name": "operator",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "approved",
-          "type": "bool",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bool",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "supportsInterface",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "interfaceId",
-          "type": "bytes4",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bytes4",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "bool",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "bool",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "symbol",
-      "constant": true,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": null,
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "tokenByIndex",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "index",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "tokenOfOwnerByIndex",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "index",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "tokenURI",
-      "constant": true,
-      "inputs": [
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [
-        {
-          "name": null,
-          "type": "string",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "string",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "totalSupply",
-      "constant": true,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": null,
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "gas": null,
-      "_isFragment": true
-    },
-    {
-      "type": "function",
-      "name": "transferFrom",
-      "constant": false,
-      "inputs": [
-        {
-          "name": "from",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "to",
-          "type": "address",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "address",
-          "_isParamType": true
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": null,
-          "components": null,
-          "arrayLength": null,
-          "arrayChildren": null,
-          "baseType": "uint256",
-          "_isParamType": true
-        }
-      ],
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "gas": null,
-      "_isFragment": true
-    }
-  ]
+  return [{"type":"constructor","payable":false,"inputs":[{"type":"string","name":"name"},{"type":"string","name":"symbol"},{"type":"string","name":"baseURI"}]},{"type":"event","anonymous":false,"name":"Approval","inputs":[{"type":"address","name":"owner","indexed":true},{"type":"address","name":"approved","indexed":true},{"type":"uint256","name":"tokenId","indexed":true}]},{"type":"event","anonymous":false,"name":"ApprovalForAll","inputs":[{"type":"address","name":"owner","indexed":true},{"type":"address","name":"operator","indexed":true},{"type":"bool","name":"approved","indexed":false}]},{"type":"event","anonymous":false,"name":"Transfer","inputs":[{"type":"address","name":"from","indexed":true},{"type":"address","name":"to","indexed":true},{"type":"uint256","name":"tokenId","indexed":true}]},{"type":"function","name":"approve","constant":false,"payable":false,"inputs":[{"type":"address","name":"to"},{"type":"uint256","name":"tokenId"}],"outputs":[]},{"type":"function","name":"balanceOf","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":"owner"}],"outputs":[{"type":"uint256"}]},{"type":"function","name":"baseURI","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"string"}]},{"type":"function","name":"getApproved","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"tokenId"}],"outputs":[{"type":"address"}]},{"type":"function","name":"isApprovedForAll","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":"owner"},{"type":"address","name":"operator"}],"outputs":[{"type":"bool"}]},{"type":"function","name":"name","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"string"}]},{"type":"function","name":"ownerOf","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"tokenId"}],"outputs":[{"type":"address"}]},{"type":"function","name":"safeTransferFrom","constant":false,"payable":false,"inputs":[{"type":"address","name":"from"},{"type":"address","name":"to"},{"type":"uint256","name":"tokenId"}],"outputs":[]},{"type":"function","name":"safeTransferFrom","constant":false,"payable":false,"inputs":[{"type":"address","name":"from"},{"type":"address","name":"to"},{"type":"uint256","name":"tokenId"},{"type":"bytes","name":"_data"}],"outputs":[]},{"type":"function","name":"setApprovalForAll","constant":false,"payable":false,"inputs":[{"type":"address","name":"operator"},{"type":"bool","name":"approved"}],"outputs":[]},{"type":"function","name":"supportsInterface","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"bytes4","name":"interfaceId"}],"outputs":[{"type":"bool"}]},{"type":"function","name":"symbol","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"string"}]},{"type":"function","name":"tokenByIndex","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"index"}],"outputs":[{"type":"uint256"}]},{"type":"function","name":"tokenOfOwnerByIndex","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"address","name":"owner"},{"type":"uint256","name":"index"}],"outputs":[{"type":"uint256"}]},{"type":"function","name":"tokenURI","constant":true,"stateMutability":"view","payable":false,"inputs":[{"type":"uint256","name":"tokenId"}],"outputs":[{"type":"string"}]},{"type":"function","name":"totalSupply","constant":true,"stateMutability":"view","payable":false,"inputs":[],"outputs":[{"type":"uint256"}]},{"type":"function","name":"transferFrom","constant":false,"payable":false,"inputs":[{"type":"address","name":"from"},{"type":"address","name":"to"},{"type":"uint256","name":"tokenId"}],"outputs":[]}]
 }
 
