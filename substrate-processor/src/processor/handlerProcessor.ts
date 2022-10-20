@@ -85,7 +85,6 @@ export class SubstrateProcessor<Store> {
         gearUserMessageSent: [],
     }
     private blockRange: Range = {from: 0}
-    private batchSize = 100
     private prometheusPort?: number | string
     private src?: DataSource
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -168,17 +167,10 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
-     * Sets the maximum number of blocks which can be fetched
-     * from the data source in a single request.
-     *
-     * The default is 100.
-     *
-     * Usually this setting doesn't have any significant impact on the performance.
+     * deprecated
      */
     setBatchSize(size: number): this {
-        this.assertNotRunning()
-        assert(size > 0)
-        this.batchSize = size
+        // do nothing
         return this
     }
 
@@ -833,7 +825,6 @@ export class SubstrateProcessor<Store> {
         return {
             blockRange: this.blockRange,
             prometheusPort: this.prometheusPort,
-            batchSize: this.batchSize
         }
     }
 

@@ -44,13 +44,11 @@ export interface IngestOptions<R> {
     archiveRequest<T>(query: string): Promise<T>
     archivePollIntervalMS?: number
     batches: Batch<R>[]
-    batchSize: number
 }
 
 
 export class Ingest<R extends BatchRequest> {
     private archiveHeight = -1
-    private readonly limit: number // maximum number of blocks in a single batch
     private readonly batches: Batch<R>[]
     private readonly maxQueueSize = 3
     private queue: Promise<DataBatch<R>>[] = []
@@ -58,8 +56,6 @@ export class Ingest<R extends BatchRequest> {
 
     constructor(private options: IngestOptions<R>) {
         this.batches = options.batches.slice()
-        this.limit = this.options.batchSize
-        assert(this.limit > 0)
     }
 
     @def
@@ -96,40 +92,31 @@ export class Ingest<R extends BatchRequest> {
 
                     let response: {
                         status: {head: number},
-                        batch: gw.BatchBlock[]
+                        batch: gw.BatchResponse,
                     } = await this.options.archiveRequest(ctx.archiveQuery)
 
                     let fetchEndTime = process.hrtime.bigint()
 
-                    ctx.batchBlocksFetched = response.batch.length
-
                     assert(response.status.head >= archiveHeight)
                     this.setArchiveHeight(response)
-
-                    let blocks = response.batch.map(mapGatewayBlock).sort((a, b) => a.header.height - b.header.height)
+                    
+                    let blocks = response.batch.data.map(mapGatewayBlock).sort((a, b) => a.header.height - b.header.height)
                     if (blocks.length) {
-                        assert(blocks.length <= this.limit)
                         assert(batch.range.from <= blocks[0].header.height)
                         assert(rangeEnd(batch.range) >= last(blocks).header.height)
                         assert(archiveHeight >= last(blocks).header.height)
                     }
 
+                    ctx.batchBlocksFetched = blocks.length
+
                     let from = batch.range.from
-                    let to: number
-                    if (blocks.length === this.limit && last(blocks).header.height < rangeEnd(batch.range)) {
-                        to = last(blocks).header.height
-                        this.batches[0] = {
-                            range: {from: to + 1, to: batch.range.to},
-                            request: batch.request
-                        }
-                    } else if (archiveHeight < rangeEnd(batch.range)) {
-                        to = archiveHeight
+                    let to = response.batch.nextBlock - 1
+                    if (to < rangeEnd(batch.range)) {
                         this.batches[0] = {
                             range: {from: to + 1, to: batch.range.to},
                             request: batch.request
                         }
                     } else {
-                        to = assertNotNull(batch.range.to)
                         this.batches.shift()
                     }
 
@@ -166,7 +153,6 @@ export class Ingest<R extends BatchRequest> {
         let args: gw.BatchRequest = {
             fromBlock: from,
             toBlock: to,
-            limit: this.limit,
             includeAllBlocks: req.getIncludeAllBlocks()
         }
 

@@ -539,15 +539,10 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     }
 
     /**
-     * Sets the maximum number of blocks which can be fetched
-     * from the data source in a single request.
-     *
-     * The default is 100.
+     * deprecated
      */
     setBatchSize(size: number): this {
-        assert(size > 0)
-        this.assertNotRunning()
-        this.options.batchSize = size
+        // do nothing
         return this
     }
 
