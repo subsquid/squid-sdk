@@ -293,7 +293,7 @@ type Pack = {chain: Chain, blocks: BlockData[]}
 
 
 function getItemsCount(blocks: BlockData[]): number {
-    let count = 1
+    let count = 0
     for (let i = 0; i < blocks.length; i++) {
         count += blocks[i].items.length
     }

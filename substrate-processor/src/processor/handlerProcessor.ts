@@ -167,10 +167,10 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
-     * deprecated
+     * @deprecated
      */
     setBatchSize(size: number): this {
-        // do nothing
+        this.getLogger().warn('batchSize is deprecated')
         return this
     }
 
