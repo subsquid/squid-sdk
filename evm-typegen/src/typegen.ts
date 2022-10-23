@@ -117,7 +117,7 @@ export class Typegen {
     private generateContract(out: FileOutput, calls: AbiCall[]) {
         out.block('export class Contract', () => {
             out.line(`private readonly _chain: Chain`)
-            out.line(`private readonly blockHeight: number`)
+            out.line(`private readonly blockHeight: string`)
             out.line(`readonly address: string`)
             out.line()
             out.line(`constructor(ctx: BlockContext, address: string)`)
@@ -125,12 +125,12 @@ export class Typegen {
             out.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
                 out.line(`this._chain = ctx._chain`)
                 out.block(`if (typeof blockOrAddress === 'string') `, () => {
-                    out.line(`this.blockHeight = ctx.block.height`)
+                    out.line(`this.blockHeight = '0x' + ctx.block.height.toString(16)`)
                     out.line(`this.address = ethers.utils.getAddress(blockOrAddress)`)
                 })
                 out.block(`else `, () => {
                     out.line(`assert(address != null)`)
-                    out.line(`this.blockHeight = blockOrAddress.height`)
+                    out.line(`this.blockHeight = '0x' + blockOrAddress.height.toString(16)`)
                     out.line(`this.address = ethers.utils.getAddress(address)`)
                 })
             })
@@ -172,7 +172,7 @@ export class Typegen {
         out.line()
         out.block('export class MulticallContract', () => {
             out.line(`private readonly _chain: Chain`)
-            out.line(`private readonly blockHeight: number`)
+            out.line(`private readonly blockHeight: string`)
             out.line(`readonly address: string`)
             out.line()
             out.line(`constructor(ctx: BlockContext, multicallAddress: string)`)
@@ -180,12 +180,12 @@ export class Typegen {
             out.block(`constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string)`, () => {
                 out.line(`this._chain = ctx._chain`)
                 out.block(`if (typeof blockOrAddress === 'string') `, () => {
-                    out.line(`this.blockHeight = ctx.block.height`)
+                    out.line(`this.blockHeight = '0x' + ctx.block.height.toString(16)`)
                     out.line(`this.address = ethers.utils.getAddress(blockOrAddress)`)
                 })
                 out.block(`else `, () => {
                     out.line(`assert(address != null)`)
-                    out.line(`this.blockHeight = blockOrAddress.height`)
+                    out.line(`this.blockHeight = '0x' + blockOrAddress.height.toString(16)`)
                     out.line(`this.address = ethers.utils.getAddress(address)`)
                 })
             })
@@ -209,9 +209,9 @@ export class Typegen {
                             }),`
                         )
                         out.line(
-                            `tryCall: (args: ${
+                            `try: (args: ${
                                 hasArgs ? `[string, [${args}]]` : `string`
-                            }[]): Promise<Result<${returnType}>[]> => this.tryCall('${signature}', ${
+                            }[]): Promise<Result<${returnType}>[]> => this.try('${signature}', ${
                                 hasArgs ? `args` : `args.map((arg) => [arg, []])`
                             })`
                         )
@@ -228,44 +228,37 @@ export class Typegen {
                     `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
                 )
                 out.line(`const batch = multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
-                out.line(`const result: any[] = []`)
-                out.block(`for (const item of batch)`, () => {
-                    out.line(`const decodedItem = abi.decodeFunctionResult(signature, item)`)
-                    out.line(`result.push(decodedItem.length > 1 ? decodedItem : decodedItem[0])`)
+                out.line(`return batch.map((item: any) => {`)
+                out.indentation(() => {
+                    out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
+                    out.line(`return decodedItem.length > 1 ? decodedItem : decodedItem[0]`)
                 })
-                out.line(`return result`)
+                out.line(`})`)
             })
             out.line()
-            out.block(
-                `private async tryCall(signature: string, args: [string, any[]][]) : Promise<Result<any>[]>`,
-                () => {
-                    out.line(
-                        `const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`
-                    )
-                    out.line(`const data = multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])`)
-                    out.line(
-                        `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
-                    )
-                    out.line(`const batch = multicallAbi.decodeFunctionResult('tryAggregate', response).returnData`)
-                    out.line(`const result: any[] = []`)
-                    out.block(`for (const item of batch)`, () => {
-                        out.line(`try {`)
-                        out.indentation(() => {
-                            out.line(`if (!item.success) throw new Error()`)
-                            out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
-                            out.line(
-                                `result.push({success:true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]})`
-                            )
-                        })
-                        out.line(`} catch {`)
-                        out.indentation(() => {
-                            out.line(`result.push({success: false})`)
-                        })
-                        out.line(`}`)
+            out.block(`private async try(signature: string, args: [string, any[]][]) : Promise<Result<any>[]>`, () => {
+                out.line(`const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`)
+                out.line(`const data = multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])`)
+                out.line(
+                    `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
+                )
+                out.line(`const batch = multicallAbi.decodeFunctionResult('tryAggregate', response).returnData`)
+                out.line(`return batch.map((item: any) => {`)
+                out.indentation(() => {
+                    out.line(`try {`)
+                    out.indentation(() => {
+                        out.line(`if (!item.success) throw false`)
+                        out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
+                        out.line(`return {success: true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]}`)
                     })
-                    out.line(`return result`)
-                }
-            )
+                    out.line(`} catch {`)
+                    out.indentation(() => {
+                        out.line(`return {success: false}`)
+                    })
+                    out.line(`}`)
+                })
+                out.line(`})`)
+            })
         })
     }
 
