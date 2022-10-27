@@ -448,7 +448,8 @@
     {
       "packageName": "@subsquid/eth-ingest",
       "projectFolder": "eth-ingest",
-      "shouldPublish": false
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-typegen",
