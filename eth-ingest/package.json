@@ -1,10 +1,12 @@
 {
   "name": "@subsquid/eth-ingest",
   "description": "Data fetcher for ethereum chains",
-  "private": true,
   "version": "0.0.0",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "squid-eth-ingest": "./bin/run.js"
   },
@@ -18,10 +20,10 @@
   "dependencies": {
     "@subsquid/logger": "^0.2.0",
     "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal-commander": "^0.0.0",
     "@subsquid/util-internal-counters": "^0.0.1",
     "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-json": "^0.2.0",
-    "@subsquid/util-timeout": "^0.0.0",
     "commander": "^9.3.0",
     "node-fetch": "^2.6.7"
   },

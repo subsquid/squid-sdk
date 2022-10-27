@@ -9,22 +9,26 @@ export interface IngestOptions {
     rpc: HttpRpcClient
     fromBlock?: number
     toBlock?: number
+    concurrency?: number
     log?: Logger
 }
 
 
 export class Ingest {
-    static getBlocks(options: IngestOptions): AsyncGenerator<Block[]> {
+    static getBlocks(options: IngestOptions): AsyncIterable<Block[]> {
         return new Ingest(options).loop()
     }
 
     private strides: Promise<Block[]>[] = []
-    private strideSize = 20
+    private strideSize = 10
+    private concurrency: number
     private chainHeight = 0
     private height: number
     private end: number
 
+
     private constructor(private options: IngestOptions) {
+        this.concurrency = options.concurrency || 5
         this.height = (options.fromBlock ?? 0) - 1
         this.end = options.toBlock ?? Infinity
         assert(this.end >= this.height)
@@ -55,7 +59,7 @@ export class Ingest {
     }
 
     private scheduleStrides(): void {
-        while (this.strides.length < 3 && this.height < this.end && this.dist() > 0) {
+        while (this.strides.length < this.concurrency && this.height < this.end && this.dist() > 0) {
             let fromBlock = this.height + 1
             let toBlock = this.height + Math.min(this.strideSize, this.end - this.height, this.dist())
             let promise = this.fetchStride(fromBlock, toBlock)
