@@ -14,7 +14,6 @@ import {Range} from "../util/range"
 
 
 export interface Options {
-    batchSize?: number
     blockRange?: Range
     prometheusPort?: number | string
 }
@@ -186,7 +185,6 @@ export class Runner<S, R extends BatchRequest> {
         let ingest = new Ingest({
             archiveRequest: this.archiveRequest(),
             batches: this.config.createBatches(blockRange),
-            batchSize: this.config.getOptions().batchSize || 200
         })
 
         this.metrics.updateProgress(
@@ -295,7 +293,7 @@ type Pack = {chain: Chain, blocks: BlockData[]}
 
 
 function getItemsCount(blocks: BlockData[]): number {
-    let count = 1
+    let count = 0
     for (let i = 0; i < blocks.length; i++) {
         count += blocks[i].items.length
     }

@@ -2,7 +2,6 @@ import type {QualifiedName, SubstrateBlock, SubstrateEvent, SubstrateExtrinsicSi
 
 
 export interface BatchRequest {
-    limit: number
     fromBlock: number
     toBlock: number
     includeAllBlocks?: boolean
@@ -73,6 +72,12 @@ export interface AcalaEvmExecutedFailedRequest {
     contract: string
     logs?: AcalaEvmLogFilter[]
     data?: any
+}
+
+
+export interface BatchResponse {
+    data: BatchBlock[]
+    nextBlock: number
 }
 
 

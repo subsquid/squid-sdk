@@ -26,7 +26,7 @@ services:
     ]
 
   gateway:
-    image: subsquid/substrate-gateway:2.1.0
+    image: subsquid/substrate-gateway:firesquid
     depends_on:
       - archive-db
     command: [

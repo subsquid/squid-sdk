@@ -11,8 +11,7 @@ import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {last, runProgram} from '@subsquid/util-internal'
-import assert from 'assert'
+import {def, last, runProgram} from '@subsquid/util-internal'
 import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
 import {PlainBatchRequest} from '../batch/request'
 import {Chain} from '../chain'
@@ -539,15 +538,17 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     }
 
     /**
-     * Sets the maximum number of blocks which can be fetched
-     * from the data source in a single request.
+     *  Used to set the maximum number of blocks which could be fetched
+     *  from the data source in a single request.
      *
-     * The default is 100.
+     *  Now this setting has no effect.
+     *
+     *  The amount of returned data is determined by the datasource.
+     *
+     * @deprecated
      */
     setBatchSize(size: number): this {
-        assert(size > 0)
-        this.assertNotRunning()
-        this.options.batchSize = size
+        this.getLogger().warn('.setBatchSize() is deprecated and has no effect')
         return this
     }
 
@@ -632,6 +633,11 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         return url
     }
 
+    @def
+    private getLogger(): Logger {
+        return createLogger('sqd:processor')
+    }
+
     /**
      * Run data processing.
      *
@@ -645,7 +651,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * @param handler - The data handler, see {@link BatchContext} for an API available to the handler.
      */
     run<Store>(db: Database<Store>, handler: (ctx: BatchContext<Store, Item>) => Promise<void>): void {
-        let logger = createLogger('sqd:processor')
+        let logger = this.getLogger()
         this.running = true
         runProgram(async () => {
             let batches = mergeBatches(this.batches, (a, b) => a.merge(b))
