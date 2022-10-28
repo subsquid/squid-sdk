@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "remove unused functions",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

@@ -1,13 +1,5 @@
-import assert from "assert"
-
-
-export function safeCall(f: () => void): void {
-    try {
-        f()
-    } catch(e: any) {
-        // TODO: log
-    }
-}
+import assert from 'assert'
+import * as process from 'process'
 
 
 export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
@@ -33,17 +25,42 @@ export function maybeLast<T>(array: T[]): T | undefined {
 
 
 export function runProgram(main: () => Promise<void>, log?: (err: Error) => void): void {
-    main().then(
-        () => {
-            process.exit(0)
-        },
-        err => {
-            if (log) {
-                log(err)
-            } else {
-                console.error(err)
-            }
-            process.exit(1)
+
+    function onerror(err: unknown) {
+        if (log) {
+            log(ensureError(err))
+        } else {
+            console.error(err)
         }
-    )
+        process.exit(1)
+    }
+
+    try {
+        main().then(() => process.exit(0), onerror)
+    } catch(e: unknown) {
+        onerror(e)
+    }
+}
+
+
+export class NonErrorThrow extends Error {
+    constructor(public readonly value: unknown) {
+        super('Non-error object was thrown')
+    }
+}
+
+
+export function ensureError(val: unknown): Error {
+    if (val instanceof Error) {
+        return val
+    } else {
+        return new NonErrorThrow(val)
+    }
+}
+
+
+export function wait(ms: number): Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms)
+    })
 }

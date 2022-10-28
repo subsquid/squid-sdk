@@ -1,13 +1,13 @@
-import {assertNotNull, def, last, unexpectedCase, wait} from "@subsquid/util-internal"
-import {Output} from "@subsquid/util-internal-code-printer"
-import assert from "assert"
-import type {Batch} from "./batch/generic"
-import {BatchRequest} from "./batch/request"
-import * as gw from "./interfaces/gateway"
-import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from "./interfaces/substrate"
-import {printGqlArguments} from "./util/gql"
-import {addErrorContext, withErrorContext} from "./util/misc"
-import {Range, rangeEnd} from "./util/range"
+import {assertNotNull, def, ensureError, last, unexpectedCase, wait} from '@subsquid/util-internal'
+import {Output} from '@subsquid/util-internal-code-printer'
+import assert from 'assert'
+import type {Batch} from './batch/generic'
+import {BatchRequest} from './batch/request'
+import * as gw from './interfaces/gateway'
+import {SubstrateBlock, SubstrateCall, SubstrateEvent, SubstrateExtrinsic} from './interfaces/substrate'
+import {printGqlArguments} from './util/gql'
+import {addErrorContext, withErrorContext} from './util/misc'
+import {Range, rangeEnd} from './util/range'
 
 
 export type Item = {
@@ -99,7 +99,7 @@ export class Ingest<R extends BatchRequest> {
 
                     assert(response.status.head >= archiveHeight)
                     this.setArchiveHeight(response)
-                    
+
                     let blocks = response.batch.data.map(mapGatewayBlock).sort((a, b) => a.header.height - b.header.height)
                     if (blocks.length) {
                         assert(batch.range.from <= blocks[0].header.height)
@@ -131,11 +131,7 @@ export class Ingest<R extends BatchRequest> {
 
             this.queue.push(promise)
 
-            let result = await promise.catch((err: unknown) => {
-                assert(err instanceof Error)
-                return err
-            })
-
+            let result = await promise.catch(ensureError)
             if (result instanceof Error) {
                 return
             }

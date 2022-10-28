@@ -61,7 +61,6 @@ specifiers:
   '@rush-temp/util-internal-json': file:./projects/util-internal-json.tgz
   '@rush-temp/util-internal-prometheus-server': file:./projects/util-internal-prometheus-server.tgz
   '@rush-temp/util-internal-read-lines': file:./projects/util-internal-read-lines.tgz
-  '@rush-temp/util-internal-service-manager': file:./projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
   '@rush-temp/util-timeout': file:./projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
@@ -180,7 +179,6 @@ dependencies:
   '@rush-temp/util-internal-json': file:projects/util-internal-json.tgz
   '@rush-temp/util-internal-prometheus-server': file:projects/util-internal-prometheus-server.tgz
   '@rush-temp/util-internal-read-lines': file:projects/util-internal-read-lines.tgz
-  '@rush-temp/util-internal-service-manager': file:projects/util-internal-service-manager.tgz
   '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-timeout': file:projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
@@ -4550,7 +4548,7 @@ packages:
     dev: false
 
   file:projects/eth-ingest.tgz:
-    resolution: {integrity: sha512-EunK0L45zc8DC31LvNxs6LQEmA/6vVhOcSMwTlwuHBqr836bOs5QlXBq6+OJ9C0p18oENEH6lrbvsLxHGphBlg==, tarball: file:projects/eth-ingest.tgz}
+    resolution: {integrity: sha512-1g/UrOf8PCFQJipj0wgH4ZLlGd2XpMqd3Usq2WW670FsIiIQII0uwGZ6o1l+iE0PaoCgIBpilyD0R+9FrrpbXw==, tarball: file:projects/eth-ingest.tgz}
     name: '@rush-temp/eth-ingest'
     version: 0.0.0
     dependencies:
@@ -5209,15 +5207,6 @@ packages:
   file:projects/util-internal-read-lines.tgz:
     resolution: {integrity: sha512-X/LJ80WsvrvTw26K26XKOf7G2GWScibUVRyYI4wfR5ZSl/7gMa0EnXF6kAhkcUZyV1Wx6vg4OMomGr3R+vqDuA==, tarball: file:projects/util-internal-read-lines.tgz}
     name: '@rush-temp/util-internal-read-lines'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 16.11.59
-      typescript: 4.7.4
-    dev: false
-
-  file:projects/util-internal-service-manager.tgz:
-    resolution: {integrity: sha512-wM9M8vkvUeI3ZNXJ3wkR3d/TyT4wN2HGOoF4Ub/xmJTbp3/wlgcWkUUedRtq4M8oLZO/ugvdgwMQB+ndk5YPzw==, tarball: file:projects/util-internal-service-manager.tgz}
-    name: '@rush-temp/util-internal-service-manager'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.59

@@ -648,12 +648,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-service-manager",
-      "projectFolder": "util/util-internal-service-manager",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
