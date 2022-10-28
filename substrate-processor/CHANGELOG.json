@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/substrate-processor_v2.0.0",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to new gateway interface for data fetching"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^0.1.4` to `^0.1.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.10.1",
       "tag": "@subsquid/substrate-processor_v1.10.1",
       "date": "Sat, 15 Oct 2022 11:43:02 GMT",

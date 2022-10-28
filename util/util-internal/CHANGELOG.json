@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal_v1.0.0",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "remove unused functions"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal_v0.0.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

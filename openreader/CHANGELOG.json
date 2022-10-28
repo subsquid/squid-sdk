@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "3.1.2",
+      "tag": "@subsquid/openreader_v3.1.2",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.1",
       "tag": "@subsquid/openreader_v3.1.1",
       "date": "Sat, 15 Oct 2022 11:43:02 GMT",

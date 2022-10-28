@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-metadata_v1.2.1",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-metadata_v1.2.0",
       "date": "Fri, 14 Oct 2022 13:59:14 GMT",

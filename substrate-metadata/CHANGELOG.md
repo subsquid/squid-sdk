@@ -1,6 +1,11 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Fri, 14 Oct 2022 13:59:14 GMT and should not be manually modified.
+This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+
+## 1.2.1
+Fri, 28 Oct 2022 12:04:58 GMT
+
+_Version update only_
 
 ## 1.2.0
 Fri, 14 Oct 2022 13:59:14 GMT

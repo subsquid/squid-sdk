@@ -2,6 +2,21 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.2.2",
+      "tag": "@subsquid/typeorm-codegen_v0.2.2",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.1.1` to `^3.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/typeorm-codegen_v0.2.1",
       "date": "Thu, 22 Sep 2022 19:06:43 GMT",

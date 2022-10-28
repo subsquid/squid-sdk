@@ -1,6 +1,11 @@
 # Change Log - @subsquid/typeorm-migration
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+
+## 0.1.3
+Fri, 28 Oct 2022 12:04:58 GMT
+
+_Version update only_
 
 ## 0.1.2
 Wed, 17 Aug 2022 17:33:52 GMT
