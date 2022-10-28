@@ -167,10 +167,17 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
+     *  Used to set the maximum number of blocks which could be fetched
+     *  from the data source in a single request.
+     *
+     *  Now this setting has no effect.
+     *
+     *  The amount of returned data is determined by the datasource.
+     *
      * @deprecated
      */
     setBatchSize(size: number): this {
-        this.getLogger().warn('batchSize is deprecated')
+        this.getLogger().warn('.setBatchSize() is deprecated and has no effect')
         return this
     }
 
