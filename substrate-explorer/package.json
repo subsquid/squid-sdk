@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-explorer",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Block explorer GraphQL API for subsquid substrate archive",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@subsquid/logger": "^0.2.0",
-    "@subsquid/openreader": "^3.1.1",
-    "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/openreader": "^3.1.2",
+    "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-http-server": "^0.1.0",
     "@subsquid/typeorm-config": "^2.0.0",
     "pg": "^8.7.3"

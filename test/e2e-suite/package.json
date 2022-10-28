@@ -9,7 +9,7 @@
     "@polkadot/api": "^7.15.1",
     "@polkadot/types": "^7.15.1",
     "@polkadot/keyring": "^8.7.1",
-    "@subsquid/util-internal": "^0.0.1",
+    "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
     "dotenv": "^10.0.0",
     "gql-test-client": "^0.0.0",
