@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Squid framework utilities for internal use",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

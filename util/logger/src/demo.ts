@@ -21,3 +21,5 @@ log.error({err: new Error('Another error'), a: 1, b: 2}, 'weird')
 const sqlLog = log.child('sql', {req: 1})
 sqlLog.debug('connecting to database')
 sqlLog.debug({sql: 'SELECT max(id) FROM status'})
+
+log.info(new Map([['a', 1], ['b', 2], ['c', 3]]))

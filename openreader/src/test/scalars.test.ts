@@ -2,7 +2,7 @@ import {useDatabase, useServer} from "./setup"
 
 describe('scalars', function() {
     useDatabase([
-        `create table scalar (id text primary key, "boolean" bool, "bigint" numeric, "string" text, enum text, date_time timestamptz, "bytes" bytea, "json" jsonb, deep jsonb)`,
+        `create table scalar (id text primary key, "boolean" bool, "bigint" numeric, "bigdecimal" numeric, "string" text, enum text, date_time timestamptz, "bytes" bytea, "json" jsonb, deep jsonb)`,
         `insert into scalar (id, "boolean") values ('1', true)`,
         `insert into scalar (id, "boolean", deep) values ('2', false, '{"boolean": true}'::jsonb)`,
         `insert into scalar (id, "bigint", deep) values ('3', 1000000000000000000000000000000000000, '{"bigint": "1000000000000000000000000000000000000"}'::jsonb)`,
@@ -23,6 +23,9 @@ describe('scalars', function() {
         `insert into scalar (id, "enum") values ('17', 'C')`,
         `insert into scalar (id, "json") values ('18', '{"key1": "value1"}'::jsonb)`,
         `insert into scalar (id, "json") values ('19', '{"key2": "value2"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('20', 0.00000000000000000000000000000000002, '{"bigdecimal": "100.00000000000000000000000000000000002"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('21', 0.00000000000000000000000000000000001, '{"bigdecimal": "12.00000000000000000000000000000000001"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('22', 5, '{"bigdecimal": "5"}'::jsonb)`,
     ])
 
     const client = useServer(`
@@ -32,6 +35,7 @@ describe('scalars', function() {
             string: String
             enum: Enum
             bigint: BigInt
+            bigdecimal: BigDecimal
             dateTime: DateTime
             bytes: Bytes
             json: JSON,
@@ -40,6 +44,7 @@ describe('scalars', function() {
         
         type DeepScalar {
             bigint: BigInt
+            bigdecimal: BigDecimal
             dateTime: DateTime
             bytes: Bytes
             boolean: Boolean
@@ -228,6 +233,78 @@ describe('scalars', function() {
                     {id: '5'},
                     {id: '3'},
                     {id: '4'}
+                ]
+            })
+        })
+    })
+
+    describe('BigDecimal', function () {
+        it('outputs correctly', function () {
+            return client.test(`
+                query {
+                    scalars(where: {id_in: ["20", "21", "22"]} orderBy: id_ASC) {
+                        id
+                        bigdecimal
+                        deep { bigdecimal }
+                    }
+                }
+            `, {
+                scalars: [
+                    {
+                        id: '20',
+                        bigdecimal: '2e-35',
+                        deep: {bigdecimal: '100.00000000000000000000000000000000002'}
+                    },
+                    {
+                        id: '21',
+                        bigdecimal: '1e-35',
+                        deep: {bigdecimal: '12.00000000000000000000000000000000001'}
+                    },
+                    {
+                        id: '22',
+                        bigdecimal: '5',
+                        deep: {bigdecimal: '5'}
+                    }
+                ]
+            })
+        })
+
+        it('supports where conditions', function () {
+            return client.test(`
+                query {
+                    eq: scalars(where: {bigdecimal_eq: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    not_eq: scalars(where: {bigdecimal_not_eq: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    gt: scalars(where: {bigdecimal_gt: 0.00000000000000000000000000000000001} orderBy: id_ASC) { id }
+                    gte: scalars(where: {bigdecimal_gte: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    lt: scalars(where: {bigdecimal_lt: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    lte: scalars(where: {bigdecimal_lte: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    in: scalars(where: {bigdecimal_in: [0.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
+                    not_in: scalars(where: {bigdecimal_not_in: [0.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
+                }
+            `, {
+                eq: [{id: '20'}],
+                not_eq: [{id: '21'}, {id: '22'}],
+                gt: [{id: '20'}, {id: '22'}],
+                gte: [{id: '20'}, {id: '22'}],
+                lt: [{id: '21'}],
+                lte: [{id: '20'}, {id: '21'}],
+                in: [{id: '21'}, {id: '22'}],
+                not_in: [{id: '20'}]
+            })
+        })
+
+        it('json sort', function () {
+            return client.test(`
+                query {
+                    scalars(orderBy: deep_bigdecimal_ASC where: {id_in: ["20", "21", "22"]}) {
+                        id
+                    }
+                }
+            `, {
+                scalars: [
+                    {id: '22'},
+                    {id: '21'},
+                    {id: '20'}
                 ]
             })
         })

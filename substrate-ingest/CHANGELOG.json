@@ -2,6 +2,77 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.3.2",
+      "tag": "@subsquid/substrate-ingest_v1.3.2",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.3.1",
+      "tag": "@subsquid/substrate-ingest_v1.3.1",
+      "date": "Sat, 15 Oct 2022 11:43:02 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.4` to `^1.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.3.0",
+      "tag": "@subsquid/substrate-ingest_v1.3.0",
+      "date": "Fri, 14 Oct 2022 13:59:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support polkadotjs types bundles"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.1.0` to `^1.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.2",
+      "tag": "@subsquid/substrate-ingest_v1.2.2",
+      "date": "Fri, 30 Sep 2022 14:01:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix naming collision for EVM.ExecutedFailed"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-ingest_v1.2.1",
+      "date": "Wed, 28 Sep 2022 07:59:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix naming collision between Acala EVM and frontier"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-ingest_v1.2.0",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",

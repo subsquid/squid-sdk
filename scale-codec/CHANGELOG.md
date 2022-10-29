@@ -1,6 +1,18 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Wed, 17 Aug 2022 17:33:52 GMT and should not be manually modified.
+This log was last generated on Sat, 15 Oct 2022 11:43:02 GMT and should not be manually modified.
+
+## 1.0.5
+Sat, 15 Oct 2022 11:43:02 GMT
+
+_Version update only_
+
+## 1.0.4
+Thu, 29 Sep 2022 15:37:49 GMT
+
+### Patches
+
+- handle compact structs with single numeric field
 
 ## 1.0.3
 Wed, 17 Aug 2022 17:33:52 GMT

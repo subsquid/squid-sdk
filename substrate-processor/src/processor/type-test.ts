@@ -1,4 +1,5 @@
-import {BatchContext, SubstrateBatchProcessor} from "./batchProcessor"
+import {EventHandlerContext} from '../interfaces/dataHandlers'
+import {BatchContext, SubstrateBatchProcessor} from './batchProcessor'
 
 
 const db: any = {}
@@ -64,5 +65,33 @@ new SubstrateBatchProcessor()
     .run(db, getItem(item => {
         if (item.name == 'EVM.Log') {
             const address: string = item.event.args.address
+        }
+    }))
+
+
+new SubstrateBatchProcessor()
+    .addEvent('Staking.Rewarded', {
+        data: {
+            event: {
+                args: true,
+                call: {args: true},
+                extrinsic: {hash: true}
+            }
+        } as const
+    })
+    .run(db, getItem(item => {
+        type Reward = EventHandlerContext<unknown, {
+            event: {
+                args: true,
+                call: {args: true},
+                extrinsic: {hash: true},
+            }
+        }>['event']
+        if (item.name == 'Staking.Rewarded') {
+            let reward: Reward = item.event
+            if (reward.call) {
+                console.log(reward.call.success)
+                console.log(reward.extrinsic.hash)
+            }
         }
     }))

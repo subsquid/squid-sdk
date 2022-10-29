@@ -1,5 +1,17 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {getOldTypesBundle, OldTypesBundle, QualifiedName, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypes,
+    OldTypesBundle,
+    QualifiedName,
+    readOldTypesBundle
+} from '@subsquid/substrate-metadata'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {
+    eliminatePolkadotjsTypesBundle,
+    PolkadotjsTypesBundle
+} from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
@@ -15,10 +27,10 @@ import type {
     CallHandlerOptions,
     CommonHandlerContext,
     ContractsContractEmittedHandler,
+    EthereumTransactionHandlerOptions,
     EventHandler,
     EvmLogHandler,
     EvmLogOptions,
-    EthereumTransactionHandlerOptions,
     EvmTopicSet,
     GearMessageEnqueuedHandler,
     GearUserMessageSentHandler
@@ -73,10 +85,9 @@ export class SubstrateProcessor<Store> {
         gearUserMessageSent: [],
     }
     private blockRange: Range = {from: 0}
-    private batchSize = 100
     private prometheusPort?: number | string
     private src?: DataSource
-    private typesBundle?: OldTypesBundle
+    private typesBundle?: OldTypesBundle | OldSpecsBundle
     private running = false
 
     /**
@@ -107,20 +118,15 @@ export class SubstrateProcessor<Store> {
      * metadata version below 14 and only if we don't have built-in
      * support for the chain in question.
      *
-     * Don't confuse this setting with types bundle from polkadot.js.
-     * Although those two are similar in purpose and structure,
-     * they are not compatible.
+     * Subsquid project has its own types bundle format,
+     * however, most of polkadotjs types bundles will work as well.
      *
-     * Types bundle can be specified in 3 different ways:
+     * Types bundle can be specified in 2 different ways:
      *
-     * 1. as a name of a known chain
-     * 2. as a name of a JSON file structured as {@link OldTypesBundle}
-     * 3. as an {@link OldTypesBundle} object
+     * 1. as a name of a JSON file
+     * 2. as an {@link OldTypesBundle} or {@link OldSpecsBundle} or {@link PolkadotjsTypesBundle} object
      *
      * @example
-     * // known chain
-     * processor.setTypesBundle('kusama')
-     *
      * // A path to a JSON file resolved relative to `cwd`.
      * processor.setTypesBundle('typesBundle.json')
      *
@@ -131,12 +137,12 @@ export class SubstrateProcessor<Store> {
      *     }
      * })
      */
-    setTypesBundle(bundle: string | OldTypesBundle): this {
+    setTypesBundle(bundle: string | OldTypesBundle | OldSpecsBundle | PolkadotjsTypesBundle): this {
         this.assertNotRunning()
         if (typeof bundle == 'string') {
             this.typesBundle = getOldTypesBundle(bundle) || readOldTypesBundle(bundle)
         } else {
-            this.typesBundle = bundle
+            this.typesBundle = eliminatePolkadotjsTypesBundle(bundle)
         }
         return this
     }
@@ -161,17 +167,17 @@ export class SubstrateProcessor<Store> {
     }
 
     /**
-     * Sets the maximum number of blocks which can be fetched
-     * from the data source in a single request.
+     *  Used to set the maximum number of blocks which could be fetched
+     *  from the data source in a single request.
      *
-     * The default is 100.
+     *  Now this setting has no effect.
      *
-     * Usually this setting doesn't have any significant impact on the performance.
+     *  The amount of returned data is determined by the datasource.
+     *
+     * @deprecated
      */
     setBatchSize(size: number): this {
-        this.assertNotRunning()
-        assert(size > 0)
-        this.batchSize = size
+        this.getLogger().warn('.setBatchSize() is deprecated and has no effect')
         return this
     }
 
@@ -826,7 +832,6 @@ export class SubstrateProcessor<Store> {
         return {
             blockRange: this.blockRange,
             prometheusPort: this.prometheusPort,
-            batchSize: this.batchSize
         }
     }
 
@@ -834,10 +839,20 @@ export class SubstrateProcessor<Store> {
         return this.db
     }
 
-    private getTypesBundle(specName: string, specVersion: number): OldTypesBundle {
-        let bundle = this.typesBundle || getOldTypesBundle(specName)
-        if (bundle) return bundle
-        throw new Error(`Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`)
+    private getTypes(specName: string, specVersion: number): OldTypes {
+        let bundle: OldTypesBundle | OldSpecsBundle | undefined
+        if (this.typesBundle != null) {
+            bundle = this.typesBundle
+        } else {
+            bundle = getOldTypesBundle(specName)
+        }
+
+        bundle = assertNotNull(
+            bundle,
+            `Types bundle is required for ${specName}@${specVersion}. Provide it via .setTypesBundle()`
+        )
+
+        return getTypesFromBundle(bundle, specVersion, specName)
     }
 
     private getArchiveEndpoint(): string {
@@ -1075,16 +1090,17 @@ class HandlerRunner<S> extends Runner<S, DataHandlers>{
         }
     }
 
-    private evmHandlerMatches(handler: {filter?: EvmTopicSet[]}, log: EvmLogEvent): boolean {
+    private evmHandlerMatches(handler: {filter?: EvmTopicSet[]}, event: EvmLogEvent): boolean {
         if (handler.filter == null) return true
+        let log = event.args.log || event.args
         for (let i = 0; i < handler.filter.length; i++) {
             let set = handler.filter[i]
             if (set == null) continue
             if (Array.isArray(set)) {
-                if (!set.includes(log.args.topics[i])) {
+                if (!set.includes(log.topics[i])) {
                     return false
                 }
-            } else if (set !== log.args.topics[i]) {
+            } else if (set !== log.topics[i]) {
                 return false
             }
         }

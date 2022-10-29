@@ -1,3 +1,4 @@
+import {BigDecimal} from '@subsquid/big-decimal'
 import type {Store} from "@subsquid/typeorm-store"
 import {
     AdditionalData,
@@ -94,13 +95,14 @@ export async function loadInitialData(store: Store): Promise<void> {
             id: '1',
             float: 0,
             nested: new NestedScalars({float: 0, json: [1, 2, 3], enumInJson: EnumInJson.A}),
-            json: {foo: 1}
+            json: {foo: 1},
+            bigdecimal: BigDecimal(123, 2)
         }))
 
         await store.save(new ScalarRaw({
             id: '2',
             float: 0.7,
-            nested: new NestedScalars({float: 0.8})
+            nested: new NestedScalars({float: 0.8, bigdecimal: BigDecimal(1, 2)})
         }))
     }
 }

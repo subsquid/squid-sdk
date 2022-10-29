@@ -2,7 +2,8 @@ type Scalar @entity {
   id: ID!
   bool: Boolean
   date: DateTime
-  bigNumber: BigInt
+  bigInt: BigInt
+  bigDecimal: BigDecimal
   bytes: Bytes
 }
 

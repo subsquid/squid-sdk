@@ -446,6 +446,12 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/eth-ingest",
+      "projectFolder": "eth-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm-typegen",
       "shouldPublish": true,
@@ -516,6 +522,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-frontier-evm",
+      "projectFolder": "util/substrate-frontier-evm",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-explorer",
       "projectFolder": "substrate-explorer",
       "shouldPublish": true,
@@ -554,6 +566,12 @@
     {
       "packageName": "@subsquid/typeorm-migration",
       "projectFolder": "typeorm-migration",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/big-decimal",
+      "projectFolder": "util/big-decimal",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -626,12 +644,6 @@
     {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util/util-internal-http-server",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-service-manager",
-      "projectFolder": "util/util-internal-service-manager",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

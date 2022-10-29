@@ -1,4 +1,5 @@
-import {LEVELS, LogLevel} from "./level"
+import {toJSON} from '@subsquid/util-internal-json'
+import {LEVELS, LogLevel} from './level'
 
 
 export interface LogRecord {
@@ -55,6 +56,8 @@ export class Logger {
         }
         if (attributes instanceof Error) {
             attributes = {err: attributes}
+        } else if (attributes instanceof Map || attributes instanceof Set) {
+            attributes = toJSON(attributes)
         }
         let rec: any = {
             level,

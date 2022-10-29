@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from 'assert'
 import {
     ArrayType,
     BitSequenceType,
@@ -12,8 +12,8 @@ import {
     Type,
     TypeKind,
     Variant
-} from "./types"
-import {assertNotNull, throwUnexpectedCase} from "./util"
+} from './types'
+import {assertNotNull, throwUnexpectedCase} from './util'
 
 
 export interface CodecStructType {
@@ -184,6 +184,14 @@ export function getCodecType(types: Type[], ti: Ti): CodecType {
                 case TypeKind.Primitive:
                     assert(type.primitive[0] == 'U')
                     return {kind: TypeKind.Compact, integer: type.primitive}
+                case TypeKind.Composite: {
+                    assert(type.fields.length == 1)
+                    let num = getUnwrappedType(types, type.fields[0].type)
+                    // FIXME: as far as I understand, CompactAs chain can be arbitrary long
+                    assert(num.kind == TypeKind.Primitive)
+                    assert(num.primitive[0] == 'U')
+                    return {kind: TypeKind.Compact, integer: num.primitive}
+                }
                 default:
                     throwUnexpectedCase(type.kind)
             }

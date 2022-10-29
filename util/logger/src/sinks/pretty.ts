@@ -63,6 +63,14 @@ export class Printer {
                     this.line(`${prefix} ${val}`)
                 } else if (typeof (val as any)?.toJSON == 'function') {
                     this.property(prefix, (val as any).toJSON())
+                } else if (val instanceof Map) {
+                    let entries: {k: unknown, v: unknown}[] = []
+                    for (let [k, v] of val.entries()) {
+                        entries.push({k, v})
+                    }
+                    this.property(prefix, {map: entries})
+                } else if (val instanceof Set) {
+                    this.property(prefix, {set: [...val]})
                 } else if (Array.isArray(val)) {
                     if (val.length == 0) {
                         this.line(`${prefix} []`)

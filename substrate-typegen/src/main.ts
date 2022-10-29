@@ -1,5 +1,5 @@
 import {createLogger} from "@subsquid/logger"
-import {getOldTypesBundle, OldTypesBundle, OldTypesBundleError, readOldTypesBundle} from "@subsquid/substrate-metadata"
+import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, OldTypesBundleError, readOldTypesBundle} from "@subsquid/substrate-metadata"
 import {ArchiveApi} from "@subsquid/substrate-metadata-explorer/lib/archiveApi"
 import {readSpecVersions, SpecFileError, SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
 import {runProgram} from "@subsquid/util-internal"
@@ -23,7 +23,7 @@ Generates TypeScript classes for events, calls and storage items
     let configFile = program.parse().args[0]
     let config = readConfig(configFile)
 
-    let typesBundle: OldTypesBundle | undefined
+    let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
     if (config.typesBundle) {
         typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle)
     }

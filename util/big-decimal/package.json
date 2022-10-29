@@ -1,0 +1,19 @@
+{
+  "name": "@subsquid/big-decimal",
+  "version": "0.0.0",
+  "description": "A small wrapper around big.js for subsquid projects",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "",
+    "test": "node test.js"
+  },
+  "main": "bigdecimal.js",
+  "types": "bigdecimal.d.ts",
+  "dependencies": {
+    "big.js":"~6.2.1"
+  }
+}

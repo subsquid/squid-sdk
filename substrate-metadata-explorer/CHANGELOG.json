@@ -2,6 +2,30 @@
   "name": "@subsquid/substrate-metadata-explorer",
   "entries": [
     {
+      "version": "1.0.8",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.8",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.7",
+      "tag": "@subsquid/substrate-metadata-explorer_v1.0.7",
+      "date": "Sat, 15 Oct 2022 11:43:02 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.6",
       "tag": "@subsquid/substrate-metadata-explorer_v1.0.6",
       "date": "Wed, 17 Aug 2022 17:33:52 GMT",

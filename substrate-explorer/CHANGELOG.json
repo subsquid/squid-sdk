@@ -2,6 +2,36 @@
   "name": "@subsquid/substrate-explorer",
   "entries": [
     {
+      "version": "2.0.3",
+      "tag": "@subsquid/substrate-explorer_v2.0.3",
+      "date": "Fri, 28 Oct 2022 12:04:58 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.1.1` to `^3.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.2",
+      "tag": "@subsquid/substrate-explorer_v2.0.2",
+      "date": "Sat, 15 Oct 2022 11:43:02 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.1.0` to `^0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.1.0` to `^3.1.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.1",
       "tag": "@subsquid/substrate-explorer_v2.0.1",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",

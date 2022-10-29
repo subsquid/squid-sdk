@@ -58,7 +58,7 @@ export class Store {
     constructor(private em: () => Promise<EntityManager>) {}
 
     /**
-     * Saves a given entity or entities into the database.
+     * Upserts a given entity or entities into the database.
      *
      * Unlike {@link EntityManager.save} it always
      * executes a primitive operation without cascades, relations, etc.
