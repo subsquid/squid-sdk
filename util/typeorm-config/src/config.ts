@@ -17,11 +17,13 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
     let dir = path.resolve(options?.projectDir || process.cwd())
     let model = resolveModel(path.join(dir, 'lib/model'))
     let migrationsDir = path.join(dir, MIGRATIONS_DIR)
+    let subscribersDir = path.join(dir, 'lib/model-subscriptions')
     return {
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
         entities: [model],
         migrations: [migrationsDir + '/*.js'],
+        subscribers: [subscribersDir + '/*.js'],
         ...createConnectionOptions()
     }
 }
