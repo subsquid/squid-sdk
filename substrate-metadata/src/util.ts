@@ -9,6 +9,7 @@ import {Field, Type, TypeKind, VariantType} from './types'
 export function normalizeMetadataTypes(types: Type[]): Type[] {
     types = fixWrapperKeepOpaqueTypes(types)
     types = introduceOptionType(types)
+    types = eliminateOptionsChain(types)
     types = removeUnitFieldsFromStructs(types)
     types = replaceUnitOptionWithBoolean(types)
     types = normalizeFieldNames(types)
@@ -69,6 +70,30 @@ function isOptionType(type: Type): type is VariantType {
         v1.index == 1 &&
         v1.fields.length == 1 &&
         v1.fields[0].name == null
+}
+
+
+function eliminateOptionsChain(types: Type[]): Type[] {
+    return types.map(type => {
+        if (type.kind != TypeKind.Option) return type
+        let param = type.type
+        if (types[param].kind != TypeKind.Option) return type
+        return {
+            kind: TypeKind.Variant,
+            variants: [
+                {
+                    name: 'None',
+                    index: 0,
+                    fields: []
+                },
+                {
+                    name: 'Some',
+                    index: 1,
+                    fields: [{type: param}]
+                }
+            ]
+        }
+    })
 }
 
 
