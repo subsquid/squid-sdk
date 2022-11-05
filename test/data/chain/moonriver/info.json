@@ -1,4 +1,3 @@
 {
-  "chain": "wss://moonriver-rpc.dwellir.com",
-  "archive": "https://moonriver-beta.indexer.gc.subsquid.io/v4/graphql"
+  "chain": "wss://moonriver-rpc.dwellir.com"
 }

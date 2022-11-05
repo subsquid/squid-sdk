@@ -1,5 +1,5 @@
 import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
-import {last} from '@subsquid/util-internal'
+import {last, maybeLast} from '@subsquid/util-internal'
 import {toCamelCase} from '@subsquid/util-naming'
 import crypto from 'crypto'
 import type {Metadata} from './interfaces'
@@ -8,6 +8,7 @@ import {Field, Type, TypeKind, VariantType} from './types'
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
     types = fixWrapperKeepOpaqueTypes(types)
+    types = fixU256Structs(types)
     types = introduceOptionType(types)
     types = eliminateOptionsChain(types)
     types = removeUnitFieldsFromStructs(types)
@@ -39,6 +40,29 @@ function fixWrapperKeepOpaqueTypes(types: Type[]): Type[] {
         })
     }
     return types
+}
+
+
+function fixU256Structs(types: Type[]): Type[] {
+    return types.map(type => {
+        let field
+        let element
+        let isU256 = type.path && maybeLast(type.path) == 'U256'
+            && type.kind == TypeKind.Composite
+            && type.fields.length == 1
+            && (field = types[type.fields[0].type])
+            && field.kind == TypeKind.Array
+            && field.len == 4
+            && (element = types[field.type])
+            && element.kind == TypeKind.Primitive
+            && element.primitive == 'U64'
+
+        if (isU256) return {
+            kind: TypeKind.Primitive,
+            primitive: 'U256'
+        }
+        return type
+    })
 }
 
 
