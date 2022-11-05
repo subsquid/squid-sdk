@@ -128,7 +128,6 @@ function removeUnitFieldsFromStructs(types: Type[]): Type[] {
         types = types.map(type => {
             switch (type.kind) {
                 case TypeKind.Composite: {
-                    if (type.fields[0]?.name == null) return type
                     let fields = type.fields.filter(f => {
                         let fieldType = getUnwrappedType(types, f.type)
                         return !isUnitType(fieldType)
@@ -142,12 +141,12 @@ function removeUnitFieldsFromStructs(types: Type[]): Type[] {
                 }
                 case TypeKind.Variant: {
                     let variants = type.variants.map(v => {
-                        if (v.fields[0]?.name == null) return v
                         let fields = v.fields.filter(f => {
                             let fieldType = getUnwrappedType(types, f.type)
                             return !isUnitType(fieldType)
                         })
                         if (fields.length == v.fields.length) return v
+                        if (v.fields[0]?.name == null && fields.length > 0) return v
                         changed = true
                         return {
                             ...v,
