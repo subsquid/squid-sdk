@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/substrate-metadata",
       "comment": "remove enum/struct fields when they all have a unit type",
-      "type": "minor"
+      "type": "major"
     }
   ],
   "packageName": "@subsquid/substrate-metadata"

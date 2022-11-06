@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/substrate-metadata",
       "comment": "decode `Option<Option<T>>` to `Option<T | undefined>`",
-      "type": "minor"
+      "type": "major"
     }
   ],
   "packageName": "@subsquid/substrate-metadata"
