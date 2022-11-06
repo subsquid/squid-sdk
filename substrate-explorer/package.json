@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^0.2.0",
-    "@subsquid/openreader": "^3.1.2",
+    "@subsquid/openreader": "^3.2.0",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-http-server": "^0.1.0",
     "@subsquid/typeorm-config": "^2.0.0",
