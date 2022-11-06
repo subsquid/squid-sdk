@@ -146,6 +146,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         context,
         cache: options.cache,
         stopOnTerminationSignals: false,
+        allowBatchedHttpRequests: false,
         executor: execute && (async req => {
             return execute({
                 schema,
