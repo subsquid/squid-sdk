@@ -20,7 +20,7 @@ jobs:
         run: git fetch origin release/firesquid:release/firesquid
 
       - name: check change files
-        run: node common/scripts/install-run-rush.js change --verify --target-branch release/firesquid
+        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/release/firesquid
 
       - name: bump versions
         run: node common/scripts/install-run-rush.js version --bump --target-branch release/firesquid
