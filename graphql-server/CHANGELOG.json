@@ -2,23 +2,6 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
-      "version": "3.3.0",
-      "tag": "@subsquid/graphql-server_v3.3.0",
-      "date": "Sun, 06 Nov 2022 17:55:12 GMT",
-      "comments": {
-        "minor": [
-          {
-            "comment": "disable batch gql requests, because they are broken"
-          }
-        ],
-        "dependency": [
-          {
-            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.1.2` to `^3.2.0`"
-          }
-        ]
-      }
-    },
-    {
       "version": "3.2.2",
       "tag": "@subsquid/graphql-server_v3.2.2",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",

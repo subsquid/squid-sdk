@@ -1,13 +1,6 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Sun, 06 Nov 2022 17:55:12 GMT and should not be manually modified.
-
-## 3.3.0
-Sun, 06 Nov 2022 17:55:12 GMT
-
-### Minor changes
-
-- disable batch gql requests, because they are broken
+This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
 
 ## 3.2.2
 Fri, 28 Oct 2022 12:04:58 GMT

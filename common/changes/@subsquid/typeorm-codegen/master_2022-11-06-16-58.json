@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "always accept null column values to workaround TypeORM issue - field transformation can be run for a null entity",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "remove enum/struct fields when they all have a unit type",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

@@ -1,13 +1,6 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Sun, 06 Nov 2022 17:55:12 GMT and should not be manually modified.
-
-## 1.5.0
-Sun, 06 Nov 2022 17:55:12 GMT
-
-### Minor changes
-
-- decode `Option<Option<T>>` to `Option<T | undefined>`
+This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
 
 ## 1.4.2
 Fri, 28 Oct 2022 12:04:58 GMT

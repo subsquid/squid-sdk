@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "disable batch gql requests, because they are broken",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "disable batch gql requests, because they are broken",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
