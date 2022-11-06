@@ -1,6 +1,15 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Sun, 06 Nov 2022 17:55:12 GMT and should not be manually modified.
+
+## 1.3.0
+Sun, 06 Nov 2022 17:55:12 GMT
+
+### Minor changes
+
+- decode `Option<Option<T>>` to `Option<T | undefined>`
+- normalize `U256` structs to `u256` primitives
+- remove enum/struct fields when they all have a unit type
 
 ## 1.2.1
 Fri, 28 Oct 2022 12:04:58 GMT

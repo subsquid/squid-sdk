@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "3.2.0",
+      "tag": "@subsquid/openreader_v3.2.0",
+      "date": "Sun, 06 Nov 2022 17:55:12 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "disable batch gql requests, because they are broken"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.2",
       "tag": "@subsquid/openreader_v3.1.2",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",
