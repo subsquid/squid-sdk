@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,7 +20,7 @@
     "@subsquid/logger": "^0.2.0",
     "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.0.5",
-    "@subsquid/substrate-metadata": "^1.2.1",
+    "@subsquid/substrate-metadata": "^2.0.0",
     "@subsquid/typeorm-config": "^2.0.0",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
