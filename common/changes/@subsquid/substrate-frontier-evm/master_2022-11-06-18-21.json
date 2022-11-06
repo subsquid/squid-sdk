@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-frontier-evm",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/substrate-frontier-evm"
+}
