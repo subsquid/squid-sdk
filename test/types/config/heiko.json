@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/heiko",
+  "outDir": "../gen/heiko/src",
   "specVersions": "../../data/chain/heiko/versions.jsonl",
   "events": true,
   "calls": true,

@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/moonriver",
+  "outDir": "../gen/moonriver/src",
   "specVersions": "../../data/chain/moonriver/versions.jsonl",
   "events": true,
   "calls": true,

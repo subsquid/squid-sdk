@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/khala",
+  "outDir": "../gen/khala/src",
   "specVersions": "../../data/chain/khala/versions.jsonl",
   "events": true,
   "calls": true,

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -rf src || exit 1
+rm -rf gen || exit 1
 
 for cfg in config/*.json; do
     chain="${cfg##config/}"
@@ -10,6 +10,10 @@ for cfg in config/*.json; do
     echo ok
 done
 
-echo -n "type check: "
-npx tsc --noEmit || exit 1
-echo ok
+for cfg in config/*.json; do
+    chain="${cfg##config/}"
+    chain="${chain%".json"}"
+    echo -n "type check $chain: "
+    (cd "gen/$chain" && cp ../../tsconfig.json . && npx tsc) || exit 1
+    echo ok
+done

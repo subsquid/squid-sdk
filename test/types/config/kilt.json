@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/kilt",
+  "outDir": "../gen/kilt/src",
   "specVersions": "../../data/chain/kilt/versions.jsonl",
   "events": true,
   "calls": true,

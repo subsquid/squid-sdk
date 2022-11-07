@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/darwinia",
+  "outDir": "../gen/darwinia/src",
   "specVersions": "../../data/chain/darwinia/versions.jsonl",
   "events": true,
   "calls": true,

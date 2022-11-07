@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/parallel",
+  "outDir": "../gen/parallel/src",
   "specVersions": "../../data/chain/parallel/versions.jsonl",
   "events": true,
   "calls": true,

@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/hydradx",
+  "outDir": "../gen/hydradx/src",
   "specVersions": "../../data/chain/hydradx/versions.jsonl",
   "events": true,
   "calls": true,

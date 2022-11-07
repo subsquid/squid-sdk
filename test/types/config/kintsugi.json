@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/kintsugi",
+  "outDir": "../gen/kintsugi/src",
   "specVersions": "../../data/chain/kintsugi/versions.jsonl",
   "events": true,
   "calls": true,

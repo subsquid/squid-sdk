@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/bifrost",
+  "outDir": "../gen/bifrost/src",
   "specVersions": "../../data/chain/bifrost/versions.jsonl",
   "events": true,
   "calls": true,

@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/shiden",
+  "outDir": "../gen/shiden/src",
   "specVersions": "../../data/chain/shiden/versions.jsonl",
   "events": true,
   "calls": true,

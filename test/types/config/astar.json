@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/astar",
+  "outDir": "../gen/astar/src",
   "specVersions": "../../data/chain/astar/versions.jsonl",
   "events": true,
   "calls": true,
