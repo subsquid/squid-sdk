@@ -1,6 +1,6 @@
 import {SubstrateProcessor, toHex} from '@subsquid/substrate-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
-import * as erc20 from './erc20'
+import * as erc20 from './abi/erc20'
 import {Transaction} from './model'
 import {toJSON} from '@subsquid/util-internal-json'
 import {getTransaction} from '@subsquid/substrate-frontier-evm'
@@ -41,22 +41,22 @@ function decodeInput(input: string): {method: string, args: any[]} | undefined {
     let sighash = input.slice(0, 10)
 
     switch (sighash) {
-        case erc20.functions['approve(address,uint256)'].sighash: {
-            const decoded = erc20.functions['approve(address,uint256)'].decode(input)
+        case erc20.functions.approve.sighash: {
+            const decoded = erc20.functions.approve.decode(input)
             return {
                 method: 'approve',
                 args: [decoded[0], decoded[1].toBigInt()]
             }
         }
-        case erc20.functions['transfer(address,uint256)'].sighash: {
-            const decoded = erc20.functions['transfer(address,uint256)'].decode(input)
+        case erc20.functions.transfer.sighash: {
+            const decoded = erc20.functions.transfer.decode(input)
             return {
                 method: 'transfer',
                 args: [decoded[0], decoded[1].toBigInt()]
             }
         }
-        case erc20.functions['transferFrom(address,address,uint256)'].sighash: {
-            const decoded = erc20.functions['transferFrom(address,address,uint256)'].decode(input)
+        case erc20.functions.transferFrom.sighash: {
+            const decoded = erc20.functions.transferFrom.decode(input)
             return {
                 method: 'transferFrom',
                 args: [decoded[0], decoded[0], decoded[2].toBigInt()]

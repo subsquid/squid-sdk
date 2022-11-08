@@ -39,11 +39,11 @@ export class Typegen {
         out.line('export const abi = new ethers.utils.Interface(rawAbi);')
         out.line('export const multicallAbi = new ethers.utils.Interface(rawMulticallAbi);')
         out.line()
-        this.generateEvents(out, this.getEvents(abi))
+        this.generateEvents(out, getEvents(abi))
         out.line()
-        this.generateFunctions(out, this.getFunctions(abi))
+        this.generateFunctions(out, getFunctions(abi))
         out.line()
-        this.generateContract(out, this.getCalls(abi))
+        this.generateContract(out, getCalls(abi))
         out.write()
     }
 
@@ -56,17 +56,16 @@ export class Typegen {
             }
         }
         out.block(`class Events`, () => {
+            out.line(`private readonly _abi = abi`)
             for (const event of events) {
                 for (let i = 0; i < event.overloads.length; i++) {
-                    out.line()
                     const overload = event.overloads[i]
                     const signature = overload.signature
+                    out.line()
                     out.block(`'${signature}' =`, () => {
-                        out.line(`topic: abi.getEventTopic('${signature}'),`)
-                        if (event.overloads[i].inputs.length == 0) return
-                        out.block(`decode(data: EvmLog): ${event.name}${i}Event`, () => {
-                            out.line(`return abi.decodeEventLog('${signature}', data.data, data.topics) as any`)
-                        })
+                        out.line(`topic: this._abi.getEventTopic('${signature}'),`)
+                        if (overload.inputs.length == 0) return
+                        out.line(`decode: (data: EvmLog): ${event.name}${i}Event => this._abi.decodeEventLog('${signature}', data.data, data.topics) as any`)
                     })
                 }
                 out.line()
@@ -88,22 +87,16 @@ export class Typegen {
             }
         }
         out.block(`class Functions`, () => {
+            out.line(`private readonly _abi = abi`)
             for (const func of functions) {
                 for (let i = 0; i < func.overloads.length; i++) {
-                    out.line()
                     const overload = func.overloads[i]
                     const signature = overload.signature
+                    out.line()
                     out.block(`'${signature}' =`, () => {
                         out.line(`sighash: abi.getSighash('${signature}'),`)
-                        if (func.overloads[i].inputs.length == 0) return
-                        out.block(
-                            `decode(data: EvmTransaction | string): ${upperCaseFirst(func.name)}${i}Function`,
-                            () => {
-                                out.line(
-                                    `return abi.decodeFunctionData('${signature}', typeof data === 'string' ? data : data.input) as any`
-                                )
-                            }
-                        )
+                        if (overload.inputs.length == 0) return
+                        out.line(`decode: (data: EvmTransaction | string): ${upperCaseFirst(func.name)}${i}Function => this._abi.decodeFunctionData('${signature}', typeof data === 'string' ? data : data.input) as any`)
                     })
                 }
                 out.line()
@@ -116,6 +109,7 @@ export class Typegen {
 
     private generateContract(out: FileOutput, calls: AbiCall[]) {
         out.block('export class Contract', () => {
+            out.line(`private readonly _abi = abi`)
             out.line(`private readonly _chain: Chain`)
             out.line(`private readonly blockHeight: string`)
             out.line(`readonly address: string`)
@@ -155,22 +149,22 @@ export class Typegen {
             }
             out.line()
             out.block(`private async call(signature: string, args: any[]) : Promise<any>`, () => {
-                out.line(`const data = abi.encodeFunctionData(signature, args)`)
-                out.line(
-                    `const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
-                )
-                out.line(`const decoded = abi.decodeFunctionResult(signature, result)`)
+                out.line(`const data = this._abi.encodeFunctionData(signature, args)`)
+                out.line(`const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`)
+                out.line(`const decoded = this._abi.decodeFunctionResult(signature, result)`)
                 out.line(`return decoded.length > 1 ? decoded : decoded[0]`)
             })
             out.line()
             out.block(`private async tryCall(signature: string, args: any[]) : Promise<Result<any>>`, () => {
                 out.line(
-                    `return this.call(signature, args).then(r => ({success: true, value: r})).catch(() => ({success: false}))`
+                    `return this.call(signature, args).then((r) => ({success: true, value: r})).catch(() => ({success: false}))`
                 )
             })
         })
         out.line()
         out.block('export class MulticallContract', () => {
+            out.line(`private readonly _abi = abi`)
+            out.line(`private readonly _multicallAbi = multicallAbi`)
             out.line(`private readonly _chain: Chain`)
             out.line(`private readonly blockHeight: string`)
             out.line(`readonly address: string`)
@@ -202,17 +196,13 @@ export class Typegen {
                     const hasArgs = overload.inputs.length > 0
                     out.block(`'${signature}' =`, () => {
                         out.line(
-                            `call: (args: ${
-                                hasArgs ? `[string, [${args}]]` : `string`
-                            }[]): Promise<${returnType}[]> => this.call('${signature}', ${
-                                hasArgs ? `args` : `args.map((arg) => [arg, []])`
+                            `call: (args: ${hasArgs ? `[string, [${args}]]` : `string`
+                            }[]): Promise<${returnType}[]> => this.call('${signature}', ${hasArgs ? `args` : `args.map((arg) => [arg, []])`
                             }),`
                         )
                         out.line(
-                            `try: (args: ${
-                                hasArgs ? `[string, [${args}]]` : `string`
-                            }[]): Promise<Result<${returnType}>[]> => this.try('${signature}', ${
-                                hasArgs ? `args` : `args.map((arg) => [arg, []])`
+                            `tryCall: (args: ${hasArgs ? `[string, [${args}]]` : `string`
+                            }[]): Promise<Result<${returnType}>[]> => this.tryCall('${signature}', ${hasArgs ? `args` : `args.map((arg) => [arg, []])`
                             })`
                         )
                     })
@@ -222,33 +212,29 @@ export class Typegen {
             }
             out.line()
             out.block(`private async call(signature: string, args: [string, any[]][]) : Promise<any>`, () => {
-                out.line(`const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`)
-                out.line(`const data = multicallAbi.encodeFunctionData('aggregate', [encodedArgs])`)
-                out.line(
-                    `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
-                )
-                out.line(`const batch = multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
+                out.line(`const encodedArgs = args.map((arg) => [arg[0], this._abi.encodeFunctionData(signature, arg[1])])`)
+                out.line(`const data = this._multicallAbi.encodeFunctionData('aggregate', [encodedArgs])`)
+                out.line(`const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`)
+                out.line(`const batch = this._multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
                 out.line(`return batch.map((item: any) => {`)
                 out.indentation(() => {
-                    out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
+                    out.line(`const decodedItem = this._abi.decodeFunctionResult(signature, item.returnData)`)
                     out.line(`return decodedItem.length > 1 ? decodedItem : decodedItem[0]`)
                 })
                 out.line(`})`)
             })
             out.line()
-            out.block(`private async try(signature: string, args: [string, any[]][]) : Promise<Result<any>[]>`, () => {
-                out.line(`const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])`)
-                out.line(`const data = multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])`)
-                out.line(
-                    `const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`
-                )
-                out.line(`const batch = multicallAbi.decodeFunctionResult('tryAggregate', response).returnData`)
-                out.line(`return batch.map((item: any) => {`)
+            out.block(`private async tryCall(signature: string, args: [string, any[]][]) : Promise<Result<any>[]>`, () => {
+                out.line(`const encodedArgs = args.map((arg) => [arg[0], this._abi.encodeFunctionData(signature, arg[1])])`)
+                out.line(`const data = this._multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])`)
+                out.line(`const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`)
+                out.line(`const batch: {success: boolean, returnData: string}[] = this._multicallAbi.decodeFunctionResult('tryAggregate', response).returnData`)
+                out.line(`return batch.map((item) => {`)
                 out.indentation(() => {
+                    out.line(`if (!item.success) return {success: false}`)
                     out.line(`try {`)
                     out.indentation(() => {
-                        out.line(`if (!item.success) throw false`)
-                        out.line(`const decodedItem = abi.decodeFunctionResult(signature, item.returnData)`)
+                        out.line(`const decodedItem = this._abi.decodeFunctionResult(signature, item.returnData)`)
                         out.line(`return {success: true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]}`)
                     })
                     out.line(`} catch {`)
@@ -262,73 +248,75 @@ export class Typegen {
         })
     }
 
-    private getEvents(abi: Interface): AbiEvent[] {
-        let res: Map<string, AbiEvent> = new Map()
-        for (let event of Object.values(abi.events)) {
-            let abiEvent = res.get(event.name)
-            if (abiEvent == null) {
-                abiEvent = {
-                    name: event.name,
-                    overloads: [],
-                }
-                res.set(event.name, abiEvent)
-            }
+    
+}
 
-            abiEvent.overloads.push({
-                signature: event.format('sighash'),
-                inputs: event.inputs || [],
-            })
+function getEvents(abi: Interface): AbiEvent[] {
+    let res: Map<string, AbiEvent> = new Map()
+    for (let event of Object.values(abi.events)) {
+        let abiEvent = res.get(event.name)
+        if (abiEvent == null) {
+            abiEvent = {
+                name: event.name,
+                overloads: [],
+            }
+            res.set(event.name, abiEvent)
         }
 
-        return [...res.values()]
+        abiEvent.overloads.push({
+            signature: event.format('sighash'),
+            inputs: event.inputs || [],
+        })
     }
 
-    private getFunctions(abi: Interface): AbiFunction[] {
-        let res: Map<string, AbiFunction> = new Map()
-        for (let func of Object.values(abi.functions)) {
-            if (func.stateMutability === 'view') continue
+    return [...res.values()]
+}
 
-            let abiFunc = res.get(func.name)
-            if (abiFunc == null) {
-                abiFunc = {
-                    name: func.name,
-                    overloads: [],
-                }
-                res.set(func.name, abiFunc)
+function getFunctions(abi: Interface): AbiFunction[] {
+    let res: Map<string, AbiFunction> = new Map()
+    for (let func of Object.values(abi.functions)) {
+        if (func.stateMutability === 'view') continue
+
+        let abiFunc = res.get(func.name)
+        if (abiFunc == null) {
+            abiFunc = {
+                name: func.name,
+                overloads: [],
             }
-
-            abiFunc.overloads.push({
-                signature: func.format('sighash'),
-                inputs: func.inputs || [],
-            })
+            res.set(func.name, abiFunc)
         }
 
-        return [...res.values()]
+        abiFunc.overloads.push({
+            signature: func.format('sighash'),
+            inputs: func.inputs || [],
+        })
     }
 
-    private getCalls(abi: Interface): AbiCall[] {
-        let res: Map<string, AbiCall> = new Map()
-        for (let func of Object.values(abi.functions)) {
-            if (func.stateMutability !== 'view' || func.outputs == null) continue
+    return [...res.values()]
+}
 
-            let abiCall = res.get(func.name)
-            if (abiCall == null) {
-                abiCall = {
-                    name: func.name,
-                    overloads: [],
-                }
-                res.set(func.name, abiCall)
+function getCalls(abi: Interface): AbiCall[] {
+    let res: Map<string, AbiCall> = new Map()
+    for (let func of Object.values(abi.functions)) {
+        if (func.stateMutability !== 'view' || func.outputs == null) continue
+
+        let abiCall = res.get(func.name)
+        if (abiCall == null) {
+            abiCall = {
+                name: func.name,
+                overloads: [],
             }
-
-            abiCall.overloads.push({
-                signature: func.format('sighash'),
-                inputs: func.inputs,
-                outputs: func.outputs || [],
-            })
+            res.set(func.name, abiCall)
         }
 
-        return [...res.values()]
+        abiCall.overloads.push({
+            signature: func.format('sighash'),
+            inputs: func.inputs,
+            outputs: func.outputs || [],
+        })
     }
+
+    return [...res.values()]
 }
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10

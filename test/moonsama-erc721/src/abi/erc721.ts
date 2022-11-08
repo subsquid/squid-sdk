@@ -14,30 +14,25 @@ export type ApprovalForAll0Event = ([owner: string, operator: string, approved: 
 export type Transfer0Event = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
 class Events {
+  private readonly _abi = abi
 
   'Approval(address,address,uint256)' = {
-    topic: abi.getEventTopic('Approval(address,address,uint256)'),
-    decode(data: EvmLog): Approval0Event {
-      return abi.decodeEventLog('Approval(address,address,uint256)', data.data, data.topics) as any
-    }
+    topic: this._abi.getEventTopic('Approval(address,address,uint256)'),
+    decode: (data: EvmLog): Approval0Event => this._abi.decodeEventLog('Approval(address,address,uint256)', data.data, data.topics) as any
   }
 
   Approval = this['Approval(address,address,uint256)']
 
   'ApprovalForAll(address,address,bool)' = {
-    topic: abi.getEventTopic('ApprovalForAll(address,address,bool)'),
-    decode(data: EvmLog): ApprovalForAll0Event {
-      return abi.decodeEventLog('ApprovalForAll(address,address,bool)', data.data, data.topics) as any
-    }
+    topic: this._abi.getEventTopic('ApprovalForAll(address,address,bool)'),
+    decode: (data: EvmLog): ApprovalForAll0Event => this._abi.decodeEventLog('ApprovalForAll(address,address,bool)', data.data, data.topics) as any
   }
 
   ApprovalForAll = this['ApprovalForAll(address,address,bool)']
 
   'Transfer(address,address,uint256)' = {
-    topic: abi.getEventTopic('Transfer(address,address,uint256)'),
-    decode(data: EvmLog): Transfer0Event {
-      return abi.decodeEventLog('Transfer(address,address,uint256)', data.data, data.topics) as any
-    }
+    topic: this._abi.getEventTopic('Transfer(address,address,uint256)'),
+    decode: (data: EvmLog): Transfer0Event => this._abi.decodeEventLog('Transfer(address,address,uint256)', data.data, data.topics) as any
   }
 
   Transfer = this['Transfer(address,address,uint256)']
@@ -56,46 +51,37 @@ export type SetApprovalForAll0Function = ([operator: string, approved: boolean] 
 export type TransferFrom0Function = ([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})
 
 class Functions {
+  private readonly _abi = abi
 
   'approve(address,uint256)' = {
     sighash: abi.getSighash('approve(address,uint256)'),
-    decode(data: EvmTransaction | string): Approve0Function {
-      return abi.decodeFunctionData('approve(address,uint256)', typeof data === 'string' ? data : data.input) as any
-    }
+    decode: (data: EvmTransaction | string): Approve0Function => this._abi.decodeFunctionData('approve(address,uint256)', typeof data === 'string' ? data : data.input) as any
   }
 
   approve = this['approve(address,uint256)']
 
   'safeTransferFrom(address,address,uint256)' = {
     sighash: abi.getSighash('safeTransferFrom(address,address,uint256)'),
-    decode(data: EvmTransaction | string): SafeTransferFrom0Function {
-      return abi.decodeFunctionData('safeTransferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
-    }
+    decode: (data: EvmTransaction | string): SafeTransferFrom0Function => this._abi.decodeFunctionData('safeTransferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
   }
 
   'safeTransferFrom(address,address,uint256,bytes)' = {
     sighash: abi.getSighash('safeTransferFrom(address,address,uint256,bytes)'),
-    decode(data: EvmTransaction | string): SafeTransferFrom1Function {
-      return abi.decodeFunctionData('safeTransferFrom(address,address,uint256,bytes)', typeof data === 'string' ? data : data.input) as any
-    }
+    decode: (data: EvmTransaction | string): SafeTransferFrom1Function => this._abi.decodeFunctionData('safeTransferFrom(address,address,uint256,bytes)', typeof data === 'string' ? data : data.input) as any
   }
 
   safeTransferFrom = this['safeTransferFrom(address,address,uint256)']
 
   'setApprovalForAll(address,bool)' = {
     sighash: abi.getSighash('setApprovalForAll(address,bool)'),
-    decode(data: EvmTransaction | string): SetApprovalForAll0Function {
-      return abi.decodeFunctionData('setApprovalForAll(address,bool)', typeof data === 'string' ? data : data.input) as any
-    }
+    decode: (data: EvmTransaction | string): SetApprovalForAll0Function => this._abi.decodeFunctionData('setApprovalForAll(address,bool)', typeof data === 'string' ? data : data.input) as any
   }
 
   setApprovalForAll = this['setApprovalForAll(address,bool)']
 
   'transferFrom(address,address,uint256)' = {
     sighash: abi.getSighash('transferFrom(address,address,uint256)'),
-    decode(data: EvmTransaction | string): TransferFrom0Function {
-      return abi.decodeFunctionData('transferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
-    }
+    decode: (data: EvmTransaction | string): TransferFrom0Function => this._abi.decodeFunctionData('transferFrom(address,address,uint256)', typeof data === 'string' ? data : data.input) as any
   }
 
   transferFrom = this['transferFrom(address,address,uint256)']
@@ -104,8 +90,9 @@ class Functions {
 export const functions = new Functions()
 
 export class Contract {
+  private readonly _abi = abi
   private readonly _chain: Chain
-  private readonly blockHeight: number
+  private readonly blockHeight: string
   readonly address: string
 
   constructor(ctx: BlockContext, address: string)
@@ -113,12 +100,12 @@ export class Contract {
   constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string) {
     this._chain = ctx._chain
     if (typeof blockOrAddress === 'string')  {
-      this.blockHeight = ctx.block.height
+      this.blockHeight = '0x' + ctx.block.height.toString(16)
       this.address = ethers.utils.getAddress(blockOrAddress)
     }
     else  {
       assert(address != null)
-      this.blockHeight = blockOrAddress.height
+      this.blockHeight = '0x' + blockOrAddress.height.toString(16)
       this.address = ethers.utils.getAddress(address)
     }
   }
@@ -208,20 +195,22 @@ export class Contract {
   totalSupply = this['totalSupply()']
 
   private async call(signature: string, args: any[]) : Promise<any> {
-    const data = abi.encodeFunctionData(signature, args)
+    const data = this._abi.encodeFunctionData(signature, args)
     const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
-    const decoded = abi.decodeFunctionResult(signature, result)
+    const decoded = this._abi.decodeFunctionResult(signature, result)
     return decoded.length > 1 ? decoded : decoded[0]
   }
 
   private async tryCall(signature: string, args: any[]) : Promise<Result<any>> {
-    return this.call(signature, args).then(r => ({success: true, value: r})).catch(() => ({success: false}))
+    return this.call(signature, args).then((r) => ({success: true, value: r})).catch(() => ({success: false}))
   }
 }
 
 export class MulticallContract {
+  private readonly _abi = abi
+  private readonly _multicallAbi = multicallAbi
   private readonly _chain: Chain
-  private readonly blockHeight: number
+  private readonly blockHeight: string
   readonly address: string
 
   constructor(ctx: BlockContext, multicallAddress: string)
@@ -229,12 +218,12 @@ export class MulticallContract {
   constructor(ctx: BlockContext, blockOrAddress: Block | string, address?: string) {
     this._chain = ctx._chain
     if (typeof blockOrAddress === 'string')  {
-      this.blockHeight = ctx.block.height
+      this.blockHeight = '0x' + ctx.block.height.toString(16)
       this.address = ethers.utils.getAddress(blockOrAddress)
     }
     else  {
       assert(address != null)
-      this.blockHeight = blockOrAddress.height
+      this.blockHeight = '0x' + blockOrAddress.height.toString(16)
       this.address = ethers.utils.getAddress(address)
     }
   }
@@ -324,33 +313,29 @@ export class MulticallContract {
   totalSupply = this['totalSupply()']
 
   private async call(signature: string, args: [string, any[]][]) : Promise<any> {
-    const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])
-    const data = multicallAbi.encodeFunctionData('aggregate', [encodedArgs])
+    const encodedArgs = args.map((arg) => [arg[0], this._abi.encodeFunctionData(signature, arg[1])])
+    const data = this._multicallAbi.encodeFunctionData('aggregate', [encodedArgs])
     const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
-    const batch = multicallAbi.decodeFunctionResult('aggregate', response).returnData
-    const result: any[] = []
-    for (const item of batch) {
-      const decodedItem = abi.decodeFunctionResult(signature, item)
-      result.push(decodedItem.length > 1 ? decodedItem : decodedItem[0])
-    }
-    return result
+    const batch = this._multicallAbi.decodeFunctionResult('aggregate', response).returnData
+    return batch.map((item: any) => {
+      const decodedItem = this._abi.decodeFunctionResult(signature, item.returnData)
+      return decodedItem.length > 1 ? decodedItem : decodedItem[0]
+    })
   }
 
   private async tryCall(signature: string, args: [string, any[]][]) : Promise<Result<any>[]> {
-    const encodedArgs = args.map((arg) => [arg[0], abi.encodeFunctionData(signature, arg[1])])
-    const data = multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])
+    const encodedArgs = args.map((arg) => [arg[0], this._abi.encodeFunctionData(signature, arg[1])])
+    const data = this._multicallAbi.encodeFunctionData('tryAggregate', [false, encodedArgs])
     const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
-    const batch = multicallAbi.decodeFunctionResult('tryAggregate', response).returnData
-    const result: any[] = []
-    for (const item of batch) {
+    const batch: {success: boolean, returnData: string}[] = this._multicallAbi.decodeFunctionResult('tryAggregate', response).returnData
+    return batch.map((item) => {
+      if (!item.success) return {success: false}
       try {
-        if (!item.success) throw new Error()
-        const decodedItem = abi.decodeFunctionResult(signature, item.returnData)
-        result.push({success:true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]})
+        const decodedItem = this._abi.decodeFunctionResult(signature, item.returnData)
+        return {success: true, value: decodedItem.length > 1 ? decodedItem : decodedItem[0]}
       } catch {
-        result.push({success: false})
+        return {success: false}
       }
-    }
-    return result
+    })
   }
 }

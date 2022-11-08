@@ -20,7 +20,7 @@ processor.addPreHook({range: {from: 0, to: 0}}, async (ctx) => {
 processor.addEvmLogHandler(
     contractAddress,
     {
-        filter: [erc721.events['Transfer(address,address,uint256)'].topic],
+        filter: [erc721.events.Transfer.topic],
         range: {
             from: 1_400_000
         }
@@ -41,26 +41,9 @@ processor.addEvmLogHandler(
             ctx.store.save(to)
         }
 
-        const ids: BigNumber[] = []
-
-        for (let i = 0; i < 100; i++) ids.push(BigNumber.from(i))
-
-        let contract = new erc721.Contract(ctx, contractAddress)
-        let multiContract = new erc721.MulticallContract(ctx, '0xaeF00A0Cf402D9DEdd54092D9cA179Be6F9E5cE3')
-        console.time('batch')
-        await multiContract.tokenURI.tryCall(ids.map((id) => [contractAddress, [id]])).then(console.log)
-        console.timeEnd('batch')
-
-        console.time('single')
-        for (const id of ids) {
-            await contract['tokenURI(uint256)'].tryCall(id)
-        }
-        console.timeEnd('single')
-
-
-
         let token = await ctx.store.get(Token, transfer.tokenId.toString())
         if (token == null) {
+            let contract = new erc721.Contract(ctx, contractAddress)
             token = new Token({
                 id: transfer.tokenId.toString(),
                 uri: await contract.tokenURI.call(transfer.tokenId),

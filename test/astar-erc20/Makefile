@@ -15,8 +15,7 @@ migration:
 
 
 typegen:
-	@npx squid-evm-typegen --abi erc20.json --output src/erc20.ts
-	@npx squid-substrate-typegen typegen.json
+	@npx squid-evm-typegen --abi erc20.json --output src/abi
 
 
 codegen:
