@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/altair",
+  "outDir": "../gen/altair/src",
   "specVersions": "../../data/chain/altair/versions.jsonl",
   "events": true,
   "calls": true,

@@ -1,5 +1,5 @@
 {
-    "outDir": "../src/acala",
+    "outDir": "../gen/acala/src",
     "specVersions": "../../data/chain/acala/versions.jsonl",
     "events": true,
     "calls": true,

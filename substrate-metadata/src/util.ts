@@ -1,5 +1,5 @@
 import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
-import {last} from '@subsquid/util-internal'
+import {last, maybeLast} from '@subsquid/util-internal'
 import {toCamelCase} from '@subsquid/util-naming'
 import crypto from 'crypto'
 import type {Metadata} from './interfaces'
@@ -8,7 +8,9 @@ import {Field, Type, TypeKind, VariantType} from './types'
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
     types = fixWrapperKeepOpaqueTypes(types)
+    types = fixU256Structs(types)
     types = introduceOptionType(types)
+    types = eliminateOptionsChain(types)
     types = removeUnitFieldsFromStructs(types)
     types = replaceUnitOptionWithBoolean(types)
     types = normalizeFieldNames(types)
@@ -38,6 +40,29 @@ function fixWrapperKeepOpaqueTypes(types: Type[]): Type[] {
         })
     }
     return types
+}
+
+
+function fixU256Structs(types: Type[]): Type[] {
+    return types.map(type => {
+        let field
+        let element
+        let isU256 = type.path && maybeLast(type.path) == 'U256'
+            && type.kind == TypeKind.Composite
+            && type.fields.length == 1
+            && (field = types[type.fields[0].type])
+            && field.kind == TypeKind.Array
+            && field.len == 4
+            && (element = types[field.type])
+            && element.kind == TypeKind.Primitive
+            && element.primitive == 'U64'
+
+        if (isU256) return {
+            kind: TypeKind.Primitive,
+            primitive: 'U256'
+        }
+        return type
+    })
 }
 
 
@@ -72,6 +97,30 @@ function isOptionType(type: Type): type is VariantType {
 }
 
 
+function eliminateOptionsChain(types: Type[]): Type[] {
+    return types.map(type => {
+        if (type.kind != TypeKind.Option) return type
+        let param = type.type
+        if (types[param].kind != TypeKind.Option) return type
+        return {
+            kind: TypeKind.Variant,
+            variants: [
+                {
+                    name: 'None',
+                    index: 0,
+                    fields: []
+                },
+                {
+                    name: 'Some',
+                    index: 1,
+                    fields: [{type: param}]
+                }
+            ]
+        }
+    })
+}
+
+
 function removeUnitFieldsFromStructs(types: Type[]): Type[] {
     let changed = true
     while (changed) {
@@ -79,7 +128,6 @@ function removeUnitFieldsFromStructs(types: Type[]): Type[] {
         types = types.map(type => {
             switch (type.kind) {
                 case TypeKind.Composite: {
-                    if (type.fields[0]?.name == null) return type
                     let fields = type.fields.filter(f => {
                         let fieldType = getUnwrappedType(types, f.type)
                         return !isUnitType(fieldType)
@@ -93,12 +141,12 @@ function removeUnitFieldsFromStructs(types: Type[]): Type[] {
                 }
                 case TypeKind.Variant: {
                     let variants = type.variants.map(v => {
-                        if (v.fields[0]?.name == null) return v
                         let fields = v.fields.filter(f => {
                             let fieldType = getUnwrappedType(types, f.type)
                             return !isUnitType(fieldType)
                         })
                         if (fields.length == v.fields.length) return v
+                        if (v.fields[0]?.name == null && fields.length > 0) return v
                         changed = true
                         return {
                             ...v,

@@ -25,6 +25,25 @@ export function asResultType(type: Type): {ok: Ti, err: Ti} | undefined {
 }
 
 
+export function asOptionType(type: Type): {some: Ti} | undefined {
+    if (type.kind !== TypeKind.Variant) return
+    if (type.variants.length != 2) return
+    let v0 = type.variants[0]
+    let v1 = type.variants[1]
+    let yes = v0.name == 'None' &&
+        v0.fields.length == 0 &&
+        v0.index == 0 &&
+        v1.name == 'Some' &&
+        v1.index == 1 &&
+        v1.fields.length == 1 &&
+        v1.fields[0].name == null
+
+    if (yes) return {
+        some: v1.fields[0].type
+    }
+}
+
+
 export function toNativePrimitive(primitive: Primitive): string {
     switch(primitive) {
         case "I8":

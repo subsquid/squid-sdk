@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/statemine",
+  "outDir": "../gen/statemine/src",
   "specVersions": "../../data/chain/statemine/versions.jsonl",
   "events": true,
   "calls": true,

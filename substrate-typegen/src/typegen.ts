@@ -58,7 +58,7 @@ export class Typegen {
             if (ifs.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(v)) + '.ts'
             let file = this.dir.file(fileName)
-            file.line(`import type {Result} from './support'`)
+            file.line(`import type {Result, Option} from './support'`)
             ifs.generate(file)
             file.write()
         })
@@ -82,7 +82,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {Chain, ChainContext, ${fix}Context, ${fix}, Result} from './support'`)
+        out.line(`import {Chain, ChainContext, ${fix}Context, ${fix}, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(name => {
             let versions = items.get(name)!
@@ -160,7 +160,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
+        out.line(`import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
@@ -233,7 +233,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {Block, Chain, ChainContext, BlockContext, Result} from './support'`)
+        out.line(`import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         
         names.forEach(qualifiedName => {

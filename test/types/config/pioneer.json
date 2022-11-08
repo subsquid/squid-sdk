@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/pioneer",
+  "outDir": "../gen/pioneer/src",
   "specVersions": "../../data/chain/pioneer/versions.jsonl",
   "events": true,
   "calls": true,

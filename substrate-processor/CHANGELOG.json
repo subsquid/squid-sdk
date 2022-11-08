@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-processor_v2.0.1",
+      "date": "Sun, 06 Nov 2022 18:24:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^1.2.1` to `^2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-processor_v2.0.0",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",

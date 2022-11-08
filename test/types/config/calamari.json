@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/calamari",
+  "outDir": "../gen/calamari/src",
   "specVersions": "../../data/chain/calamari/versions.jsonl",
   "events": true,
   "calls": true,

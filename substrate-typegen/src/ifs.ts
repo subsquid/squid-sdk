@@ -5,7 +5,7 @@ import {Output} from "@subsquid/util-internal-code-printer"
 import {toCamelCase} from "@subsquid/util-naming"
 import assert from "assert"
 import {needsName} from "./names"
-import {asResultType, toNativePrimitive} from "./util"
+import {asOptionType, asResultType, toNativePrimitive} from './util'
 
 
 export class Interfaces {
@@ -69,9 +69,12 @@ export class Interfaces {
                 let result = asResultType(this.types[ti])
                 if (result) {
                     return `Result<${this.use(result.ok)}, ${this.use(result.err)}>`
-                } else {
-                    return this.makeVariant(type, ti)
                 }
+                let option = asOptionType(this.types[ti])
+                if (option) {
+                    return `Option<${this.use(option.some)}>`
+                }
+                return this.makeVariant(type, ti)
             }
             case TypeKind.Option:
                 return `(${this.use(codecType.type)} | undefined)`

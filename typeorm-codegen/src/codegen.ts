@@ -133,7 +133,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             `@Column_("jsonb", {transformer: {to: obj => ${marshalToJson(
                                 prop,
                                 'obj'
-                            )}, from: obj => ${marshalFromJson(prop, 'obj')}}, nullable: ${
+                            )}, from: obj => ${marshalFromJson({...prop, nullable: true}, 'obj')}}, nullable: ${
                                 prop.nullable
                             }})`
                         )
@@ -164,7 +164,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                                         prop,
                                         'obj'
                                     )}, from: obj => ${marshalFromJson(
-                                        prop,
+                                        {...prop, nullable: true},
                                         'obj'
                                     )}}, nullable: ${prop.nullable}})`
                                 )

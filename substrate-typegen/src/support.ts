@@ -8,6 +8,14 @@ export type Result<T, E> = {
 }
 
 
+export type Option<T> = {
+    __kind: 'Some',
+    value: T
+} | {
+    __kind: 'None'
+}
+
+
 export interface Chain {
     getEventHash(eventName: string): string
     decodeEvent(event: Event): any

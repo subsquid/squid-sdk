@@ -1,7 +1,7 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
 import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
 import assert from "assert"
-import {asResultType} from "./util"
+import {asOptionType, asResultType} from './util'
 
 /**
  * Assign names to types
@@ -123,7 +123,7 @@ export function needsName(types: Type[], ti: Ti): boolean {
     let type = getUnwrappedType(types, ti)
     switch(type.kind) {
         case TypeKind.Variant:
-            return !asResultType(type)
+            return !(asResultType(type) || asOptionType(type))
         case TypeKind.Composite:
             return true
         default:

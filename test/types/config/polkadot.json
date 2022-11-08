@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/polkadot",
+  "outDir": "../gen/polkadot/src",
   "specVersions": "../../data/chain/polkadot/versions.jsonl",
   "storage": true,
   "events": true,

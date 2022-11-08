@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/quartz",
+  "outDir": "../gen/quartz/src",
   "specVersions": "../../data/chain/quartz/versions.jsonl",
   "events": true,
   "calls": true,

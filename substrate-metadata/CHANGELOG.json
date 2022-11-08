@@ -2,6 +2,24 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/substrate-metadata_v2.0.0",
+      "date": "Sun, 06 Nov 2022 18:24:20 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "decode `Option<Option<T>>` to `Option<T | undefined>`"
+          },
+          {
+            "comment": "normalize `U256` structs to `u256` primitives"
+          },
+          {
+            "comment": "remove enum/struct fields when they all have a unit type"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.1",
       "tag": "@subsquid/substrate-metadata_v1.2.1",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",

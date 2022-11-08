@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+
+## 0.2.3
+Sun, 06 Nov 2022 18:24:20 GMT
+
+### Patches
+
+- always accept null column values to workaround TypeORM issue - field transformation can be run for a null entity
 
 ## 0.2.2
 Fri, 28 Oct 2022 12:04:58 GMT
