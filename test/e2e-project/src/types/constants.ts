@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Block, Chain, ChainContext, BlockContext, Result} from './support'
+import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'
 
 export class SystemMaximumBlockLengthConstant {
   private readonly _chain: Chain

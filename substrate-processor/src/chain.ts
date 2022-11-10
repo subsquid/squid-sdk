@@ -14,7 +14,7 @@ import {
 import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
 import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
 import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import {assertNotNull, last, unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
 import type {SpecId} from "./interfaces/substrate"
 import * as sto from "./util/storage"
@@ -183,7 +183,7 @@ export class Chain {
         }
     }
 
-    async getStorage(blockHash: string, prefix: string, name: string, ...keys: any[]) {
+    async getStorage(blockHash: string, prefix: string, name: string, keys: any[]) {
         let item = this.getStorageItem(prefix, name)
         assert(item.keys.length === keys.length)
         let req = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
@@ -220,19 +220,11 @@ export class Chain {
         })
     }
 
-    async getKeys(blockHash: string, prefix: string, name: string): Promise<any[]>
-    async getKeys(blockHash: string, prefix: string, name: string, count: number, startKey?: any[]): Promise<any[]>
-    async getKeys(blockHash: string, prefix: string, name: string, count?: number, startKey?: any[]): Promise<any[]> {
+    async getKeys(blockHash: string, prefix: string, name: string, keys: any[]): Promise<any[]> {
         let item = this.getStorageItem(prefix, name)
-        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
 
-        let res: string[]
-        if (count == null) {
-            res = await this.client.call('state_getKeys', [storageHash, blockHash])
-        } else {
-            let startKeyHash = startKey != null ? storageHash + this.getStorageItemKeysHash(item, startKey) : storageHash
-            res = await this.client.call('state_getKeysPaged', [storageHash, count, startKeyHash, blockHash])
-        }
+        let res: string[] = await this.client.call('state_getKeys', [storageHash, blockHash])
 
         return res.map(k => {
             let decodedKey = this.decodeStorageKey(item, k)
@@ -240,31 +232,72 @@ export class Chain {
         })
     }
 
-    async getPairs(blockHash: string, prefix: string, name: string): Promise<any[][]>
-    async getPairs(blockHash: string, prefix: string, name: string, count: number, startKey?: any[]): Promise<any[][]>
-    async getPairs(blockHash: string, prefix: string, name: string, count?: number, startKey?: any[]): Promise<any[][]> {
+    async* getKeysPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<any[]> {
         let item = this.getStorageItem(prefix, name)
-        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
 
-        let query: string[]
-        if (count == null) {
-            query = await this.client.call('state_getKeys', [storageHash, blockHash])
-        } else {
-            let startKeyHash = startKey != null ? storageHash + this.getStorageItemKeysHash(item, startKey) : storageHash
-            query = await this.client.call('state_getKeysPaged', [storageHash, count, startKeyHash, blockHash])
+        let lastKey = null
+        while (true) {
+            let res: string[] = await this.client.call('state_getKeysPaged', [storageHash, count, lastKey, blockHash])
+            yield res.map(k => {
+                let decodedKey = this.decodeStorageKey(item, k)
+                return item.keys.length > 1 ? decodedKey : decodedKey[0]
+            })
+
+            if (res.length == count) {
+                lastKey = last(res)
+            } else {
+                break
+            }
         }
+    }
 
+    async getPairs(blockHash: string, prefix: string, name: string, keys: any[]): Promise<[key: any, value: any][]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
+
+        let query: string[] = await this.client.call('state_getKeys', [storageHash, blockHash])
         if (query.length == 0) return []
+
         let res: {changes: [key: string, value: string][]}[] = await this.client.call(
             'state_queryStorageAt',
             [query, blockHash]
         )
         assert(res.length == 1)
-        return res[0].changes.map(v => {
-            let decodedKey = this.decodeStorageKey(item, v[0])
-            let decodedValue = this.decodeStorageValue(item, v[1])
-            return [item.keys.length > 1 ? decodedKey : decodedKey[0], decodedValue]
-        })
+        
+        return res[0].changes.map(v => this.decodeStoragePair(item, v))
+    }
+
+    async* getPairsPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<[key: any, value: any][]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
+
+        let lastKey = null
+        while (true) {
+            let query: string[] = await this.client.call('state_getKeysPaged', [storageHash, count, lastKey, blockHash])
+            if (query.length == 0) return []
+    
+            let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+                'state_queryStorageAt',
+                [query, blockHash]
+            )
+            assert(res.length == 1)
+            
+            yield res[0].changes.map(v => this.decodeStoragePair(item, v))
+            
+            if (query.length == count) {
+                lastKey = last(query)
+            } else {
+                break
+            }
+        }
+    }
+    
+    private decodeStoragePair(item: StorageItem, pair: [key: string, value: string]): [key: any, value: any] {
+        assert(pair.length == 2)
+        let decodedKey = this.decodeStorageKey(item, pair[0])
+        let decodedValue = this.decodeStorageValue(item, pair[1])
+        return [item.keys.length > 1 ? decodedKey : decodedKey[0], decodedValue]
     }
 
     private decodeStorageValue(item: StorageItem, value: any) {

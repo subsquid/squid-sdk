@@ -1,8 +1,5 @@
 import assert from 'assert'
-import {Chain, ChainContext, EventContext, Event, Result} from './support'
-import * as v1020 from './v1020'
-import * as v1050 from './v1050'
-import * as v9130 from './v9130'
+import {Chain, ChainContext, EventContext, Event, Result, Option} from './support'
 
 export class BalancesTransferEvent {
   private readonly _chain: Chain
@@ -27,7 +24,7 @@ export class BalancesTransferEvent {
   /**
    *  Transfer succeeded (from, to, value, fees).
    */
-  get asV1020(): [v1020.AccountId, v1020.AccountId, v1020.Balance, v1020.Balance] {
+  get asV1020(): [Uint8Array, Uint8Array, bigint, bigint] {
     assert(this.isV1020)
     return this._chain.decodeEvent(this.event)
   }
@@ -42,7 +39,7 @@ export class BalancesTransferEvent {
   /**
    *  Transfer succeeded (from, to, value).
    */
-  get asV1050(): [v1050.AccountId, v1050.AccountId, v1050.Balance] {
+  get asV1050(): [Uint8Array, Uint8Array, bigint] {
     assert(this.isV1050)
     return this._chain.decodeEvent(this.event)
   }
@@ -57,7 +54,7 @@ export class BalancesTransferEvent {
   /**
    * Transfer succeeded.
    */
-  get asV9130(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
+  get asV9130(): {from: Uint8Array, to: Uint8Array, amount: bigint} {
     assert(this.isV9130)
     return this._chain.decodeEvent(this.event)
   }

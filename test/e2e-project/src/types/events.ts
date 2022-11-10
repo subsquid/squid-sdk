@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Chain, ChainContext, EventContext, Event, Result} from './support'
+import {Chain, ChainContext, EventContext, Event, Result, Option} from './support'
 
 export class BalancesTransferEvent {
   private readonly _chain: Chain

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Block, Chain, ChainContext, BlockContext, Result} from './support'
+import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'
 import * as v1 from './v1'
 
 interface SystemAccountStorageV1 {
@@ -7,9 +7,9 @@ interface SystemAccountStorageV1 {
   getMany(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]>
   getAll(): Promise<v1.AccountInfo[]>
   getKeys(): Promise<Uint8Array[]>
-  getKeys(count: number, startKey?: Uint8Array): Promise<Uint8Array[]>
   getPairs(): Promise<[key: Uint8Array, value: v1.AccountInfo][]>
-  getPairs(count: number, startKey?: Uint8Array): Promise<[key: Uint8Array, value: v1.AccountInfo][]>
+  getKeysPaged(count: number): AsyncGenerator<Uint8Array[]>
+  getPairsPaged(count: number): AsyncGenerator<[key: Uint8Array, value: v1.AccountInfo][]>
 }
 
 export class SystemAccountStorage {
@@ -46,24 +46,32 @@ export class SystemAccountStorage {
     return this._chain.getStorageItemTypeHash('System', 'Account') != null
   }
 
-  private async get(...keys: any[]): Promise<any> {
-    return this._chain.getStorage(this.blockHash, 'System', 'Account', ...keys)
+  private async get(...keys: any[]) {
+    return this._chain.getStorage(this.blockHash, 'System', 'Account', keys)
   }
 
-  private async getMany(keyList: any[]): Promise<any[]> {
+  private async getMany(keyList: any[]) {
     let query = Array.isArray(keyList[0]) ? keyList : keyList.map(k => [k])
     return this._chain.queryStorage(this.blockHash, 'System', 'Account', query)
   }
 
-  private async getAll(): Promise<any[]> {
+  private async getAll() {
     return this._chain.queryStorage(this.blockHash, 'System', 'Account')
   }
 
-  private async getKeys(count?: number, startKey?: any): Promise<any[]> {
-    return this._chain.getKeys(this.blockHash, 'System', 'Account', count, startKey)
+  private async getKeys(...keys: any[]) {
+    return this._chain.getKeys(this.blockHash, 'System', 'Account', keys)
   }
 
-  private async getPairs(count?: number, startKey?: any): Promise<any[][]> {
-    return this._chain.getPairs(this.blockHash, 'System', 'Account', count, startKey)
+  private async getKeysPaged(count: number, ...keys: any[]) {
+    return this._chain.getKeysPaged(this.blockHash, 'System', 'Account', count, keys)
+  }
+
+  private async getPairs(...keys: any[]) {
+    return this._chain.getPairs(this.blockHash, 'System', 'Account', keys)
+  }
+
+  private async getPairsPaged(count: number, ...keys: any[]) {
+    return this._chain.getPairsPaged(this.blockHash, 'System', 'Account', count, keys)
   }
 }

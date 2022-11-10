@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Chain, ChainContext, CallContext, Call, Result} from './support'
+import {Chain, ChainContext, CallContext, Call, Result, Option} from './support'
 
 export class BalancesSetBalanceCall {
   private readonly _chain: Chain

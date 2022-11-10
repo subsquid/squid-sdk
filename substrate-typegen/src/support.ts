@@ -24,8 +24,10 @@ export interface Chain {
     getStorageItemTypeHash(prefix: string, name: string): string | undefined
     getStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any>
     queryStorage(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any[]>
-    getKeys(blockHash: string, prefix: string, name: string, count?: number, startKey?: any): Promise<any[]>
-    getPairs(blockHash: string, prefix: string, name: string, count?: number, startKey?: any): Promise<any[]>
+    getKeys(blockHash: string, prefix: string, name: string, keys: any[]): Promise<any[]>
+    getPairs(blockHash: string, prefix: string, name: string, keys: any[]): Promise<any[]>
+    getKeysPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<any[]>
+    getPairsPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<[key: any, value: any][]>
     getConstantTypeHash(pallet: string, name: string): string | undefined
     getConstant(pallet: string, name: string): any
 }

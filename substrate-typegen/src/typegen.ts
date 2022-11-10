@@ -11,19 +11,18 @@ import {
     OldTypesBundle,
     QualifiedName,
     StorageItem,
-    Type
-} from "@subsquid/substrate-metadata"
-import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
-import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {getStorageItemTypeHash, isStorageKeyDecodable} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
-import {OutDir, Output} from "@subsquid/util-internal-code-printer"
-import {toCamelCase} from "@subsquid/util-naming"
-import {Interfaces} from "./ifs"
-import {assignNames} from "./names"
-import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
-
+    Type,
+} from '@subsquid/substrate-metadata'
+import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {getStorageItemTypeHash, isStorageKeyDecodable} from '@subsquid/substrate-metadata/lib/storage'
+import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
+import {OutDir, Output} from '@subsquid/util-internal-code-printer'
+import {toCamelCase} from '@subsquid/util-naming'
+import {Interfaces} from './ifs'
+import {assignNames} from './names'
+import {groupBy, isEmptyVariant, upperCaseFirst} from './util'
 
 export interface TypegenOptions {
     outDir: string
@@ -34,7 +33,6 @@ export interface TypegenOptions {
     storage?: string[] | boolean
     constants?: string[] | boolean
 }
-
 
 export class Typegen {
     static generate(options: TypegenOptions): void {
@@ -84,7 +82,7 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import {Chain, ChainContext, ${fix}Context, ${fix}, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
-        names.forEach(name => {
+        names.forEach((name) => {
             let versions = items.get(name)!
             let {def: {pallet, name: unqualifiedName}} = versions[0]
             let className = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}`)) + fix
@@ -101,14 +99,14 @@ export class Typegen {
                     out.line(`this._chain = ctx._chain`)
                     out.line(`this.${ctx} = ${ctx}`)
                 })
-                versions.forEach(v => {
+                versions.forEach((v) => {
                     let versionName = this.getVersionName(v.chain)
                     let ifs = this.getInterface(v.chain)
                     let unqualifiedTypeExp: string
                     if (v.def.fields[0]?.name == null) {
-                        unqualifiedTypeExp = ifs.makeTuple(v.def.fields.map(f => f.type))
+                        unqualifiedTypeExp = ifs.makeTuple(v.def.fields.map((f) => f.type))
                     } else {
-                        unqualifiedTypeExp = `{${v.def.fields.map(f => `${f.name}: ${ifs.use(f.type)}`).join(', ')}}`
+                        unqualifiedTypeExp = `{${v.def.fields.map((f) => `${f.name}: ${ifs.use(f.type)}`).join(', ')}}`
                     }
                     let typeExp = this.qualify(importedInterfaces, v.chain, unqualifiedTypeExp)
                     out.line()
@@ -133,7 +131,7 @@ export class Typegen {
     private generateConsts(): void {
         let items = this.collectItems(
             this.options.constants,
-            chain => {
+            (chain) => {
                 let items: Item<Constant>[] = []
                 let consts = chain.description.constants
                 for (let prefix in consts) {
@@ -141,7 +139,7 @@ export class Typegen {
                         items.push({
                             chain,
                             name: prefix + '.' + name,
-                            def: consts[prefix][name]
+                            def: consts[prefix][name],
                         })
                     }
                 }
@@ -162,7 +160,7 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
-        names.forEach(qualifiedName => {
+        names.forEach((qualifiedName) => {
             let versions = items.get(qualifiedName)!
             let [pallet, name] = qualifiedName.split('.')
             out.line()
@@ -172,7 +170,7 @@ export class Typegen {
                 out.block(`constructor(ctx: ChainContext)`, () => {
                     out.line(`this._chain = ctx._chain`)
                 })
-                versions.forEach(v => {
+                versions.forEach((v) => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getTypeHash(v.chain.description.types, v.def.type)
                     let ifs = this.getInterface(v.chain)
@@ -193,9 +191,7 @@ export class Typegen {
                     })
                 })
                 out.line()
-                out.blockComment([
-                    'Checks whether the constant is defined for the current chain version.'
-                ])
+                out.blockComment(['Checks whether the constant is defined for the current chain version.'])
                 out.block(`get isExists(): boolean`, () => {
                     out.line(`return this._chain.getConstantTypeHash('${pallet}', '${name}') != null`)
                 })
@@ -208,7 +204,7 @@ export class Typegen {
     private generateStorage(): void {
         let items = this.collectItems(
             this.options.storage,
-            chain => {
+            (chain) => {
                 let items: Item<StorageItem>[] = []
                 let storage = chain.description.storage
                 for (let prefix in storage) {
@@ -216,7 +212,7 @@ export class Typegen {
                         items.push({
                             chain,
                             name: prefix + '.' + name,
-                            def: storage[prefix][name]
+                            def: storage[prefix][name],
                         })
                     }
                 }
@@ -235,46 +231,48 @@ export class Typegen {
         out.line(`import assert from 'assert'`)
         out.line(`import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
-        
-        names.forEach(qualifiedName => {
+
+        names.forEach((qualifiedName) => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
-            versions.forEach(v => {
-                let versionName = this.getVersionName(v.chain)
-                let ifs = this.getInterface(v.chain)
-                let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
-                let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
-
-                if (isEmptyVariant(v.chain.description.types[v.def.value])) {
-                    // Meaning storage item can't hold any value
-                    // Let's just silently omit interface for this case
-                } else {
-                    let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                    let maybeOptionalReturnType = v.def.modifier == 'Optional' ? `${returnType} | undefined` : returnType
-                    let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
-                    let keyNames = keyTypes.map((type, idx) => {
-                        if (qualifiedTypes.length == 2) {
-                            return `key`
+            let storageVersions: {
+                name: string
+                keyTypes: string[]
+                returnType: string
+                isOptional: boolean
+                isStorageKeyDecodable: boolean
+            }[] = []
+            out.lazy(() => {
+                storageVersions.forEach((sv) => {
+                    let maybeOptionalReturnType = sv.isOptional ? `${sv.returnType} | undefined` : sv.returnType
+                    let keysToArgs = (keyTypes: string[]) => keyTypes.map((type, idx) => {
+                        if (keyTypes.length == 1) {
+                            return `key: ${type}`
                         } else {
-                            return `key${idx + 1}`
+                            return `key${idx + 1}: ${type}`
                         }
                     })
-                    let keyTypesString = `${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}`
+                    let keysToType = (keyTypes: string[]) => `${keyTypes.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes.join(', ')}`
+
                     out.line()
-                    out.block(`interface ${prefix}${name}Storage${versionName}`, () => {
-                        out.line(`get(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${maybeOptionalReturnType}>`)
-                        if (keyNames.length > 0) {
-                            out.line(`getMany(keys: ${keyTypesString}[]): Promise<(${maybeOptionalReturnType})[]>`)
-                            out.line(`getAll(): Promise<${returnType}[]>`)
-                            if (isStorageKeyDecodable(v.def)) {
-                                out.line(`getKeys(): Promise<${keyTypesString}[]>`)
-                                out.line(`getKeys(count: number, startKey?: ${keyTypesString}): Promise<${keyTypesString}[]>`)
-                                out.line(`getPairs(): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
-                                out.line(`getPairs(count: number, startKey?: ${keyTypesString}): Promise<[key: ${keyTypesString}, value: ${returnType}][]>`)
-                            }
+                    out.block(`interface ${sv.name}`, () => {
+                        out.line(`get(${keysToArgs(sv.keyTypes).join(`,`)}): Promise<${maybeOptionalReturnType}>`)
+
+                        if (sv.keyTypes.length == 0) return
+
+                        out.line(`getMany(keys: ${keysToType(sv.keyTypes)}[]): Promise<(${maybeOptionalReturnType})[]>`)
+                        out.line(`getAll(): Promise<${sv.returnType}[]>`)
+
+                        if (!sv.isStorageKeyDecodable) return
+
+                        for (let i = 0; i < sv.keyTypes.length; i++) {
+                            out.line(`getKeys(${keysToArgs(sv.keyTypes.slice(0, i))}): Promise<${keysToType(sv.keyTypes)}[]>`)
+                            out.line(`getPairs(${keysToArgs(sv.keyTypes.slice(0, i))}): Promise<[key: ${keysToType(sv.keyTypes)}, value: ${sv.returnType}][]>`)
+                            out.line(`getKeysPaged(${[`count: number`, ...keysToArgs(sv.keyTypes.slice(0, i))].join(`,`)}): AsyncGenerator<${keysToType(sv.keyTypes)}[]>`)
+                            out.line(`getPairsPaged(${[`count: number`, ...keysToArgs(sv.keyTypes.slice(0, i))].join(`,`)}): AsyncGenerator<[key: ${keysToType(sv.keyTypes)}, value: ${sv.returnType}][]>`)
                         }
                     })
-                }
+                })
             })
             out.line()
             out.block(`export class ${prefix}${name}Storage`, () => {
@@ -289,13 +287,12 @@ export class Typegen {
                     out.line(`this._chain = ctx._chain`)
                 })
 
-                let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
-                versions.forEach(v => {
+                versions.forEach((v) => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
                     let ifs = this.getInterface(v.chain)
-                    let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
-                    let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
+                    let types = v.def.keys.concat(v.def.value).map((ti) => ifs.use(ti))
+                    let qualifiedTypes = types.map((texp) => this.qualify(importedInterfaces, v.chain, texp))
 
                     out.line()
                     out.blockComment(v.def.docs)
@@ -307,9 +304,18 @@ export class Typegen {
                         // Meaning storage item can't hold any value
                         // Let's just silently omit `asVxx` getter for this case
                     } else {
+                        let versionTypeName = `${prefix}${name}Storage${versionName}`
+                        storageVersions.push({
+                            name: versionTypeName,
+                            returnType: qualifiedTypes[qualifiedTypes.length - 1],
+                            keyTypes: qualifiedTypes.slice(0, qualifiedTypes.length - 1),
+                            isOptional: v.def.modifier == 'Optional',
+                            isStorageKeyDecodable: isStorageKeyDecodable(v.def),
+                        })
+
                         out.line()
                         out.blockComment(v.def.docs)
-                        out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
+                        out.block(`get as${versionName}(): ${versionTypeName}`, () => {
                             out.line(`assert(this.is${versionName})`)
                             out.line(`return this as any`)
                         })
@@ -317,37 +323,47 @@ export class Typegen {
                 })
 
                 out.line()
-                out.blockComment([
-                    'Checks whether the storage item is defined for the current chain version.'
-                ])
+                out.blockComment(['Checks whether the storage item is defined for the current chain version.'])
                 out.block(`get isExists(): boolean`, () => {
                     out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
                 })
 
+                let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
+
                 out.line()
-                out.block(`private async get(...keys: any[]): Promise<any>`, () => {
-                    out.line(`return this._chain.getStorage(${args.join(', ')}, ...keys)`)
+                out.block(`private async get(...keys: any[])`, () => {
+                    out.line(`return this._chain.getStorage(${args.join(', ')}, keys)`)
                 })
 
                 out.line()
-                out.block(`private async getMany(keyList: any[]): Promise<any[]>`, () => {
+                out.block(`private async getMany(keyList: any[])`, () => {
                     out.line(`let query = Array.isArray(keyList[0]) ? keyList : keyList.map(k => [k])`)
                     out.line(`return this._chain.queryStorage(${args.join(', ')}, query)`)
                 })
 
                 out.line()
-                out.block(`private async getAll(): Promise<any[]>`, () => {
+                out.block(`private async getAll()`, () => {
                     out.line(`return this._chain.queryStorage(${args.join(', ')})`)
                 })
 
                 out.line()
-                out.block(`private async getKeys(count?: number, startKey?: any): Promise<any[]>`, () => {
-                    out.line(`return this._chain.getKeys(${args.join(', ')}, count, startKey)`)
+                out.block(`private async getKeys(...keys: any[])`, () => {
+                    out.line(`return this._chain.getKeys(${args.join(', ')}, keys)`)
                 })
 
                 out.line()
-                out.block(`private async getPairs(count?: number, startKey?: any): Promise<any[][]>`, () => {
-                    out.line(`return this._chain.getPairs(${args.join(', ')}, count, startKey)`)
+                out.block(`private async getKeysPaged(count: number, ...keys: any[])`, () => {
+                    out.line(`return this._chain.getKeysPaged(${args.join(', ')}, count, keys)`)
+                })
+
+                out.line()
+                out.block(`private async getPairs(...keys: any[])`, () => {
+                    out.line(`return this._chain.getPairs(${args.join(', ')}, keys)`)
+                })
+
+                out.line()
+                out.block(`private async getPairsPaged(count: number, ...keys: any[])`, () => {
+                    out.line(`return this._chain.getPairsPaged(${args.join(', ')}, count, keys)`)
                 })
             })
         })
@@ -367,10 +383,10 @@ export class Typegen {
         let requested = Array.isArray(req) ? new Set(req) : undefined
         if (requested?.size === 0) return new Map()
 
-        let list = this.chain().flatMap(chain => extract(chain))
-        let items = groupBy(list, i => i.name)
+        let list = this.chain().flatMap((chain) => extract(chain))
+        let items = groupBy(list, (i) => i.name)
 
-        requested?.forEach(name => {
+        requested?.forEach((name) => {
             if (!items.has(name)) {
                 throw new Error(`${name} is not defined by the chain metadata`)
             }
@@ -379,7 +395,7 @@ export class Typegen {
         items.forEach((versions, name) => {
             if (requested == null || requested.has(name)) {
                 let unique: Item<T>[] = []
-                versions.forEach(v => {
+                versions.forEach((v) => {
                     let prev = maybeLast(unique)
                     if (prev && hash(v.chain, name) === hash(prev.chain, name)) {
                     } else {
@@ -406,12 +422,12 @@ export class Typegen {
 
     @def
     private specNameNotChanged(): boolean {
-        return new Set(this.chain().map(v => v.specName)).size < 2
+        return new Set(this.chain().map((v) => v.specName)).size < 2
     }
 
     @def
     chain(): VersionDescription[] {
-        return this.options.specVersions.map(v => {
+        return this.options.specVersions.map((v) => {
             let metadata = decodeMetadata(v.metadata)
             let oldTypes: OldTypes | undefined
             if (isPreV14(metadata)) {
@@ -429,7 +445,7 @@ export class Typegen {
                 types: d.types,
                 events: new eac.Registry(d.types, d.event),
                 calls: new eac.Registry(d.types, d.call),
-                description: d
+                description: d,
             }
         })
     }
@@ -445,10 +461,12 @@ export class Typegen {
     private importInterfaces(out: Output): Set<VersionDescription> {
         let set = new Set<VersionDescription>()
         out.lazy(() => {
-            Array.from(set).sort((a, b) => a.blockNumber - b.blockNumber).forEach(v => {
-                let name = toCamelCase(this.getVersionName(v))
-                out.line(`import * as ${name} from './${name}'`)
-            })
+            Array.from(set)
+                .sort((a, b) => a.blockNumber - b.blockNumber)
+                .forEach((v) => {
+                    let name = toCamelCase(this.getVersionName(v))
+                    out.line(`import * as ${name} from './${name}'`)
+                })
         })
         return set
     }
@@ -464,7 +482,6 @@ export class Typegen {
     }
 }
 
-
 interface VersionDescription {
     specName: string
     specVersion: number
@@ -475,10 +492,8 @@ interface VersionDescription {
     description: ChainDescription
 }
 
-
 interface Item<T> {
     name: QualifiedName
     def: T
     chain: VersionDescription
 }
-
