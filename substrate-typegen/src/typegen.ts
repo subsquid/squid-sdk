@@ -352,8 +352,8 @@ export class Typegen {
                 })
 
                 out.line()
-                out.block(`private async getKeysPaged(count: number, ...keys: any[])`, () => {
-                    out.line(`return this._chain.getKeysPaged(${args.join(', ')}, count, keys)`)
+                out.block(`private async *getKeysPaged(count: number, ...keys: any[])`, () => {
+                    out.line(`yield* this._chain.getKeysPaged(${args.join(', ')}, count, keys)`)
                 })
 
                 out.line()
@@ -362,8 +362,8 @@ export class Typegen {
                 })
 
                 out.line()
-                out.block(`private async getPairsPaged(count: number, ...keys: any[])`, () => {
-                    out.line(`return this._chain.getPairsPaged(${args.join(', ')}, count, keys)`)
+                out.block(`private async *getPairsPaged(count: number, ...keys: any[])`, () => {
+                    out.line(`yield* this._chain.getPairsPaged(${args.join(', ')}, count, keys)`)
                 })
             })
         })

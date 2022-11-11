@@ -63,15 +63,15 @@ export class SystemAccountStorage {
     return this._chain.getKeys(this.blockHash, 'System', 'Account', keys)
   }
 
-  private async getKeysPaged(count: number, ...keys: any[]) {
-    return this._chain.getKeysPaged(this.blockHash, 'System', 'Account', count, keys)
+  private async *getKeysPaged(count: number, ...keys: any[]) {
+    yield* this._chain.getKeysPaged(this.blockHash, 'System', 'Account', count, keys)
   }
 
   private async getPairs(...keys: any[]) {
     return this._chain.getPairs(this.blockHash, 'System', 'Account', keys)
   }
 
-  private async getPairsPaged(count: number, ...keys: any[]) {
-    return this._chain.getPairsPaged(this.blockHash, 'System', 'Account', count, keys)
+  private async *getPairsPaged(count: number, ...keys: any[]) {
+    yield* this._chain.getPairsPaged(this.blockHash, 'System', 'Account', count, keys)
   }
 }

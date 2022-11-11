@@ -232,18 +232,20 @@ export class Chain {
         })
     }
 
-    async* getKeysPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<any[]> {
+    async *getKeysPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<any[]> {
         let item = this.getStorageItem(prefix, name)
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
 
         let lastKey = null
         while (true) {
             let res: string[] = await this.client.call('state_getKeysPaged', [storageHash, count, lastKey, blockHash])
+            if (res.length == 0) break
+
             yield res.map(k => {
                 let decodedKey = this.decodeStorageKey(item, k)
                 return item.keys.length > 1 ? decodedKey : decodedKey[0]
             })
-
+            
             if (res.length == count) {
                 lastKey = last(res)
             } else {
@@ -268,14 +270,14 @@ export class Chain {
         return res[0].changes.map(v => this.decodeStoragePair(item, v))
     }
 
-    async* getPairsPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<[key: any, value: any][]> {
+    async *getPairsPaged(blockHash: string, prefix: string, name: string, count: number, keys: any[]): AsyncGenerator<[key: any, value: any][]> {
         let item = this.getStorageItem(prefix, name)
         let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, keys)
 
         let lastKey = null
         while (true) {
             let query: string[] = await this.client.call('state_getKeysPaged', [storageHash, count, lastKey, blockHash])
-            if (query.length == 0) return []
+            if (query.length == 0) break
     
             let res: {changes: [key: string, value: string][]}[] = await this.client.call(
                 'state_queryStorageAt',
