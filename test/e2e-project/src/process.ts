@@ -48,6 +48,10 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     assert(storageKeys.length === allAccounts.length)
     assert(storageKeys.find(key => toHex(key) === toHex(aliceAddress)) != null)
 
+    let storageKeysPaged: Uint8Array[] = []
+    for await (let page of accounts.asV1.getKeysPaged(100)) storageKeysPaged.push(...page)
+    assert(storageKeys.length == storageKeysPaged.length)
+
     let pairs = await accounts.asV1.getPairs()
     assert(pairs.length === allAccounts.length)
     let maybeAliceAccount = pairs.find(([key,]) => toHex(key) === toHex(aliceAddress))?.[1]
