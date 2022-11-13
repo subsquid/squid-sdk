@@ -215,10 +215,10 @@ export class Typegen {
                 out.line(`const encodedArgs = args.map((arg) => [arg[0], this._abi.encodeFunctionData(signature, arg[1])])`)
                 out.line(`const data = this._multicallAbi.encodeFunctionData('aggregate', [encodedArgs])`)
                 out.line(`const response = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`)
-                out.line(`const batch = this._multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
-                out.line(`return batch.map((item: any) => {`)
+                out.line(`const batch: string[] = this._multicallAbi.decodeFunctionResult('aggregate', response).returnData`)
+                out.line(`return batch.map((item) => {`)
                 out.indentation(() => {
-                    out.line(`const decodedItem = this._abi.decodeFunctionResult(signature, item.returnData)`)
+                    out.line(`const decodedItem = this._abi.decodeFunctionResult(signature, item)`)
                     out.line(`return decodedItem.length > 1 ? decodedItem : decodedItem[0]`)
                 })
                 out.line(`})`)
