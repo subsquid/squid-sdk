@@ -2,6 +2,18 @@
   "name": "@subsquid/eth-ingest",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/eth-ingest_v0.0.2",
+      "date": "Tue, 15 Nov 2022 20:19:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "treat http 504 as a retryable error"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/eth-ingest_v0.0.1",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",

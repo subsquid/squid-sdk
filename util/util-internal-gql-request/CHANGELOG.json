@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-gql-request",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/util-internal-gql-request_v0.1.1",
+      "date": "Tue, 15 Nov 2022 20:19:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "treat http 504 as a retryable error"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/util-internal-gql-request_v0.1.0",
       "date": "Thu, 04 Aug 2022 06:00:53 GMT",
