@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/eth-ingest",
   "description": "Data fetcher for ethereum chains",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {

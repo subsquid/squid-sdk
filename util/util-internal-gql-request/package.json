@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-gql-request",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Utility for sending requests to our GraphQL services",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

@@ -26,7 +26,7 @@
     "@subsquid/util-internal-binary-heap": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.0.2",
     "@subsquid/util-internal-counters": "^0.0.1",
-    "@subsquid/util-internal-gql-request": "^0.1.0",
+    "@subsquid/util-internal-gql-request": "^0.1.1",
     "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-prometheus-server": "^0.0.2",
     "@subsquid/util-xxhash": "^0.1.1",
