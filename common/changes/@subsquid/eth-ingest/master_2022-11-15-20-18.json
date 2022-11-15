@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/eth-ingest",
+      "comment": "treat http 504 as a retryable error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/eth-ingest"
+}

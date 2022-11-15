@@ -144,6 +144,7 @@ function isRetryableError(err: unknown): err is Error {
             case 429:
             case 502:
             case 503:
+            case 504:
                 return true
             default:
                 return false
