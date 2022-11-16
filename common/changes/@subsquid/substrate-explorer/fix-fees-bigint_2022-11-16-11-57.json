@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-explorer",
+      "comment": "Change extrinsic fee and tip GraphQL schema to BigInt",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-explorer"
+}
