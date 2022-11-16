@@ -156,9 +156,18 @@ export class Typegen {
             })
             out.line()
             out.block(`private async tryCall(signature: string, args: any[]) : Promise<Result<any>>`, () => {
-                out.line(
-                    `return this.call(signature, args).then((r) => ({success: true, value: r})).catch(() => ({success: false}))`
-                )
+                out.line(`const data = this._abi.encodeFunctionData(signature, args)`)
+                out.line(`const result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])`)
+                out.line(`try {`)
+                out.indentation(() => {
+                    out.line(`const decoded = this._abi.decodeFunctionResult(signature, result)`)
+                    out.line(`return {success: true, value: decoded.length > 1 ? decoded : decoded[0]}`)
+                })
+                out.line(`} catch {`)
+                out.indentation(() => {
+                    out.line(`return {success: false}`)
+                })
+                out.line(`}`)
             })
         })
         out.line()
