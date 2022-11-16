@@ -56,8 +56,8 @@ type Extrinsic @entity {
     success: Boolean!
     error: JSON
     call: Call!
-    fee: Int
-    tip: Int
+    fee: BigInt
+    tip: BigInt
     hash: String!
     pos: Int!
     calls: [Call!] @derivedFrom(field: "extrinsic") @cardinality(value: 5)
