@@ -76,9 +76,21 @@ export class Ingest {
     private async fetchStride(fromBlock: number, toBlock: number): Promise<Block[]> {
         let req: RpcCall[] = []
         for (let i = fromBlock; i <= toBlock; i++) {
-            req.push({method: 'eth_getBlockByNumber', params: [i, true]})
+            req.push({
+                method: 'eth_getBlockByNumber',
+                params: [
+                    '0x'+i.toString(16),
+                    true
+                ]
+            })
         }
-        req.push({method: 'eth_getLogs', params: [{fromBlock, toBlock}]})
+        req.push({
+            method: 'eth_getLogs',
+            params: [{
+                fromBlock: '0x'+fromBlock.toString(16),
+                toBlock: '0x'+toBlock.toString(16)
+            }]
+        })
 
         let response = await this.options.rpc.batch(req)
 
