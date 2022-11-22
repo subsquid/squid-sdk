@@ -1,5 +1,24 @@
 # @subsquid/evm-typegen
 
-This package provides `squid-evm-typegen(1)` command 
-which can generate TypeScript definitions for evm logs
-to be used within [substrate-processor](../substrate-processor) mapping handlers.
+Generates TypeScript facades for EVM transactions, logs and issuing `eth_call` queries.
+
+Generated facades supposed to be used withing squid mapping projects and depend on [ethers](https://www.npmjs.com/package/ethers).
+
+## Usage
+
+```
+npm i @subsquid/evm-typegen
+```
+
+```
+squid-evm-typegen [options] <output-dir> [abi...]
+
+Arguments:
+  output-dir   output directory for generated definitions
+  abi          list of ABI files
+
+Options:
+  --multicall  generate facade for MakerDAO multicall contract
+  --clean      delete output directory before run
+  -h, --help   display help for command
+```

@@ -14,7 +14,7 @@
     "dotenv": "^10.0.0",
     "pg": "^8.7.3",
     "typeorm": "^0.3.6",
-    "ethers": "^5.6.9",
+    "ethers": "^5.7.2",
     "@ethersproject/bytes": "^5.6.1",
     "@subsquid/util-internal-json": "^0.2.0",
     "@subsquid/substrate-frontier-evm": "~0.0.1"

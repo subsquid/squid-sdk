@@ -2,7 +2,7 @@ import {getEvmLog} from "@subsquid/substrate-frontier-evm"
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contractAddress, createContractEntity, getContractEntity} from "./contract"
-import * as erc721 from "./erc721"
+import * as erc721 from "./abi/erc721"
 import {Owner, Token, Transfer} from "./model"
 
 

@@ -30,11 +30,11 @@ export class Output {
     }
 
     indentation(cb: () => void): void {
-        this.indent += '  '
+        this.indent += '    '
         try {
             cb()
         } finally {
-            this.indent = this.indent.slice(0, this.indent.length - 2)
+            this.indent = this.indent.slice(0, this.indent.length - 4)
         }
     }
 
@@ -92,7 +92,11 @@ export class FileOutput extends Output {
 
 
 export class OutDir {
-    constructor(private dir: string) {}
+    private dir: string
+
+    constructor(dir: string) {
+        this.dir = path.normalize(dir)
+    }
 
     del(): void {
         fs.rmSync(this.dir, { recursive: true, force: true })
@@ -123,8 +127,12 @@ export class OutDir {
         fs.copyFileSync(src, this.path(name))
     }
 
-    path(name: string): string {
-        return path.join(this.dir, name)
+    path(name?: string): string {
+        return name == null ? this.dir : path.join(this.dir, name)
+    }
+
+    exists(): boolean {
+        return fs.existsSync(this.dir)
     }
 }
 
