@@ -4,7 +4,7 @@ import {InvalidArgumentError} from "commander"
 export function nat(s: string): number {
     let n = parseInt(s, 10)
     if (Number.isSafeInteger(n) && n >= 0) return n
-    throw new InvalidArgumentError('not a natural number')
+    throw new InvalidArgumentError('Not a natural number')
 }
 
 
@@ -14,10 +14,10 @@ export function Url(protocols?: string[]): (s: string) => string {
         try {
             url = new URL(s)
         } catch(e: any) {
-            throw new InvalidArgumentError('invalid url')
+            throw new InvalidArgumentError('Invalid url')
         }
         if (protocols?.length && protocols.indexOf(url.protocol) < 0) {
-            throw new InvalidArgumentError(`invalid protocol, use ${protocols.join(', ')}`)
+            throw new InvalidArgumentError(`Unsupported protocol. Use one of: ${protocols.join(', ')}`)
         }
         return url.toString()
     }

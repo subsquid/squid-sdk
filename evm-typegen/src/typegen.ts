@@ -1,7 +1,8 @@
-import {Interface} from '@ethersproject/abi'
+import {EventFragment, FunctionFragment, Interface} from '@ethersproject/abi'
 import {Logger} from '@subsquid/logger'
+import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
-import {getFullTupleType, getReturnType, getStructType, getTupleType, getType} from './util'
+import {getFullTupleType, getReturnType, getStructType, getTupleType, getType} from './util/types'
 
 
 export class Typegen {
@@ -43,10 +44,9 @@ export class Typegen {
         }
         this.out.line()
         this.out.block(`export const events =`, () => {
-            for (let event of events) {
-                let signature = event.format('sighash')
-                let topic = this.abi.getEventTopic(event)
-                this.out.line(`'${signature}': new LogEvent<${getFullTupleType(event.inputs)}>(`)
+            for (let e of events) {
+                let topic = this.abi.getEventTopic(e)
+                this.out.line(`${this.getPropName(e)}: new LogEvent<${getFullTupleType(e.inputs)}>(`)
                 this.out.indentation(() => this.out.line(`abi, '${topic}'`))
                 this.out.line('),')
             }
@@ -61,12 +61,11 @@ export class Typegen {
         this.out.line()
         this.out.block(`export const functions =`, () => {
             for (let f of functions) {
-                let signature = f.format('sighash')
                 let sighash = this.abi.getSighash(f)
                 let pArgs = getTupleType(f.inputs)
                 let pArgStruct = getStructType(f.inputs)
                 let pResult = getReturnType(f.outputs || [])
-                this.out.line(`'${signature}': new Func<${pArgs}, ${pArgStruct}, ${pResult}>(`)
+                this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pArgStruct}, ${pResult}>(`)
                 this.out.indentation(() => this.out.line(`abi, '${sighash}'`))
                 this.out.line('),')
             }
@@ -77,19 +76,59 @@ export class Typegen {
         this.out.line()
         this.out.block(`export class Contract extends ContractBase`, () => {
             let functions = Object.values(this.abi.functions)
-            let generated = new Set<string>()
             for (let f of functions) {
-                if (f.constant && f.outputs?.length && !generated.has(f.name)) {
+                if (f.constant && f.outputs?.length) {
                     this.out.line()
-                    generated.add(f.name)
-                    let signature = f.format('sighash')
                     let argNames = f.inputs.map((a, idx) => a.name || `arg${idx}`)
                     let args  = f.inputs.map((a, idx) => `${argNames[idx]}: ${getType(a)}`).join(', ')
-                    this.out.block(`${f.name}(${args}): Promise<${getReturnType(f.outputs)}>`, () => {
-                        this.out.line(`return this.eth_call(functions['${signature}'], [${argNames.join(', ')}])`)
+                    this.out.block(`${this.getPropName(f)}(${args}): Promise<${getReturnType(f.outputs)}>`, () => {
+                        this.out.line(`return this.eth_call(functions${this.getRef(f)}, [${argNames.join(', ')}])`)
                     })
                 }
             }
         })
+    }
+
+    private getRef(item: EventFragment | FunctionFragment): string {
+        let key = this.getPropName(item)
+        if (key[0] == "'") {
+            return `[${key}]`
+        } else {
+            return '.' + key
+        }
+    }
+
+    private getPropName(item: EventFragment | FunctionFragment): string {
+        if (this.getOverloads(item) == 1) {
+            return item.name
+        } else {
+            return `'${item.format('sighash')}'`
+        }
+    }
+
+    private getOverloads(item: EventFragment | FunctionFragment): number {
+        if (item instanceof EventFragment) {
+            return this.eventOverloads()[item.name]
+        } else {
+            return this.functionOverloads()[item.name]
+        }
+    }
+
+    @def
+    private functionOverloads(): Record<string, number> {
+        let overloads: Record<string, number> = {}
+        for (let item of Object.values(this.abi.functions)) {
+            overloads[item.name] = (overloads[item.name] || 0) + 1
+        }
+        return overloads
+    }
+
+    @def
+    private eventOverloads(): Record<string, number> {
+        let overloads: Record<string, number> = {}
+        for (let item of Object.values(this.abi.events)) {
+            overloads[item.name] = (overloads[item.name] || 0) + 1
+        }
+        return overloads
     }
 }

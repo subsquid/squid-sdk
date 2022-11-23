@@ -77,8 +77,7 @@ export class ContractBase {
         if (typeof blockOrAddress === 'string')  {
             this.blockHeight = ctx.block.height
             this.address = ethers.utils.getAddress(blockOrAddress)
-        }
-        else  {
+        } else  {
             if (address == null) {
                 throw new Error('missing contract address')
             }
@@ -89,7 +88,10 @@ export class ContractBase {
 
     async eth_call<Args extends any[], FieldArgs, Result>(func: Func<Args, FieldArgs, Result>, args: Args): Promise<Result> {
         let data = func.encode(args)
-        let result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
+        let result = await this._chain.client.call('eth_call', [
+            {to: this.address, data},
+            '0x'+this.blockHeight.toString(16)
+        ])
         return func.decodeResult(result)
     }
 }

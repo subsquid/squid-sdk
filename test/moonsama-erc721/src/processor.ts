@@ -24,12 +24,12 @@ processor.addEvmLogHandler(
     contractAddress,
     {
         filter: [
-            erc721.events['Transfer(address,address,uint256)'].topic
+            erc721.events.Transfer.topic
         ],
     },
     async ctx => {
         let evmLog = getEvmLog(ctx, ctx.event)
-        let transfer = erc721.events['Transfer(address,address,uint256)'].decode(evmLog)
+        let transfer = erc721.events.Transfer.decode(evmLog)
 
         let from = await ctx.store.get(Owner, transfer.from)
         if (from == null) {
