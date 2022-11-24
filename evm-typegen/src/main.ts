@@ -19,7 +19,7 @@ runProgram(async function() {
         .description(`
 Generates TypeScript facades for EVM transactions, logs and eth_call queries.
 
-Designed to be used withing squid mapping projects.
+The generated facades are assumed to be used by "squids" indexing EVM data.
     `.trim())
         .name('squid-evm-typegen')
         .argument('<output-dir>', 'output directory for generated definitions')
