@@ -1,8 +1,9 @@
 # @subsquid/evm-typegen
 
-Generates TypeScript facades for EVM transactions, logs and `eth_call` queries.
+Generates TypeScript facades for EVM transactions, logs and `eth_call` queries. 
 
-Generated facades supposed to be used withing squid mapping projects and depend on [ethers](https://www.npmjs.com/package/ethers).
+The generated facade classes are assumed to be used by [squids](https://docs.Subsquid.io/overview) indexing EVM data. 
+The generated classes depend on [ethers](https://www.npmjs.com/package/ethers).
 
 ## Usage
 
