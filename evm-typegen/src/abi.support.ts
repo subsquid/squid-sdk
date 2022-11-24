@@ -39,31 +39,24 @@ export class Func<Args extends any[], FieldArgs, Result> {
         const decoded = this.abi.decodeFunctionResult(this.fragment, output)
         return decoded.length > 1 ? decoded : decoded[0]
     }
+
+    tryDecodeResult(output: ethers.utils.BytesLike): Result | undefined {
+        try {
+            return this.decodeResult(output)
+        } catch(err: any) {
+            return undefined
+        }
+    }
 }
 
 
-export function isCallResultDecodingError(val: unknown): val is Error & {data: string} {
+export function isFunctionResultDecodingError(val: unknown): val is Error & {data: string} {
     if (!(val instanceof Error)) return false
     let err = val as any
     return err.code == 'CALL_EXCEPTION'
         && typeof err.data == 'string'
         && !err.errorArgs
         && !err.errorName
-}
-
-
-export function catchCallResultWith<R>(f: Func<any, any, R>): (err: unknown) => R {
-    return function(err: unknown): R {
-        if (isCallResultDecodingError(err)) {
-            try {
-                return f.decodeResult(err.data)
-            } catch(e: any) {
-                throw err
-            }
-        } else {
-            throw err
-        }
-    }
 }
 
 

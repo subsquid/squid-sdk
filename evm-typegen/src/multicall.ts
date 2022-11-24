@@ -70,46 +70,92 @@ export type MulticallResult<T> = {
     value: T
 } | {
     success: false
+    returnData?: string
     value?: undefined
 }
 
 
 export class Multicall extends ContractBase {
-    aggregate<Args extends any[], R>(func: Func<Args, {}, R>, address: string, calls: Args[]): Promise<R[]>
-    aggregate<Args extends any[], R>(func: Func<Args, {}, R>, calls: [address: string, args: Args][]): Promise<R[]>
-    aggregate(calls: [func: AnyFunc, address: string, args: any[]][]): Promise<any[]>
-    async aggregate(...args: any[]): Promise<any[]> {
-        let [calls, funcs] = this.makeCalls(args)
-        let {returnData} = await this.eth_call(aggregate, [calls])
-        let results = new Array(returnData.length)
-        for (let i = 0; i < returnData.length; i++) {
-            results[i] = funcs[i].decodeResult(returnData[i])
-        }
-        return results
-    }
+    static aggregate = aggregate
+    static try_aggregate = try_aggregate
 
-    tryAggregate<Args extends any[], R>(func: Func<Args, {}, R>, address: string, calls: Args[]): Promise<MulticallResult<R>[]>
-    tryAggregate<Args extends any[], R>(func: Func<Args, {}, R>, calls: [address: string, args: Args][]): Promise<MulticallResult<R>[]>
-    tryAggregate(calls: [func: AnyFunc, address: string, args: any[]][]): Promise<MulticallResult<any>[]>
-    async tryAggregate(...args: any[]): Promise<any[]> {
-        let [calls, funcs] = this.makeCalls(args)
-        let response = await this.eth_call(try_aggregate, [false, calls])
-        let results = new Array(response.length)
-        for (let i = 0; i < response.length; i++) {
-            let res = response[i]
-            if (res.success) {
-                results[i] = {
-                    success: true,
-                    value: funcs[i].decodeResult(res.returnData)
-                }
-            } else {
-                results[i] = {success: false}
+    aggregate<Args extends any[], R>(
+        func: Func<Args, {}, R>,
+        address: string,
+        calls: Args[],
+        paging?: number
+    ): Promise<R[]>
+
+    aggregate<Args extends any[], R>(
+        func: Func<Args, {}, R>,
+        calls: [address: string, args: Args][],
+        paging?: number
+    ): Promise<R[]>
+
+    aggregate(
+        calls: [func: AnyFunc, address: string, args: any[]][],
+        paging?: number
+    ): Promise<any[]>
+
+    async aggregate(...args: any[]): Promise<any[]> {
+        let [calls, funcs, page] = this.makeCalls(args)
+        let size = calls.length
+        let results = new Array(size)
+        for (let [from, to] of splitIntoPages(size, page)) {
+            let {returnData} = await this.eth_call(aggregate, [calls.slice(from, to)])
+            for (let i = from; i < to; i++) {
+                let data = returnData[i - from]
+                results[i] = funcs[i].decodeResult(data)
             }
         }
         return results
     }
 
-    private makeCalls(args: any[]): [calls: Call[], funcs: AnyFunc[]] {
+    tryAggregate<Args extends any[], R>(
+        func: Func<Args, {}, R>,
+        address: string,
+        calls: Args[],
+        paging?: number
+    ): Promise<MulticallResult<R>[]>
+
+    tryAggregate<Args extends any[], R>(
+        func: Func<Args, {}, R>,
+        calls: [address: string, args: Args][],
+        paging?: number
+    ): Promise<MulticallResult<R>[]>
+
+    tryAggregate(
+        calls: [func: AnyFunc, address: string, args: any[]][],
+        paging?: number
+    ): Promise<MulticallResult<any>[]>
+
+    async tryAggregate(...args: any[]): Promise<any[]> {
+        let [calls, funcs, page] = this.makeCalls(args)
+        let size = calls.length
+        let results = new Array(size)
+        for (let [from, to] of splitIntoPages(size, page)) {
+            let response = await this.eth_call(try_aggregate, [false, calls.slice(from, to)])
+            for (let i = from; i < to; i++) {
+                let res = response[i - from]
+                if (res.success) {
+                    try {
+                        results[i] = {
+                            success: true,
+                            value: funcs[i].decodeResult(res.returnData)
+                        }
+                    } catch(err: any) {
+                        results[i] = {success: false, returnData: res.returnData}
+                    }
+                } else {
+                    results[i] = {success: false}
+                }
+            }
+        }
+        return results
+    }
+
+    private makeCalls(args: any[]): [calls: Call[], funcs: AnyFunc[], page: number] {
+        let page = typeof args[args.length-1] == 'number' ? args.pop()! : Number.MAX_SAFE_INTEGER
         switch(args.length) {
             case 1: {
                 let list: [func: AnyFunc, address: string, args: any[]][] = args[0]
@@ -120,7 +166,7 @@ export class Multicall extends ContractBase {
                     calls[i] = [address, func.encode(args)]
                     funcs[i] = func
                 }
-                return [calls, funcs]
+                return [calls, funcs, page]
             }
             case 2: {
                 let func: AnyFunc = args[0]
@@ -132,7 +178,7 @@ export class Multicall extends ContractBase {
                     calls[i] = [address, func.encode(args)]
                     funcs[i] = func
                 }
-                return [calls, funcs]
+                return [calls, funcs, page]
             }
             case 3: {
                 let func: AnyFunc = args[0]
@@ -145,10 +191,22 @@ export class Multicall extends ContractBase {
                     calls[i] = [address, func.encode(args)]
                     funcs[i] = func
                 }
-                return [calls, funcs]
+                return [calls, funcs, page]
             }
             default:
                 throw new Error('unexpected number of arguments')
         }
+    }
+}
+
+
+function* splitIntoPages(size: number, page: number): Iterable<[from: number, to: number]> {
+    let from = 0
+    while (size) {
+        let step = Math.min(page, size)
+        let to = from + step
+        yield [from, to]
+        size -= step
+        from = to
     }
 }
