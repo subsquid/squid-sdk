@@ -42,6 +42,31 @@ export class Func<Args extends any[], FieldArgs, Result> {
 }
 
 
+export function isCallResultDecodingError(val: unknown): val is Error & {data: string} {
+    if (!(val instanceof Error)) return false
+    let err = val as any
+    return err.code == 'CALL_EXCEPTION'
+        && typeof err.data == 'string'
+        && !err.errorArgs
+        && !err.errorName
+}
+
+
+export function catchCallResultWith<R>(f: Func<any, any, R>): (err: unknown) => R {
+    return function(err: unknown): R {
+        if (isCallResultDecodingError(err)) {
+            try {
+                return f.decodeResult(err.data)
+            } catch(e: any) {
+                throw err
+            }
+        } else {
+            throw err
+        }
+    }
+}
+
+
 export interface ChainContext  {
     _chain: Chain
 }
