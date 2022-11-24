@@ -17,20 +17,40 @@ const LOG = createLogger('sqd:evm-typegen')
 runProgram(async function() {
     program
         .description(`
-Generates TypeScript facades for EVM transactions, logs and issuing eth_call queries.
+Generates TypeScript facades for EVM transactions, logs and eth_call queries.
 
 Designed to be used withing squid mapping projects.
     `.trim())
         .name('squid-evm-typegen')
         .argument('<output-dir>', 'output directory for generated definitions')
-        .argument('[abi...]', 'list of ABI files', specArgument, [])
+        .argument('[abi...]', 'ABI file', specArgument)
         .option('--multicall', 'generate facade for MakerDAO multicall contract')
         .option(
             '--etherscan-api <url>',
-            'etherscan API to fetch contract ABI given a known address',
+            'etherscan API to fetch contract ABI by a known address',
             validator.Url(['http:', 'https:'])
         )
         .option('--clean', 'delete output directory before run')
+        .addHelpText('afterAll', `
+ABI file can be specified in three ways:
+
+1. as a plain JSON file:
+
+squid-evm-typegen src/abi erc20.json
+
+2. as a contract address (to fetch ABI from etherscan)
+
+squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413
+
+3. as an arbitrary http url
+
+squid-evm-typegen src/abi https://example.com/erc721.json
+
+In all cases typegen will use ABI's basename as a basename of generated files.
+You can overwrite basename of the generated files using fragment (#) suffixes.
+
+squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract   
+        `)
 
     program.parse()
 
