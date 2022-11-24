@@ -47,7 +47,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413
 squid-evm-typegen src/abi https://example.com/erc721.json
 
 In all cases typegen will use ABI's basename as a basename of generated files.
-You can overwrite basename of the generated files using fragment (#) suffixes.
+You can overwrite basename of generated files using fragment (#) suffix.
 
 squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract   
         `)
