@@ -15,7 +15,7 @@ log.debug('message with severity debug')
 log.info({foo: 1, bar: 2}, 'message and some additional attributes')
 
 // info message consisting only of attributes
-log.info({a: 1, b: 2, c: 3, array: [4, 5]}) 
+log.info({a: 1, b: 2, c: 3, array: [4, 5], obj: {foo: 'foo', bar: "bar"}}) 
 
 // pass an Error object inplace of attributes
 log.warn(new Error('Some error occured'))
@@ -63,9 +63,9 @@ When `stderr` is connected to a terminal, log records will be pretty printed.
 Otherwise, log records will be written as JSON lines.
 
 ```
-{"level":2,"time":1650875498437,"ns":"sqd:demo","msg":"message with severity info"}
-{"level":2,"time":1650875498437,"ns":"sqd:demo","msg":"message and some additional attributes","foo":1,"bar":2}
-{"level":2,"time":1650875498437,"ns":"sqd:demo","a":1,"b":2,"c":3,"array":[4,5]}
-{"level":3,"time":1650875498437,"ns":"sqd:demo","err":{"stack":"Error: Some error occured\n    at Object.<anonymous> (/Users/eldar/dev/squid/util/logger/lib/demo.js:11:10)\n    at Module._compile (node:internal/modules/cjs/loader:1103:14)\n    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1155:10)\n    at Module.load (node:internal/modules/cjs/loader:981:32)\n    at Function.Module._load (node:internal/modules/cjs/loader:822:12)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:77:12)\n    at node:internal/main/run_main_module:17:47"}}
-{"level":4,"time":1650875498438,"ns":"sqd:demo","msg":"weird","err":{"stack":"Error: Another error\n    at Object.<anonymous> (/Users/eldar/dev/squid/util/logger/lib/demo.js:13:18)\n    at Module._compile (node:internal/modules/cjs/loader:1103:14)\n    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1155:10)\n    at Module.load (node:internal/modules/cjs/loader:981:32)\n    at Function.Module._load (node:internal/modules/cjs/loader:822:12)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:77:12)\n    at node:internal/main/run_main_module:17:47"},"a":1,"b":2}
+{"level":2,"time":1669387525765,"ns":"sqd:demo","msg":"message with severity info"}
+{"level":2,"time":1669387525766,"ns":"sqd:demo","msg":"message and some additional attributes","foo":1,"bar":2}
+{"level":2,"time":1669387525766,"ns":"sqd:demo","a":1,"b":2,"c":3,"array":[4,5,6],"obj":{"foo":"foo","bar":"bar"}}
+{"level":3,"time":1669387525766,"ns":"sqd:demo","err":{"stack":"Error: Some error occured\n    at Object.<anonymous> (/Users/eldar/dev/squid/util/logger/lib/demo.js:11:10)\n    at Module._compile (node:internal/modules/cjs/loader:1159:14)\n    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)\n    at Module.load (node:internal/modules/cjs/loader:1037:32)\n    at Module._load (node:internal/modules/cjs/loader:878:12)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)\n    at node:internal/main/run_main_module:23:47"}}
+{"level":4,"time":1669387525766,"ns":"sqd:demo","msg":"weird","err":{"stack":"Error: Another error\n    at Object.<anonymous> (/Users/eldar/dev/squid/util/logger/lib/demo.js:13:18)\n    at Module._compile (node:internal/modules/cjs/loader:1159:14)\n    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)\n    at Module.load (node:internal/modules/cjs/loader:1037:32)\n    at Module._load (node:internal/modules/cjs/loader:878:12)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)\n    at node:internal/main/run_main_module:23:47"},"a":1,"b":2}
 ```

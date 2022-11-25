@@ -1,4 +1,5 @@
 import {toHex} from "@subsquid/util-internal-hex"
+import {toJSON} from '@subsquid/util-internal-json'
 import assert from "assert"
 import {stderr as stderrColor} from "supports-color"
 import {LogLevel} from "../level"
@@ -7,16 +8,30 @@ import {LogRecord} from "../logger"
 
 export class Printer {
     private prefix?: Prefix
-    private visited = new Set()
-    private style?: {open: string, close: string}
-    private seenRecursion = false
+    private color?: string
 
     constructor(private out: (line: string) => void, private hasColor: boolean) {}
 
-    private line(s: string): void {
-        if (s && this.hasColor && this.style) {
-            s = this.style.open + s + this.style.close
+    private applyColor(s: string): string {
+        if (this.hasColor && this.color && s) {
+            return `\u001b[${this.color}m${s}\u001b[0m`
+        } else {
+            return s
         }
+    }
+
+    private style(style: string, s: string): string {
+        if (this.hasColor && style && s) {
+            s = style + s + '\u001b[0m'
+            if (this.color) {
+                s = `\u001b[0m` + s + `\u001b[${this.color}m`
+            }
+        }
+        return s
+    }
+
+    private line(s: string): void {
+        s = this.applyColor(s)
         if (this.prefix) {
             this.out(this.prefix.prepend(s))
         } else {
@@ -32,10 +47,11 @@ export class Printer {
 
     private begin(prefix: string, width?: number): void {
         width = width == null ? prefix.length : width
-        if (this.hasColor && this.style) {
-            prefix = this.style.open + prefix + this.style.close
-        }
-        this.prefix = new Prefix(prefix, width, this.prefix)
+        this.prefix = new Prefix(
+            this.applyColor(prefix),
+            width,
+            this.prefix
+        )
     }
 
     private end(): void {
@@ -63,73 +79,27 @@ export class Printer {
                     this.line(`${prefix} ${val}`)
                 } else if (typeof (val as any)?.toJSON == 'function') {
                     this.property(prefix, (val as any).toJSON())
-                } else if (val instanceof Map) {
-                    let entries: {k: unknown, v: unknown}[] = []
-                    for (let [k, v] of val.entries()) {
-                        entries.push({k, v})
-                    }
-                    this.property(prefix, {map: entries})
-                } else if (val instanceof Set) {
-                    this.property(prefix, {set: [...val]})
-                } else if (Array.isArray(val)) {
-                    if (val.length == 0) {
-                        this.line(`${prefix} []`)
-                    } else {
-                        if (this.visited.has(val)) {
-                            this.seenRecursion = true
-                            return
-                        } else {
-                            this.visited.add(val)
-                        }
-                        this.line(prefix)
-                        for (let item of val) {
-                            this.property('  -', item)
-                        }
-                        this.visited.delete(val)
-                    }
                 } else if (val == null) {
                     this.line(`${prefix} null`)
                 } else {
-                    if (this.visited.has(val)) {
-                        this.seenRecursion = true
-                        return
-                    } else {
-                        this.visited.add(val)
+                    let text
+                    try {
+                        text = JSON.stringify(toJSON(val))
+                    } catch(e: any) {
+                        text = this.style('\u001b[31m', `failed to serialize logged value: ${e}`)
                     }
-                    let props: any
-                    if (val instanceof Error) {
-                        props = {...val, stack: val.stack || val.toString()}
-                    } else {
-                        props = val
-                    }
-                    let has = false
-                    for (let key in props) {
-                        if (!has) {
-                            if (prefix == '  -') {
-                                this.begin(prefix)
-                            } else {
-                                this.line(prefix)
-                                this.begin(' ')
-                            }
-                        }
-                        has = true
-                        this.property(key + ':', props[key])
-                    }
-                    if (has) {
-                        this.end()
-                    }
-                    this.visited.delete(val)
+                    this.line(`${prefix} ${text}`)
                 }
                 break
         }
     }
 
     print(rec: LogRecord) {
-        this.begin(formatHead(rec, this.hasColor), 14 + (rec.ns ? rec.ns.length + 1 : 0))
+        this.begin(this.formatHead(rec), 14 + (rec.ns ? rec.ns.length + 1 : 0))
         if (rec.msg) {
             this.text(rec.msg)
         }
-        this.style = {open: '\u001b[2m', close: '\u001b[22m'} // dim
+        this.color = '2' // dim
         if (rec.err instanceof Error) {
             this.text(rec.err.stack || rec.err.toString())
         }
@@ -143,48 +113,37 @@ export class Printer {
                 default:
                     if (key == 'err' && rec.err instanceof Error) {
                         // already printed the stack trace above
-                        // print only the rest of props
-                        this.property('err:', {...rec.err})
+                        // print only the rest of props and indented like the stack trace
+                        for (let k in rec.err) {
+                            this.property(`    ${k}:`, (rec.err as any)[k])
+                        }
                     } else {
                         this.property(key + ':', (rec as any)[key])
                     }
             }
         }
         this.end()
-        if (this.seenRecursion) {
-            this.reset()
-            this.print({
-                ns: 'sys',
-                time: Date.now(),
-                level: LogLevel.ERROR,
-                msg: 'Previous record contained recursive data.\n' +
-                    'Serialisation of such records is not supported in production.'
-            })
+    }
+
+    private formatHead(rec: LogRecord): string {
+        let time = formatTime(rec.time)
+        let level = LogLevel[rec.level].padEnd(5, ' ')
+        let ns = rec.ns
+        if (this.hasColor) {
+            level = `\u001b[1m\u001b[${getLevelColor(rec.level)}m${level}\u001b[0m`
+            ns = `\u001b[1m\u001b[34m${ns}\u001b[0m`
         }
+        let head = time + ' ' + level
+        if (rec.ns) {
+            head += ' ' + ns
+        }
+        return head
     }
 
     reset(): void {
-        this.visited.clear()
         this.prefix = undefined
-        this.style = undefined
-        this.seenRecursion = false
+        this.color = undefined
     }
-}
-
-
-function formatHead(rec: LogRecord, withColor?: boolean): string {
-    let time = formatTime(rec.time)
-    let level = LogLevel[rec.level].padEnd(5, ' ')
-    let ns = rec.ns
-    if (withColor) {
-        level = `\u001b[1m\u001b[${getLevelColor(rec.level)}m${level}\u001b[0m`
-        ns = `\u001b[1m\u001b[34m${ns}\u001b[0m`
-    }
-    let head = time + ' ' + level
-    if (rec.ns) {
-        head += ' ' + ns
-    }
-    return head
 }
 
 

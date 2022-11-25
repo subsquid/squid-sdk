@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "change pretty print format: use yaml style only for top-level attributes, use compact json for other properties",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
