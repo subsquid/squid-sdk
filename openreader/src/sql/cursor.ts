@@ -72,6 +72,7 @@ export class EntityCursor implements Cursor {
             case "scalar":
                 switch(prop.type.name) {
                     case "BigInt":
+                    case "BigDecimal":
                         return `(${col})::text`
                     case "Bytes":
                         return `'0x' || encode(${col}, 'hex')`
