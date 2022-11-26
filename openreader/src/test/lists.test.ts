@@ -6,7 +6,8 @@ describe('lists', function () {
         `create table lists (
             id text primary key, 
             int_array integer[], 
-            bigint_array numeric[], 
+            bigint_array numeric[],
+            bigdecimal_array numeric[], 
             enum_array text[],
             datetime_array timestamptz[],
             bytes_array bytea[],
@@ -16,7 +17,7 @@ describe('lists', function () {
         `insert into lists (id, int_array) values ('1', '{1, 2, 3}')`,
         `insert into lists (id, int_array) values ('2', '{4, 5, 6}')`,
         `insert into lists (id, int_array) values ('20', '{7, 8}')`,
-        `insert into lists (id, bigint_array) values ('3', '{1000000000000000000000000000, 2000000000000000000000000000}')`,
+        `insert into lists (id, bigint_array) values ('3', '{1000000000000000000000000001, 2000000000000000000000000000}')`,
         `insert into lists (id, bigint_array) values ('4', '{3000000000000000000000000000, 4000000000000000000000000000}')`,
         `insert into lists (id, list_of_list_of_int) values ('5', '[[1, 2], [3, 4], [5]]'::jsonb)`,
         `insert into lists (id, list_of_json_objects) values ('6', '[{"foo": 1, "bar": 2}, {"foo": 3, "bar": 4}]'::jsonb)`,
@@ -27,6 +28,8 @@ describe('lists', function () {
         `insert into lists (id, enum_array) values ('10', array['A', 'B', 'C'])`,
         `insert into lists (id, enum_array) values ('11', array['C',  'D'])`,
         `insert into lists (id, enum_array) values ('12', array['A',  'D'])`,
+        `insert into lists (id, bigdecimal_array) values ('13', '{100000000000000000000000000000.1, 2000000000000000000000000000000.3}')`,
+        `insert into lists (id, bigdecimal_array) values ('14', '{3.000000000000000000000000000002, 40000000000000000000000000004}')`,
     ])
 
     const client = useServer(`    
@@ -34,6 +37,7 @@ describe('lists', function () {
             intArray: [Int!]
             enumArray: [Enum!]
             bigintArray: [BigInt!]
+            bigdecimalArray: [BigDecimal!]
             datetimeArray: [DateTime!]
             bytesArray: [Bytes!]
             listOfListOfInt: [[Int]]
@@ -134,7 +138,7 @@ describe('lists', function () {
                 }
             `, {
                 lists: [
-                    {bigintArray: ['1000000000000000000000000000', '2000000000000000000000000000']},
+                    {bigintArray: ['1000000000000000000000000001', '2000000000000000000000000000']},
                     {bigintArray: ['3000000000000000000000000000', '4000000000000000000000000000']}
                 ]
             })
@@ -143,7 +147,7 @@ describe('lists', function () {
         it('supports where conditions', function () {
             return client.test(`
                 query {
-                    all: lists(where: {bigintArray_containsAll: 1000000000000000000000000000} orderBy: id_ASC) {
+                    all: lists(where: {bigintArray_containsAll: 1000000000000000000000000001} orderBy: id_ASC) {
                         id
                     }
                     any: lists(where: {bigintArray_containsAny: [3000000000000000000000000000, 2000000000000000000000000000]} orderBy: id_ASC) {
@@ -157,6 +161,23 @@ describe('lists', function () {
                 all: [{id: '3'}],
                 any: [{id: '3'}, {id: '4'}],
                 none: [{id: '4'}]
+            })
+        })
+    })
+
+    describe('big decimal arrays', function() {
+        it('outputs correctly', function() {
+            return client.test(`
+                query {
+                    lists(where: {id_in: ["13", "14"]} orderBy: id_ASC) {
+                        bigdecimalArray
+                    }
+                }
+            `, {
+                lists: [
+                    {bigdecimalArray: ['1.000000000000000000000000000001e+29', '2.0000000000000000000000000000003e+30']},
+                    {bigdecimalArray: ['3.000000000000000000000000000002', '4.0000000000000000000000000004e+28']}
+                ]
             })
         })
     })

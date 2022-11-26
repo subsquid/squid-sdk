@@ -23,8 +23,8 @@ describe('scalars', function() {
         `insert into scalar (id, "enum") values ('17', 'C')`,
         `insert into scalar (id, "json") values ('18', '{"key1": "value1"}'::jsonb)`,
         `insert into scalar (id, "json") values ('19', '{"key2": "value2"}'::jsonb)`,
-        `insert into scalar (id, "bigdecimal", deep) values ('20', 0.00000000000000000000000000000000002, '{"bigdecimal": "100.00000000000000000000000000000000002"}'::jsonb)`,
-        `insert into scalar (id, "bigdecimal", deep) values ('21', 0.00000000000000000000000000000000001, '{"bigdecimal": "12.00000000000000000000000000000000001"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('20', 1.00000000000000000000000000000000002, '{"bigdecimal": "100.00000000000000000000000000000000002"}'::jsonb)`,
+        `insert into scalar (id, "bigdecimal", deep) values ('21', 1.00000000000000000000000000000000001, '{"bigdecimal": "12.00000000000000000000000000000000001"}'::jsonb)`,
         `insert into scalar (id, "bigdecimal", deep) values ('22', 5, '{"bigdecimal": "5"}'::jsonb)`,
     ])
 
@@ -252,12 +252,12 @@ describe('scalars', function() {
                 scalars: [
                     {
                         id: '20',
-                        bigdecimal: '2e-35',
+                        bigdecimal: '1.00000000000000000000000000000000002',
                         deep: {bigdecimal: '100.00000000000000000000000000000000002'}
                     },
                     {
                         id: '21',
-                        bigdecimal: '1e-35',
+                        bigdecimal: '1.00000000000000000000000000000000001',
                         deep: {bigdecimal: '12.00000000000000000000000000000000001'}
                     },
                     {
@@ -272,14 +272,14 @@ describe('scalars', function() {
         it('supports where conditions', function () {
             return client.test(`
                 query {
-                    eq: scalars(where: {bigdecimal_eq: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
-                    not_eq: scalars(where: {bigdecimal_not_eq: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
-                    gt: scalars(where: {bigdecimal_gt: 0.00000000000000000000000000000000001} orderBy: id_ASC) { id }
-                    gte: scalars(where: {bigdecimal_gte: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
-                    lt: scalars(where: {bigdecimal_lt: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
-                    lte: scalars(where: {bigdecimal_lte: 0.00000000000000000000000000000000002} orderBy: id_ASC) { id }
-                    in: scalars(where: {bigdecimal_in: [0.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
-                    not_in: scalars(where: {bigdecimal_not_in: [0.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
+                    eq: scalars(where: {bigdecimal_eq: 1.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    not_eq: scalars(where: {bigdecimal_not_eq: 1.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    gt: scalars(where: {bigdecimal_gt: 1.00000000000000000000000000000000001} orderBy: id_ASC) { id }
+                    gte: scalars(where: {bigdecimal_gte: 1.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    lt: scalars(where: {bigdecimal_lt: 1.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    lte: scalars(where: {bigdecimal_lte: 1.00000000000000000000000000000000002} orderBy: id_ASC) { id }
+                    in: scalars(where: {bigdecimal_in: [1.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
+                    not_in: scalars(where: {bigdecimal_not_in: [1.00000000000000000000000000000000001, 5.0]} orderBy: id_ASC) { id }
                 }
             `, {
                 eq: [{id: '20'}],

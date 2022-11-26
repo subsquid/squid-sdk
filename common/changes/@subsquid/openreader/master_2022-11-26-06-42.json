@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "fix `BigDecimal` array output precision",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

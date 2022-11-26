@@ -90,9 +90,9 @@ export class EntityCursor implements Cursor {
                 let itemType = prop.type.item.type
                 switch(itemType.kind) {
                     case "scalar":
-                    case "enum":
                         switch(itemType.name) {
                             case "BigInt":
+                            case "BigDecimal":
                                 return `(${col})::text[]`
                             case "Bytes":
                                 return `array(select '0x' || encode(i, 'hex') from unnest(${col}) as i)`
