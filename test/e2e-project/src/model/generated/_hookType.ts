@@ -1,4 +1,4 @@
 export enum HookType {
-  PRE = "PRE",
-  POST = "POST",
+    PRE = "PRE",
+    POST = "POST",
 }

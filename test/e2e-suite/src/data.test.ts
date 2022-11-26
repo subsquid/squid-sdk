@@ -1,3 +1,4 @@
+import {it} from 'node:test'
 import {gql, waitForHeight} from "./setup"
 
 
@@ -146,6 +147,20 @@ describe('data', function () {
                     json: null
                 }
             ]
+        })
+    })
+
+    it('BigDecimal array', function() {
+        return gql.test(`
+            query {
+                event: systemEventById(id: "se-1") {
+                    arrayDecimal
+                }
+            }
+        `, {
+            event: {
+                arrayDecimal: ['0.1234', '1000000000000000000000000000000000000001', '3']
+            }
         })
     })
 })

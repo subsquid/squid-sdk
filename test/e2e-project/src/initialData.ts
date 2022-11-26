@@ -68,6 +68,7 @@ export async function loadInitialData(store: Store): Promise<void> {
         params.additionalData = [additionalData]
         e.params = params
         e.arrayField = ['aaa', 'bbb', 'ccc']
+        e.arrayDecimal = [BigDecimal(0.1234), BigDecimal('1000000000000000000000000000000000000001')]
         await store.save(e)
     }
 

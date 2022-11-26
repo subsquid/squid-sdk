@@ -5,25 +5,25 @@ import {Transfer} from "./transfer.model"
 
 @Entity_()
 export class Account {
-  constructor(props?: Partial<Account>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<Account>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * Account address
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * Account address
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  balance!: bigint
+    @Column_("numeric", {nullable: false, transformer: marshal.bigintTransformer})
+    balance!: bigint
 
-  @Column_("jsonb", {transformer: {to: obj => obj.toJSON(), from: obj => fromJsonStatus(obj)}, nullable: false})
-  status!: Status
+    @Column_("jsonb", {transformer: {to: obj => obj.toJSON(), from: obj => obj == null ? undefined : fromJsonStatus(obj)}, nullable: false})
+    status!: Status
 
-  @OneToMany_(() => Transfer, e => e.toAccount)
-  incomingTx!: Transfer[]
+    @OneToMany_(() => Transfer, e => e.toAccount)
+    incomingTx!: Transfer[]
 
-  @OneToMany_(() => Transfer, e => e.fromAccount)
-  outgoingTx!: Transfer[]
+    @OneToMany_(() => Transfer, e => e.fromAccount)
+    outgoingTx!: Transfer[]
 }

@@ -7,20 +7,20 @@ import {BlockTimestamp} from "./blockTimestamp.model"
  */
 @Entity_()
 export class BlockHook {
-  constructor(props?: Partial<BlockHook>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<BlockHook>) {
+        Object.assign(this, props)
+    }
 
-  @PrimaryColumn_()
-  id!: string
+    @PrimaryColumn_()
+    id!: string
 
-  @Column_("int4", {nullable: false})
-  blockNumber!: number
+    @Column_("int4", {nullable: false})
+    blockNumber!: number
 
-  @Column_("varchar", {length: 4, nullable: false})
-  type!: HookType
+    @Column_("varchar", {length: 4, nullable: false})
+    type!: HookType
 
-  @Index_()
-  @ManyToOne_(() => BlockTimestamp, {nullable: true})
-  timestamp!: BlockTimestamp | undefined | null
+    @Index_()
+    @ManyToOne_(() => BlockTimestamp, {nullable: true})
+    timestamp!: BlockTimestamp | undefined | null
 }

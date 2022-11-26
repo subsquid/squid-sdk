@@ -1,5 +1,5 @@
 export enum EnumInJson {
-  A = "A",
-  B = "B",
-  C = "C",
+    A = "A",
+    B = "B",
+    C = "C",
 }

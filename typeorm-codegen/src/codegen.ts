@@ -59,33 +59,20 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             out.line('@PrimaryColumn_()')
                         } else {
                             addIndexAnnotation(entity, key, imports, out)
-                            switch (prop.type.name) {
+                            let attributes = [
+                                `nullable: ${prop.nullable}`
+                            ]
+                            switch(prop.type.name) {
                                 case 'BigInt':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
                                 case 'BigDecimal':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigdecimalTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
                                 case 'Float':
                                     imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.floatTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                default:
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                            prop.nullable
-                                        }})`
-                                    )
+                                    attributes.push(`transformer: marshal.${prop.type.name.toLowerCase()}Transformer`)
                                     break
                             }
+                            out.line(
+                                `@Column_("${getDbType(prop.type.name)}", {${attributes.join(', ')}})`
+                            )
                         }
                         break
                     case 'enum':
@@ -140,13 +127,27 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         break
                     case 'list':
                         switch(prop.type.item.type.kind) {
-                            case 'scalar':
+                            case 'scalar': {
+                                let attributes = [
+                                    'array: true',
+                                    `nullable: ${prop.nullable}`
+                                ]
+                                let typeName = prop.type.item.type.name
+                                switch(typeName) {
+                                    case 'BigDecimal':
+                                    case 'BigInt':
+                                    case 'Float':
+                                        imports.useMarshal()
+                                        attributes.push(
+                                            `transformer: marshal.arrayTransformer(marshal.${typeName.toLowerCase()})`
+                                        )
+                                        break
+                                }
                                 out.line(
-                                    `@Column_("${getDbType(
-                                        prop.type.item.type.name
-                                    )}", {array: true, nullable: ${prop.nullable}})`
+                                    `@Column_("${getDbType(typeName)}", {${attributes.join(', ')}})`
                                 )
                                 break
+                            }
                             case 'enum':
                                 out.line(
                                     `@Column_("varchar", {length: ${getEnumMaxLength(

@@ -157,6 +157,20 @@ export const bigdecimalTransformer = {
 }
 
 
+export function arrayTransformer<T>(marshal: Marshal<T, string>) {
+    return {
+        to(array: T[]): () => string {
+            return () => "'{" + array.map(item => ''+item).join(', ') + "}'"
+        },
+        from(array: string[]): T[] {
+            return array.map(item => {
+                return marshal.fromJSON(item)
+            })
+        }
+    }
+}
+
+
 export function enumFromJson<E extends object>(json: unknown, enumObject: E): E[keyof E] {
     assert(typeof json == 'string', 'invalid enum value')
     let val = (enumObject as any)[json]

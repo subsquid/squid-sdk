@@ -145,6 +145,7 @@ type SystemEvent @entity {
   id: ID!
   params: EventParam!
   arrayField: [String!]
+  arrayDecimal: [BigDecimal!]
 }
 
 

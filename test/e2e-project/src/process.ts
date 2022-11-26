@@ -1,3 +1,4 @@
+import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from "@subsquid/ss58"
 import {decodeHex, SubstrateProcessor, toHex} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
@@ -11,10 +12,10 @@ import {
     HookType,
     MiddleClass,
     Miserable,
-    SeenItem,
+    SeenItem, SystemEvent,
     Transaction,
     Transfer
-} from "./model"
+} from './model'
 import {TimestampSetCall} from "./types/calls"
 import {SystemMaximumBlockLengthConstant} from "./types/constants"
 import {BalancesTransferEvent} from "./types/events"
@@ -52,6 +53,17 @@ processor.addPreHook({range: {from: 0, to: 0}}, async ctx => {
     hook.blockNumber = ctx.block.height
     hook.type = HookType.PRE
     await ctx.store.save(hook)
+})
+
+
+processor.addPostHook({range: {from: 1, to: 1}}, async ctx => {
+    let se = await ctx.store.get(SystemEvent, 'se-1')
+    assert(se != null)
+    assert(se.arrayDecimal?.length == 2)
+    assert(se.arrayDecimal[0].eq(0.1234))
+    assert(se.arrayDecimal[1].eq('1000000000000000000000000000000000000001'))
+    se.arrayDecimal.push(BigDecimal(3))
+    await ctx.store.save(se)
 })
 
 
