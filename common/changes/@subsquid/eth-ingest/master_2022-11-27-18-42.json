@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/eth-ingest",
+      "comment": "encode numbers in RPC calls to hex for better compatibility",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/eth-ingest"
+}
