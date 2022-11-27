@@ -140,13 +140,16 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         break
                     case 'list':
                         switch(prop.type.item.type.kind) {
-                            case 'scalar':
+                            case 'scalar': {
+                                let scalar = prop.type.item.type.name
+                                if (scalar == 'BigInt' || scalar == 'BigDecimal') {
+                                    throw new Error(`Property ${name}.${key} has unsupported type: can't generate code for native ${scalar} arrays.`)
+                                }
                                 out.line(
-                                    `@Column_("${getDbType(
-                                        prop.type.item.type.name
-                                    )}", {array: true, nullable: ${prop.nullable}})`
+                                    `@Column_("${getDbType(scalar)}", {array: true, nullable: ${prop.nullable}})`
                                 )
                                 break
+                            }
                             case 'enum':
                                 out.line(
                                     `@Column_("varchar", {length: ${getEnumMaxLength(
