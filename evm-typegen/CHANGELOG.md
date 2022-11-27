@@ -1,6 +1,23 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 2.0.0
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Breaking changes
+
+- new CLI interface and layout of generated files
+- use non-signature name to refer to non-overloaded event or function
+
+### Minor changes
+
+- add `--multicall` option to generate specialized facade for MakerDAO multicall contract
+- support fetching ABIs from etherscan or arbitrary http url
+
+### Patches
+
+- fix: `bytes[]` was typed as `bytes`
 
 ## 1.3.1
 Fri, 28 Oct 2022 12:04:58 GMT

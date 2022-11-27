@@ -1,6 +1,11 @@
 # Change Log - chain-status-service
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 0.0.7
+Sun, 27 Nov 2022 18:43:31 GMT
+
+_Version update only_
 
 ## 0.0.6
 Fri, 28 Oct 2022 12:04:58 GMT

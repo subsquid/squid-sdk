@@ -1,6 +1,17 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 0.3.0
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Minor changes
+
+- explicitly fail codegen on native big number arrays
+
+### Patches
+
+- remove not needed `typeorm-config` dependency
 
 ## 0.2.3
 Sun, 06 Nov 2022 18:24:20 GMT

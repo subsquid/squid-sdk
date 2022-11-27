@@ -1,6 +1,13 @@
 # Change Log - @subsquid/eth-ingest
 
-This log was last generated on Tue, 15 Nov 2022 20:19:26 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 0.0.3
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Patches
+
+- encode numbers in RPC calls to hex for better compatibility
 
 ## 0.0.2
 Tue, 15 Nov 2022 20:19:26 GMT

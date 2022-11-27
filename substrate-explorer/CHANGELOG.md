@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-explorer
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 2.0.4
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Patches
+
+- Change extrinsic fee and tip GraphQL schema to BigInt
 
 ## 2.0.3
 Fri, 28 Oct 2022 12:04:58 GMT

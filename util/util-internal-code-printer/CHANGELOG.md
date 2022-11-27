@@ -1,6 +1,14 @@
 # Change Log - @subsquid/util-internal-code-printer
 
-This log was last generated on Wed, 06 Jul 2022 09:25:54 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 0.1.0
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Minor changes
+
+- add `OutDir.exists()`
+- `OutDir.path(name: string)` -> `OutDir.path(name?: string)`
 
 ## 0.0.2
 Wed, 06 Jul 2022 09:25:54 GMT

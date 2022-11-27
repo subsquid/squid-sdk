@@ -2,6 +2,26 @@
   "name": "@subsquid/eth-ingest",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/eth-ingest_v0.0.3",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "encode numbers in RPC calls to hex for better compatibility"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-commander\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/eth-ingest_v0.0.2",
       "date": "Tue, 15 Nov 2022 20:19:26 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/logger",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/logger_v0.3.0",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "change pretty print format: use yaml style only for top-level attributes, use compact json for other properties"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/logger_v0.2.0",
       "date": "Sat, 15 Oct 2022 11:43:02 GMT",

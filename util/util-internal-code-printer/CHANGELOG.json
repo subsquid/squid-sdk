@@ -2,6 +2,21 @@
   "name": "@subsquid/util-internal-code-printer",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-code-printer_v0.1.0",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `OutDir.exists()`"
+          },
+          {
+            "comment": "`OutDir.path(name: string)` -> `OutDir.path(name?: string)`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/util-internal-code-printer_v0.0.2",
       "date": "Wed, 06 Jul 2022 09:25:54 GMT",

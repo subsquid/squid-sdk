@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-commander",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-commander_v0.0.1",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "reword error messages"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-commander_v0.0.0",
       "date": "Wed, 17 Aug 2022 17:33:52 GMT",

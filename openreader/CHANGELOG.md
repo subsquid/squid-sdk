@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+
+## 3.1.4
+Sun, 27 Nov 2022 18:43:31 GMT
+
+### Patches
+
+- fix `BigDecimal` array output precision
 
 ## 3.1.3
 Sun, 06 Nov 2022 18:24:20 GMT

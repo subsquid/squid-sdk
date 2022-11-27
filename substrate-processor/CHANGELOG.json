@@ -2,6 +2,21 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.0.2",
+      "tag": "@subsquid/substrate-processor_v2.0.2",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.0.2` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.1",
       "tag": "@subsquid/substrate-processor_v2.0.1",
       "date": "Sun, 06 Nov 2022 18:24:20 GMT",

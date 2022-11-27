@@ -2,6 +2,18 @@
   "name": "chain-status-service",
   "entries": [
     {
+      "version": "0.0.7",
+      "tag": "chain-status-service_v0.0.7",
+      "date": "Sun, 27 Nov 2022 18:43:31 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.2.0` to `^0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "chain-status-service_v0.0.6",
       "date": "Fri, 28 Oct 2022 12:04:58 GMT",
