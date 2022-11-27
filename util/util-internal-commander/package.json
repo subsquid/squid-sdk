@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-commander",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A small collection of option validators for commander",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

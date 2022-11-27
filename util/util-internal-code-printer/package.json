@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-code-printer",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Naive code printer for bracket languages",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
