@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "remove not needed `typeorm-config` dependency",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}
