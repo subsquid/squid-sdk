@@ -447,37 +447,37 @@
     // },
     {
       "packageName": "@subsquid/eth-ingest",
-      "projectFolder": "eth-ingest",
+      "projectFolder": "eth/eth-ingest",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-typegen",
-      "projectFolder": "evm-typegen",
+      "projectFolder": "eth/evm-typegen",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/graphql-server",
-      "projectFolder": "graphql-server",
+      "projectFolder": "graphql/graphql-server",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ink-abi",
-      "projectFolder": "ink-abi",
+      "projectFolder": "substrate/ink-abi",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ink-typegen",
-      "projectFolder": "ink-typegen",
+      "projectFolder": "substrate/ink-typegen",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/openreader",
-      "projectFolder": "openreader",
+      "projectFolder": "graphql/openreader",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -493,79 +493,79 @@
     },
     {
       "packageName": "@subsquid/scale-codec",
-      "projectFolder": "scale-codec",
+      "projectFolder": "substrate/scale-codec",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ss58",
-      "projectFolder": "ss58",
+      "projectFolder": "substrate/ss58",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/ss58-codec",
-      "projectFolder": "ss58-codec",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/typeorm-store",
-      "projectFolder": "stores/typeorm-store",
+      "projectFolder": "substrate/ss58-codec",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-ingest",
-      "projectFolder": "substrate-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/substrate-frontier-evm",
-      "projectFolder": "util/substrate-frontier-evm",
+      "projectFolder": "substrate/substrate-ingest",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-explorer",
-      "projectFolder": "substrate-explorer",
+      "projectFolder": "substrate/substrate-explorer",
       "shouldPublish": true,
       "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
-      "projectFolder": "substrate-metadata",
+      "projectFolder": "substrate/substrate-metadata",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
-      "projectFolder": "substrate-metadata-explorer",
+      "projectFolder": "substrate/substrate-metadata-explorer",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-processor",
-      "projectFolder": "substrate-processor",
+      "projectFolder": "substrate/substrate-processor",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-typegen",
-      "projectFolder": "substrate-typegen",
+      "projectFolder": "substrate/substrate-typegen",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/typeorm-codegen",
-      "projectFolder": "typeorm-codegen",
+      "projectFolder": "typeorm/typeorm-codegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "projectFolder": "typeorm/typeorm-config",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/typeorm-migration",
-      "projectFolder": "typeorm-migration",
+      "projectFolder": "typeorm/typeorm-migration",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "projectFolder": "typeorm/typeorm-store",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -594,8 +594,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/typeorm-config",
-      "projectFolder": "util/typeorm-config",
+      "packageName": "@subsquid/substrate-frontier-evm",
+      "projectFolder": "util/substrate-frontier-evm",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
