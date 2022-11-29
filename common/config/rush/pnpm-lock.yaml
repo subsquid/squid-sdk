@@ -24,6 +24,7 @@ specifiers:
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
   '@rush-temp/evm-ingest': file:./projects/evm-ingest.tgz
   '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
+  '@rush-temp/frontier': file:./projects/frontier.tgz
   '@rush-temp/gear-nft': file:./projects/gear-nft.tgz
   '@rush-temp/gql-test-client': file:./projects/gql-test-client.tgz
   '@rush-temp/graphql-server': file:./projects/graphql-server.tgz
@@ -40,7 +41,6 @@ specifiers:
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
   '@rush-temp/substrate-explorer': file:./projects/substrate-explorer.tgz
-  '@rush-temp/substrate-frontier-evm': file:./projects/substrate-frontier-evm.tgz
   '@rush-temp/substrate-ingest': file:./projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:./projects/substrate-metadata-explorer.tgz
@@ -67,6 +67,7 @@ specifiers:
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.3.0
+  '@subsquid/substrate-frontier-evm': ~0.0.1
   '@substrate/calc': ^0.2.8
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.13
@@ -143,6 +144,7 @@ dependencies:
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz_supports-color@8.1.1
   '@rush-temp/evm-ingest': file:projects/evm-ingest.tgz
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
+  '@rush-temp/frontier': file:projects/frontier.tgz
   '@rush-temp/gear-nft': file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615
   '@rush-temp/gql-test-client': file:projects/gql-test-client.tgz_graphql@15.8.0
   '@rush-temp/graphql-server': file:projects/graphql-server.tgz_supports-color@8.1.1
@@ -159,7 +161,6 @@ dependencies:
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
   '@rush-temp/substrate-explorer': file:projects/substrate-explorer.tgz
-  '@rush-temp/substrate-frontier-evm': file:projects/substrate-frontier-evm.tgz
   '@rush-temp/substrate-ingest': file:projects/substrate-ingest.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer': file:projects/substrate-metadata-explorer.tgz
@@ -186,6 +187,7 @@ dependencies:
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.3.0
+  '@subsquid/substrate-frontier-evm': 0.0.1
   '@substrate/calc': 0.2.8
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.14
@@ -1271,6 +1273,28 @@ packages:
       - supports-color
     dev: false
 
+  /@subsquid/scale-codec/1.0.5:
+    resolution: {integrity: sha512-gG8HyLDVM6tUOKrJM2avhjlJX0gonmL1F19sLEdDIaIkCuw1wG0TBaDMBU0Ha2Yn2NsFBOozuXr9AeliR4/9vw==}
+    dependencies:
+      '@subsquid/util-internal-hex': 0.0.1
+      '@subsquid/util-internal-json': 0.2.0
+    dev: false
+
+  /@subsquid/substrate-frontier-evm/0.0.1:
+    resolution: {integrity: sha512-jCvb9fL+ANd7LZJvQFi01WRJfwALSYDVAoy2dRFSDB/oDctATFd6/JW46TYP96wqRfxH9rkp/bsqw1MWUx8dxg==}
+    dependencies:
+      '@ethersproject/transactions': 5.7.0
+      '@subsquid/substrate-metadata': 2.0.0
+    dev: false
+
+  /@subsquid/substrate-metadata/2.0.0:
+    resolution: {integrity: sha512-fRkC8/YEegfUN2GaRP0wE2OTLuflwQWD8TBS6wDTXUF4cWKbpF1ABZQxt2Nj8noOgWDMYvbcVnsz/BrMv5p5Pg==}
+    dependencies:
+      '@subsquid/scale-codec': 1.0.5
+      '@subsquid/util-internal': 1.0.0
+      '@subsquid/util-naming': 0.0.1
+    dev: false
+
   /@subsquid/typeorm-config/1.1.0_typeorm@0.3.9:
     resolution: {integrity: sha512-7qIOlpodIvIhrm3pudu2jpzMXx3aCxj39FPMV38NPzbft5AEKTmfRJPPSzBDbsYnz+WFJECDkLEb2vnFUsfuDw==}
     peerDependencies:
@@ -1291,8 +1315,18 @@ packages:
     resolution: {integrity: sha512-sNok0jQV6+OpAl3QKaH2VFh8PKZyZ6XHZhZ71LeirOhgfVprKFmEvFG9yQIp7qKe7JGXmolX54zu150OMP9f5w==}
     dev: false
 
+  /@subsquid/util-internal-json/0.2.0:
+    resolution: {integrity: sha512-tkDPXQ+2/2RCO2+O3AtaI71p9TQLOcv2hJWOmgNGzzQrTXp8wbyEZIybm33lsLo2HUmQN/BQKzk4PHkLa36nMQ==}
+    dependencies:
+      '@subsquid/util-internal-hex': 0.0.1
+    dev: false
+
   /@subsquid/util-internal/0.0.1:
     resolution: {integrity: sha512-bO9+yN+3H1AvFnoSV+5W6CpRcZ2haf3a77xwZwrI4T5U3CxvRHO9v03Iam7A1tf+1ZEw9TbKN5VHvajzVsHbEw==}
+    dev: false
+
+  /@subsquid/util-internal/1.0.0:
+    resolution: {integrity: sha512-uiGA6LwrgqZzg/1M8CL4CQdZ5k8yZmR1fEor6wGOf366RyL5tyXCETrhI5xsX/AXCO+nPAtahemOqqJKTAAbkQ==}
     dev: false
 
   /@subsquid/util-naming/0.0.1:
@@ -4394,13 +4428,14 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-QNoYS1BVJi+bctIXGNLfXPgc1bflpC+FnzHua0yT8VwE/+1ye+Xe5fI7NOaJ4F3tVJbdPdaXFLIbMDNaAERg5Q==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-uk3IF3SNrcwDqkFx6M2ew6Z02o9TrHsG/ewC9KnzfainqtWxeNsqVVoeRgMHHs7WleMpMRdGqShq0GnhHHuITg==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
     dependencies:
       '@ethersproject/bytes': 5.7.0
       '@ethersproject/transactions': 5.7.0
+      '@subsquid/substrate-frontier-evm': 0.0.1
       '@types/node': 16.11.59
       dotenv: 10.0.0
       ethers: 5.7.2
@@ -4580,6 +4615,19 @@ packages:
       - bufferutil
       - encoding
       - utf-8-validate
+    dev: false
+
+  file:projects/frontier.tgz:
+    resolution: {integrity: sha512-faimmm4AUwv8rLpcnJoXA4Z20hQA4QnRHn2efgpW7paL05gJrTX6SLmRj/1/HkaQ+D4TcIxHYb81tCRsFUhfZw==, tarball: file:projects/frontier.tgz}
+    name: '@rush-temp/frontier'
+    version: 0.0.0
+    dependencies:
+      '@ethersproject/transactions': 5.7.0
+      '@types/mocha': 9.1.1
+      '@types/node': 16.11.59
+      expect: 27.5.1
+      mocha: 9.2.2
+      typescript: 4.7.4
     dev: false
 
   file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615:
@@ -4768,11 +4816,12 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-Dtu/AQaKsjVB/Eoi5pQvQX3I3YL6LS8Z+ZtUuj2pu8Al1GLYL4EaW1+RjFZwHlWUW6UrHGao4ekA+hUHsde9SA==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-fhDrRK39KeiAKgUK/AL5SHEj4I2jdDPlH9gwlmAdYm3bV99lU0+9CB2Uligi8LbKfhHLAwUlfPn1QDCmg1r7nw==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-frontier-evm': 0.0.1
       '@types/node': 16.11.59
       dotenv: 10.0.0
       ethers: 5.7.2
@@ -4931,19 +4980,6 @@ packages:
       typescript: 4.7.4
     transitivePeerDependencies:
       - pg-native
-    dev: false
-
-  file:projects/substrate-frontier-evm.tgz:
-    resolution: {integrity: sha512-D+DxeL9Rkg75jn0ZhBtceKfNOIOt5segu97oVM2tX3URawtI16WpJa+uG6sYoYsvm+8QczNPyR2x1BPEcx5Pkg==, tarball: file:projects/substrate-frontier-evm.tgz}
-    name: '@rush-temp/substrate-frontier-evm'
-    version: 0.0.0
-    dependencies:
-      '@ethersproject/transactions': 5.7.0
-      '@types/mocha': 9.1.1
-      '@types/node': 16.11.59
-      expect: 27.5.1
-      mocha: 9.2.2
-      typescript: 4.7.4
     dev: false
 
   file:projects/substrate-ingest.tgz:

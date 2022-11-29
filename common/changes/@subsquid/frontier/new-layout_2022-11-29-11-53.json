@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "rename packae to `@subsquid/frontier`",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}

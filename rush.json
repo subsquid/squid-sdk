@@ -492,6 +492,12 @@
       "shouldPublish": false
     },
     {
+      "packageName": "@subsquid/frontier",
+      "projectFolder": "substrate/frontier",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "substrate/scale-codec",
       "shouldPublish": true,
@@ -590,12 +596,6 @@
     {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/substrate-frontier-evm",
-      "projectFolder": "util/substrate-frontier-evm",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

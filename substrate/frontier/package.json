@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/substrate-frontier-evm",
+  "name": "@subsquid/frontier",
   "version": "0.0.1",
-  "description": "",
+  "description": "A set of tools to decode EVM transactions and logs coming from Frontier pallets",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -15,7 +15,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "npx mocha ./lib/test/*.test.js"
+    "test": "mocha ./lib/test/*.test.js"
   },
   "dependencies": {
     "@ethersproject/transactions": "^5.7.0",

@@ -1,6 +1,6 @@
 import {OldTypes} from '@subsquid/substrate-metadata'
 import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry'
-import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions//substrate'
+import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions/substrate'
 import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
 
 const types: OldTypes = {
