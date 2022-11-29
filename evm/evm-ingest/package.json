@@ -1,6 +1,6 @@
 {
-  "name": "@subsquid/eth-ingest",
-  "description": "Data fetcher for ethereum chains",
+  "name": "@subsquid/evm-ingest",
+  "description": "Data fetcher for ethereum-like chains",
   "version": "0.0.3",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "squid-eth-ingest": "./bin/run.js"
+    "squid-evm-ingest": "./bin/run.js"
   },
   "files": [
     "bin",

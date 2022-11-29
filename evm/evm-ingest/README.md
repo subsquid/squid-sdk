@@ -1,4 +1,4 @@
-# @subsquid/eth-ingest
+# @subsquid/evm-ingest
 
 Data fetcher for ethereum compatible chains.
 
@@ -7,11 +7,11 @@ It dumps chain blocks (headers, transactions and logs) as JSON lines to stdout.
 ## Usage
 
 ```
-npm install -g @subsquid/eth-ingest
+npm install -g @subsquid/evm-ingest
 ```
 
 ```
-Usage: squid-eth-ingest [options]
+Usage: squid-evm-ingest [options]
 
 Data fetcher for ethereum compatible chains
 
