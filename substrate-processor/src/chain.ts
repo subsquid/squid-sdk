@@ -1,23 +1,23 @@
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
+import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
+import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
 import {
-    ChainDescription, Constant,
+    ChainDescription,
+    Constant,
     decodeMetadata,
     Field,
-    getChainDescriptionFromMetadata, getTypeHash,
+    getChainDescriptionFromMetadata,
+    getTypeHash,
     isPreV14,
     OldTypes,
-    OldTypesBundle,
     QualifiedName,
     StorageItem
-} from "@subsquid/substrate-metadata"
-import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import type {SpecId} from "./interfaces/substrate"
-import * as sto from "./util/storage"
+} from '@subsquid/substrate-metadata'
+import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import type {SpecId} from './interfaces/substrate'
+import * as sto from './util/storage'
 
 
 /**

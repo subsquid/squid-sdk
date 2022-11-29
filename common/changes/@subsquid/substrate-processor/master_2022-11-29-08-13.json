@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "remove unused imports",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
