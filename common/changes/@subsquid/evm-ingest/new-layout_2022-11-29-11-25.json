@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "comment": "rename package from `eth-ingest` to `evm-ingest`",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/evm-ingest"
+}
