@@ -11,9 +11,9 @@ Subsquid framework consists of several key components.
 
 ### Archive
 
-An Archive is a set of services formed by [substrate-ingest](substrate-ingest),
+An Archive is a set of services formed by [substrate-ingest](substrate/substrate-ingest),
 [substrate-gateway](https://github.com/subsquid/substrate-gateway), postgres compatible database
-and optionally [substrate-explorer](substrate-explorer), which together
+and optionally [substrate-explorer](substrate/substrate-explorer), which together
 
 1. ingest blockchain data
 2. decode and persist it in a normalized form
@@ -23,16 +23,16 @@ Compared to data access using a conventional chain node RPC, an archive allows o
 
 ### Processor
 
-[substrate-processor](substrate-processor) fetches on-chain data from an archive and executes
+[substrate-processor](substrate/substrate-processor) fetches on-chain data from an archive and executes
 user-defined mapping code against it.
 
 ### Typegen tools
 
-[substrate-typegen(1)](substrate-typegen) can generate facade TypeScript classes
+[squid-substrate-typegen(1)](substrate/substrate-typegen) can generate facade TypeScript classes
 for substrate events, calls and storage items, allowing to work with chain data
 in a fully typesafe and runtime upgrades aware fashion.
 
-Similarly, [squid-evm-typegen(1)](evm-typegen) generates facade TypeScript classes for type-safe processing of EVM logs.  
+Similarly, [squid-evm-typegen(1)](evm/evm-typegen) generates facade TypeScript classes for type-safe processing of EVM logs.  
 
 ### Postgres
 
@@ -41,9 +41,9 @@ Similarly, [squid-evm-typegen(1)](evm-typegen) generates facade TypeScript class
 However, extra tooling for data modeling and serving the data with GraphQL is available when a processor is run against a postgres-compatible database. In such a case, the Subsquid framework suggests the following dev flow:
 
 1. Define the target database schema using a GraphQL dialect enriched with custom directives
-2. Generate [TypeORM](https://typeorm.io) entity classes with [typeorm-codegen](typeorm-codegen)
-3. Generate and apply database migrations with [typeorm-migration](typeorm-migration)
-4. Use powerful and extensible [GraphQL server](graphql-server) to serve produced data right away.
+2. Generate [TypeORM](https://typeorm.io) entity classes with [typeorm-codegen](typeorm/typeorm-codegen)
+3. Generate and apply database migrations with [typeorm-migration](typeorm/typeorm-migration)
+4. Use powerful and extensible [GraphQL server](graphql/graphql-server) to serve produced data right away.
 
 ### Squid
 
@@ -62,9 +62,9 @@ For more details on how to build, run and deploy a squid consult the [Docs](http
 
 The Subsquid framework incorporates a few npm packages that might be useful in a standalone mode:
 
-* [scale-codec](scale-codec) - encoder and decoder for [SCALE](https://docs.substrate.io/reference/scale-codec/) data serialization format
-* [ss58-codec](ss58-codec) - encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/)
-* [ss58](ss58) - [ss58-codec](ss58-codec) paired with [SS58 registry](https://github.com/paritytech/ss58-registry).
+* [scale-codec](substrate/scale-codec) - encoder and decoder for [SCALE](https://docs.substrate.io/reference/scale-codec/) data serialization format
+* [ss58-codec](substrate/ss58-codec) - encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/)
+* [ss58](substrate/ss58) - [ss58-codec](substrate/ss58-codec) paired with [SS58 registry](https://github.com/paritytech/ss58-registry).
 
 ## Getting started
 
