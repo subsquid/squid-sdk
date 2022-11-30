@@ -22,8 +22,8 @@ function publish() {
         -t "subsquid/$img:$release" || exit 1
 }
 
-publish substrate-ingest || exit 1
-publish substrate-explorer || exit 1
+publish substrate/substrate-ingest || exit 1
+publish substrate/substrate-explorer || exit 1
 publish util/chain-status-service || exit 1
 
 git push origin "HEAD:release/${release}" --follow-tags --verbose
