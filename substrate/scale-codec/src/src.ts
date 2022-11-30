@@ -145,6 +145,10 @@ export class Src {
         return this.buf.subarray(beg, end)
     }
 
+    skip(len: number): void {
+        this.idx += len
+    }
+
     bool(): boolean {
         return !!this.byte()
     }

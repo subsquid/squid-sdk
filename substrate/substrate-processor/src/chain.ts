@@ -1,5 +1,5 @@
 import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
-import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
+import {Codec as ScaleCodec, JsonCodec, Src} from '@subsquid/scale-codec'
 import {
     ChainDescription,
     Constant,
@@ -14,7 +14,7 @@ import {
 } from '@subsquid/substrate-metadata'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {assertNotNull, last, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import type {SpecId} from './interfaces/substrate'
 import * as sto from './util/storage'
@@ -204,23 +204,121 @@ export class Chain {
             })
         }
 
-        if (query.length == 0) return []
+        return this.fetchValues(blockHash, item, query)
+    }
+
+    async queryStorage2(blockHash: string, prefix: string, name: string, keys?: any[]): Promise<any[]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2)
+
+        let query: string[]
+        if (keys == null) {
+            query = await this.client.call('state_getKeys', [storageHash, blockHash])
+        } else {
+            query = keys.map(arg => {
+                return storageHash + this.getStorageItemKeysHash(item, item.keys.length > 1 ? arg : [arg])
+            })
+        }
+
+        return this.fetchValues(blockHash, item, query)
+    }
+
+    private async fetchValues(blockHash: string, item: StorageItem, rawKeys: string[]): Promise<any[]> {
+        if (rawKeys.length == 0) return []
         let res: {changes: [key: string, value: string][]}[] = await this.client.call(
             'state_queryStorageAt',
-            [query, blockHash]
+            [rawKeys, blockHash]
         )
         assert(res.length == 1)
         // Response from chain node can't contain key duplicates,
         // but our query list can, hence the following
         // value matching procedure
         let changes = new Map(res[0].changes)
-        return query.map(k => {
+        return rawKeys.map(k => {
             let v = changes.get(k)
             return this.decodeStorageValue(item, v)
         })
     }
 
-    private decodeStorageValue(item: StorageItem, value: any) {
+    async getKeys(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any[]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, args)
+        let res: string[] = await this.client.call('state_getKeys', [storageHash, blockHash])
+        return res.map(k => this.decodeStorageKey(item, k))
+    }
+
+    async getRawKeys(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<string[]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, args)
+        return await this.client.call('state_getKeys', [storageHash, blockHash])
+    }
+
+    async *getKeysPaged(pageSize: number, blockHash: string, prefix: string, name: string, ...args: any[]): AsyncIterable<any[]> {
+        assert(pageSize > 0)
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, args)
+        let lastKey = null
+        while (true) {
+            let res: string[] = await this.client.call('state_getKeysPaged', [storageHash, pageSize, lastKey, blockHash])
+            if (res.length == 0) return
+
+            yield res.map(k => this.decodeStorageKey(item, k))
+
+            if (res.length == pageSize) {
+                lastKey = last(res)
+            } else {
+                return
+            }
+        }
+    }
+
+    async getPairs(blockHash: string, prefix: string, name: string, ...args: any[]): Promise<[key: any, value: any][]> {
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, args)
+
+        let query: string[] = await this.client.call('state_getKeys', [storageHash, blockHash])
+        if (query.length == 0) return []
+
+        let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+            'state_queryStorageAt',
+            [query, blockHash]
+        )
+        assert(res.length == 1)
+        return res[0].changes.map(v => this.decodeStoragePair(item, v))
+    }
+
+    async *getPairsPaged(pageSize: number, blockHash: string, prefix: string, name: string, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
+        assert(pageSize > 0)
+        let item = this.getStorageItem(prefix, name)
+        let storageHash = sto.getNameHash(prefix) + sto.getNameHash(name).slice(2) + this.getStorageItemKeysHash(item, args)
+        let lastKey = null
+        while (true) {
+            let query: string[] = await this.client.call('state_getKeysPaged', [storageHash, pageSize, lastKey, blockHash])
+            if (query.length == 0) return
+
+            let res: {changes: [key: string, value: string][]}[] = await this.client.call(
+                'state_queryStorageAt',
+                [query, blockHash]
+            )
+            assert(res.length == 1)
+
+            yield res[0].changes.map(v => this.decodeStoragePair(item, v))
+
+            if (query.length == pageSize) {
+                lastKey = last(query)
+            } else {
+                return
+            }
+        }
+    }
+
+    private decodeStoragePair(item: StorageItem, pair: [key: string, value: string]): [key: any, value: any] {
+        let decodedKey = this.decodeStorageKey(item, pair[0])
+        let decodedValue = this.decodeStorageValue(item, pair[1])
+        return [decodedKey, decodedValue]
+    }
+
+    private decodeStorageValue(item: StorageItem, value: any): any {
         if (value == null) {
             switch(item.modifier) {
                 case 'Optional':
@@ -237,7 +335,36 @@ export class Chain {
         return this.scaleCodec.decodeBinary(item.value, value)
     }
 
+    private decodeStorageKey(item: StorageItem, key: string): any {
+        let res: any[] = []
+        let src = new Src(key)
+        src.skip(32)
+        for (let i = 0; i < item.keys.length; i++) {
+            switch(item.hashers[i]) {
+                case 'Identity':
+                    break
+                case 'Blake2_128Concat':
+                    src.skip(16)
+                    break
+                case 'Twox64Concat':
+                    src.skip(8)
+                    break
+                case 'Blake2_128':
+                case 'Twox128':
+                case 'Blake2_256':
+                case 'Twox256':
+                    throw new Error(`Original value of storage item key can't be restored from ${item.hashers[i]} encoding`)
+                default:
+                    throw unexpectedCase(item.hashers[i])
+            }
+            res.push(this.scaleCodec.decode(item.keys[i], src))
+        }
+        src.assertEOF()
+        return res.length > 1 ? res : res[0]
+    }
+
     private getStorageItemKeysHash(item: StorageItem, keys: any[]) {
+        assert(keys.length <= item.hashers.length)
         let hash = ''
         for (let i = 0; i < keys.length; i++) {
             hash += sto.getKeyHash(

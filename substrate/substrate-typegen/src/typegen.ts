@@ -12,17 +12,17 @@ import {
     QualifiedName,
     StorageItem,
     Type
-} from "@subsquid/substrate-metadata"
-import {SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
-import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {getStorageItemTypeHash} from "@subsquid/substrate-metadata/lib/storage"
-import {assertNotNull, def, last, maybeLast} from "@subsquid/util-internal"
-import {OutDir, Output} from "@subsquid/util-internal-code-printer"
-import {toCamelCase} from "@subsquid/util-naming"
-import {Interfaces} from "./ifs"
-import {assignNames} from "./names"
-import {groupBy, isEmptyVariant, upperCaseFirst} from "./util"
+} from '@subsquid/substrate-metadata'
+import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
+import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
+import {OutDir, Output} from '@subsquid/util-internal-code-printer'
+import {toCamelCase} from '@subsquid/util-naming'
+import {Interfaces} from './ifs'
+import {assignNames} from './names'
+import {groupBy, isEmptyVariant, upperCaseFirst} from './util'
 
 
 export interface TypegenOptions {
@@ -233,81 +233,97 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {Block, Chain, ChainContext, BlockContext, Result, Option} from './support'`)
+        out.line(`import {Block, BlockContext, Chain, ChainContext, Option, Result, StorageBase} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
+
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
             let [prefix, name] = qualifiedName.split('.')
+
             out.line()
-            out.block(`export class ${prefix}${name}Storage`, () => {
-                out.line(`private readonly _chain: Chain`)
-                out.line(`private readonly blockHash: string`)
+            out.block(`export class ${prefix}${name}Storage extends StorageBase`, () => {
+                out.block(`protected getPrefix()`, () => {
+                    out.line(`return '${prefix}'`)
+                })
                 out.line()
-                out.line(`constructor(ctx: BlockContext)`)
-                out.line(`constructor(ctx: ChainContext, block: Block)`)
-                out.block(`constructor(ctx: BlockContext, block?: Block)`, () => {
-                    out.line(`block = block || ctx.block`)
-                    out.line(`this.blockHash = block.hash`)
-                    out.line(`this._chain = ctx._chain`)
+                out.block(`protected getName()`, () => {
+                    out.line(`return '${name}'`)
                 })
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)
                     let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
-                    let ifs = this.getInterface(v.chain)
-                    let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
-                    let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
-
                     out.line()
                     out.blockComment(v.def.docs)
-                    out.block(`get is${versionName}()`, () => {
-                        out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') === '${hash}'`)
+                    out.block(`get is${versionName}(): boolean`, () => {
+                        out.line(`return this.getTypeHash() === '${hash}'`)
                     })
-
-                    if (isEmptyVariant(v.chain.description.types[v.def.value])) {
+                    if (isUnitStorageItem(v)) {
                         // Meaning storage item can't hold any value
-                        // Let's just silently omit .get method for this case
+                        // Let's just silently omit `asVxx` getter for this case
                     } else {
                         out.line()
                         out.blockComment(v.def.docs)
-                        let returnType = qualifiedTypes[qualifiedTypes.length - 1]
-                        if (v.def.modifier == 'Optional') {
-                            returnType = `${returnType} | undefined`
-                        }
-                        let keyTypes = qualifiedTypes.slice(0, qualifiedTypes.length - 1)
-                        let keyNames = keyTypes.map((type, idx) => {
-                            if (qualifiedTypes.length == 2) {
-                                return `key`
-                            } else {
-                                return `key${idx + 1}`
-                            }
-                        })
-
-                        let args = ['this.blockHash', `'${prefix}'`, `'${name}'`]
-                        out.block(`async getAs${versionName}(${keyNames.map((k, idx) => `${k}: ${keyTypes[idx]}`).join(', ')}): Promise<${returnType}>`, () => {
+                        out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
                             out.line(`assert(this.is${versionName})`)
-                            out.line(`return this._chain.getStorage(${args.concat(keyNames).join(', ')})`)
+                            out.line(`return this as any`)
                         })
-                        if (keyNames.length > 0) {
-                            out.line()
-                            out.block(`async getManyAs${versionName}(keys: ${keyNames.length > 1 ? `[${keyTypes.join(', ')}]` : keyTypes[0]}[]): Promise<(${returnType})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                let query = keyNames.length > 1 ? 'keys' : 'keys.map(k => [k])'
-                                out.line(`return this._chain.queryStorage(${args.concat(query).join(', ')})`)
-                            })
-                            out.line()
-                            out.block(`async getAllAs${versionName}(): Promise<(${qualifiedTypes[qualifiedTypes.length - 1]})[]>`, () => {
-                                out.line(`assert(this.is${versionName})`)
-                                out.line(`return this._chain.queryStorage(${args.join(', ')})`)
-                            })
-                        }
                     }
                 })
+            })
+
+            versions.forEach(v => {
+                if (isUnitStorageItem(v)) return // No asVxx getter
+
+                let versionName = this.getVersionName(v.chain)
+                let ifs = this.getInterface(v.chain)
+                let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
+                let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
+                let valueType = qualifiedTypes.pop()!
+                let returnType = v.def.modifier == 'Optional' ? `(${valueType} | undefined)` : valueType
+                let keyTypes = qualifiedTypes
+
+                let keyArgs = keyTypes.map((texp, idx) => {
+                    let name = keyTypes.length > 1 ? `key${idx + 1}` : 'key'
+                    return name + ': ' + texp
+                })
+
+                let keyTuple = keyTypes.length == 1 ? keyTypes[0] : `[${keyTypes.join(', ')}]`
+                let keyValueTuple = `[k: ${keyTuple}, v: ${valueType}]`
+
+                function* enumeratePartialKeyArgs(leading?: string): Iterable<string> {
+                    let list: string[] = []
+                    if (leading) {
+                        list.push(leading)
+                    }
+                    yield list.join(', ')
+                    for (let arg of keyArgs) {
+                        list.push(arg)
+                        yield list.join(', ')
+                    }
+                }
+
                 out.line()
-                out.blockComment([
-                    'Checks whether the storage item is defined for the current chain version.'
-                ])
-                out.block(`get isExists(): boolean`, () => {
-                    out.line(`return this._chain.getStorageItemTypeHash('${prefix}', '${name}') != null`)
+                out.blockComment(v.def.docs)
+                out.block(`export interface ${prefix}${name}Storage${versionName}`, () => {
+                    out.line(`get(${keyArgs.join(', ')}): Promise<${returnType}>`)
+                    if (keyArgs.length > 0) {
+                        out.line(`getAll(): Promise<${valueType}[]>`)
+                        out.line(`getMany(keys: ${keyTuple}[]): Promise<${returnType}[]>`)
+                        if (isStorageKeyDecodable(v.def)) {
+                            for (let args of enumeratePartialKeyArgs()) {
+                                out.line(`getKeys(${args}): Promise<${keyTuple}[]>`)
+                            }
+                            for (let args of enumeratePartialKeyArgs('pageSize: number')) {
+                                out.line(`getKeysPaged(${args}): AsyncIterable<${keyTuple}[]>`)
+                            }
+                            for (let args of enumeratePartialKeyArgs()) {
+                                out.line(`getPairs(${args}): Promise<${keyValueTuple}[]>`)
+                            }
+                            for (let args of enumeratePartialKeyArgs('pageSize: number')) {
+                                out.line(`getPairsPaged(${args}): AsyncIterable<${keyValueTuple}[]>`)
+                            }
+                        }
+                    }
                 })
             })
         })
@@ -327,10 +343,10 @@ export class Typegen {
         let requested = Array.isArray(req) ? new Set(req) : undefined
         if (requested?.size === 0) return new Map()
 
-        let list = this.chain().flatMap(chain => extract(chain))
-        let items = groupBy(list, i => i.name)
+        let list = this.chain().flatMap((chain) => extract(chain))
+        let items = groupBy(list, (i) => i.name)
 
-        requested?.forEach(name => {
+        requested?.forEach((name) => {
             if (!items.has(name)) {
                 throw new Error(`${name} is not defined by the chain metadata`)
             }
@@ -339,7 +355,7 @@ export class Typegen {
         items.forEach((versions, name) => {
             if (requested == null || requested.has(name)) {
                 let unique: Item<T>[] = []
-                versions.forEach(v => {
+                versions.forEach((v) => {
                     let prev = maybeLast(unique)
                     if (prev && hash(v.chain, name) === hash(prev.chain, name)) {
                     } else {
@@ -366,12 +382,12 @@ export class Typegen {
 
     @def
     private specNameNotChanged(): boolean {
-        return new Set(this.chain().map(v => v.specName)).size < 2
+        return new Set(this.chain().map((v) => v.specName)).size < 2
     }
 
     @def
     chain(): VersionDescription[] {
-        return this.options.specVersions.map(v => {
+        return this.options.specVersions.map((v) => {
             let metadata = decodeMetadata(v.metadata)
             let oldTypes: OldTypes | undefined
             if (isPreV14(metadata)) {
@@ -389,7 +405,7 @@ export class Typegen {
                 types: d.types,
                 events: new eac.Registry(d.types, d.event),
                 calls: new eac.Registry(d.types, d.call),
-                description: d
+                description: d,
             }
         })
     }
@@ -405,10 +421,12 @@ export class Typegen {
     private importInterfaces(out: Output): Set<VersionDescription> {
         let set = new Set<VersionDescription>()
         out.lazy(() => {
-            Array.from(set).sort((a, b) => a.blockNumber - b.blockNumber).forEach(v => {
-                let name = toCamelCase(this.getVersionName(v))
-                out.line(`import * as ${name} from './${name}'`)
-            })
+            Array.from(set)
+                .sort((a, b) => a.blockNumber - b.blockNumber)
+                .forEach((v) => {
+                    let name = toCamelCase(this.getVersionName(v))
+                    out.line(`import * as ${name} from './${name}'`)
+                })
         })
         return set
     }
@@ -442,3 +460,24 @@ interface Item<T> {
     chain: VersionDescription
 }
 
+
+/**
+ * Returns true when storage item actually can't hold any value
+ */
+function isUnitStorageItem(item: Item<StorageItem>): boolean {
+    return isEmptyVariant(item.chain.description.types[item.def.value])
+}
+
+
+function isStorageKeyDecodable(item: StorageItem): boolean {
+    return item.hashers.every(hasher => {
+        switch(hasher) {
+            case 'Blake2_128Concat':
+            case 'Twox64Concat':
+            case 'Identity':
+                return true
+            default:
+                return false
+        }
+    })
+}
