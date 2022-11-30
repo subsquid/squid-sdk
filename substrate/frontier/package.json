@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@ethersproject/transactions": "^5.7.0",
-    "@subsquid/substrate-metadata": "^2.0.0"
+    "@subsquid/substrate-metadata": "^2.1.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",

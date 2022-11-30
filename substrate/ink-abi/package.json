@@ -17,8 +17,8 @@
     "test": "mocha lib/test/*.test.js"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^1.0.5",
-    "@subsquid/substrate-metadata": "^2.0.0",
+    "@subsquid/scale-codec": "^1.1.0",
+    "@subsquid/substrate-metadata": "^2.1.0",
     "@subsquid/util-internal": "^1.0.0",
     "ajv": "^8.11.0"
   },

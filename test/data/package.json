@@ -7,8 +7,8 @@
   },
   "devDependencies": {
     "@subsquid/rpc-client": "^1.0.2",
-    "@subsquid/scale-codec": "^1.0.5",
-    "@subsquid/substrate-metadata": "^2.0.0",
+    "@subsquid/scale-codec": "^1.1.0",
+    "@subsquid/substrate-metadata": "^2.1.0",
     "@subsquid/substrate-metadata-explorer": "^1.0.9",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-counters": "^0.0.1",
