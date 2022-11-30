@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "add `Src.skip()`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

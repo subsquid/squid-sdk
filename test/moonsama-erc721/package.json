@@ -3,23 +3,21 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "evm-typegen": "npx squid-evm-typegen --input src/erc721.json --output src/erc721.ts"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/frontier": "^0.0.1",
     "@subsquid/graphql-server": "^3.2.4",
     "@subsquid/substrate-processor": "^2.0.2",
-    "@subsquid/typeorm-store": "^0.1.5",
     "@subsquid/typeorm-migration": "^0.1.4",
+    "@subsquid/typeorm-store": "^0.1.5",
     "dotenv": "^10.0.0",
-    "pg": "^8.7.3",
-    "typeorm": "^0.3.6",
     "ethers": "^5.7.2",
-    "@subsquid/substrate-frontier-evm": "~0.0.1"
+    "pg": "^8.7.3",
+    "typeorm": "^0.3.6"
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "^2.0.0",
-    "@subsquid/substrate-metadata-explorer": "^1.0.9",
     "@subsquid/substrate-typegen": "^1.5.1",
     "@subsquid/typeorm-codegen": "^0.3.0",
     "@types/node": "^16.11.41",

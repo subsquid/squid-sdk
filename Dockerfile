@@ -18,7 +18,7 @@ FROM node AS substrate-ingest
 COPY --from=substrate-ingest-builder /squid/common/deploy /squid
 WORKDIR /squid/substrate-ingest
 EXPOSE 9090
-ENTRYPOINT ["node", "/squid/substrate-ingest/bin/run.js", "--prom-port", "9090"]
+ENTRYPOINT ["node", "/squid/substrate/substrate-ingest/bin/run.js", "--prom-port", "9090"]
 
 
 FROM builder AS chain-status-service-builder
@@ -38,6 +38,6 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate
 
 FROM node AS substrate-explorer
 COPY --from=substrate-explorer-builder /squid/common/deploy /squid
-WORKDIR /squid/substrate-explorer
+WORKDIR /squid/substrate/substrate-explorer
 ENTRYPOINT [ "node", "lib/main.js"]
 EXPOSE 3000

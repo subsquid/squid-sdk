@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "generates new storage facade interface with more querying options",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

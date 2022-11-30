@@ -1,4 +1,4 @@
-import {getEvmLog} from "@subsquid/substrate-frontier-evm"
+import {getEvmLog} from "@subsquid/frontier"
 import {SubstrateProcessor} from "@subsquid/substrate-processor"
 import {TypeormDatabase} from "@subsquid/typeorm-store"
 import {contractAddress, createContractEntity, getContractEntity} from "./contract"

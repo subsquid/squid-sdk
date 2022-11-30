@@ -1,48 +1,45 @@
 import assert from 'assert'
-import {Block, Chain, ChainContext, BlockContext, Result} from './support'
+import {Block, BlockContext, Chain, ChainContext, Option, Result, StorageBase} from './support'
 import * as v1 from './v1'
 
-export class SystemAccountStorage {
-  private readonly _chain: Chain
-  private readonly blockHash: string
+export class SystemAccountStorage extends StorageBase {
+    protected getPrefix() {
+        return 'System'
+    }
 
-  constructor(ctx: BlockContext)
-  constructor(ctx: ChainContext, block: Block)
-  constructor(ctx: BlockContext, block?: Block) {
-    block = block || ctx.block
-    this.blockHash = block.hash
-    this._chain = ctx._chain
-  }
+    protected getName() {
+        return 'Account'
+    }
 
-  /**
-   *  The full account information for a particular account ID.
-   */
-  get isV1() {
-    return this._chain.getStorageItemTypeHash('System', 'Account') === 'eb40f1d91f26d72e29c60e034d53a72b9b529014c7e108f422d8ad5f03f0c902'
-  }
+    /**
+     *  The full account information for a particular account ID.
+     */
+    get isV1(): boolean {
+        return this.getTypeHash() === 'eb40f1d91f26d72e29c60e034d53a72b9b529014c7e108f422d8ad5f03f0c902'
+    }
 
-  /**
-   *  The full account information for a particular account ID.
-   */
-  async getAsV1(key: Uint8Array): Promise<v1.AccountInfo> {
-    assert(this.isV1)
-    return this._chain.getStorage(this.blockHash, 'System', 'Account', key)
-  }
+    /**
+     *  The full account information for a particular account ID.
+     */
+    get asV1(): SystemAccountStorageV1 {
+        assert(this.isV1)
+        return this as any
+    }
+}
 
-  async getManyAsV1(keys: Uint8Array[]): Promise<(v1.AccountInfo)[]> {
-    assert(this.isV1)
-    return this._chain.queryStorage(this.blockHash, 'System', 'Account', keys.map(k => [k]))
-  }
-
-  async getAllAsV1(): Promise<(v1.AccountInfo)[]> {
-    assert(this.isV1)
-    return this._chain.queryStorage(this.blockHash, 'System', 'Account')
-  }
-
-  /**
-   * Checks whether the storage item is defined for the current chain version.
-   */
-  get isExists(): boolean {
-    return this._chain.getStorageItemTypeHash('System', 'Account') != null
-  }
+/**
+ *  The full account information for a particular account ID.
+ */
+export interface SystemAccountStorageV1 {
+    get(key: Uint8Array): Promise<v1.AccountInfo>
+    getAll(): Promise<v1.AccountInfo[]>
+    getMany(keys: Uint8Array[]): Promise<v1.AccountInfo[]>
+    getKeys(): Promise<Uint8Array[]>
+    getKeys(key: Uint8Array): Promise<Uint8Array[]>
+    getKeysPaged(pageSize: number): AsyncIterable<Uint8Array[]>
+    getKeysPaged(pageSize: number, key: Uint8Array): AsyncIterable<Uint8Array[]>
+    getPairs(): Promise<[k: Uint8Array, v: v1.AccountInfo][]>
+    getPairs(key: Uint8Array): Promise<[k: Uint8Array, v: v1.AccountInfo][]>
+    getPairsPaged(pageSize: number): AsyncIterable<[k: Uint8Array, v: v1.AccountInfo][]>
+    getPairsPaged(pageSize: number, key: Uint8Array): AsyncIterable<[k: Uint8Array, v: v1.AccountInfo][]>
 }
