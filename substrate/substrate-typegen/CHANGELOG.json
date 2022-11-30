@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/substrate-typegen_v2.0.0",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "generates new storage facade interface with more querying options"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.5` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.0.0` to `^2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.1",
       "tag": "@subsquid/substrate-typegen_v1.5.1",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

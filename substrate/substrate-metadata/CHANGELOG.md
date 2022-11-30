@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+
+## 2.1.0
+Wed, 30 Nov 2022 19:36:06 GMT
+
+### Minor changes
+
+- add `reef` chain types bundle
 
 ## 2.0.0
 Sun, 06 Nov 2022 18:24:20 GMT

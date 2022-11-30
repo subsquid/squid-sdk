@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/evm-typegen_v2.0.1",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix startup crash"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/evm-typegen_v2.0.0",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+
+## 2.0.0
+Wed, 30 Nov 2022 19:36:06 GMT
+
+### Breaking changes
+
+- generates new storage facade interface with more querying options
 
 ## 1.5.1
 Sun, 27 Nov 2022 18:43:31 GMT

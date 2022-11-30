@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+
+## 0.3.1
+Wed, 30 Nov 2022 19:36:06 GMT
+
+### Patches
+
+- remove lookup fields from generated entities (bi-directional `@OneToOne` relations are not yet supported)
 
 ## 0.3.0
 Sun, 27 Nov 2022 18:43:31 GMT

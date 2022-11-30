@@ -2,6 +2,31 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/substrate-processor_v2.1.0",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove unused imports"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "new `ctx._chain` functions for quering storage"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.5` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.0.0` to `^2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.2",
       "tag": "@subsquid/substrate-processor_v2.0.2",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

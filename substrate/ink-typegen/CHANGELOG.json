@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/ink-typegen_v0.0.4",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-typegen\" from `^1.5.1` to `^2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/ink-typegen_v0.0.3",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/typeorm-codegen_v0.3.1",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove lookup fields from generated entities (bi-directional `@OneToOne` relations are not yet supported)"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/typeorm-codegen_v0.3.0",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

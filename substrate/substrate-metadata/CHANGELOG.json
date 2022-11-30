@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/substrate-metadata_v2.1.0",
+      "date": "Wed, 30 Nov 2022 19:36:06 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `reef` chain types bundle"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.0.5` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-metadata_v2.0.0",
       "date": "Sun, 06 Nov 2022 18:24:20 GMT",

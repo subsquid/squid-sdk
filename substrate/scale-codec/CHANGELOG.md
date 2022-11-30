@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Sat, 15 Oct 2022 11:43:02 GMT and should not be manually modified.
+This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+
+## 1.1.0
+Wed, 30 Nov 2022 19:36:06 GMT
+
+### Minor changes
+
+- add `Src.skip()`
 
 ## 1.0.5
 Sat, 15 Oct 2022 11:43:02 GMT
