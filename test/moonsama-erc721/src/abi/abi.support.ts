@@ -39,6 +39,24 @@ export class Func<Args extends any[], FieldArgs, Result> {
         const decoded = this.abi.decodeFunctionResult(this.fragment, output)
         return decoded.length > 1 ? decoded : decoded[0]
     }
+
+    tryDecodeResult(output: ethers.utils.BytesLike): Result | undefined {
+        try {
+            return this.decodeResult(output)
+        } catch(err: any) {
+            return undefined
+        }
+    }
+}
+
+
+export function isFunctionResultDecodingError(val: unknown): val is Error & {data: string} {
+    if (!(val instanceof Error)) return false
+    let err = val as any
+    return err.code == 'CALL_EXCEPTION'
+        && typeof err.data == 'string'
+        && !err.errorArgs
+        && !err.errorName
 }
 
 
@@ -77,8 +95,7 @@ export class ContractBase {
         if (typeof blockOrAddress === 'string')  {
             this.blockHeight = ctx.block.height
             this.address = ethers.utils.getAddress(blockOrAddress)
-        }
-        else  {
+        } else  {
             if (address == null) {
                 throw new Error('missing contract address')
             }
@@ -89,7 +106,10 @@ export class ContractBase {
 
     async eth_call<Args extends any[], FieldArgs, Result>(func: Func<Args, FieldArgs, Result>, args: Args): Promise<Result> {
         let data = func.encode(args)
-        let result = await this._chain.client.call('eth_call', [{to: this.address, data}, this.blockHeight])
+        let result = await this._chain.client.call('eth_call', [
+            {to: this.address, data},
+            '0x'+this.blockHeight.toString(16)
+        ])
         return func.decodeResult(result)
     }
 }

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "fix startup crash",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

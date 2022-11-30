@@ -139,8 +139,9 @@ interface Spec {
 }
 
 
-function specArgument(value: string, prev: Spec[]): Spec[] {
+function specArgument(value: string, prev?: Spec[]): Spec[] {
     let spec = parseSpec(value)
+    prev = prev || []
     prev.push(spec)
     return prev
 }
