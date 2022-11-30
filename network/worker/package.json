@@ -1,0 +1,33 @@
+{
+  "name": "@subsquid/worker",
+  "version": "0.0.0",
+  "description": "Subsquid network worker CLI",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "squid-worker": "./bin/main.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/logger": "^0.3.0",
+    "@subsquid/rpc-client": "^0.1.6",
+    "@subsquid/scale-codec": "^1.1.0",
+    "@subsquid/substrate-metadata": "^2.1.0",
+    "@subsquid/util-internal": "^1.0.0",
+    "commander": "^9.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.41",
+    "typescript": "~4.7.4"
+  }
+}

@@ -482,6 +482,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/worker",
+      "projectFolder": "network/worker",
+      "shouldPublish": false
+    },
+    {
       "packageName": "workspace",
       "projectFolder": "ops/workspace",
       "shouldPublish": false
