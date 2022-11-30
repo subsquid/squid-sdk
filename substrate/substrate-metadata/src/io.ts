@@ -65,6 +65,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'kintsugi':
         case 'kintsugi-parachain': // real spec name
             return require('./old/definitions/kintsugi').bundle
+        case 'reef':
+            return require('./old/definitions/reef').bundle
         default:
             return undefined
     }

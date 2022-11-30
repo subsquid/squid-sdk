@@ -74,6 +74,16 @@ mangata:
 		-e wss://mangata-x.api.onfinality.io/public-ws
 		-c 10
 
+
+reef:
+	@node lib/main.js --out $(DB) \
+		-e wss://rpc.reefscan.com/ws \
+		-c 20 \
+		--prom-port 0 \
+		--write-batch-size 30 \
+		--start-block 4500000
+
+
 up:
 	@docker-compose up -d
 
@@ -82,4 +92,4 @@ down:
 	@docker-compose down
 
 
-.PHONY: up down kusama moonriver moonbeam karura astar shibuya
+.PHONY: up down kusama moonriver moonbeam karura astar shibuya crab mangata reef
