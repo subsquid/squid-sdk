@@ -23,10 +23,11 @@
     "@polkadot/wasm-crypto": "^6.3.1",
     "@polkadot/x-randomvalues": "^10.1.14",
     "@subsquid/logger": "^0.3.0",
-    "@subsquid/rpc-client": "^0.1.6",
+    "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.1.0",
     "@subsquid/substrate-metadata": "^2.1.0",
     "@subsquid/util-internal": "^1.0.0",
+    "@subsquid/util-internal-hex": "^0.0.1",
     "commander": "^9.3.0"
   },
   "devDependencies": {

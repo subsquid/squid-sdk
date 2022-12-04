@@ -132,11 +132,11 @@ export class Interfaces {
                 out.line(`export type ${name} = never`)
                 return
             }
-            out.line(`export type ${name} = ${type.variants.map(v => name + '_' + v.name).join(' | ')}`)
+            out.line(`export type ${name} = ${type.variants.map(v => name + '_' + v.name.replace('.', '_')).join(' | ')}`)
             type.variants.forEach(v => {
                 out.line()
                 out.blockComment(v.docs)
-                out.block(`export interface ${name + '_' + v.name}`, () => {
+                out.block(`export interface ${name + '_' + v.name.replace('.', '_')}`, () => {
                     out.line(`__kind: '${v.name}'`)
                     if (v.fields.length > 0) {
                         if (v.fields[0].name != null) {

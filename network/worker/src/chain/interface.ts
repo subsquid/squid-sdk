@@ -11,25 +11,18 @@ export interface Task {
     command: Uint8Array[]
 }
 
-export type Event = Event_Fallback | Event_Worker
+export type Event = Event_Fallback
 
 export interface Event_Fallback {
     __kind: 'Fallback'
 }
 
-export interface Event_Worker {
-    __kind: 'Worker'
-    value: WorkerEvent
+export type Call = Call_Worker_register | Call_Fallback
+
+export interface Call_Worker_register {
+    __kind: 'Worker.register'
 }
 
-export type WorkerEvent = WorkerEvent_Fallback | WorkerEvent_RunTask
-
-export interface WorkerEvent_Fallback {
+export interface Call_Fallback {
     __kind: 'Fallback'
-}
-
-export interface WorkerEvent_RunTask {
-    __kind: 'RunTask'
-    workerId: WorkerId
-    task: Task
 }

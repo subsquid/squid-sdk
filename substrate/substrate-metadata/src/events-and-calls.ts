@@ -15,19 +15,9 @@ export class Registry {
     private hashes: Record<QualifiedName, string> = {}
 
     constructor(private types: Type[], ti: Ti) {
-        let pallets = types[ti]
-        assert(pallets.kind == TypeKind.Variant)
-        pallets.variants.forEach(pallet => {
-            assert(pallet.fields.length == 1)
-            let palletType = types[pallet.fields[0].type]
-            assert(palletType.kind == TypeKind.Variant)
-            palletType.variants.forEach(def => {
-                this.definitions[`${pallet.name}.${def.name}`] = {
-                    ...def,
-                    pallet: pallet.name
-                }
-            })
-        })
+        for (let def of getGlobalVariants(types, ti)) {
+            this.definitions[`${def.pallet}.${def.name}`] = def
+        }
     }
 
     get(name: QualifiedName): Definition {
@@ -47,14 +37,33 @@ export class Registry {
 
     private computeHash(name: QualifiedName): string {
         let def = this.get(name)
-        let fields = def.fields.map(f => {
-            return {
-                name: f.name,
-                type: getTypeHash(this.types, f.type)
-            }
-        })
-        return sha256({
-            fields
-        })
+        return getVariantHash(this.types, def)
     }
+}
+
+
+export function* getGlobalVariants(types: Type[], ti: Ti): Iterable<Definition> {
+    let pallets = types[ti]
+    assert(pallets.kind == TypeKind.Variant)
+    for (let pallet of pallets.variants) {
+        assert(pallet.fields.length == 1)
+        let variantType = types[pallet.fields[0].type]
+        assert(variantType.kind == TypeKind.Variant)
+        for (let v of variantType.variants) {
+            yield {...v, pallet: pallet.name}
+        }
+    }
+}
+
+
+export function getVariantHash(types: Type[], variant: Variant): string {
+    let fields = variant.fields.map(f => {
+        return {
+            name: f.name,
+            type: getTypeHash(types, f.type)
+        }
+    })
+    return sha256({
+        fields
+    })
 }
