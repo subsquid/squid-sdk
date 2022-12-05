@@ -133,19 +133,34 @@ export class TypeDefinitions {
 export const definitions = new TypeDefinitions({
     types: {
         H256: '[u8; 32]',
+        DockerImage: 'H256',
+        TaskId: 'H256',
         WorkerId: 'H256',
-        RequestId: 'H256',
         Task: {
-            request_id: 'RequestId',
-            docker_image: 'H256',
+            task_id: 'TaskId',
+            docker_image: 'DockerImage',
             command: 'Vec<Vec<u8>>'
         },
+        TaskResult: {
+            exit_code: 'u32',
+            stdout: 'Vec<u8>',
+            stderr: 'Vec<u8>'
+        },
         Event: {
-            _enum: {}
+            _enum: {
+                'Worker.RunTask': {
+                    worker_id: 'WorkerId',
+                    task: 'Task'
+                }
+            }
         },
         Call: {
             _enum: {
-                'Worker.register': 'Null'
+                'Worker.register': 'Null',
+                'Worker.done': {
+                    task_id: 'TaskId',
+                    result: 'TaskResult'
+                }
             }
         }
     }
