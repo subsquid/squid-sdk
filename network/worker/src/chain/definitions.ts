@@ -132,10 +132,11 @@ export class TypeDefinitions {
 
 export const definitions = new TypeDefinitions({
     types: {
+        AccountId: '[u8; 32]',
         H256: '[u8; 32]',
         DockerImage: 'H256',
         TaskId: 'H256',
-        WorkerId: 'H256',
+        WorkerId: 'AccountId',
         Task: {
             task_id: 'TaskId',
             docker_image: 'DockerImage',
