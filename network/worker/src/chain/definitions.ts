@@ -16,12 +16,12 @@ export interface GlobalEnum {
 }
 
 
-export function toGlobalEnum(flatten: {__kind: string}): GlobalEnum {
-    let [pallet, name] = flatten.__kind
+export function toGlobalEnum(flat: {__kind: string}): GlobalEnum {
+    let [pallet, name] = flat.__kind.split('.')
     return {
         __kind: pallet,
         value: {
-            ...flatten,
+            ...flat,
             __kind: name
         }
     }

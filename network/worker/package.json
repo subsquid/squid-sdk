@@ -26,6 +26,7 @@
     "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.1.0",
     "@subsquid/substrate-metadata": "^2.1.0",
+    "@subsquid/ss58-codec": "^0.1.1",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
     "commander": "^9.3.0"

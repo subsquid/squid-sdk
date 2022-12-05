@@ -1,3 +1,7 @@
+import {isReady as isCryptoReady, waitReady as initCrypto} from '@polkadot/wasm-crypto'
+
+
+export {isCryptoReady, initCrypto}
 
 
 export class FIFOCache<T> {

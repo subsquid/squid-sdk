@@ -19,4 +19,8 @@ export class KeyPair {
     sign(bytes: Uint8Array): Uint8Array {
         return sr25519Sign(this.pubKey, this.privateKey(), bytes)
     }
+
+    get signatureType(): number {
+        return 1
+    }
 }

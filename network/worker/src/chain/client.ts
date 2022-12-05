@@ -1,14 +1,19 @@
+import {blake2b} from '@polkadot/wasm-crypto'
 import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
-import {Codec as ScaleCodec} from '@subsquid/scale-codec'
+import {ByteSink, Codec as ScaleCodec, HexSink} from '@subsquid/scale-codec'
 import {ChainDescription, decodeMetadata, getChainDescriptionFromMetadata} from '@subsquid/substrate-metadata'
+import * as ss58 from '@subsquid/ss58-codec'
 import {def} from '@subsquid/util-internal'
-import {definitions, GlobalEnum} from './definitions'
+import {decodeHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+import {definitions, GlobalEnum, toGlobalEnum} from './definitions'
 import {Call, Event} from './interface'
 import {KeyPair} from './keyPair'
-import {Async, FIFOCache} from './util'
+import {Async, FIFOCache, initCrypto} from './util'
 
 
 export type BlockHash = string
+export type Address = string // Account address in SS58 format
 
 
 export interface BlockHeader {
@@ -20,8 +25,8 @@ export interface BlockHeader {
 
 export interface Transaction {
     call: Call
-    signer?: KeyPair
-    nonce?: bigint
+    author?: KeyPair
+    nonce?: number
     tip?: bigint
 }
 
@@ -51,7 +56,7 @@ export class Client {
     private knownBlocks = new FIFOCache<BlockInfo>(50)
 
     constructor(options: ClientOptions) {
-        this.rpc = new ResilientRpcClient(options.url)
+        this.rpc = new ResilientRpcClient({url: options.url})
     }
 
     async getBlockHeader(hash: BlockHash): Promise<BlockHeader> {
@@ -144,11 +149,78 @@ export class Client {
         return this.rpc.call('chain_getBlockHash', [0])
     }
 
+    @def
+    async getBinaryGenesisHash(): Promise<Uint8Array> {
+        return decodeHex(await this.getGenesisHash())
+    }
+
     async send(tx: Transaction): Promise<string> {
+        assert(tx.author, 'Unsigned transactions are not supported')
+
         let info = this.getBlockInfo(await this.getBestBlockHash())
         let runtimeVersion = await this.addRuntimeVersion(info)
         let meta = await this.addMeta(info)
-        throw new Error('Not implemented')
+
+        let callBytes = meta.encodeCall(toGlobalEnum(tx.call))
+
+        let nonce = tx.nonce ?? await this.getAccountNonce(
+            ss58.encode({
+                bytes: tx.author.getPublicKey(),
+                prefix: meta.getConstant('System', 'SS58Prefix')
+            })
+        )
+
+        let genesis = await this.getBinaryGenesisHash()
+
+        // TODO: use metadata for correct encoding and sane compatibility errors
+        let bytesToSign: Uint8Array
+        {
+            let sink = new ByteSink()
+            sink.bytes(callBytes)
+            sink.u8(0) // immortal era
+            sink.compact(nonce)
+            sink.compact(tx.tip ?? 0)
+            sink.u32(runtimeVersion.specVersion)
+            sink.u32(runtimeVersion.transactionVersion)
+            sink.bytes(genesis)
+            sink.bytes(genesis)
+            bytesToSign = sink.toBytes()
+        }
+
+        await initCrypto()
+
+        let signature = tx.author.sign(
+            bytesToSign.length > 256 ? blake2b(bytesToSign, new Uint8Array(0), 256) : bytesToSign
+        )
+
+        let extrinsic: Uint8Array
+        {
+            let sink = new ByteSink()
+            sink.u8(0b10000000 + 4)
+            sink.u8(0) // Id
+            sink.bytes(tx.author.getPublicKey())
+            sink.u8(tx.author.signatureType)
+            sink.bytes(signature)
+            sink.u8(0) // immortal era
+            sink.compact(nonce)
+            sink.compact(tx.tip ?? 0)
+            sink.bytes(callBytes)
+            extrinsic = sink.toBytes()
+        }
+
+        let payload: string
+        {
+            let sink = new HexSink()
+            sink.compact(extrinsic.length)
+            sink.bytes(extrinsic)
+            payload = sink.toHex()
+        }
+
+        return this.rpc.call('author_submitExtrinsic', [payload])
+    }
+
+    async getAccountNonce(address: Address): Promise<number> {
+        return this.rpc.call('system_accountNextIndex', [address])
     }
 }
 
@@ -168,5 +240,17 @@ class Meta {
 
     decodeEventStorageValue(raw: string | Uint8Array): {event: GlobalEnum}[] {
         return this.codec.decodeBinary(this.description.eventRecordList, raw)
+    }
+
+    getConstant(pallet: string, name: string): any {
+        let def = this.description.constants[pallet]?.[name]
+        if (def == null) {
+            throw new Error(`Constant ${pallet}.${name} is not defined`)
+        }
+        return this.codec.decodeBinary(def.type, def.value)
+    }
+
+    encodeCall(call: GlobalEnum): Uint8Array {
+        return this.codec.encodeToBinary(this.description.call, call)
     }
 }
