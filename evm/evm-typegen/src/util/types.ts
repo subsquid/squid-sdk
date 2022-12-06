@@ -45,7 +45,7 @@ export function getFullTupleType(params: ParamType[]): string {
 
 export function getTupleType(params: ParamType[]): string {
     return '[' + params.map(p => {
-        return p.name ? `${p.name}: ${getType(p)}` : getType(p)
+        return p.name ? `${p.name}: ${getType(p)}` : `_: ${getType(p)}`
     }).join(', ') + ']'
 }
 
