@@ -20,7 +20,7 @@
     "@subsquid/substrate-frontier-evm": "~0.0.1"
   },
   "devDependencies": {
-    "@subsquid/evm-typegen": "^2.0.1",
+    "@subsquid/evm-typegen": "^2.0.2",
     "@subsquid/substrate-metadata-explorer": "^1.0.9",
     "@subsquid/substrate-typegen": "^2.0.0",
     "@subsquid/typeorm-codegen": "^0.3.1",
