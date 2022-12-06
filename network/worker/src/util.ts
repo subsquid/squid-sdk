@@ -1,4 +1,5 @@
 import {isReady as isCryptoReady, waitReady as initCrypto} from '@polkadot/wasm-crypto'
+import {createLogger} from '@subsquid/logger'
 
 
 export {isCryptoReady, initCrypto}
@@ -28,3 +29,24 @@ export class FIFOCache<T> {
 
 
 export type Async<T> = T | Promise<T>
+
+
+export function toBuffer(data: Uint8Array): Buffer {
+    if (Buffer.isBuffer(data)) {
+        return data
+    } else {
+        return Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+    }
+}
+
+
+const LOG = createLogger('sys')
+
+
+export function safeCall(cb: () => void): void {
+    try {
+        cb()
+    } catch(err: any) {
+        LOG.error(err, 'callback exception')
+    }
+}

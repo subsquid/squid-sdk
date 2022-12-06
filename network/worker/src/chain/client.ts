@@ -1,15 +1,15 @@
 import {blake2b} from '@polkadot/wasm-crypto'
 import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
-import {ByteSink, Codec as ScaleCodec, HexSink} from '@subsquid/scale-codec'
-import {ChainDescription, decodeMetadata, getChainDescriptionFromMetadata} from '@subsquid/substrate-metadata'
+import {ByteSink, Codec as ScaleCodec, HexSink, Src} from '@subsquid/scale-codec'
 import * as ss58 from '@subsquid/ss58-codec'
+import {ChainDescription, decodeMetadata, getChainDescriptionFromMetadata} from '@subsquid/substrate-metadata'
 import {def} from '@subsquid/util-internal'
 import {decodeHex} from '@subsquid/util-internal-hex'
 import assert from 'assert'
 import {definitions, GlobalEnum, toGlobalEnum} from './definitions'
 import {Call, Event} from './interface'
 import {KeyPair} from './keyPair'
-import {Async, FIFOCache, initCrypto} from './util'
+import {Async, FIFOCache, initCrypto} from '../util'
 
 
 export type BlockHash = string
@@ -59,8 +59,8 @@ export class Client {
         this.rpc = new ResilientRpcClient({url: options.url})
     }
 
-    async getBlockHeader(hash: BlockHash): Promise<BlockHeader> {
-        let info = this.getBlockInfo(hash)
+    async getHeader(blockHash: string): Promise<BlockHeader> {
+        let info = this.getBlockInfo(blockHash)
         return this.addHeader(info)
     }
 
@@ -103,7 +103,7 @@ export class Client {
     }
 
     private async getMetaFor(block: BlockHash | BlockHeader): Promise<Meta> {
-        let header = typeof block == 'string' ? await this.getBlockHeader(block) : block
+        let header = typeof block == 'string' ? await this.getHeader(block) : block
         let parent = this.getBlockInfo(header.parentHash)
         return this.addMeta(parent)
     }
@@ -140,8 +140,12 @@ export class Client {
         return new Meta(description)
     }
 
-    getBestBlockHash(): Promise<string> {
+    getHead(): Promise<string> {
         return this.rpc.call('chain_getBlockHash')
+    }
+
+    getFinalizedHead(): Promise<string> {
+        return this.rpc.call('chain_getFinalizedHead')
     }
 
     @def
@@ -157,7 +161,7 @@ export class Client {
     async send(tx: Transaction): Promise<string> {
         assert(tx.author, 'Unsigned transactions are not supported')
 
-        let info = this.getBlockInfo(await this.getBestBlockHash())
+        let info = this.getBlockInfo(await this.getHead())
         let runtimeVersion = await this.addRuntimeVersion(info)
         let meta = await this.addMeta(info)
 
@@ -221,6 +225,17 @@ export class Client {
 
     async getAccountNonce(address: Address): Promise<number> {
         return this.rpc.call('system_accountNextIndex', [address])
+    }
+
+    async getTimestamp(blockHash: string): Promise<number> {
+        let raw = await this.rpc.call('state_getStorage', [
+            '0xf0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbb',
+            blockHash
+        ])
+        let src = new Src(raw)
+        let ts = src.u64()
+        src.assertEOF()
+        return Number(ts)
     }
 }
 
