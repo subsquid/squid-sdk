@@ -50,3 +50,77 @@ export function safeCall(cb: () => void): void {
         LOG.error(err, 'callback exception')
     }
 }
+
+
+export class Abort implements AbortSignal {
+    private _isAborted = false
+    private callbacks?: (() => void)[]
+
+    abort(): void {
+        if (this._isAborted) return
+        this._isAborted = true
+        let cbs = this.callbacks
+        if (cbs) {
+            this.callbacks = undefined
+            for (let i = 0; i < cbs.length; i++) {
+                safeCall(cbs[i])
+            }
+        }
+    }
+
+    get isAborted(): boolean {
+        return this._isAborted
+    }
+
+    get isLive(): boolean {
+        return !this._isAborted
+    }
+
+    onAbort(cb: () => void): void {
+        if (this.isAborted) {
+            safeCall(cb)
+        } else if (this.callbacks) {
+            this.callbacks.push(cb)
+        } else {
+            this.callbacks = [cb]
+        }
+    }
+}
+
+
+export interface AbortSignal {
+    readonly isAborted: boolean
+    readonly isLive: boolean
+    onAbort(cb: () => void): void
+}
+
+
+export class Future<T> {
+    public readonly promise: Promise<T>
+    private _resolve!: (value: T) => void
+    private _reject!: (err: Error) => void
+    private _isReady = false
+
+    constructor() {
+        this.promise = new Promise<T>((resolve, reject) => {
+            this._resolve = resolve
+            this._reject = reject
+        })
+    }
+
+    resolve(value: T): void {
+        this._isReady = true
+        this._resolve(value)
+    }
+
+    reject(err: Error): void {
+        this._isReady = true
+        this._reject(err)
+    }
+
+    get isReady(): boolean {
+        return this._isReady
+    }
+}
+
+

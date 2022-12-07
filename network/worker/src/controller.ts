@@ -2,8 +2,9 @@ import {Logger} from '@subsquid/logger'
 import {assertNotNull, def, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Client} from './chain/client'
-import {Task} from './chain/interface'
+import {Task, TaskResult} from './chain/interface'
 import {KeyPair} from './chain/keyPair'
+import {TaskHandle, TaskProcessor} from './taskProcessor'
 import {toBuffer} from './util'
 
 
@@ -13,14 +14,13 @@ interface Block {
     parentHash: string
     parent?: Block
     timestamp: number
-    tasks: TaskState[]
+    tasks: TaskItem[]
 }
 
 
-interface TaskState {
+interface TaskItem {
     task: Task
-    block: Block
-    pid?: number
+    handle?: TaskHandle
 }
 
 
@@ -36,12 +36,14 @@ export class Controller {
     private client: Client
     private log: Logger
     private head!: Block
+    private taskProcessor: TaskProcessor
     private running = true
 
     constructor(options: ControllerOptions) {
         this.identity = options.identity
         this.client = options.client
         this.log = options.log
+        this.taskProcessor = new TaskProcessor({concurrency: 1, maxWaiting: 10, log: this.log})
     }
 
     private async loop(): Promise<void> {
@@ -69,19 +71,31 @@ export class Controller {
                 for (let {hash} of chain) {
                     let block = await this.fetchBlock(hash)
                     block.parent = this.head
-                    await this.processBlock(block)
+                    this.processBlock(block)
                     this.head = block
                 }
             }
         }
     }
 
-    private async processBlock(block: Block): Promise<void> {
-
+    private processBlock(block: Block): void {
+        for (let task of block.tasks) {
+            let handle = this.taskProcessor.submit(task.task)
+            if (handle == null) {
+                this.log.error({
+                    taskId: task.task.taskId
+                }, `skipping the task, because there are too many in the queue already`)
+            } else {
+                handle.result.then(res => this.submitTaskResult(task.task, res)).catch(err => this.log.error(err))
+                task.handle = handle
+            }
+        }
     }
 
     private rollback(block: Block): void {
-
+        for (let task of block.tasks) {
+            task.handle?.cancel()
+        }
     }
 
     private async fetchBlock(blockHash: string): Promise<Block> {
@@ -91,7 +105,7 @@ export class Controller {
             this.client.getEvents(blockHash)
         ])
 
-        let tasks: TaskState[] = []
+        let tasks: TaskItem[] = []
 
         let block: Block = {
             height: header.height,
@@ -104,8 +118,7 @@ export class Controller {
         events.forEach(e => {
             if (e.__kind == 'Worker.RunTask' && toBuffer(e.workerId).equals(this.identity.getPublicKey())) {
                 tasks.push({
-                    task: e.task,
-                    block
+                    task: e.task
                 })
             }
         })
@@ -117,6 +130,14 @@ export class Controller {
         }, 'new block')
 
         return block
+    }
+
+    private async submitTaskResult({taskId}: Task, result: TaskResult): Promise<void> {
+        let tx = await this.client.send({
+            call: {__kind: 'Worker.done', taskId, result},
+            author: this.identity
+        })
+        this.log.info({taskId, tx}, 'result submitted')
     }
 
     private async trackFinalizedBlocks() {
@@ -155,6 +176,6 @@ export class Controller {
             call: {__kind: 'Worker.register'},
             author: this.identity
         })
-        this.log.info(`registered itself in transaction ${tx}`)
+        this.log.info({tx}, `worker registration submitted`)
     }
 }
