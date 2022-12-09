@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+This log was last generated on Tue, 06 Dec 2022 12:55:16 GMT and should not be manually modified.
+
+## 2.0.2
+Tue, 06 Dec 2022 12:55:16 GMT
+
+### Patches
+
+- use `_` as name for nameless tuple items
 
 ## 2.0.1
 Wed, 30 Nov 2022 19:36:06 GMT

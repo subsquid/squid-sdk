@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "2.0.2",
+      "tag": "@subsquid/evm-typegen_v2.0.2",
+      "date": "Tue, 06 Dec 2022 12:55:16 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use `_` as name for nameless tuple items"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.1",
       "tag": "@subsquid/evm-typegen_v2.0.1",
       "date": "Wed, 30 Nov 2022 19:36:06 GMT",
