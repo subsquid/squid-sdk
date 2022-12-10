@@ -4,7 +4,7 @@ import assert from 'assert'
 import {Client} from './chain/client'
 import {Task, TaskResult} from './chain/interface'
 import {KeyPair} from './chain/keyPair'
-import {TaskHandle, TaskProcessor} from './taskProcessor'
+import {IpfsServices, TaskHandle, TaskProcessor} from './taskProcessor'
 import {toBuffer} from './util'
 
 
@@ -28,6 +28,7 @@ export interface ControllerOptions {
     identity: KeyPair
     client: Client
     log: Logger
+    ipfs?: IpfsServices
 }
 
 
@@ -43,7 +44,12 @@ export class Controller {
         this.identity = options.identity
         this.client = options.client
         this.log = options.log
-        this.taskProcessor = new TaskProcessor({concurrency: 1, maxWaiting: 10, log: this.log})
+        this.taskProcessor = new TaskProcessor({
+            concurrency: 1,
+            maxWaiting: 10,
+            log: this.log,
+            ipfs: options.ipfs
+        })
     }
 
     private async loop(): Promise<void> {
@@ -162,6 +168,7 @@ export class Controller {
     @def
     async run(): Promise<void> {
         try {
+            await this.register()
             await Promise.race([
                 this.loop(),
                 this.trackFinalizedBlocks()
@@ -171,11 +178,15 @@ export class Controller {
         }
     }
 
-    async register(): Promise<void> {
+    private async register(): Promise<void> {
         let tx = await this.client.send({
             call: {__kind: 'Worker.register'},
             author: this.identity
         })
         this.log.info({tx}, `worker registration submitted`)
+    }
+
+    close(): void {
+        this.running = false
     }
 }

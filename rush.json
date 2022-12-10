@@ -482,11 +482,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/ipfs-cache",
-      "projectFolder": "network/ipfs-cache",
-      "shouldPublish": false
-    },
-    {
       "packageName": "@subsquid/worker",
       "projectFolder": "network/worker",
       "shouldPublish": false

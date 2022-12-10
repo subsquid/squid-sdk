@@ -1,6 +1,6 @@
-import {IpfsCache} from '@subsquid/ipfs-cache/lib/cache'
 import {createHttpServer, ListeningServer} from '@subsquid/util-internal-http-server'
 import {CID} from 'multiformats'
+import {IpfsCache} from './cache'
 
 
 export function createIpfsCacheService(cache: IpfsCache): Promise<ListeningServer> {

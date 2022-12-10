@@ -1,7 +1,8 @@
 import {Logger} from '@subsquid/logger'
 import {unexpectedCase} from '@subsquid/util-internal'
 import * as fs from 'fs/promises'
-import {CID, IPFS} from 'ipfs-core'
+import {IPFS} from 'ipfs-core-types'
+import {CID} from 'multiformats'
 import {base58btc} from 'multiformats/bases/base58'
 import * as Path from 'path'
 import {Writable} from 'stream'
@@ -49,8 +50,8 @@ export class IpfsCache {
                 await fs.mkdir(temp)
                 for await (let item of this.ipfs.files.ls(cid)) {
                     await this.put(item.cid)
-                    await fs.symlink('../../' + this.location(item.cid), Path.join(temp, item.name))
-                    this.log?.info(`linked ${getCidPresentation(cid)}/${item.name} -> ${this.location(item.cid)}`)
+                    await fs.symlink('../../' + getCidPath(item.cid), Path.join(temp, item.name))
+                    this.log?.info(`linked ${getCidPresentation(cid)}/${item.name} -> ${getCidPath(item.cid)}`)
                 }
                 break
             }
@@ -76,14 +77,15 @@ export class IpfsCache {
     }
 
     path(cid: CID): string {
-        return Path.join(this.dir, this.location(cid))
+        return Path.join(this.dir, getCidPath(cid))
     }
+}
 
-    private location(cid: CID): string {
-        let name = getCidPresentation(cid)
-        let parent = name.slice(name.length - 2).toUpperCase()
-        return parent + '/' + name
-    }
+
+export function getCidPath(cid: CID): string {
+    let name = getCidPresentation(cid)
+    let parent = name.slice(name.length - 2).toUpperCase()
+    return parent + '/' + name
 }
 
 

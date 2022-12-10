@@ -9,6 +9,13 @@ export interface TaskProcessorOptions {
     concurrency: number
     maxWaiting: number
     log: Logger
+    ipfs?: IpfsServices
+}
+
+
+export interface IpfsServices {
+    gateway?: string
+    cache?: string
 }
 
 
@@ -122,16 +129,31 @@ export class TaskProcessor {
 
     protected execute(image: string, command: string[], sig: AbortSignal): Promise<TaskResult> {
         return new Promise((resolve, reject) => {
-            let stdout = new ByteSink(1024)
-            let stderr = new ByteSink(1024)
+            let env = {...process.env}
+            let dockerArgs: string[] = []
+            let ipfs = this.options.ipfs || {}
+
+            if (ipfs.cache) {
+                env['IPFS_CACHE'] = ipfs.cache
+                dockerArgs.push('-e', 'IPFS_CACHE')
+            }
+
+            if (ipfs.gateway) {
+                env['IPFS_GATEWAY'] = ipfs.gateway
+                dockerArgs.push('-e', 'IPFS_GATEWAY')
+            }
 
             let abort = new AbortController()
             sig.onAbort(() => abort.abort())
 
-            let ps = spawn('docker', ['run', '--rm', image, ...command], {
+            let ps = spawn('docker', ['run', '--rm', ...dockerArgs, image, ...command], {
                 signal: abort.signal,
-                killSignal: 'SIGKILL'
+                killSignal: 'SIGKILL',
+                env
             })
+
+            let stdout = new ByteSink(1024)
+            let stderr = new ByteSink(1024)
 
             ps.stdout.on('data', data => {
                 stdout.write(data)
