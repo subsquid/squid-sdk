@@ -1,7 +1,7 @@
 import {Ti, TypeKind} from '@subsquid/scale-codec'
 import {ChainDescription, OldTypes, Type, Variant} from '@subsquid/substrate-metadata'
-import {getGlobalVariants, getVariantHash} from '@subsquid/substrate-metadata/lib/events-and-calls'
-import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry'
+import {getGlobalVariants, getVariantHash} from '@subsquid/substrate-metadata/lib/events-and-calls.js'
+import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry.js'
 import {runProgram} from '@subsquid/util-internal'
 import type {Output} from '@subsquid/util-internal-code-printer'
 import assert from 'assert'
@@ -85,7 +85,7 @@ export class TypeDefinitions {
     }
 
     async generateInterfaces(out: Output): Promise<void> {
-        let {Interfaces} = await import('@subsquid/substrate-typegen/lib/ifs')
+        let {Interfaces} = await import('@subsquid/substrate-typegen/lib/ifs.js')
 
         // add Fallback case to Event and Call variants
         let types = this.types.map(type => {
@@ -133,9 +133,8 @@ export class TypeDefinitions {
 export const definitions = new TypeDefinitions({
     types: {
         AccountId: '[u8; 32]',
-        H256: '[u8; 32]',
-        DockerImage: 'H256',
-        TaskId: 'H256',
+        DockerImage: 'Vec<u8>',
+        TaskId: '[u8; 32]',
         WorkerId: 'AccountId',
         Task: {
             task_id: 'TaskId',
@@ -166,13 +165,3 @@ export const definitions = new TypeDefinitions({
         }
     }
 })
-
-
-if (require.main === module) {
-    runProgram(async () => {
-        let {OutDir} = await import('@subsquid/util-internal-code-printer')
-        let out = new OutDir(__dirname).file('../../src/chain/interface.ts')
-        await definitions.generateInterfaces(out)
-        out.write()
-    })
-}

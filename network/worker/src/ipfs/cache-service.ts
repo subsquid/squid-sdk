@@ -1,6 +1,6 @@
 import {createHttpServer, ListeningServer} from '@subsquid/util-internal-http-server'
 import {CID} from 'multiformats'
-import {IpfsCache} from './cache'
+import {getCidPath, IpfsCache} from './cache.js'
 
 
 export function createIpfsCacheService(cache: IpfsCache): Promise<ListeningServer> {
@@ -13,6 +13,6 @@ export function createIpfsCacheService(cache: IpfsCache): Promise<ListeningServe
             return ctx.send(404, `invalid CID path: ${cidString}`)
         }
         await cache.put(cid)
-        ctx.send(200)
+        ctx.send(200, getCidPath(cid))
     })
 }

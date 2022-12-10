@@ -1,8 +1,9 @@
 import {Logger} from '@subsquid/logger'
 import {ensureError} from '@subsquid/util-internal'
 import {spawn} from 'child_process'
-import {Task, TaskResult} from './chain/interface'
-import {Abort, AbortSignal, Future, toBuffer} from './util'
+import * as Path from 'path'
+import {Task, TaskResult} from './chain/interface.js'
+import {Abort, AbortSignal, Future, toBuffer} from './util.js'
 
 
 export interface TaskProcessorOptions {
@@ -16,6 +17,7 @@ export interface TaskProcessorOptions {
 export interface IpfsServices {
     gateway?: string
     cache?: string
+    cacheDir?: string
 }
 
 
@@ -107,8 +109,8 @@ export class TaskProcessor {
 
             this.log.info({
                 taskId: item.task.taskId,
-                stdout: toBuffer(result.stdout).toString().trim(),
-                stderr: toBuffer(result.stderr).toString().trim()
+                stdout: toBuffer(result.stdout).toString().trim() || undefined,
+                stderr: toBuffer(result.stderr).toString().trim() || undefined
             }, 'task finished')
 
             item.future.resolve(result)
@@ -136,6 +138,10 @@ export class TaskProcessor {
             if (ipfs.cache) {
                 env['IPFS_CACHE'] = ipfs.cache
                 dockerArgs.push('-e', 'IPFS_CACHE')
+            }
+
+            if (ipfs.cacheDir) {
+                dockerArgs.push('-v', `${Path.resolve(ipfs.cacheDir)}:/ipfs`)
             }
 
             if (ipfs.gateway) {

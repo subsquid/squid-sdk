@@ -1,11 +1,11 @@
 import {Logger} from '@subsquid/logger'
 import {assertNotNull, def, wait} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Client} from './chain/client'
-import {Task, TaskResult} from './chain/interface'
-import {KeyPair} from './chain/keyPair'
-import {IpfsServices, TaskHandle, TaskProcessor} from './taskProcessor'
-import {toBuffer} from './util'
+import {Client} from './chain/client.js'
+import {Task, TaskResult} from './chain/interface.js'
+import {KeyPair} from './chain/keyPair.js'
+import {IpfsServices, TaskHandle, TaskProcessor} from './taskProcessor.js'
+import {toBuffer} from './util.js'
 
 
 interface Block {

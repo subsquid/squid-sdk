@@ -1,15 +1,15 @@
-import {blake2b} from '@polkadot/wasm-crypto'
-import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
+import {blake2b} from '@polkadot/wasm-crypto/bundle'
+import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient.js'
 import {ByteSink, Codec as ScaleCodec, HexSink, Src} from '@subsquid/scale-codec'
 import * as ss58 from '@subsquid/ss58-codec'
 import {ChainDescription, decodeMetadata, getChainDescriptionFromMetadata} from '@subsquid/substrate-metadata'
 import {def} from '@subsquid/util-internal'
 import {decodeHex} from '@subsquid/util-internal-hex'
 import assert from 'assert'
-import {definitions, GlobalEnum, toGlobalEnum} from './definitions'
-import {Call, Event} from './interface'
-import {KeyPair} from './keyPair'
-import {Async, FIFOCache, initCrypto} from '../util'
+import {definitions, GlobalEnum, toGlobalEnum} from './definitions.js'
+import {Call, Event} from './interface.js'
+import {KeyPair} from './keyPair.js'
+import {Async, FIFOCache, initCrypto} from '../util.js'
 
 
 export type BlockHash = string

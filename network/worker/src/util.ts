@@ -1,4 +1,4 @@
-import {isReady as isCryptoReady, waitReady as initCrypto} from '@polkadot/wasm-crypto'
+import {isReady as isCryptoReady, waitReady as initCrypto} from '@polkadot/wasm-crypto/bundle'
 import {createLogger} from '@subsquid/logger'
 
 

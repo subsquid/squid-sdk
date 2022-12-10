@@ -1,4 +1,4 @@
-import {sr25519Sign} from '@polkadot/wasm-crypto'
+import {sr25519Sign} from '@polkadot/wasm-crypto/bundle'
 import {decodeHex} from '@subsquid/util-internal-hex'
 
 

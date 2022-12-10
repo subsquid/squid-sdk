@@ -1,10 +1,14 @@
 
+run:
+	@node lib/main.js
+
+
 typegen:
-	@node lib/chain/definitions.js
+	@node lib/chain/gen.js
 
 
 node:
 	@cd ../../../subsquid-network && cargo run -- --dev --tmp
 
 
-.PHONY: node
+.PHONY: run typegen node

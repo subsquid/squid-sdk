@@ -1,4 +1,4 @@
-import {KeyPair} from './keyPair'
+import {KeyPair} from './keyPair.js'
 
 
 export const ALICE = new KeyPair(
