@@ -24,12 +24,16 @@
     "@polkadot/x-randomvalues": "^10.1.14",
     "@subsquid/logger": "^0.3.0",
     "@subsquid/rpc-client": "^1.0.2",
+    "@subsquid/ipfs-cache": "^0.0.0",
     "@subsquid/scale-codec": "^1.1.0",
     "@subsquid/substrate-metadata": "^2.1.0",
     "@subsquid/ss58-codec": "^0.1.1",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
-    "commander": "^9.3.0"
+    "@subsquid/util-internal-http-server": "^0.1.0",
+    "commander": "^9.3.0",
+    "ipfs-core": "^0.14.3",
+    "multiformats": "^9.9.0"
   },
   "devDependencies": {
     "@subsquid/substrate-typegen": "^2.0.0",

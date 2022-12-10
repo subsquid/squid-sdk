@@ -21,11 +21,14 @@
   "dependencies": {
     "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",
-    "commander": "^9.3.0",
-    "ipfs-core": "^0.14.3"
+    "commander": "^9.3.0"
+  },
+  "peerDependencies": {
+    "ipfs-core": "^0.14.3",
+    "multiformats": "^9.9.0"
   },
   "devDependencies": {
-    "@types/node": "^16.11.41",
+    "@types/node": "^18.11.12",
     "typescript": "~4.7.4"
   }
 }

@@ -78,7 +78,6 @@ specifiers:
   '@types/express': ^4.17.13
   '@types/inflected': ^1.1.29
   '@types/mocha': ^9.1.1
-  '@types/node': ^16.11.41
   '@types/node-fetch': ^2.6.2
   '@types/pg': ^8.6.5
   '@types/semver': ^7.3.10
@@ -100,7 +99,6 @@ specifiers:
   dotenv: ^10.0.0
   ethers: ^5.7.2
   expect: ^27.5.1
-  express: ^4.18.1
   fast-check: ^2.25.0
   graphql: ^15.8.0
   graphql-parse-resolve-info: ^4.12.3
@@ -111,7 +109,7 @@ specifiers:
   keyv: ~4.5.0
   latest-version: ^5.1.0
   mocha: ^9.2.2
-  multiformats: ^9.5.1
+  multiformats: ^9.9.0
   node-fetch: ^2.6.7
   pg: ^8.7.3
   postgres-migrations: ^5.3.0
@@ -196,7 +194,7 @@ dependencies:
   '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-timeout': file:projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
-  '@rush-temp/worker': file:projects/worker.tgz
+  '@rush-temp/worker': file:projects/worker.tgz_9a1a264aa4a03050f6cdadb747e47fe4
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.3.0
   '@subsquid/substrate-frontier-evm': 0.0.1
@@ -205,7 +203,6 @@ dependencies:
   '@types/express': 4.17.14
   '@types/inflected': 1.1.29
   '@types/mocha': 9.1.1
-  '@types/node': 16.11.59
   '@types/node-fetch': 2.6.2
   '@types/pg': 8.6.5
   '@types/semver': 7.3.12
@@ -216,7 +213,7 @@ dependencies:
   '@types/xxhashjs': 0.2.2
   ajv: 8.11.0
   apollo-server-core: 3.10.2_graphql@15.8.0
-  apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
+  apollo-server-express: 3.10.2_a935a965d6c3ecdcbd4e559d53f31c9f
   apollo-server-plugin-response-cache: 3.7.0_graphql@15.8.0
   base-x: 3.0.9
   big.js: 6.2.1
@@ -227,7 +224,6 @@ dependencies:
   dotenv: 10.0.0
   ethers: 5.7.2
   expect: 27.5.1
-  express: 4.18.1_supports-color@8.1.1
   fast-check: 2.25.0
   graphql: 15.8.0
   graphql-parse-resolve-info: 4.12.3_a935a965d6c3ecdcbd4e559d53f31c9f
@@ -1786,7 +1782,7 @@ packages:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 18.11.11
+      '@types/node': 18.11.12
     dev: false
 
   /@types/inflected/1.1.29:
@@ -1854,8 +1850,8 @@ packages:
     resolution: {integrity: sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==}
     dev: false
 
-  /@types/node/18.11.11:
-    resolution: {integrity: sha512-KJ021B1nlQUBLopzZmPBVuGU9un7WJd/W4ya7Ih02B4Uwky5Nja0yGYav2EfYIk0RR2Q9oVhf60S2XR1BCWJ2g==}
+  /@types/node/18.11.12:
+    resolution: {integrity: sha512-FgD3NtTAKvyMmD44T07zz2fEf+OKwutgBCEVM8GcvMGVGaDktiLNTDvPwC/LUe3PinMW+X6CuLOF2Ui1mAlSXg==}
     dev: false
 
   /@types/pg/8.6.5:
@@ -2113,6 +2109,31 @@ packages:
       graphql: 15.8.0
     dev: false
 
+  /apollo-server-express/3.10.2_40f5cee4cfa7efbdf92c4e281e9b5e15:
+    resolution: {integrity: sha512-TUpnh23qAP3NqMp3/2TxcCpOxhvT64H6teOM5W+t5ncdHZ85aEMDrbfIhNwqkdsya+UyMn9IoBmn25h5TW93ZQ==}
+    engines: {node: '>=12.0'}
+    peerDependencies:
+      express: ^4.17.1
+      graphql: ^15.3.0 || ^16.0.0
+    dependencies:
+      '@types/accepts': 1.3.5
+      '@types/body-parser': 1.19.2
+      '@types/cors': 2.8.12
+      '@types/express': 4.17.13
+      '@types/express-serve-static-core': 4.17.30
+      accepts: 1.3.8
+      apollo-server-core: 3.10.2_graphql@15.8.0
+      apollo-server-types: 3.6.2_graphql@15.8.0
+      body-parser: 1.20.0_supports-color@8.1.1
+      cors: 2.8.5
+      express: 4.18.2_supports-color@8.1.1
+      graphql: 15.8.0
+      parseurl: 1.3.3
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
   /apollo-server-express/3.10.2_74b94fa35b5137c17f5c995c6e82e419:
     resolution: {integrity: sha512-TUpnh23qAP3NqMp3/2TxcCpOxhvT64H6teOM5W+t5ncdHZ85aEMDrbfIhNwqkdsya+UyMn9IoBmn25h5TW93ZQ==}
     engines: {node: '>=12.0'}
@@ -2131,6 +2152,30 @@ packages:
       body-parser: 1.20.0_supports-color@8.1.1
       cors: 2.8.5
       express: 4.18.1_supports-color@8.1.1
+      graphql: 15.8.0
+      parseurl: 1.3.3
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
+  /apollo-server-express/3.10.2_a935a965d6c3ecdcbd4e559d53f31c9f:
+    resolution: {integrity: sha512-TUpnh23qAP3NqMp3/2TxcCpOxhvT64H6teOM5W+t5ncdHZ85aEMDrbfIhNwqkdsya+UyMn9IoBmn25h5TW93ZQ==}
+    engines: {node: '>=12.0'}
+    peerDependencies:
+      express: ^4.17.1
+      graphql: ^15.3.0 || ^16.0.0
+    dependencies:
+      '@types/accepts': 1.3.5
+      '@types/body-parser': 1.19.2
+      '@types/cors': 2.8.12
+      '@types/express': 4.17.13
+      '@types/express-serve-static-core': 4.17.30
+      accepts: 1.3.8
+      apollo-server-core: 3.10.2_graphql@15.8.0
+      apollo-server-types: 3.6.2_graphql@15.8.0
+      body-parser: 1.20.0_supports-color@8.1.1
+      cors: 2.8.5
       graphql: 15.8.0
       parseurl: 1.3.3
     transitivePeerDependencies:
@@ -2354,6 +2399,26 @@ packages:
       iconv-lite: 0.4.24
       on-finished: 2.4.1
       qs: 6.10.3
+      raw-body: 2.5.1
+      type-is: 1.6.18
+      unpipe: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /body-parser/1.20.1_supports-color@8.1.1:
+    resolution: {integrity: sha512-jWi7abTbYwajOytWCQc37VulmWiRae5RyTpaCyDcS5/lMdtwSz5lOpDE67srw/HYe35f1z3fDQw+3txg7gNtWw==}
+    engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
+    dependencies:
+      bytes: 3.1.2
+      content-type: 1.0.4
+      debug: 2.6.9_supports-color@8.1.1
+      depd: 2.0.0
+      destroy: 1.2.0
+      http-errors: 2.0.0
+      iconv-lite: 0.4.24
+      on-finished: 2.4.1
+      qs: 6.11.0
       raw-body: 2.5.1
       type-is: 1.6.18
       unpipe: 1.0.0
@@ -3193,6 +3258,45 @@ packages:
       path-to-regexp: 0.1.7
       proxy-addr: 2.0.7
       qs: 6.10.3
+      range-parser: 1.2.1
+      safe-buffer: 5.2.1
+      send: 0.18.0_supports-color@8.1.1
+      serve-static: 1.15.0_supports-color@8.1.1
+      setprototypeof: 1.2.0
+      statuses: 2.0.1
+      type-is: 1.6.18
+      utils-merge: 1.0.1
+      vary: 1.1.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /express/4.18.2_supports-color@8.1.1:
+    resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}
+    engines: {node: '>= 0.10.0'}
+    dependencies:
+      accepts: 1.3.8
+      array-flatten: 1.1.1
+      body-parser: 1.20.1_supports-color@8.1.1
+      content-disposition: 0.5.4
+      content-type: 1.0.4
+      cookie: 0.5.0
+      cookie-signature: 1.0.6
+      debug: 2.6.9_supports-color@8.1.1
+      depd: 2.0.0
+      encodeurl: 1.0.2
+      escape-html: 1.0.3
+      etag: 1.8.1
+      finalhandler: 1.2.0_supports-color@8.1.1
+      fresh: 0.5.2
+      http-errors: 2.0.0
+      merge-descriptors: 1.0.1
+      methods: 1.1.2
+      on-finished: 2.4.1
+      parseurl: 1.3.3
+      path-to-regexp: 0.1.7
+      proxy-addr: 2.0.7
+      qs: 6.11.0
       range-parser: 1.2.1
       safe-buffer: 5.2.1
       send: 0.18.0_supports-color@8.1.1
@@ -5879,7 +5983,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.2
-      '@types/node': 18.11.11
+      '@types/node': 18.11.12
       long: 4.0.0
     dev: false
 
@@ -5913,6 +6017,13 @@ packages:
 
   /qs/6.10.3:
     resolution: {integrity: sha512-wr7M2E0OFRfIfJZjKGieI8lBKb7fRCH4Fv5KNPEs7gJ8jadvotdsS08PzOKR7opXhZ/Xkjtt3WF9g38drmyRqQ==}
+    engines: {node: '>=0.6'}
+    dependencies:
+      side-channel: 1.0.4
+    dev: false
+
+  /qs/6.11.0:
+    resolution: {integrity: sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==}
     engines: {node: '>=0.6'}
     dependencies:
       side-channel: 1.0.4
@@ -6518,7 +6629,7 @@ packages:
       graphql: ^15.5.0
     dependencies:
       '@types/glob': 7.2.0
-      '@types/node': 18.11.11
+      '@types/node': 18.11.12
       '@types/semver': 7.3.12
       class-validator: 0.13.2
       glob: 7.2.3
@@ -6995,7 +7106,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-Pq2giQ9FkPJQl3+X/l93SHr1Avzd+sFZvu0p5xgh9YbCIjSoZUhcgwNDTZBYr2QmnltPRFQOPpV44Ibvz2A9IQ==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-YDgwqR+Z0bzkHtmfd8VUPLnqQVzhTGlfd8xBKow6wBEhO7L/S2kcC0yuuSwPOySl73UC6ukv+/okxBBoKc8tVw==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -7078,7 +7189,7 @@ packages:
     dependencies:
       '@types/express': 4.17.14
       '@types/node': 16.11.59
-      express: 4.18.1_supports-color@8.1.1
+      express: 4.18.2_supports-color@8.1.1
       typescript: 4.7.4
     transitivePeerDependencies:
       - supports-color
@@ -7271,13 +7382,13 @@ packages:
       '@types/pg': 8.6.5
       '@types/ws': 8.5.3
       apollo-server-core: 3.10.2_graphql@15.8.0
-      apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
+      apollo-server-express: 3.10.2_40f5cee4cfa7efbdf92c4e281e9b5e15
       apollo-server-plugin-response-cache: 3.7.0_graphql@15.8.0
       class-validator: 0.13.2
       commander: 9.4.0
       dotenv: 10.0.0
       expect: 27.5.1
-      express: 4.18.1_supports-color@8.1.1
+      express: 4.18.2_supports-color@8.1.1
       graphql: 15.8.0
       graphql-ws: 5.10.2_graphql@15.8.0
       keyv: 4.5.0
@@ -7334,12 +7445,12 @@ packages:
     dev: false
 
   file:projects/ipfs-cache.tgz_9a1a264aa4a03050f6cdadb747e47fe4:
-    resolution: {integrity: sha512-9TxUDAFUnS57xlVFRwDETN7feMusBFRL82SdMJCRrCipRR/5QlcU5ryENurqKnedbDDYOJ3Jsib1z2055Ts7ag==, tarball: file:projects/ipfs-cache.tgz}
+    resolution: {integrity: sha512-KY6O0YOmmNAMHpO5+BtAhQ6B1mejjfmBsx8Hzel6z4cJjn1YQZ9nKNK+8jLKMAcN+RDHwinv8A745FO3usH1lA==, tarball: file:projects/ipfs-cache.tgz}
     id: file:projects/ipfs-cache.tgz
     name: '@rush-temp/ipfs-cache'
     version: 0.0.0
     dependencies:
-      '@types/node': 16.11.59
+      '@types/node': 18.11.12
       commander: 9.4.0
       ipfs-core: 0.14.3_9a1a264aa4a03050f6cdadb747e47fe4
       multiformats: 9.9.0
@@ -7353,7 +7464,7 @@ packages:
     dev: false
 
   file:projects/karura-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-WDHWCinUzbWKYJ56Dnw+aW7477WA5OPMlHvPeO3/hVuyBnq+uQ7Srs066O83xilWFkB5pbhC4GgpXsPimsdM8Q==, tarball: file:projects/karura-erc20.tgz}
+    resolution: {integrity: sha512-P/SkLqa7cMyb8S/1nD5LxqBChONw9dl0DDBgIU/0jLykYiPSQsvsmyx0Sz2+tDatUdGj+89P8RykU7MwaTKu9g==, tarball: file:projects/karura-erc20.tgz}
     id: file:projects/karura-erc20.tgz
     name: '@rush-temp/karura-erc20'
     version: 0.0.0
@@ -7402,7 +7513,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-msWGtFadddw5iEsbUCx8AKYfYQtFOGZeaAdOAyRjuUFdqMi98q7S/IkP8VEATlHzq99w6CQWl43eRw1m7TQjRw==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-T3/U0SQ8a2yeX5KMvxXMCfVe4qAqgbKR6IROkpdOkRMbAghbugv/nvmKyTm0fM4e/tFafPTkbspbY4N/ijRdlA==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -7451,12 +7562,12 @@ packages:
       '@types/pg': 8.6.5
       '@types/ws': 8.5.3
       apollo-server-core: 3.10.2_graphql@15.8.0
-      apollo-server-express: 3.10.2_74b94fa35b5137c17f5c995c6e82e419
+      apollo-server-express: 3.10.2_40f5cee4cfa7efbdf92c4e281e9b5e15
       commander: 9.4.0
       deep-equal: 2.0.5
       dotenv: 10.0.0
       expect: 27.5.1
-      express: 4.18.1_supports-color@8.1.1
+      express: 4.18.2_supports-color@8.1.1
       graphql: 15.8.0
       graphql-parse-resolve-info: 4.12.3_a935a965d6c3ecdcbd4e559d53f31c9f
       graphql-ws: 5.10.2_graphql@15.8.0
@@ -7887,8 +7998,9 @@ packages:
       xxhashjs: 0.2.2
     dev: false
 
-  file:projects/worker.tgz:
-    resolution: {integrity: sha512-o2bwv/0damJdZm5GUbalaxHNhYAxaYvp17cHF/Ne1xCJcWRukPn38yYEjJmwOkB62m/4gx4IzJUpfQu3PFAe0w==, tarball: file:projects/worker.tgz}
+  file:projects/worker.tgz_9a1a264aa4a03050f6cdadb747e47fe4:
+    resolution: {integrity: sha512-Ytigb1Zy2up34lDZiTJo9WaPU0wsrC42h+dnioafg8kHADMz9e9IkUd6NeUdBqT+9XuXdcqZOYKixfDfHYq+cA==, tarball: file:projects/worker.tgz}
+    id: file:projects/worker.tgz
     name: '@rush-temp/worker'
     version: 0.0.0
     dependencies:
@@ -7897,7 +8009,16 @@ packages:
       '@polkadot/x-randomvalues': 10.1.14
       '@types/node': 16.11.59
       commander: 9.4.0
+      express: 4.18.2_supports-color@8.1.1
+      ipfs-core: 0.14.3_9a1a264aa4a03050f6cdadb747e47fe4
+      multiformats: 9.9.0
       typescript: 4.7.4
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - node-fetch
+      - supports-color
+      - utf-8-validate
     dev: false
 
   file:projects/workspace.tgz:
