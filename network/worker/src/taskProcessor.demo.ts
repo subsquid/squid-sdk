@@ -1,7 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import assert from 'assert'
-import {initIpfsServices} from './ipfs/init.js'
+import {initIpfsService} from './ipfs/init.js'
 import {TaskProcessor} from './taskProcessor.js'
 
 
@@ -9,13 +9,13 @@ const LOG = createLogger('sqd:worker')
 
 
 runProgram(async () => {
-    let ipfsServices = await initIpfsServices()
+    let ipfsService = await initIpfsService()
 
     let processor = new TaskProcessor({
         concurrency: 2,
         maxWaiting: 5,
         log: LOG,
-        ipfs: ipfsServices
+        ipfsService
     })
 
     let ids = 0
@@ -36,7 +36,17 @@ runProgram(async () => {
     await execute('curlimages/curl', [
         '/bin/sh',
         '-c',
-        'curl -sS "$IPFS_CACHE/QmP8jTG1m9GSDJLCbeWhVSVgEzCPPwXRdCRuJtQ5Tz9Kc9"'
+        'curl -sS "$SQD_IPFS_SERVICE/cache/QmP8jTG1m9GSDJLCbeWhVSVgEzCPPwXRdCRuJtQ5Tz9Kc9"'
+    ])
+
+    await execute('curlimages/curl', [
+        'cat', '/ipfs/N5/zdj7WWDyph5cck361e8LPUKMpLEsCPq7UwZVWqRygnkHRiDn5'
+    ])
+
+    await execute('curlimages/curl', [
+        '/bin/sh',
+        '-c',
+        `curl -sS -X POST --data "Hello world" "$SQD_IPFS_SERVICE/publish"`
     ])
 
     await new Promise(resolve => {

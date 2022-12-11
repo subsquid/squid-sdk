@@ -1,7 +1,7 @@
 import {Logger} from '@subsquid/logger'
 import {unexpectedCase} from '@subsquid/util-internal'
 import * as fs from 'fs/promises'
-import {IPFS} from 'ipfs-core-types'
+import type {IPFS} from 'ipfs-core'
 import {CID} from 'multiformats'
 import {base58btc} from 'multiformats/bases/base58'
 import * as Path from 'path'

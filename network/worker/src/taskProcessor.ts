@@ -3,21 +3,20 @@ import {ensureError} from '@subsquid/util-internal'
 import {spawn} from 'child_process'
 import * as Path from 'path'
 import {Task, TaskResult} from './chain/interface.js'
-import {Abort, AbortSignal, Future, toBuffer} from './util.js'
+import {Future, toBuffer} from './util.js'
 
 
 export interface TaskProcessorOptions {
     concurrency: number
     maxWaiting: number
     log: Logger
-    ipfs?: IpfsServices
+    ipfsService?: IpfsService
 }
 
 
-export interface IpfsServices {
-    gateway?: string
-    cache?: string
-    cacheDir?: string
+export interface IpfsService {
+    port: number
+    cacheDir: string
 }
 
 
@@ -29,7 +28,7 @@ export interface TaskHandle {
 
 interface Item {
     task: Task
-    abort: Abort
+    abort: AbortController
     future: Future<TaskResult>
 }
 
@@ -52,7 +51,7 @@ export class TaskProcessor {
             return undefined
         }
 
-        let abort = new Abort()
+        let abort = new AbortController()
         let future = new Future<TaskResult>()
 
         let item = {
@@ -83,7 +82,7 @@ export class TaskProcessor {
         let count = 0
         for (let i = 0; i < this.queue.length; i++) {
             let item = this.queue[i]
-            if (item.abort.isLive) {
+            if (!item.abort.signal.aborted) {
                 count += 1
             }
         }
@@ -105,7 +104,7 @@ export class TaskProcessor {
 
         this.running += 1
         try {
-            let result = await this.execute(image, command, item.abort)
+            let result = await this.execute(image, command, item.abort.signal)
 
             this.log.info({
                 taskId: item.task.taskId,
@@ -119,41 +118,32 @@ export class TaskProcessor {
         } finally {
             this.running -= 1
         }
+
         if (this.hasFatalError) return
+
         let next: Item | undefined
         while (next = this.queue.shift()) {
-            if (next.abort.isLive) {
+            if (!next.abort.signal.aborted) {
                 this.process(next).catch(err => this.handleFatalError(err))
                 return
             }
         }
     }
 
-    protected execute(image: string, command: string[], sig: AbortSignal): Promise<TaskResult> {
+    protected execute(image: string, command: string[], signal: AbortSignal): Promise<TaskResult> {
         return new Promise((resolve, reject) => {
             let env = {...process.env}
             let dockerArgs: string[] = []
-            let ipfs = this.options.ipfs || {}
 
-            if (ipfs.cache) {
-                env['IPFS_CACHE'] = ipfs.cache
-                dockerArgs.push('-e', 'IPFS_CACHE')
-            }
-
-            if (ipfs.cacheDir) {
+            let ipfs = this.options.ipfsService
+            if (ipfs) {
+                env['SQD_IPFS_SERVICE'] = `http://host.docker.internal:${ipfs.port}`
+                dockerArgs.push('-e', 'SQD_IPFS_SERVICE')
                 dockerArgs.push('-v', `${Path.resolve(ipfs.cacheDir)}:/ipfs`)
             }
 
-            if (ipfs.gateway) {
-                env['IPFS_GATEWAY'] = ipfs.gateway
-                dockerArgs.push('-e', 'IPFS_GATEWAY')
-            }
-
-            let abort = new AbortController()
-            sig.onAbort(() => abort.abort())
-
             let ps = spawn('docker', ['run', '--rm', ...dockerArgs, image, ...command], {
-                signal: abort.signal,
+                signal,
                 killSignal: 'SIGKILL',
                 env
             })
@@ -174,7 +164,7 @@ export class TaskProcessor {
             })
 
             ps.on('close', exitCode => {
-                if (sig.isAborted || exitCode == null) return
+                if (signal.aborted || exitCode == null) return
                 if (exitCode == 125) {
                     // problem with the docker daemon itself
                     // beside possible image unavailability it's ours

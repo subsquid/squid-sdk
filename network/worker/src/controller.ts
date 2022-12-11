@@ -4,7 +4,7 @@ import assert from 'assert'
 import {Client} from './chain/client.js'
 import {Task, TaskResult} from './chain/interface.js'
 import {KeyPair} from './chain/keyPair.js'
-import {IpfsServices, TaskHandle, TaskProcessor} from './taskProcessor.js'
+import {IpfsService, TaskHandle, TaskProcessor} from './taskProcessor.js'
 import {toBuffer} from './util.js'
 
 
@@ -28,7 +28,7 @@ export interface ControllerOptions {
     identity: KeyPair
     client: Client
     log: Logger
-    ipfs?: IpfsServices
+    ipfsService?: IpfsService
 }
 
 
@@ -48,7 +48,7 @@ export class Controller {
             concurrency: 1,
             maxWaiting: 10,
             log: this.log,
-            ipfs: options.ipfs
+            ipfsService: options.ipfsService
         })
     }
 

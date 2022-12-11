@@ -40,61 +40,6 @@ export function toBuffer(data: Uint8Array): Buffer {
 }
 
 
-const LOG = createLogger('sys')
-
-
-export function safeCall(cb: () => void): void {
-    try {
-        cb()
-    } catch(err: any) {
-        LOG.error(err, 'callback exception')
-    }
-}
-
-
-export class Abort implements AbortSignal {
-    private _isAborted = false
-    private callbacks?: (() => void)[]
-
-    abort(): void {
-        if (this._isAborted) return
-        this._isAborted = true
-        let cbs = this.callbacks
-        if (cbs) {
-            this.callbacks = undefined
-            for (let i = 0; i < cbs.length; i++) {
-                safeCall(cbs[i])
-            }
-        }
-    }
-
-    get isAborted(): boolean {
-        return this._isAborted
-    }
-
-    get isLive(): boolean {
-        return !this._isAborted
-    }
-
-    onAbort(cb: () => void): void {
-        if (this.isAborted) {
-            safeCall(cb)
-        } else if (this.callbacks) {
-            this.callbacks.push(cb)
-        } else {
-            this.callbacks = [cb]
-        }
-    }
-}
-
-
-export interface AbortSignal {
-    readonly isAborted: boolean
-    readonly isLive: boolean
-    onAbort(cb: () => void): void
-}
-
-
 export class Future<T> {
     public readonly promise: Promise<T>
     private _resolve!: (value: T) => void

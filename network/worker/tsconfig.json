@@ -2,8 +2,7 @@
   "compilerOptions": {
     "outDir": "lib",
     "target": "ES2020",
-    "module": "ES2020",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
     "strict": true,
     "declaration": true,
     "declarationMap": true,
