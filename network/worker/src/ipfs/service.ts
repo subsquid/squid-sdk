@@ -14,6 +14,8 @@ export interface IpfsServiceOptions {
 export function createIpfsService({ipfs, cache}: IpfsServiceOptions): Promise<ListeningServer> {
     let app = express()
 
+    app.set('etag', false)
+
     app.get('/cache/:cid', async (req, res) => {
         let cid: CID
         try {
@@ -26,9 +28,30 @@ export function createIpfsService({ipfs, cache}: IpfsServiceOptions): Promise<Li
         res.type('text/plain').send(getCidPath(cid))
     })
 
-    app.post('/publish', async (req, res) => {
-        let {cid} = await ipfs.add(req)
+    app.post('/fs/*', async (req, res) => {
+        let path = req.path.slice(3)
+        await ipfs.files.write(path, req, {
+            create: true,
+            parents: true
+        })
+        let {cid} = await ipfs.files.stat(path)
         res.type('text/plain').send(cid.toString())
+    })
+
+    app.get('/fs/*', async (req, res) => {
+        let path = req.path.slice(3)
+        let stat
+        try {
+            stat = await ipfs.files.stat(path)
+        } catch(err: any) {
+            if (err.code == 'ERR_NOT_FOUND') {
+                res.status(404).type('text/plain').send(`${path} not found`)
+                return
+            } else {
+                throw err
+            }
+        }
+        res.type('text/plain').send(stat.cid.toString())
     })
 
     return createNodeHttpServer(app, 27654)

@@ -1,5 +1,6 @@
 import {Logger} from '@subsquid/logger'
 import {ensureError} from '@subsquid/util-internal'
+import {toHex} from '@subsquid/util-internal-hex'
 import {spawn} from 'child_process'
 import * as Path from 'path'
 import {Task, TaskResult} from './chain/interface.js'
@@ -96,18 +97,20 @@ export class TaskProcessor {
             return toBuffer(arg).toString()
         })
 
+        let taskId = item.task.taskId
+
         this.log.info({
-            taskId: item.task.taskId,
+            taskId,
             image,
             command
         }, 'start task')
 
         this.running += 1
         try {
-            let result = await this.execute(image, command, item.abort.signal)
+            let result = await this.execute(taskId, image, command, item.abort.signal)
 
             this.log.info({
-                taskId: item.task.taskId,
+                taskId,
                 stdout: toBuffer(result.stdout).toString().trim() || undefined,
                 stderr: toBuffer(result.stderr).toString().trim() || undefined
             }, 'task finished')
@@ -130,10 +133,12 @@ export class TaskProcessor {
         }
     }
 
-    protected execute(image: string, command: string[], signal: AbortSignal): Promise<TaskResult> {
+    protected execute(taskId: Uint8Array, image: string, command: string[], signal: AbortSignal): Promise<TaskResult> {
         return new Promise((resolve, reject) => {
             let env = {...process.env}
             let dockerArgs: string[] = []
+
+            env['SQD_TASK_ID'] = toHex(taskId)
 
             let ipfs = this.options.ipfsService
             if (ipfs) {

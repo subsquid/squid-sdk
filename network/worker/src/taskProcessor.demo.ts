@@ -46,7 +46,13 @@ runProgram(async () => {
     await execute('curlimages/curl', [
         '/bin/sh',
         '-c',
-        `curl -sS -X POST --data "Hello world" "$SQD_IPFS_SERVICE/publish"`
+        `curl -sS -X POST --data "Hello world" "$SQD_IPFS_SERVICE/fs/$SQD_TASK_ID/hello.txt"`
+    ])
+
+    await execute('curlimages/curl', [
+        '/bin/sh',
+        '-c',
+        'curl -sS "$SQD_IPFS_SERVICE/cache/QmfGkxWRCaEvvmPN7CCmjjc97JUYdyqkPnC6xV6NxyMf6h"'
     ])
 
     await new Promise(resolve => {

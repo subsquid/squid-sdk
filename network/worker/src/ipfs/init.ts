@@ -7,7 +7,7 @@ import {createIpfsService} from './service'
 
 
 export async function initIpfsService(): Promise<IpfsService> {
-    let log = createLogger('sqd:worker:ipfs-cache')
+    let log = createLogger('sqd:worker:ipfs')
     let cacheDir = '.temp.ipfs-cache'
 
     await fs.mkdir(cacheDir, {recursive: true})
