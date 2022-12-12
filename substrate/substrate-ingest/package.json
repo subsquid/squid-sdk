@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.1.0",
-    "@subsquid/substrate-metadata": "^2.1.0",
+    "@subsquid/substrate-metadata": "^2.1.1",
     "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-counters": "^0.0.1",
