@@ -146,6 +146,6 @@ export const bundle: OldTypesBundle = {
             reported_srd_root: 'MerkleRoot',
             reported_files_root: 'MerkleRoot',
         },
-        Public: 'bool',
+        Public: '[u8; 32]',
     },
 }
