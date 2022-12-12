@@ -34,8 +34,7 @@ export function createIpfsService({ipfs, cache}: IpfsServiceOptions): Promise<Li
             create: true,
             parents: true
         })
-        let {cid} = await ipfs.files.stat(path)
-        res.type('text/plain').send(cid.toString())
+        res.status(204).send()
     })
 
     app.get('/fs/*', async (req, res) => {
