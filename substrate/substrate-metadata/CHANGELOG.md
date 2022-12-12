@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+This log was last generated on Mon, 12 Dec 2022 12:15:20 GMT and should not be manually modified.
+
+## 2.1.1
+Mon, 12 Dec 2022 12:15:20 GMT
+
+### Patches
+
+- update crust typesBundle
 
 ## 2.1.0
 Wed, 30 Nov 2022 19:36:06 GMT
