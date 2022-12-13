@@ -55,11 +55,11 @@ export class AbiDescription {
             kind: TypeKind.Variant,
             variants: list.map((msg, index) => {
                 return {
-                    name: msg.label.replace('::', '_'),
+                    name: normalizeLabel(msg.label),
                     index,
                     fields: msg.args.map(arg => {
                         return {
-                            name: arg.label,
+                            name: normalizeLabel(arg.label),
                             type: arg.type.type
                         }
                     }),
@@ -73,11 +73,11 @@ export class AbiDescription {
     event(): Ti {
         let variants: Variant[] = this.project.spec.events.map((e, index) => {
             return {
-                name: e.label,
+                name: normalizeLabel(e.label),
                 index,
                 fields: e.args.map(arg => {
                     return {
-                        name: arg.label,
+                        name: normalizeLabel(arg.label),
                         type: arg.type.type,
                         docs: arg.docs
                     }
@@ -188,4 +188,9 @@ function toField(f: FieldFor_PortableForm): Field {
 
 function capitalize(value: string) {
     return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+
+function normalizeLabel(label: string) {
+    return label.replace('::', '_')
 }
