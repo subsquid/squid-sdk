@@ -139,6 +139,7 @@ export class TaskProcessor {
             let dockerArgs: string[] = []
 
             env['SQD_TASK_ID'] = toHex(taskId)
+            dockerArgs.push('-e', 'SQD_TASK_ID')
 
             let ipfs = this.options.ipfsService
             if (ipfs) {
