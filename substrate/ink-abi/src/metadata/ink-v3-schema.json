@@ -215,11 +215,7 @@
       "properties": {
         "dispatchKey": {
           "description": "The key where the discriminant is stored to dispatch the variants.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/LayoutKey"
-            }
-          ]
+          "type": "string"
         },
         "variants": {
           "description": "The variants of the enum.",
