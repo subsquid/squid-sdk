@@ -1,6 +1,13 @@
-# Change Log - @subsquid/substrate-frontier-evm
+# Change Log - @subsquid/frontier
 
-This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+This log was last generated on Wed, 14 Dec 2022 19:37:27 GMT and should not be manually modified.
+
+## 0.1.0
+Wed, 14 Dec 2022 19:37:27 GMT
+
+### Minor changes
+
+- adjust type definitions to match latest archive
 
 ## 0.0.1
 Sun, 06 Nov 2022 18:24:20 GMT

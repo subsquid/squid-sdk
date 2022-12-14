@@ -1,6 +1,28 @@
 {
-  "name": "@subsquid/substrate-frontier-evm",
+  "name": "@subsquid/frontier",
   "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/frontier_v0.1.0",
+      "date": "Wed, 14 Dec 2022 19:37:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "adjust type definitions to match latest archive"
+          }
+        ],
+        "none": [
+          {
+            "comment": "rename packae to `@subsquid/frontier`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.1.1` to `^2.1.2`"
+          }
+        ]
+      }
+    },
     {
       "version": "0.0.1",
       "tag": "@subsquid/substrate-frontier-evm_v0.0.1",

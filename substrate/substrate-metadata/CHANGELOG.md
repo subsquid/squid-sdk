@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 12 Dec 2022 12:15:20 GMT and should not be manually modified.
+This log was last generated on Wed, 14 Dec 2022 19:37:27 GMT and should not be manually modified.
+
+## 2.1.2
+Wed, 14 Dec 2022 19:37:27 GMT
+
+### Patches
+
+- adjust extrinsic type definition logic to support new chainflip spec version
 
 ## 2.1.1
 Mon, 12 Dec 2022 12:15:20 GMT
