@@ -55,7 +55,7 @@ export class AbiDescription {
             kind: TypeKind.Variant,
             variants: list.map((msg, index) => {
                 return {
-                    name: msg.label,
+                    name: msg.label.replaceAll('::', '_'),
                     index,
                     fields: msg.args.map(arg => {
                         return {
