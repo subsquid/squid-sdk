@@ -2,7 +2,7 @@ import assert from 'assert'
 import {Call, ChainContext} from './interfaces'
 import {registry} from './registry'
 import {serialize, parse} from '@ethersproject/transactions'
-import {clearUndefinedFields, normalizeU256} from './util'
+import {clearUndefinedFields, normalizeAccessListItem, normalizeU256} from './util'
 
 export enum TransactionType {
     Legacy,
@@ -59,7 +59,7 @@ export function getTransaction(ctx: ChainContext, call: Call): Transaction {
         case registry.getHash('V14Ethereum.transactV2'):
             return getAsV1(call.args)
         default:
-            throw new Error('Uknown "Ethereum.transact" version')
+            throw new Error('Unknown "Ethereum.transact" version')
     }
 }
 
@@ -97,7 +97,7 @@ export function getAsV1(args: any): Transaction {
         maxFeePerGas: data.maxFeePerGas ? normalizeU256(data.maxFeePerGas) : undefined,
         maxPriorityFeePerGas: data.maxPriorityFeePerGas ? normalizeU256(data.maxPriorityFeePerGas) : undefined,
         chainId: data.chainId ? BigInt(data.chainId) : undefined,
-        accessList: data.accessList,
+        accessList: data.accessList?.map(normalizeAccessListItem),
         input: data.input,
         v: BigInt(signature.v || 0n),
         r: signature.r,

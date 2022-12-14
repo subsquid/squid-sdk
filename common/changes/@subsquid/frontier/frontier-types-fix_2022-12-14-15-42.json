@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "update type defenitions",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}

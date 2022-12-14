@@ -17,6 +17,12 @@ function toU256(a: bigint, b: bigint) {
     return BigInt(a) + (BigInt(b) << 128n)
 }
 
+export function normalizeAccessListItem(
+    item: {address: string; storageKeys: string[]} | {address: string; slots: string[]}
+) {
+    return 'storageKeys' in item ? item : {address: item.address, storageKeys: item.slots}
+}
+
 export function clearUndefinedFields<T extends Record<string, any>>(obj: T): T {
     Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key])
     return obj
