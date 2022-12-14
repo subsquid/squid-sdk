@@ -6,7 +6,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/frontier": "^0.0.1",
+    "@subsquid/frontier": "^0.1.0",
     "@subsquid/graphql-server": "^3.2.4",
     "@subsquid/substrate-processor": "^2.1.0",
     "@subsquid/typeorm-migration": "^0.1.4",

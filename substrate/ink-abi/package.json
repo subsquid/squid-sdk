@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ink-abi",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Ink! ABI tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^1.1.0",
-    "@subsquid/substrate-metadata": "^2.1.1",
+    "@subsquid/substrate-metadata": "^2.1.2",
     "@subsquid/util-internal": "^1.0.0",
     "ajv": "^8.11.0"
   },
