@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "adjust extrinsic type definition logic to support new chainflip spec version",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}
