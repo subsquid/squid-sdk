@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "allow multiple composite indexes in `schema.graphql`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
