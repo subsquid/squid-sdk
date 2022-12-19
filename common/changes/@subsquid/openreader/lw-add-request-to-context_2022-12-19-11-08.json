@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "Change ApolloOptions type to support ExpressContext argument for ApolloOptions.context function",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
