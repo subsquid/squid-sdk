@@ -13,6 +13,7 @@ import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
+import { ExpressContext } from 'apollo-server-express'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from 'graphql'
@@ -182,7 +183,7 @@ export class Server {
     }
 
     @def
-    private async context(): Promise<() => Context> {
+    private async context(): Promise<(ctx: ExpressContext) => Context> {
         let dialect = this.dialect()
         let createOpenreader: () => OpenreaderContext
         if (await this.customResolvers()) {
@@ -198,7 +199,7 @@ export class Server {
                 return new PoolOpenreaderContext(dialect, pool, pool, this.options.subscriptionPollInterval)
             }
         }
-        return () => {
+        return ({ req }: ExpressContext) => {
             let openreader = createOpenreader()
 
             if (this.options.maxResponseNodes) {
@@ -210,7 +211,7 @@ export class Server {
                 openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(this.options.subscriptionMaxResponseNodes)
             }
 
-            return {openreader}
+            return {req, openreader}
         }
     }
 

@@ -1,9 +1,11 @@
+import { Request } from 'express'
 import {Dialect} from './dialect'
 import {Query} from './sql/query'
 import {Limit} from './util/limit'
 
 
 export interface Context {
+    req: Request
     openreader: OpenreaderContext
 }
 

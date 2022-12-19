@@ -1,7 +1,7 @@
 import {Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
 import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
-import {ApolloServer} from 'apollo-server-express'
+import {ApolloServer, ExpressContext} from 'apollo-server-express'
 import express from 'express'
 import fs from 'fs'
 import {ExecutionArgs, GraphQLSchema} from 'graphql'
@@ -43,7 +43,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
 
     let schema = new SchemaBuilder(options).build()
 
-    let context = () => {
+    let context = ({ req }: ExpressContext) => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
             dialect,
             connection,
@@ -61,6 +61,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         }
 
         return {
+            req,
             openreader
         }
     }
@@ -88,7 +89,7 @@ export type Dispose = () => Promise<void>
 export interface ApolloOptions {
     port: number | string
     disposals: Dispose[]
-    context: () => Context
+    context: (ctx: ExpressContext) => Context
     schema: GraphQLSchema
     plugins?: PluginDefinition[]
     subscriptions?: boolean
