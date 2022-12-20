@@ -588,6 +588,12 @@
       "versionPolicyName": "docker"
     },
     {
+      "packageName": "@subsquid/commands",
+      "projectFolder": "util/commands",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,
