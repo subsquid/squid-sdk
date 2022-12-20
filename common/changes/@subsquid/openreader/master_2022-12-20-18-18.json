@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "gql subscription: emit initial value",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
