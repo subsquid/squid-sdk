@@ -4,19 +4,19 @@ import {HistoricalBalance} from "./historicalBalance.model"
 
 @Entity_()
 export class Account {
-  constructor(props?: Partial<Account>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<Account>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * Account address
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * Account address
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  balance!: bigint
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    balance!: bigint
 
-  @OneToMany_(() => HistoricalBalance, e => e.account)
-  historicalBalances!: HistoricalBalance[]
+    @OneToMany_(() => HistoricalBalance, e => e.account)
+    historicalBalances!: HistoricalBalance[]
 }
