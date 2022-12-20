@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "pass graphql context to check extension",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
