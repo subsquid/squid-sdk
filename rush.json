@@ -630,6 +630,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-config",
+      "projectFolder": "util/util-internal-config",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-counters",
       "projectFolder": "util/util-internal-counters",
       "shouldPublish": true,

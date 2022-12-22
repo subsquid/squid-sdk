@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "description": "Command launcher for squids, replaces npm scripts and make(1)",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "squid-commands": "bin/run.js"
   },
   "files": [
     "lib",
@@ -18,9 +21,9 @@
   "dependencies": {
     "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",
-    "ajv": "^8.11.0",
+    "@subsquid/util-internal-config": "^0.0.0",
     "commander": "^9.3.0",
-    "supports-color": "^8.1.1"
+    "glob": "^8.0.3"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",

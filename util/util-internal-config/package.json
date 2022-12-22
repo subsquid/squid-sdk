@@ -1,0 +1,26 @@
+{
+  "name": "@subsquid/util-internal-config",
+  "version": "0.0.0",
+  "description": "A small utility to read and validate JSON-based config files",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^1.12.5",
+    "jsonc-parser": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.41",
+    "typescript": "~4.7.4"
+  }
+}

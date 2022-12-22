@@ -3,6 +3,7 @@ lockfileVersion: 5.3
 specifiers:
   '@apollo/utils.keyvadapter': ~1.1.2
   '@apollo/utils.keyvaluecache': ~1.0.1
+  '@cfworker/json-schema': ^1.12.5
   '@ethersproject/abi': ^5.7.0
   '@ethersproject/address': ^5.7.0
   '@ethersproject/bytes': ^5.6.1
@@ -56,6 +57,7 @@ specifiers:
   '@rush-temp/util-internal-binary-heap': file:./projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:./projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-commander': file:./projects/util-internal-commander.tgz
+  '@rush-temp/util-internal-config': file:./projects/util-internal-config.tgz
   '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:./projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:./projects/util-internal-hex.tgz
@@ -98,11 +100,11 @@ specifiers:
   expect: ^27.5.1
   express: ^4.18.1
   fast-check: ^2.25.0
+  glob: ^8.0.3
   graphql: ^15.8.0
   graphql-parse-resolve-info: ^4.12.3
   graphql-ws: ^5.9.1
   inflected: ^2.1.0
-  jsonc-parser: ^3.0.0
   keyv: ~4.5.0
   latest-version: ^5.1.0
   mocha: ^9.2.2
@@ -124,6 +126,7 @@ specifiers:
 dependencies:
   '@apollo/utils.keyvadapter': 1.1.2
   '@apollo/utils.keyvaluecache': 1.0.1
+  '@cfworker/json-schema': 1.12.5
   '@ethersproject/abi': 5.7.0
   '@ethersproject/address': 5.7.0
   '@ethersproject/bytes': 5.7.0
@@ -177,6 +180,7 @@ dependencies:
   '@rush-temp/util-internal-binary-heap': file:projects/util-internal-binary-heap.tgz
   '@rush-temp/util-internal-code-printer': file:projects/util-internal-code-printer.tgz
   '@rush-temp/util-internal-commander': file:projects/util-internal-commander.tgz
+  '@rush-temp/util-internal-config': file:projects/util-internal-config.tgz
   '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
   '@rush-temp/util-internal-gql-request': file:projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:projects/util-internal-hex.tgz
@@ -219,11 +223,11 @@ dependencies:
   expect: 27.5.1
   express: 4.18.1_supports-color@8.1.1
   fast-check: 2.25.0
+  glob: 8.0.3
   graphql: 15.8.0
   graphql-parse-resolve-info: 4.12.3_a935a965d6c3ecdcbd4e559d53f31c9f
   graphql-ws: 5.10.2_graphql@15.8.0
   inflected: 2.1.0
-  jsonc-parser: 3.2.0
   keyv: 4.5.0
   latest-version: 5.1.0
   mocha: 9.2.2
@@ -385,6 +389,10 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.9
+    dev: false
+
+  /@cfworker/json-schema/1.12.5:
+    resolution: {integrity: sha512-k+ungOs1TxSfNfmfOxkwaiNL2EgRQjhk2SRweMYoKkBJZUYsGsY+XYpe2KpuS9EyjZWjZhq8QvVM+gwi3g1+hQ==}
     dev: false
 
   /@ethersproject/abi/5.7.0:
@@ -1599,6 +1607,24 @@ packages:
     resolution: {integrity: sha1-4h3xCtbCBTKVvLuNq0Cwnb6ofk0=}
     dev: false
 
+  /ajv-cli/5.0.0:
+    resolution: {integrity: sha512-LY4m6dUv44HTyhV+u2z5uX4EhPYTM38Iv1jdgDJJJCyOOuqB8KtZEGjPZ2T+sh5ZIJrXUfgErYx/j3gLd3+PlQ==}
+    hasBin: true
+    peerDependencies:
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      ts-node:
+        optional: true
+    dependencies:
+      ajv: 8.11.0
+      fast-json-patch: 2.2.1
+      glob: 7.2.3
+      js-yaml: 3.14.1
+      json-schema-migrate: 2.0.0
+      json5: 2.2.2
+      minimist: 1.2.6
+    dev: false
+
   /ajv/8.11.0:
     resolution: {integrity: sha512-wGgprdCvMalC0BztXvitD2hC04YffAvtsUn93JbGXYLAtCUO4xd17mCCZQxUOItiBwZvJScWo8NIvQMQ71rdpg==}
     dependencies:
@@ -1787,6 +1813,12 @@ packages:
     engines: {node: '>= 6.0.0'}
     dev: false
 
+  /argparse/1.0.10:
+    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
+    dependencies:
+      sprintf-js: 1.0.3
+    dev: false
+
   /argparse/2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
     dev: false
@@ -1892,6 +1924,12 @@ packages:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
+    dev: false
+
+  /brace-expansion/2.0.1:
+    resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
+    dependencies:
+      balanced-match: 1.0.2
     dev: false
 
   /braces/3.0.2:
@@ -2392,6 +2430,12 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
+  /esprima/4.0.1:
+    resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
+    engines: {node: '>=4'}
+    hasBin: true
+    dev: false
+
   /etag/1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
@@ -2501,8 +2545,19 @@ packages:
       pure-rand: 5.0.3
     dev: false
 
+  /fast-deep-equal/2.0.1:
+    resolution: {integrity: sha512-bCK/2Z4zLidyB4ReuIsvALH6w31YfAQDmXMqMx6FyfHqvBxtjC0eRumeSu4Bs3XtXwpyIywtSTrVT99BxY1f9w==}
+    dev: false
+
   /fast-deep-equal/3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
+    dev: false
+
+  /fast-json-patch/2.2.1:
+    resolution: {integrity: sha512-4j5uBaTnsYAV5ebkidvxiLUYOwjQ+JSFljeqfTxCrH9bDmlCQaOJFS84oDJ2rAXZq2yskmk3ORfoP9DCwqFNig==}
+    engines: {node: '>= 0.4.0'}
+    dependencies:
+      fast-deep-equal: 2.0.1
     dev: false
 
   /fast-json-stable-stringify/2.1.0:
@@ -2661,6 +2716,17 @@ packages:
       minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
+    dev: false
+
+  /glob/8.0.3:
+    resolution: {integrity: sha512-ull455NHSHI/Y1FqGaaYFaLGkNMMJbavMrEGFXG/PGrg6y7sutWHUHrz6gy6WEBH6akM1M414dWKCNs+IhKdiQ==}
+    engines: {node: '>=12'}
+    dependencies:
+      fs.realpath: 1.0.0
+      inflight: 1.0.6
+      inherits: 2.0.4
+      minimatch: 5.1.2
+      once: 1.4.0
     dev: false
 
   /got/9.6.0:
@@ -3103,6 +3169,14 @@ packages:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
     dev: false
 
+  /js-yaml/3.14.1:
+    resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
+    hasBin: true
+    dependencies:
+      argparse: 1.0.10
+      esprima: 4.0.1
+    dev: false
+
   /js-yaml/4.1.0:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
@@ -3118,12 +3192,24 @@ packages:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
     dev: false
 
+  /json-schema-migrate/2.0.0:
+    resolution: {integrity: sha512-r38SVTtojDRp4eD6WsCqiE0eNDt4v1WalBXb9cyZYw9ai5cGtBwzRNWjHzJl38w6TxFkXAIA7h+fyX3tnrAFhQ==}
+    dependencies:
+      ajv: 8.11.0
+    dev: false
+
   /json-schema-traverse/1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
     dev: false
 
   /json-stringify-safe/5.0.1:
     resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
+    dev: false
+
+  /json5/2.2.2:
+    resolution: {integrity: sha512-46Tk9JiOL2z7ytNQWFLpj99RZkVgeHf87yGQKsIkaPz1qSH9UczKH1rO7K3wgRselo0tYMUNfecYpm/p1vC7tQ==}
+    engines: {node: '>=6'}
+    hasBin: true
     dev: false
 
   /jsonc-parser/3.2.0:
@@ -3283,6 +3369,13 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       brace-expansion: 1.1.11
+    dev: false
+
+  /minimatch/5.1.2:
+    resolution: {integrity: sha512-bNH9mmM9qsJ2X4r2Nat1B//1dJVcn3+iBLa3IgqJ7EbGaDNepL9QSHOxN4ng33s52VMMhhIfgCYDk3C4ZmlDAg==}
+    engines: {node: '>=10'}
+    dependencies:
+      brace-expansion: 2.0.1
     dev: false
 
   /minimist/1.2.6:
@@ -3883,6 +3976,10 @@ packages:
   /split2/4.1.0:
     resolution: {integrity: sha512-VBiJxFkxiXRlUIeyMQi8s4hgvKCSjtknJv/LVYbrgALPwf5zSKmEwV9Lst25AkvMDnvxODugjdl6KZgwKM1WYQ==}
     engines: {node: '>= 10.x'}
+    dev: false
+
+  /sprintf-js/1.0.3:
+    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
     dev: false
 
   /sql-template-strings/2.2.2:
@@ -4520,14 +4617,16 @@ packages:
     dev: false
 
   file:projects/commands.tgz:
-    resolution: {integrity: sha512-+aQ+1/6RTMVWzhAJaHNcgOMu2XYxfnIgPo5IA4eDNgQt6u5Y0SN+roLhZpSo8GZWD6EbXbxtRF8q+r1up2CKHg==, tarball: file:projects/commands.tgz}
+    resolution: {integrity: sha512-Q9cugUGJCLb1a2fDA8Qi2SU/SJwa0MUn0TRQ/cmgxBv1neBWurgPiCfW7tClrCIvupHPFcZNF52pS4SbLxUxcg==, tarball: file:projects/commands.tgz}
     name: '@rush-temp/commands'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.59
       '@types/supports-color': 8.1.1
       ajv: 8.11.0
+      ajv-cli: 5.0.0
       commander: 9.4.0
+      glob: 8.0.3
       supports-color: 8.1.1
       typescript: 4.7.4
     dev: false
@@ -5201,6 +5300,17 @@ packages:
     dependencies:
       '@types/node': 16.11.59
       commander: 9.4.0
+      typescript: 4.7.4
+    dev: false
+
+  file:projects/util-internal-config.tgz:
+    resolution: {integrity: sha512-FAOgPBdHQfEI2fcePo8usQ78w5XqdgetcX+a/WyTh0zljI/QYyDEJEPNKMkuDth+kF/vaWLPKd9hFyBLoE6eYA==, tarball: file:projects/util-internal-config.tgz}
+    name: '@rush-temp/util-internal-config'
+    version: 0.0.0
+    dependencies:
+      '@cfworker/json-schema': 1.12.5
+      '@types/node': 16.11.59
+      jsonc-parser: 3.2.0
       typescript: 4.7.4
     dev: false
 

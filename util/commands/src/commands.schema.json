@@ -1,0 +1,83 @@
+{
+  "$id": "https://subsquid.io/schemas/commands.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "commands.json schema",
+  "type": "object",
+  "properties": {
+    "commands": {
+      "description": "Name-definition map of commands",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/command"
+      }
+    }
+  },
+  "$defs": {
+    "command": {
+      "description": "Command definition",
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "Command description",
+          "type": "string"
+        },
+        "hidden": {
+          "description": "Hide the command from the help listing",
+          "type": "boolean"
+        },
+        "deps": {
+          "description": "List of commands to execute prior to this one",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cmd": {
+          "description": "Program to execute and its arguments",
+          "type": "array",
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Program"
+            }
+          ],
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/glob"
+              }
+            ]
+          }
+        },
+        "workdir": {
+          "description": "Working directory",
+          "type": "string"
+        },
+        "env": {
+          "description": "Name-value map of environment variables",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "glob": {
+      "type": "object",
+      "properties": {
+        "glob": {
+          "description": "Glob pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "glob"
+      ]
+    }
+  }
+}
