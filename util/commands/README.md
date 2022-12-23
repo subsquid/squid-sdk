@@ -40,6 +40,7 @@ Below is an example `commands.json` demonstrating its features
 
 ```json5
 { // comments are ok
+  "$schema": "https://subsquid.io/schemas/commands.json",
   "commands": {
     "clean": {
       "description": "delete all build artifacts",
