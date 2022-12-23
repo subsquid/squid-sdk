@@ -19,11 +19,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-config": "^0.0.0",
     "commander": "^9.3.0",
-    "glob": "^8.0.3"
+    "glob": "^8.0.3",
+    "supports-color": "^8.1.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",

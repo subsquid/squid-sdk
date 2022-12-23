@@ -1,18 +1,17 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import {spawn} from 'child_process'
 import * as Path from 'path'
-import {Logger} from '@subsquid/logger'
 import * as process from 'process'
+import {stderr as supportsColor} from 'supports-color'
 import {Command, Config, InvalidConfig} from './config'
 
 
-export async function run(config: Config, commands: string[], log?: Logger): Promise<number> {
+export async function run(config: Config, commands: string[]): Promise<number> {
     for (let [name, cmd] of createPlan(config, commands)) {
         if (!cmd.cmd) continue
-        log?.info(`---- ${name} ----`)
+        printCommandLabel(name)
         let exitCode = await execute(config, cmd)
         if (exitCode > 0) {
-            log?.error(`\`${name}\` exited with code ${exitCode}`)
             return exitCode
         }
     }
@@ -27,7 +26,7 @@ function createPlan(config: Config, commands: string[]): [name: string, cmd: Com
 
     function visit(name: string): void {
         if (visited.has(name)) return
-        if (path.has(name)) throw new InvalidConfig(`Command ${name} depends on itself`)
+        if (path.has(name)) throw new InvalidConfig(`command \`${name}\` depends on itself`)
 
         path.add(name)
 
@@ -105,4 +104,13 @@ function extendPath(env: typeof process.env, root: string): void {
             env[key] = pathValue
         }
     }
+}
+
+
+function printCommandLabel(name: string): void {
+    let line = name.toUpperCase()
+    if (supportsColor) {
+        line = '\u001b[1m' + line + '\u001b[0m'
+    }
+    console.error(line)
 }

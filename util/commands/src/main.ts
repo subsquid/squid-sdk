@@ -1,12 +1,8 @@
-import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {program} from 'commander'
 import * as process from 'process'
 import {getConfig, InvalidConfig} from './config'
-import {UndefinedCommand, run} from './run'
-
-
-const log = createLogger('sqd:commands')
+import {run, UndefinedCommand} from './run'
 
 
 runProgram(async () => {
@@ -28,14 +24,14 @@ The tool is driven by commands.json config file, supposed to be located at the p
     }
 
     let config = await getConfig()
-
-    let exitCode = await run(config, commands, log)
+    let exitCode = await run(config, commands)
     process.exit(exitCode)
+
 }, err => {
     if (err instanceof InvalidConfig || err instanceof UndefinedCommand) {
-        log.fatal({...err}, err.toString())
+        console.error(err.toString())
     } else {
-        log.fatal(err)
+        console.error(err)
     }
 })
 
