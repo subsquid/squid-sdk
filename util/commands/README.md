@@ -2,25 +2,24 @@
 
 Command launcher for squids.
 
-This tool was created as a replacement for npm scripts and Makefiles to cover the following
-shortcomings of both.
+This tool was created as a replacement for npm scripts and Makefiles to cover the following shortcomings of both.
 
-npm scripts:
+`npm` scripts:
 
 * Hard to write complex commands.
-* Commands are interpreted via system shell, meaning behaviour can be inconsistent across platforms.
+* Commands are interpreted via the system shell, meaning the behaviour can be inconsistent across different platforms.
 * No comments.
-* No command descriptions for overview listing.
+* No command descriptions to list in the overview.
 
-make(1):
+`make(1)`:
 
-* Not available on windows.
+* Requires WSL on Windows.
 * Esoteric and unfamiliar to many modern developers.
-* No command descriptions for overview listing.
+* No command descriptions to list in the overview.
 
 ## Usage
 
-`squid-commands(1)` is driven by a special `commands.json` file supposed to be located at the project root.
+`squid-commands(1)` is driven by a special `commands.json` file expected at the project root.
 
 ```shell
 # list defined commands
@@ -34,9 +33,9 @@ cd child/
 squid-commands build
 ```
 
-## commands.json
+## `commands.json`
 
-Below is an example `commands.json` demonstrating its features
+Below is a sample `commands.json` file demonstrating its features
 
 ```json5
 { // comments are ok

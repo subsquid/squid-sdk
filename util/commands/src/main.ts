@@ -10,7 +10,7 @@ runProgram(async () => {
         .description(`
 Command runner for squids. Serves as a replacement for Makefiles and npm scripts.
 
-The tool is driven by commands.json config file, supposed to be located at the project root.
+The tool is driven by a commands.json config file, expected at the project root.
         `.trim())
         .name('squid-commands')
         .argument('[commands...]', 'commands to execute')
