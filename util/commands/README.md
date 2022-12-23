@@ -13,7 +13,7 @@ This tool was created as a replacement for npm scripts and Makefiles to cover th
 
 `make(1)`:
 
-* Requires WSL on Windows.
+* Not cross-platform
 * Esoteric and unfamiliar to many modern developers.
 * No command descriptions to list in the overview.
 
