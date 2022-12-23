@@ -1,5 +1,6 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import {spawn} from 'child_process'
+import {glob} from 'glob'
 import * as Path from 'path'
 import * as process from 'process'
 import {stderr as supportsColor} from 'supports-color'
@@ -61,11 +62,31 @@ export class UndefinedCommand extends Error {
 }
 
 
-function execute(config: Config, command: Command): Promise<number> {
-    let args = assertNotNull(command.cmd)
+async function execute(config: Config, command: Command): Promise<number> {
     let cwd = Path.dirname(Path.resolve(config.file))
+
+    let cmd = assertNotNull(command.cmd)
+    let args: string[] = []
+    for (const arg of cmd) {
+        if (typeof arg == 'string') {
+            args.push(arg)
+        } else {
+            let expanded: string[] = await new Promise((resolve, reject) => {
+                glob(arg.glob, {cwd}, (err, matches) => {
+                    if (err) {
+                        reject(err)
+                    } else {
+                        resolve(matches)
+                    }
+                })
+            })
+            args.push(...expanded)
+        }
+    }
+
     let env = {...process.env, ...command.env}
     extendPath(env, cwd)
+
     return new Promise<number>((resolve, reject) => {
         let proc = spawn(args[0], args.slice(1), {
             cwd: command.workdir ? Path.join(cwd, command.workdir) : cwd,

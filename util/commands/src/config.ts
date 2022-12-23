@@ -27,7 +27,7 @@ export interface Command {
 }
 
 
-export type CmdArg = string
+export type CmdArg = string | {glob: string}
 
 
 export function readConfig(file: string): Promise<Config> {

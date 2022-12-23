@@ -38,7 +38,7 @@ export const events = {
 }
 
 export const functions = {
-    proposals: new Func<[ethers.BigNumber], {}, ([recipient: string, amount: ethers.BigNumber, description: string, votingDeadline: ethers.BigNumber, open: boolean, proposalPassed: boolean, proposalHash: string, proposalDeposit: ethers.BigNumber, newCurator: boolean, yea: ethers.BigNumber, nay: ethers.BigNumber, creator: string] & {recipient: string, amount: ethers.BigNumber, description: string, votingDeadline: ethers.BigNumber, open: boolean, proposalPassed: boolean, proposalHash: string, proposalDeposit: ethers.BigNumber, newCurator: boolean, yea: ethers.BigNumber, nay: ethers.BigNumber, creator: string})>(
+    proposals: new Func<[_: ethers.BigNumber], {}, ([recipient: string, amount: ethers.BigNumber, description: string, votingDeadline: ethers.BigNumber, open: boolean, proposalPassed: boolean, proposalHash: string, proposalDeposit: ethers.BigNumber, newCurator: boolean, yea: ethers.BigNumber, nay: ethers.BigNumber, creator: string] & {recipient: string, amount: ethers.BigNumber, description: string, votingDeadline: ethers.BigNumber, open: boolean, proposalPassed: boolean, proposalHash: string, proposalDeposit: ethers.BigNumber, newCurator: boolean, yea: ethers.BigNumber, nay: ethers.BigNumber, creator: string})>(
         abi, '0x013cf08b'
     ),
     approve: new Func<[_spender: string, _amount: ethers.BigNumber], {_spender: string, _amount: ethers.BigNumber}, boolean>(
@@ -80,7 +80,7 @@ export const functions = {
     closingTime: new Func<[], {}, ethers.BigNumber>(
         abi, '0x4b6753bc'
     ),
-    allowedRecipients: new Func<[string], {}, boolean>(
+    allowedRecipients: new Func<[_: string], {}, boolean>(
         abi, '0x4df6d6cc'
     ),
     transferWithoutReward: new Func<[_to: string, _value: ethers.BigNumber], {_to: string, _value: ethers.BigNumber}, boolean>(
@@ -92,7 +92,7 @@ export const functions = {
     newProposal: new Func<[_recipient: string, _amount: ethers.BigNumber, _description: string, _transactionData: string, _debatingPeriod: ethers.BigNumber, _newCurator: boolean], {_recipient: string, _amount: ethers.BigNumber, _description: string, _transactionData: string, _debatingPeriod: ethers.BigNumber, _newCurator: boolean}, ethers.BigNumber>(
         abi, '0x612e45a3'
     ),
-    DAOpaidOut: new Func<[string], {}, ethers.BigNumber>(
+    DAOpaidOut: new Func<[_: string], {}, ethers.BigNumber>(
         abi, '0x643f7cdd'
     ),
     minQuorumDivisor: new Func<[], {}, ethers.BigNumber>(
@@ -110,7 +110,7 @@ export const functions = {
     halveMinQuorum: new Func<[], {}, boolean>(
         abi, '0x78524b2e'
     ),
-    paidOut: new Func<[string], {}, ethers.BigNumber>(
+    paidOut: new Func<[_: string], {}, ethers.BigNumber>(
         abi, '0x81f03fcb'
     ),
     splitDAO: new Func<[_proposalID: ethers.BigNumber, _newCurator: string], {_proposalID: ethers.BigNumber, _newCurator: string}, boolean>(
@@ -152,7 +152,7 @@ export const functions = {
     getMyReward: new Func<[], {}, boolean>(
         abi, '0xcc9ae3f6'
     ),
-    rewardToken: new Func<[string], {}, ethers.BigNumber>(
+    rewardToken: new Func<[_: string], {}, ethers.BigNumber>(
         abi, '0xcdef91d0'
     ),
     transferFromWithoutReward: new Func<[_from: string, _to: string, _value: ethers.BigNumber], {_from: string, _to: string, _value: ethers.BigNumber}, boolean>(
@@ -164,7 +164,7 @@ export const functions = {
     changeProposalDeposit: new Func<[_proposalDeposit: ethers.BigNumber], {_proposalDeposit: ethers.BigNumber}, []>(
         abi, '0xe33734fd'
     ),
-    blocked: new Func<[string], {}, ethers.BigNumber>(
+    blocked: new Func<[_: string], {}, ethers.BigNumber>(
         abi, '0xe5962195'
     ),
     curator: new Func<[], {}, string>(

@@ -74,6 +74,7 @@ specifiers:
   '@substrate/calc': ^0.2.8
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.13
+  '@types/glob': ^8.0.0
   '@types/inflected': ^1.1.29
   '@types/mocha': ^9.1.1
   '@types/node': ^16.11.41
@@ -197,6 +198,7 @@ dependencies:
   '@substrate/calc': 0.2.8
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.14
+  '@types/glob': 8.0.0
   '@types/inflected': 1.1.29
   '@types/mocha': 9.1.1
   '@types/node': 16.11.59
@@ -1454,6 +1456,13 @@ packages:
 
   /@types/glob/7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
+    dependencies:
+      '@types/minimatch': 5.1.2
+      '@types/node': 16.11.59
+    dev: false
+
+  /@types/glob/8.0.0:
+    resolution: {integrity: sha512-l6NQsDDyQUVeoTynNpC9uRvCUint/gSUXQA2euwmTuWGvPY5LSDUu6tkCtJB2SvGQlJQzLaKqcGZP4//7EDveA==}
     dependencies:
       '@types/minimatch': 5.1.2
       '@types/node': 16.11.59
@@ -4617,10 +4626,11 @@ packages:
     dev: false
 
   file:projects/commands.tgz:
-    resolution: {integrity: sha512-Q9cugUGJCLb1a2fDA8Qi2SU/SJwa0MUn0TRQ/cmgxBv1neBWurgPiCfW7tClrCIvupHPFcZNF52pS4SbLxUxcg==, tarball: file:projects/commands.tgz}
+    resolution: {integrity: sha512-taeUxbBM9cH9SVdEayKbEf3Bw1C+6NeW3PQ3hhM/qnNdZyysmM51qO4ZeOUzibn9AIbi2vQ0CpiJPqAaSztkkQ==, tarball: file:projects/commands.tgz}
     name: '@rush-temp/commands'
     version: 0.0.0
     dependencies:
+      '@types/glob': 8.0.0
       '@types/node': 16.11.59
       '@types/supports-color': 8.1.1
       ajv: 8.11.0
@@ -4930,7 +4940,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-hy7wbSKPzGeMQCf5OxfyOaiKxWoZOxTzm2hPC2/6dYzYBgWuSbjgwVTXl2BnhmgmbKk0EDH7KGNZjbqmcOzhUA==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-70mBV8y9xhsc1XzMDeKevIArvgfmaw3rqkmdVavT4zRfHh0LCNAtS2EG0OSBEOVvg13CYBNiWAIFjO6Y3J1xRg==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0

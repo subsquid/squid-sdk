@@ -7,7 +7,7 @@
     },
     "down": {
       "description": "stop docker services",
-      "cmd": ["docker", "compose", "down"]
+      "cmd": ["docker", "compose", "down", "-v"]
     },
     "build": {
       "description": "build the project",
@@ -22,7 +22,8 @@
       "description": "generate ABI facades",
       "cmd": [
         "squid-evm-typegen",
-        "erc721.json",
+        "src/abi",
+        {"glob": "erc*.json"},
         "0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#something",
         "--multicall",
         "--clean"
