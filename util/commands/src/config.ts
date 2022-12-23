@@ -61,7 +61,7 @@ export async function resolveConfig(cwd?: string): Promise<string> {
     cwd = Path.resolve(cwd ?? process.cwd())
     let candidate = Path.join(cwd, 'commands.json')
     try {
-        await fs.access(candidate)
+        await fs.stat(candidate)
         return candidate
     } catch(err: any) {
         if (err.code == 'ENOENT') {
