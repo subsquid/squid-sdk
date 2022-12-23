@@ -1,7 +1,7 @@
 import {runProgram} from '@subsquid/util-internal'
 import {program} from 'commander'
 import * as process from 'process'
-import {getConfig, InvalidConfig} from './config'
+import {ConfigNotFound, getConfig, InvalidConfig} from './config'
 import {run, UndefinedCommand} from './run'
 
 
@@ -28,7 +28,7 @@ The tool is driven by commands.json config file, supposed to be located at the p
     process.exit(exitCode)
 
 }, err => {
-    if (err instanceof InvalidConfig || err instanceof UndefinedCommand) {
+    if (err instanceof InvalidConfig || err instanceof UndefinedCommand || err instanceof ConfigNotFound) {
         console.error(err.toString())
     } else {
         console.error(err)
