@@ -91,7 +91,8 @@ async function execute(config: Config, command: Command): Promise<number> {
         let proc = spawn(args[0], args.slice(1), {
             cwd: command.workdir ? Path.join(cwd, command.workdir) : cwd,
             env,
-            stdio: 'inherit'
+            stdio: 'inherit',
+            shell: process.platform == 'win32' // support .bat, .cmd
         })
 
         proc.on('error', err => {
