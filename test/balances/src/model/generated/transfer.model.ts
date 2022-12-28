@@ -1,7 +1,6 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {Account} from "./account.model"
 
 @Index_(["from", "to"], {unique: false})
 @Index_(["timestamp", "from", "to"], {unique: false})
@@ -17,14 +16,16 @@ export class Transfer {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     timestamp!: bigint
 
-    @ManyToOne_(() => Account, {nullable: true})
-    from!: Account
+    @Column_("text", {nullable: false})
+    from!: string
 
-    @Index_()
-    @ManyToOne_(() => Account, {nullable: true})
-    to!: Account
+    @Column_("text", {nullable: false})
+    to!: string
 
     @Index_()
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     amount!: BigDecimal
+
+    @Column_("text", {array: true, nullable: true})
+    tags!: (string)[] | undefined | null
 }
