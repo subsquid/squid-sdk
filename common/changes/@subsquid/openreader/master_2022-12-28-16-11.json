@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "fix: queryables don't work without `orderBy`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

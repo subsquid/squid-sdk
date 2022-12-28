@@ -1,3 +1,4 @@
+import expect from 'expect'
 import {useDatabase, useServer} from './setup'
 
 describe('queryable interfaces', function() {
@@ -253,6 +254,22 @@ describe('queryable interfaces', function() {
                 {__typename: 'Two', id: '2-1', relations: [{id: 'r-1'}, {id: 'r-2'}]},
                 {__typename: 'Two', id: '2-2', relations: []}
             ]
+        })
+    })
+
+    it('works without ordering', function() {
+        return client.test(`
+            query {
+                numbers {
+                    id
+                    __typename
+                }
+            }
+        `, {
+            numbers: expect.arrayContaining([
+                {__typename: 'One', id: '1-1'},
+                {__typename: 'Two', id :'2-1'}
+            ])
         })
     })
 })

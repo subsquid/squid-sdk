@@ -402,7 +402,7 @@ export class QueryableSqlPrinter {
             } else {
                 cols.push('null AS d')
             }
-            cols.push(...this.orderColumns[idx])
+            cols.push(...this.orderColumns[idx] ?? [])
             return `SELECT ${cols.join(', ')} ${printer.printFrom()}`
         }).join('\nUNION ALL\n')
 
