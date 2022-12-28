@@ -150,6 +150,9 @@ export class SchemaBuilder {
             if (prop.type.kind == 'list-lookup') {
                 field.args = this.listArguments(prop.type.entity)
             }
+            if (prop.type.kind == 'interface-query') {
+                field.args = this.listArguments(prop.type.interface)
+            }
             if (object.kind == 'entity' || object.kind == 'object') {
                 switch(prop.type.kind) {
                     case 'object':
@@ -157,6 +160,7 @@ export class SchemaBuilder {
                     case 'fk':
                     case 'lookup':
                     case 'list-lookup':
+                    case 'interface-query':
                         field.resolve = (source, args, context, info) => source[info.path.key]
                         break
                 }
@@ -182,6 +186,14 @@ export class SchemaBuilder {
                     new GraphQLList(
                         new GraphQLNonNull(
                             this.get(prop.type.entity)
+                        )
+                    )
+                )
+            case "interface-query":
+                return new GraphQLNonNull(
+                    new GraphQLList(
+                        new GraphQLNonNull(
+                            this.get(prop.type.interface)
                         )
                     )
                 )

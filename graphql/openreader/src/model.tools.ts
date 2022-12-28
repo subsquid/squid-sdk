@@ -280,6 +280,8 @@ export function propTypeEquals(a: PropType, b: PropType): boolean {
         case 'lookup':
         case 'list-lookup':
             return a.entity == (b as typeof a).entity && a.field == (b as typeof a).field
+        case 'interface-query':
+            return a.interface == (b as typeof a).interface && a.field == (b as typeof a).field
         default:
             return a.name == (b as typeof a).name
     }

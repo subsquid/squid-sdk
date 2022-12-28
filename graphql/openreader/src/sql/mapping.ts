@@ -57,6 +57,15 @@ export function mapRow(row: any[], fields: FieldRequest[], ifType?: string): any
                     }
                     break
                 }
+                case "interface-query": {
+                    let rows = row[f.index]
+                    if (rows == null) {
+                        rec[alias] = []
+                    } else {
+                        rec[alias] = mapQueryableRows(rows, f.children)
+                    }
+                    break
+                }
                 default:
                     throw unexpectedCase((f as any).kind)
             }

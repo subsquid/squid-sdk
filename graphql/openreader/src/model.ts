@@ -71,7 +71,8 @@ export type PropType =
     UnionPropType |
     FkPropType |
     LookupPropType |
-    ListLookupPropType
+    ListLookupPropType |
+    InterfaceQueryPropType
 
 
 export interface ScalarPropType {
@@ -123,6 +124,13 @@ export interface LookupPropType {
 export interface ListLookupPropType {
     kind: 'list-lookup'
     entity: Name
+    field: Name
+}
+
+
+export interface InterfaceQueryPropType {
+    kind: 'interface-query'
+    interface: Name
     field: Name
 }
 

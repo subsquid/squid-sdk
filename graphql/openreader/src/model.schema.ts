@@ -235,7 +235,28 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                     ...limits
                 }
             }
-        } else {
+        } else if (fieldType instanceof GraphQLInterfaceType) {
+            if (!isQueryableInterface(fieldType)) throw new SchemaError()
+            if (derivedFrom == null) throw new SchemaError(`@derivedFrom directive is required on ${propName} declaration`)
+            switch(list.nulls.length) {
+                case 0:
+                    throw new SchemaError()
+                case 1:
+                    properties[key] = {
+                        type: {
+                            kind: 'interface-query',
+                            interface: fieldType.name,
+                            field: derivedFrom.field
+                        },
+                        nullable: false,
+                        description,
+                        ...limits
+                    }
+                    break
+                default:
+                    throw unsupportedFieldTypeError(propName)
+            }
+        } else{
             throw unsupportedFieldTypeError(propName)
         }
     }

@@ -85,6 +85,18 @@ export class EntitySqlPrinter {
                     f.index = this.columns.add(exp)
                     break
                 }
+                case "interface-query": {
+                    let sub = new QueryableSqlPrinter(
+                        this.model,
+                        this.dialect,
+                        f.type.interface,
+                        this.params,
+                        f.args,
+                        f.children
+                    ).addWhereDerivedFrom(f.type.field, cursor.native('id'))
+                    f.index = this.columns.add(`(SELECT jsonb_agg(row) FROM (SELECT JSON_BUILD_ARRAY(e,d) as row FROM (${sub.print()}) AS vars) AS rows)`)
+                    break
+                }
                 default:
                     throw unexpectedCase()
             }
@@ -293,7 +305,7 @@ export class EntitySqlPrinter {
         return escapeIdentifier(this.dialect, name)
     }
 
-    private addWhereDerivedFrom(field: string, parentIdExp: string): this {
+    public addWhereDerivedFrom(field: string, parentIdExp: string): this {
         this.where.push(`${this.root.native(field)} = ${parentIdExp}`)
         return this
     }
@@ -430,6 +442,13 @@ export class QueryableSqlPrinter {
         }
 
         return `SELECT count(*) FROM (\n${from}\n) AS rows`
+    }
+
+    public addWhereDerivedFrom(field: string, parentIdExp: string): this {
+        for (let printer of this.printers) {
+            printer.addWhereDerivedFrom(field, parentIdExp)
+        }
+        return this
     }
 
     private printArgs(): string {

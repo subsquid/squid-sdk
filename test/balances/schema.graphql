@@ -3,6 +3,8 @@ type Account @entity {
     id: ID!
     balance: BigInt!
     historicalBalances: [HistoricalBalance!] @derivedFrom(field: "account")
+    transfers: [Transfer!]! @derivedFrom(field: "from")
+    itransfers: [ITransfer!]! @derivedFrom(field: "from")
 }
 
 type HistoricalBalance @entity {
@@ -12,10 +14,22 @@ type HistoricalBalance @entity {
     timestamp: BigInt!
 }
 
-type Transfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
+interface ITransfer @query {
+    timestamp: BigInt!
+}
+
+type Transfer implements ITransfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
     id: ID!
     timestamp: BigInt! @index
     from: Account!
     to: Account!
     amount: BigDecimal! @index
 }
+
+# type SuperTransfer implements ITransfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
+#     id: ID!
+#     timestamp: BigInt! @index
+#     from: Account!
+#     to: Account!
+#     amount: BigDecimal! @index
+# }

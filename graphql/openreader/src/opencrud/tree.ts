@@ -110,6 +110,18 @@ export function parseObjectTree(
                     children: parseObjectTree(model, prop.type.entity, schema, f)
                 })
                 break
+            case "interface-query":
+                requests.push({
+                    field: f.name,
+                    aliases: [f.alias],
+                    kind: prop.type.kind,
+                    type: prop.type,
+                    prop,
+                    index: 0,
+                    args: parseSqlArguments(model, prop.type.interface, f.args),
+                    children: parseQueryableTree(model, prop.type.interface, schema, f)
+                })
+                break
             default:
                 throw unexpectedCase()
         }

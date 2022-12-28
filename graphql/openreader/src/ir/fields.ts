@@ -2,6 +2,7 @@ import assert from 'assert'
 import {
     EnumPropType,
     FkPropType,
+    InterfaceQueryPropType,
     ListLookupPropType,
     ListPropType,
     LookupPropType,
@@ -13,7 +14,7 @@ import {
 import {SqlArguments} from "./args"
 
 
-export type FieldRequest = EntityListRequest | ObjectRequest | OpaqueRequest
+export type FieldRequest = EntityListRequest | ObjectRequest | OpaqueRequest | InterfaceQueryRequest
 
 
 type Base<T> = T extends PropType ? {
@@ -29,6 +30,12 @@ type Base<T> = T extends PropType ? {
 
 export type EntityListRequest = Base<ListLookupPropType> & {
     children: FieldRequest[]
+    args?: SqlArguments
+}
+
+
+export type InterfaceQueryRequest = Base<InterfaceQueryPropType> & {
+    children: FieldsByEntity
     args?: SqlArguments
 }
 
