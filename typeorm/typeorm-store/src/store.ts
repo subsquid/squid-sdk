@@ -1,6 +1,6 @@
-import assert from "assert"
-import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from "typeorm"
-import {EntityTarget} from "typeorm/common/EntityTarget"
+import assert from 'assert'
+import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from 'typeorm'
+import {EntityTarget} from 'typeorm/common/EntityTarget'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 
 
@@ -58,14 +58,26 @@ export class Store {
     constructor(private em: () => Promise<EntityManager>) {}
 
     /**
-     * Upserts a given entity or entities into the database.
-     *
-     * Unlike {@link EntityManager.save} it always
-     * executes a primitive operation without cascades, relations, etc.
+     * Alias for {@link Store.upsert}
      */
     save<E extends Entity>(entity: E): Promise<void>
     save<E extends Entity>(entities: E[]): Promise<void>
-    async save<E extends Entity>(e: E | E[]): Promise<void> {
+    save<E extends Entity>(e: E | E[]): Promise<void> {
+        if (Array.isArray(e)) { // please the compiler
+            return this.upsert(e)
+        } else {
+            return this.upsert(e)
+        }
+    }
+
+    /**
+     * Upserts a given entity or entities into the database.
+     *
+     * It always executes a primitive operation without cascades, relations, etc.
+     */
+    upsert<E extends Entity>(entity: E): Promise<void>
+    upsert<E extends Entity>(entities: E[]): Promise<void>
+    async upsert<E extends Entity>(e: E | E[]): Promise<void> {
         if (Array.isArray(e)) {
             if (e.length == 0) return
             let entityClass = e[0].constructor as EntityClass<E>
@@ -75,19 +87,6 @@ export class Store {
             await this.em().then(em => this.saveMany(em, entityClass, e))
         } else {
             await this.em().then(em => em.upsert(e.constructor as EntityClass<E>, e as any, ['id']))
-        }
-    }
-
-    /**
-     * Alias for {@link Store.save}
-     */
-    upsert<E extends Entity>(entity: E): Promise<void>
-    upsert<E extends Entity>(entities: E[]): Promise<void>
-    async upsert<E extends Entity>(e: E | E[]): Promise<void> {
-        if (Array.isArray(e)) {
-            await this.save(e)
-        } else {
-            await this.save(e)
         }
     }
 
