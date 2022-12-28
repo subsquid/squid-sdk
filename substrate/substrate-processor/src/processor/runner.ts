@@ -211,7 +211,7 @@ export class Runner<S, R extends BatchRequest> {
             }
 
             this.lastBlock = batch.range.to
-            await this.config.getDatabase().advance(this.lastBlock)
+            await this.config.getDatabase().advance(this.lastBlock, batch.isHead)
 
             let mappingEndTime = process.hrtime.bigint()
 
