@@ -37,6 +37,7 @@ export interface DataBatch<R> {
     blocks: BlockData[]
     fetchStartTime: bigint
     fetchEndTime: bigint
+    isHead: boolean
 }
 
 
@@ -117,7 +118,17 @@ export class Ingest<R extends BatchRequest> {
                             request: batch.request
                         }
                     } else {
+                        assert(to === rangeEnd(batch.range))
                         this.batches.shift()
+                    }
+
+                    // When we are on the head, always include the head block,
+                    // even if it doesn't contain requested data.
+                    let isHead = to == response.status.head
+                    if (isHead && !blocks.find(b => b.header.height === response.status.head)) {
+                        blocks.push(
+                            mapGatewayBlock(await this.fetchBlockHeader(to))
+                        )
                     }
 
                     return {
@@ -125,7 +136,8 @@ export class Ingest<R extends BatchRequest> {
                         range: {from, to},
                         request: batch.request,
                         fetchStartTime,
-                        fetchEndTime
+                        fetchEndTime,
+                        isHead
                     }
                 }).catch(withErrorContext(ctx))
 
@@ -231,23 +243,47 @@ export class Ingest<R extends BatchRequest> {
                 q.line('head')
             })
             q.block(`batch(${printGqlArguments(args)})`, () => {
-                q.block('header', () => {
-                    q.line('id')
-                    q.line('height')
-                    q.line('hash')
-                    q.line('parentHash')
-                    q.line('timestamp')
-                    q.line('specId')
-                    q.line('stateRoot')
-                    q.line('extrinsicsRoot')
-                    q.line('validator')
-                })
+                this.printBlockHeaderGql(q)
                 q.line('events')
                 q.line('calls')
                 q.line('extrinsics')
             })
         })
         return q.toString()
+    }
+
+    private printBlockHeaderGql(q: Output): void {
+        q.block('header', () => {
+            q.line('id')
+            q.line('height')
+            q.line('hash')
+            q.line('parentHash')
+            q.line('timestamp')
+            q.line('specId')
+            q.line('stateRoot')
+            q.line('extrinsicsRoot')
+            q.line('validator')
+        })
+    }
+
+    private async fetchBlockHeader(height: number): Promise<gw.BatchBlock> {
+        let q = new Output()
+
+        let args: gw.BatchRequest = {
+            fromBlock: height,
+            toBlock: height,
+            includeAllBlocks: true
+        }
+
+        q.block(`query`, () => {
+            q.block(`batch(${printGqlArguments(args)})`, () => {
+                this.printBlockHeaderGql(q)
+            })
+        })
+
+        let response: {batch: gw.BatchResponse} = await this.options.archiveRequest(q.toString())
+        assert(response.batch.data.length == 1)
+        return response.batch.data[0]
     }
 
     private async waitForHeight(minimumHeight: number): Promise<number> {
@@ -399,7 +435,7 @@ function tryMapGatewayBlock(block: gw.BatchBlock): BlockData {
 
     return {
         header: {...hdr, timestamp: new Date(timestamp).valueOf(), validator: validator ?? undefined},
-        items: items
+        items
     }
 }
 

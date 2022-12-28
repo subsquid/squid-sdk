@@ -204,8 +204,10 @@ export class Runner<S, R extends BatchRequest> {
             let packs = await this.splitBySpec(batch)
             let mappingStartTime = process.hrtime.bigint()
 
-            for (let pack of packs) {
-                await this.processBatch(batch.request, pack.chain, pack.blocks)
+            for (let i = 0; i < packs.length; i++) {
+                let pack = packs[i]
+                let isHead = batch.isHead && i + 1 == packs.length
+                await this.processBatch(batch.request, pack.chain, pack.blocks, isHead)
             }
 
             this.lastBlock = batch.range.to
@@ -271,7 +273,7 @@ export class Runner<S, R extends BatchRequest> {
         return result
     }
 
-    async processBatch(request: R, chain: Chain, blocks: BlockData[]): Promise<void> {
+    async processBatch(request: R, chain: Chain, blocks: BlockData[], isHead: boolean): Promise<void> {
 
     }
 

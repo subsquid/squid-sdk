@@ -59,6 +59,12 @@ export interface BatchContext<Store, Item> {
     log: Logger
     store: Store
     blocks: BatchBlock<Item>[]
+    /**
+     * Signals, that the processor reached the head of a chain.
+     *
+     * The head block is always included in `.blocks`.
+     */
+    isHead: boolean
 }
 
 
@@ -670,7 +676,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
 
             let runner = new Runner(config)
 
-            runner.processBatch = async function(request: PlainBatchRequest, chain: Chain, blocks: BlockData[]) {
+            runner.processBatch = async function(request: PlainBatchRequest, chain: Chain, blocks: BlockData[], isHead: boolean) {
                 if (blocks.length == 0) return
                 let from = blocks[0].header.height
                 let to = last(blocks).header.height
@@ -680,6 +686,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
                         log: logger.child('mapping'),
                         store,
                         blocks: blocks as any,
+                        isHead
                     })
                 })
             }

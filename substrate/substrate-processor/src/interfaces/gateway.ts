@@ -83,9 +83,9 @@ export interface BatchResponse {
 
 export interface BatchBlock {
     header: Omit<SubstrateBlock, 'timestamp' | 'validator'> & {timestamp: string} & {validator: string | null}
-    events: Event[]
-    calls: Call[]
-    extrinsics: Extrinsic[]
+    events?: Event[]
+    calls?: Call[]
+    extrinsics?: Extrinsic[]
 }
 
 
