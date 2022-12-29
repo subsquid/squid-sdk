@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Dec 2022 19:19:37 GMT and should not be manually modified.
+
+## 0.2.0
+Thu, 29 Dec 2022 19:19:37 GMT
+
+### Minor changes
+
+- rename `Store.save()` to `Store.upsert()`, but preserve `.save()` as an alias
 
 ## 0.1.5
 Fri, 28 Oct 2022 12:04:58 GMT

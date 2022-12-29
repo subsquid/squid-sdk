@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "3.1.6",
+      "tag": "@subsquid/openreader_v3.1.6",
+      "date": "Thu, 29 Dec 2022 19:19:37 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix: queryables don't work without `orderBy`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.5",
       "tag": "@subsquid/openreader_v3.1.5",
       "date": "Tue, 20 Dec 2022 18:27:34 GMT",

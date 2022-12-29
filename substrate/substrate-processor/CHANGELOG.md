@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Dec 2022 19:19:37 GMT and should not be manually modified.
+
+## 2.2.0
+Thu, 29 Dec 2022 19:19:37 GMT
+
+### Minor changes
+
+- add `BatchContext.isHead` property to signal when the processor is on the top of a chain
+- pass `isHead` flag to `Database.advance()`
 
 ## 2.1.0
 Wed, 30 Nov 2022 19:36:06 GMT

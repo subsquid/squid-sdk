@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Tue, 20 Dec 2022 18:27:34 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Dec 2022 19:19:37 GMT and should not be manually modified.
+
+## 3.1.6
+Thu, 29 Dec 2022 19:19:37 GMT
+
+### Patches
+
+- fix: queryables don't work without `orderBy`
 
 ## 3.1.5
 Tue, 20 Dec 2022 18:27:34 GMT
