@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/typeorm-store",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "TypeORM based storage for squid mappings",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

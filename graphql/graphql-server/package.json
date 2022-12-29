@@ -24,7 +24,7 @@
     "@graphql-tools/merge": "^8",
     "@graphql-tools/utils": "^8",
     "@graphql-tools/schema": "^8",
-    "@subsquid/openreader": "^3.1.5",
+    "@subsquid/openreader": "^3.1.6",
     "@subsquid/typeorm-config": "^2.0.0",
     "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",

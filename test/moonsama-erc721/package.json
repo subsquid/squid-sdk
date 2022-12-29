@@ -8,9 +8,9 @@
   "dependencies": {
     "@subsquid/frontier": "^0.1.0",
     "@subsquid/graphql-server": "^3.3.0",
-    "@subsquid/substrate-processor": "^2.1.0",
+    "@subsquid/substrate-processor": "^2.2.0",
     "@subsquid/typeorm-migration": "^0.1.4",
-    "@subsquid/typeorm-store": "^0.1.5",
+    "@subsquid/typeorm-store": "^0.2.0",
     "dotenv": "^10.0.0",
     "ethers": "^5.7.2",
     "pg": "^8.7.3",
