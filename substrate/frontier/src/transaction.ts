@@ -2,7 +2,8 @@ import assert from 'assert'
 import {Call, ChainContext} from './interfaces'
 import {registry} from './registry'
 import {serialize, parse} from '@ethersproject/transactions'
-import {clearUndefinedFields, normalizeAccessListItem, normalizeU256} from './util'
+import {normalizeAccessListItem, normalizeU256} from './util'
+import {assertNotNull} from '@subsquid/util-internal'
 
 export enum TransactionType {
     Legacy,
@@ -64,92 +65,177 @@ export function getTransaction(ctx: ChainContext, call: Call): Transaction {
 }
 
 export function getAsV0(args: any): Transaction {
-    const data = args.transaction
-    return normalizeTransaction({
-        to: data.action.value || undefined,
-        nonce: normalizeU256(data.nonce),
-        gasLimit: normalizeU256(data.gasLimit),
-        gasPrice: normalizeU256(data.gasPrice),
-        value: normalizeU256(data.value),
-        input: data.input,
-        type: TransactionType.Legacy,
-        v: BigInt(data.signature.v),
-        r: data.signature.r,
-        s: data.signature.s,
-    })
+    return normalizeLegacyTransaction(args.transaction)
 }
 
 export function getAsV1(args: any): Transaction {
     const transaction = args.transaction
-    const data = transaction.value
-    const signature = data.signature || {
-        v: data.oddYParity,
-        r: data.r,
-        s: data.s,
+    switch (transaction.__kind) {
+        case 'Legacy':
+            return normalizeLegacyTransaction(transaction.value)
+        case 'EIP2930':
+            return normalizeEIP2930Transaction(transaction.value)
+        case 'EIP1559':
+            return normalizeEIP1559Transaction(transaction.value)
+        default:
+            throw new Error(`Unexpected transaction type: ${transaction.__kind}`)
     }
-    return normalizeTransaction({
-        type: transaction.__kind === 'Legacy' ? 0 : transaction.__kind === 'EIP2930' ? 1 : 2,
-        to: data.action.value || undefined,
-        nonce: normalizeU256(data.nonce),
-        gasLimit: normalizeU256(data.gasLimit),
-        gasPrice: data.gasPrice ? normalizeU256(data.gasPrice) : undefined,
-        value: normalizeU256(data.value),
-        maxFeePerGas: data.maxFeePerGas ? normalizeU256(data.maxFeePerGas) : undefined,
-        maxPriorityFeePerGas: data.maxPriorityFeePerGas ? normalizeU256(data.maxPriorityFeePerGas) : undefined,
-        chainId: data.chainId ? BigInt(data.chainId) : undefined,
-        accessList: data.accessList?.map(normalizeAccessListItem),
-        input: data.input,
-        v: BigInt(signature.v || 0n),
-        r: signature.r,
-        s: signature.s,
-    })
 }
 
-interface TransactionData {
-    to?: string
-    nonce: bigint
-    gasLimit: bigint
+interface LegacyTransactionRaw {
+    nonce: string | string[]
+    gasPrice: string | string[]
+    gasLimit: string | string[]
+    action: {value?: string}
+    value: string | string[]
     input: string
-    value: bigint
-    r: string
-    s: string
-    v: bigint
-    type: TransactionType
-    gasPrice?: bigint
-    accessList?: {address: string; storageKeys: string[]}[]
-    maxPriorityFeePerGas?: bigint
-    maxFeePerGas?: bigint
-    chainId?: bigint
+    signature: {
+        v: string
+        r: string
+        s: string
+    }
 }
 
-function normalizeTransaction(tx: TransactionData): Transaction {
+function normalizeLegacyTransaction(raw: LegacyTransactionRaw): LegacyTransaction {
     const serializedTransaction = serialize(
-        clearUndefinedFields({
-            to: tx.to,
-            nonce: Number(tx.nonce),
-            gasLimit: tx.gasLimit,
-            data: tx.input,
-            value: tx.value,
-            type: tx.type,
-            gasPrice: tx.gasPrice,
-            accessList: tx.accessList,
-            maxFeePerGas: tx.maxFeePerGas,
-            maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
-            chainId: tx.chainId ? Number(tx.chainId) : undefined,
-        }),
         {
-            v: Number(tx.v),
-            s: tx.s,
-            r: tx.r,
+            to: raw.action.value,
+            nonce: Number(normalizeU256(raw.nonce)),
+            gasLimit: normalizeU256(raw.gasLimit),
+            gasPrice: normalizeU256(raw.gasPrice),
+            value: normalizeU256(raw.value),
+            data: raw.input,
+            type: TransactionType.Legacy,
+        },
+        {
+            v: Number(raw.signature.v),
+            s: raw.signature.s,
+            r: raw.signature.r,
         }
     )
-    const {from, hash} = parse(serializedTransaction)
-    assert(from != null)
-    assert(hash != null)
+    const tx = parse(serializedTransaction)
 
     return {
-        ...tx,
-        from: from.toLowerCase(),
-        hash,
-    } as any
+        hash: assertNotNull(tx.hash),
+        to: tx.to?.toLowerCase(),
+        from: assertNotNull(tx.from).toLowerCase(),
+        nonce: BigInt(tx.nonce),
+        gasLimit: tx.gasLimit.toBigInt(),
+        input: tx.data,
+        value: tx.value.toBigInt(),
+        r: assertNotNull(tx.r),
+        s: assertNotNull(tx.s),
+        v: BigInt(assertNotNull(tx.v)),
+        type: TransactionType.Legacy,
+        gasPrice: assertNotNull(tx.gasPrice).toBigInt(),
+    }
+}
+
+interface EIP1559TransactionRaw {
+    chainId: string
+    nonce: string | string[]
+    maxPriorityFeePerGas: string | string[]
+    maxFeePerGas: string | string[]
+    gasLimit: string | string[]
+    action: {value?: string}
+    value: string | string[]
+    input: string
+    accessList: {address: string; storageKeys: string[]}[] | {address: string; slots: string[]}[]
+    oddYParity: boolean
+    r: string
+    s: string
+}
+
+function normalizeEIP1559Transaction(raw: EIP1559TransactionRaw): EIP1559Transaction {
+    const serializedTransaction = serialize(
+        {
+            to: raw.action.value,
+            chainId: Number(raw.chainId),
+            nonce: Number(normalizeU256(raw.nonce)),
+            gasLimit: normalizeU256(raw.gasLimit),
+            maxFeePerGas: normalizeU256(raw.maxFeePerGas),
+            maxPriorityFeePerGas: normalizeU256(raw.maxPriorityFeePerGas),
+            value: normalizeU256(raw.value),
+            accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+            data: raw.input,
+            type: TransactionType.EIP1559,
+        },
+        {
+            v: Number(raw.oddYParity),
+            s: raw.s,
+            r: raw.r,
+        }
+    )
+    const tx = parse(serializedTransaction)
+
+    return {
+        hash: assertNotNull(tx.hash),
+        to: tx.to?.toLowerCase(),
+        from: assertNotNull(tx.from).toLowerCase(),
+        nonce: BigInt(tx.nonce),
+        gasLimit: tx.gasLimit.toBigInt(),
+        input: tx.data,
+        value: tx.value.toBigInt(),
+        r: assertNotNull(tx.r),
+        s: assertNotNull(tx.s),
+        v: BigInt(assertNotNull(tx.v)),
+        type: TransactionType.EIP1559,
+        maxFeePerGas: assertNotNull(tx.maxFeePerGas).toBigInt(),
+        maxPriorityFeePerGas: assertNotNull(tx.maxPriorityFeePerGas).toBigInt(),
+        accessList: assertNotNull(tx.accessList),
+        chainId: BigInt(tx.chainId),
+    }
+}
+
+interface EIP2930TransactionRaw {
+    chainId: string
+    nonce: string | string[]
+    gasPrice: string | string[]
+    gasLimit: string | string[]
+    action: {value?: string}
+    value: string | string[]
+    input: string
+    accessList: {address: string; storageKeys: string[]}[] | {address: string; slots: string[]}[]
+    oddYParity: boolean
+    r: string
+    s: string
+}
+
+function normalizeEIP2930Transaction(raw: EIP2930TransactionRaw): EIP2930Transaction {
+    const serializedTransaction = serialize(
+        {
+            to: raw.action.value,
+            chainId: Number(raw.chainId),
+            nonce: Number(normalizeU256(raw.nonce)),
+            gasLimit: normalizeU256(raw.gasLimit),
+            gasPrice: normalizeU256(raw.gasPrice),
+            value: normalizeU256(raw.value),
+            accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+            data: raw.input,
+            type: TransactionType.EIP2930,
+        },
+        {
+            v: Number(raw.oddYParity),
+            s: raw.s,
+            r: raw.r,
+        }
+    )
+    const tx = parse(serializedTransaction)
+
+    return {
+        hash: assertNotNull(tx.hash),
+        to: tx.to?.toLowerCase(),
+        from: assertNotNull(tx.from).toLowerCase(),
+        nonce: BigInt(tx.nonce),
+        gasLimit: tx.gasLimit.toBigInt(),
+        input: tx.data,
+        value: tx.value.toBigInt(),
+        r: assertNotNull(tx.r),
+        s: assertNotNull(tx.s),
+        v: BigInt(assertNotNull(tx.v)),
+        type: TransactionType.EIP2930,
+        gasPrice: assertNotNull(tx.gasPrice).toBigInt(),
+        accessList: assertNotNull(tx.accessList),
+        chainId: BigInt(tx.chainId),
+    }
 }
