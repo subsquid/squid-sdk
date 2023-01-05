@@ -3,7 +3,7 @@ import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry
 import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions/substrate'
 import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
 
-const types: OldTypes = {
+const definitions: OldTypes = {
     types: {
         ...substrateBundle.types,
         EVM: {
@@ -111,7 +111,7 @@ const types: OldTypes = {
     },
 }
 
-const typeRegistry = new OldTypeRegistry(types)
+const typeRegistry = new OldTypeRegistry(definitions)
 const pallets = typeRegistry.use('P')
 
 export const registry = new Registry(typeRegistry.getTypes(), pallets)
