@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "use `oddYParity` for signature in EIP1559 and EIP2930 transactions",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}
