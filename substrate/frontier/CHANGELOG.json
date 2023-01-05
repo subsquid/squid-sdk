@@ -2,6 +2,18 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/frontier_v0.1.1",
+      "date": "Thu, 05 Jan 2023 11:14:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use `oddYParity` for signature in EIP1559 and EIP2930 transactions"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/frontier_v0.1.0",
       "date": "Wed, 14 Dec 2022 19:37:27 GMT",
