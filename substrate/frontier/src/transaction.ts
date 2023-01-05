@@ -83,7 +83,7 @@ export function getAsV1(args: any): Transaction {
     const transaction = args.transaction
     const data = transaction.value
     const signature = data.signature || {
-        v: data.v,
+        v: data.oddYParity,
         r: data.r,
         s: data.s,
     }
