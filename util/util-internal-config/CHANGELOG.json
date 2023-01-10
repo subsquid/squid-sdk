@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-config",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-config_v0.0.1",
+      "date": "Tue, 10 Jan 2023 10:43:13 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "some required files where missing from npm package"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-config_v0.0.0",
       "date": "Thu, 29 Dec 2022 19:19:37 GMT",
