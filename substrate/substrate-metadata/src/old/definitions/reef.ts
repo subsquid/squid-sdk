@@ -224,6 +224,18 @@ export const bundle: OldTypesBundle = {
         CommitmentOf: "Commitment"
     },
     versions: [
+        {	
+            minmax: [null, 8],	
+            types: {	
+               AccountInfo: "AccountInfoWithDualRefCount"	
+            },	
+            typesAlias: {	
+                evm: {	
+                    AccountInfo: "EvmAccountInfo",	
+                    Log: "EvmLog"	
+                }	
+            }	
+        },
         {
             minmax: [10, null],
             types: {
