@@ -1,4 +1,4 @@
-import type {Schema} from '@cfworker/json-schema'
+import type {Schema} from '@exodus/schemasafe'
 import * as fs from 'fs/promises'
 import {JsonSyntaxError, parse} from './parse'
 import {SchemaError, validate} from './validate'
@@ -12,7 +12,7 @@ export async function read<T>(file: string, schema?: Schema): Promise<T> {
     try {
         let value = parse(content)
         if (schema) {
-            await validate(value, schema)
+            validate(value, schema)
         }
         return value
     } catch(err: any) {

@@ -10,15 +10,13 @@
   "main": "lib/index.js",
   "files": [
     "lib",
-    "src",
-    "esm.js",
-    "esm.d.ts"
+    "src"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@cfworker/json-schema": "^1.12.5",
+    "@exodus/schemasafe": "^1.0.0-rc.9",
     "jsonc-parser": "^3.2.0"
   },
   "devDependencies": {

@@ -10,12 +10,13 @@
       "additionalProperties": {
         "$ref": "#/$defs/command"
       }
-    }
+    },
   },
   "$defs": {
     "command": {
       "description": "Command definition",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "description": {
           "description": "Command description",
@@ -65,10 +66,11 @@
             "type": "string"
           }
         }
-      }
+      },
     },
     "glob": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "glob": {
           "description": "Glob pattern",

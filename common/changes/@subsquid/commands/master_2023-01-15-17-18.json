@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/commands",
+      "comment": "forbid unknown properties in `commands.json` where they can potentially change semantics",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/commands"
+}

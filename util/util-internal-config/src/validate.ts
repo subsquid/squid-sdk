@@ -1,19 +1,20 @@
-import type {Schema} from '@cfworker/json-schema'
-import {esm} from '../esm'
+import {Schema, validator} from '@exodus/schemasafe'
 
 
-export async function validate(obj: any, schema: Schema): Promise<void> {
-    let {Validator} = await esm<typeof import('@cfworker/json-schema')>('@cfworker/json-schema')
-    let validator = new Validator(schema, '2020-12')
-    let result = validator.validate(obj)
-    if (result.valid) return
-    let err = result.errors.sort((a, b) => b.instanceLocation.length - a.instanceLocation.length)[0]
-    throw new SchemaError(err.instanceLocation, err.error)
+export function validate(obj: any, schema: Schema): void {
+    let validate = validator(schema, {
+        includeErrors: true,
+        complexityChecks: true,
+        requireSchema: true
+    })
+    if (validate(obj)) return
+    let err = validate.errors?.[0]!
+    throw new SchemaError(err.instanceLocation, err.keywordLocation)
 }
 
 
 export class SchemaError extends Error {
-    constructor(public readonly path: string, public readonly error: string) {
-        super(`Invalid property: ${path}: ${error}`)
+    constructor(public readonly path: string, public readonly keyword: string) {
+        super(`Invalid property: ${path}`)
     }
 }
