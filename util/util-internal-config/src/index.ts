@@ -29,6 +29,10 @@ export async function read<T>(file: string, schema?: Schema): Promise<T> {
 
 export class ConfigError extends Error {
     constructor(public readonly file: string, public readonly error: string) {
-        super(`Invalid ${file}: ${error}`)
+        super(`invalid ${file}: ${error}`)
+    }
+
+    get name(): string {
+        return 'ConfigError'
     }
 }

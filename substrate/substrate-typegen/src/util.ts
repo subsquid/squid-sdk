@@ -1,6 +1,5 @@
-import {Primitive, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
-import {unexpectedCase} from "@subsquid/util-internal"
-import Ajv, {JSONSchemaType, ValidateFunction} from "ajv"
+import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-metadata'
+import {unexpectedCase} from '@subsquid/util-internal'
 
 
 export function isEmptyVariant(type: Type): boolean {
@@ -88,22 +87,4 @@ export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
 
 export function upperCaseFirst(s: string): string {
     return s[0].toUpperCase() + s.slice(1)
-}
-
-
-export function makeValidator<T>(schema: JSONSchemaType<T>): ValidateFunction<T> {
-    let ajv = new Ajv({
-        messages: true,
-        removeAdditional: false,
-        verbose: true
-    })
-
-    return ajv.compile(schema)
-}
-
-
-export function printValidationErrors(validator: ValidateFunction, separator = ', ', data = 'data'): string {
-    if (!validator.errors?.length) return ''
-    return validator.errors.map((e) => `${data}${e.instancePath} ${e.message}`)
-        .reduce((text, msg) => text + separator + msg)
 }

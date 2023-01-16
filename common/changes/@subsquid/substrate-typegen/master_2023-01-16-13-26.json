@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "use `util-internal-config` for config validation",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

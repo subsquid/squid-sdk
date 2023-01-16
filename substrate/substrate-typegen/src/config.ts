@@ -1,8 +1,7 @@
-import {getOldTypesBundle, QualifiedName} from "@subsquid/substrate-metadata"
-import * as fs from "fs"
-import * as path from "path"
-import CONFIG_SCHEMA from "./config.schema.json"
-import {makeValidator, printValidationErrors} from "./util"
+import {getOldTypesBundle, QualifiedName} from '@subsquid/substrate-metadata'
+import {read} from '@subsquid/util-internal-config'
+import * as path from 'path'
+import CONFIG_SCHEMA from './config.schema.json'
 
 
 export interface Config {
@@ -16,49 +15,30 @@ export interface Config {
 }
 
 
-const validateConfig = makeValidator<Config>(CONFIG_SCHEMA as any)
+export async function readConfig(file: string): Promise<Config> {
+    let cfg: Config = await read(file, CONFIG_SCHEMA)
+    let dir = path.dirname(path.resolve(file))
+    let outDir = path.resolve(dir, cfg.outDir)
 
+    let specVersions = cfg.specVersions
+    if (specVersions) {
+        if (!/^https?:\/\//.test(specVersions)) {
+            specVersions = path.resolve(dir, specVersions)
+        }
+    }
 
-export function readConfig(file: string): Config {
-    let content: string
-    try {
-        content = fs.readFileSync(file, 'utf-8')
-    } catch(e: any) {
-        throw new ConfigError(`Failed to read ${file}: ${e}`)
+    let typesBundle = cfg.typesBundle
+    if (typesBundle && getOldTypesBundle(typesBundle) == null) {
+        typesBundle = path.resolve(dir, typesBundle)
     }
-    let json: unknown
-    try {
-        json = JSON.parse(content)
-    } catch(e: any) {
-        throw new ConfigError(`Failed to parse ${file}: ${e}`)
-    }
-    if (validateConfig(json)) {
-        let dir = path.dirname(path.resolve(file))
-        let outDir = path.resolve(dir, json.outDir)
-        let specVersions = json.specVersions
-        if (specVersions) {
-            if (!/^https?:\/\//.test(specVersions)) {
-                specVersions = path.resolve(dir, specVersions)
-            }
-        }
-        let typesBundle = json.typesBundle
-        if (typesBundle && getOldTypesBundle(typesBundle) == null) {
-            typesBundle = path.resolve(dir, typesBundle)
-        }
-        return {
-            outDir,
-            specVersions,
-            typesBundle,
-            events: json.events,
-            calls: json.calls,
-            storage: json.storage,
-            constants: json.constants
-        }
-    } else {
-        throw new ConfigError(`Invalid typegen config ${file}:\n  ${printValidationErrors(validateConfig, '\n  ', 'config')}`)
+
+    return {
+        outDir,
+        specVersions,
+        typesBundle,
+        events: cfg.events,
+        calls: cfg.calls,
+        storage: cfg.storage,
+        constants: cfg.constants
     }
 }
-
-
-export class ConfigError extends Error {}
-

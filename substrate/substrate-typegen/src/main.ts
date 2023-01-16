@@ -1,11 +1,18 @@
-import {createLogger} from "@subsquid/logger"
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, OldTypesBundleError, readOldTypesBundle} from "@subsquid/substrate-metadata"
-import {ArchiveApi} from "@subsquid/substrate-metadata-explorer/lib/archiveApi"
-import {readSpecVersions, SpecFileError, SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
-import {runProgram} from "@subsquid/util-internal"
-import {Command} from "commander"
-import {ConfigError, readConfig} from "./config"
-import {Typegen} from "./typegen"
+import {createLogger} from '@subsquid/logger'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypesBundle,
+    OldTypesBundleError,
+    readOldTypesBundle
+} from '@subsquid/substrate-metadata'
+import {ArchiveApi} from '@subsquid/substrate-metadata-explorer/lib/archiveApi'
+import {readSpecVersions, SpecFileError, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+import {runProgram} from '@subsquid/util-internal'
+import {ConfigError} from '@subsquid/util-internal-config'
+import {Command} from 'commander'
+import {readConfig} from './config'
+import {Typegen} from './typegen'
 
 
 const log = createLogger('sqd:substrate-typegen')
@@ -21,7 +28,7 @@ Generates TypeScript classes for events, calls and storage items
     program.argument('config', 'JSON file with options')
 
     let configFile = program.parse().args[0]
-    let config = readConfig(configFile)
+    let config = await readConfig(configFile)
 
     let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
     if (config.typesBundle) {

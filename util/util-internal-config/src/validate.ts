@@ -14,7 +14,11 @@ export function validate(obj: any, schema: Schema): void {
 
 
 export class SchemaError extends Error {
-    constructor(public readonly path: string, public readonly keyword: string) {
-        super(`Invalid property: ${path}`)
+    constructor(public readonly path: string, public readonly schemaPath: string) {
+        super(`invalid property: ${path}`)
+    }
+
+    get name(): string {
+        return 'SchemaError'
     }
 }
