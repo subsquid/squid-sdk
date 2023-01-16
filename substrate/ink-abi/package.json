@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^1.1.0",
-    "@subsquid/substrate-metadata": "^2.1.2",
+    "@subsquid/substrate-metadata": "^2.2.0",
     "@subsquid/util-internal": "^1.0.0",
     "ajv": "^8.11.0"
   },
