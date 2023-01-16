@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-config
 
-This log was last generated on Tue, 10 Jan 2023 10:43:13 GMT and should not be manually modified.
+This log was last generated on Mon, 16 Jan 2023 13:32:25 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 16 Jan 2023 13:32:25 GMT
+
+### Breaking changes
+
+- migrate to `@exodus/schemasafe` for JSON schema validation
 
 ## 0.0.1
 Tue, 10 Jan 2023 10:43:13 GMT

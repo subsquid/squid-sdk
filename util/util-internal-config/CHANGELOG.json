@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-config",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-config_v1.0.0",
+      "date": "Mon, 16 Jan 2023 13:32:25 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to `@exodus/schemasafe` for JSON schema validation"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal-config_v0.0.1",
       "date": "Tue, 10 Jan 2023 10:43:13 GMT",

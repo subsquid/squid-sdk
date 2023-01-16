@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/substrate-typegen_v2.1.0",
+      "date": "Mon, 16 Jan 2023 13:32:25 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use `util-internal-config` for config validation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.1.2` to `^2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-config\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-typegen_v2.0.0",
       "date": "Wed, 30 Nov 2022 19:36:06 GMT",

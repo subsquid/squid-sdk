@@ -2,6 +2,23 @@
   "name": "@subsquid/commands",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/commands_v0.1.0",
+      "date": "Mon, 16 Jan 2023 13:32:25 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "forbid unknown properties in `commands.json` where they can potentially change semantics"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-config\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/commands_v0.0.1",
       "date": "Tue, 10 Jan 2023 10:43:13 GMT",
