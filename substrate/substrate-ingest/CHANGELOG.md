@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Jan 2023 11:05:01 GMT and should not be manually modified.
+
+## 1.4.0
+Wed, 18 Jan 2023 11:05:01 GMT
+
+### Minor changes
+
+- unwrap `Multisig.as_multi_threshold_1` and recent versions of `Multisig.as_multi` calls
 
 ## 1.3.4
 Sun, 27 Nov 2022 18:43:31 GMT

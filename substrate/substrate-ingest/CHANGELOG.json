@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.4.0",
+      "tag": "@subsquid/substrate-ingest_v1.4.0",
+      "date": "Wed, 18 Jan 2023 11:05:01 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "unwrap `Multisig.as_multi_threshold_1` and recent versions of `Multisig.as_multi` calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.3.4",
       "tag": "@subsquid/substrate-ingest_v1.3.4",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",
