@@ -1,5 +1,5 @@
 
-export type H256 = Uint8Array
+export type AccountId = Uint8Array
 
 export type DockerImage = Uint8Array
 

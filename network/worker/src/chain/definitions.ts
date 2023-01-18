@@ -2,7 +2,6 @@ import {Ti, TypeKind} from '@subsquid/scale-codec'
 import {ChainDescription, OldTypes, Type, Variant} from '@subsquid/substrate-metadata'
 import {getGlobalVariants, getVariantHash} from '@subsquid/substrate-metadata/lib/events-and-calls.js'
 import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry.js'
-import {runProgram} from '@subsquid/util-internal'
 import type {Output} from '@subsquid/util-internal-code-printer'
 import assert from 'assert'
 
