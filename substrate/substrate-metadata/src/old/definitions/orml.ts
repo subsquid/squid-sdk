@@ -78,5 +78,5 @@ export const ormlAlias: OldTypesAlias = {
     tokens: {
         AccountData: 'OrmlAccountData',
         BalanceLock: 'OrmlBalanceLock'
-      }
+    }
 }

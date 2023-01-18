@@ -1,21 +1,9 @@
-type Account @entity {
-  "Account address"
-  id: ID!
-  balance: BigInt!
-  historicalBalances: [HistoricalBalance!] @derivedFrom(field: "account")
-}
 
-type HistoricalBalance @entity {
-  id: ID!
-  account: Account!
-  balance: BigInt!
-  timestamp: BigInt!
-}
-
-type Transfer @entity {
-  id: ID!
-  timestamp: BigInt! @index
-  from: Account!
-  to: Account!
-  amount: BigDecimal! @index
+type Transfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
+    id: ID!
+    timestamp: BigInt! @index
+    from: String!
+    to: String!
+    amount: BigDecimal! @index
+    tags: [String!]
 }

@@ -3,7 +3,7 @@ import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry
 import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions/substrate'
 import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
 
-const types: OldTypes = {
+const definitions: OldTypes = {
     types: {
         ...substrateBundle.types,
         EVM: {
@@ -34,11 +34,11 @@ const types: OldTypes = {
             },
         },
         V14LegacyTransaction: {
-            nonce: '[u64; 4]',
-            gasPrice: '[u64; 4]',
-            gasLimit: '[u64; 4]',
+            nonce: 'U256',
+            gasPrice: 'U256',
+            gasLimit: 'U256',
             action: 'V14EthTransactionAction',
-            value: '[u64; 4]',
+            value: 'U256',
             input: 'Bytes',
             signature: 'EthTransactionSignature',
         },
@@ -50,11 +50,11 @@ const types: OldTypes = {
         V14EthAccessList: 'Vec<V14EthAccessListItem>',
         V14EIP2930Transaction: {
             chainId: 'u64',
-            nonce: '[u64; 4]',
-            gasPrice: '[u64; 4]',
-            gasLimit: '[u64; 4]',
+            nonce: 'U256',
+            gasPrice: 'U256',
+            gasLimit: 'U256',
             action: 'V14EthTransactionAction',
-            value: '[u64; 4]',
+            value: 'U256',
             input: 'Bytes',
             accessList: 'V14EthAccessList',
             oddYParity: 'bool',
@@ -69,12 +69,12 @@ const types: OldTypes = {
         },
         V14EIP1559Transaction: {
             chainId: 'u64',
-            nonce: '[u64; 4]',
-            maxPriorityFeePerGas: '[u64; 4]',
-            maxFeePerGas: '[u64; 4]',
-            gasLimit: '[u64; 4]',
+            nonce: 'U256',
+            maxPriorityFeePerGas: 'U256',
+            maxFeePerGas: 'U256',
+            gasLimit: 'U256',
             action: 'V14EthTransactionAction',
-            value: '[u64; 4]',
+            value: 'U256',
             input: 'Bytes',
             accessList: 'V14EthAccessList',
             oddYParity: 'bool',
@@ -111,7 +111,7 @@ const types: OldTypes = {
     },
 }
 
-const typeRegistry = new OldTypeRegistry(types)
+const typeRegistry = new OldTypeRegistry(definitions)
 const pallets = typeRegistry.use('P')
 
 export const registry = new Registry(typeRegistry.getTypes(), pallets)

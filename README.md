@@ -23,8 +23,7 @@ Compared to data access using a conventional chain node RPC, an archive allows o
 
 ### Processor
 
-[substrate-processor](substrate/substrate-processor) fetches on-chain data from an archive and executes
-user-defined mapping code against it.
+[substrate-processor](substrate/substrate-processor) (for Substrate-based networks) and [evm-processor](https://github.com/subsquid/evm-processor)(for EVM networks) fetch on-chain data from an archive and execute user-defined mapping code against it.
 
 ### Typegen tools
 

@@ -1,7 +1,7 @@
-import {Model} from "@subsquid/openreader/lib/model"
-import {assertNotNull} from "@subsquid/util-internal"
-import {PluginDefinition} from "apollo-server-core"
-import {GraphQLSchema, OperationDefinitionNode} from "graphql"
+import {Model} from '@subsquid/openreader/lib/model'
+import {assertNotNull} from '@subsquid/util-internal'
+import {PluginDefinition} from 'apollo-server-core'
+import {GraphQLSchema, OperationDefinitionNode} from 'graphql'
 
 
 export interface HttpHeaders extends Iterable<[string, string]> {
@@ -24,6 +24,7 @@ export interface RequestCheckContext {
     operation: OperationDefinitionNode
     operationName: string | null
     schema: GraphQLSchema
+    context: Record<string, any>
     model: Model
 }
 
@@ -43,6 +44,7 @@ export function createCheckPlugin(requestCheck: RequestCheckFunction, model: Mod
                         operation: ctx.operation,
                         operationName: ctx.operationName,
                         schema: ctx.schema,
+                        context: ctx.context,
                         model
                     })
                     if (typeof ok == 'string') {

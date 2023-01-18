@@ -200,5 +200,48 @@ describe('Transaction', () => {
                 type: 2,
             })
         })
+
+        it('EIP1559 3', () => {
+            expect(
+                transaction.getAsV1({
+                    transaction: {
+                        __kind: 'EIP1559',
+                        value: {
+                            accessList: [],
+                            action: {
+                                __kind: 'Call',
+                                value: '0x02a6dec99b2ca768d638fcd87a96f6069f91287c',
+                            },
+                            chainId: '1284',
+                            gasLimit: '52370',
+                            input: '0xa22cb465000000000000000000000000c7e929d05e52f62c3aa2bd180983fa2bf0abcc540000000000000000000000000000000000000000000000000000000000000001',
+                            maxFeePerGas: '100000000000',
+                            maxPriorityFeePerGas: '100000000000',
+                            nonce: '6',
+                            oddYParity: true,
+                            r: '0xd9c6454dbdb8c759f43654998113ef96e5cef9d61665d90629bb81e6848dec4d',
+                            s: '0x2e6cff3357416152f6eed848109a71bb678e94f438215a6b00463fef5d450ca5',
+                            value: '0',
+                        },
+                    },
+                })
+            ).toEqual({
+                to: '0x02a6dec99b2ca768d638fcd87a96f6069f91287c',
+                accessList: [],
+                chainId: 1284n,
+                gasLimit: 52370n,
+                input: '0xa22cb465000000000000000000000000c7e929d05e52f62c3aa2bd180983fa2bf0abcc540000000000000000000000000000000000000000000000000000000000000001',
+                nonce: 6n,
+                r: '0xd9c6454dbdb8c759f43654998113ef96e5cef9d61665d90629bb81e6848dec4d',
+                s: '0x2e6cff3357416152f6eed848109a71bb678e94f438215a6b00463fef5d450ca5',
+                v: 1n,
+                value: 0n,
+                from: '0xf9ab72bde571f8e7bf7bdff210461c021f9f4425',
+                hash: '0xe676a637226a011e7c3db5e1cde4caa75adace91e21bc8816e114be0a9ec2c4b',
+                maxFeePerGas: 100000000000n,
+                maxPriorityFeePerGas: 100000000000n,
+                type: 2,
+            })
+        })
     })
 })

@@ -36,7 +36,8 @@ describe("subscriptions", function() {
                 }
             }
         `, async take => {
-            await wait(1000)
+            await wait(100)
+            expect(await take()).toEqual({data: {orders: []}})
             await databaseExecute([
                 `insert into "order" (id, kind) values ('1', 'list')`,
                 `insert into "order" (id, kind) values ('2', 'foo')`,
@@ -75,7 +76,17 @@ describe("subscriptions", function() {
                 }
             }
         `, async take => {
-            await wait(1000)
+            await wait(100)
+            expect(await take()).toEqual({
+                data: {
+                    third: {
+                        name: null,
+                        items: [
+                            {name: 'hello'}
+                        ]
+                    }
+                }
+            })
             await databaseExecute([`
                 start transaction;
                 update "order" set name = 'foo' where id = '3';

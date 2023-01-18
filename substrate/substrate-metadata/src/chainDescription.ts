@@ -1,6 +1,6 @@
-import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {assertNotNull, def, last, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
+import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
+import {assertNotNull, def, last, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
 import type {
     EventMetadataV9,
     FunctionMetadataV9,
@@ -11,12 +11,12 @@ import type {
     ModuleMetadataV12,
     ModuleMetadataV13,
     ModuleMetadataV9
-} from "./interfaces"
-import {OldTypeRegistry} from "./old/typeRegistry"
-import {OldTypes} from "./old/types"
-import {Storage, StorageHasher, StorageItem} from "./storage"
-import {Field, Ti, Type, TypeKind, Variant} from "./types"
-import {isUnitType, normalizeMetadataTypes} from "./util"
+} from './interfaces'
+import {OldTypeRegistry} from './old/typeRegistry'
+import {OldTypes} from './old/types'
+import {Storage, StorageHasher, StorageItem} from './storage'
+import {Field, Ti, Type, TypeKind, Variant} from './types'
+import {isUnitType, normalizeMetadataTypes} from './util'
 
 
 export interface ChainDescription {
@@ -183,13 +183,21 @@ class FromV14 {
 
     @def
     private uncheckedExtrinsic(): Ti {
+        let candidates = []
         for (let i = 0; i < this.metadata.lookup.types.length; i++) {
             let def = this.metadata.lookup.types[i].type
             if (def.path[0] == 'sp_runtime' && last(def.path) == 'UncheckedExtrinsic') {
-                return i
+                candidates.push(i)
             }
         }
-        throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
+        switch(candidates.length) {
+            case 0: throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
+            case 1: return candidates[0]
+            default:
+                return candidates.includes(this.metadata.extrinsic.type)
+                    ? this.metadata.extrinsic.type
+                    : candidates[0]
+        }
     }
 
     private getTypeParameter(ti: Ti, idx: number): Ti {

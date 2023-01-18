@@ -9,7 +9,7 @@ kusama:
 		-c 20 \
 		--prom-port 0 \
 		--write-batch-size 30 \
-		--start-block 13846889
+		--start-block 15428109
 
 
 kintsugi:

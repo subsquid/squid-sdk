@@ -1,6 +1,20 @@
-# Change Log - @subsquid/substrate-frontier-evm
+# Change Log - @subsquid/frontier
 
-This log was last generated on Sun, 06 Nov 2022 18:24:20 GMT and should not be manually modified.
+This log was last generated on Thu, 05 Jan 2023 11:14:26 GMT and should not be manually modified.
+
+## 0.1.1
+Thu, 05 Jan 2023 11:14:26 GMT
+
+### Patches
+
+- use `oddYParity` for signature in EIP1559 and EIP2930 transactions
+
+## 0.1.0
+Wed, 14 Dec 2022 19:37:27 GMT
+
+### Minor changes
+
+- adjust type definitions to match latest archive
 
 ## 0.0.1
 Sun, 06 Nov 2022 18:24:20 GMT

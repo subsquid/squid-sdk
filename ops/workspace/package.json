@@ -9,7 +9,7 @@
   "dependencies": {
     "@subsquid/util-internal": "^1.0.0",
     "commander": "^9.3.0",
-    "jsonc-parser": "^3.0.0",
+    "jsonc-parser": "^3.2.0",
     "latest-version": "^5.1.0",
     "semver": "^7.3.7"
   },

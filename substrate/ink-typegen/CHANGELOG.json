@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "0.0.5",
+      "tag": "@subsquid/ink-typegen_v0.0.5",
+      "date": "Wed, 14 Dec 2022 19:37:27 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/ink-typegen_v0.0.4",
       "date": "Wed, 30 Nov 2022 19:36:06 GMT",

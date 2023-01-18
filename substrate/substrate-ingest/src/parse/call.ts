@@ -1,10 +1,10 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import assert from "assert"
-import {Spec, sub} from "../interfaces"
-import * as model from "../model"
-import type {ExtrinsicExt} from "./block"
-import {addressOrigin, getExtrinsicFailedError, noneOrigin, rootOrigin, signedOrigin, unwrapArguments} from "./util"
-import {Account} from "./validator"
+import {assertNotNull, last, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Spec, sub} from '../interfaces'
+import * as model from '../model'
+import type {ExtrinsicExt} from './block'
+import {addressOrigin, getExtrinsicFailedError, noneOrigin, rootOrigin, signedOrigin, unwrapArguments} from './util'
+import {Account} from './validator'
 
 
 interface BlockCtx {
@@ -59,6 +59,18 @@ class CallExtractor {
         }
 
         switch(name) {
+            case 'Multisig.as_multi': {
+                let a = args as {call: sub.Call | Uint8Array}
+                if (!(a.call instanceof Uint8Array) && 'maxWeight' in a) {
+                    this.createCall(a.call, call, undefined) // FIXME: origin
+                }
+                break
+            }
+            case 'Multisig.as_multi_threshold_1': {
+                let a = args as {call: sub.Call}
+                this.createCall(a.call, call, undefined) // FIXME: origin
+                break
+            }
             case 'Utility.batch':
             case 'Utility.batch_all':
             case 'Utility.force_batch': {
@@ -200,6 +212,16 @@ export class CallParser {
         call.success = true
         this.calls.push(call)
         switch(call.name) {
+            case 'Multisig.as_multi_threshold_1':
+                this.visitCall(call.children[0], call)
+                break
+            case 'Multisig.as_multi':
+                if (call.children.length > 0) {
+                    this.visitWrapper(END_OF_AS_MULTI, call, parent)
+                } else {
+                    this.takeEvents(call)
+                }
+                break
             case 'Utility.batch':
                 this.visitBatch(call, parent)
                 break
@@ -323,6 +345,7 @@ export class CallParser {
     private setError(call: Call, err: unknown): void {
         call.error = err
         switch(call.name) {
+            case 'Multisig.as_multi_threshold_1':
             case 'Utility.as_derivative':
             case 'Utility.as_sub':
             case 'Utility.as_limited_sub':
@@ -532,6 +555,27 @@ function END_OF_SUDO(event: model.Event): CallEnd | undefined {
             return {ok: false, event, error: result.value}
         default:
             throw unexpectedCase(result.__kind)
+    }
+}
+
+
+function END_OF_AS_MULTI(event: model.Event): CallEnd | undefined {
+    switch(event.name) {
+        case 'Multisig.NewMultisig':
+            return {ok: false, event, error: undefined}
+        case 'Multisig.MultisigExecuted': {
+            let result = Array.isArray(event.args) ? last(event.args) : event.args.result
+            switch(result.__kind) {
+                case 'Ok':
+                    return {ok: true, event}
+                case 'Err':
+                    return {ok: false, event, error: result.value}
+                default:
+                    throw unexpectedCase(result.__kind)
+            }
+        }
+        default:
+            return
     }
 }
 

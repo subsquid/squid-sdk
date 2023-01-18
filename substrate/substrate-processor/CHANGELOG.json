@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.2.0",
+      "tag": "@subsquid/substrate-processor_v2.2.0",
+      "date": "Thu, 29 Dec 2022 19:19:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `BatchContext.isHead` property to signal when the processor is on the top of a chain"
+          },
+          {
+            "comment": "pass `isHead` flag to `Database.advance()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^0.1.5` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/substrate-processor_v2.1.0",
       "date": "Wed, 30 Nov 2022 19:36:06 GMT",

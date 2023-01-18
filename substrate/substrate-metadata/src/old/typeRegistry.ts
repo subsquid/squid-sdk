@@ -97,9 +97,9 @@ export class OldTypeRegistry {
     }
 
     private normalizeNamedType(type: texp.NamedType, pallet: string | undefined): texp.Type {
-        if (pallet != null) {
-            let section = toCamelCase(pallet)
-            let alias = this.oldTypes.typesAlias?.[section]?.[type.name]
+        if (pallet != null && this.oldTypes.typesAlias) {
+            let sectionAliases = this.oldTypes.typesAlias[pallet] || this.oldTypes.typesAlias[toCamelCase(pallet)]
+            let alias = sectionAliases?.[type.name]
             if (alias) {
                 return {kind: 'named', name: alias, params: []}
             }

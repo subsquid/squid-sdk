@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "unwrap `Multisig.as_multi_threshold_1` and recent versions of `Multisig.as_multi` calls",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-ingest"

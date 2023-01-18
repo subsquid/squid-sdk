@@ -1,6 +1,31 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Wed, 30 Nov 2022 19:36:06 GMT and should not be manually modified.
+This log was last generated on Mon, 16 Jan 2023 13:32:25 GMT and should not be manually modified.
+
+## 2.2.0
+Mon, 16 Jan 2023 13:32:25 GMT
+
+### Minor changes
+
+- allow to use raw pallet names in `.typesAlias` maps instead of their camelCase variants
+
+### Patches
+
+- fix `reef` chain types bundle
+
+## 2.1.2
+Wed, 14 Dec 2022 19:37:27 GMT
+
+### Patches
+
+- adjust extrinsic type definition logic to support new chainflip spec version
+
+## 2.1.1
+Mon, 12 Dec 2022 12:15:20 GMT
+
+### Patches
+
+- update crust typesBundle
 
 ## 2.1.0
 Wed, 30 Nov 2022 19:36:06 GMT
