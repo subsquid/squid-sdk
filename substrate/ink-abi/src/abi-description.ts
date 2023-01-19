@@ -4,10 +4,10 @@ import {def, unexpectedCase} from "@subsquid/util-internal"
 import {
     ConstructorSpecFor_PortableForm,
     FieldFor_PortableForm,
-    InkProject,
     MessageSpecFor_PortableForm,
     PortableType
-} from "./metadata/interfaces"
+} from "./metadata/v3/interfaces"
+import {InkProject} from "./metadata/validator"
 
 
 export interface SelectorsMap {

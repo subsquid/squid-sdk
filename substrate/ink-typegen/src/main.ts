@@ -1,8 +1,5 @@
-import {InkProject} from "@subsquid/ink-abi/lib/metadata/interfaces"
-import {getInkProject} from "@subsquid/ink-abi/lib/metadata/validator"
 import {FileOutput} from "@subsquid/util-internal-code-printer"
 import {Command} from "commander"
-import fs from "fs"
 import {Typegen} from "./typegen"
 
 

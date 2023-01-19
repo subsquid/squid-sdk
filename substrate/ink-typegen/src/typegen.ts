@@ -1,6 +1,6 @@
 import {AbiDescription} from "@subsquid/ink-abi/lib/abi-description"
-import {InkProject, TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/interfaces"
-import {getInkProject} from "@subsquid/ink-abi/lib/metadata/validator"
+import {TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/v3/interfaces"
+import {getInkProject, InkProject} from "@subsquid/ink-abi/lib/metadata/validator"
 import {Interfaces} from "@subsquid/substrate-typegen/lib/ifs"
 import {Names} from "@subsquid/substrate-typegen/lib/names"
 import {def, last} from "@subsquid/util-internal"
