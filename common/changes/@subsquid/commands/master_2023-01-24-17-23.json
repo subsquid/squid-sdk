@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/commands",
+      "comment": "allow to invoke command with additional arguments, but disallow invocation of multiple commands at once",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/commands"
+}

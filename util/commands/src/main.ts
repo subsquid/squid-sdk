@@ -1,30 +1,31 @@
 import {runProgram} from '@subsquid/util-internal'
-import {program} from 'commander'
 import * as process from 'process'
 import {ConfigNotFound, getConfig, InvalidConfig} from './config'
 import {run, UndefinedCommand} from './run'
 
 
 runProgram(async () => {
-    program
-        .description(`
+    let args = process.argv.slice(2)
+    if (args.includes('--help')) {
+        console.error(`
 Command runner for squids. Serves as a replacement for Makefiles and npm scripts.
 
 The tool is driven by a commands.json config file, expected at the project root.
-        `.trim())
-        .name('squid-commands')
-        .argument('[commands...]', 'commands to execute')
 
-    program.parse()
+Usage: squid-commands <cmd> [...cmd_args]
 
-    let commands: string[] = program.processedArgs[0] ?? []
-    if (commands.length == 0) {
+To list defined commands run squid-commands(1) without arguments.
+`)
+        process.exit(1)
+    }
+
+    if (args.length == 0) {
         await printAvailableCommands()
         process.exit(1)
     }
 
     let config = await getConfig()
-    let exitCode = await run(config, commands)
+    let exitCode = await run(config, args[0], args.slice(1))
     process.exit(exitCode)
 
 }, err => {

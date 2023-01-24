@@ -7,8 +7,14 @@ import {stderr as supportsColor} from 'supports-color'
 import {Command, Config, InvalidConfig} from './config'
 
 
-export async function run(config: Config, commands: string[]): Promise<number> {
-    for (let [name, cmd] of createPlan(config, commands)) {
+export async function run(config: Config, command: string, args?: string[]): Promise<number> {
+    for (let [name, cmd] of createPlan(config, command)) {
+        if (args?.length && name == command) {
+            cmd = {
+                ...cmd,
+                cmd: (cmd.cmd ?? []).concat(args)
+            }
+        }
         if (!cmd.cmd) continue
         printCommandLabel(name)
         let exitCode = await execute(config, cmd)
@@ -20,7 +26,7 @@ export async function run(config: Config, commands: string[]): Promise<number> {
 }
 
 
-function createPlan(config: Config, commands: string[]): [name: string, cmd: Command][] {
+function createPlan(config: Config, command: string): [name: string, cmd: Command][] {
     let list: [name: string, cmd: Command][] = []
     let visited = new Set<string>()
     let path = new Set<string>()
@@ -43,9 +49,7 @@ function createPlan(config: Config, commands: string[]): [name: string, cmd: Com
         visited.add(name)
     }
 
-    for (let name of commands) {
-        visit(name)
-    }
+    visit(command)
 
     return list
 }
