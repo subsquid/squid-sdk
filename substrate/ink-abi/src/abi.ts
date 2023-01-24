@@ -25,16 +25,16 @@ export class Abi {
         this.constructorSelectors = d.constructorSelectors()
     }
 
-    decodeEvent<T>(data: string): T {
+    decodeEvent<T=any>(data: string): T {
         return this.scaleCodec.decodeBinary(this.event, data)
     }
 
-    decodeConstructor<T>(data: string): T {
+    decodeConstructor<T=any>(data: string): T {
         let src = new SelectorSource(data, this.constructorSelectors)
         return this.scaleCodec.decode(this.constructors, src)
     }
 
-    decodeMessage<T>(data: string): T {
+    decodeMessage<T=any>(data: string): T {
         let src = new SelectorSource(data, this.messageSelectors)
         return this.scaleCodec.decode(this.messages, src)
     }

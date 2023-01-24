@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/ink-abi",
-      "comment": "fix type error for contracts without events",
+      "comment": "fix type error for generated contract facades without events",
       "type": "patch"
     }
   ],
