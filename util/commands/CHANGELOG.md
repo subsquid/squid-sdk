@@ -1,6 +1,13 @@
 # Change Log - @subsquid/commands
 
-This log was last generated on Mon, 16 Jan 2023 13:32:25 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Jan 2023 17:54:27 GMT and should not be manually modified.
+
+## 1.0.0
+Tue, 24 Jan 2023 17:54:27 GMT
+
+### Breaking changes
+
+- allow to invoke command with additional arguments, but disallow invocation of multiple commands at once
 
 ## 0.1.0
 Mon, 16 Jan 2023 13:32:25 GMT

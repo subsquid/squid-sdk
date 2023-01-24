@@ -1,6 +1,17 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Wed, 14 Dec 2022 19:37:27 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Jan 2023 17:54:27 GMT and should not be manually modified.
+
+## 1.0.0
+Tue, 24 Jan 2023 17:54:27 GMT
+
+### Breaking changes
+
+- add support for v4 metadata
+
+### Patches
+
+- fix type error for generated contract facades without events
 
 ## 0.0.3
 Wed, 14 Dec 2022 19:37:27 GMT

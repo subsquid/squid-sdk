@@ -2,6 +2,18 @@
   "name": "@subsquid/commands",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/commands_v1.0.0",
+      "date": "Tue, 24 Jan 2023 17:54:27 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "allow to invoke command with additional arguments, but disallow invocation of multiple commands at once"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/commands_v0.1.0",
       "date": "Mon, 16 Jan 2023 13:32:25 GMT",
