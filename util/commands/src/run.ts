@@ -67,7 +67,8 @@ export class UndefinedCommand extends Error {
 
 
 async function execute(config: Config, command: Command): Promise<number> {
-    let cwd = Path.dirname(Path.resolve(config.file))
+    let loc = Path.dirname(Path.resolve(config.file))
+    let cwd = command.workdir ? Path.join(loc, command.workdir) : loc
 
     let cmd = assertNotNull(command.cmd)
     let args: string[] = []
@@ -89,11 +90,11 @@ async function execute(config: Config, command: Command): Promise<number> {
     }
 
     let env = {...process.env, ...command.env}
-    extendPath(env, cwd)
+    extendPath(env, loc)
 
     return new Promise<number>((resolve, reject) => {
         let proc = spawn(args[0], args.slice(1), {
-            cwd: command.workdir ? Path.join(cwd, command.workdir) : cwd,
+            cwd,
             env,
             stdio: 'inherit',
             shell: process.platform == 'win32' // support .bat, .cmd
