@@ -2,6 +2,18 @@
   "name": "@subsquid/commands",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/commands_v1.0.1",
+      "date": "Wed, 25 Jan 2023 18:43:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "resolve globs relative to a working dir of a command"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/commands_v1.0.0",
       "date": "Tue, 24 Jan 2023 17:54:27 GMT",

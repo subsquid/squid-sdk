@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Mon, 16 Jan 2023 13:32:25 GMT and should not be manually modified.
+This log was last generated on Wed, 25 Jan 2023 18:43:43 GMT and should not be manually modified.
+
+## 2.2.1
+Wed, 25 Jan 2023 18:43:43 GMT
+
+### Patches
+
+- fix KILT types bundle
 
 ## 2.2.0
 Mon, 16 Jan 2023 13:32:25 GMT

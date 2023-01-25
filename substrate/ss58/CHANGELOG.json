@@ -2,6 +2,18 @@
   "name": "@subsquid/ss58",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/ss58_v0.1.3",
+      "date": "Wed, 25 Jan 2023 18:43:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update SS58 registry"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/ss58_v0.1.2",
       "date": "Thu, 15 Sep 2022 20:54:52 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/commands
 
-This log was last generated on Tue, 24 Jan 2023 17:54:27 GMT and should not be manually modified.
+This log was last generated on Wed, 25 Jan 2023 18:43:43 GMT and should not be manually modified.
+
+## 1.0.1
+Wed, 25 Jan 2023 18:43:43 GMT
+
+### Patches
+
+- resolve globs relative to a working dir of a command
 
 ## 1.0.0
 Tue, 24 Jan 2023 17:54:27 GMT

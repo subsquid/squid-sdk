@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 18 Jan 2023 11:05:01 GMT and should not be manually modified.
+This log was last generated on Wed, 25 Jan 2023 18:43:43 GMT and should not be manually modified.
+
+## 1.4.1
+Wed, 25 Jan 2023 18:43:43 GMT
+
+### Patches
+
+- handle `MultisigApproval` case in `as_multi` call unwrapping procedure
 
 ## 1.4.0
 Wed, 18 Jan 2023 11:05:01 GMT

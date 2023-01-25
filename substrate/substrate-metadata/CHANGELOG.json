@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "2.2.1",
+      "tag": "@subsquid/substrate-metadata_v2.2.1",
+      "date": "Wed, 25 Jan 2023 18:43:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix KILT types bundle"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.0",
       "tag": "@subsquid/substrate-metadata_v2.2.0",
       "date": "Mon, 16 Jan 2023 13:32:25 GMT",
