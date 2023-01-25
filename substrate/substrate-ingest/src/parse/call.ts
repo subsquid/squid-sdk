@@ -562,6 +562,7 @@ function END_OF_SUDO(event: model.Event): CallEnd | undefined {
 function END_OF_AS_MULTI(event: model.Event): CallEnd | undefined {
     switch(event.name) {
         case 'Multisig.NewMultisig':
+        case 'Multisig.MultisigApproval':
             return {ok: false, event, error: undefined}
         case 'Multisig.MultisigExecuted': {
             let result = Array.isArray(event.args) ? last(event.args) : event.args.result
