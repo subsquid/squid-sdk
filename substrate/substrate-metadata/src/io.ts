@@ -38,7 +38,12 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'subsocial':
             return require('./old/definitions/subsocial').bundle
         case 'kilt':
-        case 'kilt-spiritnet': // real spec name
+        case 'kilt-spiritnet':
+        case 'kilt-spiritnet-develop':
+        case 'kilt-peregrine':
+        case 'kilt-peregrine-stagenet':
+        case 'kilt-peregrine-develop':
+        case 'kilt-mashnet':
             return require('./old/definitions/kilt').bundle
         case 'hydradx':
         case 'hydra-dx': // real spec name

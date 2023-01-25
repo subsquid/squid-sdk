@@ -3133,6 +3133,39 @@ export const types = {
     "index": "u8",
     "error": "u8"
   },
+    DispatchErrorPre6: {
+        _enum: {
+            Other: 'Null',
+            CannotLookup: 'Null',
+            BadOrigin: 'Null',
+            Module: 'DispatchErrorModule',
+            ConsumerRemaining: 'Null',
+            NoProviders: 'Null',
+            TooManyConsumers: 'Null',
+            Token: 'TokenError',
+            Arithmetic: 'ArithmeticError',
+            Transactional: 'TransactionalError'
+        }
+    },
+    DispatchErrorPre6First: {
+        _enum: {
+            Other: 'Null',
+            CannotLookup: 'Null',
+            BadOrigin: 'Null',
+            Module: 'DispatchErrorModule',
+            ConsumerRemaining: 'Null',
+            NoProviders: 'Null',
+            Token: 'TokenError',
+            Arithmetic: 'ArithmeticError',
+            Transactional: 'TransactionalError'
+        }
+    },
+    TransactionalError: {
+        _enum: [
+            'LimitReached',
+            'NoLayer'
+        ]
+    },
   "DispatchErrorTo198": {
     "module": "Option<u8>",
     "error": "u8"
