@@ -1,18 +1,18 @@
 {
-  "name": "@subsquid/evm-ingest",
-  "description": "Data fetcher for ethereum-like chains",
-  "version": "0.0.3",
+  "name": "@subsquid/util-internal-http-client",
+  "version": "0.0.0",
+  "description": "Small convenience layer on top of fetch",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
-  "bin": {
-    "squid-evm-ingest": "./bin/run.js"
-  },
+  "main": "lib/client.js",
   "files": [
-    "bin",
-    "lib"
+    "lib",
+    "src",
+    "esm.d.ts",
+    "esm.js"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc"
@@ -20,16 +20,11 @@
   "dependencies": {
     "@subsquid/logger": "^0.3.0",
     "@subsquid/util-internal": "^1.0.0",
-    "@subsquid/util-internal-commander": "^0.0.1",
-    "@subsquid/util-internal-counters": "^0.0.1",
-    "@subsquid/util-internal-hex": "^0.0.1",
     "@subsquid/util-internal-json": "^0.2.0",
-    "commander": "^9.3.0",
-    "node-fetch": "^2.6.8"
+    "node-fetch": "^3.3.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",
-    "@types/node-fetch": "^2.6.2",
     "typescript": "~4.7.4"
   }
 }

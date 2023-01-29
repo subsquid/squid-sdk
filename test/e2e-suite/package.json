@@ -11,15 +11,14 @@
     "@polkadot/keyring": "^8.7.1",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-hex": "^0.0.1",
+    "@subsquid/util-internal-http-client": "^0.0.0",
     "dotenv": "^10.0.0",
     "gql-test-client": "^0.0.0",
-    "node-fetch": "^2.6.7",
     "mocha": "^9.2.2",
     "expect": "^27.5.1"
   },
   "devDependencies": {
     "@types/node": "^16.11.41",
-    "@types/node-fetch": "^2.6.2",
     "@types/mocha": "^9.1.1",
     "typescript": "~4.7.4"
   }

@@ -145,7 +145,7 @@ describe('response size limits', function() {
     })
 
     it('root query fields limit', async function() {
-        return client.errorTest(`
+        return client.httpErrorTest(`
             query {
                 a: order1ById(id: "1") { id }
                 b: order1ById(id: "1") { id }

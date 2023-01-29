@@ -1,26 +1,20 @@
-import expect from "expect"
-import {createClient, ExecutionResult} from "graphql-ws"
-import fetch from "node-fetch"
-import WebSocket from "ws"
+import {GraphqlMessage, HttpClient, HttpError} from '@subsquid/util-internal-http-client'
+import expect from 'expect'
+import {createClient, ExecutionResult} from 'graphql-ws'
+import WebSocket from 'ws'
+
 
 export class Client {
-    constructor(public endpoint: string) {}
+    private client: HttpClient
 
-    async query<R=any>(q: string): Promise<R> {
-        let response = await fetch(this.endpoint, {
-            method: 'POST',
-            body: JSON.stringify({query: q}),
-            headers: {
-                'content-type': 'application/json',
-                'accept': 'application/json'
-            }
+    constructor(public endpoint: string) {
+        this.client = new HttpClient({baseUrl: endpoint})
+    }
+
+    query(query: string): Promise<{data?: any, errors?: GraphqlMessage[]}> {
+        return this.client.post('/', {
+            json: {query}
         })
-        if (!response.ok) {
-            throw new HttpError(response.status, await response.text())
-        }
-        expect(response.headers.get('content-type')).toMatch('application/json')
-        let result = await response.json()
-        return result as R
     }
 
     async test(query: string, expectedData: any): Promise<void> {
@@ -28,10 +22,10 @@ export class Client {
         expect(response).toEqual({data: expectedData})
     }
 
-    async errorTest(query: string, errorData: any): Promise<void> {
-        let response = await this.query(query).catch(err => err)
+    async httpErrorTest(query: string, errorData: any): Promise<void> {
+        let response: any = await this.query(query).catch(err => err)
         expect(response).toBeInstanceOf(HttpError)
-        expect(JSON.parse(response.body)).toEqual(errorData)
+        expect(response.response.body).toEqual(errorData)
     }
 
     subscriptionTest<R>(
@@ -90,12 +84,5 @@ export class Client {
             test(take).then(resolve, reject)
 
         }).finally(() => client.terminate())
-    }
-}
-
-
-export class HttpError extends Error {
-    constructor(public readonly status: number, public readonly body: string) {
-        super(`Got http ${status}, body: ${body} `)
     }
 }
