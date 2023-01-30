@@ -2,8 +2,7 @@
 
 [Subsquid](https://subsquid.io/) framework is a set of tools to ingest, transform and present blockchain data.
 
-Our current focus is on [substrate](https://substrate.io)-based chains,
-with support for EVM-based chains coming next.
+Our focus is on EVM- and [substrate](https://substrate.io)-based chains.
 
 ## Overview
 
