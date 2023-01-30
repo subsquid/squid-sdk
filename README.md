@@ -1,8 +1,8 @@
-# Subsquid - an ETL framework for Web3 data
+# Squid SDK - an ETL framework for Web3 data
 
-[Subsquid](https://subsquid.io/) framework is a set of tools to ingest, transform and present blockchain data.
+Squid SDK is a set of tools to ingest, transform and present blockchain data.
 
-Our focus is on EVM- and [substrate](https://substrate.io)-based chains.
+The SDK currently supports indexing of EVM- and [Substrate](https://substrate.io)-based chains.
 
 ## Overview
 
