@@ -65,7 +65,7 @@ The Subsquid framework incorporates a few npm packages that might be useful in a
 
 The best way to get started is to install [squid CLI](https://github.com/subsquid/squid-cli) and scaffold a squid project with [`sqd init`](https://docs.subsquid.io/squid-cli/init/). 
 
-For step-by-step instructions, follow one of the [Quickstart quides](https://docs.subsquid.io/quickstart/).
+For step-by-step instructions, follow one of the [Quickstart guides](https://docs.subsquid.io/quickstart/).
 
 ## Developer community
 
