@@ -1,32 +1,18 @@
 # Squid SDK - an ETL framework for Web3 data
 
-Squid SDK is a set of tools to ingest, transform and present blockchain data.
+The Squid SDK is a set of tools to ingest, transform and present blockchain data.
 
 The SDK currently supports indexing of EVM- and [Substrate](https://substrate.io)-based chains.
 
+## Getting started
+
+The best way to get started is to install [squid CLI](https://github.com/subsquid/squid-cli) and scaffold a squid project with [`sqd init`](https://docs.subsquid.io/squid-cli/init/). 
+
+For step-by-step instructions, follow one of the [Quickstart guides](https://docs.subsquid.io/quickstart/).
+
 ## Overview
 
-Squid SDK consists of several key components.
-
-### Archive
-
-An Archive is a specilized data lake optimized for batch access to the historical event and transaction data. Currently, public Archives are maintained by the Subsquid Labs GmbH and will be replaced by a decentralized solution in the future.
-
-- For EVM chains, see a [separate `eth-archive` repo](https://github.com/subsquid/eth-archive). For a list of public EVM archive endpoints, see the 
-[docs](https://docs.subsquid.io/develop-a-squid/evm-processor/configuration/).
-
-- For Substrate chains, the achive service is formed by [`substrate-ingest`](substrate/substrate-ingest),
-[`substrate-gateway`](https://github.com/subsquid/substrate-gateway), postgres compatible database
-and optionally [`substrate-explorer`](substrate/substrate-explorer), which together
-
-1. ingest blockchain data
-2. decode and persist it in a normalized form
-3. make it available for further processing and exploration.
-
-For a list of public Substrate acrhives, see [the Aquarium page](https://app.subsquid.io/archives).
-
-Compared to data access using a conventional chain node RPC, an archive allows one to access data in a more granular fashion and from multiple blocks at once. 
-
+The Squid SDK consists of several key components.
 
 ### Processor
 
@@ -61,11 +47,24 @@ The Subsquid framework incorporates a few npm packages that might be useful in a
 * [ss58-codec](substrate/ss58-codec) - encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/)
 * [ss58](substrate/ss58) - [ss58-codec](substrate/ss58-codec) paired with [SS58 registry](https://github.com/paritytech/ss58-registry).
 
-## Getting started
+## Archives
 
-The best way to get started is to install [squid CLI](https://github.com/subsquid/squid-cli) and scaffold a squid project with [`sqd init`](https://docs.subsquid.io/squid-cli/init/). 
+An Archive is a specilized data lake optimized for batch access to the historical event and transaction data. Archives are the primary data sources for squid projects developed with the Squid SDK. Currently, public Archives are maintained by the Subsquid Labs GmbH and will be replaced by a decentralized solution in the future.
 
-For step-by-step instructions, follow one of the [Quickstart guides](https://docs.subsquid.io/quickstart/).
+- For EVM chains, see a [separate `eth-archive` repo](https://github.com/subsquid/eth-archive). For a list of public EVM archive endpoints, see the 
+[docs](https://docs.subsquid.io/develop-a-squid/evm-processor/configuration/).
+
+- For Substrate chains, the achive service is formed by [`substrate-ingest`](substrate/substrate-ingest),
+[`substrate-gateway`](https://github.com/subsquid/substrate-gateway), postgres compatible database
+and optionally [`substrate-explorer`](substrate/substrate-explorer), which together
+
+1. ingest blockchain data
+2. decode and persist it in a normalized form
+3. make it available for further processing and exploration.
+
+For a list of public Substrate acrhives, see [the Aquarium page](https://app.subsquid.io/archives).
+
+Compared to data access using a conventional chain node RPC, an archive allows one to access data in a more granular fashion and from multiple blocks at once. 
 
 ## Developer community
 
