@@ -6,7 +6,7 @@ The SDK currently supports indexing of EVM- and [Substrate](https://substrate.io
 
 ## Overview
 
-Subsquid framework consists of several key components.
+Squid SDK consists of several key components.
 
 ### Archive
 
