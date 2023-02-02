@@ -1,4 +1,6 @@
-import {RpcClient as WebsocketRpcClient} from '@subsquid/rpc-client'
+import {RpcClient as WebsocketRpcClient, RpcConnectionError, RpcError} from '@subsquid/rpc-client'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
+import {isRateLimitError} from '../util'
 import {CommonConnectionOptions, ConnectionBase} from './base'
 
 
@@ -11,10 +13,13 @@ export class WsRpcConnection extends ConnectionBase {
     }
 
     protected call(method: string, params?: unknown[]): Promise<any> {
-        return this.client.call(method, params)
+        return addTimeout(this.client.call(method, params), this.requestTimeout)
     }
 
     protected isRetryableError(err: unknown): boolean {
+        if (err instanceof RpcConnectionError) return true
+        if (err instanceof TimeoutError) return true
+        if (isRateLimitError(err)) return true
         return false
     }
 

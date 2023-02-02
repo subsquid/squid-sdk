@@ -1,6 +1,6 @@
 import {Speed} from '@subsquid/util-internal-counters'
 import assert from 'assert'
-import {getTime} from './util'
+import {getTime} from '../util'
 
 
 export interface Req {
@@ -36,6 +36,7 @@ export interface CommonConnectionOptions {
     id: number
     url: string
     capacity: number
+    requestTimeout: number
 }
 
 
@@ -44,6 +45,7 @@ export abstract class ConnectionBase implements Connection {
 
     public readonly id: number
     public readonly url: string
+    protected readonly requestTimeout: number
     private maxCapacity: number
     private capacity: number
     private online = true
@@ -54,7 +56,7 @@ export abstract class ConnectionBase implements Connection {
     private speed = new Speed({
         windowSize: 200
     })
-    private reconnectTimeout?: any
+    private reconnectTimer?: any
     private closed = false
 
     protected constructor(options: CommonConnectionOptions) {
@@ -62,6 +64,7 @@ export abstract class ConnectionBase implements Connection {
         this.url = options.url
         this.maxCapacity = options.capacity
         this.capacity = this.maxCapacity
+        this.requestTimeout = options.requestTimeout
     }
 
     getAvgResponseTime(): number {
@@ -123,8 +126,8 @@ export abstract class ConnectionBase implements Connection {
         this.connectionErrorsInRow += 1
         this.epoch += 1
         this.online = false
-        this.reconnectTimeout = setTimeout(() => {
-            this.reconnectTimeout = undefined
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = undefined
             this.reconnect().then(() => {
                 this.online = true
                 this.onlineCallback?.()
@@ -137,9 +140,9 @@ export abstract class ConnectionBase implements Connection {
     close(): void {
         this.closed = true
         this.online = false
-        if (this.reconnectTimeout) {
-            clearTimeout(this.reconnectTimeout)
-            this.reconnectTimeout = undefined
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer)
+            this.reconnectTimer = undefined
         }
         this.cleanup()
     }

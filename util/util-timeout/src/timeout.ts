@@ -1,19 +1,15 @@
-import assert from "assert"
-
 
 export function addTimeout<T>(
     promise: Promise<T>,
-    seconds: number,
+    ms: number,
     createTimeoutError?: () => Error
 ): Promise<T> {
-    assert(seconds >= 0)
-    let ms = Math.round(seconds * 1000)
     if (ms == 0) return promise
 
     return new Promise((resolve, reject) => {
         let timer: any = setTimeout(() => {
             timer = null
-            let err = createTimeoutError ? createTimeoutError() : new Error('Timeout')
+            let err = createTimeoutError ? createTimeoutError() : new TimeoutError(ms)
             reject(err)
         }, ms)
 
@@ -23,4 +19,15 @@ export function addTimeout<T>(
             }
         }).then(resolve, reject)
     })
+}
+
+
+export class TimeoutError extends Error {
+    constructor(public readonly ms: number) {
+        super(`Timed out in ${ms}`)
+    }
+
+    get name(): string {
+        return 'TimeoutError'
+    }
 }
