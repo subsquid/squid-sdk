@@ -21,16 +21,16 @@ runProgram(async () => {
     let ids = 0
 
     async function execute(image: string, args: string[]): Promise<void> {
-        let id = ids += 1
-        let handle = processor.submit({
-            taskId: new Uint8Array([id]),
-            dockerImage: Buffer.from(image),
-            command: args.map(arg => Buffer.from(arg))
-        })
-
-        assert(handle)
-
-        await handle.result
+        // let id = ids += 1
+        // let handle = processor.submit({
+        //     taskId: new Uint8Array([id]),
+        //     dockerImage: Buffer.from(image),
+        //     command: args.map(arg => Buffer.from(arg))
+        // })
+        //
+        // assert(handle)
+        //
+        // await handle.result
     }
 
     await execute('curlimages/curl', [

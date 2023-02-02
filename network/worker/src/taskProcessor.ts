@@ -3,7 +3,7 @@ import {ensureError} from '@subsquid/util-internal'
 import {toHex} from '@subsquid/util-internal-hex'
 import {spawn} from 'child_process'
 import * as Path from 'path'
-import {Task, TaskResult} from './chain/interface.js'
+import {TaskSpec, TaskResult, TaskId} from './chain/interface.js'
 import {Future, toBuffer} from './util.js'
 
 
@@ -28,7 +28,8 @@ export interface TaskHandle {
 
 
 interface Item {
-    task: Task
+    taskId: TaskId
+    taskSpec: TaskSpec
     abort: AbortController
     future: Future<TaskResult>
 }
@@ -44,7 +45,7 @@ export class TaskProcessor {
         this.log = options.log
     }
 
-    submit(task: Task): TaskHandle | undefined {
+    submit(taskId: TaskId, taskSpec: TaskSpec): TaskHandle | undefined {
         if (this.hasFatalError) throw new Error(
             `Unexpected task processing error occurred previously, the processing of any new task will likely fail`
         )
@@ -56,7 +57,8 @@ export class TaskProcessor {
         let future = new Future<TaskResult>()
 
         let item = {
-            task,
+            taskId,
+            taskSpec,
             abort,
             future
         }
@@ -91,13 +93,15 @@ export class TaskProcessor {
     }
 
     private async process(item: Item): Promise<void> {
-        let image = toBuffer(item.task.dockerImage).toString()
+        let image_name = toBuffer(item.taskSpec.dockerImage.name).toString()
+        let digest = toBuffer(item.taskSpec.dockerImage.digest).toString("hex")
+        let image = image_name + "@sha256:" + digest
 
-        let command = item.task.command.map(arg => {
+        let command = item.taskSpec.command.map(arg => {
             return toBuffer(arg).toString()
         })
 
-        let taskId = item.task.taskId
+        let taskId = item.taskId
 
         this.log.info({
             taskId,
@@ -133,12 +137,12 @@ export class TaskProcessor {
         }
     }
 
-    protected execute(taskId: Uint8Array, image: string, command: string[], signal: AbortSignal): Promise<TaskResult> {
+    protected execute(taskId: TaskId, image: string, command: string[], signal: AbortSignal): Promise<TaskResult> {
         return new Promise((resolve, reject) => {
             let env = {...process.env}
             let dockerArgs: string[] = []
 
-            env['SQD_TASK_ID'] = toHex(taskId)
+            env['SQD_TASK_ID'] = taskId.toString()
             dockerArgs.push('-e', 'SQD_TASK_ID')
 
             let ipfs = this.options.ipfsService

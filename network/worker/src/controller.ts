@@ -2,7 +2,7 @@ import {Logger} from '@subsquid/logger'
 import {assertNotNull, def, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Client} from './chain/client.js'
-import {Task, TaskResult} from './chain/interface.js'
+import {TaskSpec, TaskResult, TaskId} from './chain/interface.js'
 import {KeyPair} from './chain/keyPair.js'
 import {IpfsService, TaskHandle, TaskProcessor} from './taskProcessor.js'
 import {toBuffer} from './util.js'
@@ -19,7 +19,8 @@ interface Block {
 
 
 interface TaskItem {
-    task: Task
+    taskId: TaskId
+    taskSpec: TaskSpec
     handle?: TaskHandle
 }
 
@@ -86,13 +87,13 @@ export class Controller {
 
     private processBlock(block: Block): void {
         for (let task of block.tasks) {
-            let handle = this.taskProcessor.submit(task.task)
+            let handle = this.taskProcessor.submit(task.taskId, task.taskSpec)
             if (handle == null) {
                 this.log.error({
-                    taskId: task.task.taskId
+                    taskId: task.taskId
                 }, `skipping the task, because there are too many in the queue already`)
             } else {
-                handle.result.then(res => this.submitTaskResult(task.task, res)).catch(err => this.log.error(err))
+                handle.result.then(res => this.submitTaskResult(task, res)).catch(err => this.log.error(err))
                 task.handle = handle
             }
         }
@@ -124,7 +125,8 @@ export class Controller {
         events.forEach(e => {
             if (e.__kind == 'Worker.RunTask' && toBuffer(e.workerId).equals(this.identity.getPublicKey())) {
                 tasks.push({
-                    task: e.task
+                    taskId: e.taskId,
+                    taskSpec: e.taskSpec,
                 })
             }
         })
@@ -132,15 +134,15 @@ export class Controller {
         this.log.info({
             blockHash,
             blockHeight: block.height,
-            tasks: tasks.map(t => t.task.taskId)
+            tasks: tasks.map(t => t.taskId)
         }, 'new block')
 
         return block
     }
 
-    private async submitTaskResult({taskId}: Task, result: TaskResult): Promise<void> {
+    private async submitTaskResult({taskId}: TaskItem, taskResult: TaskResult): Promise<void> {
         let tx = await this.client.send({
-            call: {__kind: 'Worker.done', taskId, result},
+            call: {__kind: 'Worker.done', taskId, taskResult},
             author: this.identity
         })
         this.log.info({taskId, tx}, 'result submitted')
@@ -180,7 +182,15 @@ export class Controller {
 
     private async register(): Promise<void> {
         let tx = await this.client.send({
-            call: {__kind: 'Worker.register'},
+            call: {
+                __kind: 'Worker.register',
+                spec: {
+                    numCpuCores: 1,
+                    memoryBytes: 2048n,
+                    storageBytes: 10n * 1024n * 1024n
+                },
+                isOnline: true
+            },
             author: this.identity
         })
         this.log.info({tx}, `worker registration submitted`)

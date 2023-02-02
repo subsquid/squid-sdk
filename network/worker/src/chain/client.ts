@@ -194,7 +194,7 @@ export class Client {
         await initCrypto()
 
         let signature = tx.author.sign(
-            bytesToSign.length > 256 ? blake2b(bytesToSign, new Uint8Array(0), 256) : bytesToSign
+            bytesToSign.length > 256 ? blake2b(bytesToSign, new Uint8Array(0), 32) : bytesToSign
         )
 
         let extrinsic: Uint8Array

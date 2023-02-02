@@ -132,11 +132,14 @@ export class TypeDefinitions {
 export const definitions = new TypeDefinitions({
     types: {
         AccountId: '[u8; 32]',
-        DockerImage: 'Vec<u8>',
-        TaskId: '[u8; 32]',
+        DockerDigest: '[u8; 32]',
+        DockerImage: {
+            name: 'Vec<u8>',
+            digest: 'DockerDigest'
+        },
+        TaskId: 'u64',
         WorkerId: 'AccountId',
-        Task: {
-            task_id: 'TaskId',
+        TaskSpec: {
             docker_image: 'DockerImage',
             command: 'Vec<Vec<u8>>'
         },
@@ -145,20 +148,30 @@ export const definitions = new TypeDefinitions({
             stdout: 'Vec<u8>',
             stderr: 'Vec<u8>'
         },
+        HardwareSpec: {
+            num_cpu_cores: 'Option<u16>',
+            memory_bytes: 'Option<u64>',
+            storage_bytes: 'Option<u64>',
+        },
         Event: {
             _enum: {
                 'Worker.RunTask': {
                     worker_id: 'WorkerId',
-                    task: 'Task'
+                    task_id: 'TaskId',
+                    task_spec: 'TaskSpec',
+                    constraints: 'Option<HardwareSpec>'
                 }
             }
         },
         Call: {
             _enum: {
-                'Worker.register': 'Null',
+                'Worker.register': {
+                    spec: 'HardwareSpec',
+                    is_online: 'bool',
+                },
                 'Worker.done': {
                     task_id: 'TaskId',
-                    result: 'TaskResult'
+                    task_result: 'TaskResult'
                 }
             }
         }

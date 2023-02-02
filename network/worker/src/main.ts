@@ -10,7 +10,7 @@ const log = createLogger('sqd:worker')
 
 
 runProgram(async () => {
-    let ipfsService = await initIpfsService()
+    // let ipfsService = await initIpfsService()
 
     let controller = new Controller({
         identity: ALICE,
@@ -18,7 +18,7 @@ runProgram(async () => {
             url: 'ws://127.0.0.1:9944'
         }),
         log,
-        ipfsService
+        // ipfsService
     })
 
     process.on('SIGTERM', () => controller.close())
