@@ -110,7 +110,7 @@ export class HttpClient {
         let req: FetchRequest = {
             method,
             headers: new nodeFetch.Headers(options.headers),
-            url: this.resolveUrl(url),
+            url: this.getAbsUrl(url),
             signal: options.abort,
             compress: true
         }
@@ -203,7 +203,7 @@ export class HttpClient {
         return false
     }
 
-    protected resolveUrl(url: string): string {
+    getAbsUrl(url: string): string {
         if (!this.baseUrl) return url
         if (url.includes('://')) return url
         if (url[0] == '/') return this.baseUrl + url

@@ -66,6 +66,7 @@ specifiers:
   '@rush-temp/util-internal-json': file:./projects/util-internal-json.tgz
   '@rush-temp/util-internal-prometheus-server': file:./projects/util-internal-prometheus-server.tgz
   '@rush-temp/util-internal-read-lines': file:./projects/util-internal-read-lines.tgz
+  '@rush-temp/util-internal-resilient-rpc': file:./projects/util-internal-resilient-rpc.tgz
   '@rush-temp/util-naming': file:./projects/util-naming.tgz
   '@rush-temp/util-timeout': file:./projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
@@ -191,6 +192,7 @@ dependencies:
   '@rush-temp/util-internal-json': file:projects/util-internal-json.tgz
   '@rush-temp/util-internal-prometheus-server': file:projects/util-internal-prometheus-server.tgz
   '@rush-temp/util-internal-read-lines': file:projects/util-internal-read-lines.tgz
+  '@rush-temp/util-internal-resilient-rpc': file:projects/util-internal-resilient-rpc.tgz
   '@rush-temp/util-naming': file:projects/util-naming.tgz
   '@rush-temp/util-timeout': file:projects/util-timeout.tgz
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
@@ -4732,7 +4734,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-suite.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-DO5gd2bqZJ4fQxweMWHAHHhAby5fsrkoylKQ2dccFi1YVK8jsI0C2Lbcl8dLn+hbKT8nTuabR0FIc+c56U0LCA==, tarball: file:projects/e2e-test-suite.tgz}
+    resolution: {integrity: sha512-EZB+yhfcJNr3AxYieERpsEromlDzQqHT1G7tjVFTMSg/21muzEHeuP9DkKAiaMWvYYe/68DTagZSVLC6ZDi9Qg==, tarball: file:projects/e2e-test-suite.tgz}
     id: file:projects/e2e-test-suite.tgz
     name: '@rush-temp/e2e-test-suite'
     version: 0.0.0
@@ -4835,7 +4837,7 @@ packages:
     dev: false
 
   file:projects/gql-test-client.tgz_graphql@15.8.0:
-    resolution: {integrity: sha512-tJxcf4gxzWIsk0/Sb/cL2FgrPtI+yKAMry9jSCfN7DYt9Tjm/4Hgb7TmiIaqNK0VaV5vcUt3y6A8hbS+HVsaxw==, tarball: file:projects/gql-test-client.tgz}
+    resolution: {integrity: sha512-A2YHzrO8h6U1C2u7OiQC1j6gAvS0srIsM76GLBvtxTEL6dpTfBecvKUq4kDEqi4D2doZ4NPWhiafXHrpJQvu4Q==, tarball: file:projects/gql-test-client.tgz}
     id: file:projects/gql-test-client.tgz
     name: '@rush-temp/gql-test-client'
     version: 0.0.0
@@ -4850,7 +4852,6 @@ packages:
       ws: 8.8.1
     transitivePeerDependencies:
       - bufferutil
-      - encoding
       - graphql
       - utf-8-validate
     dev: false
@@ -5402,7 +5403,7 @@ packages:
     dev: false
 
   file:projects/util-internal-http-client.tgz:
-    resolution: {integrity: sha512-5GPoRCWjnUrfEDOMwyKXOHUYIQ+pbYuKUYMs7i7ZegBqHsMs770XTODXHdZutuQo59x6hSztn0NOyU3efBYCOg==, tarball: file:projects/util-internal-http-client.tgz}
+    resolution: {integrity: sha512-i+4EDZ6W8gq15FyICxf1RQHsUjNGg0fkxmsJ2yAXQeGMpxo20jyUGFFBQDTHTA7xaP7q79XcD6uug717s8YDSw==, tarball: file:projects/util-internal-http-client.tgz}
     name: '@rush-temp/util-internal-http-client'
     version: 0.0.0
     dependencies:
@@ -5445,6 +5446,15 @@ packages:
   file:projects/util-internal-read-lines.tgz:
     resolution: {integrity: sha512-X/LJ80WsvrvTw26K26XKOf7G2GWScibUVRyYI4wfR5ZSl/7gMa0EnXF6kAhkcUZyV1Wx6vg4OMomGr3R+vqDuA==, tarball: file:projects/util-internal-read-lines.tgz}
     name: '@rush-temp/util-internal-read-lines'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.11.59
+      typescript: 4.7.4
+    dev: false
+
+  file:projects/util-internal-resilient-rpc.tgz:
+    resolution: {integrity: sha512-kJH7qPKOlI49egbpwu0RwflAp49H+SUl7Ob0CfUPHsTlsrkpuZDXx7sYEuNDMMOCe4ae/YyaT962Ye3GbhkTlQ==, tarball: file:projects/util-internal-resilient-rpc.tgz}
+    name: '@rush-temp/util-internal-resilient-rpc'
     version: 0.0.0
     dependencies:
       '@types/node': 16.11.59

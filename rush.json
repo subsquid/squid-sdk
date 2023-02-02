@@ -690,6 +690,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-resilient-rpc",
+      "projectFolder": "util/util-internal-resilient-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-timeout",
       "projectFolder": "util/util-timeout",
       "shouldPublish": true,
