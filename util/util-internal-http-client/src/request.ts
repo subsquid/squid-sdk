@@ -1,12 +1,6 @@
 import assert from 'assert'
-import type {Headers, RequestInit, Response} from 'node-fetch'
+import type {RequestInit, Response} from 'node-fetch'
 import {esm} from '../esm'
-
-
-export interface FetchRequest extends RequestInit {
-    url: string
-    headers: Headers
-}
 
 
 let mod: typeof import('node-fetch') | undefined
@@ -25,8 +19,8 @@ export const nodeFetch = {
         assert(mod, 'node-fetch ESM is not loaded')
         return mod.FetchError
     },
-    async request(req: FetchRequest): Promise<Response> {
+    async request(url: string, init?: RequestInit): Promise<Response> {
         let m = await nodeFetch.load()
-        return m.default(req.url, req)
+        return m.default(url, init)
     }
 }

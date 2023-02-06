@@ -15,7 +15,7 @@ type Call = string | [method: string] | [method: string, params?: unknown[]]
 
 export class RpcClient {
     private ids = 0
-    private requests: Record<number, Handle> = {}
+    private requests: Record<number | string, Handle> = {}
     private sendQueue: string[] = []
     private ws: WebSocket
     private connection: Promise<void>
@@ -138,11 +138,14 @@ export class RpcClient {
     }
 
     call<T=any>(method: string, params?: unknown[]): Promise<T> {
+        return this._callWithId(this.ids++, method, params)
+    }
+
+    _callWithId<T=any>(id: number| string, method: string, params?: unknown[]): Promise<T> {
         return new Promise((resolve, reject) => {
             if (this.error) return reject(this.error)
-            let id = this.ids++
             let payload = JSON.stringify({
-                id: String(id),
+                id,
                 jsonrpc: '2.0',
                 method,
                 params

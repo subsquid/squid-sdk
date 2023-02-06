@@ -2,7 +2,7 @@ import {def} from "@subsquid/util-internal"
 import type {Progress} from "@subsquid/util-internal-counters"
 import {createPrometheusServer, ListeningServer} from "@subsquid/util-internal-prometheus-server"
 import {collectDefaultMetrics, Gauge, Registry} from "prom-client"
-import type {Client, RpcConnectionMetrics} from "./client"
+import type {RpcClient, RpcConnectionMetrics} from "@subsquid/util-internal-resilient-rpc"
 
 
 export class Metrics {
@@ -31,7 +31,7 @@ export class Metrics {
         })
     }
 
-    addRpcMetrics(client: Client): void {
+    addRpcMetrics(client: RpcClient): void {
         this.add('rpc')
 
         const gauge = (
@@ -45,7 +45,7 @@ export class Metrics {
                 registers: [this.registry],
                 labelNames: ['id', 'url'],
                 collect() {
-                    for (let con of client.getConnectionMetrics()) {
+                    for (let con of client.getMetrics()) {
                         this.set({url: con.url, id: con.id}, get(con))
                     }
                 }

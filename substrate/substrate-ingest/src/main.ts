@@ -2,13 +2,13 @@ import {createLogger} from '@subsquid/logger'
 import {readOldTypesBundle} from '@subsquid/substrate-metadata'
 import {runProgram} from '@subsquid/util-internal'
 import {Progress, Speed} from '@subsquid/util-internal-counters'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import assert from 'assert'
 import {Command} from 'commander'
 import * as fs from 'fs'
 import path from 'path'
 import * as pg from 'pg'
 import {migrate} from 'postgres-migrations'
-import {Client} from './client'
 import {Ingest} from './ingest'
 import {Metrics} from './metrics'
 import {PostgresSink, Sink, WritableSink} from './sink'
@@ -72,15 +72,17 @@ runProgram(async () => {
         switch (u.protocol) {
             case 'ws:':
             case 'wss:':
+            case 'http:':
+            case 'https:':
                 break
             default:
-                log.fatal(`Invalid endpoint url: ${url}. Only ws: and wss: protocols are supported.`)
+                log.fatal(`Invalid endpoint url: ${url}. Only http(s) and ws(s) protocols are supported.`)
                 process.exit(1)
         }
 
         let cap = idx < capacities.length
             ? capacities[idx]
-            : capacities[capacities.length - 1] || 3
+            : capacities[capacities.length - 1] || 5
 
         return {url, capacity: cap}
     })
@@ -146,7 +148,11 @@ runProgram(async () => {
         log.info(`last block: ${progress.getCurrentValue()}, progress: ${Math.round(progress.speed())} blocks/sec, write: ${Math.round(writeSpeed.speed())} blocks/sec`)
     })
 
-    let client = new Client(endpoints, log.child('rpc'))
+    let client = new RpcClient({
+        endpoints,
+        requestTimeout: 10_000,
+        log: log.child('rpc')
+    })
 
     if (options.promPort != null) {
         let metrics = new Metrics()

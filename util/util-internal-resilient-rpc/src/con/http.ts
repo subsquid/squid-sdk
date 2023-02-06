@@ -1,12 +1,12 @@
 import {RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcRequest, RpcResponse} from '@subsquid/rpc-client/lib/rpc'
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient, HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/util-internal-http-client'
 import {HttpAgent} from '@subsquid/util-internal-http-client/lib/agent'
+import {isRateLimitError} from '../util'
 import {CommonConnectionOptions, ConnectionBase} from './base'
 
 
 export class HttpRpcConnection extends ConnectionBase {
-    private idCounter = 0
     private agent: HttpAgent
     private http: HttpClient
 
@@ -17,14 +17,15 @@ export class HttpRpcConnection extends ConnectionBase {
         })
         this.http = new HttpClient({
             baseUrl: this.url,
-            agent: this.agent
+            agent: this.agent,
+            httpTimeout: this.requestTimeout
         })
     }
 
-    protected async call(method: string, params?: unknown[]): Promise<any> {
+    protected async call(id: number, method: string, params?: unknown[]): Promise<any> {
         let json: RpcRequest = {
             jsonrpc: '2.0',
-            id: this.idCounter += 1,
+            id,
             method,
             params
         }
@@ -40,6 +41,20 @@ export class HttpRpcConnection extends ConnectionBase {
     }
 
     protected isRetryableError(err: unknown): boolean {
+        if (isRateLimitError(err)) return true
+        if (isHttpConnectionError(err)) return true
+        if (err instanceof HttpTimeoutError) return true
+        if (err instanceof HttpError) {
+            switch(err.response.status) {
+                case 429:
+                case 502:
+                case 503:
+                case 504:
+                    return true
+                default:
+                    return false
+            }
+        }
         return false
     }
 

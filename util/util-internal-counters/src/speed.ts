@@ -67,4 +67,9 @@ export class Speed {
         let inc = end.value - beg.value
         return inc * 1000_000_000 / Number(duration)
     }
+
+    time(): number {
+        let speed = this.speed()
+        return speed == 0 ? 0 : 1/speed
+    }
 }

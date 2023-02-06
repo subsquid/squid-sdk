@@ -12,8 +12,8 @@ export class WsRpcConnection extends ConnectionBase {
         this.client = new WebsocketRpcClient(this.url)
     }
 
-    protected call(method: string, params?: unknown[]): Promise<any> {
-        return addTimeout(this.client.call(method, params), this.requestTimeout)
+    protected call(id: number, method: string, params?: unknown[]): Promise<any> {
+        return addTimeout(this.client._callWithId(id, method, params), this.requestTimeout)
     }
 
     protected isRetryableError(err: unknown): boolean {

@@ -1,5 +1,7 @@
 import {Logger} from '@subsquid/logger'
-import {Connection, Req, RpcConnectionMetrics} from './con/base'
+import {CommonConnectionOptions, Connection, Req, RpcConnectionMetrics} from './con/base'
+import {HttpRpcConnection} from './con/http'
+import {WsRpcConnection} from './con/ws'
 import {PriorityQueue} from './queue'
 
 
@@ -11,6 +13,7 @@ export interface RpcEndpoint {
 
 export interface RpcClientOptions {
     endpoints: RpcEndpoint[]
+    requestTimeout?: number
     log?: Logger
 }
 
@@ -20,8 +23,31 @@ export class RpcClient {
     private queue = new PriorityQueue<Req>()
     private counter = 0
     private schedulingScheduled = false
+    private log?: Logger
 
     constructor(options: RpcClientOptions) {
+        this.log = options.log
+        this.connections = options.endpoints.map((ep, id) => {
+            let params: CommonConnectionOptions = {
+                id,
+                url: ep.url,
+                capacity: ep.capacity ?? 10,
+                requestTimeout: options.requestTimeout ?? 20_000,
+                log: this.log?.child({rpcConnection: id, rpcUrl: ep.url}),
+                onlineCallback: () => this.schedule()
+            }
+            let protocol = new URL(ep.url).protocol
+            switch(protocol) {
+                case 'ws:':
+                case 'wss:':
+                    return new WsRpcConnection(params)
+                case 'http:':
+                case 'https:':
+                    return new HttpRpcConnection(params)
+                default:
+                    throw new TypeError(`unsupported protocol: ${protocol}`)
+            }
+        })
     }
 
     getMetrics(): RpcConnectionMetrics[] {
@@ -43,8 +69,14 @@ export class RpcClient {
                 method = paramsOrMethod as string
                 params = args
             }
+            let id = this.nextRequestId()
+            this.log?.debug({
+                rpcRequestId: id,
+                rpcMethod: method,
+                rpcParams: params
+            }, 'rpc call')
             this.queue.push({
-                id: this.nextRequestId(),
+                id,
                 priority,
                 method,
                 params,
@@ -55,12 +87,8 @@ export class RpcClient {
         })
     }
 
-    /**
-     * Create request label for debug purposes
-     */
     private nextRequestId(): number {
-        this.counter = (this.counter + 1) % 10000
-        return this.counter
+        return this.counter++
     }
 
     private schedule(): void {
@@ -112,7 +140,7 @@ export class RpcClient {
             if (con.isOnline()) {
                 let avg = con.getAvgResponseTime()
                 n += con.getMaxCapacity() * Math.floor(
-                    Math.max(deadline - 3 * avg, 0) / avg
+                    Math.max(deadline - 2 * avg, 0) / avg
                 )
             }
         }
@@ -139,11 +167,10 @@ export class RpcClient {
 
     private send(con: Connection, req: Req): void {
         con.send(req).then(handled => {
-            if (handled) {
-                this.schedule()
-            } else {
+            if (!handled) {
                 this.queue.push(req)
             }
+            this.schedule()
         })
     }
 }

@@ -23,8 +23,8 @@ export function addTimeout<T>(
 
 
 export class TimeoutError extends Error {
-    constructor(public readonly ms: number) {
-        super(`Timed out in ${ms}`)
+    constructor(ms: number) {
+        super(`timed out after ${ms} ms`)
     }
 
     get name(): string {

@@ -1,10 +1,9 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {ensureError, wait} from '@subsquid/util-internal'
-import {toJSON} from '@subsquid/util-internal-json'
-import type {Response, Headers} from 'node-fetch'
+import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
 import {HttpBody} from './body'
-import {FetchRequest, nodeFetch} from './request'
+import {nodeFetch} from './request'
 
 
 export interface HttpClientOptions {
@@ -15,8 +14,7 @@ export interface HttpClientOptions {
      * Default request timeout in milliseconds.
      *
      * This timeout is only related to individual http requests.
-     * When retries are enabled, the total request processing time
-     * might be much larger.
+     * Overall request processing time might be much larger due to retries.
      */
     httpTimeout?: number
     retryAttempts?: number
@@ -42,6 +40,14 @@ export interface GraphqlRequestOptions extends RequestOptions {
 }
 
 
+interface FetchRequest extends RequestInit {
+    url: string
+    headers: Headers
+    timeout?: number
+    signal?: AbortSignal
+}
+
+
 export class HttpClient {
     protected log: Logger | null
     protected headers?: Record<string, string | number | bigint>
@@ -49,7 +55,7 @@ export class HttpClient {
     private agent: AgentProvider
     private retrySchedule: number[]
     private retryAttempts: number
-    private requestTimeout?: number
+    private httpTimeout?: number
 
     constructor(options: HttpClientOptions = {}) {
         this.log = options.log === undefined ? createLogger('sqd:http-client') : options.log
@@ -58,7 +64,7 @@ export class HttpClient {
         this.agent = options.agent || defaultAgentProvider
         this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
         this.retryAttempts = options.retryAttempts || 0
-        this.requestTimeout = options.httpTimeout
+        this.httpTimeout = options.httpTimeout
     }
 
     get<T=any>(url: string, options?: RequestOptions): Promise<T> {
@@ -81,14 +87,14 @@ export class HttpClient {
         let retries = 0
 
         while (true) {
-            let res: HttpResponse | Error = await this.performRequest(req).catch(ensureError)
+            let res: HttpResponse | Error = await this.performRequestWithTimeout(req).catch(ensureError)
             if (res instanceof Error || !res.ok) {
                 if (retryAttempts > retries && this.isRetryableError(req, res)) {
                     let pause = retrySchedule.length
                         ? retrySchedule[Math.max(retries, retrySchedule.length - 1)]
                         : 1000
                     retries += 1
-                    await wait(pause) // FIXME: abort
+                    await wait(pause, req.signal)
                 } else if (res instanceof Error) {
                     throw res
                 } else {
@@ -112,7 +118,8 @@ export class HttpClient {
             headers: new nodeFetch.Headers(options.headers),
             url: this.getAbsUrl(url),
             signal: options.abort,
-            compress: true
+            compress: true,
+            timeout: options.httpTimeout ?? this.httpTimeout
         }
 
         if (options.query) {
@@ -140,7 +147,7 @@ export class HttpClient {
         }
 
         if (options.json !== undefined) {
-            req.body = JSON.stringify(toJSON(options.json))
+            req.body = JSON.stringify(options.json)
             if (!req.headers.has('content-type')) {
                 req.headers.set('content-type', 'application/json')
             }
@@ -155,8 +162,40 @@ export class HttpClient {
         return req
     }
 
+    private async performRequestWithTimeout(req: FetchRequest): Promise<HttpResponse> {
+        if (!req.timeout) return this.performRequest(req)
+
+        let ac = new AbortController()
+
+        function abort() {
+            ac.abort()
+        }
+
+        req.signal?.addEventListener('abort', abort)
+
+        let timer: any | null = setTimeout(() => {
+            timer = null
+            abort()
+        }, req.timeout)
+
+        try {
+            return await this.performRequest({...req, signal: ac.signal})
+        } catch(err: any) {
+            if (timer == null) {
+                throw new HttpTimeoutError(req.timeout)
+            } else {
+                throw err
+            }
+        } finally {
+            if (timer != null) {
+                clearTimeout(timer)
+            }
+            req.signal?.removeEventListener('abort', abort)
+        }
+    }
+
     protected async performRequest(req: FetchRequest): Promise<HttpResponse> {
-        let res = await nodeFetch.request(req)
+        let res = await nodeFetch.request(req.url, req)
         let body = await this.handleResponseBody(req, res)
         return new HttpResponse(res.url, res.status, res.headers, body)
     }
@@ -178,17 +217,8 @@ export class HttpClient {
     }
 
     protected isRetryableError(req: FetchRequest, error: HttpResponse | Error): boolean {
-        if (error instanceof nodeFetch.FetchError) {
-            switch(error.type) {
-                case 'body-timeout':
-                case 'request-timeout':
-                    return true
-                case 'system':
-                    return error.message.startsWith('request to')
-                default:
-                    return false
-            }
-        }
+        if (isHttpConnectionError(error)) return true
+        if (error instanceof HttpTimeoutError) return true
         if (error instanceof HttpError) {
             switch(error.response.status) {
                 case 429:
@@ -234,7 +264,7 @@ export class HttpClient {
                 query: gql,
             }
             if (variables) {
-                req.query.variables = JSON.stringify(toJSON(variables))
+                req.query.variables = JSON.stringify(variables)
             }
         } else {
             req.json = {
@@ -292,6 +322,17 @@ export class HttpError extends Error {
 }
 
 
+export class HttpTimeoutError extends Error {
+    constructor(ms: number) {
+        super(`request timed out after ${ms} ms`)
+    }
+
+    get name(): string {
+        return 'HttpTimeoutError'
+    }
+}
+
+
 export interface GraphqlMessage {
     message: string
     path?: (string | number)[]
@@ -306,4 +347,11 @@ export class GraphqlError extends Error {
     get name(): string {
         return 'GraphqlError'
     }
+}
+
+
+export function isHttpConnectionError(err: unknown): boolean {
+    return err instanceof nodeFetch.FetchError
+        && err.type == 'system'
+        && err.message.startsWith('request to')
 }
