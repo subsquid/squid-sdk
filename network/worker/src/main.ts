@@ -14,6 +14,11 @@ runProgram(async () => {
 
     let controller = new Controller({
         identity: ALICE,
+        hardwareSpec: {
+            numCpuCores: 1,
+            memoryBytes: 2048n,
+            storageBytes: 10n * 1024n * 1024n
+        },
         client: new Client({
             url: 'ws://127.0.0.1:9944'
         }),
@@ -22,6 +27,7 @@ runProgram(async () => {
     })
 
     process.on('SIGTERM', () => controller.close())
+    process.on('SIGINT', () => controller.close())
 
     return controller.run()
 }, err => {

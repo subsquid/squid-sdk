@@ -1,10 +1,11 @@
 import {blake2b} from '@polkadot/wasm-crypto'
+import {xxhashAsU8a} from '@polkadot/util-crypto'
 import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient.js'
 import {ByteSink, Codec as ScaleCodec, HexSink, Src} from '@subsquid/scale-codec'
 import * as ss58 from '@subsquid/ss58-codec'
 import {ChainDescription, decodeMetadata, getChainDescriptionFromMetadata} from '@subsquid/substrate-metadata'
 import {def} from '@subsquid/util-internal'
-import {decodeHex} from '@subsquid/util-internal-hex'
+import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import assert from 'assert'
 import {Async, FIFOCache, initCrypto} from '../util.js'
 import {definitions, GlobalEnum, toGlobalEnum} from './definitions.js'
@@ -238,6 +239,24 @@ export class Client {
         let ts = src.u64()
         src.assertEOF()
         return Number(ts)
+    }
+
+    async getStorageItem(blockHash: string, module: string, method: string, encodedKey: Uint8Array): Promise<any> {
+        let fullStorageKey = toHex(Buffer.concat([
+            xxhashAsU8a(module, 128),
+            xxhashAsU8a(method, 128),
+            encodedKey
+        ]))
+
+        let raw = await this.rpc.call('state_getStorage', [fullStorageKey])
+        if (raw === null) {
+            return null
+        }
+
+        let src = new Src(raw)
+        let meta = await this.fetchMeta(blockHash)
+        let type_info = meta.description.storage[module][method].value
+        return meta.codec.decode(type_info, src)
     }
 }
 

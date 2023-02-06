@@ -139,6 +139,10 @@ export const definitions = new TypeDefinitions({
         },
         TaskId: 'u64',
         WorkerId: 'AccountId',
+        WorkerInfo: {
+            spec: 'HardwareSpec',
+            is_online: 'bool',
+        },
         TaskSpec: {
             docker_image: 'DockerImage',
             command: 'Vec<Vec<u8>>'
@@ -169,6 +173,12 @@ export const definitions = new TypeDefinitions({
                     spec: 'HardwareSpec',
                     is_online: 'bool',
                 },
+                'Worker.unregister': {},
+                'Worker.update_spec': {
+                    spec: 'HardwareSpec',
+                },
+                'Worker.go_online': {},
+                'Worker.go_offline': {},
                 'Worker.done': {
                     task_id: 'TaskId',
                     task_result: 'TaskResult'

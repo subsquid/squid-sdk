@@ -1,5 +1,5 @@
 import {isReady as isCryptoReady, waitReady as initCrypto} from '@polkadot/wasm-crypto/bundle'
-import {createLogger} from '@subsquid/logger'
+import {xxhashAsU8a} from "@polkadot/util-crypto";
 
 
 export {isCryptoReady, initCrypto}
@@ -39,6 +39,9 @@ export function toBuffer(data: Uint8Array): Buffer {
     }
 }
 
+export function xx64concat(data: Uint8Array): Uint8Array {
+    return Buffer.concat([xxhashAsU8a(data, 64), data])
+}
 
 export class Future<T> {
     public readonly promise: Promise<T>

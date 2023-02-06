@@ -2,11 +2,11 @@ import {Logger} from '@subsquid/logger'
 import {assertNotNull, def, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Client} from './chain/client.js'
-import {TaskSpec, TaskResult, TaskId} from './chain/interface.js'
+import {TaskSpec, TaskResult, TaskId, WorkerInfo, HardwareSpec} from './chain/interface.js'
 import {KeyPair} from './chain/keyPair.js'
 import {IpfsService, TaskHandle, TaskProcessor} from './taskProcessor.js'
-import {toBuffer} from './util.js'
-
+import {toBuffer, xx64concat} from './util.js'
+import equal from "fast-deep-equal/es6";
 
 interface Block {
     height: number
@@ -27,6 +27,7 @@ interface TaskItem {
 
 export interface ControllerOptions {
     identity: KeyPair
+    hardwareSpec: HardwareSpec
     client: Client
     log: Logger
     ipfsService?: IpfsService
@@ -35,6 +36,7 @@ export interface ControllerOptions {
 
 export class Controller {
     private identity: KeyPair
+    private hardwareSpec: HardwareSpec
     private client: Client
     private log: Logger
     private head!: Block
@@ -43,6 +45,7 @@ export class Controller {
 
     constructor(options: ControllerOptions) {
         this.identity = options.identity
+        this.hardwareSpec = options.hardwareSpec
         this.client = options.client
         this.log = options.log
         this.taskProcessor = new TaskProcessor({
@@ -170,30 +173,80 @@ export class Controller {
     @def
     async run(): Promise<void> {
         try {
-            await this.register()
+            let worker_info = await this.getWorkerInfo()
+            if (worker_info === null) {
+                await this.register()
+            } else {
+                if (!worker_info.isOnline) {
+                    await this.go_online()
+                }
+                if (!equal(worker_info.spec, this.hardwareSpec)) {
+                    await this.update_spec()
+                }
+            }
+
             await Promise.race([
                 this.loop(),
                 this.trackFinalizedBlocks()
             ])
         } finally {
+            await this.go_offline()
             this.running = false
         }
     }
 
+    private async getWorkerInfo(): Promise<WorkerInfo> {
+        let blockHash = await this.client.getHead()
+        let encodedKey = xx64concat(this.identity.getPublicKey())
+        return  await this.client.getStorageItem(blockHash, 'Worker', 'Workers', encodedKey)
+    }
+
     private async register(): Promise<void> {
+        this.log.info("Registering worker")
         let tx = await this.client.send({
             call: {
                 __kind: 'Worker.register',
-                spec: {
-                    numCpuCores: 1,
-                    memoryBytes: 2048n,
-                    storageBytes: 10n * 1024n * 1024n
-                },
+                spec: this.hardwareSpec,
                 isOnline: true
             },
             author: this.identity
         })
-        this.log.info({tx}, `worker registration submitted`)
+        this.log.info({tx}, `Worker registration submitted`)
+    }
+
+    private async go_online(): Promise<void> {
+        this.log.info("Going online")
+        let tx = await this.client.send({
+            call: {
+                __kind: 'Worker.go_online',
+            },
+            author: this.identity
+        })
+        this.log.info({tx}, `Worker go_online submitted`)
+    }
+
+    private async go_offline(): Promise<void> {
+        this.log.info("Going offline")
+        let tx = await this.client.send({
+            call: {
+                __kind: 'Worker.go_offline',
+            },
+            author: this.identity
+        })
+        this.log.info({tx}, `Worker go_offline submitted`)
+    }
+
+    private async update_spec(): Promise<void> {
+        this.log.info({spec: this.hardwareSpec}, "Updating worker specification")
+        let tx = await this.client.send({
+            call: {
+                __kind: 'Worker.update_spec',
+                spec: this.hardwareSpec
+            },
+            author: this.identity
+        })
+        this.log.info({tx}, `Specification update submitted`)
+
     }
 
     close(): void {
