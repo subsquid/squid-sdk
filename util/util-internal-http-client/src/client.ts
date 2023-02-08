@@ -1,5 +1,5 @@
-import {createLogger, Logger} from '@subsquid/logger'
-import {ensureError, wait} from '@subsquid/util-internal'
+import type {Logger} from '@subsquid/logger'
+import {addErrorContext, ensureError, wait} from '@subsquid/util-internal'
 import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
 import {HttpBody} from './body'
@@ -19,7 +19,7 @@ export interface HttpClientOptions {
     httpTimeout?: number
     retryAttempts?: number
     retrySchedule?: number[]
-    log?: Logger | null
+    log?: Logger
 }
 
 
@@ -40,7 +40,8 @@ export interface GraphqlRequestOptions extends RequestOptions {
 }
 
 
-interface FetchRequest extends RequestInit {
+export interface FetchRequest extends RequestInit {
+    id: number
     url: string
     headers: Headers
     timeout?: number
@@ -49,16 +50,17 @@ interface FetchRequest extends RequestInit {
 
 
 export class HttpClient {
-    protected log: Logger | null
+    protected log?: Logger
     protected headers?: Record<string, string | number | bigint>
     private baseUrl?: string
     private agent: AgentProvider
     private retrySchedule: number[]
     private retryAttempts: number
     private httpTimeout?: number
+    private requestCounter = 0
 
     constructor(options: HttpClientOptions = {}) {
-        this.log = options.log === undefined ? createLogger('sqd:http-client') : options.log
+        this.log = options.log
         this.headers = options.headers
         this.setBaseUrl(options.baseUrl)
         this.agent = options.agent || defaultAgentProvider
@@ -82,6 +84,8 @@ export class HttpClient {
     ): Promise<HttpResponse<T>> {
         let req = await this.prepareRequest(method, url, options)
 
+        this.beforeRequest(req)
+
         let retryAttempts = options.retryAttempts ?? this.retryAttempts
         let retrySchedule = options.retrySchedule ?? this.retrySchedule
         let retries = 0
@@ -94,15 +98,72 @@ export class HttpClient {
                         ? retrySchedule[Math.max(retries, retrySchedule.length - 1)]
                         : 1000
                     retries += 1
+                    this.beforeRetryPause(req, res, pause)
                     await wait(pause, req.signal)
                 } else if (res instanceof Error) {
-                    throw res
+                    throw addErrorContext(res, {httpRequestId: req.id})
                 } else {
                     throw new HttpError(res)
                 }
             } else {
                 return res
             }
+        }
+    }
+
+    protected beforeRequest(req: FetchRequest): void {
+        if (this.log?.isDebug()) {
+            this.log.debug({
+                httpRequestId: req.id,
+                httpRequestUrl: req.url,
+                httpRequestMethod: req.method,
+                httpRequestHeaders: Array.from(req.headers),
+                httpRequestBody: req.body
+            }, 'http request')
+        }
+    }
+
+    protected beforeRetryPause(req: FetchRequest, reason: Error | HttpResponse, pause: number): void {
+        if (this.log?.isWarn()) {
+            let info: any = {
+                httpRequestId: req.id
+            }
+            if (reason instanceof Error) {
+                info.reason = reason.toString()
+            } else {
+                info.reason = `got ${reason.status}`
+                info.httpResponseUrl = reason.url
+                info.httpResponseStatus = reason.status
+                info.httpResponseHeaders = Array.from(reason.headers)
+                info.httpResponseBody = reason.body
+            }
+            this.log.warn(info, `request will be retried in ${pause} ms`)
+        }
+    }
+
+    protected afterResponseHeaders(req: FetchRequest, url: string, status: number, headers: Headers): void {
+        if (this.log?.isDebug()) {
+            this.log.debug({
+                httpRequestId: req.id,
+                httpResponseUrl: url,
+                httpResponseStatus: status,
+                httpResponseHeaders: headers
+            }, 'http headers')
+        }
+    }
+
+    protected afterResponse(req: FetchRequest, res: HttpResponse): void {
+        if (this.log?.isDebug()) {
+            let httpResponseBody: any = res.body
+            if (typeof res.body == 'string' || res.body instanceof Uint8Array) {
+                if (res.body.length > 1024 * 1024) {
+                    httpResponseBody = '...body is too long to be logged'
+                }
+            }
+            this.log.debug({
+                httpRequestId: req.id,
+                httpResponseBody
+            }, 'http body')
         }
     }
 
@@ -114,6 +175,7 @@ export class HttpClient {
         await nodeFetch.load()
 
         let req: FetchRequest = {
+            id: this.requestCounter++,
             method,
             headers: new nodeFetch.Headers(options.headers),
             url: this.getAbsUrl(url),
@@ -194,10 +256,13 @@ export class HttpClient {
         }
     }
 
-    protected async performRequest(req: FetchRequest): Promise<HttpResponse> {
+    private async performRequest(req: FetchRequest): Promise<HttpResponse> {
         let res = await nodeFetch.request(req.url, req)
+        this.afterResponseHeaders(req, res.url, res.status, res.headers)
         let body = await this.handleResponseBody(req, res)
-        return new HttpResponse(res.url, res.status, res.headers, body)
+        let httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, body)
+        this.afterResponse(req, httpResponse)
+        return httpResponse
     }
 
     protected async handleResponseBody(req: FetchRequest, res: Response): Promise<any> {
@@ -236,6 +301,7 @@ export class HttpClient {
     getAbsUrl(url: string): string {
         if (!this.baseUrl) return url
         if (url.includes('://')) return url
+        if (url == '/') return this.baseUrl
         if (url[0] == '/') return this.baseUrl + url
         return this.baseUrl + '/' + url
     }
@@ -284,6 +350,7 @@ export class HttpClient {
 
 export class HttpResponse<T=any> {
     constructor(
+        public readonly requestId: number,
         public readonly url: string,
         public readonly status: number,
         public readonly headers: Headers,

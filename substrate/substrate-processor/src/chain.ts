@@ -1,4 +1,3 @@
-import {ResilientRpcClient} from '@subsquid/rpc-client/lib/resilient'
 import {Codec as ScaleCodec, JsonCodec, Src} from '@subsquid/scale-codec'
 import {
     ChainDescription,
@@ -39,9 +38,14 @@ interface SpecMetadata {
 }
 
 
+interface RpcClient {
+    call<T=any>(method: string, params?: unknown[]): Promise<T>
+}
+
+
 export interface ChainManagerOptions {
     archiveRequest<T>(query: string): Promise<T>
-    getChainClient: () => ResilientRpcClient
+    getChainClient: () => RpcClient
     getTypes: (meta: SpecMetadata) => OldTypes
 }
 
@@ -127,7 +131,7 @@ export class Chain {
 
     constructor(
         public readonly description: ChainDescription,
-        private getClient: () => ResilientRpcClient
+        private getClient: () => RpcClient
     ) {
         this.jsonCodec = new JsonCodec(description.types)
         this.scaleCodec = new ScaleCodec(description.types)
@@ -135,7 +139,7 @@ export class Chain {
         this.calls = new eac.Registry(description.types, description.call)
     }
 
-    get client(): ResilientRpcClient {
+    get client(): RpcClient {
         return this.getClient()
     }
 

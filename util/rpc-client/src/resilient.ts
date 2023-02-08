@@ -1,5 +1,5 @@
-import {addTimeout} from "@subsquid/util-timeout"
-import {RpcClient, RpcConnectionError, RpcError} from "./client"
+import {addTimeout} from '@subsquid/util-timeout'
+import {RpcClient, RpcConnectionError, RpcError} from './client'
 
 
 export interface ResilientRpcClientOptions {
@@ -63,7 +63,7 @@ export class ResilientRpcClient {
 
     private addTimeout(res: Promise<any>): Promise<any> {
         let seconds = this.options.timeoutSeconds || 20
-        return addTimeout(res, seconds, () => new RpcConnectionError(`Request timed out in ${seconds} seconds`))
+        return addTimeout(res, seconds * 1000, () => new RpcConnectionError(`Request timed out after ${seconds} seconds`))
     }
 
     close(err?: Error): void {
