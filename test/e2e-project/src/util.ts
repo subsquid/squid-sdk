@@ -1,5 +1,5 @@
-import type {Entity, Store} from "@subsquid/typeorm-store"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
+import type {Entity, Store} from '@subsquid/typeorm-store'
+import {HttpClient} from '@subsquid/util-internal-http-client'
 
 
 export async function getOrCreate<T extends Entity>(
@@ -28,18 +28,11 @@ export function getDataSource(): {archive: string, chain: string} {
 
 
 export async function waitForGateway(): Promise<void> {
-    let attempts = 10
-    let err: Error
-    while (attempts--) {
-        try {
-            return await graphqlRequest({
-                url: getDataSource().archive,
-                query: `query {status {head}}`
-            })
-        } catch(e: any) {
-            err = e
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-    }
-    throw err!
+    let gateway = new HttpClient({
+        baseUrl: getDataSource().archive,
+        retryAttempts: 10,
+        retrySchedule: [1000]
+    })
+
+    await gateway.graphqlRequest(`query {status {head}}`)
 }
