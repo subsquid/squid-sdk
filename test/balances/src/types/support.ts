@@ -114,7 +114,7 @@ export class StorageBase {
     }
 
     protected getKeys(...args: any[]): Promise<any[]> {
-        return this._chain.getKeys(this.blockHash, this.getPrefix(), this.getPrefix(), ...args)
+        return this._chain.getKeys(this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 
     protected getKeysPaged(pageSize: number, ...args: any[]): AsyncIterable<any[]> {
