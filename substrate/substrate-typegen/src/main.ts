@@ -28,6 +28,8 @@ Generates TypeScript classes for events, calls and storage items
     program.argument('[config...]', 'JSON file with options')
 
     for (let configFile of program.parse().processedArgs[0]){
+        log.info(`using ${configFile}`)
+
         let config = await readConfig(configFile)
 
         let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
