@@ -12,6 +12,7 @@ export interface Req {
     params?: unknown[]
     resolve(val: any): void
     reject(err: Error): void
+    retries: number
 }
 
 

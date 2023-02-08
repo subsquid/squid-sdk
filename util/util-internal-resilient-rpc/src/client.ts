@@ -1,4 +1,5 @@
 import {Logger} from '@subsquid/logger'
+import {RpcConnectionError} from '@subsquid/rpc-client'
 import {CommonConnectionOptions, Connection, Req, RpcConnectionMetrics} from './con/base'
 import {HttpRpcConnection} from './con/http'
 import {WsRpcConnection} from './con/ws'
@@ -13,6 +14,7 @@ export interface RpcEndpoint {
 
 export interface RpcClientOptions {
     endpoints: RpcEndpoint[]
+    retryAttempts?: number
     requestTimeout?: number
     log?: Logger
 }
@@ -24,14 +26,16 @@ export class RpcClient {
     private counter = 0
     private schedulingScheduled = false
     private log?: Logger
+    private retryAttempts?: number
 
     constructor(options: RpcClientOptions) {
         this.log = options.log
+        this.retryAttempts = options.retryAttempts
         this.connections = options.endpoints.map((ep, id) => {
             let params: CommonConnectionOptions = {
                 id,
                 url: ep.url,
-                capacity: ep.capacity ?? 10,
+                capacity: ep.capacity ?? 5,
                 requestTimeout: options.requestTimeout ?? 20_000,
                 log: this.log?.child({rpcConnection: id, rpcUrl: ep.url}),
                 onlineCallback: () => this.schedule()
@@ -81,7 +85,8 @@ export class RpcClient {
                 method,
                 params,
                 resolve,
-                reject
+                reject,
+                retries: 0
             })
             this.schedule()
         })
@@ -168,7 +173,13 @@ export class RpcClient {
     private send(con: Connection, req: Req): void {
         con.send(req).then(handled => {
             if (!handled) {
-                this.queue.push(req)
+                let maxRetries = this.retryAttempts ?? Number.MAX_SAFE_INTEGER
+                if (maxRetries > req.retries) {
+                    req.retries += 1
+                    this.queue.push(req)
+                } else {
+                    req.reject(new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`))
+                }
             }
             this.schedule()
         })

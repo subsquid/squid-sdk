@@ -17,7 +17,7 @@ export function Url(protocols?: string[]): (s: string) => string {
             throw new InvalidArgumentError('Invalid url')
         }
         if (protocols?.length && protocols.indexOf(url.protocol) < 0) {
-            throw new InvalidArgumentError(`Unsupported protocol. Use one of: ${protocols.join(', ')}`)
+            throw new InvalidArgumentError(`Unsupported protocol. Expected one of: ${protocols.join(', ')}`)
         }
         return url.toString()
     }
