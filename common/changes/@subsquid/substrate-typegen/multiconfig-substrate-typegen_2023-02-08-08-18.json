@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "allow to pass multiple configs",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
