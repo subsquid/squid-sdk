@@ -6,15 +6,15 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^1.0.2",
     "@subsquid/scale-codec": "^1.1.0",
     "@subsquid/substrate-metadata": "^2.2.1",
     "@subsquid/substrate-metadata-explorer": "^1.0.9",
     "@subsquid/util-internal": "^1.0.0",
     "@subsquid/util-internal-counters": "^0.0.1",
-    "@subsquid/util-internal-gql-request": "^0.1.1",
     "@subsquid/util-internal-hex": "^0.0.1",
+    "@subsquid/util-internal-http-client": "^0.0.0",
     "@subsquid/util-internal-read-lines": "^0.0.1",
+    "@subsquid/util-internal-resilient-rpc": "^0.0.0",
     "@subsquid/util-naming": "^0.0.1",
     "@types/node": "^16.11.41",
     "@types/pg": "^8.6.5",

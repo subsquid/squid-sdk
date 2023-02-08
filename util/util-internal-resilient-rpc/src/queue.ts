@@ -49,6 +49,12 @@ export class PriorityQueue<Item extends {priority: number}> {
         }
     }
 
+    takeAll(): Item[] {
+        let items = this.items.flatMap(its => its)
+        this.items.length = 0
+        return items
+    }
+
     isEmpty(): boolean {
         return this.items.length == 0
     }

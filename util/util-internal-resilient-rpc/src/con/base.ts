@@ -23,6 +23,7 @@ export interface Connection {
     getCapacity(): number
     getMaxCapacity(): number
     getMetrics(): RpcConnectionMetrics
+    close(): void
 }
 
 

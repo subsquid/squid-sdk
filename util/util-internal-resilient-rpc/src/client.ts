@@ -26,11 +26,12 @@ export class RpcClient {
     private counter = 0
     private schedulingScheduled = false
     private log?: Logger
-    private retryAttempts?: number
+    private retryAttempts: number
+    private closed = false
 
     constructor(options: RpcClientOptions) {
         this.log = options.log
-        this.retryAttempts = options.retryAttempts
+        this.retryAttempts = options.retryAttempts ?? Number.MAX_SAFE_INTEGER
         this.connections = options.endpoints.map((ep, id) => {
             let params: CommonConnectionOptions = {
                 id,
@@ -62,6 +63,7 @@ export class RpcClient {
     call<T=any>(priority: number, method: string, params?: unknown[]): Promise<T>
     call<T=any>(methodOrPriority: number | string, paramsOrMethod?: string | unknown[], args?: unknown[]): Promise<T> {
         return new Promise<T>((resolve, reject) => {
+            if (this.closed) return reject(new RpcConnectionError('client was already closed'))
             let priority = 0
             let method: string
             let params: unknown[] | undefined
@@ -172,16 +174,28 @@ export class RpcClient {
 
     private send(con: Connection, req: Req): void {
         con.send(req).then(handled => {
-            if (!handled) {
-                let maxRetries = this.retryAttempts ?? Number.MAX_SAFE_INTEGER
-                if (maxRetries > req.retries) {
-                    req.retries += 1
-                    this.queue.push(req)
-                } else {
-                    req.reject(new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`))
-                }
+            if (this.closed) {
+                if (!handled) req.reject(new RpcConnectionError('client was closed'))
+            } else if (handled) {
+                this.schedule()
+            } else if (this.retryAttempts > req.retries) {
+                req.retries += 1
+                this.queue.push(req)
+                this.schedule()
+            } else {
+                req.reject(new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`))
             }
-            this.schedule()
         })
+    }
+
+    close(): void {
+        if (this.closed) return
+        this.closed = true
+        for (let con of this.connections) {
+            con.close()
+        }
+        for (let req of this.queue.takeAll()) {
+            req.reject(new RpcConnectionError('client was closed'))
+        }
     }
 }
