@@ -78,7 +78,7 @@ export class DataHandlers implements BatchRequest {
             }
         })
 
-        function addBlock(req?: BlockHandlerDataRequest): void {
+        function addBlock(req?: BlockHandlerDataRequest | true): void {
             if (!req) return
             if (req === true || req.items === true) return add('*', true)
             if (!req.items || !req.items.events) return
@@ -125,7 +125,7 @@ export class DataHandlers implements BatchRequest {
             }
         })
 
-        function addBlock(req?: BlockHandlerDataRequest): void {
+        function addBlock(req?: BlockHandlerDataRequest | true): void {
             if (!req) return
             if (req === true || req.items === true) return add('*', true)
             if (!req.items || !req.items.calls) return
