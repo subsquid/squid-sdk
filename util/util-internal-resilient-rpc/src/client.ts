@@ -1,5 +1,6 @@
 import {Logger} from '@subsquid/logger'
 import {RpcConnectionError} from '@subsquid/rpc-client'
+import {addErrorContext} from '@subsquid/util-internal'
 import {CommonConnectionOptions, Connection, Req, RpcConnectionMetrics} from './con/base'
 import {HttpRpcConnection} from './con/http'
 import {WsRpcConnection} from './con/ws'
@@ -183,7 +184,15 @@ export class RpcClient {
                 this.queue.push(req)
                 this.schedule()
             } else {
-                req.reject(new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`))
+                req.reject(
+                    addErrorContext(
+                        new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`),
+                        {
+                            rpcRequestId: req.id,
+                            rpcRequestMethod: req.method
+                        }
+                    )
+                )
             }
         })
     }

@@ -220,6 +220,10 @@ export class RpcProtocolError extends Error {
     constructor(public readonly code?: number, msg?: string) {
         super(msg)
     }
+
+    get name(): string {
+        return 'RpcProtocolError'
+    }
 }
 
 
@@ -235,10 +239,18 @@ export class RpcError extends Error {
         this.code = info.code
         this.data = info.data
     }
+
+    get name(): string {
+        return 'RpcError'
+    }
 }
 
 
 /**
  * Problem with websocket connection
  */
-export class RpcConnectionError extends Error {}
+export class RpcConnectionError extends Error {
+    get name(): string {
+        return 'RpcConnectionError'
+    }
+}

@@ -59,7 +59,6 @@ specifiers:
   '@rush-temp/util-internal-commander': file:./projects/util-internal-commander.tgz
   '@rush-temp/util-internal-config': file:./projects/util-internal-config.tgz
   '@rush-temp/util-internal-counters': file:./projects/util-internal-counters.tgz
-  '@rush-temp/util-internal-gql-request': file:./projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:./projects/util-internal-hex.tgz
   '@rush-temp/util-internal-http-client': file:./projects/util-internal-http-client.tgz
   '@rush-temp/util-internal-http-server': file:./projects/util-internal-http-server.tgz
@@ -73,6 +72,7 @@ specifiers:
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.3.0
   '@subsquid/substrate-frontier-evm': ~0.0.1
+  '@subsquid/util-internal-gql-request': ^0.1.1
   '@substrate/calc': ^0.2.8
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.13
@@ -185,7 +185,6 @@ dependencies:
   '@rush-temp/util-internal-commander': file:projects/util-internal-commander.tgz
   '@rush-temp/util-internal-config': file:projects/util-internal-config.tgz
   '@rush-temp/util-internal-counters': file:projects/util-internal-counters.tgz
-  '@rush-temp/util-internal-gql-request': file:projects/util-internal-gql-request.tgz
   '@rush-temp/util-internal-hex': file:projects/util-internal-hex.tgz
   '@rush-temp/util-internal-http-client': file:projects/util-internal-http-client.tgz
   '@rush-temp/util-internal-http-server': file:projects/util-internal-http-server.tgz
@@ -199,6 +198,7 @@ dependencies:
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.3.0
   '@subsquid/substrate-frontier-evm': 0.0.1
+  '@subsquid/util-internal-gql-request': 0.1.1
   '@substrate/calc': 0.2.8
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.14
@@ -1329,6 +1329,14 @@ packages:
 
   /@subsquid/util-internal-code-printer/0.0.2:
     resolution: {integrity: sha512-JqOMotioko6SLAquVM5GMi7qvzo4W9LPw6kw2Wse1wdnQt1HjpS9t2Zo8QkAh9PzZR+0lfVskBm83AhUCGsOGQ==}
+    dev: false
+
+  /@subsquid/util-internal-gql-request/0.1.1:
+    resolution: {integrity: sha512-KBCtokrwi7jjEqucUhHm/x4hmZvmJjxkEoYEhPCLwPirzOCtcNWjmsgaE41hGfbd8VnTeo2cji9cjGjSvwGvkw==}
+    dependencies:
+      node-fetch: 2.6.8
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@subsquid/util-internal-hex/0.0.1:
@@ -4659,7 +4667,7 @@ packages:
     dev: false
 
   file:projects/chain-status-service.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-dG6o0pxDdOEyCnECPGoC/7wywQ/9/hObaJVGdh+W1MFGo1VNHvK3404A5AfQGLe9fvZNgtqo/6qEgOQ6GAV0SA==, tarball: file:projects/chain-status-service.tgz}
+    resolution: {integrity: sha512-8AF1Ok20rfPYE5d3nzO07rEShFDQQFBmxffP+wJsfMdJ8qdf8pEFTgFVBOPflm6UCB4RmoZFfAqGcAhohZgRAw==, tarball: file:projects/chain-status-service.tgz}
     id: file:projects/chain-status-service.tgz
     name: '@rush-temp/chain-status-service'
     version: 0.0.0
@@ -4689,7 +4697,7 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-1AmB1dzDoVdMEZ/w8dRcXSF0GoB91Vz6UrEoZlGb1xzPZkaSTumA7gjfXYRYq5iDzxtVStBy91ipL0i4u4Zqyg==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-H0EWJbKsK70bNd4S0Mx//f/hgb8YqgTH2PBDZNGSR/y1543sEz4DJJTCAiGIFgxGoStB42yFNI7xiKtPLeY4Jg==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
@@ -4703,7 +4711,7 @@ packages:
     dev: false
 
   file:projects/e2e-test-project.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-If6AuKL5dPruwxQWtwwjKkLkLk+/epjP9Xq26j16KbBbIpagGzs3r1na2Dvk1xcWsapgas1/MmzgHFSgU03zug==, tarball: file:projects/e2e-test-project.tgz}
+    resolution: {integrity: sha512-yxdxpM5F2jBoOkx0HdhtRl+CsOhT2m1S0iA+wa6jCjZimCSXgGZDsmSyhIMusRAx7OiFq95LGaG6ZJpRmbc5/Q==, tarball: file:projects/e2e-test-project.tgz}
     id: file:projects/e2e-test-project.tgz
     name: '@rush-temp/e2e-test-project'
     version: 0.0.0
@@ -5153,7 +5161,7 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-qPwuwHJXAmn0rE6BGMf8QYYcCkI8o9jHAUhu2IdSpq/nohEaajRCfeFUKAKzZE6ka9RVcOntnwHNQXyEhZCGiA==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-DSGPFQUDdV/qRt7Td4+yLyqDJexKwHPYBPeJrq1KuEnyZrpPLW3J3ZcFeMDDqiYbofZaUz565Q6Pmju42wlT+Q==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
@@ -5171,7 +5179,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-SRXx4SbHIqTneE8YbRtiIuA+KeaWGEGem+M/J54jBcd4lUrbKoINbXn5BYmydRYL/BIluazxWZtVyUDBVbjzog==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-1ydZNL+m5Vq4tVJmiLP/bCkIltbv/qh5dnPfIYMouGg1IM7sy9WjltNO2qd6l1lctCoCQuoy+WAr9kfVO927vQ==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -5194,7 +5202,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-lAswO5H/nNGmkQa9ndWI4HzirWSuCuBl/734I1m7V5NjDDReqekZStfgfzLc+E0bitGCvtYJ9MBGdURv0heRpg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-HdenZowmLvG06HbzczSPOdmp9VUgYmjL4nNhOZ0YBYJBYAR5+IifrsXmSSWDqLoBFReQYN3N/lV9UALyE/7R/Q==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
@@ -5209,14 +5217,17 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-m8lsS+sP7JUr0DVD4sbv7FG2PUiXJzUhks6K2kUtysiJTzYpilu79MTVypBJOeg73APwS8Bys+ORehOPSb0opA==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-QpG/vrwrm2IDfE5V5xzv8lUuZXVIjLB7+wbpBN7UBEKNxV8YidNJ1vTyELGZMTrWJ7h8NPYiUOonUOV6x2LDRA==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
+      '@subsquid/util-internal-gql-request': 0.1.1
       '@types/node': 16.11.59
       ajv: 8.11.0
       commander: 9.4.0
       typescript: 4.7.4
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   file:projects/typeorm-codegen.tgz:
@@ -5380,19 +5391,6 @@ packages:
       typescript: 4.7.4
     dev: false
 
-  file:projects/util-internal-gql-request.tgz:
-    resolution: {integrity: sha512-6EBznSlmEeW9+eYThxGiFk1ZoERKs231dKldNEgK61UGU0SGIgkGPwIDY5p+5uIeO1lyKV2Slx05gM4iwjoRkA==, tarball: file:projects/util-internal-gql-request.tgz}
-    name: '@rush-temp/util-internal-gql-request'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 16.11.59
-      '@types/node-fetch': 2.6.2
-      node-fetch: 2.6.8
-      typescript: 4.7.4
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   file:projects/util-internal-hex.tgz:
     resolution: {integrity: sha512-WQ0CpFuQYe4IbKOBREo/h3psKcwgOxaHKSRYsv4l5EwjdAaF1Xy8uLe0EZVmaKc2YDzSTeDivY38Z08/yZQ8LQ==, tarball: file:projects/util-internal-hex.tgz}
     name: '@rush-temp/util-internal-hex'
@@ -5403,7 +5401,7 @@ packages:
     dev: false
 
   file:projects/util-internal-http-client.tgz:
-    resolution: {integrity: sha512-i+4EDZ6W8gq15FyICxf1RQHsUjNGg0fkxmsJ2yAXQeGMpxo20jyUGFFBQDTHTA7xaP7q79XcD6uug717s8YDSw==, tarball: file:projects/util-internal-http-client.tgz}
+    resolution: {integrity: sha512-GxY5OHlWxtA0RwYpvBg5ZIn1fIgESOXFYqfdpUTZ/i/8TBIuCwH3Ot34WZAczQniQKV96twZIDw+0kYNmDPjWw==, tarball: file:projects/util-internal-http-client.tgz}
     name: '@rush-temp/util-internal-http-client'
     version: 0.0.0
     dependencies:
@@ -5453,7 +5451,7 @@ packages:
     dev: false
 
   file:projects/util-internal-resilient-rpc.tgz:
-    resolution: {integrity: sha512-kJH7qPKOlI49egbpwu0RwflAp49H+SUl7Ob0CfUPHsTlsrkpuZDXx7sYEuNDMMOCe4ae/YyaT962Ye3GbhkTlQ==, tarball: file:projects/util-internal-resilient-rpc.tgz}
+    resolution: {integrity: sha512-a5yBB+pfJUljZFroZI+hXcVr9de23p9scesqMiIrS7hyJAGuzxYShvnpW66ZT9LLjwuHF+OM0ImxoFeMnZiKhg==, tarball: file:projects/util-internal-resilient-rpc.tgz}
     name: '@rush-temp/util-internal-resilient-rpc'
     version: 0.0.0
     dependencies:
