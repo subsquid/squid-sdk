@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/typeorm-config",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "TypeORM conventions of a squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-naming": "^0.0.1"
+    "@subsquid/util-naming": "^0.0.2"
   },
   "peerDependencies": {
     "typeorm": "^0.3.12"

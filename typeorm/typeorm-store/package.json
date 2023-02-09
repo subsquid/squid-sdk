@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/typeorm-store",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeORM based storage for squid mappings",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,8 +18,8 @@
     "test": "make up && sleep 1 && make && make down || (make down && exit 1)"
   },
   "dependencies": {
-    "@subsquid/typeorm-config": "^2.0.0",
-    "@subsquid/util-internal": "^1.0.0"
+    "@subsquid/typeorm-config": "^2.0.1",
+    "@subsquid/util-internal": "^1.1.0"
   },
   "peerDependencies": {
     "typeorm": "^0.3.12"

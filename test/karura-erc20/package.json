@@ -7,20 +7,20 @@
     "evm-typegen": "npx squid-evm-typegen --input src/erc20.json --output src/erc20.ts"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^3.3.0",
-    "@subsquid/substrate-processor": "^2.2.0",
-    "@subsquid/typeorm-store": "^0.2.0",
-    "@subsquid/typeorm-migration": "^0.1.4",
+    "@subsquid/graphql-server": "^3.3.1",
+    "@subsquid/substrate-processor": "^2.3.0",
+    "@subsquid/typeorm-store": "^0.2.1",
+    "@subsquid/typeorm-migration": "^0.1.5",
     "dotenv": "^16.0.3",
     "pg": "^8.9.0",
     "typeorm": "^0.3.12",
     "ethers": "^5.7.2"
   },
   "devDependencies": {
-    "@subsquid/evm-typegen": "^2.0.2",
-    "@subsquid/substrate-metadata-explorer": "^1.0.9",
-    "@subsquid/substrate-typegen": "^2.2.0",
-    "@subsquid/typeorm-codegen": "^0.3.1",
+    "@subsquid/evm-typegen": "^2.0.3",
+    "@subsquid/substrate-metadata-explorer": "^1.1.0",
+    "@subsquid/substrate-typegen": "^2.2.1",
+    "@subsquid/typeorm-codegen": "^0.3.2",
     "@types/node": "^16.18.12",
     "typescript": "~4.9.5"
   }
