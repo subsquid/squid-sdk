@@ -25,8 +25,8 @@ This tool was created as a replacement for npm scripts and Makefiles to cover th
 # list defined commands
 squid-commands 
 
-# execute `clean` and `build`
-squid-commands clean build
+# path arguments and flags to the script
+squid-commands clean --force
 
 # it is ok to use from any project dir
 cd child/
