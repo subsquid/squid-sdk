@@ -2,10 +2,12 @@ import {createLogger} from '@subsquid/logger'
 import {last, runProgram} from '@subsquid/util-internal'
 import {nat, Url} from '@subsquid/util-internal-commander'
 import {Progress} from '@subsquid/util-internal-counters'
+import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpAgent} from '@subsquid/util-internal-http-client/lib/agent'
 import {toJSON} from '@subsquid/util-internal-json'
 import {Command} from 'commander'
 import {Ingest} from './ingest'
-import {HttpRpcClient} from './rpc'
+import {RpcClient} from './rpc'
 import WritableStream = NodeJS.WritableStream
 
 
@@ -29,7 +31,14 @@ runProgram(async () => {
         toBlock?: number
     }
 
-    let rpc = new HttpRpcClient(options.endpoint)
+    let httpClient = new HttpClient({
+        baseUrl: options.endpoint,
+        agent: new HttpAgent({keepAlive: true}),
+        log: log.child('http')
+    })
+
+    let rpc = new RpcClient(httpClient)
+
     let fromBlock = options.fromBlock ?? 0
     let toBlock = options.toBlock
     let concurrency = options.concurrency
