@@ -46,6 +46,12 @@
     },
     {
       "parameterKind": "flag",
+      "longName": "--major",
+      "description": "allow major upgrades",
+      "associatedCommands": ["unify-dependencies"]
+    },
+    {
+      "parameterKind": "flag",
       "longName": "--dry",
       "description": "do not perform real changes",
       "associatedCommands": ["unify-dependencies"]

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "support `http(s)` RPC endpoints",
+      "type": "minor"
+    }
+  ],
+  "packageName": "chain-status-service"
+}

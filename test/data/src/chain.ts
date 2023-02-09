@@ -1,5 +1,4 @@
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {Codec as ScaleCodec, JsonCodec} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
 import {
     ChainDescription,
     decodeExtrinsic,
@@ -7,20 +6,20 @@ import {
     encodeExtrinsic,
     getChainDescriptionFromMetadata,
     getOldTypesBundle
-} from "@subsquid/substrate-metadata"
-import {readSpecVersions, SpecVersion} from "@subsquid/substrate-metadata-explorer/lib/specVersion"
-import * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
-import {getTypesFromBundle} from "@subsquid/substrate-metadata/lib/old/typesBundle"
-import {assertNotNull, def, last} from "@subsquid/util-internal"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
-import {toHex} from "@subsquid/util-internal-hex"
-import {readLines} from "@subsquid/util-internal-read-lines"
-import assert from "assert"
-import expect from "expect"
-import * as fs from "fs"
-import * as path from "path"
-import * as pg from "pg"
-import {ProgressReporter} from "./util"
+} from '@subsquid/substrate-metadata'
+import {readSpecVersions, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {assertNotNull, def, last} from '@subsquid/util-internal'
+import {toHex} from '@subsquid/util-internal-hex'
+import {HttpClient} from '@subsquid/util-internal-http-client'
+import {readLines} from '@subsquid/util-internal-read-lines'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import expect from 'expect'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as pg from 'pg'
+import {ProgressReporter} from './util'
 
 
 export class Chain {
@@ -288,8 +287,11 @@ export class Chain {
         }
     }
 
-    private async withRpcClient<T>(cb: (client: ResilientRpcClient) => Promise<T>): Promise<T> {
-        let client = new ResilientRpcClient({url: this.info().chain, maxRetries: 3})
+    private async withRpcClient<T>(cb: (client: RpcClient) => Promise<T>): Promise<T> {
+        let client = new RpcClient({
+            endpoints: [{url: this.info().chain, capacity: 5}],
+            retryAttempts: 3
+        })
         try {
             return await cb(client)
         } finally {
@@ -297,22 +299,16 @@ export class Chain {
         }
     }
 
-    private async archiveRequest<T>(query: string): Promise<T> {
-        let url = assertNotNull(this.info().archive)
-        let attempt = 3
-        while (attempt--) {
-            try {
-                return await graphqlRequest({url, query})
-            } catch(e: any) {
-                if (attempt && (e.toString().startsWith('FetchError') || /Got http 5/.test(e.toString()))) {
-                    console.log(`error: ${e.message}`)
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                } else {
-                    throw e
-                }
-            }
-        }
-        assert(false)
+    @def
+    private archiveClient(): HttpClient {
+       return new HttpClient({
+           baseUrl: assertNotNull(this.info().archive),
+           retryAttempts: 3
+       })
+    }
+
+    private archiveRequest<T>(query: string): Promise<T> {
+        return this.archiveClient().graphqlRequest(query)
     }
 
     private async withDatabase<T>(cb: (client: pg.Client) => Promise<T>): Promise<T> {

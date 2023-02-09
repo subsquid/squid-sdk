@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "remove `ResilientRpcClient` in favour of `@subsquid/util-internal-resilient-rpc`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

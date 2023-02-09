@@ -1,10 +1,10 @@
-import {createLogger} from "@subsquid/logger"
-import {assertNotNull, def, runProgram} from "@subsquid/util-internal"
-import {createNodeHttpServer, waitForInterruption} from "@subsquid/util-internal-http-server"
-import express from "express"
-import * as fs from "fs"
-import * as process from "process"
-import {Client} from "./client"
+import {createLogger} from '@subsquid/logger'
+import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
+import {createNodeHttpServer, waitForInterruption} from '@subsquid/util-internal-http-server'
+import express from 'express'
+import * as fs from 'fs'
+import * as process from 'process'
+import {Client} from './client'
 
 
 type Chain = string
@@ -29,7 +29,7 @@ class App {
         for (let chain in config) {
             let endpoints = config[chain]
             if (endpoints.length > 0) {
-                clients[chain] = new Client(endpoints, this.log)
+                clients[chain] = new Client(endpoints, this.log.child({chain}))
             }
         }
         return clients

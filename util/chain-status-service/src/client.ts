@@ -1,7 +1,9 @@
-import type {Logger} from "@subsquid/logger"
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import assert from "assert"
-import {createFuture, Future} from "./util"
+import type {Logger} from '@subsquid/logger'
+import {addErrorContext} from '@subsquid/util-internal'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
+import assert from 'assert'
+import {createFuture, Future} from './util'
 
 
 export interface ChainStatus {
@@ -12,7 +14,7 @@ export interface ChainStatus {
 }
 
 
-async function fetchStatus(client: ResilientRpcClient): Promise<ChainStatus> {
+async function fetchStatus(client: RpcClient): Promise<ChainStatus> {
     let hash = await client.call('chain_getFinalizedHead')
     let header: {number: string} = await client.call('chain_getHeader', [hash])
     return {
@@ -53,20 +55,30 @@ export class Client {
     }
 
     private async fetchLoop(url: string): Promise<void> {
-        let log = this.log?.child({url})
-        let client = new ResilientRpcClient({url, timeoutSeconds: 10})
+        let client = this.newClient(url)
         let req = 0
         while (true) {
             req = await this.nextRequest(req)
             try {
-                let status = await fetchStatus(client)
+                let status = await addTimeout(fetchStatus(client), 10_000)
                 this.provide(req, status)
             } catch(err: any) {
-                log?.error({req, err})
-                client.close(err)
-                client = new ResilientRpcClient({url, timeoutSeconds: 10})
+                if (err instanceof TimeoutError) {
+                    this.rejectWithTimeout(req, err)
+                }
+                this.log?.error(addErrorContext(err, {req}))
+                client.close()
+                client = this.newClient(url)
             }
         }
+    }
+
+    private newClient(url: string): RpcClient {
+        return new RpcClient({
+            endpoints: [{url}],
+            retryAttempts: 0,
+            log: this.log?.child({endpoint: url})
+        })
     }
 
     private async nextRequest(prev: RequestId): Promise<RequestId> {
@@ -85,25 +97,19 @@ export class Client {
         this.request = undefined
     }
 
+    private rejectWithTimeout(req: number, err: TimeoutError): void {
+        if (this.request?.id !== req) return
+        this.request.reject(err)
+        this.request = undefined
+    }
+
     getStatus(): Promise<ChainStatus> {
         if (this.request) return this.request.promise()
 
-        let request = this.request = {
+        this.request = {
             id: this.requestCounter += 1,
             ...createFuture()
         }
-
-        let timer: any = setTimeout(() => {
-            timer = undefined
-            request.reject(new Error('Request timeout'))
-        }, 10_000)
-
-        request.promise().finally(() => {
-            if (timer) {
-                clearTimeout(timer)
-                timer = undefined
-            }
-        })
 
         this.requestWaiter.resolve(this.request.id)
         this.requestWaiter = createFuture()

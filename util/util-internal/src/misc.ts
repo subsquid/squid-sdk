@@ -59,8 +59,44 @@ export function ensureError(val: unknown): Error {
 }
 
 
-export function wait(ms: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(resolve, ms)
-    })
+export function addErrorContext<T extends Error>(err: T, ctx: any): T {
+    let e = err as any
+    for (let key in ctx) {
+        if (e[key] == null) {
+            e[key] = ctx[key]
+        }
+    }
+    return err
+}
+
+
+export function withErrorContext(ctx: any): (err: Error) => never {
+    return function(err: Error): never {
+        throw addErrorContext(err, ctx)
+    }
+}
+
+
+export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
+    if (abortSignal) {
+        return new Promise((resolve, reject) => {
+            if (abortSignal.aborted) return reject(new Error('aborted'))
+
+            abortSignal.addEventListener('abort', abort, {once: true})
+
+            let timer = setTimeout(() => {
+                abortSignal.removeEventListener('abort', abort)
+                resolve()
+            }, ms)
+
+            function abort() {
+                clearTimeout(timer)
+                reject(new Error('aborted'))
+            }
+        })
+    } else {
+        return new Promise(resolve => {
+            setTimeout(resolve, ms)
+        })
+    }
 }

@@ -11,27 +11,25 @@ import {
 } from '@subsquid/substrate-metadata'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
-import {assertNotNull, wait} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, wait, withErrorContext} from '@subsquid/util-internal'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import assert from 'assert'
-import {Client} from './client'
 import {Spec, sub} from './interfaces'
 import {BlockData} from './model'
 import {parseRawBlock, RawBlock} from './parse/block'
 import {Account} from './parse/validator'
 import {Shooter} from './shooter'
 import {
-    addErrorContext,
     EVENT_STORAGE_KEY,
     NEXT_FEE_MULTIPLIER_STORAGE_KEY,
     SESSION_STORAGE_KEY,
     splitSpecId,
-    VALIDATORS_STORAGE_KEY,
-    withErrorContext
+    VALIDATORS_STORAGE_KEY
 } from './util'
 
 
 export interface IngestOptions {
-    client: Client
+    client: RpcClient
     typesBundle?: OldTypesBundle | OldSpecsBundle
     startBlock?: number
     log?: Logger
@@ -43,7 +41,7 @@ export class Ingest {
         return new Ingest(options).loop()
     }
 
-    private client: Client
+    private client: RpcClient
     private typesBundle?: OldTypesBundle | OldSpecsBundle
     private maxStrides = 20
     private readonly strideSize = 10
@@ -82,10 +80,13 @@ export class Ingest {
                 try {
                     yield await this.processRawBlock(raw)
                 } catch(e: any) {
-                    throw addErrorContext(e, {
-                        blockHeight: raw.blockHeight,
-                        blockHash: raw.blockHash
-                    })
+                    if (e.blockHeight == null && e.blockHash == null) {
+                        addErrorContext(e, {
+                            blockHeight: raw.blockHeight,
+                            blockHash: raw.blockHash
+                        })
+                    }
+                    throw e
                 }
             }
         }

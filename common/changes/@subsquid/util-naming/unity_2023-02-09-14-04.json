@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-naming",
+      "comment": "upgrade dev dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-naming"
+}

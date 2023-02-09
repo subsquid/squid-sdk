@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add abort signal option to `wait()`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

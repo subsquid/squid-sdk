@@ -1,12 +1,12 @@
 import {Logger} from "@subsquid/logger"
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import {findSpecVersions} from "./binarySearch"
 import {ExploreApi} from "./explore"
 import {SpecVersion, SpecVersionRecord} from "./specVersion"
 
 
 export class ChainApi implements ExploreApi {
-    constructor(private client: ResilientRpcClient, private log?: Logger) {}
+    constructor(private client: RpcClient, private log?: Logger) {}
 
     async getHeight(): Promise<number> {
         let head = await this.client.call('chain_getFinalizedHead')
@@ -42,12 +42,10 @@ export class ChainApi implements ExploreApi {
         })
     }
 
-    async getVersionRecordArray(heights: number[]): Promise<SpecVersionRecord[]> {
-        let result: SpecVersionRecord[] = new Array(heights.length)
-        for (let i = 0; i < heights.length; i++) {
-            result[i] = await this.getVersionRecord(heights[i])
-        }
-        return result
+    getVersionRecordArray(heights: number[]): Promise<SpecVersionRecord[]> {
+        return Promise.all(
+            heights.map(h => this.getVersionRecord(h))
+        )
     }
 
     async getVersion(rec: SpecVersionRecord): Promise<SpecVersion> {

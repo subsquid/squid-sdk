@@ -12,7 +12,7 @@ import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {assertNotNull, def, runProgram, unexpectedCase} from '@subsquid/util-internal'
+import {assertNotNull, def, runProgram, unexpectedCase, withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 import {applyRangeBound, Batch, mergeBatches} from '../batch/generic'
 import {CallHandlerEntry, DataHandlers} from '../batch/handlers'
@@ -52,7 +52,6 @@ import type {
     SubstrateCall,
     SubstrateEvent
 } from '../interfaces/substrate'
-import {withErrorContext} from '../util/misc'
 import type {Range} from '../util/range'
 import {Options, Runner} from './runner'
 

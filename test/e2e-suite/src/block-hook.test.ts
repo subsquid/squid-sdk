@@ -14,6 +14,7 @@ describe('block hooks', () => {
                 }
             }
         `).then(res => {
+            expect(res.data).toHaveProperty('blockHooks')
             hooks = res.data.blockHooks
         })
     })

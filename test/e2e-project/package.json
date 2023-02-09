@@ -17,11 +17,11 @@
     "@subsquid/typeorm-migration": "^0.1.4",
     "@subsquid/typeorm-store": "^0.2.0",
     "@subsquid/util-internal": "^1.0.0",
-    "@subsquid/util-internal-gql-request": "^0.1.1",
-    "@types/node": "^16.11.41",
-    "dotenv": "^10.0.0",
-    "pg": "^8.7.3",
-    "typeorm": "^0.3.6",
-    "typescript": "~4.7.4"
+    "@subsquid/util-internal-http-client": "^0.0.0",
+    "@types/node": "^16.18.12",
+    "dotenv": "^16.0.3",
+    "pg": "^8.9.0",
+    "typeorm": "^0.3.12",
+    "typescript": "~4.9.5"
   }
 }

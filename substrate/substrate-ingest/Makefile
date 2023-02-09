@@ -3,13 +3,12 @@ DB="postgres://postgres:postgres@localhost:29387/archive"
 
 kusama:
 	@node lib/main.js --out $(DB) \
-		-e wss://kusama-rpc.polkadot.io \
+		-e https://kusama-rpc.polkadot.io \
 		-c 20 \
 		-e wss://kusama.api.onfinality.io/public-ws \
 		-c 20 \
 		--prom-port 0 \
-		--write-batch-size 30 \
-		--start-block 15428109
+		--write-batch-size 30
 
 
 kintsugi:

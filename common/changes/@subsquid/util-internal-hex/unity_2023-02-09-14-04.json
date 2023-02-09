@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-hex",
+      "comment": "upgrade dev dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-hex"
+}

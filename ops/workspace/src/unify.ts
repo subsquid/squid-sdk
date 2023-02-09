@@ -1,20 +1,21 @@
-import {Command} from "commander"
-import * as process from "process"
-import {Workspace} from "./workspace"
+import {runProgram} from '@subsquid/util-internal'
+import {Command} from 'commander'
+import * as process from 'process'
+import {Workspace} from './workspace'
 
 
 interface Options {
     update: boolean
-    major?: string[]
+    major?: boolean
     dry?: boolean
 }
 
 
-async function main(): Promise<void> {
+runProgram(async () => {
     let command = new Command()
     command.description('Unifies and optionally updates dependencies across rush project')
     command.option('--update', 'update dependencies', false)
-    command.option('-m, --major [...packages]', 'allow major update for a package')
+    command.option('--major', 'allow major update for a package')
     command.option('--dry', 'do not perform real changes')
     command.parse()
 
@@ -22,7 +23,7 @@ async function main(): Promise<void> {
     let workspace = new Workspace(process.cwd())
 
     if (options.update) {
-        await workspace.update(new Set(options.major))
+        await workspace.update(options.major)
     }
 
     workspace.unify()
@@ -30,10 +31,4 @@ async function main(): Promise<void> {
     if (!options.dry) {
         workspace.save()
     }
-}
-
-
-main().catch(err => {
-    console.error(err)
-    process.exit(1)
 })

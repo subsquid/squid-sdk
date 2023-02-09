@@ -1,10 +1,10 @@
-import {def} from "@subsquid/util-internal"
-import fs from "fs"
-import latestVersion from "latest-version"
-import * as path from "path"
-import * as JSONC from "jsonc-parser"
-import * as semver from "semver"
-import {PackageJson} from "type-fest"
+import {def} from '@subsquid/util-internal'
+import fs from 'fs'
+import * as JSONC from 'jsonc-parser'
+import latestVersion from 'latest-version'
+import * as path from 'path'
+import * as semver from 'semver'
+import {PackageJson} from 'type-fest'
 
 
 type PkgJson = PackageJson.PackageJsonStandard
@@ -43,13 +43,14 @@ export class Workspace {
         })
     }
 
-    async update(majorBumpSet?: Set<string>): Promise<void> {
+    async update(major?: boolean): Promise<void> {
         let versions = this.unifiedDependencies()
         for (let name in versions) {
-            let current = pure(versions[name]!)
-            let latest = majorBumpSet?.has(name)
+            let fullCurrent = versions[name]!
+            let current = pure(fullCurrent)
+            let latest = major
                 ? await latestVersion(name)
-                : await latestVersion(name, {version: '^'+current})
+                : await latestVersion(name, {version: fullCurrent})
             if (current != latest) {
                 console.log(`updated ${name}\t${current} -> ${latest}`)
                 versions[name] = prefix(versions[name]!) + latest
