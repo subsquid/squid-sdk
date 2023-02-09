@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {assertNotNull} from '@subsquid/util-internal'
 import {spawn} from 'child_process'
 import {glob} from 'glob'
@@ -134,10 +135,17 @@ function extendPath(env: typeof process.env, root: string): void {
 }
 
 
+const LOG = createLogger('sqd:commands')
+
+
 function printCommandLabel(name: string): void {
-    let line = name.toUpperCase()
-    if (supportsColor) {
-        line = '\u001b[1m' + line + '\u001b[0m'
+    if (process.stderr.isTTY) {
+        let line = name.toUpperCase()
+        if (supportsColor) {
+            line = '\u001b[1m' + line + '\u001b[0m'
+        }
+        console.error(line)
+    } else {
+        LOG.info(name.toUpperCase())
     }
-    console.error(line)
 }
