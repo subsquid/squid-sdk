@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/commands",
+      "comment": "README fix",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/commands"
+}

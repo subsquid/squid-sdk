@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ss58-codec",
+      "comment": "upgrade `base-x` from `^3.0.9` to `^4.0.0`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ss58-codec"
+}

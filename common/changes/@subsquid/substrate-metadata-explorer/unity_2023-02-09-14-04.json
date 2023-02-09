@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "support `http(s)` RPC endpoints",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

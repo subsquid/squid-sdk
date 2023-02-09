@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-resilient-rpc",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-resilient-rpc"
+}

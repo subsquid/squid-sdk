@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "support `http(s)` RPC endpoints",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

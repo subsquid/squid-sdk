@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "fix pretty printing of `Error` properties",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "comment": "use `util-internal-http-client` for HTTP requests",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-ingest"
+}
