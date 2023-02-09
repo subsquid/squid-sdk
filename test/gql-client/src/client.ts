@@ -8,11 +8,11 @@ export class Client {
     private client: HttpClient
 
     constructor(public endpoint: string) {
-        this.client = new HttpClient({baseUrl: endpoint})
+        this.client = new HttpClient()
     }
 
     query(query: string): Promise<{data?: any, errors?: GraphqlMessage[]}> {
-        return this.client.post('/', {
+        return this.client.post(this.endpoint, {
             json: {query}
         })
     }

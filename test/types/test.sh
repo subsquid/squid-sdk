@@ -2,13 +2,10 @@
 
 rm -rf gen || exit 1
 
-for cfg in config/*.json; do
-    chain="${cfg##config/}"
-    chain="${chain%".json"}"
-    echo -n "gen $chain: "
-    npx squid-substrate-typegen "$cfg" || exit 1
-    echo ok
-done
+
+echo typegen
+npx squid-substrate-typegen config/*.json 2>&1 || exit 1
+
 
 for cfg in config/*.json; do
     chain="${cfg##config/}"
