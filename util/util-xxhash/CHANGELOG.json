@@ -2,6 +2,18 @@
   "name": "@subsquid/util-xxhash",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/util-xxhash_v0.1.2",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dev dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/util-xxhash_v0.1.1",
       "date": "Fri, 24 Jun 2022 22:07:05 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Fri, 28 Oct 2022 12:04:58 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 1.1.0
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Minor changes
+
+- add abort signal option to `wait()`
 
 ## 1.0.0
 Fri, 28 Oct 2022 12:04:58 GMT

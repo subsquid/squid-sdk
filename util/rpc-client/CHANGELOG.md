@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Thu, 07 Jul 2022 15:00:50 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 2.0.0
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Breaking changes
+
+- remove `ResilientRpcClient` in favour of `@subsquid/util-internal-resilient-rpc`
 
 ## 1.0.2
 Thu, 07 Jul 2022 15:00:50 GMT

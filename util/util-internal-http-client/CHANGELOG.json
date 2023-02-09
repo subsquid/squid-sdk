@@ -1,0 +1,20 @@
+{
+  "name": "@subsquid/util-internal-http-client",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/util-internal-http-client_v0.0.0",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

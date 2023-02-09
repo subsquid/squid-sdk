@@ -2,6 +2,38 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "3.3.1",
+      "tag": "@subsquid/graphql-server_v3.3.1",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^3.1.6` to `^3.1.7`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.0` to `^2.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-commander\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.1.0` to `^0.1.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.3.0",
       "tag": "@subsquid/graphql-server_v3.3.0",
       "date": "Tue, 20 Dec 2022 18:27:34 GMT",

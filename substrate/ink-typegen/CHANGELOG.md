@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-typegen
 
-This log was last generated on Tue, 24 Jan 2023 17:54:27 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.1.1
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- upgrade dependencies
 
 ## 0.1.0
 Tue, 24 Jan 2023 17:54:27 GMT

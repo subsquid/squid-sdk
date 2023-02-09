@@ -2,6 +2,29 @@
   "name": "@subsquid/ink-abi",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/ink-abi_v1.0.1",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.2.1` to `^2.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/ink-abi_v1.0.0",
       "date": "Tue, 24 Jan 2023 17:54:27 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 25 Jan 2023 18:43:43 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 1.5.0
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Minor changes
+
+- support `http(s)` RPC endpoints
 
 ## 1.4.1
 Wed, 25 Jan 2023 18:43:43 GMT

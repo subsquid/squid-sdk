@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 29 Dec 2022 19:19:37 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 2.3.0
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Minor changes
+
+- support `http(s)` RPC endpoints
 
 ## 2.2.0
 Thu, 29 Dec 2022 19:19:37 GMT

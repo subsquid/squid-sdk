@@ -2,6 +2,56 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.3.0",
+      "tag": "@subsquid/substrate-processor_v2.3.0",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support `http(s)` RPC endpoints"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.2.1` to `^2.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.0` to `^2.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.1.0` to `^0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^0.0.2` to `^0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^0.2.0` to `^0.2.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.0",
       "tag": "@subsquid/substrate-processor_v2.2.0",
       "date": "Thu, 29 Dec 2022 19:19:37 GMT",

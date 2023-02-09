@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-commander
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.0.2
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- refine invalid URL phrase
 
 ## 0.0.1
 Sun, 27 Nov 2022 18:43:31 GMT

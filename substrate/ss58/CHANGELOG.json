@@ -2,6 +2,23 @@
   "name": "@subsquid/ss58",
   "entries": [
     {
+      "version": "0.1.4",
+      "tag": "@subsquid/ss58_v0.1.4",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dev dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ss58-codec\" from `^0.1.1` to `^0.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.3",
       "tag": "@subsquid/ss58_v0.1.3",
       "date": "Wed, 25 Jan 2023 18:43:43 GMT",

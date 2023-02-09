@@ -1,6 +1,38 @@
 {
-  "name": "@subsquid/eth-ingest",
+  "name": "@subsquid/evm-ingest",
   "entries": [
+    {
+      "version": "0.0.4",
+      "tag": "@subsquid/evm-ingest_v0.0.4",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use `util-internal-http-client` for HTTP requests"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-commander\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^0.2.0` to `^0.2.1`"
+          }
+        ]
+      }
+    },
     {
       "version": "0.0.3",
       "tag": "@subsquid/eth-ingest_v0.0.3",

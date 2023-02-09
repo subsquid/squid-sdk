@@ -2,6 +2,18 @@
   "name": "@subsquid/util-timeout",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-timeout_v1.0.0",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "use `ms` as a timeout unit instead of seconds"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-timeout_v0.0.0",
       "date": "Thu, 07 Jul 2022 15:00:50 GMT",

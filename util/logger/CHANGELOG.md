@@ -1,6 +1,13 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.3.1
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- fix pretty printing of `Error` properties
 
 ## 0.3.0
 Sun, 27 Nov 2022 18:43:31 GMT
