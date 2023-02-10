@@ -1,9 +1,9 @@
 import {Logger} from '@subsquid/logger'
 import {RpcConnectionError} from '@subsquid/rpc-client'
 import {addErrorContext} from '@subsquid/util-internal'
-import {CommonConnectionOptions, Connection, Req, RpcConnectionMetrics} from './con/base'
-import {HttpRpcConnection} from './con/http'
-import {WsRpcConnection} from './con/ws'
+import {CommonConnectionOptions, Connection, Req, RpcConnectionMetrics} from './connection/base'
+import {HttpRpcConnection} from './connection/http'
+import {WsRpcConnection} from './connection/ws'
 import {PriorityQueue} from './queue'
 
 
