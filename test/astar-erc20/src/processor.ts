@@ -1,4 +1,4 @@
-import {SubstrateProcessor, toHex} from '@subsquid/substrate-processor'
+import {SubstrateBatchProcessor, assertNotNull} from '@subsquid/substrate-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import * as erc20 from './erc20'
 import {Transaction} from './model'
@@ -6,35 +6,22 @@ import {toJSON} from '@subsquid/util-internal-json'
 import {getTransaction} from '@subsquid/substrate-frontier-evm'
 
 
-const processor = new SubstrateProcessor(new TypeormDatabase())
-
-
-processor.setDataSource({
-    archive: 'https://astar.archive.subsquid.io/graphql',
-    chain: 'wss://public-rpc.pinknode.io/astar'
-})
-
-
-processor.addEthereumTransactionHandler(
-    ['0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98', '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'],
-    async ctx => {
-        let transaction = getTransaction(ctx, ctx.call)
-
-        let input = decodeInput(transaction.input)
-        if (!input) return
-
-        await ctx.store.save(new Transaction({
-            id: ctx.call.id,
-            block: ctx.block.height,
-            timestamp: new Date(ctx.block.timestamp),
-            txHash: transaction.hash,
-            from: transaction.from,
-            to: transaction.to,
-            type: transaction.type || 0,
-            input: toJSON(input)
-        }))
-    }
-)
+const processor = new SubstrateBatchProcessor()
+    .setDataSource({
+        chain: "wss://public-rpc.pinknode.io/astar",
+        archive: "https://astar.archive.subsquid.io/graphql",
+    })
+    .addEthereumExecuted([
+        '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+        '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+    ], {
+        data: {
+            event: {
+                args: true,
+                call: {args: true}
+            }
+        }
+    })
 
 
 function decodeInput(input: string): {method: string, args: any[]} | undefined {
@@ -68,4 +55,35 @@ function decodeInput(input: string): {method: string, args: any[]} | undefined {
 }
 
 
-processor.run()
+processor.run(new TypeormDatabase(), async ctx => {
+    let transactions = []
+    for (let block of ctx.blocks) {
+        for (let item of block.items) {
+            if (item.kind == 'event' && item.name == 'Ethereum.Executed') {
+                let exitReason = assertNotNull(item.event.args.exitReason || item.event.args[3])
+                if (exitReason.__kind != 'Succeed') {
+                    console.log('failed');
+                }
+
+                let call = assertNotNull(item.event.call)
+                let transaction = getTransaction(ctx, call)
+
+                let input = decodeInput(transaction.input)
+                if (!input) continue
+
+                transactions.push(new Transaction({
+                    id: call.id,
+                    block: block.header.height,
+                    timestamp: new Date(block.header.timestamp),
+                    txHash: transaction.hash,
+                    from: transaction.from,
+                    to: transaction.to,
+                    type: transaction.type || 0,
+                    input: toJSON(input)
+                }))
+            }
+        }
+    }
+
+    await ctx.store.save(transactions)
+})

@@ -28,6 +28,12 @@ type EthereumTransactionReq = {
 }
 
 
+type EthereumExecutedReq = {
+    contract: string
+    data?: EventDataRequest
+}
+
+
 type ContractsEventReq = {
     contract: string
     data?: EventDataRequest
@@ -72,6 +78,7 @@ export interface BatchRequest {
     getCalls(): CallReq[]
     getEvmLogs(): EvmLogReq[]
     getEthereumTransactions(): EthereumTransactionReq[]
+    getEthereumExecuted(): EthereumExecutedReq[]
     getContractsEvents(): ContractsEventReq[]
     getGearMessagesEnqueued(): GearMessageEnqueuedReq[]
     getGearUserMessagesSent(): GearUserMessageSentReq[]
@@ -85,6 +92,7 @@ export class PlainBatchRequest implements BatchRequest {
     calls: CallReq[] = []
     evmLogs: EvmLogReq[] = []
     ethereumTransactions: EthereumTransactionReq[] = []
+    ethereumExecuted: EthereumExecutedReq[] = []
     contractsEvents: ContractsEventReq[] = []
     gearMessagesEnqueued: GearMessageEnqueuedReq[] = []
     gearUserMessagesSent: GearUserMessageSentReq[] = []
@@ -106,6 +114,10 @@ export class PlainBatchRequest implements BatchRequest {
 
     getEthereumTransactions(): EthereumTransactionReq[] {
         return this.ethereumTransactions
+    }
+
+    getEthereumExecuted(): EthereumExecutedReq[] {
+        return this.ethereumExecuted
     }
 
     getContractsEvents(): ContractsEventReq[] {
@@ -139,6 +151,7 @@ export class PlainBatchRequest implements BatchRequest {
         result.calls = this.calls.concat(other.calls)
         result.evmLogs = this.evmLogs.concat(other.evmLogs)
         result.ethereumTransactions = this.ethereumTransactions.concat(other.ethereumTransactions)
+        result.ethereumExecuted = this.ethereumExecuted.concat(other.ethereumExecuted)
         result.contractsEvents = this.contractsEvents.concat(other.contractsEvents)
         result.gearMessagesEnqueued = this.gearMessagesEnqueued.concat(other.gearMessagesEnqueued)
         result.gearUserMessagesSent = this.gearUserMessagesSent.concat(other.gearUserMessagesSent)

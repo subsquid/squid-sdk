@@ -341,6 +341,46 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
 
     /**
      * Similar to {@link .addEvent},
+     * but requests `Ethereum.Executed` events holding a result of EVM transaction
+     * with an option to filter them by contract address.
+     *
+     * @example
+     * // request all `Ethereum.Executed` events from contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
+     * processor.addEthereumExecuted('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98')
+     *
+     * // request the same data from multiple contracts at once
+     * processor.addEthereumExecuted([
+     *     '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
+     *     '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
+     * ])
+     */
+    addEthereumExecuted(
+        contractAddress: string | string[],
+        options?: BlockRangeOption & NoDataSelection
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Ethereum.Executed", true>>>
+
+    addEthereumExecuted<R extends EventDataRequest>(
+        contractAddress: string | string[],
+        options: BlockRangeOption & DataSelection<R>
+    ): SubstrateBatchProcessor<AddEventItem<Item, EventItem<"Ethereum.Executed", R>>>
+
+    addEthereumExecuted(
+        contractAddress: string | string[],
+        options?: BlockRangeOption & MayBeDataSelection<EventDataRequest>
+    ): SubstrateBatchProcessor<any> {
+        this.assertNotRunning()
+        let req = new PlainBatchRequest()
+        let contractAddresses = Array.isArray(contractAddress) ? contractAddress : [contractAddress]
+        req.ethereumExecuted.push(...contractAddresses.map((contractAddress) => ({
+            contract: contractAddress.toLowerCase(),
+            data: options?.data
+        })))
+        this.add(req, options?.range)
+        return this
+    }
+
+    /**
+     * Similar to {@link .addEvent},
      * but requests `Contracts.ContractEmitted` events belonging to particular contract.
      */
     addContractsContractEmitted(
