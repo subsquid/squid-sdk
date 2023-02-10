@@ -452,6 +452,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-ingest",
+      "projectFolder": "evm/evm-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,
