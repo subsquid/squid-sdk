@@ -276,7 +276,7 @@ export class HttpClient {
             return res.text()
         }
 
-        let bytes = await res.buffer()
+        let bytes = await res.arrayBuffer()
         if (bytes.length == 0) return undefined
         return bytes
     }
