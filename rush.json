@@ -452,8 +452,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/evm-ingest",
-      "projectFolder": "evm/evm-ingest",
+      "packageName": "@subsquid/evm-processor",
+      "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
