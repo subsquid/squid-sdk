@@ -41,6 +41,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         printComment(entity, out)
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
+            imports.useTypeorm('Index')
             out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
         out.line('@Entity_()')
