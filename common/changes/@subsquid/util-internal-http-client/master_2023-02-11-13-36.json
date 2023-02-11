@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-http-client",
+      "comment": "use `body.arrayBuffer()` instead of `body.buffer()` to fix deprecation warning (closes #161)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-http-client"
+}
