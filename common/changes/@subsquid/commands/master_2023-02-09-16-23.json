@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/commands",
-      "comment": "write log record to deliniate commands when TTY is not avaiable (helps Aquarium not to get erroneus error messages)",
+      "comment": "write log record to delineate commands when TTY is not available (helps Aquarium not to get erroneous error messages)",
       "type": "patch"
     }
   ],

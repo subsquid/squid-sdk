@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "README fixes",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}
