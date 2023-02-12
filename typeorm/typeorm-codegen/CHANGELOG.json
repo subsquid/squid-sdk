@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "0.3.3",
+      "tag": "@subsquid/typeorm-codegen_v0.3.3",
+      "date": "Sun, 12 Feb 2023 12:16:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't forget to import `@Index` directive for multi-column indexes (closes #157)"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.2",
       "tag": "@subsquid/typeorm-codegen_v0.3.2",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

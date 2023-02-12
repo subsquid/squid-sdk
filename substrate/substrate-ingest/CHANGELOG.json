@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "1.5.1",
+      "tag": "@subsquid/substrate-ingest_v1.5.1",
+      "date": "Sun, 12 Feb 2023 12:16:19 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.0",
       "tag": "@subsquid/substrate-ingest_v1.5.0",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",
