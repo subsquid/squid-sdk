@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-resilient-rpc",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/util-internal-resilient-rpc_v0.0.2",
+      "date": "Sun, 12 Feb 2023 12:16:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "rename internal `con` folder to `connection`, because `con` is a reserved file name on Windows"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-client\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal-resilient-rpc_v0.0.1",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

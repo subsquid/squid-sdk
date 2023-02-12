@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/commands",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Command launcher for squids, replaces npm scripts and make(1)",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
