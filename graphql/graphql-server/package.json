@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/graphql-server",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "GraphQL server for squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -25,7 +25,7 @@
     "@graphql-tools/utils": "^8",
     "@graphql-tools/schema": "^8",
     "@subsquid/openreader": "^3.1.7",
-    "@subsquid/typeorm-config": "^2.0.1",
+    "@subsquid/typeorm-config": "^2.0.2",
     "@subsquid/logger": "^0.3.1",
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-commander": "^0.0.2",

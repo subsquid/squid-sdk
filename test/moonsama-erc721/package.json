@@ -7,10 +7,10 @@
   },
   "dependencies": {
     "@subsquid/frontier": "^0.1.2",
-    "@subsquid/graphql-server": "^3.3.1",
+    "@subsquid/graphql-server": "^3.3.2",
     "@subsquid/substrate-processor": "^2.3.1",
-    "@subsquid/typeorm-migration": "^0.1.5",
-    "@subsquid/typeorm-store": "^0.2.1",
+    "@subsquid/typeorm-migration": "^0.1.6",
+    "@subsquid/typeorm-store": "^0.2.2",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "pg": "^8.9.0",
