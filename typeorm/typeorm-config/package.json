@@ -19,7 +19,7 @@
     "@subsquid/util-naming": "^0.0.2"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.11"
   },
   "peerDependenciesMeta": {
     "typeorm": {

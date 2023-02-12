@@ -14,7 +14,7 @@
     "@subsquid/big-decimal": "^0.0.0",
     "dotenv": "^16.0.3",
     "pg": "^8.9.0",
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.11"
   },
   "devDependencies": {
     "@subsquid/substrate-metadata-explorer": "^1.1.1",

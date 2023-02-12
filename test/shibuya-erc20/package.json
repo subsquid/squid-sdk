@@ -14,7 +14,7 @@
     "@subsquid/ink-abi": "^1.0.1",
     "dotenv": "^16.0.3",
     "pg": "^8.9.0",
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.11"
   },
   "devDependencies": {
     "@subsquid/typeorm-codegen": "^0.3.3",

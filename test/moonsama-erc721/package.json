@@ -14,7 +14,7 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "pg": "^8.9.0",
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.11"
   },
   "devDependencies": {
     "@subsquid/commands": "^1.0.3",
