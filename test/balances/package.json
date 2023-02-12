@@ -6,15 +6,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^3.3.1",
+    "@subsquid/graphql-server": "^3.3.2",
     "@subsquid/ss58": "^0.1.4",
     "@subsquid/substrate-processor": "^2.3.1",
-    "@subsquid/typeorm-migration": "^0.1.5",
-    "@subsquid/typeorm-store": "^0.2.1",
+    "@subsquid/typeorm-migration": "^0.1.6",
+    "@subsquid/typeorm-store": "^0.2.2",
     "@subsquid/big-decimal": "^0.0.0",
     "dotenv": "^16.0.3",
     "pg": "^8.9.0",
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.11"
   },
   "devDependencies": {
     "@subsquid/substrate-metadata-explorer": "^1.1.1",

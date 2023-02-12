@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+This log was last generated on Sun, 12 Feb 2023 16:50:59 GMT and should not be manually modified.
+
+## 2.0.2
+Sun, 12 Feb 2023 16:50:59 GMT
+
+### Patches
+
+- downgrade `typeorm` to `^0.3.11` due to problems on Windows
 
 ## 2.0.1
 Thu, 09 Feb 2023 15:10:00 GMT
