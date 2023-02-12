@@ -2,6 +2,23 @@
   "name": "@subsquid/typeorm-migration",
   "entries": [
     {
+      "version": "0.1.6",
+      "tag": "@subsquid/typeorm-migration_v0.1.6",
+      "date": "Sun, 12 Feb 2023 16:50:59 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "downgrade `typeorm` to `^0.3.11` due to problems on Windows"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.1` to `^2.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.5",
       "tag": "@subsquid/typeorm-migration_v0.1.5",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",
