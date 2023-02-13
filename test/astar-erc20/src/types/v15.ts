@@ -22,16 +22,6 @@ export interface ExitReason_Fatal {
     value: ExitFatal
 }
 
-export interface LegacyTransaction {
-    nonce: bigint
-    gasPrice: bigint
-    gasLimit: bigint
-    action: TransactionAction
-    value: bigint
-    input: Uint8Array
-    signature: TransactionSignature
-}
-
 export type ExitSucceed = ExitSucceed_Stopped | ExitSucceed_Returned | ExitSucceed_Suicided
 
 export interface ExitSucceed_Stopped {
@@ -46,7 +36,7 @@ export interface ExitSucceed_Suicided {
     __kind: 'Suicided'
 }
 
-export type ExitError = ExitError_StackUnderflow | ExitError_StackOverflow | ExitError_InvalidJump | ExitError_InvalidRange | ExitError_DesignatedInvalid | ExitError_CallTooDeep | ExitError_CreateCollision | ExitError_CreateContractLimit | ExitError_OutOfOffset | ExitError_OutOfGas | ExitError_OutOfFund | ExitError_PCUnderflow | ExitError_CreateEmpty | ExitError_Other
+export type ExitError = ExitError_StackUnderflow | ExitError_StackOverflow | ExitError_InvalidJump | ExitError_InvalidRange | ExitError_DesignatedInvalid | ExitError_CallTooDeep | ExitError_CreateCollision | ExitError_CreateContractLimit | ExitError_InvalidCode | ExitError_OutOfOffset | ExitError_OutOfGas | ExitError_OutOfFund | ExitError_PCUnderflow | ExitError_CreateEmpty | ExitError_Other
 
 export interface ExitError_StackUnderflow {
     __kind: 'StackUnderflow'
@@ -78,6 +68,10 @@ export interface ExitError_CreateCollision {
 
 export interface ExitError_CreateContractLimit {
     __kind: 'CreateContractLimit'
+}
+
+export interface ExitError_InvalidCode {
+    __kind: 'InvalidCode'
 }
 
 export interface ExitError_OutOfOffset {
@@ -129,21 +123,4 @@ export interface ExitFatal_CallErrorAsFatal {
 export interface ExitFatal_Other {
     __kind: 'Other'
     value: string
-}
-
-export type TransactionAction = TransactionAction_Call | TransactionAction_Create
-
-export interface TransactionAction_Call {
-    __kind: 'Call'
-    value: Uint8Array
-}
-
-export interface TransactionAction_Create {
-    __kind: 'Create'
-}
-
-export interface TransactionSignature {
-    v: bigint
-    r: Uint8Array
-    s: Uint8Array
 }

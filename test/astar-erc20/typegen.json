@@ -3,5 +3,8 @@
   "specVersions": "https://astar.archive.subsquid.io/graphql",
   "calls": [
     "Ethereum.transact"
+  ],
+  "events": [
+    "Ethereum.Executed"
   ]
 }
