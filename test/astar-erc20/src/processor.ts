@@ -11,17 +11,10 @@ const processor = new SubstrateBatchProcessor()
         chain: "wss://public-rpc.pinknode.io/astar",
         archive: "https://astar.archive.subsquid.io/graphql",
     })
-    .addEthereumExecuted([
+    .addEthereumTransaction([
         '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
         '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'
-    ], {
-        data: {
-            event: {
-                args: true,
-                call: {args: true}
-            }
-        }
-    })
+    ])
 
 
 function decodeInput(input: string): {method: string, args: any[]} | undefined {

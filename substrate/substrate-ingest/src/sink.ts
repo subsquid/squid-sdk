@@ -39,12 +39,6 @@ interface FrontierEthereumTransaction {
 }
 
 
-interface FrontierEthereumExecuted {
-    event_id: string
-    contract: string
-}
-
-
 interface GearMessage {
     event_id: string
     program: string
@@ -157,11 +151,6 @@ export class PostgresSink implements Sink {
         sighash: {cast: 'text'}
     })
 
-    private frontierEthereumExecutedInsert = new Insert<FrontierEthereumExecuted>('frontier_ethereum_executed', {
-        event_id: {cast: 'text'},
-        contract: {cast: 'text'}
-    })
-
     private contractsContractEmittedInsert = new Insert<ContractsContractEmitted>('contracts_contract_emitted', {
         event_id: {cast: 'text'},
         contract: {cast: 'text'}
@@ -259,12 +248,6 @@ export class PostgresSink implements Sink {
                     })
                     break
                 }
-                case 'Ethereum.Executed':
-                    this.frontierEthereumExecutedInsert.add({
-                        event_id: event.id,
-                        contract: toHex(event.args.to || event.args[1])
-                    })
-                    break
                 case 'EVM.Executed':
                     if (this.isAcalaEvmExecuted(event)) {
                         executedLogIndex = this.insertAcalaEvmEvent(
@@ -372,7 +355,6 @@ export class PostgresSink implements Sink {
         let warningInsert = this.warningInsert.take()
         let frontierEvmLogInsert = this.frontierEvmLogInsert.take()
         let frontierEthereumTransactionInsert = this.frontierEthereumTransactionInsert.take()
-        let frontierEthereumExecutedInsert = this.frontierEthereumExecutedInsert.take()
         let contractsContractEmittedInsert = this.contractsContractEmittedInsert.take()
         let gearMessageEnqueuedInsert = this.gearMessageEnqueuedInsert.take()
         let gearUserMessageSentInsert = this.gearUserMessageSentInsert.take()
@@ -389,7 +371,6 @@ export class PostgresSink implements Sink {
             await warningInsert.query(this.db)
             await frontierEvmLogInsert.query(this.db)
             await frontierEthereumTransactionInsert.query(this.db)
-            await frontierEthereumExecutedInsert.query(this.db)
             await contractsContractEmittedInsert.query(this.db)
             await gearMessageEnqueuedInsert.query(this.db)
             await gearUserMessageSentInsert.query(this.db)

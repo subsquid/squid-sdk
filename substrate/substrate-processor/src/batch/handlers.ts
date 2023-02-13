@@ -38,7 +38,6 @@ export class DataHandlers implements BatchRequest {
     calls: Record<QualifiedName, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     evmLogs: Record<ContractAddress, {filter?: EvmTopicSet[], data?: EventDataRequest, handler: EvmLogHandler<any>}[]> = {}
     ethereumTransactions: Record<ContractAddress, Record<Sighash, HandlerList<CallHandlerEntry, CallDataRequest>>> = {}
-    ethereumExecuted: Record<ContractAddress, HandlerList<CallHandlerEntry, CallDataRequest>> = {}
     contractsContractEmitted: Record<ContractAddress, HandlerList<ContractsContractEmittedHandler<any>>> = {}
     gearMessageEnqueued: Record<ProgramId, HandlerList<GearMessageEnqueuedHandler<any>>> = {}
     gearUserMessageSent: Record<ProgramId, HandlerList<GearUserMessageSentHandler<any>>> = {}
@@ -177,10 +176,6 @@ export class DataHandlers implements BatchRequest {
                 }
             })
         })
-    }
-
-    getEthereumExecuted() {
-        return []
     }
 
     getContractsEvents() {
