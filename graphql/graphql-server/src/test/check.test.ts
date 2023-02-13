@@ -9,7 +9,7 @@ describe('check extension', function () {
     const client = useServer('lib/test/check-extension')
 
     it('can forbid with false', function () {
-        return client.errorTest(`
+        return client.httpErrorTest(`
             query forbid {
                 accounts { id balance }
             }
@@ -21,7 +21,7 @@ describe('check extension', function () {
     })
 
     it('can forbid with error message', function () {
-        return client.errorTest(`
+        return client.httpErrorTest(`
             query complex {
                 accounts { id balance }
             }

@@ -9,9 +9,8 @@
     "wss://karura.polkawallet.io"
   ],
   "kusama": [
-    "wss://kusama-rpc.polkadot.io",
-    "wss://kusama-rpc.dwellir.com",
-    "wss://kusama.api.onfinality.io/public-ws"
+    "https://kusama-rpc.polkadot.io",
+    "https://kusama.api.onfinality.io/public"
   ],
   "moonriver": [
     "wss://moonriver.api.onfinality.io/public-ws",

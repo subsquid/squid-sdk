@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-explorer
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 2.0.5
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- upgrade dependencies
 
 ## 2.0.4
 Sun, 27 Nov 2022 18:43:31 GMT

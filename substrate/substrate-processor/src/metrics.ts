@@ -1,6 +1,7 @@
-import {Progress, Speed} from "@subsquid/util-internal-counters"
-import {createPrometheusServer, ListeningServer} from "@subsquid/util-internal-prometheus-server"
-import {collectDefaultMetrics, Counter, Gauge, Registry} from "prom-client"
+import {Progress, Speed} from '@subsquid/util-internal-counters'
+import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
+import {RpcClient, RpcConnectionMetrics} from '@subsquid/util-internal-resilient-rpc'
+import {collectDefaultMetrics, Counter, Gauge, Registry} from 'prom-client'
 
 
 export class Metrics {
@@ -9,7 +10,6 @@ export class Metrics {
     private mappingSpeed = new Speed({windowSize: 5})
     private mappingItemSpeed = new Speed({windowSize: 5})
     private blockProgress = new Progress({initialValue: 0})
-    private rpcSpeed = new Speed({windowSize: 60, windowGranularitySeconds: 1})
     private registry = new Registry()
 
     private lastBlockGauge = new Gauge({
@@ -64,40 +64,6 @@ export class Metrics {
         labelNames: ['url']
     })
 
-    private archiveHttpErrorsInRowGauge = new Gauge({
-        name: 'sqd_processor_archive_http_errors_in_row',
-        help: 'Number of archive http connection errors happened in row, without single successful request',
-        registers: [this.registry],
-        aggregator: 'sum',
-        labelNames: ['url']
-    })
-
-    private chainRpcErrorsCounter = new Counter({
-        name: 'sqd_processor_chain_rpc_errors',
-        help: 'Number of chain rpc connection errors',
-        registers: [this.registry],
-        aggregator: 'sum',
-        labelNames: ['url']
-    })
-
-    private chainRpcErrorsInRowGauge = new Gauge({
-        name: 'sqd_processor_chain_rpc_errors_in_row',
-        help: 'Number of chain rpc connection errors happened in row, without single successful request',
-        registers: [this.registry],
-        aggregator: 'sum',
-        labelNames: ['url']
-    })
-
-    private chainRpcAvgResponseTime = new Gauge({
-        name: 'sqd_processor_chain_rpc_avg_response_time_seconds',
-        help: 'Avg response time of chain RPC',
-        registers: [this.registry],
-        collect: this.collect(() => {
-            let speed = this.rpcSpeed.speed()
-            return speed == 0 ? 0 : 1 / speed
-        })
-    })
-
     private collect(fn: () => number) {
         return function(this: Gauge<string>) {
             this.set(fn())
@@ -108,6 +74,44 @@ export class Metrics {
         collectDefaultMetrics({register: this.registry})
         this.setLastProcessedBlock(-1)
         this.setChainHeight(-1)
+    }
+
+    addChainRpcMetrics(client: RpcClient): void {
+        const gauge = (
+            name: string,
+            help: string,
+            get: (con: RpcConnectionMetrics) => number
+        ) => {
+            new Gauge({
+                name,
+                help,
+                registers: [this.registry],
+                labelNames: ['id', 'url'],
+                collect() {
+                    for (let con of client.getMetrics()) {
+                        this.set({url: con.url, id: con.id}, get(con))
+                    }
+                }
+            })
+        }
+
+        gauge(
+            'sqd_processor_chain_rpc_requests_served',
+            'Number of chain rpc requests served',
+            con => con.requestsServed
+        )
+
+        gauge(
+            'sqd_processor_chain_rpc_errors',
+            'Number of chain rpc connection errors',
+            con => con.connectionErrors
+        )
+
+        gauge(
+            'sqd_processor_chain_rpc_avg_response_time_seconds',
+            'Avg response time',
+            con => con.avgResponseTimeSeconds
+        )
     }
 
     setLastProcessedBlock(height: number): void {
@@ -142,23 +146,8 @@ export class Metrics {
         this.mappingItemSpeed.push(batchItemSize, batchMappingStartTime, batchMappingEndTime)
     }
 
-    registerArchiveRetry(url: string, errorsInRow: number): void {
+    registerArchiveRetry(url: string): void {
         this.archiveHttpErrorsCounter.inc({url})
-        this.archiveHttpErrorsInRowGauge.set({url}, errorsInRow)
-    }
-
-    registerArchiveResponse(url: string): void {
-        this.archiveHttpErrorsInRowGauge.set({url}, 0)
-    }
-
-    registerChainRpcRetry(url: string, errorsInRow: number): void {
-        this.chainRpcErrorsCounter.inc({url})
-        this.chainRpcErrorsInRowGauge.set({url}, errorsInRow)
-    }
-
-    registerChainRpcResponse(url: string, method: string, beg: bigint, end: bigint): void {
-        this.chainRpcErrorsInRowGauge.set({url}, 0)
-        this.rpcSpeed.push(1, beg, end)
     }
 
     getChainHeight(): number {

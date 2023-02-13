@@ -102,6 +102,9 @@ export class Printer {
         this.color = '2' // dim
         if (rec.err instanceof Error) {
             this.text(rec.err.stack || rec.err.toString())
+            for (let k in rec.err) {
+                this.property(`    ${k}:`, (rec.err as any)[k])
+            }
         }
         for (let key in rec) {
             switch(key) {
@@ -112,11 +115,7 @@ export class Printer {
                     break
                 default:
                     if (key == 'err' && rec.err instanceof Error) {
-                        // already printed the stack trace above
-                        // print only the rest of props and indented like the stack trace
-                        for (let k in rec.err) {
-                            this.property(`    ${k}:`, (rec.err as any)[k])
-                        }
+                        // already printed under the stack trace above
                     } else {
                         this.property(key + ':', (rec as any)[key])
                     }

@@ -1,16 +1,17 @@
-import {Logger} from "@subsquid/logger"
-import {ResilientRpcClient} from "@subsquid/rpc-client/lib/resilient"
-import {OldTypes} from "@subsquid/substrate-metadata"
-import {def} from "@subsquid/util-internal"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
-import {Batch, getBlocksCount} from "../batch/generic"
-import {BatchRequest} from "../batch/request"
-import {Chain, ChainManager} from "../chain"
-import {BlockData, DataBatch, Ingest} from "../ingest"
-import {Database} from "../interfaces/db"
-import {Metrics} from "../metrics"
-import {timeInterval, withErrorContext} from "../util/misc"
-import {Range} from "../util/range"
+import {Logger} from '@subsquid/logger'
+import {OldTypes} from '@subsquid/substrate-metadata'
+import {def, withErrorContext} from '@subsquid/util-internal'
+import {FetchRequest, HttpClient, HttpResponse} from '@subsquid/util-internal-http-client'
+import {HttpAgent} from '@subsquid/util-internal-http-client/lib/agent'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import {Batch, getBlocksCount} from '../batch/generic'
+import {BatchRequest} from '../batch/request'
+import {Chain, ChainManager} from '../chain'
+import {BlockData, DataBatch, Ingest} from '../ingest'
+import {Database} from '../interfaces/db'
+import {Metrics} from '../metrics'
+import {timeInterval} from '../util/misc'
+import {Range} from '../util/range'
 
 
 export interface Options {
@@ -37,100 +38,47 @@ export class Runner<S, R extends BatchRequest> {
     constructor(protected config: Config<S, R>) {}
 
     @def
-    protected chainClient(): ResilientRpcClient {
+    protected chainClient(): RpcClient {
         let url = this.config.getChainEndpoint()
         let log = this.config.getLogger().child('chain-rpc', {url})
-        let metrics = this.metrics
-        let counter = 0
 
-        class ChainClient extends ResilientRpcClient {
-            constructor() {
-                super({
-                    url,
-                    onRetry(err, errorsInRow, backoff) {
-                        metrics.registerChainRpcRetry(url, errorsInRow)
-                        log.warn({
-                            backoff,
-                            reason: err.message
-                        }, 'connection error')
-                    }
-                })
-            }
+        let client = new RpcClient({
+            endpoints: [{url, capacity: 10}],
+            requestTimeout: 20_000,
+            log
+        })
 
-            async call<T=any>(method: string, params?: unknown[]): Promise<T> {
-                let id = counter
-                counter = (counter + 1) % 10000
-                log.debug({
-                    req: id,
-                    method,
-                    params
-                }, 'request')
-                let beg = process.hrtime.bigint()
-                let result = await super.call(method, params).catch(withErrorContext({
-                    rpcUrl: url,
-                    rpcRequestId: id,
-                    rpcMethod: method
-                }))
-                let end = process.hrtime.bigint()
-                let duration = end - beg
-                metrics.registerChainRpcResponse(url, method, beg, end)
-                log.debug({
-                    req: id,
-                    responseTime: Math.round(Number(duration) / 1000_000)
-                }, 'response')
-                return result
-            }
-        }
+        this.metrics.addChainRpcMetrics(client)
 
-        return new ChainClient()
+        return client
     }
 
     @def
     protected archiveRequest(): (query: string) => Promise<any> {
-        const archiveUrl = this.config.getArchiveEndpoint()
+        let metrics = this.metrics
+        let archiveUrl = this.config.getArchiveEndpoint()
 
-        let log = this.config.getLogger().child('archive-request', {archiveUrl})
-        let counter = 0
+        class ArchiveClient extends HttpClient {
+            protected beforeRetryPause(req: FetchRequest, reason: Error | HttpResponse, pause: number) {
+                metrics.registerArchiveRetry(archiveUrl)
+                super.beforeRetryPause(req, reason, pause)
+            }
+        }
 
-        return async archiveQuery => {
-            let archiveRequestId = counter
-            counter = (counter + 1) % 1000
+        let http = new ArchiveClient({
+            baseUrl: archiveUrl,
+            headers: {
+                'x-squid-id': this.getId()
+            },
+            agent: new HttpAgent({
+                keepAlive: true
+            }),
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            log: this.config.getLogger().child('archive-request')
+        })
 
-            log.debug({
-                archiveRequestId,
-                archiveQuery
-            }, 'request')
-
-            let response = await graphqlRequest({
-                headers: {
-                    'x-squid-id': this.getId(),
-                },
-                url: archiveUrl,
-                query: archiveQuery,
-                timeout: 60_000,
-                retry: {
-                    log: (err, errorsInRow, backoff) => {
-                        this.metrics.registerArchiveRetry(archiveUrl, errorsInRow)
-                        log.warn({
-                            archiveRequestId,
-                            archiveQuery,
-                            backoff,
-                            reason: err.message
-                        }, 'retry')
-                    }
-                }
-            }).catch(
-                withErrorContext({archiveUrl, archiveRequestId, archiveQuery})
-            )
-
-            this.metrics.registerArchiveResponse(archiveUrl)
-            log.debug({
-                archiveUrl,
-                archiveRequestId,
-                archiveResponse: log.isTrace() ? response : undefined
-            }, 'response')
-
-            return response
+        return archiveQuery => {
+            return http.graphqlRequest(archiveQuery).catch(withErrorContext({archiveQuery}))
         }
     }
 

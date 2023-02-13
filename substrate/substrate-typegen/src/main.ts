@@ -25,34 +25,36 @@ runProgram(async () => {
 Generates TypeScript classes for events, calls and storage items
     `.trim())
 
-    program.argument('config', 'JSON file with options')
+    program.argument('[config...]', 'JSON file with options')
 
-    let configFile = program.parse().args[0]
-    let config = await readConfig(configFile)
+    for (let configFile of program.parse().processedArgs[0]){
+        log.info(`using ${configFile}`)
 
-    let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
-    if (config.typesBundle) {
-        typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle)
+        let config = await readConfig(configFile)
+
+        let typesBundle: OldTypesBundle | OldSpecsBundle | undefined
+        if (config.typesBundle) {
+            typesBundle = getOldTypesBundle(config.typesBundle) || readOldTypesBundle(config.typesBundle)
+        }
+
+        let specVersions: SpecVersion[]
+        if (/^https?:\/\//.test(config.specVersions)) {
+            log.info(`downloading spec versions from ${config.specVersions}`)
+            specVersions = await new ArchiveApi(config.specVersions, log.child('archive')).fetchVersions()
+        } else {
+            specVersions = readSpecVersions(config.specVersions)
+        }
+
+        Typegen.generate({
+            outDir: config.outDir,
+            specVersions,
+            typesBundle,
+            events: config.events,
+            calls: config.calls,
+            storage: config.storage,
+            constants: config.constants
+        })
     }
-
-    let specVersions: SpecVersion[]
-    if (/^https?:\/\//.test(config.specVersions)) {
-        log.info(`downloading spec versions from ${config.specVersions}`)
-        specVersions = await new ArchiveApi(config.specVersions, log.child('archive')).fetchVersions()
-    } else {
-        specVersions = readSpecVersions(config.specVersions)
-    }
-
-    Typegen.generate({
-        outDir: config.outDir,
-        specVersions,
-        typesBundle,
-        events: config.events,
-        calls: config.calls,
-        storage: config.storage,
-        constants: config.constants
-    })
-
 }, err => {
     if (err instanceof ConfigError || err instanceof OldTypesBundleError || err instanceof SpecFileError) {
         log.fatal(err.message)

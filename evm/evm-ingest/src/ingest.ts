@@ -1,12 +1,12 @@
 import {Logger} from '@subsquid/logger'
 import {last, wait} from '@subsquid/util-internal'
 import assert from 'assert'
-import {HttpRpcClient, RpcCall} from './rpc'
+import {RpcClient, RpcCall} from './rpc'
 import {Block, HexNumber, Log, rpc} from './types'
 
 
 export interface IngestOptions {
-    rpc: HttpRpcClient
+    rpc: RpcClient
     fromBlock?: number
     toBlock?: number
     concurrency?: number

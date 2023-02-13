@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-xxhash
 
-This log was last generated on Fri, 24 Jun 2022 22:07:05 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.1.2
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- upgrade dev dependencies
 
 ## 0.1.1
 Fri, 24 Jun 2022 22:07:05 GMT

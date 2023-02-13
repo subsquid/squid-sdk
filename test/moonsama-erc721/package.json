@@ -6,22 +6,22 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/frontier": "^0.1.1",
-    "@subsquid/graphql-server": "^3.3.0",
-    "@subsquid/substrate-processor": "^2.2.0",
-    "@subsquid/typeorm-migration": "^0.1.4",
-    "@subsquid/typeorm-store": "^0.2.0",
-    "dotenv": "^10.0.0",
+    "@subsquid/frontier": "^0.1.2",
+    "@subsquid/graphql-server": "^3.3.2",
+    "@subsquid/substrate-processor": "^2.3.1",
+    "@subsquid/typeorm-migration": "^0.1.6",
+    "@subsquid/typeorm-store": "^0.2.2",
+    "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
-    "pg": "^8.7.3",
-    "typeorm": "^0.3.6"
+    "pg": "^8.9.0",
+    "typeorm": "^0.3.11"
   },
   "devDependencies": {
-    "@subsquid/commands": "^1.0.1",
-    "@subsquid/evm-typegen": "^2.0.2",
-    "@subsquid/substrate-typegen": "^2.1.0",
-    "@subsquid/typeorm-codegen": "^0.3.1",
-    "@types/node": "^16.11.41",
-    "typescript": "~4.7.4"
+    "@subsquid/commands": "^1.0.3",
+    "@subsquid/evm-typegen": "^2.0.4",
+    "@subsquid/substrate-typegen": "^2.2.1",
+    "@subsquid/typeorm-codegen": "^0.3.3",
+    "@types/node": "^16.18.12",
+    "typescript": "~4.9.5"
   }
 }

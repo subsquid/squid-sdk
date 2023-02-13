@@ -2,6 +2,26 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/frontier_v0.1.2",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dev dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.2.1` to `^2.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/frontier_v0.1.1",
       "date": "Thu, 05 Jan 2023 11:14:26 GMT",

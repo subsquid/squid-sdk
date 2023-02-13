@@ -2,6 +2,59 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "2.2.1",
+      "tag": "@subsquid/substrate-typegen_v2.2.1",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.2.1` to `^2.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.0.9` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.1.0` to `^0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-config\" from `^1.0.0` to `^1.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-read-lines\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.2.0",
+      "tag": "@subsquid/substrate-typegen_v2.2.0",
+      "date": "Wed, 08 Feb 2023 09:11:49 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to pass multiple configs"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/substrate-typegen_v2.1.0",
       "date": "Mon, 16 Jan 2023 13:32:25 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-code-printer
 
-This log was last generated on Sun, 27 Nov 2022 18:43:31 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.1.1
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- upgrade dev dependencies
 
 ## 0.1.0
 Sun, 27 Nov 2022 18:43:31 GMT

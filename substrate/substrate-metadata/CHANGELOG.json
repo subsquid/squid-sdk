@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "2.2.2",
+      "tag": "@subsquid/substrate-metadata_v2.2.2",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dev dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.1",
       "tag": "@subsquid/substrate-metadata_v2.2.1",
       "date": "Wed, 25 Jan 2023 18:43:43 GMT",

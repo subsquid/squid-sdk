@@ -1,6 +1,20 @@
 # Change Log - @subsquid/commands
 
-This log was last generated on Wed, 25 Jan 2023 18:43:43 GMT and should not be manually modified.
+This log was last generated on Sun, 12 Feb 2023 12:16:19 GMT and should not be manually modified.
+
+## 1.0.3
+Sun, 12 Feb 2023 12:16:19 GMT
+
+### Patches
+
+- write log record to delineate commands when TTY is not available (helps Aquarium not to get erroneous error messages)
+
+## 1.0.2
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- README fix
 
 ## 1.0.1
 Wed, 25 Jan 2023 18:43:43 GMT

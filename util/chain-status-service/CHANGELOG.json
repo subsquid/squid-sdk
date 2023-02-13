@@ -2,6 +2,47 @@
   "name": "chain-status-service",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "chain-status-service_v0.1.1",
+      "date": "Sun, 12 Feb 2023 12:16:19 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "chain-status-service_v0.1.0",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support `http(s)` RPC endpoints"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.0` to `^0.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.1.0` to `^0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-timeout\" from `^0.0.0` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.7",
       "tag": "chain-status-service_v0.0.7",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

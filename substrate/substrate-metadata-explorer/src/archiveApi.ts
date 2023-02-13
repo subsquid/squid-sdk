@@ -1,13 +1,22 @@
-import {Logger} from "@subsquid/logger"
-import {assertNotNull, def} from "@subsquid/util-internal"
-import {graphqlRequest} from "@subsquid/util-internal-gql-request"
-import {ExploreApi} from "./explore"
-import {SpecVersion, SpecVersionRecord} from "./specVersion"
-import {withErrorContext} from "./util"
+import {Logger} from '@subsquid/logger'
+import {assertNotNull, def, withErrorContext} from '@subsquid/util-internal'
+import {HttpClient} from '@subsquid/util-internal-http-client'
+import {ExploreApi} from './explore'
+import {SpecVersion, SpecVersionRecord} from './specVersion'
 
 
 export class ArchiveApi implements ExploreApi {
-    constructor(private url: string, private log?: Logger) {
+    private archive: HttpClient
+
+    constructor(url: string, private log?: Logger) {
+        this.archive = new HttpClient({
+            baseUrl: url,
+            headers: {
+                'x-squid-id': 'metadata-explorer'
+            },
+            retryAttempts: 3,
+            log: log?.child('archive-request')
+        })
     }
 
     getVersion(rec: SpecVersionRecord): Promise<SpecVersion> {
@@ -53,25 +62,8 @@ export class ArchiveApi implements ExploreApi {
     }
 
     private request<T>(query: string): Promise<T> {
-        return graphqlRequest<T>({
-            headers: {
-                'x-squid-id': 'metadata-explorer'
-            },
-            url: this.url,
-            query,
-            retry: {
-                maxCount: 3,
-                log: (err, errorsInRow, backoff) => {
-                    this.log?.warn({
-                        archiveQuery: this.url,
-                        backoff,
-                        reason: err.message
-                    }, 'retry')
-                }
-            }
-        }).catch(
+        return this.archive.graphqlRequest(query).catch(
             withErrorContext({
-                archiveUrl: this.url,
                 archiveQuery: query
             })
         )

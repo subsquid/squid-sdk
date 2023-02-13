@@ -642,14 +642,14 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-gql-request",
-      "projectFolder": "util/util-internal-gql-request",
+      "packageName": "@subsquid/util-internal-hex",
+      "projectFolder": "util/util-internal-hex",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-hex",
-      "projectFolder": "util/util-internal-hex",
+      "packageName": "@subsquid/util-internal-http-client",
+      "projectFolder": "util/util-internal-http-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -680,6 +680,12 @@
     {
       "packageName": "@subsquid/util-internal-read-lines",
       "projectFolder": "util/util-internal-read-lines",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-resilient-rpc",
+      "projectFolder": "util/util-internal-resilient-rpc",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

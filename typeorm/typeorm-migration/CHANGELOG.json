@@ -2,6 +2,46 @@
   "name": "@subsquid/typeorm-migration",
   "entries": [
     {
+      "version": "0.1.6",
+      "tag": "@subsquid/typeorm-migration_v0.1.6",
+      "date": "Sun, 12 Feb 2023 16:50:59 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "downgrade `typeorm` to `^0.3.11` due to problems on Windows"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.1` to `^2.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.5",
+      "tag": "@subsquid/typeorm-migration_v0.1.5",
+      "date": "Thu, 09 Feb 2023 15:10:00 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "upgrade dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.0` to `^2.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.1.0` to `^0.1.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.4",
       "tag": "@subsquid/typeorm-migration_v0.1.4",
       "date": "Sun, 27 Nov 2022 18:43:31 GMT",

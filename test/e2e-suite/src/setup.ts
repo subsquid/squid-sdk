@@ -2,8 +2,8 @@ import {ApiPromise, WsProvider} from "@polkadot/api"
 import {createTestKeyring} from "@polkadot/keyring"
 import {Header} from "@polkadot/types/interfaces/runtime"
 import {assertNotNull} from "@subsquid/util-internal"
+import {HttpClient} from '@subsquid/util-internal-http-client'
 import {Client} from "gql-test-client"
-import fetch from "node-fetch"
 import * as process from "process"
 
 
@@ -11,14 +11,11 @@ export const gql = new Client(assertNotNull(process.env.GQL_ENDPOINT))
 
 
 export async function getProcessorHeight(): Promise<number> {
-    let endpoint = assertNotNull(process.env.PROCESSOR_PROMETHEUS_ENDPOINT)
-    let response = await fetch(new URL('/metrics/sqd_processor_last_block', endpoint))
-    let text = await response.text()
-    if (!response.ok) {
-        throw new Error(
-            `Got http ${response.status}, body: ${text}`
-        )
-    }
+    let http = new HttpClient({
+        baseUrl: assertNotNull(process.env.PROCESSOR_PROMETHEUS_ENDPOINT),
+        retryAttempts: 4
+    })
+    let text: string = await http.get('/metrics/sqd_processor_last_block')
     let lines = text.split('\n')
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
@@ -89,20 +86,10 @@ export async function transfer(api: ApiPromise, from: string, to: string, amount
 }
 
 
-async function start(timeout: number): Promise<void> {
-    try {
-        await waitForHeight(1)
-    } catch(e: any) {
-        if (timeout > 0 && e.toString().startsWith('FetchError')) {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            return start(timeout - 1)
-        } else {
-            console.error(e.stack)
-            process.exit(1)
-        }
+waitForHeight(1).then(
+    () => run(),
+    err => {
+        console.error(err.stack)
+        process.exit(1)
     }
-    run()
-}
-
-
-start(10).catch(() => {})
+)

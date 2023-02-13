@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-json
 
-This log was last generated on Sat, 15 Oct 2022 11:43:02 GMT and should not be manually modified.
+This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+
+## 0.2.1
+Thu, 09 Feb 2023 15:10:00 GMT
+
+### Patches
+
+- upgrade dev dependencies
 
 ## 0.2.0
 Sat, 15 Oct 2022 11:43:02 GMT
