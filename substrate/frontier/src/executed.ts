@@ -1,5 +1,5 @@
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {ChainContext, Event} from './interfaces'
 
 export interface TransactionResult {
@@ -39,7 +39,7 @@ export interface TransactionResultRaw {
 
 function normalize(raw: TransactionResultRaw): TransactionResult {
     let status = raw.exitReason.__kind
-    if (['Succeed', 'Error', 'Revert', 'Fatal'].indexOf(status) == -1) {
+    if (status !== 'Succeed' && status !== 'Error' && status !== 'Revert' && status !== 'Fatal') {
         throw unexpectedCase(status)
     }
 
@@ -52,7 +52,7 @@ function normalize(raw: TransactionResultRaw): TransactionResult {
         from: raw.from,
         to: raw.to,
         hash: raw.transactionHash,
-        status: status as any,
+        status,
         reason,
     }
 }
