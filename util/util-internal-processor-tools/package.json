@@ -1,12 +1,11 @@
 {
-  "name": "@subsquid/evm-processor",
-  "version": "0.3.2",
-  "description": "Data fetcher and mappings executor for evm chains",
+  "name": "@subsquid/util-internal-processor-tools",
+  "version": "0.0.0",
+  "description": "Common tools for data fetching and mapping execution",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "files": [
     "lib",
@@ -19,23 +18,17 @@
   },
   "dependencies": {
     "@subsquid/logger": "^0.3.1",
-    "@subsquid/rpc-client": "^1.0.2",
-    "@subsquid/typeorm-config": "^2.0.2",
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
-    "@subsquid/util-internal-code-printer": "^0.1.1",
     "@subsquid/util-internal-counters": "^0.0.2",
-    "@subsquid/util-internal-hex": "^0.0.2",
+    "@subsquid/util-internal-http-client": "^0.0.1",
     "@subsquid/util-internal-prometheus-server": "^0.0.3",
-    "@subsquid/util-xxhash": "^0.1.2",
-    "node-fetch": "^3.3.0",
+    "@subsquid/util-internal-resilient-rpc": "^0.0.2",
     "prom-client": "^14.1.1"
   },
   "devDependencies": {
-    "@subsquid/typeorm-store": "^0.2.2",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.18.12",
-    "@types/node-fetch": "^2.6.2",
     "expect": "^29.4.2",
     "fast-check": "^3.6.3",
     "mocha": "^10.2.0",

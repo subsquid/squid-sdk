@@ -678,6 +678,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "projectFolder": "util/util-internal-processor-tools",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-prometheus-server",
       "projectFolder": "util/util-internal-prometheus-server",
       "shouldPublish": true,
