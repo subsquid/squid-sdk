@@ -1,9 +1,6 @@
 import {Logger, createLogger} from '@subsquid/logger'
-import {def, last, runProgram, wait} from '@subsquid/util-internal'
-import {Batch, applyRangeBound, getBlocksCount, mergeBatches} from './batch/generic'
-import {BatchRequest, PlainBatchRequest} from './batch/request'
-import {Chain} from './chain'
-import {BlockData, Ingest} from './ingest'
+import {def, runProgram} from '@subsquid/util-internal'
+import {Database} from '@subsquid/util-internal-processor-tools'
 import {BatchHandlerContext, LogOptions, TransactionOptions} from './interfaces/dataHandlers'
 import {
     AddLogItem,
@@ -16,12 +13,7 @@ import {
     TransactionDataRequest,
     TransactionItem,
 } from './interfaces/dataSelection'
-import {Database} from './interfaces/db'
-import {Metrics} from './metrics'
-import {JSONClient, Request} from './util/json'
-import {timeInterval, withErrorContext} from './util/misc'
-import {Range} from './util/range'
-import {RpcClient} from './util/rpc'
+
 
 export interface DataSource {
     /**
@@ -29,42 +21,27 @@ export interface DataSource {
      */
     archive: string
     /**
-     * Chain node RPC websocket URL
+     * Chain node RPC endpoint URL
      */
     chain?: string
 }
 
 /**
  * A helper to get the resulting type of block item
- *
- * @example
- * const processor = new SubstrateBatchProcessor()
- *  .addEvent('Balances.Transfer')
- *  .addEvent('Balances.Deposit')
- *
- * type BlockItem = BatchProcessorItem<typeof processor>
  */
 export type BatchProcessorItem<T> = T extends EvmBatchProcessor<infer I> ? I : never
 export type BatchProcessorLogItem<T> = Extract<BatchProcessorItem<T>, {kind: 'evmLog'}>
 export type BatchProcessorTransactionItem<T> = Extract<BatchProcessorItem<T>, {kind: 'transaction'}>
 
+
 /**
  * Provides methods to configure and launch data processing.
- *
- * Unlike {@link SubstrateProcessor}, `SubstrateBatchProcessor` can have
- * only one data handler, which accepts a list of blocks.
- *
- * This gives mapping developers an opportunity to reduce the number of round-trips
- * both to database and chain nodes,
- * thus providing much better performance.
  */
 export class EvmBatchProcessor<Item extends {kind: string; address: string} = LogItem | TransactionItem> {
     private batches: Batch<PlainBatchRequest>[] = []
     private options: any = {}
     private src?: DataSource
     private running = false
-    private metrics = new Metrics()
-    private _lastBlock = -1
 
     private add(request: PlainBatchRequest, range?: Range): void {
         this.batches.push({
@@ -221,281 +198,8 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
      */
     run<Store>(db: Database<Store>, handler: (ctx: BatchHandlerContext<Store, Item>) => Promise<void>): void {
         this.running = true
-        runProgram(
-            async () => {
-                let log = this.getLogger()
+        runProgram(async () => {
 
-                let heightAtStart = await db.connect()
-                if (heightAtStart >= 0) {
-                    this.lastBlock = heightAtStart
-                    log.info(`last processed block was ${heightAtStart}`)
-                }
-
-                let blockRange = this.getWholeBlockRange()
-                if (blockRange.to != null && blockRange.to < heightAtStart + 1) {
-                    log.info(`processing range is [${blockRange.from}, ${blockRange.to}]`)
-                    log.info('nothing to do')
-                    return
-                } else {
-                    blockRange = {
-                        from: Math.max(heightAtStart + 1, blockRange.from),
-                        to: blockRange.to,
-                    }
-                }
-
-                log.info(
-                    `processing blocks from ${blockRange.from}${blockRange.to == null ? '' : ' to ' + blockRange.to}`
-                )
-
-                let ingest = new Ingest({
-                    archive: this.archiveClient(),
-                    batches: this.createBatches(blockRange),
-                })
-
-                this.metrics.updateProgress(
-                    await ingest.fetchArchiveHeight(),
-                    getBlocksCount(this.wholeRange(), 0, await ingest.getLatestKnownArchiveHeight()),
-                    getBlocksCount(this.wholeRange(), heightAtStart + 1, await ingest.getLatestKnownArchiveHeight())
-                )
-
-                let prometheusServer = await this.metrics.serve(this.getPrometheusPort())
-                log.info(`prometheus metrics are served at port ${prometheusServer.port}`)
-
-                return this.process(db, ingest, handler)
-            },
-            (err) => this.getLogger().fatal(err)
-        )
+        }, err => this.getLogger().fatal(err))
     }
-
-    @def
-    protected archiveClient(): JSONClient {
-        let url = this.getArchiveEndpoint()
-        let log = this.getLogger().child('archive', {url})
-        let counter = 0
-        let metrics = this.metrics
-        let id = this.getId()
-
-        class ArchiveClient extends JSONClient {
-            constructor() {
-                super({
-                    url,
-                    onRetry(err, query, errorsInRow, backoff) {
-                        metrics.registerArchiveRetry(url, errorsInRow)
-                        log.warn(
-                            {
-                                archiveUrl: url,
-                                archiveRequestId: counter,
-                                archiveQuery: query,
-                                backoff,
-                                reason: err.message,
-                            },
-                            'retry'
-                        )
-                    },
-                })
-            }
-
-            async request<T>(req: Request): Promise<T> {
-                counter = (counter + 1) % 10000
-                log.debug(
-                    {
-                        archiveUrl: url,
-                        archiveRequestId: counter,
-                        archiveQuery: req.query,
-                    },
-                    'request'
-                )
-                req.headers = {...req.headers, 'x-squid-id': id}
-                let result: T = await super.request(req)
-                metrics.registerArchiveResponse(url)
-                log.debug(
-                    {
-                        archiveUrl: url,
-                        archiveRequestId: counter,
-                        archiveQuery: req.query,
-                        archiveResponse: log.isTrace() ? result : undefined,
-                    },
-                    'response'
-                )
-                return result
-            }
-        }
-
-        return new ArchiveClient()
-    }
-
-    @def
-    protected chainClient(): RpcClient {
-        let url = this.getChainEndpoint()
-        let log = this.getLogger().child('chain-rpc', {url})
-        let metrics = this.metrics
-        let counter = 0
-
-        class ChainClient extends RpcClient {
-            constructor() {
-                super({
-                    url,
-                    onRetry(err, errorsInRow, backoff) {
-                        metrics.registerChainRpcRetry(url, errorsInRow)
-                        log.warn(
-                            {
-                                backoff,
-                                reason: err.message,
-                            },
-                            'connection error'
-                        )
-                    },
-                })
-            }
-
-            async call<T = any>(method: string, params?: unknown[]): Promise<T> {
-                let id = counter
-                counter = (counter + 1) % 10000
-                log.debug(
-                    {
-                        req: id,
-                        method,
-                        params,
-                    },
-                    'request'
-                )
-                let beg = process.hrtime.bigint()
-                let result = await super.call(method, params).catch(
-                    withErrorContext({
-                        rpcUrl: url,
-                        rpcRequestId: id,
-                        rpcMethod: method,
-                    })
-                )
-                let end = process.hrtime.bigint()
-                let duration = end - beg
-                metrics.registerChainRpcResponse(url, method, beg, end)
-                log.debug(
-                    {
-                        req: id,
-                        responseTime: Math.round(Number(duration) / 1000_000),
-                        result,
-                    },
-                    'response'
-                )
-                return result
-            }
-        }
-
-        return new ChainClient()
-    }
-
-    @def
-    protected getChain(): Chain {
-        return new Chain(() => this.chainClient())
-    }
-
-    protected getWholeBlockRange(): Range {
-        return this.options.blockRange || {from: 0}
-    }
-
-    @def
-    protected wholeRange(): {range: Range}[] {
-        return this.createBatches(this.getWholeBlockRange())
-    }
-
-    protected get lastBlock(): number {
-        return this._lastBlock
-    }
-
-    protected set lastBlock(height: number) {
-        this._lastBlock = height
-        this.metrics.setLastProcessedBlock(height)
-    }
-
-    private async process(
-        db: Database<any>,
-        ingest: Ingest<BatchRequest>,
-        handler: (ctx: BatchHandlerContext<any, Item>) => Promise<void>
-    ): Promise<void> {
-        for await (let batch of ingest.getBlocks()) {
-            let log = this.getLogger()
-            let mappingStartTime = process.hrtime.bigint()
-            let blocks = batch.blocks
-            let isHead = batch.isHead
-
-            if (batch.blocks.length != 0) {
-                let from = Number(blocks[0].header.height)
-                let to = Number(last(blocks).header.height)
-                await db.transact(from, to, (store) => {
-                    return handler({
-                        _chain: this.getChain(),
-                        log,
-                        store,
-                        blocks: blocks as any,
-                        isHead,
-                    })
-                })
-            }
-
-            this.lastBlock = batch.range.to
-            await db.advance(this.lastBlock, isHead)
-
-            let mappingEndTime = process.hrtime.bigint()
-
-            this.metrics.updateProgress(
-                ingest.getLatestKnownArchiveHeight(),
-                getBlocksCount(this.wholeRange(), 0, ingest.getLatestKnownArchiveHeight()),
-                getBlocksCount(this.wholeRange(), this.lastBlock + 1, ingest.getLatestKnownArchiveHeight()),
-                mappingEndTime
-            )
-
-            this.metrics.registerBatch(
-                batch.blocks.length,
-                getItemsCount(batch.blocks),
-                batch.fetchStartTime,
-                batch.fetchEndTime,
-                mappingStartTime,
-                mappingEndTime
-            )
-
-            log.info(
-                `${this.lastBlock} / ${this.metrics.getChainHeight()}, ` +
-                    `rate: ${Math.round(this.metrics.getSyncSpeed())} blocks/sec, ` +
-                    `mapping: ${Math.round(this.metrics.getMappingSpeed())} blocks/sec, ` +
-                    `${Math.round(this.metrics.getMappingItemSpeed())} items/sec, ` +
-                    `ingest: ${Math.round(this.metrics.getIngestSpeed())} blocks/sec, ` +
-                    `eta: ${timeInterval(this.metrics.getSyncEtaSeconds())}`
-            )
-        }
-    }
-
-    private createBatches(blockRange: Range) {
-        let batches = mergeBatches(this.batches, (a, b) => a.merge(b))
-        return applyRangeBound(batches, blockRange)
-    }
-
-    private getPrometheusPort(): number | string {
-        let port = this.options.prometheusPort
-        return port == null ? process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT || 0 : port
-    }
-
-    @def
-    private getId() {
-        return process.env.SQUID_ID || `gen-${randomString(10)}`
-    }
-}
-
-function getItemsCount(blocks: BlockData[]): number {
-    let count = 0
-    for (let i = 0; i < blocks.length; i++) {
-        count += blocks[i].items.length
-    }
-    return count
-}
-
-function randomString(len: number) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-
-    let result = ''
-    for (let i = 0; i < len; i++) {
-        result += chars[Math.floor(Math.random() * chars.length)]
-    }
-
-    return result
 }

@@ -1,25 +1,27 @@
-import {EvmTopicSet} from './dataHandlers'
 
-export interface QueryResponse {
-    data: BatchBlock[][]
+export interface BatchRequest {
+    fromBlock: number
+    toBlock?: number
+    includeAllBlocks: boolean
+    logs: LogRequest[]
+    transactions: TransactionRequest[]
+}
+
+
+export interface BatchResponse {
+    data: BlockData[][]
     metrics: any
     nextBlock: number
     archiveHeight: number
 }
 
-export interface BatchRequest {
-    fromBlock: number
-    toBlock?: number
-    logs: LogRequest[]
-    transactions: TransactionRequest[]
-    includeAllBlocks: boolean
-}
 
 export interface LogRequest {
     address: string[] | null
-    topics: EvmTopicSet
+    topics: string[][]
     fieldSelection: FieldSelection
 }
+
 
 export interface TransactionRequest {
     address: string[] | null
@@ -27,17 +29,22 @@ export interface TransactionRequest {
     fieldSelection: FieldSelection
 }
 
+
 export interface FieldSelection {
     block?: BlockFieldSelection | null
     transaction?: TransactionFieldSelection | null
     log?: LogFieldSelection | null
 }
 
+
 export type BlockFieldSelection = {[P in keyof Block]?: true}
+
 
 export type LogFieldSelection = {[P in keyof Log]?: true}
 
+
 export type TransactionFieldSelection = {[P in keyof Transaction]?: true}
+
 
 export interface Block {
     number: number
@@ -61,6 +68,7 @@ export interface Block {
     baseFeePerGas?: string
 }
 
+
 export interface Transaction {
     from?: string
     gas: string
@@ -81,6 +89,7 @@ export interface Transaction {
     yParity?: number
 }
 
+
 export interface Log {
     address: string
     data: string
@@ -91,59 +100,9 @@ export interface Log {
     transactionHash: string
 }
 
-export interface BatchBlock {
+
+export interface BlockData {
     block: Block
     logs: Log[]
     transactions: Transaction[]
-}
-
-export const FULL_SELECTION = {
-    block: {
-        number: true,
-        hash: true,
-        parentHash: true,
-        nonce: true,
-        sha3Uncles: true,
-        logsBloom: true,
-        transactionsRoot: true,
-        stateRoot: true,
-        receiptsRoot: true,
-        miner: true,
-        difficulty: true,
-        totalDifficulty: true,
-        extraData: true,
-        size: true,
-        gasLimit: true,
-        gasUsed: true,
-        timestamp: true,
-        mixHash: true,
-        baseFeePerGas: true,
-    },
-    log: {
-        address: true,
-        data: true,
-        index: true,
-        removed: true,
-        topics: true,
-        transactionIndex: true,
-    },
-    transaction: {
-        from: true,
-        gas: true,
-        gasPrice: true,
-        hash: true,
-        input: true,
-        nonce: true,
-        to: true,
-        index: true,
-        value: true,
-        kind: true,
-        chainId: true,
-        v: true,
-        r: true,
-        s: true,
-        maxPriorityFeePerGas: true,
-        maxFeePerGas: true,
-        yParity: true,
-    },
 }
