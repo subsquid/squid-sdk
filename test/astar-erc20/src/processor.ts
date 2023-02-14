@@ -14,8 +14,6 @@ const processor = new SubstrateBatchProcessor()
         '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
         '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283',
     ])
-    .addEvent('Ethereum.Executed')
-    .setBlockRange({from: 2_000_000})
 
 function decodeInput(input: string): {method: string; args: any[]} | undefined {
     let sighash = input.slice(0, 10)
@@ -57,27 +55,27 @@ processor.run(new TypeormDatabase(), async (ctx) => {
                     ctx.log.warn(`Transaction failed. ${result.status}: ${result.reason}`)
                 }
 
-                // let call = assertNotNull(item.event.call)
-                // let transaction = getTransaction(ctx, call)
+                let call = assertNotNull(item.event.call)
+                let transaction = getTransaction(ctx, call)
 
-                // let input = decodeInput(transaction.input)
-                // if (!input) continue
+                let input = decodeInput(transaction.input)
+                if (!input) continue
 
-                // transactions.push(
-                //     new Transaction({
-                //         id: call.id,
-                //         block: block.header.height,
-                //         timestamp: new Date(block.header.timestamp),
-                //         txHash: transaction.hash,
-                //         from: transaction.from,
-                //         to: transaction.to,
-                //         type: transaction.type || 0,
-                //         input: toJSON(input),
-                //     })
-                // )
+                transactions.push(
+                    new Transaction({
+                        id: call.id,
+                        block: block.header.height,
+                        timestamp: new Date(block.header.timestamp),
+                        txHash: transaction.hash,
+                        from: transaction.from,
+                        to: transaction.to,
+                        type: transaction.type || 0,
+                        input: toJSON(input),
+                    })
+                )
             }
         }
     }
 
-    // await ctx.store.save(transactions)
+    await ctx.store.save(transactions)
 })
