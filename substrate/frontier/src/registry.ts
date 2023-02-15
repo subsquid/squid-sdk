@@ -25,6 +25,13 @@ const definitions: OldTypes = {
                 transactV2: {
                     transaction: 'TransactionV2',
                 },
+                ExecutedV0: '(H160, H160, H256, ExitReason)',
+                ExecutedV1: {
+                    from: 'H160',
+                    to: 'H160',
+                    transaction_hash: 'H256',
+                    exit_reason: 'ExitReason'
+                }
             },
         },
         V14EthTransactionAction: {

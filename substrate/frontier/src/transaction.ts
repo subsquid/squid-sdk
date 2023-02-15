@@ -47,18 +47,18 @@ export interface EIP1559Transaction extends BaseTransaction {
 
 export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transaction
 
-export function getTransaction(ctx: ChainContext, call: Call): Transaction {
-    assert(call.name === 'Ethereum.transact')
+export function getTransaction(ctx: ChainContext, ethereumTransact: Call): Transaction {
+    assert(ethereumTransact.name === 'Ethereum.transact')
 
     switch (ctx._chain.getCallHash('Ethereum.transact')) {
         case registry.getHash('Ethereum.transactV0'):
         case registry.getHash('V14Ethereum.transactV0'):
-            return getAsV0(call.args)
+            return getAsV0(ethereumTransact.args)
         case registry.getHash('Ethereum.transactV1'):
         case registry.getHash('Ethereum.transactV2'):
         case registry.getHash('V14Ethereum.transactV1'):
         case registry.getHash('V14Ethereum.transactV2'):
-            return getAsV1(call.args)
+            return getAsV1(ethereumTransact.args)
         default:
             throw new Error('Unknown "Ethereum.transact" version')
     }
