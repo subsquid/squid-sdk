@@ -1,4 +1,4 @@
 {
   "chain": "wss://rpc.astar.network",
-  "archive": "https://astar-beta.indexer.gc.subsquid.io/v4/graphql"
+  "archive": "https://astar.archive.subsquid.io/graphql"
 }

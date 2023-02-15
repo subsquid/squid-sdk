@@ -1,4 +1,5 @@
 import {Ti} from "@subsquid/scale-codec"
+import {sortBy} from '@subsquid/util-internal'
 import assert from "assert"
 import {QualifiedName, Type, TypeKind, Variant} from "./types"
 import {getTypeHash} from "./types-hashing"
@@ -47,12 +48,13 @@ export class Registry {
 
     private computeHash(name: QualifiedName): string {
         let def = this.get(name)
-        let fields = def.fields.map(f => {
+        let fields = def.fields.map((f, idx) => {
             return {
-                name: f.name,
+                name: f.name ?? idx,
                 type: getTypeHash(this.types, f.type)
             }
         })
+        sortBy(fields, f => f.name)
         return sha256({
             fields
         })

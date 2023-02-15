@@ -1,4 +1,4 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
+import {assertNotNull, sortBy, unexpectedCase} from '@subsquid/util-internal'
 import assert from "assert"
 import {Ti, Type, TypeKind, TypeRegistry} from "./types"
 import {sha256} from "./util"
@@ -166,7 +166,9 @@ export class TypeHasher {
                     }), parent)
                 } else {
                     let struct: any = {}
-                    type.fields.forEach(f => {
+                    let fields = type.fields.slice()
+                    sortBy(fields, f => f.name)
+                    fields.forEach(f => {
                         let name = assertNotNull(f.name)
                         struct[name] = this.hash(f.type, parent)
                     })
@@ -174,14 +176,18 @@ export class TypeHasher {
                 }
             case TypeKind.Variant: {
                 let desc: any = {}
-                type.variants.forEach(v => {
-                    desc[v.name] = v.fields.map((f, idx) => {
+                let variants = type.variants.slice()
+                sortBy(variants, v => v.name)
+                variants.forEach(v => {
+                    let fields = v.fields.map((f, idx) => {
                         let name = f.name || idx
                         return {
                             name,
                             type: this.hash(f.type, parent)
                         }
                     })
+                    sortBy(fields, f => f.name)
+                    desc[v.name] = fields
                 })
                 return {variant: desc}
             }

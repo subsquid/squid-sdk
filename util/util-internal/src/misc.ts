@@ -100,3 +100,20 @@ export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
         })
     }
 }
+
+
+export function sortBy<T>(array: T[], prop: (val: T) => any): T[] {
+    return array.sort((a, b) => compare(prop(a), prop(b)))
+}
+
+
+function compare(a: any, b: any): number {
+    if (a === b) return 0
+    if (a === undefined) return 1
+    if (b === undefined) return -1
+    if (a === null) return 1
+    if (b === null) return -1
+    if (a > b) return 1
+    if (a < b) return -1
+    return compare(String(a), String(b))
+}
