@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-abi",
+      "comment": "add support for contracts state calls",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-abi"
+}

@@ -1,0 +1,21 @@
+type Owner @entity {
+  id: ID!
+  balance: BigInt!
+}
+
+type Token @entity {
+  id: ID!
+  name: String!
+  symbol: String!
+  decimals: Int!
+}
+
+type Transfer @entity {
+  id: ID!
+  from: Owner
+  to: Owner
+  amount: BigInt!
+  token: Token!
+  timestamp: DateTime!
+  block: Int!
+}

@@ -1,7 +1,9 @@
-import {Codec as ScaleCodec, Src} from "@subsquid/scale-codec"
+import {Codec as ScaleCodec, Src, ByteSink} from "@subsquid/scale-codec"
 import {Ti} from "@subsquid/substrate-metadata"
 import {AbiDescription, SelectorsMap} from "./abi-description"
-import {getInkProject} from "./metadata/validator"
+import {getInkProject, InkProject} from "./metadata/validator"
+import {decodeHex} from "@subsquid/util-internal-hex"
+import assert from "assert"
 
 
 export class Abi {
@@ -11,10 +13,11 @@ export class Abi {
     private constructors: Ti
     private messageSelectors: SelectorsMap
     private constructorSelectors: SelectorsMap
+    private project: InkProject
 
     constructor(abiJson: unknown) {
-        let project = getInkProject(abiJson)
-        let d = new AbiDescription(project)
+        this.project = getInkProject(abiJson)
+        let d = new AbiDescription(this.project)
         let types = d.types()
 
         this.scaleCodec = new ScaleCodec(types)
@@ -23,6 +26,23 @@ export class Abi {
         this.constructors = d.constructors()
         this.messageSelectors = d.messageSelectors()
         this.constructorSelectors = d.constructorSelectors()
+    }
+
+    encodeMessageInput(selector: string, args: any[]): Uint8Array {
+        let message = this.getMessage(selector)
+        let sink = new ByteSink()
+        sink.bytes(decodeHex(selector))
+        for (let i = 0; i < message.args.length; i++) {
+            let arg = message.args[i];
+            this.scaleCodec.encode(arg.type.type, args[i], sink)
+        }
+        return sink.toBytes()
+    }
+
+    decodeMessageOutput<T=any>(selector: string, value: Uint8Array): T {
+        let message = this.getMessage(selector)
+        assert(message.returnType?.type != null)
+        return this.scaleCodec.decodeBinary(message.returnType.type, value)
     }
 
     decodeEvent<T=any>(data: string): T {
@@ -37,6 +57,14 @@ export class Abi {
     decodeMessage<T=any>(data: string): T {
         let src = new SelectorSource(data, this.messageSelectors)
         return this.scaleCodec.decode(this.messages, src)
+    }
+
+    private getMessage(selector: string) {
+        let index = this.messageSelectors[selector]
+        if (index == null) {
+            throw new Error(`Unknown selector: ${selector}`)
+        }
+        return this.project.spec.messages[index]
     }
 }
 
