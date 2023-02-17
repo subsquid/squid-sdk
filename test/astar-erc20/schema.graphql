@@ -5,28 +5,6 @@ type Transaction @entity {
   from: String!
   to: String!
   txHash: String!
-  type: Int!
-  input: JSON!
-  data: TransactionData
-}
-
-union TransactionData = Legacy | EIP2930 | EIP1559
-
-type Legacy {
-  gasLimit: BigInt!
-  gasPrice: BigInt!
-  value: BigInt!
-}
-
-type EIP2930 {
-  gasLimit: BigInt!
-  gasPrice: BigInt!
-  value: BigInt!
-}
-
-type EIP1559 {
-  gasLimit: BigInt!
-  maxPriorityFeePerGas: BigInt!
-  maxFeePerGas: BigInt!
-  value: BigInt!
+  method: String!
+  args: JSON!
 }
