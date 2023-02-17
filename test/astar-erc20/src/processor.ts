@@ -24,7 +24,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         for (let item of block.items) {
             if (item.name == 'Ethereum.Executed') {
                 let result = getTransactionResult(ctx, item.event)
-                if (result.exitReason.__kind !== 'Succeed') {
+                if (result.status !== 'Succeed') {
                     ctx.log.warn(result, `failed transaction`)
                     continue
                 }
@@ -41,8 +41,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
                         txHash: transaction.hash,
                         from: transaction.from,
                         to: transaction.to,
-                        type: transaction.type || 0,
-                        input: toJSON(input),
+                        method: input.method,
+                        args: toJSON(input.args)
                     })
                 )
             }
