@@ -31,9 +31,8 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
             validator.Url(['http:', 'https:'])
         )
         .option(
-            '--api-retry-timeout <s>',
-            'timeout between API request attempts to prevent rate limiting',
-            validator.nat
+            '--etherscan-api-key <key>',
+            'etherscan API key'
         )
         .option('--clean', 'delete output directory before run')
         .addHelpText('afterAll', `
@@ -63,7 +62,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         clean?: boolean,
         multicall?: boolean,
         etherscanApi?: string
-        apiRetryTimeout?: number
+        etherscanApiKey?: string
     }
     let dest = new OutDir(program.processedArgs[0])
     let specs = program.processedArgs[1] as Spec[]
@@ -95,9 +94,9 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 }, err => LOG.fatal(err))
 
 
-async function read(spec: Spec, options?: {etherscanApi?: string, apiRetryTimeout?: number}): Promise<any> {
+async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKey?: string}): Promise<any> {
     if (spec.kind == 'address') {
-        return fetchFromEtherscan(spec.src, options?.etherscanApi, options?.apiRetryTimeout)
+        return fetchFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
     }
     let abi: any
     if (spec.kind == 'url') {
@@ -115,18 +114,22 @@ async function read(spec: Spec, options?: {etherscanApi?: string, apiRetryTimeou
 }
 
 
-async function fetchFromEtherscan(address: string, api?: string, retryTimeout?: number): Promise<any> {
+async function fetchFromEtherscan(address: string, api?: string, apiKey?: string): Promise<any> {
     api = api || 'https://api.etherscan.io/'
-    retryTimeout = retryTimeout || 4
     let url = new URL('api?module=contract&action=getabi', api)
     url.searchParams.set('address', address)
+    if (apiKey) {
+        url.searchParams.set('apiKey', apiKey)
+    }
     let response: {status: string, result: string}
-    let attempts = 2
+    let attempts = 0
     while (true) {
         response = await GET(url.toString())
-        if (response.status == '0' && response.result.includes('rate limit') && --attempts) {
-            LOG.warn(`faced rate limit error while trying to fetch contract ABI. Trying again in ${retryTimeout} seconds.`)
-            await wait(retryTimeout * 1000)
+        if (response.status == '0' && response.result.includes('rate limit') && attempts < 4) {
+            attempts += 1
+            let timeout = attempts * 2
+            LOG.warn(`faced rate limit error while trying to fetch contract ABI. Trying again in ${timeout} seconds.`)
+            await wait(timeout * 1000)
         } else {
             break
         }

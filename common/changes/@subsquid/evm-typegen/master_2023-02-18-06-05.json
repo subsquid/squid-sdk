@@ -2,7 +2,12 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "add api retry timeout option",
+      "comment": "add `--etherscan-api-key` option",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "add exponential backoff for etherscan API rate limit errors",
       "type": "minor"
     }
   ],
