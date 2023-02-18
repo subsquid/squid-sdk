@@ -297,8 +297,9 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * Similar to {@link .addCall},
      * but requests `Ethereum.transact` calls holding an EVM call transaction
      * with an option to filter them by contract address and sighash.
-     * `Ethereum.Executed` event will be loaded for each `Ethereum.transact` call
-     * from the result set.
+     *
+     * In addition, all `Ethereum.Executed` events emitted by found transactions will be included
+     * into the resulting set.
      *
      * @example
      * // request all EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
