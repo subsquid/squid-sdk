@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "comment": "generate interface for access to contracts state",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-typegen"
+}

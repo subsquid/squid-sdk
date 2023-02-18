@@ -742,6 +742,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "shibuya-psp22",
+      "projectFolder": "test/shibuya-psp22",
+      "shouldPublish": false
+    },
+    {
       "packageName": "karura-erc20",
       "projectFolder": "test/karura-erc20",
       "shouldPublish": false
