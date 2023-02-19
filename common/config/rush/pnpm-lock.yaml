@@ -72,13 +72,13 @@ specifiers:
   '@rush-temp/util-xxhash': file:./projects/util-xxhash.tgz
   '@rush-temp/workspace': file:./projects/workspace.tgz
   '@subsquid/graphiql-console': ^0.3.0
-  '@subsquid/substrate-frontier-evm': ~0.0.1
   '@substrate/calc': ^0.2.8
   '@types/deep-equal': ^1.0.1
   '@types/express': ^4.17.17
   '@types/glob': ^8.0.1
   '@types/inflected': ^1.1.29
   '@types/mocha': ^10.0.1
+  '@types/node': ^16.18.12
   '@types/pg': ^8.6.6
   '@types/semver': ^7.3.13
   '@types/stoppable': ^1.1.1
@@ -96,6 +96,7 @@ specifiers:
   camelcase: ^6.3.0
   commander: ^10.0.0
   deep-equal: ^2.2.0
+  dotenv: ^16.0.3
   ethers: ^5.7.2
   expect: ^29.4.2
   express: ^4.18.2
@@ -110,12 +111,15 @@ specifiers:
   latest-version: ^5.1.0
   mocha: ^10.2.0
   node-fetch: ^3.3.0
+  pg: ^8.9.0
   postgres-migrations: ^5.3.0
   prom-client: ^14.1.1
   semver: ^7.3.8
   stoppable: ^1.1.0
   supports-color: ^8.1.1
   type-fest: ^2.19.0
+  typeorm: ^0.3.11
+  typescript: ~4.9.5
   websocket: ^1.0.34
   ws: ^8.12.0
   xxhash-wasm: ^1.0.2
@@ -171,8 +175,8 @@ dependencies:
   '@rush-temp/substrate-processor': file:projects/substrate-processor.tgz
   '@rush-temp/substrate-typegen': file:projects/substrate-typegen.tgz
   '@rush-temp/typeorm-codegen': file:projects/typeorm-codegen.tgz
-  '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_supports-color@8.1.1
-  '@rush-temp/typeorm-migration': file:projects/typeorm-migration.tgz_supports-color@8.1.1
+  '@rush-temp/typeorm-config': file:projects/typeorm-config.tgz_pg@8.9.0+supports-color@8.1.1
+  '@rush-temp/typeorm-migration': file:projects/typeorm-migration.tgz_pg@8.9.0+supports-color@8.1.1
   '@rush-temp/typeorm-store': file:projects/typeorm-store.tgz_supports-color@8.1.1
   '@rush-temp/types-test': file:projects/types-test.tgz
   '@rush-temp/util-internal': file:projects/util-internal.tgz
@@ -193,13 +197,13 @@ dependencies:
   '@rush-temp/util-xxhash': file:projects/util-xxhash.tgz
   '@rush-temp/workspace': file:projects/workspace.tgz
   '@subsquid/graphiql-console': 0.3.0
-  '@subsquid/substrate-frontier-evm': 0.0.1
   '@substrate/calc': 0.2.8
   '@types/deep-equal': 1.0.1
   '@types/express': 4.17.17
   '@types/glob': 8.0.1
   '@types/inflected': 1.1.29
   '@types/mocha': 10.0.1
+  '@types/node': 16.18.12
   '@types/pg': 8.6.6
   '@types/semver': 7.3.13
   '@types/stoppable': 1.1.1
@@ -217,6 +221,7 @@ dependencies:
   camelcase: 6.3.0
   commander: 10.0.0
   deep-equal: 2.2.0
+  dotenv: 16.0.3
   ethers: 5.7.2
   expect: 29.4.2
   express: 4.18.2_supports-color@8.1.1
@@ -231,12 +236,15 @@ dependencies:
   latest-version: 5.1.0
   mocha: 10.2.0
   node-fetch: 3.3.0
+  pg: 8.9.0
   postgres-migrations: 5.3.0
   prom-client: 14.1.1
   semver: 7.3.8
   stoppable: 1.1.0
   supports-color: 8.1.1
   type-fest: 2.19.0
+  typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
+  typescript: 4.9.5
   websocket: 1.0.34_supports-color@8.1.1
   ws: 8.12.0
   xxhash-wasm: 1.0.2
@@ -4539,85 +4547,6 @@ packages:
       - supports-color
     dev: false
 
-  /typeorm/0.3.12_supports-color@8.1.1:
-    resolution: {integrity: sha512-sYSxBmCf1nJLLTcYtwqZ+lQIRtLPyUoO93rHTOKk9vJCyT4UfRtU7oRsJvfvKP3nnZTD1hzz2SEy2zwPEN6OyA==}
-    engines: {node: '>= 12.9.0'}
-    hasBin: true
-    peerDependencies:
-      '@google-cloud/spanner': ^5.18.0
-      '@sap/hana-client': ^2.12.25
-      better-sqlite3: ^7.1.2 || ^8.0.0
-      hdb-pool: ^0.1.6
-      ioredis: ^5.0.4
-      mongodb: ^3.6.0
-      mssql: ^7.3.0
-      mysql2: ^2.2.5 || ^3.0.1
-      oracledb: ^5.1.0
-      pg: ^8.5.1
-      pg-native: ^3.0.0
-      pg-query-stream: ^4.0.0
-      redis: ^3.1.1 || ^4.0.0
-      sql.js: ^1.4.0
-      sqlite3: ^5.0.3
-      ts-node: ^10.7.0
-      typeorm-aurora-data-api-driver: ^2.0.0
-    peerDependenciesMeta:
-      '@google-cloud/spanner':
-        optional: true
-      '@sap/hana-client':
-        optional: true
-      better-sqlite3:
-        optional: true
-      hdb-pool:
-        optional: true
-      ioredis:
-        optional: true
-      mongodb:
-        optional: true
-      mssql:
-        optional: true
-      mysql2:
-        optional: true
-      oracledb:
-        optional: true
-      pg:
-        optional: true
-      pg-native:
-        optional: true
-      pg-query-stream:
-        optional: true
-      redis:
-        optional: true
-      sql.js:
-        optional: true
-      sqlite3:
-        optional: true
-      ts-node:
-        optional: true
-      typeorm-aurora-data-api-driver:
-        optional: true
-    dependencies:
-      '@sqltools/formatter': 1.2.5
-      app-root-path: 3.1.0
-      buffer: 6.0.3
-      chalk: 4.1.2
-      cli-highlight: 2.1.11
-      date-fns: 2.29.3
-      debug: 4.3.4_supports-color@8.1.1
-      dotenv: 16.0.3
-      glob: 8.1.0
-      js-yaml: 4.1.0
-      mkdirp: 2.1.3
-      reflect-metadata: 0.1.13
-      sha.js: 2.4.11
-      tslib: 2.5.0
-      uuid: 9.0.0
-      xml2js: 0.4.23
-      yargs: 17.6.2
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /typeorm/0.3.9_pg@8.8.0+supports-color@8.1.1:
     resolution: {integrity: sha512-xNcE44D4hn74n7pjuMog9hRgep+BiO3IBpjEaQZ8fb56zsDz7xHT1GAeWwmGuuU+4nDEELp2mIqgSCR+zxR7Jw==}
     engines: {node: '>= 12.9.0'}
@@ -4696,12 +4625,6 @@ packages:
       yargs: 17.5.1
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /typescript/4.7.4:
-    resolution: {integrity: sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
     dev: false
 
   /typescript/4.9.5:
@@ -4991,7 +4914,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-0noR12DXEFgNYEmnh4Kpi3JTDHTqlK7wnFyJBE7V5BonEhbSiIlqcg4Kkyx3awpMN1aRR7WGQR1RXnWYSOphAw==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-8yLZEGtsWDWRQY2awojWwhhum2bDM8pz0uNGp2yAHz5JCbpRYdXG230ZEYoNBWO/LnTAF+adnoCm42H0LRVSbw==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -5319,7 +5242,7 @@ packages:
     dev: false
 
   file:projects/ink-abi.tgz:
-    resolution: {integrity: sha512-1jnWjKuaA9lpimKcbUDIo7dZf6j7stGX5Fx0JiolvTogxIWSCERPcVL4co2HWwFp9p1ocgb9ZQt/KpgtOyugNg==, tarball: file:projects/ink-abi.tgz}
+    resolution: {integrity: sha512-pngz5oKr6SLRcRB6fSvuZQdBgty1W0wx7fymYFm4Y6CvVZS3Ahgip6b5aF1PMquL1c4kg8bUVWB6R3YUa4StPg==, tarball: file:projects/ink-abi.tgz}
     name: '@rush-temp/ink-abi'
     version: 0.0.0
     dependencies:
@@ -5525,16 +5448,16 @@ packages:
     dev: false
 
   file:projects/shibuya-psp22.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-SMZ7pWSUUd0ZqrDThu9C45vd0FmU7kZf7wv16E0pfEAD+ydfp0+dA+y07sp90Xav4/m6Ms9EKhbHlg+44Vy81Q==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-jvPcdnyfkwodj3GxsU0XSvr0Z1CBkgqN3EJOKpRNsIeSHKiyxPsJ2ThBqr5bE/XNzzvH2tYHuiK4/IMVdlji9Q==, tarball: file:projects/shibuya-psp22.tgz}
     id: file:projects/shibuya-psp22.tgz
     name: '@rush-temp/shibuya-psp22'
     version: 0.0.0
     dependencies:
       '@types/node': 16.18.12
-      dotenv: 10.0.0
+      dotenv: 16.0.3
       pg: 8.9.0
       typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
-      typescript: 4.7.4
+      typescript: 4.9.5
     transitivePeerDependencies:
       - '@google-cloud/spanner'
       - '@sap/hana-client'
@@ -5666,14 +5589,14 @@ packages:
       typescript: 4.9.5
     dev: false
 
-  file:projects/typeorm-config.tgz_supports-color@8.1.1:
+  file:projects/typeorm-config.tgz_pg@8.9.0+supports-color@8.1.1:
     resolution: {integrity: sha512-JM7MhLvwkcDs3qKpnw2tBvewiwvEoS1YXc++KHxneWgz53qZimL9nqa5wYMN1/2c4t3ZYgL4mXPLN1BG3Tgzdw==, tarball: file:projects/typeorm-config.tgz}
     id: file:projects/typeorm-config.tgz
     name: '@rush-temp/typeorm-config'
     version: 0.0.0
     dependencies:
       '@types/node': 16.18.12
-      typeorm: 0.3.12_supports-color@8.1.1
+      typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -5696,7 +5619,7 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
-  file:projects/typeorm-migration.tgz_supports-color@8.1.1:
+  file:projects/typeorm-migration.tgz_pg@8.9.0+supports-color@8.1.1:
     resolution: {integrity: sha512-52KZinWM0kpoxqN0NyDpLen2HRP/Hy0JWChRloVN1EY/QJEi9pA0AXfd8q4OS370+r2v7ijnAYpS4cNUK7rhMg==, tarball: file:projects/typeorm-migration.tgz}
     id: file:projects/typeorm-migration.tgz
     name: '@rush-temp/typeorm-migration'
@@ -5705,7 +5628,7 @@ packages:
       '@types/node': 16.18.12
       commander: 10.0.0
       dotenv: 16.0.3
-      typeorm: 0.3.12_supports-color@8.1.1
+      typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5
     transitivePeerDependencies:
       - '@google-cloud/spanner'
