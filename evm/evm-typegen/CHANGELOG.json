@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/evm-typegen_v2.1.0",
+      "date": "Sun, 19 Feb 2023 09:15:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `--etherscan-api-key` option"
+          },
+          {
+            "comment": "add exponential backoff for etherscan API rate limit errors"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.4",
       "tag": "@subsquid/evm-typegen_v2.0.4",
       "date": "Sun, 12 Feb 2023 12:16:19 GMT",

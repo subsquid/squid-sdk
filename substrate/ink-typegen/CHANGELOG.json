@@ -2,6 +2,23 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/ink-typegen_v0.2.0",
+      "date": "Sun, 19 Feb 2023 09:15:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "generate methods for contract state calls"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^1.0.1` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/ink-typegen_v0.1.1",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Feb 2023 09:15:04 GMT and should not be manually modified.
+
+## 1.1.0
+Sun, 19 Feb 2023 09:15:04 GMT
+
+### Minor changes
+
+- support contract state calls
 
 ## 1.0.1
 Thu, 09 Feb 2023 15:10:00 GMT

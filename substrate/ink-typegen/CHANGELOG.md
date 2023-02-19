@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-typegen
 
-This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Feb 2023 09:15:04 GMT and should not be manually modified.
+
+## 0.2.0
+Sun, 19 Feb 2023 09:15:04 GMT
+
+### Minor changes
+
+- generate methods for contract state calls
 
 ## 0.1.1
 Thu, 09 Feb 2023 15:10:00 GMT

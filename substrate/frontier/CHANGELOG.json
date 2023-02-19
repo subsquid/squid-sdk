@@ -2,6 +2,18 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/frontier_v0.2.0",
+      "date": "Sun, 19 Feb 2023 09:15:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "introduce `getTransactionResult()` to extract tx status from `Ethereum.Executed` event"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/frontier_v0.1.2",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",
