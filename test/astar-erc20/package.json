@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@subsquid/graphql-server": "^3.3.2",
-    "@subsquid/substrate-processor": "^2.3.1",
+    "@subsquid/substrate-processor": "^2.4.0",
     "@subsquid/typeorm-store": "^0.2.2",
     "@subsquid/typeorm-migration": "^0.1.6",
     "dotenv": "^16.0.3",
@@ -17,10 +17,10 @@
     "ethers": "^5.7.2",
     "@ethersproject/bytes": "^5.7.0",
     "@subsquid/util-internal-json": "^0.2.1",
-    "@subsquid/frontier": "^0.1.2"
+    "@subsquid/frontier": "^0.2.0"
   },
   "devDependencies": {
-    "@subsquid/evm-typegen": "^2.0.4",
+    "@subsquid/evm-typegen": "^2.1.0",
     "@subsquid/substrate-metadata-explorer": "^1.1.1",
     "@subsquid/substrate-typegen": "^2.2.1",
     "@subsquid/typeorm-codegen": "^0.3.3",
