@@ -3,7 +3,7 @@ import {TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/v3/interf
 import {getInkProject, InkProject} from "@subsquid/ink-abi/lib/metadata/validator"
 import {Interfaces} from "@subsquid/substrate-typegen/lib/ifs"
 import {Names} from "@subsquid/substrate-typegen/lib/names"
-import {def, last} from "@subsquid/util-internal"
+import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
 import fs from "fs"
 
@@ -77,7 +77,7 @@ export class Typegen {
         let d = this.description()
         let ifs = new Interfaces(d.types(), this.nameAssignment())
 
-        this.out.line(`import {Abi} from "@subsquid/ink-abi"`)
+        this.out.line(`import {Abi, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
 
         this.out.line()
         this.out.line(`export const metadata = ${JSON.stringify(this.metadata(), null, 2)}`)
@@ -98,6 +98,44 @@ export class Typegen {
         this.out.line()
         this.out.block(`export function decodeConstructor(hex: string): ${ifs.use(d.constructors())}`, () => {
             this.out.line(`return _abi.decodeConstructor(hex)`)
+        })
+
+        this.out.line()
+        this.out.block('export interface Chain', () => {
+            this.out.block('client:', () => {
+                this.out.line('call: <T=any>(method: string, params?: unknown[]) => Promise<T>')
+            })
+        })
+
+        this.out.line()
+        this.out.block('export interface ChainContext', () => {
+            this.out.line('_chain: Chain')
+        })
+
+        this.out.line()
+        this.out.block('export class Contract', () => {
+            this.out.line('constructor(private ctx: ChainContext, private address: string, private blockHash?: string) { }')
+
+            this.project().spec.messages.forEach(m => {
+                if (!m.mutates) {
+                    let args = m.args.map(arg => `${arg.label}: ${ifs.use(arg.type.type)}`).join(', ')
+                    let returnType = assertNotNull(m.returnType?.type)
+                    let callArgs = m.args.map(arg => arg.label).join(', ')
+                    this.out.line()
+                    this.out.block(`${m.label.replace('::', '_')}(${args}): Promise<${ifs.use(returnType)}>`, () => {
+                        this.out.line(`return this.stateCall('${m.selector}', [${callArgs}])`)
+                    })
+                }
+            })
+
+            this.out.line()
+            this.out.block('private async stateCall<T>(selector: string, args: any[]): Promise<T>', () => {
+                this.out.line('let input = _abi.encodeMessageInput(selector, args)')
+                this.out.line('let data = encodeCall(this.address, input)')
+                this.out.line("let result = await this.ctx._chain.client.call('state_call', ['ContractsApi_call', data, this.blockHash])")
+                this.out.line('let value = decodeResult(result)')
+                this.out.line('return _abi.decodeMessageOutput(selector, value)')
+            })
         })
 
         ifs.generate(this.out)

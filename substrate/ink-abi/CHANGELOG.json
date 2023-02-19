@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-abi",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/ink-abi_v1.1.0",
+      "date": "Sun, 19 Feb 2023 09:15:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support contract state calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/ink-abi_v1.0.1",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

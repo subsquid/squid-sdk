@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 12 Feb 2023 12:16:19 GMT and should not be manually modified.
+This log was last generated on Sun, 19 Feb 2023 09:15:04 GMT and should not be manually modified.
+
+## 2.4.0
+Sun, 19 Feb 2023 09:15:04 GMT
+
+### Minor changes
+
+- reflect in types, that `.addEthereumTransaction()` will result in `Ethereum.Executed` events being present as well
 
 ## 2.3.1
 Sun, 12 Feb 2023 12:16:19 GMT

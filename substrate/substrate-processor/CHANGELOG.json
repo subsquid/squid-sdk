@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.4.0",
+      "tag": "@subsquid/substrate-processor_v2.4.0",
+      "date": "Sun, 19 Feb 2023 09:15:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "reflect in types, that `.addEthereumTransaction()` will result in `Ethereum.Executed` events being present as well"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.3.1",
       "tag": "@subsquid/substrate-processor_v2.3.1",
       "date": "Sun, 12 Feb 2023 12:16:19 GMT",

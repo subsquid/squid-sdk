@@ -298,6 +298,9 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
      * but requests `Ethereum.transact` calls holding an EVM call transaction
      * with an option to filter them by contract address and sighash.
      *
+     * In addition, all `Ethereum.Executed` events emitted by found transactions will be included
+     * into the resulting set.
+     *
      * @example
      * // request all EVM calls to contract `0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98`
      * processor.addEthereumTransaction('0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98')
@@ -316,12 +319,12 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     addEthereumTransaction(
         contractAddress: string | string[],
         options?: {range?: Range, sighash?: string} & NoDataSelection
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", true>>>
+    ): SubstrateBatchProcessor<AddCallItem<AddEventItem<Item, EventItem<"Ethereum.Executed", true>>, CallItem<"Ethereum.transact", true>>>
 
     addEthereumTransaction<R extends CallDataRequest>(
         contractAddress: string | string[],
         options: {range?: Range, sighash?: string} & DataSelection<R>
-    ): SubstrateBatchProcessor<AddCallItem<Item, CallItem<"Ethereum.transact", R>>>
+    ): SubstrateBatchProcessor<AddCallItem<AddEventItem<Item, EventItem<"Ethereum.Executed", true>>, CallItem<"Ethereum.transact", R>>>
 
     addEthereumTransaction(
         contractAddress: string | string[],

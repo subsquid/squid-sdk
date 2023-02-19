@@ -24,8 +24,8 @@ const definitions: OldTypes = {
                 },
                 transactV2: {
                     transaction: 'TransactionV2',
-                },
-            },
+                }
+            }
         },
         V14EthTransactionAction: {
             _enum: {
