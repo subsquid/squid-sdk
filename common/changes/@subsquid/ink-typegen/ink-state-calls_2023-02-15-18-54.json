@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/ink-typegen",
-      "comment": "generate methods for contract state access",
+      "comment": "generate methods for contract state calls",
       "type": "minor"
     }
   ],
