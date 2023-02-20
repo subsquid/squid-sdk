@@ -64,7 +64,14 @@ export class Runner<R, B extends BlockBase, S> {
         let lastBlock = batch.range.to
         let mappingStartTime = process.hrtime.bigint()
 
-        await this.processBatch(batch)
+        if (batch.blocks.length) {
+            await this.config.database.transact(
+                batch.range.from,
+                batch.range.to,
+                store => this.processBatch(store, batch)
+            )
+        }
+
         await this.config.database.advance(lastBlock, batch.isHead)
 
         let mappingEndTime = process.hrtime.bigint()
@@ -81,7 +88,7 @@ export class Runner<R, B extends BlockBase, S> {
         )
     }
 
-    protected async processBatch(batch: DataBatch<R, B>): Promise<void> {}
+    async processBatch(store: S, batch: DataBatch<R, B>): Promise<void> {}
 
     private getEstimatedTotalBlocksCount(): number {
         return getBlocksCount(this.config.requests, 0,  this.chainHeight)

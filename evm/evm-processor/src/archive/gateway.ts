@@ -48,7 +48,7 @@ export type TransactionFieldSelection = {[P in keyof Transaction]?: true}
 
 export interface Block {
     number: number
-    hash?: string
+    hash: string
     parentHash: string
     nonce?: string
     sha3Uncles: string

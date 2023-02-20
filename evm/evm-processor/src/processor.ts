@@ -1,18 +1,18 @@
-import {Logger, createLogger} from '@subsquid/logger'
+import {createLogger, Logger} from '@subsquid/logger'
 import {def, runProgram} from '@subsquid/util-internal'
-import {Database} from '@subsquid/util-internal-processor-tools'
-import {BatchHandlerContext, LogOptions, TransactionOptions} from './interfaces/dataHandlers'
+import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpAgent} from '@subsquid/util-internal-http-client/lib/agent'
 import {
-    AddLogItem,
-    AddTransactionItem,
-    DataSelection,
-    LogDataRequest,
-    LogItem,
-    MayBeDataSelection,
-    NoDataSelection,
-    TransactionDataRequest,
-    TransactionItem,
-} from './interfaces/dataSelection'
+    applyRangeBound,
+    BatchRequest,
+    Database,
+    mergeBatchRequests,
+    Metrics,
+    Range,
+    Runner
+} from '@subsquid/util-internal-processor-tools'
+import {ArchiveDataSource} from './archive/client'
+import {BlockData, DataRequest, DefaultFields, EvmTopicSet, Fields} from './interfaces/data'
 
 
 export interface DataSource {
@@ -26,78 +26,98 @@ export interface DataSource {
     chain?: string
 }
 
-/**
- * A helper to get the resulting type of block item
- */
-export type BatchProcessorItem<T> = T extends EvmBatchProcessor<infer I> ? I : never
-export type BatchProcessorLogItem<T> = Extract<BatchProcessorItem<T>, {kind: 'evmLog'}>
-export type BatchProcessorTransactionItem<T> = Extract<BatchProcessorItem<T>, {kind: 'transaction'}>
+
+export interface LogOptions {
+    /**
+     * Address of the emitting contract
+     */
+    address?: string | string[]
+    /**
+     * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
+     */
+    topics?: EvmTopicSet
+    /**
+     * Block range
+     */
+    range?: Range
+}
+
+
+export interface TransactionOptions {
+    /**
+     * Address of the called contract
+     */
+    to?: string | string[]
+    /**
+     * Address of the tx author
+     */
+    from?: string | string[]
+    /**
+     * Sighash of the invoked contract method
+     */
+    sighash?: string | string[]
+    /**
+     * Block range
+     */
+    range?: Range
+}
+
+
+export interface DataHandlerContext<Store, F extends Fields = DefaultFields> {
+    log: Logger
+    store: Store
+    blocks: BlockData<F>[]
+    isHead: boolean
+}
 
 
 /**
  * Provides methods to configure and launch data processing.
  */
-export class EvmBatchProcessor<Item extends {kind: string; address: string} = LogItem | TransactionItem> {
-    private batches: Batch<PlainBatchRequest>[] = []
-    private options: any = {}
+export class EvmBatchProcessor<F extends Fields = DefaultFields> {
+    private requests: BatchRequest<DataRequest>[] = []
     private src?: DataSource
+    private blockRange?: Range
+    private prometheusPort?: string | number
+    private fields?: Fields
     private running = false
 
-    private add(request: PlainBatchRequest, range?: Range): void {
-        this.batches.push({
+    private add(request: DataRequest, range?: Range): void {
+        this.requests.push({
             range: range || {from: 0},
-            request,
+            request
         })
     }
 
-    addLog<A extends string | ReadonlyArray<string>>(
-        contractAddress: A,
-        options?: LogOptions & NoDataSelection
-    ): EvmBatchProcessor<AddLogItem<Item, LogItem>>
-
-    addLog<R extends LogDataRequest>(
-        contractAddress: string | string[],
-        options: LogOptions & DataSelection<R>
-    ): EvmBatchProcessor<AddLogItem<Item, LogItem<R>>>
-
-    addLog(
-        contractAddress: string | string[],
-        options?: LogOptions & MayBeDataSelection<LogDataRequest>
-    ): EvmBatchProcessor<any> {
+    /**
+     * Configure a set of fetched fields
+     */
+    setFields<T extends Fields>(fields: T): EvmBatchProcessor<T> {
         this.assertNotRunning()
-        let req = new PlainBatchRequest()
-        if (!contractAddress || contractAddress === '*') contractAddress = []
-        req.logs.push({
-            address: Array.isArray(contractAddress) ? contractAddress : [contractAddress],
-            topics: options?.filter,
-            data: options?.data,
-        })
-        this.add(req, options?.range)
+        this.fields = fields
+        return this as any
+    }
+
+    addLog(options: LogOptions): this {
+        this.assertNotRunning()
+        this.add({
+            logs: [{
+                address: toRequestList(options.address),
+                topics: toRequestList(options.topics)
+            }]
+        }, options.range)
         return this
     }
 
-    addTransaction<A extends string | ReadonlyArray<string>>(
-        contractAddress: A,
-        options?: TransactionOptions & NoDataSelection
-    ): EvmBatchProcessor<AddTransactionItem<Item, TransactionItem>>
-
-    addTransaction<R extends TransactionDataRequest>(
-        contractAddress: string | string[],
-        options: TransactionOptions & DataSelection<R>
-    ): EvmBatchProcessor<AddTransactionItem<Item, TransactionItem<R>>>
-
-    addTransaction(
-        contractAddress: string | string[],
-        options?: TransactionOptions & MayBeDataSelection<TransactionDataRequest>
-    ): EvmBatchProcessor<any> {
+    addTransaction(options: TransactionOptions): this {
         this.assertNotRunning()
-        let req = new PlainBatchRequest()
-        req.transactions.push({
-            address: Array.isArray(contractAddress) ? contractAddress : [contractAddress],
-            sighash: options?.sighash == null || Array.isArray(options?.sighash) ? options?.sighash : [options.sighash],
-            data: options?.data,
-        })
-        this.add(req, options?.range)
+        this.add({
+            transactions: [{
+                from: toRequestList(options.from),
+                to: toRequestList(options.to),
+                sighash: toRequestList(options.sighash)
+            }]
+        }, options.range)
         return this
     }
 
@@ -110,7 +130,7 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
      */
     setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
-        this.options.prometheusPort = port
+        this.prometheusPort = port
         return this
     }
 
@@ -124,9 +144,7 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
      */
     includeAllBlocks(range?: Range): this {
         this.assertNotRunning()
-        let req = new PlainBatchRequest()
-        req.includeAllBlocks = true
-        this.add(req)
+        this.add({includeAllBlocks: true}, range)
         return this
     }
 
@@ -138,7 +156,7 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
      */
     setBlockRange(range?: Range): this {
         this.assertNotRunning()
-        this.options.blockRange = range
+        this.blockRange = range
         return this
     }
 
@@ -163,6 +181,11 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
         }
     }
 
+    @def
+    private getLogger(): Logger {
+        return createLogger('sqd:processor')
+    }
+
     private getArchiveEndpoint(): string {
         let url = this.src?.archive
         if (url == null) {
@@ -171,17 +194,39 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
         return url
     }
 
-    private getChainEndpoint(): string {
-        let url = this.src?.chain
-        if (url == null) {
-            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
-        }
-        return url
+    @def
+    private getArchiveDataSource(): ArchiveDataSource {
+        let http = new HttpClient({
+            baseUrl: this.getArchiveEndpoint(),
+            agent: new HttpAgent({
+                keepAlive: true
+            }),
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            log: this.getLogger().child('archive')
+        })
+
+        return new ArchiveDataSource(http)
     }
 
     @def
-    private getLogger(): Logger {
-        return createLogger('sqd:processor')
+    private getBatchRequests(): BatchRequest<DataRequest>[] {
+        let requests = mergeBatchRequests(this.requests, function merge(a: DataRequest, b: DataRequest) {
+            let res: DataRequest = {}
+            if (a.includeAllBlocks || b.includeAllBlocks) {
+                res.includeAllBlocks = true
+            }
+            res.logs = concatRequestLists(a.logs, b.logs)
+            res.transactions = concatRequestLists(a.transactions, b.transactions)
+            return res
+        })
+
+        if (this.fields) {
+            requests.forEach(req => {
+                req.request.fields = this.fields
+            })
+        }
+
+        return applyRangeBound(requests, this.blockRange)
     }
 
     /**
@@ -191,15 +236,60 @@ export class EvmBatchProcessor<Item extends {kind: string; address: string} = Lo
      * it terminates the entire program in case of error or
      * at the end of data processing.
      *
-     * @param db - database is responsible for providing storage to data handlers
+     * @param database - database is responsible for providing storage to data handlers
      * and persisting mapping progress and status.
      *
      * @param handler - The data handler, see {@link BatchContext} for an API available to the handler.
      */
-    run<Store>(db: Database<Store>, handler: (ctx: BatchHandlerContext<Store, Item>) => Promise<void>): void {
+    run<Store>(database: Database<Store>, handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>): void {
+        this.assertNotRunning()
         this.running = true
-        runProgram(async () => {
+        let log = this.getLogger()
 
-        }, err => this.getLogger().fatal(err))
+        runProgram(async () => {
+            let runner = new Runner({
+                database,
+                requests: this.getBatchRequests(),
+                src: this.getArchiveDataSource(),
+                srcPollInterval: 2000,
+                metrics: new Metrics(),
+                prometheusPort: this.prometheusPort || 0,
+                log
+            })
+
+            runner.processBatch = function(store, batch) {
+                return handler({
+                    log: log.child('mapping'),
+                    store,
+                    blocks: batch.blocks as any,
+                    isHead: batch.isHead
+                })
+            }
+
+            return runner.run()
+
+        }, err => log.fatal(err))
     }
+}
+
+
+function toRequestList<T>(val?: T | T[]): T[] | undefined {
+    if (val == null) return undefined
+    if (!Array.isArray(val)) {
+        val = [val]
+    }
+    if (val.length == 0) return undefined
+    return val
+}
+
+
+function concatRequestLists<T extends object>(a?: T[], b?: T[]): T[] | undefined {
+    let result: T[] = []
+    if (a) {
+        result.push(...a)
+    }
+    if (b) {
+        result.push(...b)
+    }
+    return result.length == 0 ? undefined : result
 }
