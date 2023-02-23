@@ -19,6 +19,7 @@ export interface BatchResponse<B> {
     range: {from: number, to: number}
     blocks: B[]
     isHead: boolean
+    chainHeight: number
 }
 
 
@@ -103,7 +104,7 @@ export class Ingest<R, B extends BlockBase> {
                 assert(response.range.to >= last(blocks).header.height)
             }
 
-            this.chainHeight = Math.max(this.chainHeight, response.range.to)
+            this.chainHeight = Math.max(this.chainHeight, response.chainHeight)
 
             if (response.range.to < rangeEnd(req.range)) {
                 this.requests[0] = {

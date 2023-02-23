@@ -29,7 +29,7 @@ export interface EvmBlock {
 
 export interface EvmTransaction {
     id: string
-    from?: EvmAddress
+    from: EvmAddress
     gas: bigint
     gasPrice?: bigint
     hash: Bytes32
@@ -54,6 +54,7 @@ export interface EvmLog {
     id: string
     index: number
     transactionIndex: number
+    transactionHash: string
     address: EvmAddress
     topics: Bytes32[]
     data: Bytes

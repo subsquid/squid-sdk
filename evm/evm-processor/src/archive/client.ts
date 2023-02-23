@@ -1,17 +1,263 @@
 import {HttpClient} from '@subsquid/util-internal-http-client'
-import {BatchRequest, DataSource, BatchResponse} from '@subsquid/util-internal-processor-tools'
-import {BlockData, DataRequest} from '../interfaces/data'
+import {BatchRequest, BatchResponse, DataSource} from '@subsquid/util-internal-processor-tools'
+import {BlockData, DataRequest, DEFAULT_FIELDS, Fields, FullBlockData} from '../interfaces/data'
+import {EvmBlock, EvmLog, EvmTransaction} from '../interfaces/evm'
+import * as gw from './gateway'
 
 
 export class ArchiveDataSource implements DataSource<DataRequest, BlockData> {
     constructor(private http: HttpClient) {}
 
-    async batchRequest(request: BatchRequest<DataRequest>): Promise<BatchResponse<BlockData>> {
-        throw new Error()
+    async batchRequest(request: BatchRequest<DataRequest>): Promise<BatchResponse<FullBlockData>> {
+        let q: gw.BatchRequest = {
+            fromBlock: request.range.from,
+            toBlock: request.range.to,
+            includeAllBlocks: !!request.request.includeAllBlocks,
+            transactions: [],
+            logs: []
+        }
+
+        let fields = request.request.fields
+
+        let fieldSelection = toFieldSelection(fields)
+
+        request.request.transactions?.forEach(tx => {
+            q.transactions.push({
+                address: tx.from,
+                sighash: tx.sighash,
+                fieldSelection: {...fieldSelection, log: null}
+            })
+        })
+
+        request.request.logs?.forEach(log => {
+            q.logs.push({
+                address: log.address,
+                topics: log.topics || [],
+                fieldSelection: fields?.log?.transaction ? fieldSelection : {...fieldSelection, transaction: null}
+            })
+        })
+
+        let res: gw.BatchResponse = await this.http.post('/query', {json: q})
+
+        return mapResponse(request.range.from, res)
     }
 
     async getChainHeight(): Promise<number> {
         let {height}: {height: number} = await this.http.get('/height')
         return height
     }
+}
+
+
+function mapResponse(firstBlock: number, res: gw.BatchResponse): BatchResponse<FullBlockData> {
+    let lastBlock = res.nextBlock - 1
+
+    let batch: BatchResponse<FullBlockData> = {
+        range: {from: firstBlock, to: lastBlock},
+        blocks: [],
+        chainHeight: res.archiveHeight,
+        isHead: res.archiveHeight === lastBlock
+    }
+
+    for (let bb of res.data) {
+        for (let block of bb) {
+            batch.blocks.push(
+                mapBlock(block)
+            )
+        }
+    }
+
+    return batch
+}
+
+
+function mapBlock(src: gw.BlockData): FullBlockData {
+    let header = mapBlockHeader(src.block)
+
+    let items: FullBlockData['items'] = []
+    let txIndex = new Map<EvmTransaction['index'], EvmTransaction>()
+
+    for (let gtx of src.transactions) {
+        let transaction = mapTransaction(header.height, header.hash, gtx)
+        items.push({kind: 'transaction', transaction})
+        txIndex.set(transaction.index, transaction)
+    }
+
+    for (let gl of src.logs) {
+        let log = mapLog(header.height, header.hash, gl)
+        let item: {kind: 'log', log: EvmLog, transaction?: EvmTransaction} = {kind: 'log', log}
+        let transaction = txIndex.get(log.transactionIndex)
+        if (transaction) {
+            item.transaction = transaction
+        }
+        items.push(item)
+    }
+
+    return {header, items}
+}
+
+
+function mapBlockHeader(src: gw.Block): EvmBlock {
+    let header: Partial<EvmBlock> = {
+        id: formatId(src.number, src.hash),
+        height: src.number,
+        hash: src.hash
+    }
+
+    let key: keyof gw.Block
+    for (key in src) {
+        switch(key) {
+            case 'number':
+            case 'hash':
+                break
+            case 'timestamp':
+                header.timestamp = Number(src.timestamp)
+                break
+            case 'nonce':
+            case 'difficulty':
+            case 'totalDifficulty':
+            case 'size':
+            case 'gasUsed':
+            case 'gasLimit':
+            case 'baseFeePerGas':
+                header[key] = BigInt(src[key]!)
+                break
+            default:
+                header[key] = src[key]
+        }
+    }
+
+    return header as EvmBlock
+}
+
+
+function mapTransaction(blockHeight: number, blockHash: string, src: gw.Transaction): EvmTransaction {
+    let tx: Partial<EvmTransaction> = {
+        id: formatId(blockHeight, blockHash, src.index)
+    }
+
+    let key: keyof gw.Transaction
+    for (key in src) {
+        switch(key) {
+            case 'from':
+            case 'to':
+            case 'hash':
+            case 'input':
+            case 'r':
+            case 's':
+                tx[key] = src[key]
+                break
+            case 'gas':
+            case 'gasPrice':
+            case 'nonce':
+            case 'value':
+            case 'v':
+            case 'maxFeePerGas':
+            case 'maxPriorityFeePerGas':
+                tx[key] = BigInt(src[key]!)
+                break
+            case 'index':
+            case 'type':
+            case 'chainId':
+            case 'yParity':
+                tx[key] = src[key]
+                break
+        }
+    }
+
+    return tx as EvmTransaction
+}
+
+
+function mapLog(blockHeight: number, blockHash: string, src: gw.Log): EvmLog {
+    let log: Partial<EvmLog> = {
+        id: formatId(blockHeight, blockHash, src.index),
+        index: src.index
+    }
+
+    let key: keyof gw.Log
+    for (key in src) {
+        switch(key) {
+            case 'transactionHash':
+            case 'address':
+            case 'data':
+                log[key] = src[key]
+                break
+            case 'topics':
+                log.topics = src.topics
+                break
+            case 'transactionIndex':
+                log.transactionIndex = src.transactionIndex
+                break
+        }
+    }
+
+    return log as EvmLog
+}
+
+
+function toFieldSelection(fields?: Fields): gw.FieldSelection {
+    let {transaction, ...logFields} = fields?.log || {}
+    let sel = {
+        block: {
+            ...mergeDefaultFields(DEFAULT_FIELDS.block, fields?.block),
+            hash: true,
+            number: true
+        },
+        transaction: {
+            ...mergeDefaultFields(DEFAULT_FIELDS.transaction, fields?.transaction),
+            index: true
+        },
+        log: {
+            ...mergeDefaultFields(DEFAULT_FIELDS.log, logFields),
+            index: true
+        }
+    }
+    if (transaction) {
+        sel.log.transactionIndex = true
+    }
+    return sel
+}
+
+
+type Selector<Props extends string> = {
+    [K in Props]?: boolean
+}
+
+
+function mergeDefaultFields<P extends string>(defaults: Selector<P>, selection?: Selector<P>): Selector<P> {
+    let result: Selector<P> = {...defaults}
+    for (let key in selection) {
+        if (selection[key] != null) {
+            if (selection[key]) {
+                result[key] = true
+            } else {
+                result[key] = undefined
+            }
+        }
+    }
+    return result
+}
+
+
+/**
+ * Formats the event id into a fixed-length string. When formatted the natural string ordering
+ * is the same as the ordering
+ * in the blockchain (first ordered by block height, then by block ID)
+ *
+ * @return  id in the format 000000..00<blockNum>-000<index>-<shorthash>
+ *
+ */
+export function formatId(height: number, hash: string, index?: number): string {
+    const blockPart = `${String(height).padStart(10, "0")}`
+    const indexPart =
+        index !== undefined
+            ? `-${String(index).padStart(6, "0")}`
+            : ""
+    const _hash = hash.startsWith("0x") ? hash.substring(2) : hash
+    const shortHash =
+        _hash.length < 5
+            ? _hash.padEnd(5, "0")
+            : _hash.slice(0, 5)
+    return `${blockPart}${indexPart}-${shortHash}`
 }

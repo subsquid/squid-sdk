@@ -259,7 +259,7 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
 
             runner.processBatch = function(store, batch) {
                 return handler({
-                    log: log.child('mapping'),
+                    log: log.child('mapping', {batchRange: batch.range}),
                     store,
                     blocks: batch.blocks as any,
                     isHead: batch.isHead

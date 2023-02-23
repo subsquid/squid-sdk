@@ -10,21 +10,20 @@ export interface BatchRequest {
 
 export interface BatchResponse {
     data: BlockData[][]
-    metrics: any
     nextBlock: number
     archiveHeight: number
 }
 
 
 export interface LogRequest {
-    address: string[] | null
+    address?: string[]
     topics: string[][]
     fieldSelection: FieldSelection
 }
 
 
 export interface TransactionRequest {
-    address: string[] | null
+    address?: string[]
     sighash?: string[]
     fieldSelection: FieldSelection
 }
@@ -37,13 +36,13 @@ export interface FieldSelection {
 }
 
 
-export type BlockFieldSelection = {[P in keyof Block]?: true}
+export type BlockFieldSelection = {[P in keyof Block]?: boolean}
 
 
-export type LogFieldSelection = {[P in keyof Log]?: true}
+export type LogFieldSelection = {[P in keyof Log]?: boolean}
 
 
-export type TransactionFieldSelection = {[P in keyof Transaction]?: true}
+export type TransactionFieldSelection = {[P in keyof Transaction]?: boolean}
 
 
 export interface Block {
@@ -70,7 +69,7 @@ export interface Block {
 
 
 export interface Transaction {
-    from?: string
+    from: string
     gas: string
     gasPrice?: string
     hash: string

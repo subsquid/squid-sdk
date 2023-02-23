@@ -16,3 +16,8 @@ function randomString(len: number) {
     }
     return result
 }
+
+
+export function getBlockId() {
+
+}

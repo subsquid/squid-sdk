@@ -61,9 +61,16 @@ type MergeDefault<T, D> = Simplify<
 >
 
 
-type Select<T, F> = {id: string} & {
-    [K in keyof F as true extends F[K] ? K : never]: K extends keyof T ? T[K] : never
+type AddOption<T> = {
+    [P in keyof T as undefined extends T[P] ? P : never]+?: T[P]
+} & {
+    [P in keyof T as undefined extends T[P] ? never : P]: T[P]
 }
+
+
+type Select<T, F> = {id: string} & AddOption<{
+    -readonly [K in keyof F as true extends F[K] ? K : never]: K extends keyof T ? T[K] : never
+}>
 
 
 export type BlockHeader<F extends Fields = DefaultFields> = Simplify<
@@ -114,7 +121,7 @@ export type BlockData<F extends Fields = DefaultFields> = {
 export interface FullBlockData {
     header: EvmBlock
     items: (
-        {kind: 'log', log: EvmLog, transaction: EvmTransaction} | {kind: 'transaction', transaction: EvmTransaction}
+        {kind: 'log', log: EvmLog, transaction?: EvmTransaction} | {kind: 'transaction', transaction: EvmTransaction}
     )[]
 }
 
@@ -141,4 +148,3 @@ export interface TransactionItemRequest {
     from?: EvmAddress[]
     sighash?: Bytes32[]
 }
-
