@@ -23,7 +23,8 @@ export interface LogRequest {
 
 
 export interface TransactionRequest {
-    address?: string[]
+    to?: string[]
+    from?: string[]
     sighash?: string[]
     fieldSelection: FieldSelection
 }

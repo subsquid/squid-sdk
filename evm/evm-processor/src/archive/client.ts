@@ -1,11 +1,13 @@
+import {addErrorContext, maybeLast, withErrorContext} from '@subsquid/util-internal'
 import {HttpClient} from '@subsquid/util-internal-http-client'
 import {BatchRequest, BatchResponse, DataSource} from '@subsquid/util-internal-processor-tools'
-import {BlockData, DataRequest, DEFAULT_FIELDS, Fields, FullBlockData} from '../interfaces/data'
+import assert from 'assert'
+import {BlockItem, DataRequest, DEFAULT_FIELDS, Fields, FullBlockData, FullLogItem} from '../interfaces/data'
 import {EvmBlock, EvmLog, EvmTransaction} from '../interfaces/evm'
 import * as gw from './gateway'
 
 
-export class ArchiveDataSource implements DataSource<DataRequest, BlockData> {
+export class ArchiveDataSource implements DataSource<DataRequest, FullBlockData> {
     constructor(private http: HttpClient) {}
 
     async batchRequest(request: BatchRequest<DataRequest>): Promise<BatchResponse<FullBlockData>> {
@@ -23,7 +25,8 @@ export class ArchiveDataSource implements DataSource<DataRequest, BlockData> {
 
         request.request.transactions?.forEach(tx => {
             q.transactions.push({
-                address: tx.from,
+                to: tx.to,
+                from: tx.from,
                 sighash: tx.sighash,
                 fieldSelection: {...fieldSelection, log: null}
             })
@@ -39,7 +42,54 @@ export class ArchiveDataSource implements DataSource<DataRequest, BlockData> {
 
         let res: gw.BatchResponse = await this.http.post('/query', {json: q})
 
-        return mapResponse(request.range.from, res)
+        let lastBlock = res.nextBlock - 1
+
+        let batch: BatchResponse<FullBlockData> = {
+            range: {from: request.range.from, to: lastBlock},
+            blocks: [],
+            chainHeight: res.archiveHeight,
+            isHead: res.archiveHeight === lastBlock
+        }
+
+        for (let bb of res.data) {
+            for (let block of bb) {
+                batch.blocks.push(
+                    tryMapGatewayBlock(block)
+                )
+            }
+        }
+
+        if (batch.isHead && maybeLast(batch.blocks)?.header.height !== lastBlock) {
+            // When we are on the head, always include the head block,
+            // even if it doesn't contain requested data.
+            let lastBlockHeader = await this.fetchBlockHeader(lastBlock, fieldSelection)
+                .catch(withErrorContext({blockHeight: lastBlock}))
+
+            batch.blocks.push({
+                header: lastBlockHeader,
+                items: []
+            })
+        }
+
+        return batch
+    }
+
+    private async fetchBlockHeader(height: number, fieldSelection: gw.FieldSelection): Promise<EvmBlock> {
+        let q: gw.BatchRequest = {
+            fromBlock: height,
+            toBlock: height,
+            includeAllBlocks: true,
+            transactions: [{
+                fieldSelection
+            }],
+            logs: []
+        }
+
+        let res: gw.BatchResponse = await this.http.post('/query', {json: q})
+
+        assert(res.data.length == 1)
+        assert(res.data[0].length == 1)
+        return mapGatewayBlockHeader(res.data[0][0].block)
     }
 
     async getChainHeight(): Promise<number> {
@@ -49,55 +99,62 @@ export class ArchiveDataSource implements DataSource<DataRequest, BlockData> {
 }
 
 
-function mapResponse(firstBlock: number, res: gw.BatchResponse): BatchResponse<FullBlockData> {
-    let lastBlock = res.nextBlock - 1
-
-    let batch: BatchResponse<FullBlockData> = {
-        range: {from: firstBlock, to: lastBlock},
-        blocks: [],
-        chainHeight: res.archiveHeight,
-        isHead: res.archiveHeight === lastBlock
+function tryMapGatewayBlock(src: gw.BlockData): FullBlockData {
+    try {
+        return mapGatewayBlock(src)
+    } catch (e: any) {
+        throw addErrorContext(e, {
+            blockHeight: src.block.number,
+            blockHash: src.block.hash,
+        })
     }
-
-    for (let bb of res.data) {
-        for (let block of bb) {
-            batch.blocks.push(
-                mapBlock(block)
-            )
-        }
-    }
-
-    return batch
 }
 
 
-function mapBlock(src: gw.BlockData): FullBlockData {
-    let header = mapBlockHeader(src.block)
+function mapGatewayBlock(src: gw.BlockData): FullBlockData {
+    let header = mapGatewayBlockHeader(src.block)
 
     let items: FullBlockData['items'] = []
     let txIndex = new Map<EvmTransaction['index'], EvmTransaction>()
 
     for (let gtx of src.transactions) {
-        let transaction = mapTransaction(header.height, header.hash, gtx)
+        let transaction = mapGatewayTransaction(header.height, header.hash, gtx)
         items.push({kind: 'transaction', transaction})
         txIndex.set(transaction.index, transaction)
     }
 
     for (let gl of src.logs) {
-        let log = mapLog(header.height, header.hash, gl)
-        let item: {kind: 'log', log: EvmLog, transaction?: EvmTransaction} = {kind: 'log', log}
+        let log = mapGatewayLog(header.height, header.hash, gl)
+        let item: Partial<FullLogItem> = {kind: 'log', log}
         let transaction = txIndex.get(log.transactionIndex)
         if (transaction) {
             item.transaction = transaction
         }
-        items.push(item)
+        items.push(item as FullLogItem)
     }
+
+    items.sort(itemOrder)
 
     return {header, items}
 }
 
 
-function mapBlockHeader(src: gw.Block): EvmBlock {
+function itemOrder(a: BlockItem, b: BlockItem): number {
+    if (a.kind == 'log' && b.kind == 'log') {
+        return a.log.index - b.log.index
+    } else if (a.kind == 'transaction' && b.kind == 'transaction') {
+        return a.transaction.index - b.transaction.index
+    } else if (a.kind == 'log' && b.kind == 'transaction') {
+        return a.log.transactionIndex - b.transaction.index || -1 // transaction after logs
+    } else if (a.kind == 'transaction' && b.kind == 'log') {
+        return a.transaction.index - b.log.transactionIndex || 1
+    } else {
+        assert(false)
+    }
+}
+
+
+function mapGatewayBlockHeader(src: gw.Block): EvmBlock {
     let header: Partial<EvmBlock> = {
         id: formatId(src.number, src.hash),
         height: src.number,
@@ -131,7 +188,7 @@ function mapBlockHeader(src: gw.Block): EvmBlock {
 }
 
 
-function mapTransaction(blockHeight: number, blockHash: string, src: gw.Transaction): EvmTransaction {
+function mapGatewayTransaction(blockHeight: number, blockHash: string, src: gw.Transaction): EvmTransaction {
     let tx: Partial<EvmTransaction> = {
         id: formatId(blockHeight, blockHash, src.index)
     }
@@ -169,7 +226,7 @@ function mapTransaction(blockHeight: number, blockHash: string, src: gw.Transact
 }
 
 
-function mapLog(blockHeight: number, blockHash: string, src: gw.Log): EvmLog {
+function mapGatewayLog(blockHeight: number, blockHash: string, src: gw.Log): EvmLog {
     let log: Partial<EvmLog> = {
         id: formatId(blockHeight, blockHash, src.index),
         index: src.index
@@ -198,7 +255,7 @@ function mapLog(blockHeight: number, blockHash: string, src: gw.Log): EvmLog {
 
 function toFieldSelection(fields?: Fields): gw.FieldSelection {
     let {transaction, ...logFields} = fields?.log || {}
-    let sel = {
+    return  {
         block: {
             ...mergeDefaultFields(DEFAULT_FIELDS.block, fields?.block),
             hash: true,
@@ -210,13 +267,10 @@ function toFieldSelection(fields?: Fields): gw.FieldSelection {
         },
         log: {
             ...mergeDefaultFields(DEFAULT_FIELDS.log, logFields),
-            index: true
+            index: true,
+            transactionIndex: true
         }
     }
-    if (transaction) {
-        sel.log.transactionIndex = true
-    }
-    return sel
 }
 
 

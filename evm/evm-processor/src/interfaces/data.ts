@@ -31,6 +31,7 @@ export const DEFAULT_FIELDS = {
         timestamp: true
     },
     log: {
+        transactionIndex: true,
         index: true,
         address: true,
         topics: true,
@@ -43,7 +44,8 @@ export const DEFAULT_FIELDS = {
         input: true,
         hash: true,
         nonce: true,
-        status: true
+        status: true,
+        type: true
     }
 } as const
 
@@ -118,11 +120,22 @@ export type BlockData<F extends Fields = DefaultFields> = {
 }
 
 
+export interface FullLogItem {
+    kind: 'log'
+    log: EvmLog
+    transaction: EvmTransaction
+}
+
+
+export interface FullTransactionItem {
+    kind: 'transaction'
+    transaction: EvmTransaction
+}
+
+
 export interface FullBlockData {
     header: EvmBlock
-    items: (
-        {kind: 'log', log: EvmLog, transaction?: EvmTransaction} | {kind: 'transaction', transaction: EvmTransaction}
-    )[]
+    items: (FullLogItem | FullTransactionItem)[]
 }
 
 
