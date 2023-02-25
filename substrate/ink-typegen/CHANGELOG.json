@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/ink-typegen_v0.2.1",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "improve README"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/ink-typegen_v0.2.0",
       "date": "Sun, 19 Feb 2023 09:15:04 GMT",

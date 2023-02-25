@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-ingest",
   "entries": [
     {
+      "version": "0.0.6",
+      "tag": "@subsquid/evm-ingest_v0.0.6",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "refactor `util-internal-http-client` import"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-client\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/evm-ingest_v0.0.5",
       "date": "Sun, 12 Feb 2023 12:16:19 GMT",

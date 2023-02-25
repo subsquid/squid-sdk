@@ -2,6 +2,18 @@
   "name": "chain-status-service",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "chain-status-service_v0.1.2",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "chain-status-service_v0.1.1",
       "date": "Sun, 12 Feb 2023 12:16:19 GMT",

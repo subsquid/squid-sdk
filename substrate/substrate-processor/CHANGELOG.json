@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "2.4.1",
+      "tag": "@subsquid/substrate-processor_v2.4.1",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "refactor `util-internal-http-client` import"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-client\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.2` to `^0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.4.0",
       "tag": "@subsquid/substrate-processor_v2.4.0",
       "date": "Sun, 19 Feb 2023 09:15:04 GMT",
