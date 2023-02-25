@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-resilient-rpc",
+      "comment": "refactor `util-internal-http-client` import",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-resilient-rpc"
+}

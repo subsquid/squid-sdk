@@ -1,7 +1,12 @@
 import {RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcRequest, RpcResponse} from '@subsquid/rpc-client/lib/rpc'
-import {HttpClient, HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/util-internal-http-client'
-import {HttpAgent} from '@subsquid/util-internal-http-client/lib/agent'
+import {
+    HttpAgent,
+    HttpClient,
+    HttpError,
+    HttpTimeoutError,
+    isHttpConnectionError
+} from '@subsquid/util-internal-http-client'
 import {isRateLimitError} from '../util'
 import {CommonConnectionOptions, ConnectionBase} from './base'
 

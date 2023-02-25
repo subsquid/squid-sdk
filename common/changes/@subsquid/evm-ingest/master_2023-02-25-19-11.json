@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "comment": "refactor `util-internal-http-client` import",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-ingest"
+}
