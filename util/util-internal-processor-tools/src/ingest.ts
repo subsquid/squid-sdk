@@ -108,7 +108,7 @@ export class Ingest<R, B extends BlockBase> {
 
             if (response.range.to < rangeEnd(req.range)) {
                 this.requests[0] = {
-                    range: {from: response.range.to, to: req.range.to},
+                    range: {from: response.range.to + 1, to: req.range.to},
                     request: req.request
                 }
             } else {

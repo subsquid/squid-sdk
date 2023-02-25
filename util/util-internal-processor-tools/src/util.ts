@@ -1,10 +1,6 @@
 
-let SQUID_ID: string | undefined
-
-
-export function getSquidId(): string {
-    if (SQUID_ID) return SQUID_ID
-    return SQUID_ID = process.env.SQUID_ID || `gen-${randomString(10)}`
+export function getOrGenerateSquidId(): string {
+    return process.env.SQUID_ID || `gen-${randomString(10)}`
 }
 
 
@@ -18,6 +14,15 @@ function randomString(len: number) {
 }
 
 
-export function getBlockId() {
-
+export function timeInterval(seconds: number): string {
+    if (seconds < 60) {
+        return Math.round(seconds) + 's'
+    }
+    let minutes = Math.ceil(seconds/60)
+    if (minutes < 60) {
+        return  minutes+'m'
+    }
+    let hours = Math.floor(minutes / 60)
+    minutes = minutes - hours * 60
+    return hours + 'h ' + minutes + 'm'
 }

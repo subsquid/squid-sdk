@@ -5,6 +5,7 @@ import {Database} from './database'
 import {BlockBase, DataBatch, DataSource, Ingest} from './ingest'
 import {Metrics} from './metrics'
 import {rangeEnd} from './range'
+import {timeInterval} from './util'
 
 
 export interface RunnerConfig<R, B, S> {
@@ -33,7 +34,7 @@ export class Runner<R, B extends BlockBase, S> {
             this.setLastProcessedBlock(heightAtStart)
         }
 
-        let requests = applyRangeBound(this.config.requests, {from: heightAtStart})
+        let requests = applyRangeBound(this.config.requests, {from: heightAtStart + 1})
         if (requests.length == 0) {
             this.printProcessingRange()
             log.info('nothing to do')
@@ -85,6 +86,14 @@ export class Runner<R, B extends BlockBase, S> {
             batch.fetchEndTime,
             mappingStartTime,
             mappingEndTime
+        )
+        this.config.log.info(
+            `${this.lastBlock} / ${this.config.metrics.getChainHeight()}, ` +
+            `rate: ${Math.round(this.config.metrics.getSyncSpeed())} blocks/sec, ` +
+            `mapping: ${Math.round(this.config.metrics.getMappingSpeed())} blocks/sec, ` +
+            `${Math.round(this.config.metrics.getMappingItemSpeed())} items/sec, ` +
+            `ingest: ${Math.round(this.config.metrics.getIngestSpeed())} blocks/sec, ` +
+            `eta: ${timeInterval(this.config.metrics.getSyncEtaSeconds())}`
         )
     }
 

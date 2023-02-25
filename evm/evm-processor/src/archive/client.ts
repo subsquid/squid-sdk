@@ -28,19 +28,19 @@ export class ArchiveDataSource implements DataSource<DataRequest, FullBlockData>
                 to: tx.to,
                 from: tx.from,
                 sighash: tx.sighash,
-                fieldSelection: {...fieldSelection, log: null}
+                fieldSelection: {...fieldSelection, log: undefined}
             })
         })
 
         request.request.logs?.forEach(log => {
             q.logs.push({
                 address: log.address,
-                topics: log.topics || [],
-                fieldSelection: fields?.log?.transaction ? fieldSelection : {...fieldSelection, transaction: null}
+                topics: log.filter || [],
+                fieldSelection: fields?.log?.transaction ? fieldSelection : {...fieldSelection, transaction: undefined}
             })
         })
 
-        let res: gw.BatchResponse = await this.http.post('/query', {json: q})
+        let res = await this.query(q)
 
         let lastBlock = res.nextBlock - 1
 
@@ -59,6 +59,8 @@ export class ArchiveDataSource implements DataSource<DataRequest, FullBlockData>
             }
         }
 
+        batch.blocks.sort((a, b) => a.header.height - b.header.height)
+
         if (batch.isHead && maybeLast(batch.blocks)?.header.height !== lastBlock) {
             // When we are on the head, always include the head block,
             // even if it doesn't contain requested data.
@@ -75,7 +77,7 @@ export class ArchiveDataSource implements DataSource<DataRequest, FullBlockData>
     }
 
     private async fetchBlockHeader(height: number, fieldSelection: gw.FieldSelection): Promise<EvmBlock> {
-        let q: gw.BatchRequest = {
+        let res = await this.query({
             fromBlock: height,
             toBlock: height,
             includeAllBlocks: true,
@@ -83,13 +85,14 @@ export class ArchiveDataSource implements DataSource<DataRequest, FullBlockData>
                 fieldSelection
             }],
             logs: []
-        }
-
-        let res: gw.BatchResponse = await this.http.post('/query', {json: q})
-
+        })
         assert(res.data.length == 1)
         assert(res.data[0].length == 1)
         return mapGatewayBlockHeader(res.data[0][0].block)
+    }
+
+    private query(q: gw.BatchRequest): Promise<gw.BatchResponse> {
+        return this.http.post('/query', {json: q}).catch(withErrorContext({archiveQuery: q}))
     }
 
     async getChainHeight(): Promise<number> {

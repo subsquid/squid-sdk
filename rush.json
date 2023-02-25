@@ -734,6 +734,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "eth-usdc-transfers",
+      "projectFolder": "test/eth-usdc-transfers",
+      "shouldPublish": false
+    },
+    {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
       "shouldPublish": false

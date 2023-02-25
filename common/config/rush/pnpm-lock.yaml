@@ -24,6 +24,7 @@ specifiers:
   '@rush-temp/data-test': file:./projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:./projects/e2e-test-project.tgz
   '@rush-temp/e2e-test-suite': file:./projects/e2e-test-suite.tgz
+  '@rush-temp/eth-usdc-transfers': file:./projects/eth-usdc-transfers.tgz
   '@rush-temp/evm-ingest': file:./projects/evm-ingest.tgz
   '@rush-temp/evm-processor': file:./projects/evm-processor.tgz
   '@rush-temp/evm-typegen': file:./projects/evm-typegen.tgz
@@ -151,6 +152,7 @@ dependencies:
   '@rush-temp/data-test': file:projects/data-test.tgz
   '@rush-temp/e2e-test-project': file:projects/e2e-test-project.tgz_supports-color@8.1.1
   '@rush-temp/e2e-test-suite': file:projects/e2e-test-suite.tgz_supports-color@8.1.1
+  '@rush-temp/eth-usdc-transfers': file:projects/eth-usdc-transfers.tgz_supports-color@8.1.1
   '@rush-temp/evm-ingest': file:projects/evm-ingest.tgz
   '@rush-temp/evm-processor': file:projects/evm-processor.tgz
   '@rush-temp/evm-typegen': file:projects/evm-typegen.tgz
@@ -5088,6 +5090,40 @@ packages:
     transitivePeerDependencies:
       - encoding
       - supports-color
+    dev: false
+
+  file:projects/eth-usdc-transfers.tgz_supports-color@8.1.1:
+    resolution: {integrity: sha512-y52r82rT4XKZWq6kPgNmIzIIQ6bkRJMsgzXaPRitjXn8mAWm1sb6HKvQOi2pc4BrkR5wo6RGhwN9Ra+sXDh7gQ==, tarball: file:projects/eth-usdc-transfers.tgz}
+    id: file:projects/eth-usdc-transfers.tgz
+    name: '@rush-temp/eth-usdc-transfers'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 16.18.12
+      dotenv: 16.0.3
+      ethers: 5.7.2
+      pg: 8.9.0
+      typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
+      typescript: 4.9.5
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - bufferutil
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+      - utf-8-validate
     dev: false
 
   file:projects/evm-ingest.tgz:

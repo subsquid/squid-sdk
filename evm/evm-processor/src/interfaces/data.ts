@@ -32,6 +32,7 @@ export const DEFAULT_FIELDS = {
     },
     log: {
         transactionIndex: true,
+        transactionHash: true,
         index: true,
         address: true,
         topics: true,
@@ -50,7 +51,7 @@ export const DEFAULT_FIELDS = {
 } as const
 
 
-export type DefaultFields = typeof DEFAULT_FIELDS
+type DefaultFields = typeof DEFAULT_FIELDS
 
 
 type ExcludeUndefined<T> = {
@@ -75,22 +76,22 @@ type Select<T, F> = {id: string} & AddOption<{
 }>
 
 
-export type BlockHeader<F extends Fields = DefaultFields> = Simplify<
+export type BlockHeader<F extends Fields = {}> = Simplify<
     Select<EvmBlock, MergeDefault<F['block'], DefaultFields['block']>>
 >
 
 
-export type Transaction<F extends Fields = DefaultFields> = Simplify<
+export type Transaction<F extends Fields = {}> = Simplify<
     Select<EvmTransaction, MergeDefault<F['transaction'], DefaultFields['transaction']>>
 >
 
 
-export type Log<F extends Fields = DefaultFields> = Simplify<
+export type Log<F extends Fields = {}> = Simplify<
     Select<EvmLog, Omit<MergeDefault<F['log'], DefaultFields['log']>, 'transaction'>>
 >
 
 
-export type LogItem<F extends Fields = DefaultFields> = Simplify<
+export type LogItem<F extends Fields = {}> = Simplify<
     {
         kind: 'log'
         log: Log<F>
@@ -105,16 +106,16 @@ export type LogItem<F extends Fields = DefaultFields> = Simplify<
 >
 
 
-export type TransactionItem<F extends Fields = DefaultFields> = {
+export type TransactionItem<F extends Fields = {}> = {
     kind: 'transaction',
     transaction: Transaction<F>
 }
 
 
-export type BlockItem<F extends Fields = DefaultFields> = LogItem<F> | TransactionItem<F>
+export type BlockItem<F extends Fields = {}> = LogItem<F> | TransactionItem<F>
 
 
-export type BlockData<F extends Fields = DefaultFields> = {
+export type BlockData<F extends Fields = {}> = {
     header: BlockHeader<F>
     items: BlockItem<F>[]
 }
@@ -149,7 +150,7 @@ export interface DataRequest {
 
 export interface LogItemRequest {
     address?: EvmAddress[]
-    topics?: EvmTopicSet
+    filter?: EvmTopicSet
 }
 
 

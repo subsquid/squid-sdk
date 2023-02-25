@@ -421,5 +421,5 @@ export class GraphqlError extends Error {
 export function isHttpConnectionError(err: unknown): boolean {
     return err instanceof nodeFetch.FetchError
         && err.type == 'system'
-        && err.message.startsWith('request to')
+        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
 }

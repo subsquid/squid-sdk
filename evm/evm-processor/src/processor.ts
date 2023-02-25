@@ -6,13 +6,16 @@ import {
     applyRangeBound,
     BatchRequest,
     Database,
+    getOrGenerateSquidId,
     mergeBatchRequests,
     Metrics,
     Range,
     Runner
 } from '@subsquid/util-internal-processor-tools'
+import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import {ArchiveDataSource} from './archive/client'
-import {BlockData, DataRequest, DefaultFields, EvmTopicSet, Fields} from './interfaces/data'
+import {Chain} from './interfaces/chain'
+import {BlockData, DataRequest, EvmTopicSet, Fields} from './interfaces/data'
 
 
 export interface DataSource {
@@ -35,7 +38,7 @@ export interface LogOptions {
     /**
      * EVM topic filter as defined by https://docs.ethers.io/v5/concepts/events/#events--filters
      */
-    topics?: EvmTopicSet
+    filter?: EvmTopicSet
     /**
      * Block range
      */
@@ -63,7 +66,8 @@ export interface TransactionOptions {
 }
 
 
-export interface DataHandlerContext<Store, F extends Fields = DefaultFields> {
+export interface DataHandlerContext<Store, F extends Fields = {}> {
+    _chain: Chain
     log: Logger
     store: Store
     blocks: BlockData<F>[]
@@ -74,7 +78,7 @@ export interface DataHandlerContext<Store, F extends Fields = DefaultFields> {
 /**
  * Provides methods to configure and launch data processing.
  */
-export class EvmBatchProcessor<F extends Fields = DefaultFields> {
+export class EvmBatchProcessor<F extends Fields = {}> {
     private requests: BatchRequest<DataRequest>[] = []
     private src?: DataSource
     private blockRange?: Range
@@ -103,7 +107,7 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
         this.add({
             logs: [{
                 address: toRequestList(options.address),
-                topics: toRequestList(options.topics)
+                filter: options.filter?.length ? options.filter : undefined
             }]
         }, options.range)
         return this
@@ -186,6 +190,11 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
         return createLogger('sqd:processor')
     }
 
+    @def
+    private getSquidId(): string {
+        return getOrGenerateSquidId()
+    }
+
     private getArchiveEndpoint(): string {
         let url = this.src?.archive
         if (url == null) {
@@ -195,9 +204,36 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
     }
 
     @def
+    private getChainClient(): RpcClient {
+        let url = this.src?.chain
+        if (url == null) {
+            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
+        }
+        return new RpcClient({
+            endpoints: [{url, capacity: 5}],
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            requestTimeout: 20_000,
+            log: this.getLogger().child('rpc')
+        })
+    }
+
+    @def
+    private getChain(): Chain {
+        let self = this
+        return {
+            get client() {
+                return self.getChainClient()
+            }
+        }
+    }
+
+    @def
     private getArchiveDataSource(): ArchiveDataSource {
         let http = new HttpClient({
             baseUrl: this.getArchiveEndpoint(),
+            headers: {
+                'x-squid-id': this.getSquidId()
+            },
             agent: new HttpAgent({
                 keepAlive: true
             }),
@@ -257,8 +293,11 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
                 log
             })
 
+            let chain = this.getChain()
+
             runner.processBatch = function(store, batch) {
                 return handler({
+                    _chain: chain,
                     log: log.child('mapping', {batchRange: batch.range}),
                     store,
                     blocks: batch.blocks as any,
@@ -273,13 +312,13 @@ export class EvmBatchProcessor<F extends Fields = DefaultFields> {
 }
 
 
-function toRequestList<T>(val?: T | T[]): T[] | undefined {
+function toRequestList(val?: string | string[]): string[] | undefined {
     if (val == null) return undefined
     if (!Array.isArray(val)) {
         val = [val]
     }
     if (val.length == 0) return undefined
-    return val
+    return val.map(s => s.toLowerCase())
 }
 
 

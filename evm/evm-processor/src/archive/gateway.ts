@@ -31,9 +31,9 @@ export interface TransactionRequest {
 
 
 export interface FieldSelection {
-    block?: BlockFieldSelection | null
-    transaction?: TransactionFieldSelection | null
-    log?: LogFieldSelection | null
+    block?: BlockFieldSelection
+    transaction?: TransactionFieldSelection
+    log?: LogFieldSelection
 }
 
 
