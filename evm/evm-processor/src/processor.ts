@@ -195,6 +195,11 @@ export class EvmBatchProcessor<F extends Fields = {}> {
         return getOrGenerateSquidId()
     }
 
+    @def
+    private getMetrics(): Metrics {
+        return new Metrics()
+    }
+
     private getArchiveEndpoint(): string {
         let url = this.src?.archive
         if (url == null) {
@@ -209,12 +214,14 @@ export class EvmBatchProcessor<F extends Fields = {}> {
         if (url == null) {
             throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
         }
-        return new RpcClient({
+        let client = new RpcClient({
             endpoints: [{url, capacity: 5}],
             retryAttempts: Number.MAX_SAFE_INTEGER,
             requestTimeout: 20_000,
             log: this.getLogger().child('rpc')
         })
+        this.getMetrics().addChainRpcMetrics(client)
+        return client
     }
 
     @def
@@ -289,7 +296,7 @@ export class EvmBatchProcessor<F extends Fields = {}> {
                 requests: this.getBatchRequests(),
                 src: this.getArchiveDataSource(),
                 srcPollInterval: 2000,
-                metrics: new Metrics(),
+                metrics: this.getMetrics(),
                 prometheusPort: this.prometheusPort || 0,
                 log
             })
