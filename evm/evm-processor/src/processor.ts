@@ -237,6 +237,7 @@ export class EvmBatchProcessor<F extends Fields = {}> {
             agent: new HttpAgent({
                 keepAlive: true
             }),
+            httpTimeout: 20_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('archive')
         })

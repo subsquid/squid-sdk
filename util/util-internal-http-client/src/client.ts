@@ -95,7 +95,7 @@ export class HttpClient {
             if (res instanceof Error || !res.ok) {
                 if (retryAttempts > retries && this.isRetryableError(req, res)) {
                     let pause = retrySchedule.length
-                        ? retrySchedule[Math.max(retries, retrySchedule.length - 1)]
+                        ? retrySchedule[Math.min(retries, retrySchedule.length - 1)]
                         : 1000
                     retries += 1
                     this.beforeRetryPause(req, res, pause)
