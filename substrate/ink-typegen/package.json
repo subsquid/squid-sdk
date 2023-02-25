@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ink-typegen",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Generates TypeScript API for decoding ink! events, messages and constructors",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
