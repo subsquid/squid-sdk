@@ -56,7 +56,7 @@ export class HttpClient {
     private agent: AgentProvider
     private retrySchedule: number[]
     private retryAttempts: number
-    private httpTimeout?: number
+    private httpTimeout: number
     private requestCounter = 0
 
     constructor(options: HttpClientOptions = {}) {
@@ -66,7 +66,7 @@ export class HttpClient {
         this.agent = options.agent || defaultAgentProvider
         this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
         this.retryAttempts = options.retryAttempts || 0
-        this.httpTimeout = options.httpTimeout
+        this.httpTimeout = options.httpTimeout ?? 20000
     }
 
     get<T=any>(url: string, options?: RequestOptions): Promise<T> {
@@ -95,7 +95,7 @@ export class HttpClient {
             if (res instanceof Error || !res.ok) {
                 if (retryAttempts > retries && this.isRetryableError(req, res)) {
                     let pause = retrySchedule.length
-                        ? retrySchedule[Math.max(retries, retrySchedule.length - 1)]
+                        ? retrySchedule[Math.min(retries, retrySchedule.length - 1)]
                         : 1000
                     retries += 1
                     this.beforeRetryPause(req, res, pause)
@@ -421,5 +421,5 @@ export class GraphqlError extends Error {
 export function isHttpConnectionError(err: unknown): boolean {
     return err instanceof nodeFetch.FetchError
         && err.type == 'system'
-        && err.message.startsWith('request to')
+        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
 }

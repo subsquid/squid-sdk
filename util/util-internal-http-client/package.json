@@ -7,7 +7,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/client.js",
+  "main": "lib/index.js",
   "files": [
     "lib",
     "src",
