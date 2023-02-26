@@ -75,6 +75,9 @@ export interface DataHandlerContext<Store, F extends Fields = {}> {
 }
 
 
+export type EvmBatchProcessorFields<T> = T extends EvmBatchProcessor<infer F> ? F : never
+
+
 /**
  * Provides methods to configure and launch data processing.
  */
