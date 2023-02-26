@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "2.1.1",
+      "tag": "@subsquid/evm-typegen_v2.1.1",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-client\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/evm-typegen_v2.1.0",
       "date": "Sun, 19 Feb 2023 09:15:04 GMT",

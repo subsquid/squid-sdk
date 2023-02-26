@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 19 Feb 2023 09:15:04 GMT and should not be manually modified.
+This log was last generated on Sat, 25 Feb 2023 19:16:49 GMT and should not be manually modified.
+
+## 2.4.1
+Sat, 25 Feb 2023 19:16:49 GMT
+
+### Patches
+
+- refactor `util-internal-http-client` import
 
 ## 2.4.0
 Sun, 19 Feb 2023 09:15:04 GMT

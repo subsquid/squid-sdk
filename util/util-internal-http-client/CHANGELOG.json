@@ -2,6 +2,29 @@
   "name": "@subsquid/util-internal-http-client",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-http-client_v0.1.0",
+      "date": "Sat, 25 Feb 2023 19:16:49 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "export `AgentProvider` interface and `HttpAgent` class"
+          },
+          {
+            "comment": "use 20 second http request timeout by default"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix backoff pause time"
+          },
+          {
+            "comment": "refine `isHttpConnectionError()`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal-http-client_v0.0.1",
       "date": "Sun, 12 Feb 2023 12:16:19 GMT",

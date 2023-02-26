@@ -56,7 +56,7 @@ export class HttpClient {
     private agent: AgentProvider
     private retrySchedule: number[]
     private retryAttempts: number
-    private httpTimeout?: number
+    private httpTimeout: number
     private requestCounter = 0
 
     constructor(options: HttpClientOptions = {}) {
@@ -66,7 +66,7 @@ export class HttpClient {
         this.agent = options.agent || defaultAgentProvider
         this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
         this.retryAttempts = options.retryAttempts || 0
-        this.httpTimeout = options.httpTimeout
+        this.httpTimeout = options.httpTimeout ?? 20000
     }
 
     get<T=any>(url: string, options?: RequestOptions): Promise<T> {

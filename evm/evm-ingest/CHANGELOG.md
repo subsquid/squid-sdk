@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-ingest
 
-This log was last generated on Sun, 12 Feb 2023 12:16:19 GMT and should not be manually modified.
+This log was last generated on Sat, 25 Feb 2023 19:16:49 GMT and should not be manually modified.
+
+## 0.0.6
+Sat, 25 Feb 2023 19:16:49 GMT
+
+### Patches
+
+- refactor `util-internal-http-client` import
 
 ## 0.0.5
 Sun, 12 Feb 2023 12:16:19 GMT

@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@subsquid/graphql-server": "^3.3.2",
-    "@subsquid/substrate-processor": "^2.4.0",
+    "@subsquid/substrate-processor": "^2.4.1",
     "@subsquid/typeorm-migration": "^0.1.6",
     "@subsquid/typeorm-store": "^0.2.2",
     "@gear-js/api": "^0.24.2",

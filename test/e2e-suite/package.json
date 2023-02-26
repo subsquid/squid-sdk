@@ -11,7 +11,7 @@
     "@polkadot/keyring": "^8.7.1",
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-hex": "^0.0.2",
-    "@subsquid/util-internal-http-client": "^0.0.1",
+    "@subsquid/util-internal-http-client": "^0.1.0",
     "dotenv": "^16.0.3",
     "gql-test-client": "^0.0.0",
     "mocha": "^10.2.0",
