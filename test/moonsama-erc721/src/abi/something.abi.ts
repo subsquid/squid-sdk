@@ -2,8 +2,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "proposals",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -65,8 +64,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "approve",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -87,8 +85,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "minTokensToCreate",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -100,8 +97,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "rewardAccount",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -113,8 +109,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "daoCreator",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -126,8 +121,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "totalSupply",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -139,8 +133,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "divisor",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -153,8 +146,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "extraBalance",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -167,8 +159,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "executeProposal",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "uint256",
@@ -190,8 +181,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "transferFrom",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -217,8 +207,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "unblockMe",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [],
         "outputs": [
             {
@@ -229,8 +218,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "totalRewardToken",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -242,8 +230,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "actualBalance",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -256,8 +243,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "closingTime",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -269,8 +255,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "allowedRecipients",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -287,8 +272,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "transferWithoutReward",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -310,8 +294,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "refund",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [],
         "outputs": []
     },
@@ -319,8 +302,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "newProposal",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -357,8 +339,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "DAOpaidOut",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -374,8 +355,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "minQuorumDivisor",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -388,8 +368,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "newContract",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -401,8 +380,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "balanceOf",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -421,8 +399,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "changeAllowedRecipients",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -444,8 +421,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "halveMinQuorum",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [],
         "outputs": [
             {
@@ -457,8 +433,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "paidOut",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -475,8 +450,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "splitDAO",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "uint256",
@@ -497,8 +471,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "DAOrewardAccount",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -510,8 +483,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "proposalDeposit",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -523,8 +495,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "numberOfProposals",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -537,8 +508,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "lastTimeMinQuorumMet",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -551,8 +521,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "retrieveDAOReward",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "bool",
@@ -570,8 +539,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "receiveEther",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [],
         "outputs": [
             {
@@ -583,8 +551,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "transfer",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -605,8 +572,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "isFueled",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -619,8 +585,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "createTokenProxy",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -637,8 +602,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "getNewDAOAddress",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -657,8 +621,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "vote",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "uint256",
@@ -680,8 +643,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "getMyReward",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [],
         "outputs": [
             {
@@ -693,8 +655,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "rewardToken",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -711,8 +672,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "transferFromWithoutReward",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
@@ -737,8 +697,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "allowance",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -761,8 +720,7 @@ export const ABI_JSON = [
         "type": "function",
         "name": "changeProposalDeposit",
         "constant": false,
-        "stateMutability": "payable",
-        "payable": true,
+        "payable": false,
         "inputs": [
             {
                 "type": "uint256",
@@ -774,8 +732,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "blocked",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -791,8 +748,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "curator",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -804,8 +760,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "checkProposalCode",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [
             {
@@ -835,8 +790,7 @@ export const ABI_JSON = [
     {
         "type": "function",
         "name": "privateCreation",
-        "constant": true,
-        "stateMutability": "view",
+        "constant": false,
         "payable": false,
         "inputs": [],
         "outputs": [
@@ -847,8 +801,8 @@ export const ABI_JSON = [
     },
     {
         "type": "constructor",
-        "stateMutability": "payable",
-        "payable": true,
+        "stateMutability": "undefined",
+        "payable": false,
         "inputs": [
             {
                 "type": "address",
