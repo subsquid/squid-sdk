@@ -1,4 +1,4 @@
-import {EventFragment, FunctionFragment, Interface} from '@ethersproject/abi'
+import * as ethers from 'ethers'
 import {Logger} from '@subsquid/logger'
 import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
@@ -8,7 +8,7 @@ import {getFullTupleType, getReturnType, getStructType, getTupleType, getType} f
 export class Typegen {
     private out: FileOutput
 
-    constructor(private dest: OutDir, private abi: Interface, private basename: string, private log: Logger) {
+    constructor(private dest: OutDir, private abi: ethers.Interface, private basename: string, private log: Logger) {
         this.out = dest.file(basename + '.ts')
     }
 
@@ -17,7 +17,7 @@ export class Typegen {
         this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
         this.out.line(`import {ABI_JSON} from './${this.basename}.abi'`)
         this.out.line()
-        this.out.line("export const abi = new ethers.utils.Interface(ABI_JSON);")
+        this.out.line("export const abi = new ethers.Interface(ABI_JSON);")
 
         this.generateEvents()
         this.generateFunctions()
@@ -30,7 +30,7 @@ export class Typegen {
 
     private writeAbi() {
         let out = this.dest.file(this.basename + '.abi.ts')
-        let json = this.abi.format('json') as string
+        let json = this.abi.formatJson()
         json = JSON.stringify(JSON.parse(json), null, 4)
         out.line(`export const ABI_JSON = ${json}`)
         out.write()
@@ -38,33 +38,32 @@ export class Typegen {
     }
 
     private generateEvents() {
-        let events = Object.values(this.abi.events)
+        let events = this.getEvents()
         if (events.length == 0) {
             return
         }
         this.out.line()
         this.out.block(`export const events =`, () => {
             for (let e of events) {
-                let topic = this.abi.getEventTopic(e)
                 this.out.line(`${this.getPropName(e)}: new LogEvent<${getFullTupleType(e.inputs)}>(`)
-                this.out.indentation(() => this.out.line(`abi, '${topic}'`))
+                this.out.indentation(() => this.out.line(`abi, '${e.topicHash}'`))
                 this.out.line('),')
             }
         })
     }
 
     private generateFunctions() {
-        let functions = Object.values(this.abi.functions)
+        let functions = this.getFunctions()
         if (functions.length == 0) {
             return
         }
         this.out.line()
         this.out.block(`export const functions =`, () => {
             for (let f of functions) {
-                let sighash = this.abi.getSighash(f)
+                let sighash = f.selector
                 let pArgs = getTupleType(f.inputs)
                 let pArgStruct = getStructType(f.inputs)
-                let pResult = getReturnType(f.outputs || [])
+                let pResult = getReturnType(f.outputs)
                 this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pArgStruct}, ${pResult}>(`)
                 this.out.indentation(() => this.out.line(`abi, '${sighash}'`))
                 this.out.line('),')
@@ -75,7 +74,7 @@ export class Typegen {
     private generateContract() {
         this.out.line()
         this.out.block(`export class Contract extends ContractBase`, () => {
-            let functions = Object.values(this.abi.functions)
+            let functions = this.getFunctions()
             for (let f of functions) {
                 if (f.constant && f.outputs?.length) {
                     this.out.line()
@@ -89,7 +88,7 @@ export class Typegen {
         })
     }
 
-    private getRef(item: EventFragment | FunctionFragment): string {
+    private getRef(item: ethers.EventFragment | ethers.FunctionFragment): string {
         let key = this.getPropName(item)
         if (key[0] == "'") {
             return `[${key}]`
@@ -98,7 +97,7 @@ export class Typegen {
         }
     }
 
-    private getPropName(item: EventFragment | FunctionFragment): string {
+    private getPropName(item: ethers.EventFragment | ethers.FunctionFragment): string {
         if (this.getOverloads(item) == 1) {
             return item.name
         } else {
@@ -106,8 +105,8 @@ export class Typegen {
         }
     }
 
-    private getOverloads(item: EventFragment | FunctionFragment): number {
-        if (item instanceof EventFragment) {
+    private getOverloads(item: ethers.EventFragment | ethers.FunctionFragment): number {
+        if (item instanceof ethers.EventFragment) {
             return this.eventOverloads()[item.name]
         } else {
             return this.functionOverloads()[item.name]
@@ -117,7 +116,7 @@ export class Typegen {
     @def
     private functionOverloads(): Record<string, number> {
         let overloads: Record<string, number> = {}
-        for (let item of Object.values(this.abi.functions)) {
+        for (let item of this.getFunctions()) {
             overloads[item.name] = (overloads[item.name] || 0) + 1
         }
         return overloads
@@ -126,9 +125,19 @@ export class Typegen {
     @def
     private eventOverloads(): Record<string, number> {
         let overloads: Record<string, number> = {}
-        for (let item of Object.values(this.abi.events)) {
+        for (let item of this.getEvents()) {
             overloads[item.name] = (overloads[item.name] || 0) + 1
         }
         return overloads
+    }
+
+    @def
+    private getFunctions(): ethers.FunctionFragment[] {
+        return this.abi.fragments.filter(f => f.type === 'function') as ethers.FunctionFragment[]
+    }
+
+    @def
+    private getEvents(): ethers.EventFragment[] {
+        return this.abi.fragments.filter(f => f.type === 'event') as ethers.EventFragment[]
     }
 }

@@ -1,12 +1,11 @@
-import {Interface} from '@ethersproject/abi'
-import {isAddress} from '@ethersproject/address'
+import * as fs from 'fs'
+import * as ethers from 'ethers'
+import path from 'path'
+import {InvalidArgumentError, program} from 'commander'
 import {createLogger} from '@subsquid/logger'
 import {runProgram, wait} from '@subsquid/util-internal'
 import {OutDir} from '@subsquid/util-internal-code-printer'
 import * as validator from '@subsquid/util-internal-commander'
-import {InvalidArgumentError, program} from 'commander'
-import * as fs from 'fs'
-import path from 'path'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
 
@@ -88,7 +87,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     for (let spec of specs) {
         LOG.info(`processing ${spec.src}`)
         let abi_json = await read(spec, opts)
-        let abi = new Interface(abi_json)
+        let abi = new ethers.Interface(abi_json)
         new Typegen(dest, abi, spec.name, LOG).generate()
     }
 }, err => LOG.fatal(err))
@@ -160,7 +159,7 @@ function specArgument(value: string, prev?: Spec[]): Spec[] {
 function parseSpec(spec: string): Spec {
     let [src, fragment] = splitFragment(spec)
     if (src.startsWith('0x')) {
-        if (!isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
+        if (!ethers.isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
         return {
             kind: 'address',
             src,
