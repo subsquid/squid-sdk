@@ -4,7 +4,6 @@ specifiers:
   '@apollo/utils.keyvadapter': ~1.1.2
   '@apollo/utils.keyvaluecache': ~1.0.2
   '@ethersproject/bytes': ^5.7.0
-  '@ethersproject/transactions': ^5.7.0
   '@exodus/schemasafe': ^1.0.0-rc.9
   '@gear-js/api': ^0.24.2
   '@graphql-tools/merge': ^8
@@ -126,7 +125,6 @@ dependencies:
   '@apollo/utils.keyvadapter': 1.1.2
   '@apollo/utils.keyvaluecache': 1.0.2
   '@ethersproject/bytes': 5.7.0
-  '@ethersproject/transactions': 5.7.0
   '@exodus/schemasafe': 1.0.0-rc.9
   '@gear-js/api': 0.24.2_@polkadot+api@7.15.1
   '@graphql-tools/merge': 8.3.6_graphql@15.8.0
@@ -248,6 +246,10 @@ packages:
 
   /@adraffy/ens-normalize/1.8.9:
     resolution: {integrity: sha512-93OmGCV0vO8+JQ3FHG+gZk/MPHzzMPDRiCiFcCQNTCnHaaxsacO3ScTPGlu2wX2dOtgfalbchPcw1cOYYjHCYQ==}
+    dev: false
+
+  /@adraffy/ens-normalize/1.9.0:
+    resolution: {integrity: sha512-iowxq3U30sghZotgl4s/oJRci6WPBfNO5YYgk2cIOMCHr3LeGPcsZjCEr+33Q4N+oV3OABDAtA+pyvWjbvBifQ==}
     dev: false
 
   /@apollo/protobufjs/1.2.4:
@@ -2495,6 +2497,21 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@adraffy/ens-normalize': 1.8.9
+      '@noble/hashes': 1.1.2
+      '@noble/secp256k1': 1.7.1
+      aes-js: 4.0.0-beta.3
+      tslib: 2.4.0
+      ws: 8.5.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /ethers/6.2.0:
+    resolution: {integrity: sha512-F/RiSDU8d7k9wpt6iMfJyGSuHM3/FmzjZwQkGwfLxLj5aaoAagjBMIyAg96FL2LJEerRHBRenTep6+bF48Ei1w==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@adraffy/ens-normalize': 1.9.0
       '@noble/hashes': 1.1.2
       '@noble/secp256k1': 1.7.1
       aes-js: 4.0.0-beta.3
@@ -4813,7 +4830,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-4jWC3pSgQpozpicZAfCRarmConEjmpJP2F/VcDSmSOQie8Iwk44icqZeW+qy7Mx4r5Wddus9OSw0Rq65OmSthA==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-6qvJhTAmUTpXeQdTQG8pvjHdHFmNoBTP8dYkzUrPuxpnTt/4eH+a1RuJWFX/A0SknIyEojM42IBrd404DSgisw==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -4823,7 +4840,7 @@ packages:
       '@subsquid/substrate-frontier-evm': 0.0.1
       '@types/node': 16.18.12
       dotenv: 16.0.3
-      ethers: 6.1.0
+      ethers: 6.2.0
       pg: 8.9.0
       typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5
@@ -4998,7 +5015,7 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-n/1THNOJ5/tdc5ZBWrhtibhU/y8DcmTJNoLIJaw6jdFiT/W7piEOtATHzm+ggXFEF128D03X8C34tMK2D1YOKA==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-ERJnq/Ioe39OF1BIUdps/2XP26BNXkm06xgk+HRj5BNk5K7OZI2B0WhaapKpmLaz8VAsuYdP1Q+QGOe1uvWDJw==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
@@ -5007,7 +5024,7 @@ packages:
       '@types/node': 16.18.12
       '@types/node-fetch': 2.6.2
       commander: 10.0.0
-      ethers: 6.1.0
+      ethers: 6.2.0
       node-fetch: 2.6.8
       typescript: 4.9.5
     transitivePeerDependencies:
@@ -5016,16 +5033,20 @@ packages:
     dev: false
 
   file:projects/frontier.tgz:
-    resolution: {integrity: sha512-GN1ekgvuDNscUoBTwfL/Y7PjTWPMbwRj4zeGmoqveE4P8kK9Omm5MhWBT/GF3Ne+OooUQ3++YMLBKV8zKPKTlg==, tarball: file:projects/frontier.tgz}
+    resolution: {integrity: sha512-Qi9vwfo1edq2/Y2lG5h/GCETRFlWQs29RdUQwnrhVv6Nyh7W25lqrrXBUXcVM+7RixqGPIYR5fcmys9I7y/vwQ==, tarball: file:projects/frontier.tgz}
     name: '@rush-temp/frontier'
     version: 0.0.0
     dependencies:
       '@ethersproject/transactions': 5.7.0
       '@types/mocha': 10.0.1
       '@types/node': 16.18.12
+      ethers: 6.2.0
       expect: 29.4.2
       mocha: 10.2.0
       typescript: 4.9.5
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: false
 
   file:projects/gear-nft.tgz_f3112c9ccceff8ba6e1ae691573f7615:
@@ -5084,7 +5105,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-2VqM8z4w0MvPGMTxOWNSlMdPOERcvKvvJfGIK5LhkWC/MwaRD6Vc6PbBfZ4+Ztm34MTTIxXWzacp+ReIzQfqEQ==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-6+Tb59Rd3bYt3BTpWIznGKvLRJ+7YxlwD6YOPkkFSLf/IQjtC7bc49db9OJaV1NykDmQSM6kBencS1DKmLqH8A==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -5114,7 +5135,7 @@ packages:
       mocha: 10.2.0
       pg: 8.9.0
       type-graphql: 1.2.0-rc.1_c5d678748bb646779c19388363facc5c
-      typeorm: 0.3.12_pg@8.9.0+supports-color@8.1.1
+      typeorm: 0.3.11_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5
       ws: 8.12.0
     transitivePeerDependencies:
@@ -5164,7 +5185,7 @@ packages:
     dev: false
 
   file:projects/karura-erc20.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-4C5T3jwBbugTX9xD2ABhm8MVoPDzdZ16cfD2/0sVK3Ih3y5U7pyse7JEUZZzdFUuDQQlP26kBcJRzWIHWfZFyw==, tarball: file:projects/karura-erc20.tgz}
+    resolution: {integrity: sha512-g46ntP96wnKvz0Ri50e90bCnLKyivlUEgDw4QxwQgKIBTTMZiPHZJUwRHiCKL1GkvGTrupdEBOo1KSzSGFK2Kg==, tarball: file:projects/karura-erc20.tgz}
     id: file:projects/karura-erc20.tgz
     name: '@rush-temp/karura-erc20'
     version: 0.0.0
@@ -5172,7 +5193,7 @@ packages:
       '@subsquid/graphql-server': 1.1.0_e2ac5d8a97d9dfbb6dd844d95caf5ef1
       '@types/node': 16.18.12
       dotenv: 16.0.3
-      ethers: 6.1.0
+      ethers: 6.2.0
       pg: 8.9.0
       typeorm: 0.3.11_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5
@@ -5213,7 +5234,7 @@ packages:
     dev: false
 
   file:projects/moonsama-erc721.tgz_supports-color@8.1.1:
-    resolution: {integrity: sha512-5aP4J26WPO6M+AWCDU1KC1VCIqCNtAw3EZ+AS6wtDAgOMuqlAe03Cgl8xGo1uxtZgX4Wv972JE06olsRWNixjw==, tarball: file:projects/moonsama-erc721.tgz}
+    resolution: {integrity: sha512-h1wFMYNTdX4aeOMLnfEkCWrMhqh76sh1i00a9uc1zQ9njHxYAFQi6pNlSWnxckEYfaZydoQSyFzjHS9LsBs/NA==, tarball: file:projects/moonsama-erc721.tgz}
     id: file:projects/moonsama-erc721.tgz
     name: '@rush-temp/moonsama-erc721'
     version: 0.0.0
@@ -5221,7 +5242,7 @@ packages:
       '@subsquid/substrate-frontier-evm': 0.0.1
       '@types/node': 16.18.12
       dotenv: 16.0.3
-      ethers: 6.1.0
+      ethers: 6.2.0
       pg: 8.9.0
       typeorm: 0.3.11_pg@8.9.0+supports-color@8.1.1
       typescript: 4.9.5

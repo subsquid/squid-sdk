@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {Call, ChainContext} from './interfaces'
 import {registry} from './registry'
-import {serialize, parse} from '@ethersproject/transactions'
+import * as ethers from 'ethers'
 import {normalizeAccessListItem, normalizeU256} from './util'
 import {assertNotNull} from '@subsquid/util-internal'
 
@@ -97,37 +97,30 @@ interface LegacyTransactionRaw {
 }
 
 function normalizeLegacyTransaction(raw: LegacyTransactionRaw): LegacyTransaction {
-    const serializedTransaction = serialize(
-        {
-            to: raw.action.value,
-            nonce: Number(normalizeU256(raw.nonce)),
-            gasLimit: normalizeU256(raw.gasLimit),
-            gasPrice: normalizeU256(raw.gasPrice),
-            value: normalizeU256(raw.value),
-            data: raw.input,
-            type: TransactionType.Legacy,
-        },
-        {
-            v: Number(raw.signature.v),
-            s: raw.signature.s,
-            r: raw.signature.r,
-        }
-    )
-    const tx = parse(serializedTransaction)
+    const tx = ethers.Transaction.from({
+        to: raw.action.value,
+        nonce: Number(normalizeU256(raw.nonce)),
+        gasLimit: normalizeU256(raw.gasLimit),
+        gasPrice: normalizeU256(raw.gasPrice),
+        value: normalizeU256(raw.value),
+        data: raw.input,
+        type: TransactionType.Legacy,
+        signature: raw.signature,
+    })
 
     return {
         hash: assertNotNull(tx.hash),
         to: tx.to?.toLowerCase(),
         from: assertNotNull(tx.from).toLowerCase(),
         nonce: BigInt(tx.nonce),
-        gasLimit: tx.gasLimit.toBigInt(),
+        gasLimit: tx.gasLimit,
         input: tx.data,
-        value: tx.value.toBigInt(),
-        r: assertNotNull(tx.r),
-        s: assertNotNull(tx.s),
-        v: BigInt(assertNotNull(tx.v)),
+        value: tx.value,
+        r: assertNotNull(tx.signature?.r),
+        s: assertNotNull(tx.signature?.s),
+        v: BigInt(assertNotNull(tx.signature?.networkV)),
         type: TransactionType.Legacy,
-        gasPrice: assertNotNull(tx.gasPrice).toBigInt(),
+        gasPrice: assertNotNull(tx.gasPrice),
     }
 }
 
@@ -147,41 +140,38 @@ interface EIP1559TransactionRaw {
 }
 
 function normalizeEIP1559Transaction(raw: EIP1559TransactionRaw): EIP1559Transaction {
-    const serializedTransaction = serialize(
-        {
-            to: raw.action.value,
-            chainId: Number(raw.chainId),
-            nonce: Number(normalizeU256(raw.nonce)),
-            gasLimit: normalizeU256(raw.gasLimit),
-            maxFeePerGas: normalizeU256(raw.maxFeePerGas),
-            maxPriorityFeePerGas: normalizeU256(raw.maxPriorityFeePerGas),
-            value: normalizeU256(raw.value),
-            accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
-            data: raw.input,
-            type: TransactionType.EIP1559,
-        },
-        {
-            v: Number(raw.oddYParity),
+    const tx = ethers.Transaction.from({
+        to: raw.action.value,
+        chainId: Number(raw.chainId),
+        nonce: Number(normalizeU256(raw.nonce)),
+        gasLimit: normalizeU256(raw.gasLimit),
+        maxFeePerGas: normalizeU256(raw.maxFeePerGas),
+        maxPriorityFeePerGas: normalizeU256(raw.maxPriorityFeePerGas),
+        value: normalizeU256(raw.value),
+        accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+        data: raw.input,
+        type: TransactionType.EIP1559,
+        signature: {
             s: raw.s,
             r: raw.r,
-        }
-    )
-    const tx = parse(serializedTransaction)
+            yParity: raw.oddYParity ? 1 : 0,
+        },
+    })
 
     return {
         hash: assertNotNull(tx.hash),
         to: tx.to?.toLowerCase(),
         from: assertNotNull(tx.from).toLowerCase(),
         nonce: BigInt(tx.nonce),
-        gasLimit: tx.gasLimit.toBigInt(),
+        gasLimit: tx.gasLimit,
         input: tx.data,
-        value: tx.value.toBigInt(),
-        r: assertNotNull(tx.r),
-        s: assertNotNull(tx.s),
-        v: BigInt(assertNotNull(tx.v)),
+        value: tx.value,
+        r: assertNotNull(tx.signature?.r),
+        s: assertNotNull(tx.signature?.s),
+        v: BigInt(assertNotNull(tx.signature?.yParity)),
         type: TransactionType.EIP1559,
-        maxFeePerGas: assertNotNull(tx.maxFeePerGas).toBigInt(),
-        maxPriorityFeePerGas: assertNotNull(tx.maxPriorityFeePerGas).toBigInt(),
+        maxFeePerGas: assertNotNull(tx.maxFeePerGas),
+        maxPriorityFeePerGas: assertNotNull(tx.maxPriorityFeePerGas),
         accessList: assertNotNull(tx.accessList),
         chainId: BigInt(tx.chainId),
     }
@@ -202,39 +192,36 @@ interface EIP2930TransactionRaw {
 }
 
 function normalizeEIP2930Transaction(raw: EIP2930TransactionRaw): EIP2930Transaction {
-    const serializedTransaction = serialize(
-        {
-            to: raw.action.value,
-            chainId: Number(raw.chainId),
-            nonce: Number(normalizeU256(raw.nonce)),
-            gasLimit: normalizeU256(raw.gasLimit),
-            gasPrice: normalizeU256(raw.gasPrice),
-            value: normalizeU256(raw.value),
-            accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
-            data: raw.input,
-            type: TransactionType.EIP2930,
-        },
-        {
-            v: Number(raw.oddYParity),
+    const tx = ethers.Transaction.from({
+        to: raw.action.value,
+        chainId: Number(raw.chainId),
+        nonce: Number(normalizeU256(raw.nonce)),
+        gasLimit: normalizeU256(raw.gasLimit),
+        gasPrice: normalizeU256(raw.gasPrice),
+        value: normalizeU256(raw.value),
+        accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+        data: raw.input,
+        type: TransactionType.EIP2930,
+        signature: {
             s: raw.s,
             r: raw.r,
-        }
-    )
-    const tx = parse(serializedTransaction)
+            yParity: raw.oddYParity ? 1 : 0,
+        },
+    })
 
     return {
         hash: assertNotNull(tx.hash),
         to: tx.to?.toLowerCase(),
         from: assertNotNull(tx.from).toLowerCase(),
         nonce: BigInt(tx.nonce),
-        gasLimit: tx.gasLimit.toBigInt(),
+        gasLimit: tx.gasLimit,
         input: tx.data,
-        value: tx.value.toBigInt(),
-        r: assertNotNull(tx.r),
-        s: assertNotNull(tx.s),
-        v: BigInt(assertNotNull(tx.v)),
+        value: tx.value,
+        r: assertNotNull(tx.signature?.r),
+        s: assertNotNull(tx.signature?.s),
+        v: BigInt(assertNotNull(tx.signature?.yParity)),
         type: TransactionType.EIP2930,
-        gasPrice: assertNotNull(tx.gasPrice).toBigInt(),
+        gasPrice: assertNotNull(tx.gasPrice),
         accessList: assertNotNull(tx.accessList),
         chainId: BigInt(tx.chainId),
     }
