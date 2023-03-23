@@ -42,7 +42,8 @@ Object.assign(BigDecimal, Base)
 BigDecimal.isBigDecimal = isBigDecimal
 BigDecimal.prototype = Object.create(Base.prototype)
 BigDecimal.prototype.__is_squid_big_decimal = true
-
+// pg-specific parameter serialization - details at https://node-postgres.com/features/queries
+BigDecimal.prototype.toPostgres = BigDecimal.prototype.toString
 
 function isBigDecimal(value) {
     return value != null && !!value.__is_squid_big_decimal

@@ -269,6 +269,12 @@ export interface BigDecimal {
      */
     toString(): string;
     /**
+     * Returns a string representation of this BigDecimal number suitable for sending to Postgres as a parameter value. Same as toString().
+     *
+     * @see https://node-postgres.com/features/queries
+     */
+    toPostgres(): string;
+    /**
      * Returns a primitive number representing the value of this BigDecimal number.
      *
      * If BigDecimal.strict is true an error will be thrown if toNumber is called on a BigDecimal number which cannot be converted to a primitive number without a loss of precision.
