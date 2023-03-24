@@ -184,6 +184,13 @@ type NestedScalars {
 }
 
 
+type Vector @entity {
+  id: ID!
+  bigdecimal: [BigDecimal]!
+  bigint: [BigInt]!
+}
+
+
 enum EnumInJson {
   A
   B
