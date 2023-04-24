@@ -64,6 +64,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/shibuya').bundle
         case 'shell':
             return require('./old/definitions/shell').bundle
+        case 'sora-substrate':
+            return require('./old/definitions/sora-substrate').bundle
         case 'statemint':
         case 'statemine':
             return require('./old/definitions/statemint').bundle
@@ -74,6 +76,8 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
         case 'unique':
         case 'quartz':
             return require('./old/definitions/unique').bundle
+        case 'zeitgeist':
+            return require('./old/definitions/zeitgeist').bundle
         default:
             return undefined
     }
