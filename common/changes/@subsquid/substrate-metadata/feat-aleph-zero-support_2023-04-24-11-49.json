@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "add `aleph-zero`, `sora`, `zeitgeist` types",
+      "type": "patch",
+      "packageName": "@subsquid/substrate-metadata"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata",
+  "email": "nklimin007@gmail.com"
+}
