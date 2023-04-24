@@ -5,6 +5,8 @@ import {eliminatePolkadotjsTypesBundle} from './old/typesBundle-polkadotjs'
 
 export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
     switch(chain) {
+        case 'aleph-node':
+            return require('./old/definitions/aleph-node').bundle
         case 'altair':
             return require('./old/definitions/altair').bundle
         case 'bifrost':
