@@ -1,8 +1,8 @@
 {
   "changes": [
     {
-      "comment": "add `aleph-zero`, `sora`, `zeitgeist` types",
-      "type": "patch",
+      "comment": "add type bundles for `aleph-zero`, `sora` and `zeitgeist` chains",
+      "type": "minor",
       "packageName": "@subsquid/substrate-metadata"
     }
   ],
