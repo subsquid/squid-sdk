@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "2.3.0",
+      "tag": "@subsquid/substrate-metadata_v2.3.0",
+      "date": "Tue, 25 Apr 2023 10:37:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add type bundles for `aleph-zero`, `sora` and `zeitgeist` chains"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.2",
       "tag": "@subsquid/substrate-metadata_v2.2.2",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",
