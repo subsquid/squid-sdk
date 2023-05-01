@@ -1,6 +1,6 @@
 import {maybeLast, withErrorContext} from '@subsquid/util-internal'
 import {Output} from '@subsquid/util-internal-code-printer'
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient} from '@subsquid/http-client'
 import {ArchiveDataSource, BatchRequest, BatchResponse} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {BlockDataP, DataRequest} from '../interfaces/data'

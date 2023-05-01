@@ -1,6 +1,6 @@
 import {Logger} from '@subsquid/logger'
 import {assertNotNull, def, withErrorContext} from '@subsquid/util-internal'
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient} from '@subsquid/http-client'
 import {ExploreApi} from './explore'
 import {SpecVersion, SpecVersionRecord} from './specVersion'
 

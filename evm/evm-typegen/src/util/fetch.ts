@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient} from '@subsquid/http-client'
 
 
 const http = new HttpClient({

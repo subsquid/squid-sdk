@@ -16,11 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/http-client": "^0.1.0",
     "@subsquid/logger": "^0.3.1",
     "@subsquid/rpc-client": "^2.0.0",
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-counters": "^0.0.2",
-    "@subsquid/util-internal-http-client": "^0.1.0",
     "@subsquid/util-timeout": "^1.0.0"
   },
   "devDependencies": {

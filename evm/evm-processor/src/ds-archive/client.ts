@@ -1,5 +1,5 @@
 import {addErrorContext, last, wait, withErrorContext} from '@subsquid/util-internal'
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient} from '@subsquid/http-client'
 import {ArchiveDataSource, BatchRequest, BatchResponse} from '@subsquid/util-internal-processor-tools'
 import {
     AllFields,

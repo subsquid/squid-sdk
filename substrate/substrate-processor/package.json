@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/http-client": "^0.1.0",
     "@subsquid/logger": "^0.3.1",
     "@subsquid/scale-codec": "^1.1.1",
     "@subsquid/substrate-metadata": "^2.3.0",
@@ -23,7 +24,6 @@
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-code-printer": "^0.1.1",
     "@subsquid/util-internal-hex": "^0.0.2",
-    "@subsquid/util-internal-http-client": "^0.1.0",
     "@subsquid/util-internal-processor-tools": "^0.0.0",
     "@subsquid/util-internal-resilient-rpc": "^0.0.3",
     "@subsquid/util-xxhash": "^0.1.2",

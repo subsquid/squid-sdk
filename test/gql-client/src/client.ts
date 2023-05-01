@@ -1,4 +1,4 @@
-import {GraphqlMessage, HttpClient, HttpError} from '@subsquid/util-internal-http-client'
+import {GraphqlMessage, HttpClient, HttpError} from '@subsquid/http-client'
 import expect from 'expect'
 import {createClient, ExecutionResult} from 'graphql-ws'
 import WebSocket from 'ws'

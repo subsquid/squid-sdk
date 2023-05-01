@@ -1,4 +1,4 @@
-import {HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpClient} from '@subsquid/http-client'
 import assert from 'assert'
 
 

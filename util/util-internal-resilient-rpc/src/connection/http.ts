@@ -6,7 +6,7 @@ import {
     HttpError,
     HttpTimeoutError,
     isHttpConnectionError
-} from '@subsquid/util-internal-http-client'
+} from '@subsquid/http-client'
 import {isRateLimitError} from '../util'
 import {CommonConnectionOptions, ConnectionBase} from './base'
 

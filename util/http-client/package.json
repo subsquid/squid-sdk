@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/util-internal-http-client",
+  "name": "@subsquid/http-client",
   "version": "0.1.0",
   "description": "Small convenience layer on top of fetch",
   "license": "GPL-3.0-or-later",

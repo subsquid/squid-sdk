@@ -654,8 +654,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-http-client",
-      "projectFolder": "util/util-internal-http-client",
+      "packageName": "@subsquid/http-client",
+      "projectFolder": "util/http-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

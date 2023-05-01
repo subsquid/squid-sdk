@@ -12,7 +12,7 @@ import {
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
 import {addErrorContext, def, last, runProgram} from '@subsquid/util-internal'
-import {HttpAgent, HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {
     applyRangeBound,
     BatchRequest,

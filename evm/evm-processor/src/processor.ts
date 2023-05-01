@@ -1,6 +1,6 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
-import {HttpAgent, HttpClient} from '@subsquid/util-internal-http-client'
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {
     applyRangeBound,
     BatchRequest,
