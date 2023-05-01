@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+This log was last generated on Tue, 25 Apr 2023 10:37:54 GMT and should not be manually modified.
+
+## 2.3.0
+Tue, 25 Apr 2023 10:37:54 GMT
+
+### Minor changes
+
+- add type bundles for `aleph-zero`, `sora` and `zeitgeist` chains
 
 ## 2.2.2
 Thu, 09 Feb 2023 15:10:00 GMT

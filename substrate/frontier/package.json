@@ -18,7 +18,7 @@
     "test": "mocha ./lib/test/*.test.js"
   },
   "dependencies": {
-    "@subsquid/substrate-metadata": "^2.2.2",
+    "@subsquid/substrate-metadata": "^2.3.0",
     "@subsquid/util-internal": "^1.1.0"
   },
   "peerDependencies": {

@@ -19,7 +19,7 @@
   "dependencies": {
     "@subsquid/logger": "^0.3.1",
     "@subsquid/scale-codec": "^1.1.1",
-    "@subsquid/substrate-metadata": "^2.2.2",
+    "@subsquid/substrate-metadata": "^2.3.0",
     "@subsquid/typeorm-config": "^2.0.2",
     "@subsquid/util-internal": "^1.1.0",
     "@subsquid/util-internal-binary-heap": "^0.0.0",
