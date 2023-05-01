@@ -2,6 +2,38 @@
   "name": "@subsquid/util-internal-resilient-rpc",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-resilient-rpc_v1.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^0.1.0` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^2.0.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-timeout\" from `^1.0.0` to `^2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/util-internal-resilient-rpc_v0.0.3",
       "date": "Sat, 25 Feb 2023 19:16:49 GMT",

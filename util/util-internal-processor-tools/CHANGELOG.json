@@ -1,0 +1,34 @@
+{
+  "name": "@subsquid/util-internal-processor-tools",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-processor-tools_v0.0.1",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-binary-heap\" from `^0.0.0` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^0.0.3` to `^1.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

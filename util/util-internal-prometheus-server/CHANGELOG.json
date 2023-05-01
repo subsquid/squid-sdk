@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-prometheus-server",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-prometheus-server_v1.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.1.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/util-internal-prometheus-server_v0.0.3",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

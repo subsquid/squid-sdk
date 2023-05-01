@@ -2,6 +2,18 @@
   "name": "@subsquid/util-timeout",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/util-timeout_v2.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/util-timeout_v1.0.0",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

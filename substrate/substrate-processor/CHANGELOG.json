@@ -2,6 +2,53 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/substrate-processor_v3.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^0.1.0` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.1` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.3.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^2.0.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.1.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-resilient-rpc\" from `^0.0.3` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^0.1.2` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.4.1",
       "tag": "@subsquid/substrate-processor_v2.4.1",
       "date": "Sat, 25 Feb 2023 19:16:49 GMT",

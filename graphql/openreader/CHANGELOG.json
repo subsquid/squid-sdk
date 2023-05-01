@@ -2,6 +2,41 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@subsquid/openreader_v4.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-commander\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^0.1.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/big-decimal\" from `^0.0.0` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.7",
       "tag": "@subsquid/openreader_v3.1.7",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

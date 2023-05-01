@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ss58-codec
 
-This log was last generated on Thu, 09 Feb 2023 15:10:00 GMT and should not be manually modified.
+This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 01 May 2023 18:57:46 GMT
+
+### Breaking changes
+
+- Introduce ArrowSquid
 
 ## 0.1.2
 Thu, 09 Feb 2023 15:10:00 GMT

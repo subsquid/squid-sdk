@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Sun, 12 Feb 2023 16:50:59 GMT and should not be manually modified.
+This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+
+## 4.0.0
+Mon, 01 May 2023 18:57:46 GMT
+
+### Breaking changes
+
+- Introduce ArrowSquid
 
 ## 3.3.2
 Sun, 12 Feb 2023 16:50:59 GMT

@@ -2,6 +2,47 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/substrate-typegen_v3.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^0.3.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^1.1.1` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.3.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^1.1.2` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^0.1.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-config\" from `^1.0.1` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-read-lines\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^0.0.2` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.1",
       "tag": "@subsquid/substrate-typegen_v2.2.1",
       "date": "Thu, 09 Feb 2023 15:10:00 GMT",

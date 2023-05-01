@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata
 
-This log was last generated on Tue, 25 Apr 2023 10:37:54 GMT and should not be manually modified.
+This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+
+## 3.0.0
+Mon, 01 May 2023 18:57:46 GMT
+
+### Breaking changes
+
+- Introduce ArrowSquid
 
 ## 2.3.0
 Tue, 25 Apr 2023 10:37:54 GMT

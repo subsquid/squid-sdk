@@ -2,6 +2,26 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/frontier_v1.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to ethers-v6"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^2.3.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^1.1.0` to `^2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/frontier_v0.2.0",
       "date": "Sun, 19 Feb 2023 09:15:04 GMT",

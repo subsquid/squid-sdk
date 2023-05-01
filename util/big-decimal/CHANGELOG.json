@@ -2,6 +2,18 @@
   "name": "@subsquid/big-decimal",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/big-decimal_v1.0.0",
+      "date": "Mon, 01 May 2023 18:57:46 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Introduce ArrowSquid"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/big-decimal_v0.0.0",
       "date": "Thu, 22 Sep 2022 15:21:10 GMT",

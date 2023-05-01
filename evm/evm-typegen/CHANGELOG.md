@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Sat, 25 Feb 2023 19:16:49 GMT and should not be manually modified.
+This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+
+## 3.0.0
+Mon, 01 May 2023 18:57:46 GMT
+
+### Breaking changes
+
+- migrate to ethers-v6
 
 ## 2.1.1
 Sat, 25 Feb 2023 19:16:49 GMT
