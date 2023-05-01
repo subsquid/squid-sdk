@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "Introduce ArrowSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

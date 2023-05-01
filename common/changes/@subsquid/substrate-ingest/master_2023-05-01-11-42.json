@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "Introduce ArrowSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

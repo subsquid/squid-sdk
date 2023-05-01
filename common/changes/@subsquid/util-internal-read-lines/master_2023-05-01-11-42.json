@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-read-lines",
+      "comment": "Introduce ArrowSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-read-lines"
+}

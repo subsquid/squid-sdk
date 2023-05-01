@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Introduce ArrowSquid",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

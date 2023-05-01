@@ -522,16 +522,16 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-ingest",
-      "projectFolder": "substrate/substrate-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/substrate-explorer",
       "projectFolder": "substrate/substrate-explorer",
       "shouldPublish": true,
       "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "projectFolder": "substrate/substrate-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/substrate-metadata",
@@ -600,6 +600,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/http-client",
+      "projectFolder": "util/http-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,
@@ -654,20 +660,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/http-client",
-      "projectFolder": "util/http-client",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util/util-internal-http-server",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-naming",
-      "projectFolder": "util/util-naming",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -698,6 +692,12 @@
     {
       "packageName": "@subsquid/util-internal-resilient-rpc",
       "projectFolder": "util/util-internal-resilient-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-naming",
+      "projectFolder": "util/util-naming",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

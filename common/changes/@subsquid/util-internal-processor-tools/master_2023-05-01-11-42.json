@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "Introduce ArrowSquid",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}
