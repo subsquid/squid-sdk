@@ -62,8 +62,8 @@ export const DEFAULT_FIELDS = {
     },
     transaction: {
         from: true,
-        hash: true,
-        sighash: true
+        to: true,
+        hash: true
     },
     trace: {
         error: true
@@ -102,12 +102,14 @@ type Select<T, F> = Simplify<Pick<T, Extract<keyof T, F>>>
 
 
 export type BlockHeader<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
     Pick<EvmBlock, BlockRequiredFields> &
     Select<EvmBlock, GetFields<F, 'block'>>
 >
 
 
 export type Transaction<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
     Pick<EvmTransaction, TransactionRequiredFields> &
     Select<EvmTransaction, GetFields<F, 'transaction'>> &
     {block: BlockHeader<F>}
@@ -115,6 +117,7 @@ export type Transaction<F extends FieldSelection = {}> = Simplify<
 
 
 export type Log<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
     Pick<EvmLog, LogRequiredFields> &
     Select<EvmLog, GetFields<F, 'log'>> &
     {block: BlockHeader<F>, transaction?: Transaction<F>}

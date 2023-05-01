@@ -2,9 +2,10 @@ import {addErrorContext, unexpectedCase} from '@subsquid/util-internal'
 import {BatchRequest, BatchResponse, HashAndHeight, HotDataSource} from '@subsquid/util-internal-processor-tools'
 import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import assert from 'assert'
-import {AllFields, BlockData, Log, StateDiff, Trace, Transaction} from '../interfaces/data'
+import {AllFields, BlockData, BlockHeader, Log, StateDiff, Trace, Transaction} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
-import {Bytes20, EvmBlock, EvmStateDiff, EvmTrace, EvmTraceCall, EvmTraceCreate, Qty} from '../interfaces/evm'
+import {Bytes20, EvmStateDiff, EvmTrace, EvmTraceCall, EvmTraceCreate, Qty} from '../interfaces/evm'
+import {formatId} from '../util'
 import * as rpc from './rpc'
 
 
@@ -172,8 +173,11 @@ export class EvmRpcDataSource implements HotDataSource<DataRequest> {
                 assert(receipt.transactionHash === rpcTx.hash)
             }
 
+            let transactionIndex = qty2Int(rpcTx.transactionIndex)
+
             let tx: Transaction<AllFields> = {
-                transactionIndex: qty2Int(rpcTx.transactionIndex),
+                id: formatId(header.height, header.hash, transactionIndex),
+                transactionIndex,
                 hash: rpcTx.hash,
                 from: rpcTx.from,
                 to: rpcTx.to || undefined,
@@ -204,8 +208,10 @@ export class EvmRpcDataSource implements HotDataSource<DataRequest> {
         }
 
         for (let rpcLog of iterateLogs(receipts, logs)) {
+            let logIndex = qty2Int(rpcLog.logIndex)
             let log: Log<AllFields> = {
-                logIndex: qty2Int(rpcLog.logIndex),
+                id: formatId(header.height, header.hash, logIndex),
+                logIndex,
                 transactionIndex: qty2Int(rpcLog.transactionIndex),
                 transactionHash: rpcLog.transactionHash,
                 address: rpcLog.address,
@@ -268,9 +274,11 @@ export class EvmRpcDataSource implements HotDataSource<DataRequest> {
 }
 
 
-function mapBlockHeader(block: rpc.Block): EvmBlock {
+function mapBlockHeader(block: rpc.Block): BlockHeader<AllFields> {
+    let height = qty2Int(block.number)
     return {
-        height: qty2Int(block.number),
+        id: formatId(height, block.hash),
+        height,
         hash: block.hash,
         parentHash: block.parentHash,
         timestamp: qty2Int(block.timestamp) * 1000,

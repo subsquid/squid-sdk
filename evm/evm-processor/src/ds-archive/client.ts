@@ -1,5 +1,5 @@
-import {addErrorContext, last, wait, withErrorContext} from '@subsquid/util-internal'
 import {HttpClient} from '@subsquid/http-client'
+import {addErrorContext, last, wait, withErrorContext} from '@subsquid/util-internal'
 import {ArchiveDataSource, BatchRequest, BatchResponse} from '@subsquid/util-internal-processor-tools'
 import {
     AllFields,
@@ -23,6 +23,7 @@ import {
     Transaction
 } from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
+import {formatId} from '../util'
 import * as gw from './gateway'
 
 
@@ -129,6 +130,7 @@ function mapGatewayBlock(src: gw.BlockData): BlockData<AllFields> {
 
     for (let go of src.logs || []) {
         let log: Log<AllFields> = {
+            id: formatId(header.height, header.hash, go.logIndex),
             ...go,
             block: header
         }
@@ -166,7 +168,9 @@ function mapGatewayBlock(src: gw.BlockData): BlockData<AllFields> {
 
 
 function mapBlockHeader(src: gw.Block): BlockHeader<AllFields> {
-    let header: Partial<BlockHeader<AllFields>> = {}
+    let header: Partial<BlockHeader<AllFields>> = {
+        id: formatId(src.number, src.hash)
+    }
 
     let key: keyof gw.Block
     for (key in src) {
@@ -195,7 +199,9 @@ function mapBlockHeader(src: gw.Block): BlockHeader<AllFields> {
 
 
 function mapTransaction(block: BlockHeader<AllFields>, src: gw.Transaction): Transaction<AllFields> {
-    let tx: Partial<Transaction<AllFields>> = {}
+    let tx: Partial<Transaction<AllFields>> = {
+        id: formatId(block.height, block.hash, src.transactionIndex)
+    }
 
     let key: keyof gw.Transaction
     for (key in src) {

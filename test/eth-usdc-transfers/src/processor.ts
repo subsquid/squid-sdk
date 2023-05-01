@@ -29,7 +29,7 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
         for (let log of block.logs) {
             let {from, to, value} = erc20.events.Transfer.decode(log)
             transfers.push(new Transfer({
-                id: `${block.header.height}-${log.logIndex}`,
+                id: log.id,
                 blockNumber: block.header.height,
                 timestamp: new Date(block.header.timestamp),
                 txHash: '0x',

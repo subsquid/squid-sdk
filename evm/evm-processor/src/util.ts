@@ -19,9 +19,3 @@ export function formatId(height: number, hash: string, index?: number): string {
             : _hash.slice(0, 5)
     return `${blockPart}${indexPart}-${shortHash}`
 }
-
-
-export interface BlockContext {
-    blockHeight?: number
-    blockHash?: string
-}
