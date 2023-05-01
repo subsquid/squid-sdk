@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-counters",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "Utilities for measuring processing speed, ETA, etc",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

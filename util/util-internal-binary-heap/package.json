@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-binary-heap",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Classical implementation of binary heap data structure",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

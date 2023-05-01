@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-config",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "A small utility to read and validate JSON-based config files",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",

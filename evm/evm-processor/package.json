@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-processor",
-  "version": "0.3.2",
+  "version": "1.0.0",
   "description": "Data fetcher and mappings executor for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,15 +17,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^0.1.0",
-    "@subsquid/logger": "^0.3.1",
-    "@subsquid/util-internal": "^1.1.0",
-    "@subsquid/util-internal-hex": "^0.0.2",
-    "@subsquid/util-internal-processor-tools": "^0.0.0",
-    "@subsquid/util-internal-resilient-rpc": "^0.0.3"
+    "@subsquid/http-client": "^1.0.0",
+    "@subsquid/logger": "^1.0.0",
+    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal-hex": "^1.0.0",
+    "@subsquid/util-internal-processor-tools": "^0.0.1",
+    "@subsquid/util-internal-resilient-rpc": "^1.0.0"
   },
   "devDependencies": {
-    "@subsquid/typeorm-store": "^0.2.2",
+    "@subsquid/typeorm-store": "^1.0.0",
     "@types/node": "^16.18.25",
     "typescript": "~4.9.5"
   }

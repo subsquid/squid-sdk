@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-resilient-rpc",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Resilient JSON-RPC client for Subsquid SDK",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,12 +16,12 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^0.1.0",
-    "@subsquid/logger": "^0.3.1",
-    "@subsquid/rpc-client": "^2.0.0",
-    "@subsquid/util-internal": "^1.1.0",
-    "@subsquid/util-internal-counters": "^0.0.2",
-    "@subsquid/util-timeout": "^1.0.0"
+    "@subsquid/http-client": "^1.0.0",
+    "@subsquid/logger": "^1.0.0",
+    "@subsquid/rpc-client": "^3.0.0",
+    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal-counters": "^1.0.0",
+    "@subsquid/util-timeout": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.18.25",

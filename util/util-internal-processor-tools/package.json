@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-processor-tools",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Common tools for data fetching and mapping execution",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,12 +17,12 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/logger": "^0.3.1",
-    "@subsquid/util-internal": "^1.1.0",
-    "@subsquid/util-internal-binary-heap": "^0.0.0",
-    "@subsquid/util-internal-counters": "^0.0.2",
+    "@subsquid/logger": "^1.0.0",
+    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal-binary-heap": "^1.0.0",
+    "@subsquid/util-internal-counters": "^1.0.0",
     "@subsquid/util-internal-http-client": "^0.1.0",
-    "@subsquid/util-internal-prometheus-server": "^0.0.3",
+    "@subsquid/util-internal-prometheus-server": "^1.0.0",
     "prom-client": "^14.2.0"
   },
   "devDependencies": {

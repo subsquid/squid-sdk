@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ss58-codec",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "SS58 address format encoder/decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
