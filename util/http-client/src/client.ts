@@ -126,7 +126,9 @@ export class HttpClient {
     protected beforeRetryPause(req: FetchRequest, reason: Error | HttpResponse, pause: number): void {
         if (this.log?.isWarn()) {
             let info: any = {
-                httpRequestId: req.id
+                httpRequestId: req.id,
+                httpRequestUrl: req.url,
+                httpRequestMethod: req.method
             }
             if (reason instanceof Error) {
                 info.reason = reason.toString()

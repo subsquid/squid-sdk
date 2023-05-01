@@ -17,7 +17,7 @@ export class Transfer {
     timestamp!: Date
 
     @Column_("text", {nullable: false})
-    txHash!: string
+    tx!: string
 
     @Column_("text", {nullable: false})
     from!: string

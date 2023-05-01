@@ -2,7 +2,7 @@ type Transfer @entity {
     id: ID!
     blockNumber: Int!
     timestamp: DateTime!
-    txHash: String!
+    tx: String!
     from: String!
     to: String!
     amount: BigInt!
