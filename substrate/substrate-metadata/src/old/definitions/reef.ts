@@ -225,7 +225,7 @@ export const bundle: OldTypesBundle = {
     },
     versions: [
         {	
-            minmax: [null, 8],	
+            minmax: [null, 7],	
             types: {	
                AccountInfo: "AccountInfoWithDualRefCount"	
             },	
