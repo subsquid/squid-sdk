@@ -189,7 +189,8 @@ export class RpcClient {
                         new RpcConnectionError(`failed to perform a call after ${req.retries + 1} attempts`),
                         {
                             rpcRequestId: req.id,
-                            rpcRequestMethod: req.method
+                            rpcMethod: req.method,
+                            rpcParams: req.params
                         }
                     )
                 )

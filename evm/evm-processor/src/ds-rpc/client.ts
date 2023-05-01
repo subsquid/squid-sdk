@@ -124,7 +124,10 @@ export class EvmRpcDataSource implements HotDataSource<DataRequest> {
                 })
             )
         } else if (logsRequested(request)) {
-            logs = await this.rpc.call<rpc.Log[]>('eth_getLogs', [block.number, block.number])
+            logs = await this.rpc.call<rpc.Log[]>('eth_getLogs', [{
+                fromBlock: block.number,
+                toBlock: block.number
+            }])
             for (let log of logs) {
                 assert.strictEqual(log.blockHash, block.hash)
             }
@@ -145,8 +148,8 @@ export class EvmRpcDataSource implements HotDataSource<DataRequest> {
             assert(replay.length === block.transactions.length)
             for (let i = 0; i < block.transactions.length; i++) {
                 let tx = block.transactions[i]
-                assert(typeof tx == 'object')
-                assert(tx.hash === replay[i].transactionHash)
+                let txHash = typeof tx == 'string' ? tx : tx.hash
+                assert.strictEqual(replay[i].transactionHash, txHash)
             }
         }
 

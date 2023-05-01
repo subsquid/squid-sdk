@@ -133,7 +133,8 @@ export abstract class ConnectionBase implements Connection {
                     rpcConnection: this.id,
                     rpcUrl: this.url,
                     rpcRequestId: req.id,
-                    rpcMethod: req.method
+                    rpcMethod: req.method,
+                    rpcParams: req.params
                 })
                 req.reject(err)
                 return true
