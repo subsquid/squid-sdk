@@ -179,3 +179,12 @@ export interface GearMessageEnqueuedEvent extends SubstrateApplyExtrinsicEvent {
 export interface GearUserMessageSentEvent extends SubstrateFinalizationEvent {
     name: 'Gear.UserMessageSent'
 }
+
+
+export interface SpecMetadata {
+    id: SpecId
+    specName: string
+    specVersion: number
+    blockHeight: number
+    hex: string
+}

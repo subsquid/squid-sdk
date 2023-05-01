@@ -1,5 +1,5 @@
 import * as ss58 from "@subsquid/ss58"
-import {assertNotNull, BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
+import {assertNotNull, DataHandlerContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import * as psp22 from "./psp22"
@@ -18,7 +18,7 @@ const processor = new SubstrateBatchProcessor()
 
 
 type Item = BatchProcessorItem<typeof processor>
-type Ctx = BatchContext<Store, Item>
+type Ctx = DataHandlerContext<Store, Item>
 
 
 let token: Token | undefined

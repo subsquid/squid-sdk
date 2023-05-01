@@ -1,79 +1,250 @@
-import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull} from "@subsquid/util-internal"
-import assert from "assert"
-import {DataSource, EntityManager} from "typeorm"
-import {Store} from "./store"
-import {createTransaction, Tx} from "./tx"
+import {createOrmConfig} from '@subsquid/typeorm-config'
+import {assertNotNull, last, maybeLast} from '@subsquid/util-internal'
+import assert from 'assert'
+import {DataSource, EntityManager} from 'typeorm'
+import {ChangeTracker, rollbackBlock} from './hot'
+import {DatabaseState, FinalTxInfo, HashAndHeight, HotTxInfo} from './interfaces'
+import {Store} from './store'
 
 
 export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
 
 
 export interface TypeormDatabaseOptions {
-    stateSchema?: string
+    supportHotBlocks?: boolean
     isolationLevel?: IsolationLevel
+    stateSchema?: string
+    projectDir?: string
 }
 
 
-class BaseDatabase<S> {
-    protected statusSchema: string
-    protected isolationLevel: IsolationLevel
-    protected con?: DataSource
-    protected lastCommitted = -1
+export class TypeormDatabase {
+    private statusSchema: string
+    private isolationLevel: IsolationLevel
+    private con?: DataSource
+    private projectDir: string
+
+    public readonly supportsHotBlocks: boolean
 
     constructor(options?: TypeormDatabaseOptions) {
-        this.statusSchema = options?.stateSchema ? `"${options.stateSchema}"` : 'squid_processor'
+        this.statusSchema = options?.stateSchema || 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
+        this.supportsHotBlocks = !!options?.supportHotBlocks
+        this.projectDir = options?.projectDir || process.cwd()
     }
 
-    async connect(): Promise<number> {
-        if (this.con != null) {
-            throw new Error('Already connected')
-        }
-        let cfg = createOrmConfig()
-        let con = new DataSource(cfg)
-        await con.initialize()
+    async connect(): Promise<DatabaseState> {
+        assert(this.con == null, 'already connected')
+
+        let cfg = createOrmConfig({projectDir: this.projectDir})
+        this.con = new DataSource(cfg)
+
+        await this.con.initialize()
+
         try {
-            let height = await con.transaction('SERIALIZABLE', async em => {
-                await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`)
-                await em.query(`
-                    CREATE TABLE IF NOT EXISTS ${this.statusSchema}.status (
-                        id int primary key,
-                        height int not null
-                    )
-                `)
-                let status: {height: number}[] = await em.query(
-                    `SELECT height FROM ${this.statusSchema}.status WHERE id = 0`
-                )
-                if (status.length == 0) {
-                    await em.query(`INSERT INTO ${this.statusSchema}.status (id, height) VALUES (0, -1)`)
-                    return -1
-                } else {
-                    return status[0].height
-                }
-            })
-            this.con = con
-            return height
+            return await this.con.transaction('SERIALIZABLE', em => this.initTransaction(em))
         } catch(e: any) {
-            await con.destroy().catch(() => {}) // ignore error
+            await this.con.destroy().catch(() => {}) // ignore error
+            this.con = undefined
             throw e
         }
     }
 
-    async close(): Promise<void> {
-        let con = this.con
-        this.con = undefined
-        this.lastCommitted = -1
-        if (con) {
-            await con.destroy()
+    async disconnect(): Promise<void> {
+        await this.con?.destroy().finally(() => this.con = undefined)
+    }
+
+    private async initTransaction(em: EntityManager): Promise<DatabaseState> {
+        let schema = this.escapedSchema()
+
+        await em.query(
+            `CREATE SCHEMA IF NOT EXISTS ${schema}`
+        )
+        await em.query(
+            `CREATE TABLE IF NOT EXISTS ${schema}.status (` +
+            `id int primary key, ` +
+            `height int not null, ` +
+            `hash text DEFAULT '0x', ` +
+            `nonce int DEFAULT 0`+
+            `)`
+        )
+        await em.query( // for databases created by prev version of typeorm store
+            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS hash text DEFAULT '0x'`
+        )
+        await em.query( // for databases created by prev version of typeorm store
+            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
+        )
+        await em.query(
+            `CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int primary key, hash text not null)`
+        )
+        await em.query(
+            `CREATE TABLE IF NOT EXISTS ${schema}.hot_change_log (` +
+            `block_height int not null references ${schema}.hot_block on delete cascade, ` +
+            `index int not null, ` +
+            `change jsonb not null, ` +
+            `PRIMARY KEY (block_height, index)` +
+            `)`
+        )
+
+        let status: (HashAndHeight & {nonce: number})[] = await em.query(
+            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+        )
+        if (status.length == 0) {
+            await em.query(`INSERT INTO ${schema}.status (id, height, hash) VALUES (0, -1, '0x')`)
+            status.push({height: -1, hash: '0x', nonce: 0})
+        }
+
+        let top: HashAndHeight[] = await em.query(
+            `SELECT height, hash FROM ${schema}.hot_block ORDER BY height`
+        )
+
+        return assertStateInvariants({...status[0], top})
+    }
+
+    private async getState(em: EntityManager): Promise<DatabaseState> {
+        let schema = this.escapedSchema()
+
+        let status: (HashAndHeight & {nonce: number})[] = await em.query(
+            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+        )
+
+        assert(status.length == 1)
+
+        let top: HashAndHeight[] = await em.query(
+            `SELECT hash, height FROM ${schema}.hot_block ORDER BY height`
+        )
+
+        return assertStateInvariants({...status[0], top})
+    }
+
+    transact(info: FinalTxInfo, cb: (store: Store) => Promise<void>): Promise<void> {
+        return this.submit(async em => {
+            let state = await this.getState(em)
+            let {prevHead: prev, nextHead: next} = info
+
+            assert(state.hash === info.prevHead.hash, RACE_MSG)
+            assert(state.height === prev.height)
+            assert(prev.height < next.height)
+            assert(prev.hash != next.hash)
+
+            for (let i = state.top.length - 1; i >= 0; i--) {
+                let block = state.top[i]
+                await rollbackBlock(this.statusSchema, em, block.height)
+            }
+
+            await this.performUpdates(cb, em)
+
+            await this.updateStatus(em, state.nonce, next)
+        })
+    }
+
+    transactHot(info: HotTxInfo, cb: (store: Store, block: HashAndHeight) => Promise<void>): Promise<void> {
+        return this.submit(async em => {
+            let state = await this.getState(em)
+            let chain = [state, ...state.top]
+
+            assertChainContinuity(info.baseHead, info.newBlocks)
+            assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
+
+            assert(chain.find(b => b.hash === info.baseHead.hash), RACE_MSG)
+            if (info.newBlocks.length == 0) {
+                assert(last(chain).hash === info.baseHead.hash, RACE_MSG)
+            }
+            assert(chain[0].height <= info.finalizedHead.height, RACE_MSG)
+
+            let rollbackPos = info.baseHead.height + 1 - chain[0].height
+
+            for (let i = chain.length - 1; i >= rollbackPos; i--) {
+                await rollbackBlock(this.statusSchema, em, chain[i].height)
+            }
+
+            for (let b of info.newBlocks) {
+                let changeTracker: ChangeTracker | undefined
+
+                if (b.height > info.finalizedHead.height) {
+                    await this.insertHotBlock(em, b)
+                    changeTracker = new ChangeTracker(em, this.statusSchema, b.height)
+                }
+
+                await this.performUpdates(
+                    store => cb(store, b),
+                    em,
+                    changeTracker
+                )
+            }
+
+            chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
+
+            let finalizedHeadPos = info.finalizedHead.height - chain[0].height
+            assert(chain[finalizedHeadPos].hash === info.finalizedHead.hash)
+            await this.deleteHotBlocks(em, info.finalizedHead.height)
+
+            await this.updateStatus(em, state.nonce, info.finalizedHead)
+        })
+    }
+
+    private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
+        return em.query(
+            `DELETE FROM ${this.escapedSchema()}.hot_block WHERE height <= $1`,
+            [finalizedHeight]
+        )
+    }
+
+    private insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
+        return em.query(
+            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
+            [block.height, block.hash]
+        )
+    }
+
+    private async updateStatus(em: EntityManager, nonce: number, next: HashAndHeight): Promise<void> {
+        let schema = this.escapedSchema()
+
+        let result: [data: any[], rowsChanged: number] = await em.query(
+            `UPDATE ${schema}.status SET height = $1, hash = $2, nonce = nonce + 1 WHERE id = 0 AND nonce = $3`,
+            [next.height, next.hash, nonce]
+        )
+
+        let rowsChanged = result[1]
+
+        // Will never happen if isolation level is SERIALIZABLE or REPEATABLE_READ,
+        // but occasionally people use multiprocessor setups and READ_COMMITTED.
+        assert.strictEqual(
+            rowsChanged,
+            1,
+            RACE_MSG
+        )
+    }
+
+    private async performUpdates(
+        cb: (store: Store) => Promise<void>,
+        em: EntityManager,
+        changeTracker?: ChangeTracker
+    ): Promise<void> {
+        let running = true
+
+        let store = new Store(
+            () => {
+                assert(running, `too late to perform db updates, make sure you haven't forgot to await on db query`)
+                return em
+            },
+            changeTracker
+        )
+
+        try {
+            await cb(store)
+        } finally {
+            running = false
         }
     }
 
-    async transact(from: number, to: number, cb: (store: S) => Promise<void>): Promise<void> {
+    private async submit(tx: (em: EntityManager) => Promise<void>): Promise<void> {
         let retries = 3
         while (true) {
             try {
-                return await this.runTransaction(from, to, cb)
+                let con = this.con
+                assert(con != null, 'not connected')
+                return await con.transaction(this.isolationLevel, tx)
             } catch(e: any) {
                 if (e.code == '40001' && retries) {
                     retries -= 1
@@ -84,107 +255,32 @@ class BaseDatabase<S> {
         }
     }
 
-    protected async runTransaction(from: number, to: number, cb: (store: S) => Promise<void>): Promise<void> {
-        throw new Error('Not implemented')
-    }
-
-    protected async updateHeight(em: EntityManager, from: number, to: number): Promise<void> {
-        return em.query(
-            `UPDATE ${this.statusSchema}.status SET height = $2 WHERE id = 0 AND height < $1`,
-            [from, to]
-        ).then((result: [data: any[], rowsChanged: number]) => {
-            let rowsChanged = result[1]
-            assert.strictEqual(
-                rowsChanged,
-                1,
-                'status table was updated by foreign process, make sure no other processor is running'
-            )
-        })
+    private escapedSchema(): string {
+        let con = assertNotNull(this.con)
+        return con.driver.escape(this.statusSchema)
     }
 }
 
 
-/**
- * Provides restrictive and lazy version of TypeORM EntityManager
- * to data handlers.
- *
- * Lazy here means that no database transaction is opened until an
- * actual database operation is requested by some data handler,
- * which allows more efficient data filtering within handlers.
- *
- * `TypeormDatabase` supports only primitive DML operations
- * without cascades, relations and other ORM goodies in return
- * for performance and exciting new features yet to be implemented :).
- *
- * Instances of this class should be considered to be completely opaque.
- */
-export class TypeormDatabase extends BaseDatabase<Store> {
-    protected async runTransaction(from: number, to: number, cb: (store: Store) => Promise<void>): Promise<void> {
-        let tx: Promise<Tx> | undefined
-        let open = true
+const RACE_MSG = 'status table was updated by foreign process, make sure no other processor is running'
 
-        let store = new Store(() => {
-            assert(open, `Transaction was already closed`)
-            tx = tx || this.createTx(from, to)
-            return tx.then(tx => tx.em)
-        })
 
-        try {
-            await cb(store)
-        } catch(e: any) {
-            open = false
-            if (tx) {
-                await tx.then(t => t.rollback()).catch(err => null)
-            }
-            throw e
-        }
+function assertStateInvariants(state: DatabaseState): DatabaseState {
+    let height = state.height
 
-        open = false
-        if (tx) {
-            await tx.then(t => t.commit())
-            this.lastCommitted = to
-        }
-    }
+    // Sanity check. Who knows what driver will return?
+    assert(Number.isSafeInteger(height))
 
-    private async createTx(from: number, to: number): Promise<Tx> {
-        let con = assertNotNull(this.con, 'not connected')
-        let tx = await createTransaction(con, this.isolationLevel)
-        try {
-            await this.updateHeight(tx.em, from, to)
-            return tx
-        } catch(e: any) {
-            await tx.rollback().catch(() => {})
-            throw e
-        }
-    }
+    assertChainContinuity(state, state.top)
 
-    async advance(height: number): Promise<void> {
-        if (this.lastCommitted == height) return
-        let tx = await this.createTx(height, height)
-        await tx.commit()
-    }
+    return state
 }
 
 
-/**
- * Provides full TypeORM {@link EntityManager} to data handlers.
- *
- * Prefer using {@link TypeormDatabase} instead of this class when possible.
- *
- * Instances of this class should be considered to be completely opaque.
- */
-export class FullTypeormDatabase extends BaseDatabase<EntityManager> {
-    protected async runTransaction(from: number, to: number, cb: (store: EntityManager) => Promise<void>): Promise<void> {
-        let con = assertNotNull(this.con, 'not connected')
-        await con.transaction(this.isolationLevel, async em => {
-            await this.updateHeight(em, from, to)
-            await cb(em)
-        })
-        this.lastCommitted = to
-    }
-
-    async advance(height: number): Promise<void> {
-        if (this.lastCommitted == height) return
-        return this.runTransaction(height, height, async () => {})
+function assertChainContinuity(base: HashAndHeight, chain: HashAndHeight[]) {
+    let prev = base
+    for (let b of chain) {
+        assert(b.height === prev.height + 1, 'blocks must form a continues chain')
+        prev = b
     }
 }

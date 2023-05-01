@@ -17,17 +17,17 @@ jobs:
           git config --global user.email 'github-actions@github.com'
 
       - name: create local release branch
-        run: git fetch origin release/firesquid:release/firesquid
+        run: git fetch origin release/arrowsquid:release/arrowsquid
 
       - name: check change files
-        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/release/firesquid
+        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/release/arrowsquid
 
       - name: bump versions
-        run: node common/scripts/install-run-rush.js version --bump --target-branch release/firesquid
+        run: node common/scripts/install-run-rush.js version --bump --target-branch release/arrowsquid
 
       - name: merge back release branch
         run: |
           git checkout "${GITHUB_REF##*/}"
-          git fetch origin release/firesquid
-          git merge release/firesquid
+          git fetch origin release/arrowsquid
+          git merge release/arrowsquid
           git push origin "${GITHUB_REF##*/}"

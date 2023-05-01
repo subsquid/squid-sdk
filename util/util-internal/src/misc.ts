@@ -100,3 +100,18 @@ export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
         })
     }
 }
+
+
+export function groupBy<T, G>(list: Iterable<T>, group: (t: T) => G): Map<G, T[]> {
+    let grouping = new Map<G, T[]>()
+    for (let item of list) {
+        let key = group(item)
+        let g = grouping.get(key)
+        if (g == null) {
+            grouping.set(key, [item])
+        } else {
+            g.push(item)
+        }
+    }
+    return grouping
+}

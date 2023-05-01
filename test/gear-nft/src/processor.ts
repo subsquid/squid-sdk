@@ -1,4 +1,4 @@
-import {SubstrateBatchProcessor, BatchProcessorItem, BatchContext, assertNotNull} from '@subsquid/substrate-processor'
+import {SubstrateBatchProcessor, BatchProcessorItem, DataHandlerContext, assertNotNull} from '@subsquid/substrate-processor'
 import {Store, TypeormDatabase} from '@subsquid/typeorm-store'
 import { In } from 'typeorm'
 import {Account, TokenMint} from './model'
@@ -29,7 +29,7 @@ const processor = new SubstrateBatchProcessor()
 
 
 type Item = BatchProcessorItem<typeof processor>
-type Ctx = BatchContext<Store, Item>
+type Ctx = DataHandlerContext<Store, Item>
 
 
 processor.run(new TypeormDatabase(), async ctx => {

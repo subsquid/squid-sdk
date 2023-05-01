@@ -452,6 +452,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-processor",
+      "projectFolder": "evm/evm-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,
@@ -672,6 +678,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "projectFolder": "util/util-internal-processor-tools",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-prometheus-server",
       "projectFolder": "util/util-internal-prometheus-server",
       "shouldPublish": true,
@@ -712,23 +724,13 @@
       "shouldPublish": false
     },
     {
-      "packageName": "e2e-test-project",
-      "projectFolder": "test/e2e-project",
-      "shouldPublish": false
-    },
-    {
-      "packageName": "e2e-test-suite",
-      "projectFolder": "test/e2e-suite",
+      "packageName": "eth-usdc-transfers",
+      "projectFolder": "test/eth-usdc-transfers",
       "shouldPublish": false
     },
     {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
-      "shouldPublish": false
-    },
-    {
-      "packageName": "moonsama-erc721",
-      "projectFolder": "test/moonsama-erc721",
       "shouldPublish": false
     },
     {

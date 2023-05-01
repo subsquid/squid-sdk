@@ -1,4 +1,4 @@
-import type {Connection, EntityManager} from "typeorm"
+import type {DataSource, EntityManager} from "typeorm"
 import type {IsolationLevel} from "./database"
 
 
@@ -9,7 +9,7 @@ export interface Tx {
 }
 
 
-export function createTransaction(con: Connection, isolationLevel: IsolationLevel): Promise<Tx> {
+export function createTransaction(con: DataSource, isolationLevel: IsolationLevel): Promise<Tx> {
     return new Promise((resolve, reject) => {
         let done: Promise<void> = con.transaction(isolationLevel, em => {
             return new Promise((commit, rollback) => {

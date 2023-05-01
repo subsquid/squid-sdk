@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: release/firesquid
+          ref: release/arrowsquid
 
       - name: Build and Publish
-        run: ./ops/docker-publish.sh firesquid latest
+        run: ./ops/docker-publish.sh arrowsquid next

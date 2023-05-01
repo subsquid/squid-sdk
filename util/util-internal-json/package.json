@@ -19,7 +19,7 @@
     "@subsquid/util-internal-hex": "^0.0.2"
   },
   "devDependencies": {
-    "@types/node": "^16.18.12",
+    "@types/node": "^16.18.25",
     "typescript": "~4.9.5"
   }
 }

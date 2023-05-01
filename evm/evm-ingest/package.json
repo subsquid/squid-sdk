@@ -25,10 +25,10 @@
     "@subsquid/util-internal-hex": "^0.0.2",
     "@subsquid/util-internal-http-client": "^0.1.0",
     "@subsquid/util-internal-json": "^0.2.1",
-    "commander": "^10.0.0"
+    "commander": "^10.0.1"
   },
   "devDependencies": {
-    "@types/node": "^16.18.12",
+    "@types/node": "^16.18.25",
     "typescript": "~4.9.5"
   }
 }

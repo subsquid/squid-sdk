@@ -13,8 +13,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "mocha lib/**/*.test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@subsquid/logger": "^0.3.1",
@@ -22,31 +21,16 @@
     "@subsquid/substrate-metadata": "^2.3.0",
     "@subsquid/typeorm-config": "^2.0.2",
     "@subsquid/util-internal": "^1.1.0",
-    "@subsquid/util-internal-binary-heap": "^0.0.0",
     "@subsquid/util-internal-code-printer": "^0.1.1",
-    "@subsquid/util-internal-counters": "^0.0.2",
     "@subsquid/util-internal-hex": "^0.0.2",
     "@subsquid/util-internal-http-client": "^0.1.0",
-    "@subsquid/util-internal-prometheus-server": "^0.0.3",
+    "@subsquid/util-internal-processor-tools": "^0.0.0",
     "@subsquid/util-internal-resilient-rpc": "^0.0.3",
     "@subsquid/util-xxhash": "^0.1.2",
-    "blake2b": "^2.1.4",
-    "prom-client": "^14.1.1"
-  },
-  "peerDependencies": {
-    "@subsquid/typeorm-store": "^0.2.2"
-  },
-  "peerDependenciesMeta": {
-    "@subsquid/typeorm-store": {
-      "optional": true
-    }
+    "blake2b": "^2.1.4"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.1",
-    "@types/node": "^16.18.12",
-    "expect": "^29.4.2",
-    "fast-check": "^3.6.3",
-    "mocha": "^10.2.0",
+    "@types/node": "^16.18.25",
     "typescript": "~4.9.5"
   }
 }

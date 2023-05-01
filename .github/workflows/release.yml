@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: release/firesquid
+          ref: release/arrowsquid
           fetch-depth: 0
 
       - name: Configure git user
@@ -25,10 +25,6 @@ jobs:
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-#      - name: e2e tests
-#        working-directory: test/e2e-suite
-#        run: ./run.sh
-
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
 
@@ -36,4 +32,4 @@ jobs:
         run: node common/scripts/install-run-rush.js build
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/firesquid --publish --tag latest
+        run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/arrowsquid --publish --tag next

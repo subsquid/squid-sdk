@@ -1,8 +1,10 @@
-import {assertNotNull} from "@subsquid/util-internal"
-import expect from "expect"
-import {Equal} from "typeorm"
-import {Item, Order} from "./lib/model"
-import {createStore, getItemIds, getItems, useDatabase} from "./util"
+import {assertNotNull} from '@subsquid/util-internal'
+import expect from 'expect'
+import {Equal} from 'typeorm'
+import {Store} from '../store'
+import {Item, Order} from './lib/model'
+import {getEntityManager, useDatabase} from './util'
+
 
 describe("Store", function() {
     describe(".save()", function() {
@@ -11,13 +13,13 @@ describe("Store", function() {
         ])
 
         it("saving of a single entity", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.save(new Item('1', 'a'))
             await expect(getItems()).resolves.toEqual([{id: '1', name: 'a'}])
         })
 
         it("saving of multiple entities", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.save([new Item('1', 'a'), new Item('2', 'b')])
             await expect(getItems()).resolves.toEqual([
                 {id: '1', name: 'a'},
@@ -26,7 +28,7 @@ describe("Store", function() {
         })
 
         it("saving a large amount of entities", async function() {
-            let store = createStore()
+            let store = await createStore()
             let items: Item[] = []
             for (let i = 0; i < 20000; i++) {
                 items.push(new Item(''+i))
@@ -36,7 +38,7 @@ describe("Store", function() {
         })
 
         it("updates", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.save(new Item('1', 'a'))
             await store.save([
                 new Item('1', 'foo'),
@@ -58,13 +60,13 @@ describe("Store", function() {
         ])
 
         it("removal by passing an entity", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.remove(new Item('1'))
             await expect(getItemIds()).resolves.toEqual(['2', '3'])
         })
 
         it("removal by passing an array of entities", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.remove([
                 new Item('1'),
                 new Item('3')
@@ -73,13 +75,13 @@ describe("Store", function() {
         })
 
         it("removal by passing an id", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.remove(Item, '1')
             await expect(getItemIds()).resolves.toEqual(['2', '3'])
         })
 
         it("removal by passing an array of ids", async function() {
-            let store = createStore()
+            let store = await createStore()
             await store.remove(Item, ['1', '2'])
             await expect(getItemIds()).resolves.toEqual(['3'])
         })
@@ -96,7 +98,7 @@ describe("Store", function() {
         ])
 
         it(".save() doesn't clear reference (single row update)", async function() {
-            let store = createStore()
+            let store = await createStore()
             let order = assertNotNull(await store.get(Order, '1'))
             order.qty = 5
             await store.save(order)
@@ -111,7 +113,7 @@ describe("Store", function() {
         })
 
         it(".save() doesn't clear reference (multi row update)", async function() {
-            let store = createStore()
+            let store = await createStore()
             let orders = await store.find(Order, {order: {id: 'ASC'}})
             let items = await store.find(Item, {order: {id: 'ASC'}})
 
@@ -148,3 +150,21 @@ describe("Store", function() {
         })
     })
 })
+
+
+export function createStore(): Promise<Store> {
+    return getEntityManager().then(
+        em => new Store(() => em)
+    )
+}
+
+
+export async function getItems(): Promise<Item[]> {
+    let em = await getEntityManager()
+    return em.find(Item)
+}
+
+
+export function getItemIds(): Promise<string[]> {
+    return getItems().then(items => items.map(it => it.id).sort())
+}

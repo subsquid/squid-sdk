@@ -15,7 +15,8 @@ import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
 import {assertNotNull, last, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
-import type {SpecId} from './interfaces/substrate'
+import {SubstrateArchive} from './ds-archive/client'
+import type {SpecId, SpecMetadata} from './interfaces/substrate'
 import * as sto from './util/storage'
 
 
@@ -29,22 +30,13 @@ interface BlockInfo {
 }
 
 
-interface SpecMetadata {
-    id: SpecId
-    specName: string
-    specVersion: number
-    blockHeight: number
-    hex: string
-}
-
-
 interface RpcClient {
     call<T=any>(method: string, params?: unknown[]): Promise<T>
 }
 
 
 export interface ChainManagerOptions {
-    archiveRequest<T>(query: string): Promise<T>
+    archive: SubstrateArchive
     getChainClient: () => RpcClient
     getTypes: (meta: SpecMetadata) => OldTypes
 }
@@ -60,10 +52,10 @@ export class ChainManager {
         if (v != null && v.height < block.height) return v.chain
 
         let height = Math.max(0, block.height - 1)
-        let specId = await this.getSpecId(height)
+        let specId = await this.options.archive.getSpecId(height)
         v = this.versions.get(specId)
         if (v == null) {
-            let meta = await this.getSpecMetadata(specId)
+            let meta = await this.options.archive.getSpecMetadata(specId)
             v = this.versions.get(specId) // perhaps it was fetched
             if (v == null) {
                 let chain = this.createChain(meta)
@@ -82,41 +74,6 @@ export class ChainManager {
         }
         let description = getChainDescriptionFromMetadata(metadata, types)
         return new Chain(description, () => this.options.getChainClient())
-    }
-
-    private async getSpecId(height: number): Promise<SpecId> {
-        let res: {batch: {header: {specId: string}}[]} = await this.options.archiveRequest(`
-            query {
-                batch(fromBlock: ${height} toBlock: ${height} includeAllBlocks: true limit: 1) {
-                    header {
-                        specId
-                    }
-                }
-            }
-        `)
-        if (res.batch.length == 0) throw new Error(`Block ${height} not found in archive`)
-        assert(res.batch.length === 1)
-        return res.batch[0].header.specId
-    }
-
-    private getSpecMetadata(specId: SpecId): Promise<SpecMetadata> {
-        return this.options.archiveRequest<{metadataById: SpecMetadata | null}>(`
-            query {
-                metadataById(id: "${specId}") {
-                    id
-                    specName
-                    specVersion
-                    blockHeight
-                    hex
-                }
-            }
-        `).then(res => {
-            if (res.metadataById == null) {
-                throw new Error(`Metadata for spec ${specId} not found in archive`)
-            } else {
-                return res.metadataById
-            }
-        })
     }
 }
 

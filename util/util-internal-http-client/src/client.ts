@@ -93,7 +93,7 @@ export class HttpClient {
         while (true) {
             let res: HttpResponse | Error = await this.performRequestWithTimeout(req).catch(ensureError)
             if (res instanceof Error || !res.ok) {
-                if (retryAttempts > retries && this.isRetryableError(req, res)) {
+                if (retryAttempts > retries && this.isRetryableError(res, req)) {
                     let pause = retrySchedule.length
                         ? retrySchedule[Math.min(retries, retrySchedule.length - 1)]
                         : 1000
@@ -282,11 +282,11 @@ export class HttpClient {
         return bytes
     }
 
-    protected isRetryableError(req: FetchRequest, error: HttpResponse | Error): boolean {
+    isRetryableError(error: HttpResponse | Error, req?: FetchRequest): boolean {
         if (isHttpConnectionError(error)) return true
         if (error instanceof HttpTimeoutError) return true
-        if (error instanceof HttpError) {
-            switch(error.response.status) {
+        if (error instanceof HttpResponse) {
+            switch(error.status) {
                 case 429:
                 case 502:
                 case 503:

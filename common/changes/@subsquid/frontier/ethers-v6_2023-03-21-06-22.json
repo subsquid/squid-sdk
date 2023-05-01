@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/frontier",
       "comment": "migrate to ethers-v6",
-      "type": "minor"
+      "type": "major"
     }
   ],
   "packageName": "@subsquid/frontier"

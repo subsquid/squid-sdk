@@ -83,7 +83,7 @@ export class Progress {
         this._hasNews = false
         if (this.targetValue == null) return 0
         let speed = this.speed()
-        if (speed == 0) return 0
+        if (speed <= 0) return 0
         let last = this.last()
         let left = this.targetValue - Math.min(this.targetValue, last.value)
         return left / speed

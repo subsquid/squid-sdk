@@ -1,9 +1,7 @@
-import {createOrmConfig} from "@subsquid/typeorm-config"
-import {assertNotNull} from "@subsquid/util-internal"
-import {Client as PgClient, ClientBase} from "pg"
-import {DataSource, EntityManager} from "typeorm"
-import {Store} from "../store"
-import {Item} from "./lib/model"
+import {createOrmConfig} from '@subsquid/typeorm-config'
+import {assertNotNull} from '@subsquid/util-internal'
+import {Client as PgClient, ClientBase} from 'pg'
+import {DataSource, EntityManager} from 'typeorm'
 
 
 export const db_config = {
@@ -37,8 +35,9 @@ export function databaseInit(sql: string[]): Promise<void> {
 
 export function databaseDelete(): Promise<void> {
     return withClient(async client => {
-        await client.query(`DROP SCHEMA IF EXISTS root CASCADE`)
-        await client.query(`CREATE SCHEMA root`)
+        await client.query(`DROP SCHEMA IF EXISTS ${db_config.user} CASCADE`)
+        await client.query(`DROP SCHEMA IF EXISTS squid_processor CASCADE`)
+        await client.query(`CREATE SCHEMA ${db_config.user}`)
     })
 }
 
@@ -60,20 +59,4 @@ export function getEntityManager(): Promise<EntityManager> {
         connection = new DataSource(cfg).initialize()
     }
     return connection.then(con => con.createEntityManager())
-}
-
-
-export function createStore(): Store {
-    return new Store(getEntityManager)
-}
-
-
-export async function getItems(): Promise<Item[]> {
-    let em = await getEntityManager()
-    return em.find(Item)
-}
-
-
-export function getItemIds(): Promise<string[]> {
-    return getItems().then(items => items.map(it => it.id).sort())
 }

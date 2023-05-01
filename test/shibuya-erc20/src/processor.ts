@@ -1,5 +1,5 @@
 import * as ss58 from "@subsquid/ss58"
-import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
+import {DataHandlerContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import * as erc20 from "./erc20"
@@ -21,7 +21,7 @@ const processor = new SubstrateBatchProcessor()
 
 
 type Item = BatchProcessorItem<typeof processor>
-type Ctx = BatchContext<Store, Item>
+type Ctx = DataHandlerContext<Store, Item>
 
 
 processor.run(new TypeormDatabase(), async ctx => {

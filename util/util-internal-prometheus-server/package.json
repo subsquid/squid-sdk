@@ -19,10 +19,10 @@
     "@subsquid/util-internal-http-server": "^0.1.1"
   },
   "peerDependencies": {
-    "prom-client": "^14.1.1"
+    "prom-client": "^14.2.0"
   },
   "devDependencies": {
-    "@types/node": "^16.18.12",
+    "@types/node": "^16.18.25",
     "typescript": "~4.9.5"
   }
 }

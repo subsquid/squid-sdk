@@ -1,7 +1,0 @@
-{
-  "types": {
-    "AccountInfo": "AccountInfoWithRefCount",
-    "Address": "AccountId",
-    "LookupSource": "AccountId"
-  }
-}
