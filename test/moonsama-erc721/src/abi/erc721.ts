@@ -2,31 +2,31 @@ import * as ethers from 'ethers'
 import {LogEvent, Func, ContractBase} from './abi.support'
 import {ABI_JSON} from './erc721.abi'
 
-export const abi = new ethers.utils.Interface(ABI_JSON);
+export const abi = new ethers.Interface(ABI_JSON);
 
 export const events = {
-    Approval: new LogEvent<([owner: string, approved: string, tokenId: ethers.BigNumber] & {owner: string, approved: string, tokenId: ethers.BigNumber})>(
+    Approval: new LogEvent<([owner: string, approved: string, tokenId: bigint] & {owner: string, approved: string, tokenId: bigint})>(
         abi, '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     ),
     ApprovalForAll: new LogEvent<([owner: string, operator: string, approved: boolean] & {owner: string, operator: string, approved: boolean})>(
         abi, '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
     ),
-    Transfer: new LogEvent<([from: string, to: string, tokenId: ethers.BigNumber] & {from: string, to: string, tokenId: ethers.BigNumber})>(
+    Transfer: new LogEvent<([from: string, to: string, tokenId: bigint] & {from: string, to: string, tokenId: bigint})>(
         abi, '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
     ),
 }
 
 export const functions = {
-    approve: new Func<[to: string, tokenId: ethers.BigNumber], {to: string, tokenId: ethers.BigNumber}, []>(
+    approve: new Func<[to: string, tokenId: bigint], {to: string, tokenId: bigint}, []>(
         abi, '0x095ea7b3'
     ),
-    balanceOf: new Func<[owner: string], {owner: string}, ethers.BigNumber>(
+    balanceOf: new Func<[owner: string], {owner: string}, bigint>(
         abi, '0x70a08231'
     ),
     baseURI: new Func<[], {}, string>(
         abi, '0x6c0360eb'
     ),
-    getApproved: new Func<[tokenId: ethers.BigNumber], {tokenId: ethers.BigNumber}, string>(
+    getApproved: new Func<[tokenId: bigint], {tokenId: bigint}, string>(
         abi, '0x081812fc'
     ),
     isApprovedForAll: new Func<[owner: string, operator: string], {owner: string, operator: string}, boolean>(
@@ -35,13 +35,13 @@ export const functions = {
     name: new Func<[], {}, string>(
         abi, '0x06fdde03'
     ),
-    ownerOf: new Func<[tokenId: ethers.BigNumber], {tokenId: ethers.BigNumber}, string>(
+    ownerOf: new Func<[tokenId: bigint], {tokenId: bigint}, string>(
         abi, '0x6352211e'
     ),
-    'safeTransferFrom(address,address,uint256)': new Func<[from: string, to: string, tokenId: ethers.BigNumber], {from: string, to: string, tokenId: ethers.BigNumber}, []>(
+    'safeTransferFrom(address,address,uint256)': new Func<[from: string, to: string, tokenId: bigint], {from: string, to: string, tokenId: bigint}, []>(
         abi, '0x42842e0e'
     ),
-    'safeTransferFrom(address,address,uint256,bytes)': new Func<[from: string, to: string, tokenId: ethers.BigNumber, _data: string], {from: string, to: string, tokenId: ethers.BigNumber, _data: string}, []>(
+    'safeTransferFrom(address,address,uint256,bytes)': new Func<[from: string, to: string, tokenId: bigint, _data: string], {from: string, to: string, tokenId: bigint, _data: string}, []>(
         abi, '0xb88d4fde'
     ),
     setApprovalForAll: new Func<[operator: string, approved: boolean], {operator: string, approved: boolean}, []>(
@@ -53,26 +53,26 @@ export const functions = {
     symbol: new Func<[], {}, string>(
         abi, '0x95d89b41'
     ),
-    tokenByIndex: new Func<[index: ethers.BigNumber], {index: ethers.BigNumber}, ethers.BigNumber>(
+    tokenByIndex: new Func<[index: bigint], {index: bigint}, bigint>(
         abi, '0x4f6ccce7'
     ),
-    tokenOfOwnerByIndex: new Func<[owner: string, index: ethers.BigNumber], {owner: string, index: ethers.BigNumber}, ethers.BigNumber>(
+    tokenOfOwnerByIndex: new Func<[owner: string, index: bigint], {owner: string, index: bigint}, bigint>(
         abi, '0x2f745c59'
     ),
-    tokenURI: new Func<[tokenId: ethers.BigNumber], {tokenId: ethers.BigNumber}, string>(
+    tokenURI: new Func<[tokenId: bigint], {tokenId: bigint}, string>(
         abi, '0xc87b56dd'
     ),
-    totalSupply: new Func<[], {}, ethers.BigNumber>(
+    totalSupply: new Func<[], {}, bigint>(
         abi, '0x18160ddd'
     ),
-    transferFrom: new Func<[from: string, to: string, tokenId: ethers.BigNumber], {from: string, to: string, tokenId: ethers.BigNumber}, []>(
+    transferFrom: new Func<[from: string, to: string, tokenId: bigint], {from: string, to: string, tokenId: bigint}, []>(
         abi, '0x23b872dd'
     ),
 }
 
 export class Contract extends ContractBase {
 
-    balanceOf(owner: string): Promise<ethers.BigNumber> {
+    balanceOf(owner: string): Promise<bigint> {
         return this.eth_call(functions.balanceOf, [owner])
     }
 
@@ -80,7 +80,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.baseURI, [])
     }
 
-    getApproved(tokenId: ethers.BigNumber): Promise<string> {
+    getApproved(tokenId: bigint): Promise<string> {
         return this.eth_call(functions.getApproved, [tokenId])
     }
 
@@ -92,7 +92,7 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.name, [])
     }
 
-    ownerOf(tokenId: ethers.BigNumber): Promise<string> {
+    ownerOf(tokenId: bigint): Promise<string> {
         return this.eth_call(functions.ownerOf, [tokenId])
     }
 
@@ -104,19 +104,19 @@ export class Contract extends ContractBase {
         return this.eth_call(functions.symbol, [])
     }
 
-    tokenByIndex(index: ethers.BigNumber): Promise<ethers.BigNumber> {
+    tokenByIndex(index: bigint): Promise<bigint> {
         return this.eth_call(functions.tokenByIndex, [index])
     }
 
-    tokenOfOwnerByIndex(owner: string, index: ethers.BigNumber): Promise<ethers.BigNumber> {
+    tokenOfOwnerByIndex(owner: string, index: bigint): Promise<bigint> {
         return this.eth_call(functions.tokenOfOwnerByIndex, [owner, index])
     }
 
-    tokenURI(tokenId: ethers.BigNumber): Promise<string> {
+    tokenURI(tokenId: bigint): Promise<string> {
         return this.eth_call(functions.tokenURI, [tokenId])
     }
 
-    totalSupply(): Promise<ethers.BigNumber> {
+    totalSupply(): Promise<bigint> {
         return this.eth_call(functions.totalSupply, [])
     }
 }

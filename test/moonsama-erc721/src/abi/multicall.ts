@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 import {ContractBase, Func} from './abi.support'
 
 
-const abi = new ethers.utils.Interface([
+const abi = new ethers.Interface([
     {
         type: 'function',
         name: 'aggregate',
@@ -55,13 +55,13 @@ type AnyFunc = Func<any, {}, any>
 type Call = [address: string, bytes: string]
 
 
-const aggregate = new Func<[calls: Call[]], {}, {blockNumber: ethers.BigNumber, returnData: string[]}>(
-    abi, abi.getSighash('aggregate')
+const aggregate = new Func<[calls: Call[]], {}, {blockNumber: bigint, returnData: string[]}>(
+    abi, abi.getFunction('aggregate')!.selector
 )
 
 
 const try_aggregate = new Func<[requireSuccess: boolean, calls: Array<[target: string, callData: string]>], {}, Array<{success: boolean, returnData: string}>>(
-    abi, abi.getSighash('tryAggregate')
+    abi, abi.getFunction('tryAggregate')!.selector
 )
 
 

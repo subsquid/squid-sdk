@@ -62,7 +62,7 @@ function decodeTxInput(input: string): {method: string; args: any} | undefined {
                 method: 'approve',
                 args: {
                     spender,
-                    value: value.toBigInt()
+                    value
                 }
             }
         }
@@ -72,7 +72,7 @@ function decodeTxInput(input: string): {method: string; args: any} | undefined {
                 method: 'transfer',
                 args: {
                     to,
-                    value: value.toBigInt()
+                    value
                 }
             }
         }
@@ -83,7 +83,7 @@ function decodeTxInput(input: string): {method: string; args: any} | undefined {
                 args: {
                     from,
                     to,
-                    value: value.toBigInt()
+                    value
                 }
             }
         }

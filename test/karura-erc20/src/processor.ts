@@ -1,7 +1,7 @@
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
-import * as erc20 from "./erc20"
+import * as erc20 from "./abi/erc20"
 import {Owner, Transfer} from "./model"
 
 
@@ -17,7 +17,7 @@ const processor = new SubstrateBatchProcessor()
         logs: [{
             contract: CONTRACT_ADDRESS,
             filter: [[
-                erc20.events['Transfer(address,address,uint256)'].topic
+                erc20.events.Transfer.topic
             ]]
         }],
         data: {
@@ -101,12 +101,12 @@ function extractTransferRecords(ctx: Ctx): TransferRecord[] {
             if (item.name == 'EVM.Executed') {
                 for (let log of item.event.args.logs) {
                     if (log.address == CONTRACT_ADDRESS) {
-                        let transfer = erc20.events['Transfer(address,address,uint256)'].decode(log)
+                        let transfer = erc20.events.Transfer.decode(log)
                         records.push({
                             id: item.event.id + '-' + logIndex++,
                             from: transfer.from,
                             to: transfer.to,
-                            amount: transfer.value.toBigInt(),
+                            amount: transfer.value,
                             block: block.header.height,
                             timestamp: new Date(block.header.timestamp)
                         })
