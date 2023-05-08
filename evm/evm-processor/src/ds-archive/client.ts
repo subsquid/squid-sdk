@@ -206,16 +206,11 @@ function mapTransaction(block: BlockHeader<AllFields>, src: gw.Transaction): Tra
     let key: keyof gw.Transaction
     for (key in src) {
         switch(key) {
-            case 'from':
-            case 'to':
-            case 'hash':
-            case 'input':
-            case 'r':
-            case 's':
-                tx[key] = src[key]
-                break
             case 'gas':
             case 'gasPrice':
+            case 'gasUsed':
+            case 'cumulativeGasUsed':
+            case 'effectiveGasPrice':
             case 'value':
             case 'v':
             case 'maxFeePerGas':
@@ -226,8 +221,12 @@ function mapTransaction(block: BlockHeader<AllFields>, src: gw.Transaction): Tra
             case 'chainId':
             case 'yParity':
             case 'nonce':
+            case 'type':
+            case 'status':
                 tx[key] = src[key]
                 break
+            default:
+                tx[key] = src[key]
         }
     }
 
