@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/evm-processor_v1.0.1",
+      "date": "Mon, 08 May 2023 12:14:55 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "not all transaction fields where passed to the data handler"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/evm-processor_v1.0.0",
       "date": "Mon, 01 May 2023 18:57:46 GMT",
