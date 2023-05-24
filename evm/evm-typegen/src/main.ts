@@ -33,6 +33,11 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
             '--etherscan-api-key <key>',
             'etherscan API key'
         )
+        .option(
+            '--storage-layout <str>',
+            'storage layout file',
+            specArgument
+        )
         .option('--clean', 'delete output directory before run')
         .addHelpText('afterAll', `
 ABI file can be specified in three ways:
@@ -62,6 +67,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         multicall?: boolean,
         etherscanApi?: string
         etherscanApiKey?: string
+        storageLayout?: Spec[]
     }
     let dest = new OutDir(program.processedArgs[0])
     let specs = program.processedArgs[1] as Spec[]

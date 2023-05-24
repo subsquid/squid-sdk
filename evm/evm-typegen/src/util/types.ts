@@ -1,6 +1,6 @@
 import assert from 'assert'
 import type {ParamType} from 'ethers'
-
+import {Slot, SlotKind, StorageFragment} from './storageLayout'
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
 export function getType(param: ParamType): string {
@@ -34,7 +34,6 @@ export function getType(param: ParamType): string {
     throw new Error('unknown type')
 }
 
-
 export function getFullTupleType(params: ReadonlyArray<ParamType>): string {
     let tuple = getTupleType(params)
     let struct = getStructType(params)
@@ -45,13 +44,17 @@ export function getFullTupleType(params: ReadonlyArray<ParamType>): string {
     }
 }
 
-
 export function getTupleType(params: ReadonlyArray<ParamType>): string {
-    return '[' + params.map(p => {
-        return p.name ? `${p.name}: ${getType(p)}` : `_: ${getType(p)}`
-    }).join(', ') + ']'
+    return (
+        '[' +
+        params
+            .map((p) => {
+                return p.name ? `${p.name}: ${getType(p)}` : `_: ${getType(p)}`
+            })
+            .join(', ') +
+        ']'
+    )
 }
-
 
 // https://github.com/ethers-io/ethers.js/blob/278f84174409b470fa7992e1f8b5693e6e5d2dac/src.ts/abi/coders/tuple.ts#L36
 export function getStructType(params: ReadonlyArray<ParamType>): string {
@@ -62,11 +65,28 @@ export function getStructType(params: ReadonlyArray<ParamType>): string {
             counts[p.name] = (counts[p.name] || 0) + 1
         }
     }
-    let fields = params.filter(p => counts[p.name] == 1)
-    return '{' + fields.map(f => `${f.name}: ${getType(f)}`).join(', ') + '}'
+    let fields = params.filter((p) => counts[p.name] == 1)
+    return '{' + fields.map((f) => `${f.name}: ${getType(f)}`).join(', ') + '}'
 }
-
 
 export function getReturnType(outputs: ReadonlyArray<ParamType>) {
     return outputs.length == 1 ? getType(outputs[0]) : getFullTupleType(outputs)
+}
+
+export function getKeysType(slot: Slot): string {
+    let types: string[] = []
+    let s: Slot | undefined = slot
+    while (s != null) {
+        switch (s.kind) {
+            case SlotKind.Array:
+            case SlotKind.DynamicArray:
+                types.push('number')
+                break
+            case SlotKind.Mapping:
+                types.push('string')
+                break
+        }
+    }
+
+    return `[${types.join(', ')}]`
 }
