@@ -13,8 +13,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "moduleResolution": "node16",
-    "moduleDetection": "force"
   },
   "include": [
     "src"

@@ -3,7 +3,7 @@ import {Logger} from '@subsquid/logger'
 import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
 import {getFullTupleType, getKeysType, getReturnType, getStructType, getTupleType, getType} from './util/types'
-import {StorageFragment, StorageLayout} from './util/storageLayout'
+import {StorageFragment, StorageLayout} from './layout.support'
 
 export class StorageTypegen {
     private out: FileOutput
@@ -42,7 +42,7 @@ export class StorageTypegen {
         this.out.line()
         this.out.block(`export const storage =`, () => {
             for (let i of storage) {
-                this.out.line(`${this.getPropName(i)}: new StorageItem<${getKeysType(i.slot)}>(`)
+                this.out.line(`${this.getPropName(i)}: new StorageItem<${getKeysType(i.path)}, number>(`)
                 this.out.indentation(() => this.out.line(`layout, '${i.name}'`))
                 this.out.line('),')
             }
@@ -55,6 +55,6 @@ export class StorageTypegen {
 
     @def
     private getStorage(): StorageFragment[] {
-        return this.layout.project.fragments
+        return this.layout.fragments
     }
 }

@@ -1,6 +1,6 @@
 import assert from 'assert'
 import type {ParamType} from 'ethers'
-import {Slot, SlotKind, StorageFragment} from './storageLayout'
+import {Slot, SlotKind, StorageFragment} from '../layout.support'
 
 // taken from: https://github.com/ethers-io/ethers.js/blob/948f77050dae884fe88932fd88af75560aac9d78/packages/cli/src.ts/typescript.ts#L10
 export function getType(param: ParamType): string {
@@ -73,20 +73,21 @@ export function getReturnType(outputs: ReadonlyArray<ParamType>) {
     return outputs.length == 1 ? getType(outputs[0]) : getFullTupleType(outputs)
 }
 
-export function getKeysType(slot: Slot): string {
-    let types: string[] = []
-    let s: Slot | undefined = slot
-    while (s != null) {
-        switch (s.kind) {
-            case SlotKind.Array:
-            case SlotKind.DynamicArray:
-                types.push('number')
-                break
-            case SlotKind.Mapping:
-                types.push('string')
-                break
-        }
-    }
-
-    return `[${types.join(', ')}]`
+export function getKeysType(path: Slot[]): string {
+    return (
+        `[` +
+        path
+            .filter((s) => s.kind === SlotKind.Array || s.kind === SlotKind.DynamicArray || s.kind === SlotKind.Mapping)
+            .map((s) => {
+                switch (s.kind) {
+                    case SlotKind.Array:
+                    case SlotKind.DynamicArray:
+                        return `${s.lable}_index: number`
+                    case SlotKind.Mapping:
+                        return `${s.lable}_key: string`
+                }
+            })
+            .join(', ') +
+        `]`
+    )
 }
