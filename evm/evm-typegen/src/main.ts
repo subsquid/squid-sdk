@@ -8,6 +8,8 @@ import {OutDir} from '@subsquid/util-internal-code-printer'
 import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
+import {StorageLayout} from './layout.support'
+import {StorageTypegen} from './storageTypegen'
 
 
 const LOG = createLogger('sqd:evm-typegen')
@@ -77,7 +79,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         dest.del()
     }
 
-    if (specs.length == 0 && !opts.multicall) {
+    if (specs.length == 0 && !opts.multicall && !opts.storageLayout?.length) {
         LOG.warn('no ABI files given, nothing to generate')
         return
     }
@@ -95,6 +97,19 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         let abi_json = await read(spec, opts)
         let abi = new ethers.Interface(abi_json)
         new Typegen(dest, abi, spec.name, LOG).generate()
+    }
+
+    if (opts.storageLayout) {
+        dest.add('layout.support.ts', [__dirname, '../src/layout.support.ts'])
+        LOG.info(`saved ${dest.path('layout.support.ts')}`)
+        
+        for (let spec of opts.storageLayout) {
+            LOG.info(`processing ${spec.src}`)
+            let layout_json = await readLayout(spec)
+            let layout = new StorageLayout(layout_json)
+            new StorageTypegen(dest, layout, spec.name, LOG).generate()
+        }
+
     }
 }, err => LOG.fatal(err))
 
@@ -116,6 +131,19 @@ async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKe
     } else {
         throw new Error('Unrecognized ABI format')
     }
+}
+
+async function readLayout(spec: Spec): Promise<any> {
+    if (spec.kind == 'address') {
+        throw new Error()
+    }
+    let abi: any
+    if (spec.kind == 'url') {
+        throw new Error()
+    } else {
+        abi = JSON.parse(fs.readFileSync(spec.src, 'utf-8'))
+    }
+    return abi
 }
 
 
