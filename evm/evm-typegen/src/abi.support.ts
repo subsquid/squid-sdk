@@ -1,5 +1,6 @@
 import assert from 'assert'
 import * as ethers from 'ethers'
+import {StorageItem} from './layout.support'
 
 export interface LogRecord {
     topics: string[]
@@ -109,7 +110,7 @@ export class ContractBase {
         return func.decodeResult(result)
     }
 
-    // async eth_getStorage<K, V>(storage: Storage<K, V>, key: K): Promise<V> {
-    //     throw new Error('not implemented')
-    // }
+    async eth_getStorage<V>(storage: StorageItem<V>): Promise<V> {
+        throw new Error('not implemented')
+    }
 }

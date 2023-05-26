@@ -8,7 +8,6 @@ import {OutDir} from '@subsquid/util-internal-code-printer'
 import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
-import {StorageLayout} from './layout.support'
 import {StorageTypegen} from './storageTypegen'
 
 
@@ -105,8 +104,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         
         for (let spec of opts.storageLayout) {
             LOG.info(`processing ${spec.src}`)
-            let layout_json = await readLayout(spec)
-            let layout = new StorageLayout(layout_json)
+            let layout = await readLayout(spec)
             new StorageTypegen(dest, layout, spec.name, LOG).generate()
         }
 

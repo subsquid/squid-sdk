@@ -1,355 +1,202 @@
 import assert from 'assert'
 import {ethers} from 'ethers'
 
-export interface RawStorageLayout {
-    storage: RawStorageItem[]
-    types: Record<string, RawStorageType>
+type StorageItemConstructor<S extends StorageItem<any>> = {
+    new (layout: StorageLayout, type: StorageType, slot: string): S
 }
 
-export interface RawStorageItem {
+export interface StorageLayout {
+    storage: StorageFragment[]
+    types: Record<string, StorageType>
+}
+
+export interface StorageFragment {
     label: string
     offset: number
     slot: string
     type: string
 }
 
-export interface RawStorageType {
+export interface StorageType {
     encoding: string
     label: string
     numberOfBytes: string
     base?: string
-    members?: RawStorageItem[]
+    members?: StorageFragment[]
     key?: string
     value?: string
 }
 
-export class StorageItem<K extends any[], V> {
-    protected fragment: StorageFragment
-
-    constructor(protected layout: StorageLayout, public readonly label: string) {
-        this.fragment = layout.getItem(label)
-    }
-
-    encodeKey(...keys: K): string {
-        return this.layout.encodeKey(this.fragment, ...keys)
-    }
+export class StorageItem<V> {
+    constructor(protected layout: StorageLayout, protected type: StorageType, public readonly slot: string) {}
 
     decodeValue(val: string): V {
-        return this.layout.decodeValue(this.fragment, val)
+        throw new Error('not implemented')
     }
 }
 
-enum TypeEncoding {
-    Inplace = 'inplace',
-    Mapping = 'mapping',
-    DynamicArray = 'dynamic_array',
+export class StructStorageItem<F extends Record<string, StorageItem<any>>> extends StorageItem<unknown> {
+    private fields: F
+
+    constructor(layout: StorageLayout, type: StorageType, slot: string) {
+        super(layout, type, slot)
+
+        let members = this.getMembers()
+        this.fields = Object.fromEntries(
+            members.map((m: StorageFragment & {label: keyof F}) => {
+                let memberType = this.layout.types[m.type]
+                assert(memberType != null)
+                let memberConstructor = getItemConstructor(memberType)
+                return [
+                    m.label,
+                    new memberConstructor(layout, memberType, uint256toHex(BigInt(this.slot) + BigInt(m.slot))),
+                ]
+            })
+        ) as any
+    }
+
+    item<N extends keyof F>(field: N): F[N] {
+        return this.fields[field]
+    }
+
+    private getMembers() {
+        assert(this.type.members != null)
+        return this.type.members
+    }
 }
 
-// export type Primitive =
-//     | ''
-//     | 'address'
-//     | 'bool'
-//     | 'string'
-//     | `${'bytes'}${number | ''}`
-//     | `${'u' | ''}${'int'}${8 | 16 | 32 | 64 | 128 | 256}`
-//     | `enum ${string}`
+export class MappingStorageItem<K, I extends StorageItem<any>> extends StorageItem<unknown> {
+    private itemContructor: StorageItemConstructor<I>
 
-export interface TypeInfo {
-    numberOfBytes: bigint
-    label: string
+    constructor(layout: StorageLayout, type: StorageType, slot: string) {
+        super(layout, type, slot)
+
+        let valueType = this.getValueType()
+        this.itemContructor = getItemConstructor(valueType) as StorageItemConstructor<I>
+    }
+
+    item(key: K): I {
+        let keyType = this.getKeyType()
+        let paddedKey = padKey(keyType, key)
+
+        let itemType = this.getValueType()
+        let itemSlot = ethers.keccak256(paddedKey + this.slot.slice(2))
+
+        return new this.itemContructor(this.layout, itemType, itemSlot)
+    }
+
+    private getKeyType() {
+        assert(this.type.key != null)
+
+        let type = this.layout.types[this.type.key]
+        assert(type != null)
+
+        return type
+    }
+
+    private getValueType() {
+        assert(this.type.value != null)
+
+        let type = this.layout.types[this.type.value]
+        assert(type != null)
+
+        return type
+    }
 }
 
-export interface InplaceType extends TypeInfo {
-    encoding: TypeEncoding.Inplace
-    members?: any[]
-    base?: string
+export class ArrayStorageItem<I extends StorageItem<any>> extends StorageItem<unknown> {
+    private itemContructor: StorageItemConstructor<I>
+
+    constructor(layout: StorageLayout, type: StorageType, slot: string) {
+        super(layout, type, slot)
+
+        let baseType = this.getBaseType()
+        this.itemContructor = getItemConstructor(baseType) as StorageItemConstructor<I>
+    }
+
+    item(index: number | bigint): I {
+        if (typeof index === 'number') {
+            assert(Number.isSafeInteger(index))
+            index = BigInt(index)
+        }
+        assert(index > -1n)
+
+        let itemType = this.getBaseType()
+        let arrayLen = BigInt(this.type.numberOfBytes) / BigInt(itemType.numberOfBytes)
+        assert(index < arrayLen)
+        let itemSlot = uint256toHex(BigInt(this.slot) + (index * BigInt(itemType.numberOfBytes)) / 32n)
+
+        return new this.itemContructor(this.layout, itemType, itemSlot)
+    }
+
+    private getBaseType() {
+        assert(this.type.base != null)
+
+        let baseType = this.layout.types[this.type.base]
+        assert(baseType != null)
+
+        return baseType
+    }
 }
 
-export interface DynamicArrayType extends TypeInfo {
-    encoding: TypeEncoding.DynamicArray
-    base: string
+export class DynamicArrayStorageItem<I extends StorageItem<any>> extends StorageItem<bigint> {
+    private itemContructor: StorageItemConstructor<I>
+
+    constructor(layout: StorageLayout, type: StorageType, slot: string) {
+        super(layout, type, slot)
+
+        let baseType = this.getBaseType()
+        this.itemContructor = getItemConstructor(baseType) as StorageItemConstructor<I>
+    }
+
+    item(index: number | bigint): I {
+        if (typeof index === 'number') {
+            assert(Number.isSafeInteger(index))
+            index = BigInt(index)
+        }
+        assert(index > -1n)
+
+        let itemType = this.getBaseType()
+        let itemSlot = uint256toHex(
+            BigInt(ethers.keccak256(this.slot)) + (index * BigInt(itemType.numberOfBytes)) / 32n
+        )
+
+        return new this.itemContructor(this.layout, itemType, itemSlot)
+    }
+
+    private getBaseType() {
+        assert(this.type.base != null)
+
+        let baseType = this.layout.types[this.type.base]
+        assert(baseType != null)
+
+        return baseType
+    }
 }
 
-export interface MappingType extends TypeInfo {
-    encoding: TypeEncoding.Mapping
-    key: string
-    value: string
-}
-
-export interface Field {
-    name: string
-    type: string
-}
-
-export type Type = InplaceType | MappingType | DynamicArrayType
-
-export enum SlotKind {
-    Index,
-    Array,
-    DynamicArray,
-    Mapping,
-}
-
-export interface IndexSlot {
-    kind: SlotKind.Index
-    index: bigint
-    offset: number
-    type: string
-    lable: string
-}
-
-export interface ArraySlot {
-    kind: SlotKind.Array
-    type: string
-    lable: string
-}
-
-export interface DynamicArraySlot {
-    kind: SlotKind.DynamicArray
-    type: string
-    lable: string
-}
-
-export interface MappingSlot {
-    kind: SlotKind.Mapping
-    type: string
-    lable: string
-}
-
-export type Slot = IndexSlot | ArraySlot | DynamicArraySlot | MappingSlot
-
-export interface StorageFragment {
-    name: string
-    path: Slot[]
+function getItemConstructor(type: StorageType): new (...args: any[]) => StorageItem<any> {
+    switch (type.encoding) {
+        case 'inplace':
+            if (type.members != null) {
+                return StructStorageItem
+            } else if (type.base != null) {
+                return ArrayStorageItem
+            } else {
+                return StorageItem
+            }
+        case 'mapping':
+            return MappingStorageItem
+        case 'dynamic_array':
+            return DynamicArrayStorageItem
+        case 'bytes':
+        default:
+            throw new Error('unexpected case')
+    }
 }
 
 const typeBytes = new RegExp(/^bytes([0-9]*)$/)
 const typeInt = new RegExp(/^(u?int)([0-9]*)$/)
 const typeEnum = new RegExp(/^enum (.+)$/)
-
-export class StorageLayout {
-    public types: Record<string, Type> = {}
-    public fragments: StorageFragment[] = []
-
-    constructor(private json: RawStorageLayout) {
-        for (let rawItem of json.storage) {
-            this.parseRawItem(rawItem, [])
-        }
-    }
-
-    getItem(name: string): StorageFragment {
-        let item = this.fragments.find((f) => f.name === name)
-        assert(item != null, `missing item "${name}"`)
-        return item
-    }
-
-    encodeKey(fragment: StorageFragment, ...keyList: any[]): string {
-        let index = 0n
-
-        let prevSlot: Slot | undefined
-        for (let slot of fragment.path) {
-            switch (slot.kind) {
-                case SlotKind.Index: {
-                    index += slot.index
-
-                    break
-                }
-                case SlotKind.Array: {
-                    let itemIndex = keyList.pop()
-                    assert(
-                        (typeof itemIndex === 'number' && Number.isSafeInteger(itemIndex)) ||
-                            typeof itemIndex === 'bigint'
-                    )
-                    itemIndex = BigInt(itemIndex)
-                    assert(itemIndex > -1)
-
-                    assert(prevSlot != null)
-
-                    let itemType = this.types[slot.type]
-                    assert(itemType != null)
-
-                    let arrayType = this.types[prevSlot.type]
-                    assert(arrayType != null)
-                    let arrayLen = arrayType.numberOfBytes / itemType.numberOfBytes
-                    assert(itemIndex < arrayLen)
-
-                    index += (itemIndex * itemType.numberOfBytes) / 32n
-
-                    break
-                }
-                case SlotKind.DynamicArray: {
-                    let itemIndex = keyList.pop()
-                    assert(
-                        (typeof itemIndex === 'number' && Number.isSafeInteger(itemIndex)) ||
-                            typeof itemIndex === 'bigint'
-                    )
-                    itemIndex = BigInt(itemIndex)
-                    assert(itemIndex > -1n)
-
-                    let itemType = this.types[slot.type]
-                    assert(itemType != null)
-
-                    index = BigInt(ethers.keccak256(uint256toHex(index)))
-                    index += (itemIndex * itemType.numberOfBytes) / 32n
-
-                    break
-                }
-                case SlotKind.Mapping: {
-                    let itemKey = keyList.pop()
-                    assert(itemKey != null)
-
-                    assert(prevSlot != null)
-
-                    let mappingType = this.types[prevSlot.type]
-                    assert(mappingType != null && mappingType.encoding === TypeEncoding.Mapping)
-                    let keyType = this.types[mappingType.key]
-                    assert(keyType != null)
-
-                    let paddedKey = padKey(keyType, itemKey)
-                    console.log(padKey)
-
-                    index = BigInt(ethers.keccak256(paddedKey + uint256toHex(index).slice(2)))
-
-                    break
-                }
-            }
-
-            assert(isUint256(index))
-            prevSlot = slot
-        }
-
-        return uint256toHex(index)
-    }
-
-    decodeValue<T>(fragment: StorageFragment, data: string): T {
-        // let type = this.project.types[fragment.slot.type]
-        // assert(type !== null)
-
-        // assert(type.kind === TypeKind.Primitive)
-
-        // let bytes = getBytesCopy(data)
-        // assert(bytes.length === 32)
-
-        // let coder = this.getCoder(type, fragment.name)
-        // return coder.decode(new Reader(bytes, false))
-
-        throw new Error('invalid type')
-    }
-
-    formatJson(): string {
-        return JSON.stringify(this.json)
-    }
-
-    private parseRawItem(item: RawStorageItem, path: Slot[]) {
-        path.push({
-            kind: SlotKind.Index,
-            index: BigInt(item.slot),
-            offset: item.offset,
-            type: item.type,
-            lable: item.label,
-        })
-
-        this.parseRawType(item.type, path)
-    }
-
-    private parseRawType(typeName: string, path: Slot[]) {
-        let type = this.json.types[typeName]
-        assert(type != null)
-
-        switch (type.encoding) {
-            case 'inplace':
-                if (type.members != null) {
-                    for (let m of type.members) {
-                        this.parseRawItem(m, [...path])
-                    }
-                } else if (type.base != null) {
-                    path.push({
-                        kind: SlotKind.Array,
-                        type: type.base,
-                        lable: 'item',
-                    })
-
-                    this.parseRawType(type.base, path)
-                } else {
-                    assert(isPrimitive(type.label))
-
-                    this.fragments.push({
-                        name: createFragmentName(path),
-                        path,
-                    })
-                }
-
-                this.types[typeName] = {
-                    encoding: TypeEncoding.Inplace,
-                    label: type.label,
-                    numberOfBytes: BigInt(type.numberOfBytes),
-                    base: type.base,
-                }
-                break
-            case 'mapping':
-                assert(type.key != null)
-                assert(type.value != null)
-
-                path.push({
-                    kind: SlotKind.Mapping,
-                    type: type.value,
-                    lable: 'item',
-                })
-
-                this.parseRawType(type.value, path)
-
-                this.types[typeName] = {
-                    encoding: TypeEncoding.Mapping,
-                    label: type.label,
-                    numberOfBytes: BigInt(type.numberOfBytes),
-                    key: type.key,
-                    value: type.value,
-                }
-
-                let keyType = this.json.types[type.key]
-                assert(keyType != null)
-
-                this.types[type.key] = {
-                    encoding: TypeEncoding.Inplace,
-                    label: keyType.label,
-                    numberOfBytes: BigInt(keyType.numberOfBytes),
-                }
-
-                break
-            case 'dynamic_array':
-                assert(type.base != null)
-
-                this.fragments.push({
-                    name: createFragmentName(path),
-                    path,
-                })
-
-                path.push({
-                    kind: SlotKind.DynamicArray,
-                    type: type.base,
-                    lable: 'item',
-                })
-
-                this.parseRawType(type.base, path)
-
-                this.types[typeName] = {
-                    encoding: TypeEncoding.DynamicArray,
-                    label: type.label,
-                    numberOfBytes: BigInt(type.numberOfBytes),
-                    base: type.base,
-                }
-                break
-            case 'bytes':
-                return
-            default:
-                throw new Error('unexpected case')
-        }
-    }
-}
-
-function createFragmentName(slots: Slot[]) {
-    return slots.map((s) => s.lable).join('.')
-}
 
 function isPrimitive(type: string) {
     return (
@@ -366,10 +213,10 @@ function uint256toHex(n: bigint): string {
     return '0x' + n.toString(16).padStart(64, '0')
 }
 
-function padKey(keyType: Type, key: any) {
+function padKey(keyType: StorageType, key: any) {
     if (typeInt.test(keyType.label) || typeEnum.test(keyType.label)) {
         assert(typeof key === 'number' || typeof key === 'bigint')
-        return uint256toHex(toUint256(key, keyType.numberOfBytes * 8n, keyType.label[0] !== 'u'))
+        return uint256toHex(toUint256(key, BigInt(keyType.numberOfBytes) * 8n, keyType.label[0] !== 'u'))
     }
 
     if (typeBytes.test(keyType.label)) {

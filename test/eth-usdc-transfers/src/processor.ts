@@ -18,14 +18,13 @@ const processor = new EvmBatchProcessor()
         topic0: [erc20.events.Transfer.topic],
     })
     .addStateDiff({
-        address: [CONTRACT],
     })
     .setFields({
         log: {transactionHash: true}
     })
     .setBlockRange({from: 16_000_000})
 
-    console.log(layout.storage.totalSupply_.encodeKey())
+    console.log(layout.storage.totalSupply_.slot)
 
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
@@ -46,9 +45,8 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
                 }))
             }
         }
-        
-        let c = new erc20.Contract(ctx, block.header, CONTRACT)
-        console.log(await c.eth_getStorage(layout.storage.totalSupply_, []))
+
+        console.log(block.stateDiffs)
     }
 
     await ctx.store.insert(transfers)

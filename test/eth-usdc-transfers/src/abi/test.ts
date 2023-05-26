@@ -1,58 +1,93 @@
-import {StorageLayout, StorageItem} from './layout.support'
+import {
+    StorageLayout,
+    StorageItem,
+    StructStorageItem,
+    MappingStorageItem,
+    ArrayStorageItem,
+    DynamicArrayStorageItem,
+} from './layout.support'
 import {LAYOUT_JSON} from './test.layout'
 
-export const layout = new StorageLayout(LAYOUT_JSON);
+export const layout = LAYOUT_JSON
 
 export const storage = {
-    x: new StorageItem<[], number>(
-        layout, 'x'
+    x: new StorageItem<bigint>(
+        layout,
+        layout.types['t_uint256'],
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        0
     ),
-    y: new StorageItem<[], number>(
-        layout, 'y'
+    y: new StorageItem<bigint>(
+        layout,
+        layout.types['t_uint256'],
+        '0x0000000000000000000000000000000000000000000000000000000000000001',
+        0
     ),
-    's.a': new StorageItem<[], number>(
-        layout, 's.a'
+    s: new StructStorageItem<{
+        a: StorageItem<bigint>
+        b: StorageItem<bigint>
+        staticArray: ArrayStorageItem<StorageItem<bigint>>
+        dynArray: DynamicArrayStorageItem<StorageItem<bigint>>
+    }>(
+        layout,
+        layout.types['t_struct(S)13_storage'],
+        '0x0000000000000000000000000000000000000000000000000000000000000002',
+        0
     ),
-    's.b': new StorageItem<[], number>(
-        layout, 's.b'
+    addr: new StorageItem<string>(
+        layout,
+        layout.types['t_address'],
+        '0x0000000000000000000000000000000000000000000000000000000000000006',
+        0
     ),
-    's.staticArray.item': new StorageItem<[item_index: number], number>(
-        layout, 's.staticArray.item'
+    map: new MappingStorageItem<number, MappingStorageItem<string, StorageItem<boolean>>>(
+        layout,
+        layout.types['t_mapping(t_enum(Enum)21,t_mapping(t_address,t_bool))'],
+        '0x0000000000000000000000000000000000000000000000000000000000000007',
+        0
     ),
-    's.dynArray': new StorageItem<[item_index: number], number>(
-        layout, 's.dynArray'
+    array: new DynamicArrayStorageItem<StorageItem<string>>(
+        layout,
+        layout.types['t_array(t_string_storage)dyn_storage'],
+        '0x0000000000000000000000000000000000000000000000000000000000000008',
+        0
     ),
-    's.dynArray.item': new StorageItem<[item_index: number], number>(
-        layout, 's.dynArray.item'
+    s1: new StorageItem<string>(
+        layout,
+        layout.types['t_string_storage'],
+        '0x0000000000000000000000000000000000000000000000000000000000000009',
+        0
     ),
-    addr: new StorageItem<[], number>(
-        layout, 'addr'
+    b1: new StorageItem<string>(
+        layout,
+        layout.types['t_bytes_storage'],
+        '0x000000000000000000000000000000000000000000000000000000000000000a',
+        0
     ),
-    'map.item.item': new StorageItem<[item_key: string, item_key: string], number>(
-        layout, 'map.item.item'
+    b2: new StorageItem<string>(
+        layout,
+        layout.types['t_bytes30'],
+        '0x000000000000000000000000000000000000000000000000000000000000000b',
+        0
     ),
-    array: new StorageItem<[item_index: number], number>(
-        layout, 'array'
+    b3: new StorageItem<string>(
+        layout,
+        layout.types['t_bytes2'],
+        '0x000000000000000000000000000000000000000000000000000000000000000b',
+        30
     ),
-    b2: new StorageItem<[], number>(
-        layout, 'b2'
-    ),
-    b3: new StorageItem<[], number>(
-        layout, 'b3'
-    ),
-    'ses.item.a': new StorageItem<[item_index: number], number>(
-        layout, 'ses.item.a'
-    ),
-    'ses.item.b': new StorageItem<[item_index: number], number>(
-        layout, 'ses.item.b'
-    ),
-    'ses.item.staticArray.item': new StorageItem<[item_index: number, item_index: number], number>(
-        layout, 'ses.item.staticArray.item'
-    ),
-    'ses.item.dynArray': new StorageItem<[item_index: number, item_index: number], number>(
-        layout, 'ses.item.dynArray'
-    ),
-    'ses.item.dynArray.item': new StorageItem<[item_index: number, item_index: number], number>(
-        layout, 'ses.item.dynArray.item'
+    ses: new ArrayStorageItem<
+        StructStorageItem<{
+            a: StorageItem<bigint>
+            b: StorageItem<bigint>
+            staticArray: ArrayStorageItem<StorageItem<bigint>>
+            dynArray: DynamicArrayStorageItem<StorageItem<bigint>>
+        }>
+    >(
+        layout,
+        layout.types['t_array(t_struct(S)13_storage)2_storage'],
+        '0x000000000000000000000000000000000000000000000000000000000000000c',
+        0
     ),
 }
+
