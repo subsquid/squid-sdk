@@ -456,6 +456,13 @@
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+      
+    },
+    {
+      "packageName": "@subsquid/evm-support",
+      "projectFolder": "evm/evm-support",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-typegen",

@@ -1,5 +1,5 @@
 import * as ethers from 'ethers'
-import {ContractBase, Func} from './abi.support'
+import {ContractBase, Func} from './support'
 
 
 const abi = new ethers.Interface([
