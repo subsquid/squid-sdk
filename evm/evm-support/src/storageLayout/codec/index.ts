@@ -1,7 +1,6 @@
 import {unexpectedCase} from '@subsquid/util-internal'
 import {Sink} from './sink'
 import {Src} from './src'
-import {assert} from 'console'
 
 export * from './sink'
 export * from './src'
@@ -21,11 +20,13 @@ export type Elementary =
     | 'ufixed'
     | `ufixed${8 | 16 | 32 | 64 | 128 | 256}${number}`
 
+const typeBytes = new RegExp(/^bytes([0-9]*)$/)
+
 // TODO: add support for "fixed" types, don't know what type it should take
 export function encodeElementary(type: Elementary, val: any, sink: Sink): void {
     let match = type.match(typeBytes)
     if (match != null) {
-        sink.bytes(val)
+        sink.bytes(val, Number(match[1]))
     }
 
     switch (type) {
@@ -80,10 +81,13 @@ export function encodeElementary(type: Elementary, val: any, sink: Sink): void {
     }
 }
 
-const typeBytes = new RegExp(/^bytes([0-9]*)$/)
-
 // TODO: add support for "fixed" types, don't know what type it should return
 export function decodeElementary(type: Elementary, src: Src): any {
+    let match = type.match(typeBytes)
+    if (match != null) {
+        src.bytes(Number(match[1]))
+    }
+
     switch (type) {
         case 'int8':
             return src.i8()
