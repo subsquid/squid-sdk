@@ -4,9 +4,7 @@ import * as erc20 from './abi/erc20'
 import * as layout from './abi/layout'
 import {Transfer} from './model'
 
-
 const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-
 
 const processor = new EvmBatchProcessor()
     .setDataSource({
@@ -23,9 +21,6 @@ const processor = new EvmBatchProcessor()
         log: {transactionHash: true}
     })
     .setBlockRange({from: 16_000_000})
-
-    console.log(layout.storage.totalSupply_.slot)
-
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
@@ -46,7 +41,8 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
             }
         }
 
-        console.log(block.stateDiffs)
+        let contract = new erc20.Contract(ctx, block.header, CONTRACT)
+        await contract.eth_getStorage(layout.storage.currency).then(console.log)
     }
 
     await ctx.store.insert(transfers)

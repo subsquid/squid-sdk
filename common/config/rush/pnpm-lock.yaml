@@ -685,7 +685,7 @@ packages:
   /@types/connect/3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 16.18.25
+      '@types/node': 18.15.13
     dev: false
 
   /@types/cors/2.8.12:
@@ -833,7 +833,7 @@ packages:
     resolution: {integrity: sha512-Cwo8LE/0rnvX7kIIa3QHCkcuF21c05Ayb0ZfxPiv0W8VRiZiNW/WuRupHKpqqGVGf7SUA44QSOUKaEd9lIrd/Q==}
     dependencies:
       '@types/mime': 1.3.2
-      '@types/node': 16.18.25
+      '@types/node': 18.15.13
     dev: false
 
   /@types/serve-static/1.15.1:
@@ -2293,7 +2293,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.5.0
-      '@types/node': 16.18.25
+      '@types/node': 18.15.13
       chalk: 4.1.2
       ci-info: 3.8.0
       graceful-fs: 4.2.11
@@ -3739,7 +3739,7 @@ packages:
     dev: false
 
   file:projects/evm-support.tgz:
-    resolution: {integrity: sha512-u5C8J64wOMrK1L0V0odXDADeVpAAPXPPTW+AD5cLK1DlHF8VD1t8ekZeMfYDMAO56csTK0xjKQH/xHvbdAF5XA==, tarball: file:projects/evm-support.tgz}
+    resolution: {integrity: sha512-BHZa2yAQqwoCNWyq2wUGlhQlUCMxupSw/29XGEKYAndpouQzFZZyuLps6+6MiWAVRhgMZ0z4xRzA0+Ir3z+VSA==, tarball: file:projects/evm-support.tgz}
     name: '@rush-temp/evm-support'
     version: 0.0.0
     dependencies:
@@ -3752,7 +3752,7 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-TiiQS9fkWokHkC9xgfjG+LOM/GRP9w5+3JqhJUaaNhDgOzkviVPXaogI+B+tUQq+MaNL1c1EE1RFRCJveClG7Q==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-HNG6S3Rv3TfUJl4yw8eVbBeQd3K3+yQ5Ne7paji3xr5CAz6VzEHl+JVYMvt7v4O9xTbHXRpvPcFT4K4eHU/zEg==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:

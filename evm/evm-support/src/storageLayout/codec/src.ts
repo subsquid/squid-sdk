@@ -1,4 +1,4 @@
-import {decodeHex} from '@subsquid/util-internal-hex'
+import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import assert from 'assert'
 import {UTF8_DECODER} from './util'
 
@@ -6,12 +6,17 @@ export class Src {
     private idx = 0
     private buf: Uint8Array
 
+    get length() {
+        return this.buf.length
+    }
+
     constructor(buf: Uint8Array | string) {
         if (typeof buf == 'string') {
             this.buf = decodeHex(buf)
         } else {
             this.buf = buf
         }
+        this.idx = this.buf.length - 1
     }
 
     private byte(): number {
@@ -19,7 +24,7 @@ export class Src {
         if (b === undefined) {
             throw eof()
         }
-        this.idx += 1
+        this.idx -= 1
         return b
     }
 
@@ -87,69 +92,28 @@ export class Src {
         return lo + (hi << 128n)
     }
 
-    compact(): number | bigint {
-        let b = this.byte()
-        let mode = b & 3
-        switch (mode) {
-            case 0:
-                return b >> 2
-            case 1:
-                return (b >> 2) + this.byte() * 2 ** 6
-            case 2:
-                return (b >> 2) + this.byte() * 2 ** 6 + this.byte() * 2 ** 14 + this.byte() * 2 ** 22
-            case 3:
-                return this.bigCompact(b >> 2)
-            default:
-                throw new Error('Reached unreachable statement')
-        }
+    address(): string {
+        let bytes = this.bytes(20)
+        return toHex(bytes)
     }
 
-    private bigCompact(len: number): bigint | number {
-        let i = this.u32()
-        switch (len) {
-            case 0:
-                return i
-            case 1:
-                return i + this.byte() * 2 ** 32
-            case 2:
-                return i + this.byte() * 2 ** 32 + this.byte() * 2 ** 40
-        }
-        let n = BigInt(i)
-        let base = 32n
-        while (len--) {
-            n += BigInt(this.byte()) << base
-            base += 8n
-        }
-        return n
-    }
-
-    compactLength(): number {
-        let len = this.compact()
-        assert(typeof len == 'number')
-        return len
-    }
-
-    str(): string {
-        let len = this.compactLength()
+    str(len: number): string {
         let buf = this.bytes(len)
         return UTF8_DECODER.decode(buf)
     }
 
-    address(): string {
-        return ''
-    }
-
     bytes(len: number): Uint8Array {
-        let beg = this.idx
-        let end = (this.idx += len)
+        let end = this.idx + 1
+        let beg = end - len
         if (this.buf.length < end) {
             throw eof()
         }
+        this.idx -= len
         return this.buf.subarray(beg, end)
     }
 
     skip(len: number): void {
-        this.idx += len
+        this.idx -= len
     }
 
     bool(): boolean {
@@ -157,7 +121,7 @@ export class Src {
     }
 
     hasBytes(): boolean {
-        return this.buf.length > this.idx
+        return this.idx > -1
     }
 
     assertEOF(): void {

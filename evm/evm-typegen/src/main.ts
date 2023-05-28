@@ -1,5 +1,4 @@
 import * as fs from 'fs'
-import * as ethers from 'ethers'
 import path from 'path'
 import {InvalidArgumentError, program} from 'commander'
 import {createLogger} from '@subsquid/logger'
@@ -9,6 +8,7 @@ import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
 import {StorageTypegen} from './storageTypegen'
+import {Interface, StorageLayout} from '@subsquid/evm-support'
 
 
 const LOG = createLogger('sqd:evm-typegen')
@@ -94,17 +94,17 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     for (let spec of specs) {
         LOG.info(`processing ${spec.src}`)
         let abi_json = await read(spec, opts)
-        let abi = new ethers.Interface(abi_json)
+        let abi = new Interface(abi_json)
         new Typegen(dest, abi, spec.name, LOG).generate()
     }
 
     if (opts.storageLayout) {
-        dest.add('layout.support.ts', [__dirname, '../src/layout.support.ts'])
         LOG.info(`saved ${dest.path('layout.support.ts')}`)
         
         for (let spec of opts.storageLayout) {
             LOG.info(`processing ${spec.src}`)
-            let layout = await readLayout(spec)
+            let layout_json = await readLayout(spec)
+            let layout = new StorageLayout(layout_json)
             new StorageTypegen(dest, layout, spec.name, LOG).generate()
         }
 
@@ -130,6 +130,7 @@ async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKe
         throw new Error('Unrecognized ABI format')
     }
 }
+
 
 async function readLayout(spec: Spec): Promise<any> {
     if (spec.kind == 'address') {
@@ -191,7 +192,7 @@ function specArgument(value: string, prev?: Spec[]): Spec[] {
 function parseSpec(spec: string): Spec {
     let [src, fragment] = splitFragment(spec)
     if (src.startsWith('0x')) {
-        if (!ethers.isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
+        if (!isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
         return {
             kind: 'address',
             src,
@@ -233,4 +234,9 @@ function basename(file: string): string {
     throw new InvalidArgumentError(
         `Can't derive target basename for output files. Use url fragment to specify it, e.g. #erc20`
     )
+}
+
+
+function isAddress(str: string): boolean {
+    return /^0x[0-9A-Fa-f]{20}$/.test(str)
 }

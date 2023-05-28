@@ -74,6 +74,7 @@ export class TypeRegistry {
                             type: m.type,
                         })),
                     }
+                    break
                 case 'mapping':
                     assert(type.key != null)
                     assert(type.value != null)
@@ -84,6 +85,7 @@ export class TypeRegistry {
                         key: type.key,
                         value: type.value,
                     }
+                    break
                 case 'dynamic_array':
                     assert(type.base != null)
                     this.definitions[name] = {
@@ -92,12 +94,14 @@ export class TypeRegistry {
                         numberOfBytes: BigInt(type.numberOfBytes),
                         base: type.base,
                     }
+                    break
                 case 'bytes':
                     this.definitions[name] = {
                         encoding: 'bytes',
                         label: type.label,
                         numberOfBytes: BigInt(type.numberOfBytes),
                     }
+                    break
                 default:
                     throw unexpectedCase(type.encoding)
             }

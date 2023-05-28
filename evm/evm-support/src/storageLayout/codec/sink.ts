@@ -7,11 +7,12 @@ import {
     checkUnsignedInt,
     unsignedIntByteLength,
 } from './util'
+import {decodeHex} from '@subsquid/util-internal-hex'
 
 export abstract class Sink {
     protected abstract write(byte: number): void
 
-    abstract bytes(b: Uint8Array): void
+    abstract bytes(b: Uint8Array, width?: number): void
 
     private uncheckedU16(val: number): void {
         this.write(val & 0xff)
@@ -110,12 +111,8 @@ export abstract class Sink {
         this.uncheckedU256(val)
     }
 
-    address(val: string): void {}
-
-    str(val: string): void {
-        assert(typeof val == 'string')
-        let bytes = UTF8_ENCODER.encode(val)
-        this.compact(bytes.length)
+    address(val: string): void {
+        let bytes = decodeHex(val)
         this.bytes(bytes)
     }
 
@@ -124,50 +121,38 @@ export abstract class Sink {
         this.write(Number(val))
     }
 
-    compact(val: number | bigint): void {
-        assert((typeof val == 'number' || typeof val == 'bigint') && val >= 0, 'invalid compact')
-        if (val < 64) {
-            this.write(Number(val) * 4)
-        } else if (val < 2 ** 14) {
-            val = Number(val)
-            this.write((val & 63) * 4 + 1)
-            this.write(val >>> 6)
-        } else if (val < 2 ** 30) {
-            val = Number(val)
-            this.write((val & 63) * 4 + 2)
-            this.write((val >>> 6) & 0xff)
-            this.uncheckedU16(val >>> 14)
-        } else if (val < 2n ** 536n) {
-            val = BigInt(val)
-            this.write(unsignedIntByteLength(val) * 4 - 13)
-            while (val > 0) {
-                this.write(Number(val & 0xffn))
-                val = val >> 8n
-            }
-        } else {
-            throw new Error(`${val.toString(16)} is too large for a compact`)
-        }
+    str(val: string): void {
+        assert(typeof val == 'string')
+        let bytes = UTF8_ENCODER.encode(val)
+        this.bytes(bytes)
     }
 }
 
 export class HexSink extends Sink {
-    private hex = '0x'
+    private hex = ''
 
-    protected write(byte: number): void {
-        this.hex += (byte >>> 4).toString(16)
-        this.hex += (byte & 15).toString(16)
+    get length() {
+        return this.hex.length / 2
     }
 
-    bytes(b: Uint8Array): void {
+    protected write(byte: number): void {
+        this.hex = (byte & 15).toString(16) + this.hex
+        this.hex = (byte >>> 4).toString(16) + this.hex
+    }
+
+    bytes(b: Uint8Array, width = 0): void {
         if (Buffer.isBuffer(b)) {
-            this.hex += b.toString('hex')
+            this.hex = b.toString('hex').padEnd(width * 2, '0') + this.hex
         } else {
-            this.hex += Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString('hex')
+            this.hex =
+                Buffer.from(b.buffer, b.byteOffset, b.byteLength)
+                    .toString('hex')
+                    .padEnd(width * 2, '0') + this.hex
         }
     }
 
     toHex(): string {
-        return this.hex
+        return '0x' + this.hex
     }
 }
 
@@ -175,27 +160,32 @@ export class ByteSink extends Sink {
     private buf = Buffer.allocUnsafe(128)
     private pos = 0
 
+    get length() {
+        return this.pos
+    }
+
     private alloc(size: number): void {
         if (this.buf.length - this.pos < size) {
             let buf = Buffer.allocUnsafe(Math.max(size, this.buf.length) * 2)
-            buf.set(this.buf)
+            buf.set(this.buf, buf.length - this.pos - 1)
             this.buf = buf
         }
     }
 
     protected write(byte: number): void {
         this.alloc(1)
-        this.buf[this.pos] = byte
+        this.buf[this.buf.length - this.pos - 1] = byte
         this.pos += 1
     }
 
-    bytes(b: Uint8Array): void {
-        this.alloc(b.length)
-        this.buf.set(b, this.pos)
-        this.pos += b.length
+    bytes(b: Uint8Array, width = 0): void {
+        let len = Math.max(b.length, width)
+        this.alloc(len)
+        this.buf.set(b, this.buf.length - this.pos - len)
+        this.pos += len
     }
 
     toBytes(): Uint8Array {
-        return this.buf.subarray(0, this.pos)
+        return this.buf.subarray(this.buf.length - this.pos)
     }
 }

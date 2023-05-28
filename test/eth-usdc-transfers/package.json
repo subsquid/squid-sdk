@@ -13,7 +13,8 @@
     "dotenv": "^16.0.3",
     "ethers": "^6.3.0",
     "pg": "^8.10.0",
-    "typeorm": "^0.3.15"
+    "typeorm": "^0.3.15",
+    "@subsquid/evm-support": "~0.0.0"
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "^3.0.0",

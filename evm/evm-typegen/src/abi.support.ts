@@ -1,3 +1,5 @@
+import {Func, StorageItem} from '@subsquid/evm-support'
+
 export interface ChainContext {
     _chain: Chain
 }
@@ -50,7 +52,12 @@ export class ContractBase {
         return func.decodeResult(result)
     }
 
-    async eth_getStorage<V>(storage: StorageItem<V>): Promise<V> {
-        throw new Error('not implemented')
+    async eth_getStorage<V>(item: StorageItem<V>): Promise<V> {
+        let result = await this._chain.client.call('eth_getStorageAt', [
+            this.address,
+            item.key,
+            '0x' + this.blockHeight.toString(16),
+        ])
+        return item.decodeValue(result)
     }
 }

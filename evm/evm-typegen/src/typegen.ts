@@ -13,11 +13,11 @@ export class Typegen {
     }
 
     generate(): void {
-        this.out.line("import * as ethers from 'ethers'")
-        this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
+        this.out.line("import {ContractBase} from './abi.support'")
+        this.out.line("import {LogEvent, Func, Interface} from '@subsquid/evm-support'")
         this.out.line(`import {ABI_JSON} from './${this.basename}.abi'`)
         this.out.line()
-        this.out.line("export const abi = new ethers.Interface(ABI_JSON);")
+        this.out.line("export const abi = new Interface(ABI_JSON);")
 
         this.generateEvents()
         this.generateFunctions()
@@ -45,7 +45,7 @@ export class Typegen {
         this.out.line()
         this.out.block(`export const events =`, () => {
             for (let e of events) {
-                this.out.line(`${this.getPropName(e)}: new LogEvent<${getFullTupleType(e.inputs)}>(`)
+                this.out.line(`${this.getPropName(e)}: new LogEvent<${getTupleType(e.inputs)}, ${getStructType(e.inputs)}>(`)
                 this.out.indentation(() => this.out.line(`abi, '${e.topicHash}'`))
                 this.out.line('),')
             }

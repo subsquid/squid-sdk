@@ -1,8 +1,13 @@
 import {unexpectedCase} from '@subsquid/util-internal'
 import {Sink} from './sink'
 import {Src} from './src'
+import {assert} from 'console'
+
+export * from './sink'
+export * from './src'
 
 export type Elementary =
+    | `bytes${number}`
     | 'int'
     | `int${8 | 16 | 32 | 64 | 128 | 256}`
     | 'uint'
@@ -16,13 +21,13 @@ export type Elementary =
     | 'ufixed'
     | `ufixed${8 | 16 | 32 | 64 | 128 | 256}${number}`
 
-const typeBytes = new RegExp(/^bytes([0-9]*)$/)
-const typeInt = new RegExp(/^(u?int)([0-9]*)$/)
-const typeEnum = new RegExp(/^enum (.+)$/)
-const typeContract = new RegExp(/^contract (.+)$/)
-
-// TODO: add support for "fixed" types
+// TODO: add support for "fixed" types, don't know what type it should take
 export function encodeElementary(type: Elementary, val: any, sink: Sink): void {
+    let match = type.match(typeBytes)
+    if (match != null) {
+        sink.bytes(val)
+    }
+
     switch (type) {
         case 'int8':
             sink.i8(val)
@@ -75,54 +80,43 @@ export function encodeElementary(type: Elementary, val: any, sink: Sink): void {
     }
 }
 
-export function decodeElementary(type: Elementary, src: Src): void {
+const typeBytes = new RegExp(/^bytes([0-9]*)$/)
+
+// TODO: add support for "fixed" types, don't know what type it should return
+export function decodeElementary(type: Elementary, src: Src): any {
     switch (type) {
         case 'int8':
-            src.i8()
-            break
+            return src.i8()
         case 'uint8':
         case 'enum':
-            src.u8()
-            break
+            return src.u8()
         case 'int16':
-            src.i16()
-            break
+            return src.i16()
         case 'uint16':
-            src.u16()
-            break
+            return src.u16()
         case 'int32':
-            src.i32()
-            break
+            return src.i32()
         case 'uint32':
-            src.u32()
-            break
+            return src.u32()
         case 'int64':
-            src.i64()
-            break
+            return src.i64()
         case 'uint64':
-            src.u64()
-            break
+            return src.u64()
         case 'int128':
-            src.i128()
-            break
+            return src.i128()
         case 'uint128':
-            src.u128()
-            break
+            return src.u128()
         case 'int256':
         case 'int':
-            src.i256()
-            break
+            return src.i256()
         case 'uint256':
         case 'uint':
-            src.u256()
-            break
+            return src.u256()
         case 'bool':
-            src.bool()
-            break
+            return src.bool()
         case 'address':
         case 'contract':
-            src.str()
-            break
+            return src.address()
         default:
             throw unexpectedCase(type)
     }

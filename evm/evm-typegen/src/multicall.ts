@@ -1,8 +1,8 @@
-import * as ethers from 'ethers'
-import {ContractBase, Func} from './support'
+import {ContractBase} from './abi.support'
+import {Func, Interface} from '@subsquid/evm-support'
 
 
-const abi = new ethers.Interface([
+const abi = new Interface([
     {
         type: 'function',
         name: 'aggregate',

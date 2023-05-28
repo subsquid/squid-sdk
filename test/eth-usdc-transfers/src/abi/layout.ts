@@ -1,140 +1,70 @@
-import {
-    StorageLayout,
-    StorageItem,
-    StructStorageItem,
-    MappingStorageItem,
-    ArrayStorageItem,
-    DynamicArrayStorageItem,
-} from './layout.support'
+import {StorageLayout, StorageItem, StructStorageItem, MappingStorageItem, ArrayStorageItem, DynamicArrayStorageItem, BytesStorageItem} from '@subsquid/evm-support'
 import {LAYOUT_JSON} from './layout.layout'
 
-export const layout = LAYOUT_JSON
+export const layout = new StorageLayout(LAYOUT_JSON);
 
 export const storage = {
     _owner: new StorageItem<string>(
-        layout,
-        layout.types['t_address'],
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-        0
+        layout, 't_address', 0n, 0
     ),
     pauser: new StorageItem<string>(
-        layout,
-        layout.types['t_address'],
-        '0x0000000000000000000000000000000000000000000000000000000000000001',
-        0
+        layout, 't_address', 1n, 0
     ),
     paused: new StorageItem<boolean>(
-        layout,
-        layout.types['t_bool'],
-        '0x0000000000000000000000000000000000000000000000000000000000000001',
-        20
+        layout, 't_bool', 1n, 20
     ),
     blacklister: new StorageItem<string>(
-        layout,
-        layout.types['t_address'],
-        '0x0000000000000000000000000000000000000000000000000000000000000002',
-        0
+        layout, 't_address', 2n, 0
     ),
     blacklisted: new MappingStorageItem<string, StorageItem<boolean>>(
-        layout,
-        layout.types['t_mapping(t_address,t_bool)'],
-        '0x0000000000000000000000000000000000000000000000000000000000000003',
-        0
+        layout, 't_mapping(t_address,t_bool)', 3n, 0
     ),
-    name: new StorageItem<string>(
-        layout,
-        layout.types['t_string_storage'],
-        '0x0000000000000000000000000000000000000000000000000000000000000004',
-        0
+    name: new BytesStorageItem<string>(
+        layout, 't_string_storage', 4n, 0
     ),
-    symbol: new StorageItem<string>(
-        layout,
-        layout.types['t_string_storage'],
-        '0x0000000000000000000000000000000000000000000000000000000000000005',
-        0
+    symbol: new BytesStorageItem<string>(
+        layout, 't_string_storage', 5n, 0
     ),
     decimals: new StorageItem<number>(
-        layout,
-        layout.types['t_uint8'],
-        '0x0000000000000000000000000000000000000000000000000000000000000006',
-        0
+        layout, 't_uint8', 6n, 0
     ),
-    currency: new StorageItem<string>(
-        layout,
-        layout.types['t_string_storage'],
-        '0x0000000000000000000000000000000000000000000000000000000000000007',
-        0
+    currency: new BytesStorageItem<string>(
+        layout, 't_string_storage', 7n, 0
     ),
     masterMinter: new StorageItem<string>(
-        layout,
-        layout.types['t_address'],
-        '0x0000000000000000000000000000000000000000000000000000000000000008',
-        0
+        layout, 't_address', 8n, 0
     ),
     initialized: new StorageItem<boolean>(
-        layout,
-        layout.types['t_bool'],
-        '0x0000000000000000000000000000000000000000000000000000000000000008',
-        20
+        layout, 't_bool', 8n, 20
     ),
     balances: new MappingStorageItem<string, StorageItem<bigint>>(
-        layout,
-        layout.types['t_mapping(t_address,t_uint256)'],
-        '0x0000000000000000000000000000000000000000000000000000000000000009',
-        0
+        layout, 't_mapping(t_address,t_uint256)', 9n, 0
     ),
     allowed: new MappingStorageItem<string, MappingStorageItem<string, StorageItem<bigint>>>(
-        layout,
-        layout.types['t_mapping(t_address,t_mapping(t_address,t_uint256))'],
-        '0x000000000000000000000000000000000000000000000000000000000000000a',
-        0
+        layout, 't_mapping(t_address,t_mapping(t_address,t_uint256))', 10n, 0
     ),
     totalSupply_: new StorageItem<bigint>(
-        layout,
-        layout.types['t_uint256'],
-        '0x000000000000000000000000000000000000000000000000000000000000000b',
-        0
+        layout, 't_uint256', 11n, 0
     ),
     minters: new MappingStorageItem<string, StorageItem<boolean>>(
-        layout,
-        layout.types['t_mapping(t_address,t_bool)'],
-        '0x000000000000000000000000000000000000000000000000000000000000000c',
-        0
+        layout, 't_mapping(t_address,t_bool)', 12n, 0
     ),
     minterAllowed: new MappingStorageItem<string, StorageItem<bigint>>(
-        layout,
-        layout.types['t_mapping(t_address,t_uint256)'],
-        '0x000000000000000000000000000000000000000000000000000000000000000d',
-        0
+        layout, 't_mapping(t_address,t_uint256)', 13n, 0
     ),
     _rescuer: new StorageItem<string>(
-        layout,
-        layout.types['t_address'],
-        '0x000000000000000000000000000000000000000000000000000000000000000e',
-        0
+        layout, 't_address', 14n, 0
     ),
-    DOMAIN_SEPARATOR: new StorageItem<string>(
-        layout,
-        layout.types['t_bytes32'],
-        '0x000000000000000000000000000000000000000000000000000000000000000f',
-        0
+    DOMAIN_SEPARATOR: new StorageItem<Uint8Array>(
+        layout, 't_bytes32', 15n, 0
     ),
-    _authorizationStates: new MappingStorageItem<string, MappingStorageItem<string, StorageItem<boolean>>>(
-        layout,
-        layout.types['t_mapping(t_address,t_mapping(t_bytes32,t_bool))'],
-        '0x0000000000000000000000000000000000000000000000000000000000000010',
-        0
+    _authorizationStates: new MappingStorageItem<string, MappingStorageItem<Uint8Array, StorageItem<boolean>>>(
+        layout, 't_mapping(t_address,t_mapping(t_bytes32,t_bool))', 16n, 0
     ),
     _permitNonces: new MappingStorageItem<string, StorageItem<bigint>>(
-        layout,
-        layout.types['t_mapping(t_address,t_uint256)'],
-        '0x0000000000000000000000000000000000000000000000000000000000000011',
-        0
+        layout, 't_mapping(t_address,t_uint256)', 17n, 0
     ),
     _initializedVersion: new StorageItem<number>(
-        layout,
-        layout.types['t_uint8'],
-        '0x0000000000000000000000000000000000000000000000000000000000000012',
-        0
+        layout, 't_uint8', 18n, 0
     ),
 }

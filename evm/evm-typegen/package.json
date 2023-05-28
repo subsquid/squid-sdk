@@ -24,7 +24,8 @@
     "@subsquid/util-internal": "^2.0.0",
     "@subsquid/util-internal-code-printer": "^1.0.0",
     "@subsquid/util-internal-commander": "^1.0.0",
-    "commander": "^10.0.1"
+    "commander": "^10.0.1",
+    "@subsquid/evm-support": "~0.0.0"
   },
   "peerDependencies": {
     "ethers": "^6.3.0"

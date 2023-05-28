@@ -1,31 +1,76 @@
 import {StorageType} from './interfaces'
-import {ByteSink, Sink} from '../codeс/sink'
-import {toHex} from '@subsquid/util-internal-hex'
-import {Elementary, encodeElementary} from '../codeс'
+import {HexSink} from './codec/sink'
+import {Elementary, decodeElementary, encodeElementary} from './codec'
+import {Src} from './codec/src'
+import assert from 'assert'
+import {decodeHex, isHex} from '@subsquid/util-internal-hex'
 
 export function padKey(keyType: StorageType, key: any) {
+    let sink = new HexSink()
+
+    switch (keyType.label) {
+        case 'bytes': {
+            let bytes = typeof key === 'string' ? decodeHex(key) : key
+            sink.bytes(bytes)
+            break
+        }
+        case 'string': {
+            sink.str(key)
+            break
+        }
+        default: {
+            let type = normalizeElementaryType(keyType.label)
+            encodeElementary(type, key, sink)
+            sink.bytes(new Uint8Array(32 - Number(keyType.numberOfBytes))) // left-pad with zeros.
+            assert(sink.length == 32)
+        }
+    }
+
+    return sink.toHex()
+}
+
+export function decodeValue(valType: StorageType, val: string | Uint8Array, offset: number) {
+    let src = new Src(val)
+    assert(src.length == 32)
+
+    if (valType.label === 'string' || valType.label === 'bytes') {
+        let lenByte = src.u8()
+
+        if (lenByte % 2 === 0) {
+            // bytes are stored in slot
+            let length = lenByte / 2
+            src.skip(31 - length ) // skip zeros
+
+            switch (valType.label) {
+                case 'bytes':
+                    return src.bytes(length)
+                case 'string':
+                    return src.str(length)
+            }
+        } else {
+            // only length is stored in slot
+            src.skip(-1)
+
+            return decodeElementary('uint', src)
+        }
+    } else {
+        src.skip(offset)
+
+        let type = normalizeElementaryType(valType.label)
+        return decodeElementary(type, src)
+    }
+}
+
+function normalizeElementaryType(str: string): Elementary {
     let type: Elementary
 
-    if (keyType.label.startsWith('enum')) {
-        type = keyType.label.slice(0, 3) as 'enum'
-    } else if (keyType.label.startsWith('contract')) {
-        type = keyType.label.slice(0, 7) as 'contract'
+    if (str.startsWith('enum')) {
+        type = str.slice(0, 3) as 'enum'
+    } else if (str.startsWith('contract')) {
+        type = str.slice(0, 7) as 'contract'
     } else {
-        type = keyType.label as Elementary
+        type = str as Elementary
     }
 
-    if (type === 'string' || type === 'bytes') {
-    } else {
-        let sink = new ByteSink()
-        encodeElementary(type, key, sink)
-
-        let bytes = sink.toBytes()
-        if (bytes.length < 32) {
-            let t = bytes
-            bytes = new Uint8Array(32)
-            bytes.set(t, 32 - t.length)
-        }
-
-        return toHex(bytes)
-    }
+    return type
 }

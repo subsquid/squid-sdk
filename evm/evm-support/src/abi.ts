@@ -17,7 +17,7 @@ export class LogEvent<Args extends any[], FieldArgs> {
         this.fragment = fragment
     }
 
-    decode(rec: LogRecord): Args {
+    decode(rec: LogRecord): Args & FieldArgs {
         return this.abi.decodeEventLog(this.fragment, rec.data, rec.topics) as any as Args & FieldArgs
     }
 }

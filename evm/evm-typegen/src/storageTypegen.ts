@@ -1,9 +1,7 @@
-import * as ethers from 'ethers'
 import {Logger} from '@subsquid/logger'
-import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
-import {StorageFragment, StorageLayout, StorageType, getItemConstructor, uint256toHex} from './layout.support'
-import {assert} from 'console'
+import {StorageLayout, StorageType} from '@subsquid/evm-support'
+import {unexpectedCase} from '@subsquid/util-internal'
 
 export class StorageTypegen {
     private out: FileOutput
@@ -14,11 +12,11 @@ export class StorageTypegen {
 
     generate(): void {
         this.out.line(
-            "import {StorageLayout, StorageItem, StructStorageItem, MappingStorageItem, ArrayStorageItem, DynamicArrayStorageItem} from './layout.support'"
+            "import {StorageLayout, StorageItem, StructStorageItem, MappingStorageItem, ArrayStorageItem, DynamicArrayStorageItem, BytesStorageItem} from '@subsquid/evm-support'"
         )
         this.out.line(`import {LAYOUT_JSON} from './${this.basename}.layout'`)
         this.out.line()
-        this.out.line('export const layout = LAYOUT_JSON;')
+        this.out.line('export const layout = new StorageLayout(LAYOUT_JSON);')
 
         this.generateStorage()
 
@@ -29,7 +27,8 @@ export class StorageTypegen {
 
     private writeLayout() {
         let out = this.dest.file(this.basename + '.layout.ts')
-        let json = JSON.stringify(this.layout, null, 4)
+        let json = this.layout.toJSON()
+        json = JSON.stringify(JSON.parse(json), null, 4)
         out.line(`export const LAYOUT_JSON = ${json}`)
         out.write()
         this.log.info(`saved ${out.file}`)
@@ -43,39 +42,41 @@ export class StorageTypegen {
         this.out.line()
         this.out.block(`export const storage =`, () => {
             for (let i of storage) {
-                this.out.line(`${i.label}: new ${this.getStorageItem(this.layout.types[i.type])}(`)
-                this.out.indentation(() =>
-                    this.out.line(`layout, layout.types['${i.type}'], '${uint256toHex(BigInt(i.slot))}', ${i.offset}`)
-                )
+                this.out.line(`${i.label}: new ${this.getStorageItem(this.layout.types.get(i.type))}(`)
+                this.out.indentation(() => this.out.line(`layout, '${i.type}', ${i.slot}n, ${i.offset}`))
                 this.out.line('),')
             }
         })
     }
 
     private getStorageItem(type: StorageType): string {
-        let constructor = getItemConstructor(type)
-        let name = constructor.name
-
-        switch (name) {
-            case 'StructStorageItem':
-                return (
-                    `${name}<{` +
-                    type
-                        .members!.map((m) => `${m.label}: ${this.getStorageItem(this.layout.types[m.type])}`)
-                        .join(', ') +
-                    `}>`
-                )
-            case 'MappingStorageItem':
-                return `${name}<${getType(this.layout.types[type.key!])}, ${this.getStorageItem(
-                    this.layout.types[type.value!]
+        switch (type.encoding) {
+            case 'inplace':
+                if (type.members != null && type.base == null) {
+                    return (
+                        `StructStorageItem<{` +
+                        type.members
+                            .map((m) => `${m.label}: ${this.getStorageItem(this.layout.types.get(m.type))}`)
+                            .join(', ') +
+                        `}>`
+                    )
+                } else if (type.base != null && type.members == null) {
+                    return `ArrayStorageItem<${this.getStorageItem(this.layout.types.get(type.base))}>`
+                } else if (type.base == null && type.members == null) {
+                    return `StorageItem<${getType(type)}>`
+                } else {
+                    throw unexpectedCase()
+                }
+            case 'mapping':
+                return `MappingStorageItem<${getType(this.layout.types.get(type.key))}, ${this.getStorageItem(
+                    this.layout.types.get(type.value)
                 )}>`
-            case 'ArrayStorageItem':
-            case 'DynamicArrayStorageItem':
-                return `${name}<${this.getStorageItem(this.layout.types[type.base!])}>`
-            case 'StorageItem':
-                return `${name}<${getType(type)}>`
+            case 'dynamic_array':
+                return `DynamicArrayStorageItem<${this.getStorageItem(this.layout.types.get(type.base))}>`
+            case 'bytes':
+                return `BytesStorageItem<${getType(type)}>`
             default:
-                throw new Error()
+                throw unexpectedCase()
         }
     }
 }
@@ -85,11 +86,15 @@ export function getType(type: StorageType): string {
 
     let match = type.label.match(/^(u?int)([0-9]+)$/)
     if (match || type.label.startsWith('enum')) {
-        return BigInt(type.numberOfBytes) * 8n < 53n ? 'number' : 'bigint'
+        return type.numberOfBytes * 8n < 53n ? 'number' : 'bigint'
     }
 
-    if (type.label.startsWith('bytes') || type.label === 'address' || type.label === 'string') {
+    if (type.label === 'address' || type.label === 'string' || type.label.startsWith('contract')) {
         return 'string'
+    }
+
+    if (type.label.startsWith('bytes')) {
+        return 'Uint8Array'
     }
 
     if (type.label === 'bool') {
