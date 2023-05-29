@@ -5,26 +5,42 @@ import {BytesType, DynamicArrayType, InplaceType, MappingType, StorageLayout, St
 import {decodeValue, padKey} from './util'
 import {HexSink, Src} from './codec'
 
-type StorageItemConstructor<S extends StorageItem<any>> = {
-    new (layout: StorageLayout, type: string, slot: bigint, offset: number): S
+export interface StorageItem<V> {
+    readonly key: string
+    decodeValue(val: string): V
 }
 
-export class StorageItem<V> {
-    protected type: StorageType
+abstract class BaseStorageItem<V> implements StorageItem<V> {
+    private _key: string | undefined
 
     constructor(
         protected layout: StorageLayout,
         public readonly name: string,
         public readonly slot: bigint,
         public readonly offset: number
-    ) {
-        this.type = this.layout.types.get(name)
-    }
+    ) {}
 
     get key() {
-        let sink = new HexSink()
-        sink.u256(this.slot)
-        return sink.toHex()
+        if (this._key == null) {
+            let sink = new HexSink()
+            sink.u256(this.slot)
+            this._key = sink.toHex()
+        }
+
+        return this._key
+    }
+
+    abstract decodeValue(val: string): V
+}
+
+export class ValueStorageItem<V> extends BaseStorageItem<V> {
+    protected type: InplaceType
+
+    constructor(layout: StorageLayout, name: string, slot: bigint, offset: number) {
+        super(layout, name, slot, offset)
+        let type = this.layout.types.get(name) as Readonly<StorageType>
+        assert(type.encoding === 'inplace')
+        this.type = type
     }
 
     decodeValue(val: string): V {
@@ -32,7 +48,7 @@ export class StorageItem<V> {
     }
 }
 
-export class MappingStorageItem<K, I extends StorageItem<any>> extends StorageItem<unknown> {
+export class MappingStorageItem<K, I extends BaseStorageItem<any>> extends BaseStorageItem<unknown> {
     protected type: MappingType
 
     private get itemConstructor(): StorageItemConstructor<I> {
@@ -56,12 +72,17 @@ export class MappingStorageItem<K, I extends StorageItem<any>> extends StorageIt
 
         return new this.itemConstructor(this.layout, this.type.value, itemSlot, 0)
     }
+
+    decodeValue(): unknown {
+        throw undecodableType(this.name)
+    }
 }
 
-export class ArrayStorageItem<I extends StorageItem<any>> extends StorageItem<unknown> {
-    protected type: InplaceType & {base: string}
+export class ArrayStorageItem<I extends BaseStorageItem<any>> extends BaseStorageItem<unknown> {
+    protected type: InplaceType
 
     private get itemConstructor(): StorageItemConstructor<I> {
+        assert(this.type.base != null)
         let baseType = this.layout.types.get(this.type.base)
         return getItemConstructor(baseType)
     }
@@ -71,8 +92,7 @@ export class ArrayStorageItem<I extends StorageItem<any>> extends StorageItem<un
 
         let type = this.layout.types.get(name)
         assert(type.encoding === 'inplace')
-        assert(type.base != null)
-        this.type = type as any
+        this.type = type
     }
 
     item(index: number | bigint): I {
@@ -82,18 +102,23 @@ export class ArrayStorageItem<I extends StorageItem<any>> extends StorageItem<un
         }
         assert(index > -1n)
 
+        assert(this.type.base != null)
         let itemType = this.layout.types.get(this.type.base)
         let arrayLen = this.type.numberOfBytes / itemType.numberOfBytes
         assert(index < arrayLen, 'out of range')
 
         let itemSlot = this.slot + (index * itemType.numberOfBytes) / 32n
 
-        let offset = Number((index % (32n / itemType.numberOfBytes)) * itemType.numberOfBytes)
+        let offset = getItemOffset(index, itemType.numberOfBytes)
         return new this.itemConstructor(this.layout, this.type.base, itemSlot, offset)
+    }
+
+    decodeValue(): unknown {
+        throw undecodableType(this.name)
     }
 }
 
-export class DynamicArrayStorageItem<I extends StorageItem<any>> extends StorageItem<bigint> {
+export class DynamicArrayStorageItem<I extends BaseStorageItem<any>> extends BaseStorageItem<bigint> {
     protected type: DynamicArrayType
 
     private get itemConstructor(): StorageItemConstructor<I> {
@@ -119,7 +144,7 @@ export class DynamicArrayStorageItem<I extends StorageItem<any>> extends Storage
         let itemType = this.layout.types.get(this.type.base)
         let itemSlot = BigInt(ethers.keccak256(this.key)) + (index * itemType.numberOfBytes) / 32n
 
-        let offset = Number((index % (32n / itemType.numberOfBytes)) * itemType.numberOfBytes)
+        let offset = getItemOffset(index, itemType.numberOfBytes)
         return new this.itemConstructor(this.layout, this.type.base, itemSlot, offset)
     }
 
@@ -130,11 +155,12 @@ export class DynamicArrayStorageItem<I extends StorageItem<any>> extends Storage
     }
 }
 
-export class StructStorageItem<F extends Record<string, StorageItem<any>>> extends StorageItem<unknown> {
-    protected type: InplaceType & {members: string}
+export class StructStorageItem<F extends Record<string, BaseStorageItem<any>>> extends BaseStorageItem<unknown> {
+    protected type: InplaceType
 
     private get fields(): F {
         let members = this.type.members
+        assert(members != null)
         return Object.fromEntries(
             members.map((m) => {
                 let memberType = this.layout.types.get(m.type)
@@ -149,7 +175,6 @@ export class StructStorageItem<F extends Record<string, StorageItem<any>>> exten
 
         let type = this.layout.types.get(name)
         assert(type.encoding === 'inplace')
-        assert(type.members != null)
         this.type = type as any
     }
 
@@ -158,9 +183,13 @@ export class StructStorageItem<F extends Record<string, StorageItem<any>>> exten
         assert(field != null)
         return field
     }
+
+    decodeValue(): unknown {
+        throw undecodableType(this.name)
+    }
 }
 
-export class BytesStorageItem<V extends string | Uint8Array> extends StorageItem<V | bigint> {
+export class BytesStorageItem<V extends string | Uint8Array> extends BaseStorageItem<V | bigint> {
     protected type: BytesType
 
     constructor(layout: StorageLayout, name: string, slot: bigint, offset: number) {
@@ -182,9 +211,13 @@ export class BytesStorageItem<V extends string | Uint8Array> extends StorageItem
 
         return new BytesPartStorageItem(this.layout, this.name, itemSlot, 0)
     }
+
+    decodeValue(val: string): V {
+        return decodeValue(this.type, val, this.offset)
+    }
 }
 
-export class BytesPartStorageItem<V extends string | Uint8Array> extends StorageItem<V> {
+export class BytesPartStorageItem<V extends string | Uint8Array> extends BaseStorageItem<V> {
     protected type: BytesType
 
     constructor(layout: StorageLayout, name: string, slot: bigint, offset: number) {
@@ -210,6 +243,10 @@ export class BytesPartStorageItem<V extends string | Uint8Array> extends Storage
     }
 }
 
+function getItemOffset(index: bigint, width: bigint) {
+    return Number((index % (32n / width)) * width)
+}
+
 export function getItemConstructor(type: StorageType): StorageItemConstructor<any> {
     switch (type.encoding) {
         case 'inplace':
@@ -218,7 +255,7 @@ export function getItemConstructor(type: StorageType): StorageItemConstructor<an
             } else if (type.base != null && type.members == null) {
                 return ArrayStorageItem
             } else if (type.base == null && type.members == null) {
-                return StorageItem
+                return ValueStorageItem
             } else {
                 throw unexpectedCase()
             }
@@ -231,4 +268,12 @@ export function getItemConstructor(type: StorageType): StorageItemConstructor<an
         default:
             throw unexpectedCase()
     }
+}
+
+export type StorageItemConstructor<I extends BaseStorageItem<any>> = {
+    new (...args: ConstructorParameters<typeof BaseStorageItem>): I
+}
+
+function undecodableType(type: string) {
+    new Error(`Undecodable type: ${type}`)
 }

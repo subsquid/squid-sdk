@@ -12,7 +12,7 @@ export class StorageTypegen {
 
     generate(): void {
         this.out.line(
-            "import {StorageLayout, StorageItem, StructStorageItem, MappingStorageItem, ArrayStorageItem, DynamicArrayStorageItem, BytesStorageItem} from '@subsquid/evm-support'"
+            "import {StorageLayout, ValueStorageItem, StructStorageItem, MappingStorageItem, ArrayStorageItem, DynamicArrayStorageItem, BytesStorageItem} from '@subsquid/evm-support'"
         )
         this.out.line(`import {LAYOUT_JSON} from './${this.basename}.layout'`)
         this.out.line()
@@ -42,62 +42,66 @@ export class StorageTypegen {
         this.out.line()
         this.out.block(`export const storage =`, () => {
             for (let i of storage) {
-                this.out.line(`${i.label}: new ${this.getStorageItem(this.layout.types.get(i.type))}(`)
+                this.out.line(`${i.label}: new ${this.getStorageItem(i.type)}(`)
                 this.out.indentation(() => this.out.line(`layout, '${i.type}', ${i.slot}n, ${i.offset}`))
                 this.out.line('),')
             }
         })
     }
 
-    private getStorageItem(type: StorageType): string {
+    // FIXME: this method duplicates `getItemConstructor` function, needs refactoring
+    private getStorageItem(typeName: string): string {
+        let type = this.layout.types.get(typeName)
         switch (type.encoding) {
             case 'inplace':
                 if (type.members != null && type.base == null) {
                     return (
                         `StructStorageItem<{` +
-                        type.members
-                            .map((m) => `${m.label}: ${this.getStorageItem(this.layout.types.get(m.type))}`)
-                            .join(', ') +
+                        type.members.map((m) => `${m.label}: ${this.getStorageItem(m.type)}`).join(', ') +
                         `}>`
                     )
                 } else if (type.base != null && type.members == null) {
-                    return `ArrayStorageItem<${this.getStorageItem(this.layout.types.get(type.base))}>`
+                    return `ArrayStorageItem<${this.getStorageItem(type.base)}>`
                 } else if (type.base == null && type.members == null) {
-                    return `StorageItem<${getType(type)}>`
+                    return `ValueStorageItem<${getType(type.label)}>`
                 } else {
                     throw unexpectedCase()
                 }
             case 'mapping':
-                return `MappingStorageItem<${getType(this.layout.types.get(type.key))}, ${this.getStorageItem(
-                    this.layout.types.get(type.value)
+                return `MappingStorageItem<${getType(this.layout.types.get(type.key).label)}, ${this.getStorageItem(
+                    type.value
                 )}>`
             case 'dynamic_array':
-                return `DynamicArrayStorageItem<${this.getStorageItem(this.layout.types.get(type.base))}>`
+                return `DynamicArrayStorageItem<${this.getStorageItem(type.base)}>`
             case 'bytes':
-                return `BytesStorageItem<${getType(type)}>`
+                return `BytesStorageItem<${getType(type.label)}>`
             default:
                 throw unexpectedCase()
         }
     }
 }
 
-export function getType(type: StorageType): string {
+export function getType(type: string): string {
     // assert(isPrimitive(type.label))
 
-    let match = type.label.match(/^(u?int)([0-9]+)$/)
-    if (match || type.label.startsWith('enum')) {
-        return type.numberOfBytes * 8n < 53n ? 'number' : 'bigint'
+    let match = type.match(/^(u?int)([0-9]+)$/)
+    if (match != null) {
+        return Number(match[2]) * 8 < 53 ? 'number' : 'bigint'
     }
 
-    if (type.label === 'address' || type.label === 'string' || type.label.startsWith('contract')) {
+    if (type.startsWith('enum')) {
+        return 'number'
+    }
+
+    if (type === 'address' || type === 'string' || type.startsWith('contract')) {
         return 'string'
     }
 
-    if (type.label.startsWith('bytes')) {
+    if (type.startsWith('bytes')) {
         return 'Uint8Array'
     }
 
-    if (type.label === 'bool') {
+    if (type === 'bool') {
         return 'boolean'
     }
 

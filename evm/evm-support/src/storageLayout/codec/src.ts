@@ -1,6 +1,9 @@
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
-import assert from 'assert'
 import {UTF8_DECODER} from './util'
+
+/**
+ * Since values in slot are lower-order aligned, we read them from right to left. Probably need better and universal solution.
+ */
 
 export class Src {
     private idx = 0

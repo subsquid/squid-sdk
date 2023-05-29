@@ -1,9 +1,7 @@
-import {StorageType} from './interfaces'
-import {HexSink} from './codec/sink'
-import {Elementary, decodeElementary, encodeElementary} from './codec'
-import {Src} from './codec/src'
 import assert from 'assert'
-import {decodeHex, isHex} from '@subsquid/util-internal-hex'
+import {decodeHex} from '@subsquid/util-internal-hex'
+import {StorageType} from './interfaces'
+import {Elementary, decodeElementary, encodeElementary, HexSink, Src} from './codec'
 
 export function padKey(keyType: StorageType, key: any) {
     let sink = new HexSink()
@@ -39,7 +37,7 @@ export function decodeValue(valType: StorageType, val: string | Uint8Array, offs
         if (lenByte % 2 === 0) {
             // bytes are stored in slot
             let length = lenByte / 2
-            src.skip(31 - length ) // skip zeros
+            src.skip(31 - length) // skip zeros
 
             switch (valType.label) {
                 case 'bytes':
@@ -49,7 +47,7 @@ export function decodeValue(valType: StorageType, val: string | Uint8Array, offs
             }
         } else {
             // only length is stored in slot
-            src.skip(-1)
+            src.skip(-1) // move cursor back
 
             return decodeElementary('uint', src)
         }

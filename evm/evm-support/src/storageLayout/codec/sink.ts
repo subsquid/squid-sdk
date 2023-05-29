@@ -9,6 +9,10 @@ import {
 } from './util'
 import {decodeHex} from '@subsquid/util-internal-hex'
 
+/**
+ * Since values in slot are lower-order aligned, we write them from right to left. Probably need better and universal solution.
+ */
+
 export abstract class Sink {
     protected abstract write(byte: number): void
 
