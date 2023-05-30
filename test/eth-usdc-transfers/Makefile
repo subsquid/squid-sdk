@@ -19,7 +19,7 @@ codegen:
 
 
 typegen:
-	@npx squid-evm-typegen src/abi erc20.json
+	@npx squid-evm-typegen --storage-layout .\usdc.json --storage-layout .\test.json --clean src/abi erc20.json
 
 
 up:

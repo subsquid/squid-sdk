@@ -1,2 +1,2 @@
 export * from './items'
-export * from './interfaces'
+export * from './interface'

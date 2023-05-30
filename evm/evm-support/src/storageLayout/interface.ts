@@ -1,6 +1,9 @@
 import assert from 'assert'
 import {unexpectedCase} from '@subsquid/util-internal'
+import {decodeHex} from '@subsquid/util-internal-hex'
 import {toJSON} from '@subsquid/util-internal-json'
+import {HexSink, Src, decodeElementary, encodeElementary} from './codec'
+import {normalizeElementaryType} from './util'
 
 export interface RawStorageFragment {
     label: string
@@ -36,6 +39,18 @@ export interface InplaceType extends TypeInfo {
     encoding: 'inplace'
     base?: string
     members?: StorageFragment[]
+}
+
+export interface StructInplaceType extends InplaceType {
+    encoding: 'inplace'
+    base?: never
+    members: StorageFragment[]
+}
+
+export interface ArrayInplaceType extends InplaceType {
+    encoding: 'inplace'
+    base: string
+    members?: never
 }
 
 export interface MappingType extends TypeInfo {
@@ -133,6 +148,83 @@ export class StorageLayout {
         }))
 
         this.types = new TypeRegistry(layout.types)
+    }
+
+    padKey(type: string | StorageType, key: any) {
+        type = typeof type === 'string' ? this.types.get(type) : type
+
+        let sink = new HexSink()
+
+        switch (type.label) {
+            case 'bytes': {
+                let bytes = typeof key === 'string' ? decodeHex(key) : key
+                sink.bytes(bytes)
+                break
+            }
+            case 'string': {
+                sink.str(key)
+                break
+            }
+            default: {
+                let elementary = normalizeElementaryType(type.label)
+                encodeElementary(elementary, key, sink)
+                sink.bytes(new Uint8Array(32 - sink.length)) // left-pad with zeros.
+            }
+        }
+
+        return sink.toHex()
+    }
+
+    decodeValue(type: string | StorageType, value: string, offset?: number): any {
+        type = typeof type === 'string' ? this.types.get(type) : type
+
+        let src = new Src(value)
+        assert(src.length == 32)
+
+        switch (type.encoding) {
+            case 'inplace':
+                return this.decodeInplace(type, offset ?? 0, src)
+            case 'dynamic_array':
+                return src.u256()
+            case 'bytes':
+                return this.decodeBytes(type, src)
+            case 'mapping':
+                throw new Error(`unable to decode mapping type`)
+            default:
+                throw unexpectedCase()
+        }
+    }
+
+    private decodeInplace(type: InplaceType, offset: number, src: Src) {
+        src.skip(offset)
+
+        let elemenentary = normalizeElementaryType(type.label)
+        return decodeElementary(elemenentary, src)
+    }
+
+    private decodeBytes(type: BytesType, src: Src) {
+        let lenByte = src.u8()
+
+        if (lenByte % 2 === 0) {
+            // bytes are stored in slot
+            let length = lenByte / 2
+            src.skip(31 - length) // skip zeros
+
+            switch (type.label) {
+                case 'bytes':
+                    return src.bytes(length)
+                case 'string':
+                    return src.str(length)
+                default:
+                    throw unexpectedCase(type.label)
+            }
+        } else {
+            // only length is stored in slot
+            src.skip(-1) // move cursor back
+
+            let length: bigint = decodeElementary('uint', src)
+            return (length - 1n) / 2n
+        }
     }
 
     toJSON() {
