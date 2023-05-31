@@ -30,7 +30,7 @@ export abstract class StorageItem<V = unknown> {
     }
 
     decodeValue(value: string): V {
-        return this.layout.decodeValue(this.type, value)
+        return this.layout.decodeValue(this.type, value, this.offset)
     }
 }
 

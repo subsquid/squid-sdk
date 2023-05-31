@@ -175,7 +175,7 @@ export class StorageLayout {
         return sink.toHex()
     }
 
-    decodeValue(type: string | StorageType, value: string, offset?: number): any {
+    decodeValue(type: string | StorageType, value: string, offset: number): any {
         type = typeof type === 'string' ? this.types.get(type) : type
 
         let src = new Src(value)
@@ -183,7 +183,7 @@ export class StorageLayout {
 
         switch (type.encoding) {
             case 'inplace':
-                return this.decodeInplace(type, offset ?? 0, src)
+                return this.decodeInplace(type, offset, src)
             case 'dynamic_array':
                 return src.u256()
             case 'bytes':
