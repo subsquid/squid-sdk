@@ -3,11 +3,17 @@ import {LAYOUT_JSON} from './usdc.layout'
 
 export const layout = new StorageLayout(LAYOUT_JSON);
 
+class StringItem extends BytesStorageItem<string> {}
+
 class AddressItem extends StorageItem<string> {}
 
 class BoolItem extends StorageItem<boolean> {}
 
 class Bytes32Item extends StorageItem<Uint8Array> {}
+
+class Uint256Item extends StorageItem<bigint> {}
+
+class Uint8Item extends StorageItem<bigint> {}
 
 class AddressBoolMappingItem extends MappingStorageItem {
     get(key: string): BoolItem {
@@ -38,16 +44,6 @@ class Bytes32BoolMappingItem extends MappingStorageItem {
         return this.item(BoolItem, key)
     }
 }
-
-class StringItem extends BytesStorageItem<string> {
-    at(index: number): BytesPartStorageItem<string> {
-        return this.part(BytesPartStorageItem, index)
-    }
-}
-
-class Uint256Item extends StorageItem<bigint> {}
-
-class Uint8Item extends StorageItem<bigint> {}
 
 export const storage = {
     _owner: new AddressItem(

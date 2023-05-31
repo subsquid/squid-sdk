@@ -64,7 +64,7 @@ export class StorageTypegen {
     }
 
     private generateClasses() {
-        let types = Object.values(this.layout.types.definitions).sort((a, b) => a.label.localeCompare(b.label))
+        let types = Object.values(this.layout.types.definitions).sort((a, b) => a.encoding.localeCompare(b.encoding))
         for (let type of types) {
             this.out.line()
             switch (type.encoding) {
@@ -89,11 +89,7 @@ export class StorageTypegen {
     private generateBytesClass(type: BytesType) {
         let className = getClassName(type.label)
 
-        this.out.block(`class ${className} extends BytesStorageItem<${toType(type.label)}>`, () => {
-            this.out.block(`at(index: number): BytesPartStorageItem<${toType(type.label)}>`, () => {
-                this.out.line(`return this.part(BytesPartStorageItem, index)`)
-            })
-        })
+        this.out.line(`class ${className} extends BytesStorageItem<${toType(type.label)}> {}`)
     }
 
     private generateDynamicArrayClass(type: DynamicArrayType) {

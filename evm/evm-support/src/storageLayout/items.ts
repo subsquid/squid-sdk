@@ -78,7 +78,9 @@ export abstract class BytesStorageItem<V extends string | Uint8Array> extends St
         super(layout, type, slot, offset)
     }
 
-    abstract at(index: number): BytesPartStorageItem<V>
+    at(index: number): BytesPartStorageItem<V> {
+        return this.part(BytesPartStorageItem, index)
+    }
 
     protected part<S extends BytesPartStorageItem<V>>(constructor: StorageItemConstructor<S>, index: number): S {
         assert(Number.isSafeInteger(index))

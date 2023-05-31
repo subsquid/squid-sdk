@@ -13,64 +13,70 @@ export const LAYOUT_JSON = {
             "type": "t_uint256"
         },
         {
-            "label": "s",
+            "label": "x64",
             "offset": 0,
             "slot": "2",
-            "type": "t_struct(S)13_storage"
+            "type": "t_uint64"
         },
         {
-            "label": "addr",
+            "label": "y128",
+            "offset": 8,
+            "slot": "2",
+            "type": "t_uint128"
+        },
+        {
+            "label": "struct_",
             "offset": 0,
-            "slot": "6",
+            "slot": "3",
+            "type": "t_struct(Data)13_storage"
+        },
+        {
+            "label": "address_",
+            "offset": 0,
+            "slot": "7",
             "type": "t_address"
         },
         {
-            "label": "map",
+            "label": "mapping_",
             "offset": 0,
-            "slot": "7",
-            "type": "t_mapping(t_enum(Enum)21,t_mapping(t_address,t_bool))"
+            "slot": "8",
+            "type": "t_mapping(t_enum(Letters)21,t_mapping(t_address,t_bool))"
         },
         {
             "label": "array",
             "offset": 0,
-            "slot": "8",
+            "slot": "9",
             "type": "t_array(t_string_storage)dyn_storage"
         },
         {
             "label": "s1",
             "offset": 0,
-            "slot": "9",
+            "slot": "10",
             "type": "t_string_storage"
         },
         {
-            "label": "b1",
+            "label": "bytes_",
             "offset": 0,
-            "slot": "10",
+            "slot": "11",
             "type": "t_bytes_storage"
         },
         {
-            "label": "b2",
+            "label": "bytes32_",
             "offset": 0,
-            "slot": "11",
+            "slot": "12",
             "type": "t_bytes30"
         },
         {
-            "label": "b3",
+            "label": "enum_",
             "offset": 30,
-            "slot": "11",
-            "type": "t_bytes2"
-        },
-        {
-            "label": "ses",
-            "offset": 0,
             "slot": "12",
-            "type": "t_array(t_struct(S)13_storage)2_storage"
+            "type": "t_enum(Letters)21"
         },
         {
-            "label": "mapa",
+            "label": "contract_",
             "offset": 0,
-            "slot": "20",
-            "type": "t_mapping(t_contract(A)59,t_bool)"
+            "slot": "13",
+            "type": "t_contract(Test)57"
         }
     ],
     "types": {
@@ -84,12 +90,6 @@ export const LAYOUT_JSON = {
             "label": "string[]",
             "numberOfBytes": "32",
             "base": "t_string_storage"
-        },
-        "t_array(t_struct(S)13_storage)2_storage": {
-            "encoding": "inplace",
-            "label": "struct A.S[2]",
-            "numberOfBytes": "256",
-            "base": "t_struct(S)13_storage"
         },
         "t_array(t_uint256)2_storage": {
             "encoding": "inplace",
@@ -108,11 +108,6 @@ export const LAYOUT_JSON = {
             "label": "bool",
             "numberOfBytes": "1"
         },
-        "t_bytes2": {
-            "encoding": "inplace",
-            "label": "bytes2",
-            "numberOfBytes": "2"
-        },
         "t_bytes30": {
             "encoding": "inplace",
             "label": "bytes30",
@@ -123,14 +118,14 @@ export const LAYOUT_JSON = {
             "label": "bytes",
             "numberOfBytes": "32"
         },
-        "t_contract(A)59": {
+        "t_contract(Test)57": {
             "encoding": "inplace",
-            "label": "contract A",
+            "label": "contract Test",
             "numberOfBytes": "20"
         },
-        "t_enum(Enum)21": {
+        "t_enum(Letters)21": {
             "encoding": "inplace",
-            "label": "enum A.Enum",
+            "label": "enum Test.Letters",
             "numberOfBytes": "1"
         },
         "t_mapping(t_address,t_bool)": {
@@ -140,18 +135,11 @@ export const LAYOUT_JSON = {
             "key": "t_address",
             "value": "t_bool"
         },
-        "t_mapping(t_contract(A)59,t_bool)": {
+        "t_mapping(t_enum(Letters)21,t_mapping(t_address,t_bool))": {
             "encoding": "mapping",
-            "label": "mapping(contract A => bool)",
+            "label": "mapping(enum Test.Letters => mapping(address => bool))",
             "numberOfBytes": "32",
-            "key": "t_contract(A)59",
-            "value": "t_bool"
-        },
-        "t_mapping(t_enum(Enum)21,t_mapping(t_address,t_bool))": {
-            "encoding": "mapping",
-            "label": "mapping(enum A.Enum => mapping(address => bool))",
-            "numberOfBytes": "32",
-            "key": "t_enum(Enum)21",
+            "key": "t_enum(Letters)21",
             "value": "t_mapping(t_address,t_bool)"
         },
         "t_string_storage": {
@@ -159,9 +147,9 @@ export const LAYOUT_JSON = {
             "label": "string",
             "numberOfBytes": "32"
         },
-        "t_struct(S)13_storage": {
+        "t_struct(Data)13_storage": {
             "encoding": "inplace",
-            "label": "struct A.S",
+            "label": "struct Test.Data",
             "numberOfBytes": "128",
             "members": [
                 {
