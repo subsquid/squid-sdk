@@ -29,7 +29,7 @@ export abstract class StorageItem<V = unknown> {
         return this._key
     }
 
-    decodeValue(value: string): V {
+    decode(value: string): V {
         return this.layout.decodeValue(this.type, value, this.offset)
     }
 }
@@ -100,7 +100,7 @@ export class BytesPartStorageItem<V extends string | Uint8Array> extends Storage
         super(layout, type, slot, offset)
     }
 
-    decodeValue(val: string): V {
+    decode(val: string): V {
         let src = new Src(val)
         assert(src.length == 32)
 
