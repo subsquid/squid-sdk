@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "rework data ingestion",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

@@ -1,23 +1,18 @@
 
 export function addTimeout<T>(
     promise: Promise<T>,
-    ms: number,
-    createTimeoutError?: () => Error
+    ms?: number,
+    onTimeout?: () => Error | undefined | void
 ): Promise<T> {
-    if (ms == 0) return promise
+    if (!ms) return promise
 
     return new Promise((resolve, reject) => {
-        let timer: any = setTimeout(() => {
-            timer = null
-            let err = createTimeoutError ? createTimeoutError() : new TimeoutError(ms)
+        let timer = setTimeout(() => {
+            let err = onTimeout?.() || new TimeoutError(ms)
             reject(err)
         }, ms)
 
-        promise.finally(() => {
-            if (timer != null) {
-                clearTimeout(timer)
-            }
-        }).then(resolve, reject)
+        promise.finally(() => clearTimeout(timer)).then(resolve, reject)
     })
 }
 

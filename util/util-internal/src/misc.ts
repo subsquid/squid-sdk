@@ -102,16 +102,56 @@ export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
 }
 
 
-export function groupBy<T, G>(list: Iterable<T>, group: (t: T) => G): Map<G, T[]> {
+export function groupBy<T, G>(elements: Iterable<T>, group: (e: T) => G): Map<G, T[]> {
     let grouping = new Map<G, T[]>()
-    for (let item of list) {
-        let key = group(item)
+    for (let element of elements) {
+        let key = group(element)
         let g = grouping.get(key)
         if (g == null) {
-            grouping.set(key, [item])
+            grouping.set(key, [element])
         } else {
-            g.push(item)
+            g.push(element)
         }
     }
     return grouping
+}
+
+
+export function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg: number, end: number]> {
+    assert(maxSize >= 1)
+    end = end ?? Number.MAX_SAFE_INTEGER
+    while (beg < end) {
+        let left = end - beg
+        let splits = Math.ceil(left / maxSize)
+        let step = Math.round(left / splits)
+        yield [beg, beg + step]
+        beg += step
+    }
+}
+
+
+export function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
+    if (arr.length <= maxSize) {
+        yield arr
+    } else {
+        for (let [beg, end] of splitSlice(maxSize, 0, arr.length)) {
+            yield arr.slice(beg, end)
+        }
+    }
+}
+
+
+export async function splitParallelWork<T, R>(maxSize: number, tasks: T[], run: (tasks: T[]) => Promise<R[]>): Promise<R[]> {
+    if (tasks.length <= maxSize) return run(tasks)
+
+    let promises: Promise<R[]>[] = []
+    for (let group of splitArray(maxSize, tasks)) {
+        promises.push(run(group))
+    }
+
+    let result: R[] = []
+    for (let group of await Promise.all(promises)) {
+        result.push(...group)
+    }
+    return result
 }

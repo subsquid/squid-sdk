@@ -1,3 +1,4 @@
+import {splitSlice} from '@subsquid/util-internal'
 
 /**
  * Closed range of numbers
@@ -11,6 +12,11 @@ export interface Range {
      * End of segment (inclusive). Defaults to infinity.
      */
     to?: number
+}
+
+
+export interface ClosedRange extends Range {
+    to: number
 }
 
 
@@ -52,4 +58,14 @@ export function rangeEnd(range: Range): number {
 
 export function rangeContains(big: Range, small: Range): boolean {
     return big.from <= small.from && (big.to == null || big.to >= (small.to ?? Infinity))
+}
+
+
+export function* splitRange(maxSize: number, range: Range): Iterable<ClosedRange> {
+    for (let [beg, end] of splitSlice(maxSize, range.from, range.to == null ? undefined : range.to + 1)) {
+        yield {
+            from: beg,
+            to: end - 1
+        }
+    }
 }

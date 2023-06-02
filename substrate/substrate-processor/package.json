@@ -18,6 +18,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.0.0",
     "@subsquid/logger": "^1.0.0",
+    "@subsquid/rpc-client": "^3.0.0",
     "@subsquid/scale-codec": "^2.0.0",
     "@subsquid/substrate-metadata": "^3.0.0",
     "@subsquid/typeorm-config": "^3.0.0",
@@ -25,7 +26,6 @@
     "@subsquid/util-internal-code-printer": "^1.0.0",
     "@subsquid/util-internal-hex": "^1.0.0",
     "@subsquid/util-internal-processor-tools": "^0.0.1",
-    "@subsquid/util-internal-resilient-rpc": "^1.0.0",
     "@subsquid/util-xxhash": "^1.0.0",
     "blake2b": "^2.1.4"
   },

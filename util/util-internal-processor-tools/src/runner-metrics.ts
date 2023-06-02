@@ -7,7 +7,6 @@ import {timeInterval} from './util'
 export class RunnerMetrics {
     private chainHeight = -1
     private lastBlock = -1
-    private ingestSpeed = new Speed({windowSize: 5})
     private mappingSpeed = new Speed({windowSize: 5})
     private mappingItemSpeed = new Speed({windowSize: 5})
     private blockProgress = new Progress({initialValue: 0})
@@ -15,11 +14,12 @@ export class RunnerMetrics {
     constructor(private requests: {range: Range}[]) {}
 
     setChainHeight(height: number): void {
-        this.chainHeight = height
+        this.chainHeight = Math.max(height, this.lastBlock)
     }
 
     setLastProcessedBlock(height: number): void {
         this.lastBlock = height
+        this.chainHeight = Math.max(this.chainHeight, this.lastBlock)
     }
 
     updateProgress(time?: bigint): void {
@@ -31,12 +31,9 @@ export class RunnerMetrics {
     registerBatch(
         batchSize: number,
         batchItemSize: number,
-        batchFetchStartTime: bigint,
-        batchFetchEndTime: bigint,
         batchMappingStartTime: bigint,
         batchMappingEndTime: bigint,
     ): void {
-        this.ingestSpeed.push(batchSize, batchFetchStartTime, batchFetchEndTime)
         this.mappingSpeed.push(batchSize, batchMappingStartTime, batchMappingEndTime)
         this.mappingItemSpeed.push(batchItemSize || 1, batchMappingStartTime, batchMappingEndTime)
     }
@@ -70,10 +67,6 @@ export class RunnerMetrics {
         return this.blockProgress.ratio()
     }
 
-    getIngestSpeed(): number {
-        return this.ingestSpeed.speed()
-    }
-
     getMappingSpeed(): number {
         return this.mappingSpeed.speed()
     }
@@ -87,7 +80,6 @@ export class RunnerMetrics {
         `rate: ${Math.round(this.getSyncSpeed())} blocks/sec, ` +
         `mapping: ${Math.round(this.getMappingSpeed())} blocks/sec, ` +
         `${Math.round(this.getMappingItemSpeed())} items/sec, ` +
-        `ingest: ${Math.round(this.getIngestSpeed())} blocks/sec, ` +
         `eta: ${timeInterval(this.getSyncEtaSeconds())}`
     }
 }

@@ -17,6 +17,14 @@ export interface RpcResponse {
 
 export interface RpcErrorInfo {
     code: number
-    data?: number | string
     message: string
+    data?: any
+}
+
+
+export interface Connection {
+    connect(): Promise<void>
+    close(err?: Error): void
+    call(req: RpcRequest, timeout?: number): Promise<RpcResponse>
+    batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]>
 }

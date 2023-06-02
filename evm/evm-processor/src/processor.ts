@@ -1,6 +1,7 @@
-import {createLogger, Logger} from '@subsquid/logger'
-import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import {createLogger, Logger} from '@subsquid/logger'
+import {RpcClient} from '@subsquid/rpc-client'
+import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
     BatchRequest,
@@ -11,7 +12,7 @@ import {
     Range,
     Runner
 } from '@subsquid/util-internal-processor-tools'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
@@ -71,6 +72,10 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private src?: DataSource
     private blockRange?: Range
     private fields?: FieldSelection
+    private finalityConfirmation?: number
+    private _useTraceApi?: boolean
+    private _useDebugApiForStateDiffs?: boolean
+    private chainPollInterval?: number
     private running = false
 
     private add(request: DataRequest, range?: Range): void {
@@ -165,13 +170,38 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      *
      * @example
      * processor.setDataSource({
-     *     chain: 'wss://rpc.polkadot.io',
-     *     archive: 'https://eth.archive.subsquid.io'
+     *     archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
+     *     chain: 'https://eth-mainnet.public.blastapi.io'
      * })
      */
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         this.src = src
+        return this
+    }
+
+    setFinalityConfirmation(nBlocks: number): this {
+        this.assertNotRunning()
+        this.finalityConfirmation = nBlocks
+        return this
+    }
+
+    setChainPollInterval(ms: number): this {
+        assert(ms >= 0)
+        this.assertNotRunning()
+        this.chainPollInterval = ms
+        return this
+    }
+
+    useTraceApi(yes?: boolean): this {
+        this.assertNotRunning()
+        this._useTraceApi = yes !== false
+        return this
+    }
+
+    useDebugApiForStateDiffs(yes?: boolean): this {
+        this.assertNotRunning()
+        this._useDebugApiForStateDiffs = yes !== false
         return this
     }
 
@@ -210,12 +240,13 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
         }
         let client = new RpcClient({
-            endpoints: [{url, capacity: 5}],
-            retryAttempts: Number.MAX_SAFE_INTEGER,
-            requestTimeout: 20_000,
-            log: this.getLogger().child('rpc')
+            url,
+            maxBatchCallSize: 100,
+            requestTimeout: 30_000,
+            capacity: 10,
+            retryAttempts: Number.MAX_SAFE_INTEGER
         })
-        this.getPrometheusServer().addChainRpcMetrics(client)
+        this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
     }
 
@@ -231,8 +262,15 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getHotDataSource(): EvmRpcDataSource {
+        if (this.finalityConfirmation == null) {
+            throw new Error(`use .setFinalityConfirmation() to specify number of children required to conform block's finality`)
+        }
         return new EvmRpcDataSource({
-            rpc: this.getChainRpcClient()
+            rpc: this.getChainRpcClient(),
+            finalityConfirmation: this.finalityConfirmation,
+            useTraceApi: this._useTraceApi,
+            useDebugApiForStateDiffs: this._useDebugApiForStateDiffs,
+            pollInterval: this.chainPollInterval
         })
     }
 
@@ -296,31 +334,26 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
         runProgram(async () => {
             let src = this.getDataSource()
+            let chain = this.getChain()
+            let mappingLog = log.child('mapping')
 
-            let runner = new Runner({
+            return new Runner({
                 database,
                 requests: this.getBatchRequests(),
                 archive: src.archive ? this.getArchiveDataSource() : undefined,
-                archivePollInterval: 2000,
                 hotDataSource: src.chain ? this.getHotDataSource() : undefined,
                 prometheus: this.getPrometheusServer(),
-                log
-            })
-
-            let chain = this.getChain()
-
-            runner.processBatch = function(store, batch) {
-                return handler({
-                    _chain: chain,
-                    log: log.child('mapping', {batchRange: batch.range}),
-                    store,
-                    blocks: batch.blocks as any,
-                    isHead: batch.range.to === batch.chainHeight
-                })
-            }
-
-            return runner.run()
-
+                log,
+                process(store, batch) {
+                    return handler({
+                        _chain: chain,
+                        log: mappingLog,
+                        store,
+                        blocks: batch.blocks as any,
+                        isHead: batch.isHead
+                    })
+                }
+            }).run()
         }, err => log.fatal(err))
     }
 }

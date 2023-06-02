@@ -1,193 +1,165 @@
-import {def, last, maybeLast, wait} from '@subsquid/util-internal'
+import {concurrentMap, last, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BatchRequest} from './batch'
-import {HotDatabaseState} from './database'
-import {rangeEnd} from './range'
+import {HashAndHeight, HotDatabaseState} from './database'
+import {Batch, Block, BlockHeader, HotUpdate} from './datasource'
+import {ClosedRange, splitRange} from './range'
 
 
-export interface HashAndHeight {
-    hash: string
-    height: number
+export interface HeightTracker {
+    wait(height: number): Promise<number>
+    getHeight(): Promise<number>
 }
 
 
-export interface BlockHeader {
-    height: number
-    hash: string
-    parentHash: string
-}
-
-
-export interface Block {
-    header: BlockHeader
-}
-
-
-export interface BatchResponse<B extends Block = Block> {
-    /**
-     * This is the range of scanned blocks
-     */
-    range: {from: number, to: number}
-    blocks: B[]
+export interface DataSplit<R> {
+    range: ClosedRange
+    request: R
     chainHeight: number
 }
 
 
-export interface DataBatch<B extends Block = Block> extends BatchResponse<B> {
-    fetchStartTime: bigint
-    fetchEndTime: bigint
-    finalizedHead?: HashAndHeight
-    baseHead?: HashAndHeight
-}
-
-
-export interface HotDataBatch extends DataBatch {
-    finalizedHead: HashAndHeight
-    baseHead: HashAndHeight
-}
-
-
-export interface ArchiveDataSource<R> {
-    getFinalizedBatch(request: BatchRequest<R>): Promise<BatchResponse>
-    getFinalizedHeight(): Promise<number>
-}
-
-
-export interface HotDataSource<R> extends ArchiveDataSource<R> {
-    getBlock(blockHash: string, request?: R): Promise<Block>
-    getBlockHash(height: number): Promise<string>
-    getBestHead(): Promise<HashAndHeight>
-    getFinalizedHead(): Promise<HashAndHeight>
-}
-
-
-export interface ArchiveIngestOptions<R> {
-    requests: BatchRequest<R>[]
-    archive: ArchiveDataSource<R>
-    pollInterval?: number
-    maxBufferedBatches?: number
-}
-
-
-export class ArchiveIngest<R> {
-    private requests: BatchRequest<R>[]
-    private src: ArchiveDataSource<R>
-    private pollInterval: number
-    private queue: Promise<DataBatch | null>[] = []
-    private chainHeight = -1
-    private fetching = false
-    private maxBufferedBatches: number
-
-    constructor(options: ArchiveIngestOptions<R>) {
-        this.requests = options.requests.slice()
-        this.src = options.archive
-        this.pollInterval = options.pollInterval ?? 2000
-        this.maxBufferedBatches = options.maxBufferedBatches ?? 2
+export async function* generateDataSplits<R>(
+    args: {
+        requests: BatchRequest<R>[]
+        heightTracker: HeightTracker
+        stopOnHead?: boolean
     }
-
-    async shouldStopOnHeight(height: number): Promise<boolean> {
-        return false
-    }
-
-    @def
-    async *getBlocks(): AsyncIterable<DataBatch> {
-        this.chainHeight = await this.src.getFinalizedHeight()
-        while (true) {
-            if (!this.fetching) {
-                this.loop()
-            }
-            let batch = await this.queue.shift()
-            if (batch == null) return
-            yield batch
-        }
-    }
-
-    private loop() {
-        if (this.queue.length >= this.maxBufferedBatches) {
-            this.fetching = false
-            return
-        } else {
-            this.fetching = true
-        }
-
-        if (this.requests.length == 0) return
-
-        let req = this.requests[0]
-
-        let promise: Promise<DataBatch | null> = this.waitForHeight(req.range.from).then(async ok => {
-            if (!ok) return null
-
-            let fetchStartTime = process.hrtime.bigint()
-            let response = await this.src.getFinalizedBatch(req)
-            let fetchEndTime = process.hrtime.bigint()
-
-            assert(response.range.from <= response.range.to)
-            assert(response.range.from == req.range.from)
-            assert(response.range.to <= rangeEnd(req.range))
-            assert(response.range.to <= response.chainHeight)
-
-            let blocks = response.blocks.sort((a, b) => a.header.height - b.header.height)
-            if (blocks.length) {
-                assert(response.range.from <= blocks[0].header.height)
-                assert(response.range.to >= last(blocks).header.height)
-            }
-
-            this.chainHeight = Math.max(this.chainHeight, response.chainHeight)
-
-            if (response.range.to < rangeEnd(req.range)) {
-                this.requests[0] = {
-                    range: {from: response.range.to + 1, to: req.range.to},
-                    request: req.request
+): AsyncIterable<DataSplit<R>> {
+    let top = await args.heightTracker.getHeight()
+    for (let req of args.requests) {
+        let from = req.range.from
+        let end = req.range.to ?? Infinity
+        while (from <= end) {
+            if (top < from) {
+                top = await args.heightTracker.getHeight()
+                if (top < from) {
+                    if (args.stopOnHead) return
+                    top = await args.heightTracker.wait(from)
                 }
-            } else {
-                this.requests.shift()
             }
-
-            this.loop()
-
-            return {
-                ...response,
-                fetchStartTime,
-                fetchEndTime,
-                chainHeight: this.chainHeight
+            let to = Math.min(end, top)
+            yield {
+                range: {from, to},
+                request: req.request,
+                chainHeight: top
             }
-        })
-
-        promise.catch(() => {})
-
-        this.queue.push(promise)
-    }
-
-    private async waitForHeight(minimumHeight: number): Promise<boolean> {
-        while (this.chainHeight < minimumHeight) {
-            if (await this.shouldStopOnHeight(this.chainHeight)) return false
-            await wait(this.pollInterval)
-            this.chainHeight = Math.max(this.chainHeight, await this.src.getFinalizedHeight())
+            from = to + 1
         }
-        return true
     }
 }
 
 
-export interface HotIngestOptions<R> {
-    src: HotDataSource<R>
-    state: HotDatabaseState
-    requests: BatchRequest<R>[]
-    pollInterval?: number
+export async function* generateFetchStrides<R>(
+    args: {
+        requests: BatchRequest<R>[]
+        heightTracker: HeightTracker
+        strideSize?: number
+        stopOnHead?: boolean
+    }
+): AsyncIterable<DataSplit<R>> {
+    let {strideSize = 10, ...params} = args
+    for await (let s of generateDataSplits(params)) {
+        for (let range of splitRange(strideSize, s.range)) {
+            yield {
+                range,
+                request: s.request,
+                chainHeight: s.chainHeight
+            }
+        }
+    }
 }
 
 
-export class HotIngest<R> {
-    private requests: BatchRequest<R>[]
-    private chain: HashAndHeight[]
-    private src: HotDataSource<R>
-    private pollInterval: number
+export function archiveIngest<R, B extends Block>(
+    args: {
+        requests: BatchRequest<R>[]
+        heightTracker: HeightTracker
+        query: (s: DataSplit<R>) => Promise<B[]>
+        stopOnHead?: boolean
+    }
+): AsyncIterable<Batch<B>> {
+    let {query, ...params} = args
 
-    constructor(options: HotIngestOptions<R>) {
-        this.requests = options.requests
-        this.chain = [options.state, ...options.state.top]
-        this.src = options.src
-        this.pollInterval = options.pollInterval ?? 1000
+    async function* ingest(): AsyncIterable<Batch<B>> {
+        for await (let s of generateDataSplits(params)) {
+            let from = s.range.from
+            let to = s.range.to
+            while (from <= to) {
+                let blocks = await query({
+                    range: {from, to},
+                    request: s.request,
+                    chainHeight: s.chainHeight
+                })
+                assert(blocks.length > 0, 'boundary blocks are expected to be included')
+                from = last(blocks).header.height + 1
+                yield {blocks, isHead: to == s.chainHeight}
+            }
+        }
+    }
+
+    return concurrentMap(
+        2,
+        ingest(),
+        b => Promise.resolve(b)
+    )
+}
+
+
+export class PollingHeightTracker implements HeightTracker {
+    private lastAccess = 0
+    private lastHeight = 0
+
+    constructor(
+        private height: () => Promise<number>,
+        public readonly pollInterval: number = 1000
+    ) {
+    }
+
+    async getHeight(): Promise<number> {
+        let height = await this.height()
+        this.lastAccess = Date.now()
+        this.lastHeight = height
+        return height
+    }
+
+    async wait(height: number): Promise<number> {
+        while (this.lastHeight < height) {
+            let pause = this.pollInterval - Math.min(Date.now() - this.lastAccess, this.pollInterval)
+            if (pause) {
+                await wait(pause)
+            }
+            await this.getHeight()
+        }
+        return this.lastHeight
+    }
+}
+
+
+export async function* getHeightUpdates(heightTracker: HeightTracker, from: number): AsyncIterable<number> {
+    let height = from
+    while (true) {
+        yield height = await heightTracker.wait(height)
+        height += 1
+    }
+}
+
+
+export interface ChainHeads {
+    best?: HashAndHeight | number | string
+    finalized?: HashAndHeight | number | string
+}
+
+
+export class ForkNavigator<B> {
+    private chain: HashAndHeight[]
+
+    constructor(
+        state: HotDatabaseState,
+        private getBlock: (ref: Partial<HashAndHeight>) => Promise<B>,
+        private getHeader: (block: B) => BlockHeader
+    ) {
+        this.chain = [state, ...state.top]
         this.assertInvariants()
     }
 
@@ -197,16 +169,115 @@ export class HotIngest<R> {
         }
     }
 
-    private waitsForBlocks(): boolean {
-        let next = this.chain[0].height + 1
-        for (let req of this.requests) {
-            let to = req.range.to ?? Infinity
-            if (next <= to) return true
-        }
-        return false
+    getHeight(): number {
+        return last(this.chain).height
     }
 
-    private getRequestAtHeight(height: number): R | undefined {
+    async move(heads: ChainHeads): Promise<HotUpdate<B>> {
+        let chain = this.chain.slice()
+        let newBlocks: B[] = []
+        let bestHead: HashAndHeight | undefined
+
+        if (typeof heads.best == 'number') {
+            if (heads.best > last(chain).height) {
+                let newBlock = await this.getBlock({height: heads.best})
+                newBlocks.push(newBlock)
+                bestHead = getParent(this.getHeader(newBlock))
+            }
+        } else if (typeof heads.best == 'string') {
+            bestHead = chain.find(ref => ref.hash === heads.best)
+            bestHead = bestHead || await this.getBlock({hash: heads.best}).then(b => this.getHeader(b))
+        } else {
+            bestHead = heads.best
+        }
+
+        if (bestHead) {
+            assert(bestHead.height >= chain[0].height)
+
+            if (last(chain).height > bestHead.height) {
+                let bestPos = bestHead.height - chain[0].height
+                if (chain[bestPos].hash === bestHead.hash) {
+                    // no fork
+                } else {
+                    // we have a proper fork
+                    chain = chain.slice(0, bestPos)
+                }
+            }
+
+            while (last(chain).height < bestHead.height) {
+                let block = await this.getBlock(bestHead)
+                newBlocks.push(block)
+                bestHead = getParent(this.getHeader(block))
+            }
+
+            while (last(chain).hash !== bestHead.hash) {
+                let block = await this.getBlock(bestHead)
+                newBlocks.push(block)
+                bestHead = getParent(this.getHeader(block))
+                chain.pop()
+            }
+        }
+
+        newBlocks = newBlocks.reverse()
+        for (let block of newBlocks) {
+            chain.push(this.getHeader(block))
+        }
+
+        let finalizedHead: HashAndHeight | undefined
+        if (typeof heads.finalized == 'number') {
+            assert(heads.finalized <= last(chain).height)
+            if (heads.finalized > chain[0].height) {
+                finalizedHead = chain[heads.finalized - chain[0].height]
+                assert(finalizedHead.height == heads.finalized)
+            }
+        } else if (typeof heads.finalized == 'string') {
+            finalizedHead = chain.find(ref => ref.hash === heads.finalized)
+            finalizedHead = finalizedHead || await this.getBlock({hash: heads.finalized}).then(b => this.getHeader(b))
+        } else {
+            finalizedHead = heads.finalized
+        }
+
+        if (finalizedHead && finalizedHead.height >= chain[0].height) {
+            assert(finalizedHead.height <= last(chain).height)
+            let finalizedHeadPos = finalizedHead.height - chain[0].height
+            assert(chain[finalizedHeadPos].hash === finalizedHead.hash)
+            chain = chain.slice(finalizedHeadPos)
+        }
+
+        // don't change the state until no error is guaranteed to occur
+        this.chain = chain
+
+        return {
+            blocks: newBlocks,
+            baseHead: newBlocks.length ? getParent(this.getHeader(newBlocks[0])) : last(this.chain),
+            finalizedHead: this.chain[0]
+        }
+    }
+
+    async transact<R>(cb: () => Promise<R>): Promise<R> {
+        let chain = this.chain
+        try {
+            return await cb()
+        } catch(err: any) {
+            this.chain = chain
+            throw err
+        }
+    }
+}
+
+
+function getParent(hdr: BlockHeader): HashAndHeight {
+    return {
+        hash: hdr.parentHash,
+        height: hdr.height - 1
+    }
+}
+
+
+export class RequestsTracker<R> {
+    constructor(private requests: BatchRequest<R>[]) {}
+
+    getRequestAt(height: number): R | undefined {
         for (let req of this.requests) {
             let from = req.range.from
             let to = req.range.to ?? Infinity
@@ -214,93 +285,43 @@ export class HotIngest<R> {
         }
     }
 
-    @def
-    async *getItems(): AsyncIterable<HotDataBatch> {
-        while (this.waitsForBlocks()) {
-            let fetchStartTime = process.hrtime.bigint()
-            let newBlocks = await this.pollNewBlocks()
-            let fetchEndTime = process.hrtime.bigint()
-
-            if (newBlocks.length) {
-                yield {
-                    range: {from: newBlocks[0].header.height, to: last(newBlocks).header.height},
-                    blocks: newBlocks,
-                    chainHeight: last(newBlocks).header.height,
-                    fetchStartTime,
-                    fetchEndTime,
-                    finalizedHead: this.chain[0],
-                    baseHead: {
-                        height: newBlocks[0].header.height - 1,
-                        hash: newBlocks[0].header.parentHash
-                    }
-                }
-            }
-
-            let sinceLastPoll = Number(process.hrtime.bigint() - fetchStartTime) / 1_000_000
-            await wait(Math.max(0, this.pollInterval - sinceLastPoll))
+    hasRequestsAfter(height: number): boolean {
+        for (let req of this.requests) {
+            let to = req.range.to ?? Infinity
+            if (height < to) return true
         }
+        return false
     }
 
-    private async pollNewBlocks(): Promise<Block[]> {
-        let finalizedHead = await this.src.getFinalizedHead()
-        let best = await this.src.getBestHead()
-
-        if (this.chain[0].height > finalizedHead.height) {
-            // this happens with all RPC providers
-            // sometimes we just loose the progress...
-            finalizedHead = this.chain[0]
-        }
-        assert(finalizedHead.height <= best.height)
-
-        if (last(this.chain).height > best.height) {
-            let bestPos = best.height - this.chain[0].height
-            if (this.chain[bestPos].hash === best.hash) {
-                // once again we just lost progress
-                return []
+    *splitBlocksByRequest<B>(blocks: B[], getBlockHeight: (b: B) => number): Iterable<{blocks: B[], request?: R}> {
+        let pack: B[] = []
+        let packRequest: R | undefined = undefined
+        for (let b of blocks) {
+            let req = this.getRequestAt(getBlockHeight(b))
+            if (req === packRequest) {
+                pack.push(b)
             } else {
-                // we have a proper fork
-                // we don't apply height judgement here,
-                // because blockchains can differ in how they define the notion of the best block
-                this.chain = this.chain.slice(0, bestPos)
+                if (pack.length) {
+                    yield {blocks: pack, request: packRequest}
+                }
+                pack = [b]
+                packRequest = req
             }
         }
-
-        let newBlocks: Block[] = []
-
-        while (last(this.chain).height < best.height) {
-            let item = await this.getBlock(best)
-            newBlocks.push(item.block)
-            best = item.parent
+        if (pack.length) {
+            yield {blocks: pack, request: packRequest}
         }
-
-        while (last(this.chain).hash !== best.hash) {
-            let item = await this.getBlock(best)
-            newBlocks.push(item.block)
-            best = item.parent
-            this.chain.pop()
-        }
-
-        newBlocks = newBlocks.reverse()
-        for (let block of newBlocks) {
-            this.chain.push(block.header)
-        }
-
-        let finalizedHeadPos = finalizedHead.height - this.chain[0].height
-        assert(this.chain[finalizedHeadPos].hash === finalizedHead.hash)
-        this.chain = this.chain.slice(finalizedHeadPos)
-
-        return newBlocks
     }
 
-    private async getBlock(ref: HashAndHeight): Promise<{block: Block, parent: HashAndHeight}> {
-        let request = this.getRequestAtHeight(ref.height)
-        let block = await this.src.getBlock(ref.hash, request)
-        return {
-            block,
-            parent: {
-                hash: block.header.parentHash,
-                height: block.header.height - 1
-            }
+    async processBlocks<I, O>(
+        blocks: I[],
+        getBlockHeight: (b: I) => number,
+        process: (blocks: I[], req?: R) => Promise<O[]>
+    ): Promise<O[]> {
+        let result: O[] = []
+        for (let pack of this.splitBlocksByRequest(blocks, getBlockHeight)) {
+            result.push(...await process(pack.blocks, pack.request))
         }
+        return result
     }
 }

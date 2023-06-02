@@ -3,7 +3,7 @@ import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
 import assert from 'assert'
 import {applyRangeBound, BatchRequest} from './batch'
 import {Database, HashAndHeight, HotDatabaseState} from './database'
-import {ArchiveDataSource, ArchiveIngest, Block, BatchResponse, DataBatch, HotDataSource, HotIngest} from './ingest'
+import {HotUpdate, Block, DataSource, HotDataSource, Batch} from './datasource'
 import {PrometheusServer} from './prometheus'
 import {rangeEnd} from './range'
 import {RunnerMetrics} from './runner-metrics'
@@ -11,10 +11,9 @@ import {formatHead, getItemsCount} from './util'
 
 
 export interface RunnerConfig<R, S> {
-    archive?: ArchiveDataSource<R>
-    archivePollInterval?: number
-    hotDataSource?: HotDataSource<R>
-    hotDataSourcePollInterval?: number
+    archive?: DataSource<Block, R>
+    hotDataSource?: HotDataSource<Block, R>
+    process: (store: S, batch: Batch<Block>) => Promise<void>
     requests: BatchRequest<R>[]
     database: Database<S>
     log: Logger
@@ -27,7 +26,7 @@ export class Runner<R, S> {
     private statusReportTimer?: any
     private hasStatusNews = false
 
-    constructor(protected config: RunnerConfig<R, S>) {
+    constructor(private config: RunnerConfig<R, S>) {
         this.metrics = new RunnerMetrics(this.config.requests)
         this.config.prometheus.addRunnerMetrics(this.metrics)
     }
@@ -60,8 +59,7 @@ export class Runner<R, S> {
                 state = await this.processFinalizedBlocks({
                     state,
                     src: archive,
-                    srcPollInterval: this.config.archivePollInterval,
-                    shouldStopOnHeight: hot && (async () => true)
+                    shouldStopOnHead: !!hot && this.config.database.supportsHotBlocks
                 })
                 if (this.getLeftRequests(state).length == 0) return
             }
@@ -76,8 +74,7 @@ export class Runner<R, S> {
             state = await this.processFinalizedBlocks({
                 state,
                 src: hot,
-                srcPollInterval: this.config.hotDataSourcePollInterval,
-                shouldStopOnHeight: async height => !!this.config.database.supportsHotBlocks
+                shouldStopOnHead: this.config.database.supportsHotBlocks
             })
             if (this.getLeftRequests(state).length == 0) return
         }
@@ -85,39 +82,26 @@ export class Runner<R, S> {
         return this.processHotBlocks(state)
     }
 
-    private async processFinalizedBlocks(options: {
+    private async processFinalizedBlocks(args: {
         state: HotDatabaseState,
-        src: ArchiveDataSource<R>
-        srcPollInterval?: number
-        shouldStopOnHeight?: (height: number) => Promise<boolean>
+        src: DataSource<Block, R>
+        shouldStopOnHead?: boolean
     }): Promise<HotDatabaseState> {
-
-        let state = options.state
-
-        let ingest = new ArchiveIngest({
-            requests: this.getLeftRequests(state),
-            archive: options.src,
-            pollInterval: options.srcPollInterval
-        })
-
-        if (options.shouldStopOnHeight) {
-            ingest.shouldStopOnHeight = options.shouldStopOnHeight
-        }
-
+        let state = args.state
         let minimumCommitHeight = state.height + state.top.length
-        let prevBatch: DataBatch | undefined
+        let prevBatch: Batch<Block> | undefined
 
-        for await (let batch of ingest.getBlocks()) {
+        for await (let batch of args.src.getFinalizedBlocks(
+            this.getLeftRequests(args.state),
+            args.shouldStopOnHead
+        )) {
             if (prevBatch) {
                 batch = {
-                    range: {from: prevBatch.range.from, to: batch.range.to},
-                    chainHeight: batch.chainHeight,
                     blocks: prevBatch.blocks.concat(batch.blocks),
-                    fetchStartTime: prevBatch.fetchStartTime,
-                    fetchEndTime: batch.fetchEndTime
+                    isHead: batch.isHead
                 }
             }
-            if (batch.range.to < minimumCommitHeight) {
+            if (last(batch.blocks).header.height < minimumCommitHeight) {
                 prevBatch = batch
             } else {
                 prevBatch = undefined
@@ -132,17 +116,10 @@ export class Runner<R, S> {
         return state
     }
 
-    private async handleFinalizedBlocks(state: HotDatabaseState, batch: DataBatch): Promise<HotDatabaseState> {
-        assert(state.height < batch.range.from)
+    private async handleFinalizedBlocks(state: HotDatabaseState, batch: Batch<Block>): Promise<HotDatabaseState> {
+        let lastBlock = last(batch.blocks)
 
-        let lastBlock = maybeLast(batch.blocks)
-        if (lastBlock?.header.height !== batch.range.to) {
-            this.log.warn(
-                {batchRange: batch.range},
-                'by convention batch always should contain the last block of its range'
-            )
-        }
-        if (lastBlock == null) return state
+        assert(state.height < lastBlock.header.height)
 
         let nextState: HotDatabaseState = {
             height: lastBlock.header.height,
@@ -150,13 +127,13 @@ export class Runner<R, S> {
             top: []
         }
 
-        await this.withProgressMetrics(batch, () => {
+        await this.withProgressMetrics(batch.blocks, () => {
             return this.config.database.transact({
                 prevHead: state,
                 nextHead: nextState,
-                isOnTop: batch.chainHeight === batch.range.to
+                isOnTop: batch.isHead
             }, store => {
-                return this.processBatch(store, batch)
+                return this.config.process(store, batch)
             })
         })
 
@@ -166,38 +143,32 @@ export class Runner<R, S> {
     private async processHotBlocks(state: HotDatabaseState): Promise<void> {
         assert(this.config.database.supportsHotBlocks === true)
         let db = this.config.database
-
-        let ingest = new HotIngest({
-            src: assertNotNull(this.config.hotDataSource),
-            state,
-            requests: this.getLeftRequests(state),
-            pollInterval: this.config.hotDataSourcePollInterval
-        })
-
+        let ds = assertNotNull(this.config.hotDataSource)
         let lastHead = maybeLast(state.top) || state
 
-        for await (let batch of ingest.getItems()) {
-            let newHead = maybeLast(batch.blocks)?.header || batch.baseHead
-            if (batch.baseHead.hash !== lastHead.hash) {
-                this.log.info(`navigating a fork from ${formatHead(lastHead)} to ${formatHead(newHead)} with a common base ${formatHead(batch.baseHead)}`)
+        for await (let upd of ds.getHotBlocks(this.getLeftRequests(state), state)) {
+            let newHead = maybeLast(upd.blocks)?.header || upd.baseHead
+            if (upd.baseHead.hash !== lastHead.hash) {
+                this.log.info(`navigating a fork between ${formatHead(lastHead)} to ${formatHead(newHead)} with a common base ${formatHead(upd.baseHead)}`)
             }
-            this.log.debug({batch})
-            await this.withProgressMetrics(batch, () => {
+
+            this.log.debug({hotUpdate: upd})
+
+            await this.withProgressMetrics(upd.blocks, () => {
                 return db.transactHot({
-                    finalizedHead: batch.finalizedHead,
-                    baseHead: batch.baseHead,
-                    newBlocks: batch.blocks.map(b => b.header)
+                    finalizedHead: upd.finalizedHead,
+                    baseHead: upd.baseHead,
+                    newBlocks: upd.blocks.map(b => b.header)
                 }, (store, ref) => {
-                    let idx = ref.height - batch.baseHead.height - 1
-                    let block = batch.blocks[idx]
+                    let idx = ref.height - upd.baseHead.height - 1
+                    let block = upd.blocks[idx]
 
                     assert.strictEqual(block.header.hash, ref.hash)
                     assert.strictEqual(block.header.height, ref.height)
 
-                    return this.processBatch(store, {
-                        range: {from: ref.height, to: ref.height},
+                    return this.config.process(store, {
                         blocks: [block],
-                        chainHeight: batch.chainHeight
+                        isHead: newHead.height === ref.height
                     })
                 })
             })
@@ -205,27 +176,23 @@ export class Runner<R, S> {
         }
     }
 
-    async processBatch(store: S, batch: BatchResponse): Promise<void> {}
-
-    private async withProgressMetrics<R>(batch: DataBatch, handler: () => R): Promise<R> {
-        this.metrics.setChainHeight(batch.chainHeight)
-
+    private async withProgressMetrics<R>(blocks: Block[], handler: () => R): Promise<R> {
         let mappingStartTime = process.hrtime.bigint()
 
         let result = await handler()
 
         let mappingEndTime = process.hrtime.bigint()
 
-        this.metrics.setLastProcessedBlock(batch.range.to)
-        this.metrics.updateProgress(mappingEndTime)
-        this.metrics.registerBatch(
-            batch.blocks.length,
-            getItemsCount(batch.blocks),
-            batch.fetchStartTime,
-            batch.fetchEndTime,
-            mappingStartTime,
-            mappingEndTime
-        )
+        if (blocks.length > 0) {
+            this.metrics.setLastProcessedBlock(last(blocks).header.height)
+            this.metrics.updateProgress(mappingEndTime)
+            this.metrics.registerBatch(
+                blocks.length,
+                getItemsCount(blocks),
+                mappingStartTime,
+                mappingEndTime
+            )
+        }
         this.reportStatus()
         return result
     }

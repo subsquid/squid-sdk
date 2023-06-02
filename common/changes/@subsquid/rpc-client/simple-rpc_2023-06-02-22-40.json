@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "rework to support http, resiliency, etc",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

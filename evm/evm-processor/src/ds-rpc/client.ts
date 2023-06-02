@@ -1,536 +1,467 @@
-import {addErrorContext, unexpectedCase} from '@subsquid/util-internal'
-import {BatchRequest, BatchResponse, HashAndHeight, HotDataSource} from '@subsquid/util-internal-processor-tools'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import {RpcClient} from '@subsquid/rpc-client'
+import {assertNotNull, concurrentMap, def, groupBy, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {
+    Batch,
+    BatchRequest,
+    DataSplit,
+    ForkNavigator,
+    generateFetchStrides,
+    getHeightUpdates,
+    HotDatabaseState,
+    HotDataSource,
+    HotUpdate,
+    PollingHeightTracker,
+    RequestsTracker
+} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
-import {AllFields, BlockData, BlockHeader, Log, StateDiff, Trace, Transaction} from '../interfaces/data'
+import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
+import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
-import {Bytes20, EvmStateDiff, EvmTrace, EvmTraceCall, EvmTraceCreate, Qty} from '../interfaces/evm'
-import {formatId} from '../util'
+import {Bytes32, Qty} from '../interfaces/evm'
+import {getBlockHeight, getBlockName, getTxHash, mapBlock, qty2Int, toRpcDataRequest} from './mapping'
 import * as rpc from './rpc'
+
+
+type Block = BlockData<AllFields>
 
 
 export interface EvmRpcDataSourceOptions {
     rpc: RpcClient
-    finalityConfirmation?: number
+    finalityConfirmation: number
+    pollInterval?: number
+    strideSize?: number
+    useDebugApiForStateDiffs?: boolean
+    useTraceApi?: boolean
 }
 
 
-export class EvmRpcDataSource implements HotDataSource<DataRequest> {
+export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private rpc: RpcClient
-    private batchSize: number
+    private strideSize: number
     private finalityConfirmation: number
-    private lastFinalizedHeight = 0
-    private lastFinalizedHead?: HashAndHeight
-    private lastBlock?: rpc.Block
+    private pollInterval: number
+    private useDebugApiForStateDiffs: boolean
+    private useTraceApi: boolean
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
-        this.batchSize = 1
-        this.finalityConfirmation = options.finalityConfirmation ?? 10
+        this.finalityConfirmation = options.finalityConfirmation
+        this.strideSize = options.strideSize ?? 10
+        this.pollInterval = options.pollInterval ?? 1000
+        this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs ?? false
+        this.useTraceApi = options.useTraceApi ?? false
     }
 
     async getFinalizedHeight(): Promise<number> {
         let height = await this.getHeight()
-        return this.lastFinalizedHeight = Math.max(0, height - this.finalityConfirmation)
+        return Math.max(0, height - this.finalityConfirmation)
     }
 
     private async getHeight(): Promise<number> {
-        let qty: Qty = await this.rpc.call('eth_blockNumber')
-        let height = parseInt(qty)
-        assert(Number.isSafeInteger(height))
-        return height
-    }
-
-    async getFinalizedHead(): Promise<HashAndHeight> {
-        let height = await this.getFinalizedHeight()
-        if (this.lastFinalizedHead?.height === height) return this.lastFinalizedHead
-        let block: rpc.Block = await this.rpc.call('eth_getBlockByNumber', ['0x'+height.toString(16), false])
-        return this.lastFinalizedHead = {
-            hash: block.hash,
-            height: qty2Int(block.number)
-        }
-    }
-
-    async getBestHead(): Promise<HashAndHeight> {
-        this.lastBlock = await this.rpc.call('eth_getBlockByNumber', ['latest', true])
-        return {
-            height: qty2Int(this.lastBlock.number),
-            hash: this.lastBlock.hash
-        }
-    }
-
-    async getFinalizedBatch(request: BatchRequest<DataRequest>): Promise<BatchResponse> {
-        let firstBlock = request.range.from
-        let lastBlock = Math.min(request.range.to ?? Infinity, firstBlock + this.batchSize)
-
-        assert(firstBlock <= lastBlock)
-
-        let height = this.lastFinalizedHeight
-        if (height < lastBlock) {
-            height = await this.getFinalizedHeight()
-        }
-
-        assert(firstBlock <= height, 'requested blocks from non-finalized range')
-        lastBlock = Math.min(height, lastBlock)
-
-        let needsTransactions = transactionsRequested(request.request)
-
-        let blockPromises: Promise<rpc.Block>[] = []
-        for (let i = firstBlock; i <= lastBlock; i++) {
-            blockPromises.push(
-                this.rpc.call(i, 'eth_getBlockByNumber', ['0x'+i.toString(16), needsTransactions])
-            )
-        }
-
-        let batchBlocks: BlockData<AllFields>[] = await Promise.all(
-            blockPromises.map(p => p.then(
-                block => this.mapBlock(block, request.request).catch(err => {
-                    throw addBlockContext(err, block)
-                })
-            ))
-        )
-
-        assertBlockChain(batchBlocks)
-
-        return {
-            range: {from: firstBlock, to: lastBlock},
-            blocks: batchBlocks,
-            chainHeight: height
-        }
-    }
-
-    async getBlock(blockHash: string, request?: DataRequest): Promise<BlockData<AllFields>> {
-        let block: rpc.Block
-        if (this.lastBlock?.hash === blockHash) {
-            block = this.lastBlock
-        } else {
-            block = await this.rpc.call('eth_getBlockByHash', [blockHash, transactionsRequested(request)])
-        }
-        return this.mapBlock(block, request).catch(err => {
-            throw addBlockContext(err, block)
-        })
-    }
-
-    private async mapBlock(block: rpc.Block, request?: DataRequest): Promise<BlockData<AllFields>> {
-        let receipts: rpc.TransactionReceipt[] | undefined
-        let logs: rpc.Log[] | undefined
-        let replay: rpc.TransactionReplay[] | undefined
-
-        if (receiptsRequested(request)) {
-            receipts = await Promise.all(
-                block.transactions.map(tx => {
-                    assert(typeof tx == 'object')
-                    return this.rpc.call('eth_getTransactionReceipt', [tx.hash])
-                })
-            )
-        } else if (logsRequested(request)) {
-            logs = await this.rpc.call<rpc.Log[]>('eth_getLogs', [{
-                fromBlock: block.number,
-                toBlock: block.number
-            }])
-            for (let log of logs) {
-                assert.strictEqual(log.blockHash, block.hash)
-            }
-        }
-
-        let replayTypes = []
-        if (tracesRequested(request)) {
-            replayTypes.push('trace')
-        }
-        if (stateDiffsRequested(request)) {
-            replayTypes.push('stateDiff')
-        }
-        if (replayTypes.length) {
-            replay = await this.rpc.call<rpc.TransactionReplay[]>(
-                'trace_replayBlockTransactions',
-                [block.number, replayTypes]
-            )
-            assert(replay.length === block.transactions.length)
-            for (let i = 0; i < block.transactions.length; i++) {
-                let tx = block.transactions[i]
-                let txHash = typeof tx == 'string' ? tx : tx.hash
-                assert.strictEqual(replay[i].transactionHash, txHash)
-            }
-        }
-
-        let header = mapBlockHeader(block)
-
-        let data: BlockData<AllFields> = {
-            header,
-            transactions: [],
-            logs: [],
-            traces: [],
-            stateDiffs: []
-        }
-
-        let txIndex = new Map<Transaction['transactionIndex'], Transaction<AllFields>>()
-
-        for (let i = 0; i < block.transactions.length; i++) {
-            let rpcTx = block.transactions[i]
-            if (typeof rpcTx == 'string') {
-                break
-            }
-
-            let receipt = receipts?.[i]
-            if (receipt) {
-                assert(receipt.transactionHash === rpcTx.hash)
-            }
-
-            let transactionIndex = qty2Int(rpcTx.transactionIndex)
-
-            let tx: Transaction<AllFields> = {
-                id: formatId(header.height, header.hash, transactionIndex),
-                transactionIndex,
-                hash: rpcTx.hash,
-                from: rpcTx.from,
-                to: rpcTx.to || undefined,
-                input: rpcTx.input,
-                nonce: qty2Int(rpcTx.nonce),
-                v: rpcTx.v == null ? undefined : BigInt(rpcTx.v),
-                r: rpcTx.r,
-                s: rpcTx.s,
-                value: BigInt(rpcTx.value),
-                gas: BigInt(rpcTx.gas),
-                gasPrice: BigInt(rpcTx.gasPrice),
-                chainId: rpcTx.chainId == null ? undefined : qty2Int(rpcTx.chainId),
-                sighash: rpcTx.input.slice(0, 10),
-                block: header
-            }
-
-            if (receipt) {
-                tx.gasUsed = BigInt(receipt.gasUsed)
-                tx.cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                tx.effectiveGasPrice = BigInt(receipt.effectiveGasPrice)
-                tx.contractAddress = receipt.contractAddress || undefined
-                tx.type = qty2Int(receipt.type)
-                tx.status = qty2Int(receipt.status)
-            }
-
-            txIndex.set(tx.transactionIndex, tx)
-            data.transactions.push(tx)
-        }
-
-        for (let rpcLog of iterateLogs(receipts, logs)) {
-            let logIndex = qty2Int(rpcLog.logIndex)
-            let log: Log<AllFields> = {
-                id: formatId(header.height, header.hash, logIndex),
-                logIndex,
-                transactionIndex: qty2Int(rpcLog.transactionIndex),
-                transactionHash: rpcLog.transactionHash,
-                address: rpcLog.address,
-                topics: rpcLog.topics,
-                data: rpcLog.data,
-                block: header
-            }
-
-            let transaction = txIndex.get(log.transactionIndex)
-            if (transaction) {
-                log.transaction = transaction
-            }
-
-            data.logs.push(log)
-        }
-
-        if (replay) {
-            assert.strictEqual(replay.length, block.transactions.length)
-            for (let i = 0; i < replay.length; i++) {
-                let rep: rpc.TransactionReplay = replay[i]
-                let tx = block.transactions[i]
-                assert.strictEqual(
-                    rep.transactionHash,
-                    typeof tx == 'string' ? tx : tx.hash
-                )
-                let transactionIndex = i
-                let transaction = txIndex.get(transactionIndex)
-
-                for (let rpcTrace of rep.trace || []) {
-                    let trace: Trace<AllFields> = {
-                        ...mapTrace(transactionIndex, rpcTrace),
-                        block: header
-                    }
-                    if (transaction) {
-                        trace.transaction = transaction
-                    }
-                    data.traces.push(trace)
-                }
-
-                for (let diff of iterateStateDiffs(transactionIndex, rep.stateDiff)) {
-                    let diffRec: StateDiff<AllFields> = {
-                        ...diff,
-                        block: header
-                    }
-                    if (transaction) {
-                        diffRec.transaction = transaction
-                    }
-                    data.stateDiffs.push(diffRec)
-                }
-            }
-        }
-
-        return data
+        let height: Qty = await this.rpc.call('eth_blockNumber')
+        return qty2Int(height)
     }
 
     async getBlockHash(height: number): Promise<string> {
-        let block: rpc.Block = await this.rpc.call('eth_getBlockByNumber', ['0x'+height.toString(16), false])
+        let block: rpc.Block = await this.rpc.call(
+            'eth_getBlockByNumber',
+            ['0x'+height.toString(16), false]
+        )
         return block.hash
     }
+
+    @def
+    getGenesisHash(): Promise<string> {
+        return this.getBlockHash(0)
+    }
+
+    async *getHotBlocks(requests: BatchRequest<DataRequest>[], state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
+        let requestsTracker = new RequestsTracker(
+            requests.map(toRpcBatchRequest)
+        )
+
+        let heightTracker = new PollingHeightTracker(
+            () => this.getHeight(),
+            this.pollInterval
+        )
+
+        let nav = new ForkNavigator(
+            state,
+            ref => {
+                let height = assertNotNull(ref.height)
+                let withTransactions = !!requestsTracker.getRequestAt(height)?.transactions
+                if (ref.hash) {
+                    return this.getBlock0(ref.hash, withTransactions)
+                } else {
+                    return this.getBlock0(height, withTransactions)
+                }
+            },
+            block => ({
+                height: qty2Int(block.number),
+                hash: block.hash,
+                parentHash: block.parentHash
+            })
+        )
+
+        for await (let top of getHeightUpdates(heightTracker, nav.getHeight() + 1)) {
+            let update: HotUpdate<Block>
+            let retries = 3
+            while (true) {
+                try {
+                    update = await nav.transact(async () => {
+                        let {baseHead, finalizedHead, blocks: blocks0} = await nav.move({
+                            best: top,
+                            finalized: top - this.finalityConfirmation
+                        })
+                        let blocks = await requestsTracker.processBlocks(
+                            blocks0,
+                            getBlockHeight,
+                            (blocks0, req) => splitParallelWork(
+                                20,
+                                blocks0,
+                                bks0 => this.processBlocks(bks0, req)
+                            )
+                        )
+                        return {
+                            blocks,
+                            baseHead,
+                            finalizedHead
+                        }
+                    })
+                    break
+                } catch(err: any) {
+                    if (err instanceof ConsistencyError && retries) {
+                        retries -= 1
+                        await wait(200)
+                    } else {
+                        throw err
+                    }
+                }
+            }
+            yield update
+            if (!requestsTracker.hasRequestsAfter(update.finalizedHead.height)) return
+        }
+    }
+
+    getFinalizedBlocks(
+        requests: BatchRequest<DataRequest>[],
+        stopOnHead?: boolean
+    ): AsyncIterable<Batch<Block>> {
+        return concurrentMap(
+            5,
+            generateFetchStrides({
+                requests: requests.map(toRpcBatchRequest),
+                heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), this.pollInterval),
+                strideSize: this.strideSize,
+                stopOnHead
+            }),
+            async s => {
+                let blocks0 = await this.getStride0(s)
+                let blocks = await this.processBlocks(blocks0, s.request)
+                return {
+                    blocks,
+                    isHead: s.range.to === s.chainHeight
+                }
+            }
+        )
+    }
+
+    private async getBlock0(ref: number | string, withTransactions: boolean): Promise<rpc.Block> {
+        let block: rpc.Block | null
+        if (typeof ref == 'string') {
+            block = await this.rpc.call('eth_getBlockByHash', [ref, withTransactions])
+        } else {
+            block = await this.rpc.call('eth_getBlockByNumber', ['0x'+ref.toString(16), withTransactions])
+        }
+        if (block == null) {
+            throw new ConsistencyError(ref)
+        } else {
+            return block
+        }
+    }
+
+    private async getStride0(s: DataSplit<rpc.DataRequest>): Promise<rpc.Block[]> {
+        let call = []
+        for (let i = s.range.from; i <= s.range.to; i++) {
+            call.push({
+                method: 'eth_getBlockByNumber',
+                params: ['0x'+i.toString(16), s.request.transactions]
+            })
+        }
+        let blocks: rpc.Block[] = await this.rpc.batchCall(call, {
+            priority: s.range.from
+        })
+        for (let i = 1; i < blocks.length; i++) {
+            assert.strictEqual(
+                blocks[i - 1].hash,
+                blocks[i].parentHash,
+                'perhaps finality confirmation was not large enough'
+            )
+        }
+        return blocks
+    }
+
+    private async processBlocks(blocks: rpc.Block[], request?: rpc.DataRequest): Promise<Block[]> {
+        let req = request ?? toRpcDataRequest()
+        await this.fetchRequestedData(blocks, req)
+        return blocks.map(b => mapBlock(b, !!req.transactionList))
+    }
+
+    private async fetchRequestedData(blocks: rpc.Block[], req: rpc.DataRequest): Promise<void> {
+        let subtasks = []
+
+        if (req.logs && !req.receipts) {
+            subtasks.push(this.fetchLogs(blocks))
+        }
+
+        if (req.receipts) {
+            subtasks.push(this.fetchReceipts(blocks))
+        }
+
+        if (req.traces || req.stateDiffs) {
+            let isArbitrumOne = await this.getGenesisHash() === '0x7ee576b35482195fc49205cec9af72ce14f003b9ae69f6ba0faef4514be8b442'
+            if (isArbitrumOne) {
+                subtasks.push(this.fetchArbitrumOneTraces(blocks, req))
+            } else {
+                let replayTracers: rpc.TraceTracers[] = []
+                if (req.traces) {
+                    if (this.useTraceApi) {
+                        replayTracers.push('trace')
+                    } else {
+                        subtasks.push(
+                            this.fetchDebugFrames(blocks)
+                        )
+                    }
+                }
+                if (req.stateDiffs) {
+                    if (this.useDebugApiForStateDiffs) {
+                        subtasks.push(
+                            this.fetchDebugStateDiffs(blocks)
+                        )
+                    } else {
+                        replayTracers.push('stateDiff')
+                    }
+                }
+                if (replayTracers.length) {
+                    subtasks.push(
+                        this.fetchReplays(blocks, replayTracers)
+                    )
+                }
+            }
+        }
+
+        await Promise.all(subtasks)
+    }
+
+    private async fetchLogs(blocks: rpc.Block[]): Promise<void> {
+        let logs: rpc.Log[] = await this.rpc.call('eth_getLogs', [{
+            fromBlock: blocks[0].number,
+            toBlock: last(blocks).number
+        }], {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        let logsByBlock = groupBy(logs, log => log.blockHash)
+
+        for (let block of blocks) {
+            let logs = logsByBlock.get(block.hash) || []
+            if (logs.length == 0 && block.logsBloom !== NO_LOGS_BLOOM) {
+                throw new ConsistencyError(block)
+            } else {
+                block._logs = logs
+            }
+        }
+    }
+
+    private async fetchReceipts(blocks: rpc.Block[]): Promise<void> {
+        let call = []
+        for (let block of blocks) {
+            for (let tx of block.transactions) {
+                call.push({
+                    method: 'eth_getTransactionReceipt',
+                    params: [getTxHash(tx)]
+                })
+            }
+        }
+
+        let receipts: rpc.TransactionReceipt[] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        let receiptsByBlock = groupBy(receipts, r => r.blockHash)
+
+        for (let block of blocks) {
+            let rs = receiptsByBlock.get(block.hash) || []
+            if (rs.length !== block.transactions.length) {
+                throw new ConsistencyError(block)
+            }
+            for (let i = 0; i < rs.length; i++) {
+                if (rs[i].transactionHash !== getTxHash(block.transactions[i])) {
+                    throw new ConsistencyError(block)
+                }
+            }
+            block._receipts = rs
+        }
+    }
+
+    private async fetchReplays(
+        blocks: rpc.Block[],
+        tracers: rpc.TraceTracers[],
+        method: string = 'trace_replayBlockTransactions'
+    ): Promise<void> {
+        if (tracers.length == 0) return
+
+        let call = []
+        for (let block of blocks) {
+            call.push({
+                method,
+                params: [block.number, tracers]
+            })
+        }
+
+        let replaysByBlock: rpc.TraceTransactionReplay[][] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let replays = replaysByBlock[i]
+            let txs = new Set(block.transactions.map(getTxHash))
+
+            for (let rep of replays) {
+                if (!rep.transactionHash) { // TODO: Who behaves like that? Arbitrum?
+                    let txHash: Bytes32 | undefined = undefined
+                    for (let frame of rep.trace || []) {
+                        assert(txHash == null || txHash === frame.transactionHash)
+                        txHash = txHash || frame.transactionHash
+                    }
+                    assert(txHash, "Can't match transaction replay with its transaction")
+                    rep.transactionHash = txHash
+                }
+                // Sometimes replays might be missing for pre-compiled contracts
+                if (!txs.has(rep.transactionHash)) {
+                    throw new ConsistencyError(block)
+                }
+            }
+
+            block._traceReplays = replays
+        }
+    }
+
+    private async fetchDebugFrames(blocks: rpc.Block[]): Promise<void> {
+        let traceConfig = {
+            tracer: 'callTracer',
+            tracerConfig: {
+                onlyTopCall: false,
+                withLog: false // will study log <-> frame matching problem later
+            }
+        }
+
+        let call = []
+        for (let block of blocks) {
+            call.push({
+                method: 'debug_traceBlockByHash',
+                params: [block.hash, traceConfig]
+            })
+        }
+
+        let results: any[][] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+
+            assert(block.transactions.length === frames.length)
+
+            // Moonbeam quirk
+            for (let j = 0; j < frames.length; j++) {
+                if (!frames[j].result) {
+                    frames[j] = {result: frames[j]}
+                }
+            }
+
+            block._debugFrames = frames
+        }
+    }
+
+    private async fetchDebugStateDiffs(blocks: rpc.Block[]): Promise<void> {
+        let traceConfig = {
+            tracer: 'prestateTracer',
+            tracerConfig: {
+                onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
+                diffMode: true
+            }
+        }
+
+        let call = []
+        for (let block of blocks) {
+            call.push({
+                method: 'debug_traceBlockByHash',
+                params: [block.hash, traceConfig]
+            })
+        }
+
+        let results: rpc.DebugStateDiffResult[][] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let diffs = results[i]
+            assert(block.transactions.length === diffs.length)
+            block._debugStateDiffs = diffs
+        }
+    }
+
+    private fetchArbitrumOneTraces(blocks: rpc.Block[], req: rpc.DataRequest): Promise<void> {
+        let arbBlocks = blocks.filter(b => getBlockHeight(b) <= 22207815)
+        let debugBlocks = blocks.filter(b => getBlockHeight(b) >= 22207818)
+
+        let tasks = []
+        if (arbBlocks.length) {
+            let tracers: rpc.TraceTracers[] = []
+            if (req.traces) {
+                tracers.push('trace')
+            }
+            if (req.stateDiffs) {
+                tracers.push('stateDiff')
+            }
+            tasks.push(
+                this.fetchReplays(arbBlocks, tracers, 'arbtrace_replayBlockTransactions')
+            )
+        }
+
+        if (debugBlocks.length) {
+            if (req.traces) {
+                tasks.push(
+                    this.fetchDebugFrames(debugBlocks)
+                )
+            }
+            if (req.stateDiffs) {
+                tasks.push(
+                    this.fetchDebugStateDiffs(debugBlocks)
+                )
+            }
+        }
+
+        return Promise.all(tasks).then()
+    }
 }
 
 
-function mapBlockHeader(block: rpc.Block): BlockHeader<AllFields> {
-    let height = qty2Int(block.number)
+class ConsistencyError extends Error {
+    constructor(block: rpc.Block | number | string) {
+        let name = typeof block == 'object' ? getBlockName(block) : block
+        super(`Seems like the chain node navigated to another branch while we were fetching block ${name}`)
+    }
+}
+
+
+function toRpcBatchRequest(request: BatchRequest<DataRequest>): BatchRequest<rpc.DataRequest> {
     return {
-        id: formatId(height, block.hash),
-        height,
-        hash: block.hash,
-        parentHash: block.parentHash,
-        timestamp: qty2Int(block.timestamp) * 1000,
-        stateRoot: block.stateRoot,
-        transactionsRoot: block.transactionsRoot,
-        receiptsRoot: block.receiptsRoot,
-        logsBloom: block.logsBloom,
-        extraData: block.extraData,
-        sha3Uncles: block.sha3Uncles,
-        miner: block.miner,
-        nonce: block.nonce,
-        size: BigInt(block.size),
-        gasLimit: BigInt(block.gasLimit),
-        gasUsed: BigInt(block.gasUsed),
-        difficulty: block.difficulty == null ? undefined : BigInt(block.difficulty)
+        range: request.range,
+        request: toRpcDataRequest(request.request)
     }
-}
-
-
-function mapTrace(transactionIndex: number, src: rpc.Trace): EvmTrace {
-    switch(src.type) {
-        case 'create': {
-            let rec: EvmTraceCreate = {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    from: src.action.from,
-                    value: BigInt(src.action.value),
-                    gas: BigInt(src.action.gas),
-                    init: src.action.init
-                }
-            }
-            if (src.result) {
-                rec.result = {
-                    address: src.result.address,
-                    code: src.result.code,
-                    gasUsed: BigInt(src.result.gasUsed)
-                }
-            }
-            return rec
-        }
-        case 'call': {
-            let rec: EvmTraceCall = {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    from: src.action.from,
-                    to: src.action.to,
-                    value: BigInt(src.action.value),
-                    gas: BigInt(src.action.gas),
-                    input: src.action.input,
-                    sighash: src.action.input.slice(0, 10)
-                }
-            }
-            if (src.result) {
-                rec.result = {
-                    gasUsed: BigInt(src.result.gasUsed),
-                    output: src.result.output
-                }
-            }
-            return rec
-        }
-        case 'suicide': {
-            return {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    address: src.action.address,
-                    refundAddress: src.action.refundAddress,
-                    balance: BigInt(src.action.balance)
-                }
-            }
-        }
-        case 'reward': {
-            return {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    author: src.action.author,
-                    value: BigInt(src.action.value),
-                    type: src.action.type
-                }
-            }
-        }
-        default:
-            throw unexpectedCase((src as any).type)
-    }
-}
-
-
-function* iterateStateDiffs(
-    transactionIndex: number,
-    stateDiff?: Record<Bytes20, rpc.StateDiff>
-): Iterable<EvmStateDiff> {
-    if (stateDiff == null) return
-    for (let address in stateDiff) {
-        let diffs = stateDiff[address]
-        yield mapStateDiff(transactionIndex, address, 'code', diffs.code)
-        yield mapStateDiff(transactionIndex, address, 'balance', diffs.balance)
-        yield mapStateDiff(transactionIndex, address, 'nonce', diffs.nonce)
-        for (let key in diffs.storage) {
-            yield mapStateDiff(transactionIndex, address, key, diffs.storage[key])
-        }
-    }
-}
-
-
-function mapStateDiff(transactionIndex: number, address: Bytes20, key: string, diff: rpc.Diff): EvmStateDiff {
-    if (diff === '=') {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '='
-        }
-    }
-    if (diff['+']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '+',
-            next: diff['+']
-        }
-    }
-    if (diff['*']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '*',
-            prev: diff['*'].from,
-            next: diff['*'].to
-        }
-    }
-    if (diff['-']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '-',
-            prev: diff['-']
-        }
-    }
-    throw unexpectedCase()
-}
-
-
-function assertBlockChain(blocks: BlockData[]): void {
-    if (blocks.length == 0) return
-    for (let i = 1; i < blocks.length; i++) {
-        assert.strictEqual(blocks[i-1].header.hash, blocks[i].header.parentHash)
-        assert.strictEqual(blocks[i-1].header.height + 1, blocks[i].header.height)
-    }
-}
-
-
-function addBlockContext(err: Error, block: rpc.Block): Error {
-    let ctx: any = {
-        blockHash: block.hash
-    }
-    try {
-        ctx.blockHeight = qty2Int(block.number)
-    } catch(e: any) {
-        ctx.blockNumber = block.number
-    }
-    return addErrorContext(err, ctx)
-}
-
-
-function qty2Int(qty: Qty): number {
-    let i = parseInt(qty, 16)
-    assert(Number.isSafeInteger(i))
-    return i
-}
-
-
-function* iterateLogs(receipts?: rpc.TransactionReceipt[], logs?: rpc.Log[]): Iterable<rpc.Log> {
-    if (receipts) {
-        for (let receipt of receipts) {
-            yield* receipt.logs
-        }
-    } else if (logs) {
-        yield* logs
-    }
-}
-
-
-function logsRequested(req?: DataRequest): boolean {
-    return !!req?.logs?.length
-}
-
-
-function transactionsRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.transactions?.length) return true
-    for (let items of [req.logs, req.traces, req.stateDiffs]) {
-        if (items) {
-            for (let it of items) {
-                if (it.transaction) return true
-            }
-        }
-    }
-    return false
-}
-
-
-function receiptsRequested(req?: DataRequest): boolean {
-    if (!transactionsRequested(req)) return false
-    let fields = req?.fields?.transaction
-    if (fields == null) return false
-    return !!(
-        fields.status ||
-        fields.type ||
-        fields.gasUsed ||
-        fields.cumulativeGasUsed ||
-        fields.effectiveGasPrice ||
-        fields.contractAddress
-    )
-}
-
-
-function tracesRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.traces?.length) return true
-    for (let tx of req.transactions || []) {
-        if (tx.traces) return true
-    }
-    return false
-}
-
-
-function stateDiffsRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.stateDiffs?.length) return true
-    for (let tx of req.transactions || []) {
-        if (tx.stateDiffs) return true
-    }
-    return false
 }

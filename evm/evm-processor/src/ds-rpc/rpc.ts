@@ -22,6 +22,11 @@ export interface Block {
     timestamp: Qty
     baseFeePerGas?: Qty
     transactions: Bytes32[] | Transaction[]
+    _receipts?: TransactionReceipt[]
+    _logs?: Log[]
+    _traceReplays?: TraceTransactionReplay[]
+    _debugFrames?: DebugFrameResult[]
+    _debugStateDiffs?: DebugStateDiffResult[]
 }
 
 
@@ -74,14 +79,15 @@ export interface Log {
 }
 
 
-export interface TraceBase {
+export interface TraceFrameBase {
     traceAddress: number[]
     subtraces: number
     error: string | null
+    transactionHash?: Bytes32 // Some networks have this set on old blocks
 }
 
 
-export interface TraceCreate extends TraceBase {
+export interface TraceCreateFrame extends TraceFrameBase {
     type: 'create'
     action: TraceCreateAction
     result?: TraceCreateResult
@@ -103,7 +109,7 @@ export interface TraceCreateResult {
 }
 
 
-export interface TraceCall extends TraceBase {
+export interface TraceCallFrame extends TraceFrameBase {
     type: 'call'
     action: TraceCallAction
     result?: TraceCallResult
@@ -111,6 +117,7 @@ export interface TraceCall extends TraceBase {
 
 
 export interface TraceCallAction {
+    callType: string
     from: Bytes20
     to: Bytes20
     value: Qty
@@ -125,7 +132,7 @@ export interface TraceCallResult {
 }
 
 
-export interface TraceSuicide extends TraceBase {
+export interface TraceSuicideFrame extends TraceFrameBase {
     type: 'suicide'
     action: TraceSuicideAction
 }
@@ -138,7 +145,7 @@ export interface TraceSuicideAction {
 }
 
 
-export interface TraceReward extends TraceBase {
+export interface TraceRewardFrame extends TraceFrameBase {
     type: 'reward'
     action: TraceRewardAction
 }
@@ -151,17 +158,17 @@ export interface TraceRewardAction {
 }
 
 
-export type Trace = TraceCreate | TraceCall | TraceSuicide | TraceReward
+export type TraceFrame = TraceCreateFrame | TraceCallFrame | TraceSuicideFrame | TraceRewardFrame
 
 
-interface AddDiff {
+interface TraceAddDiff {
     '+': Bytes
     '*'?: undefined
     '-'?: undefined
 }
 
 
-interface ChangeDiff {
+interface TraceChangeDiff {
     '+'?: undefined
     '*': {
         from: Bytes
@@ -171,26 +178,78 @@ interface ChangeDiff {
 }
 
 
-interface DeleteDiff {
+interface TraceDeleteDiff {
     '+'?: undefined
     '*'?: undefined
     '-': Bytes
 }
 
 
-export type Diff = '=' | AddDiff | ChangeDiff | DeleteDiff
+export type TraceDiff = '=' | TraceAddDiff | TraceChangeDiff | TraceDeleteDiff
 
 
-export interface StateDiff {
-    balance: Diff
-    code: Diff
-    nonce: Diff
-    storage: Record<Bytes20, Diff>
+export interface TraceStateDiff {
+    balance: TraceDiff
+    code: TraceDiff
+    nonce: TraceDiff
+    storage: Record<Bytes20, TraceDiff>
 }
 
 
-export interface TransactionReplay {
+export interface TraceTransactionReplay {
     transactionHash: Bytes32
-    trace?: Trace[]
-    stateDiff?: Record<Bytes20, StateDiff>
+    trace?: TraceFrame[]
+    stateDiff?: Record<Bytes20, TraceStateDiff>
+}
+
+
+export type TraceTracers = 'trace' | 'stateDiff'
+
+
+export interface DebugFrame {
+    type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT'
+    from: Bytes20
+    to: Bytes20
+    value?: Qty
+    gas: Qty
+    gasUsed: Qty
+    input: Bytes
+    output: Bytes
+    error?: string
+    revertReason?: string
+    calls?: DebugFrame[]
+}
+
+
+export interface DebugFrameResult {
+    result: DebugFrame
+}
+
+
+export interface DebugStateMap {
+    balance?: Qty
+    code?: Bytes
+    nonce?: number
+    storage?: Record<Bytes32, Bytes>
+}
+
+
+export interface DebugStateDiff {
+    pre: Record<Bytes20, DebugStateMap>
+    post: Record<Bytes20, DebugStateMap>
+}
+
+
+export interface DebugStateDiffResult {
+    result: DebugStateDiff
+}
+
+
+export interface DataRequest {
+    logs: boolean
+    transactions: boolean
+    receipts: boolean
+    traces: boolean
+    stateDiffs: boolean
+    transactionList?: boolean
 }

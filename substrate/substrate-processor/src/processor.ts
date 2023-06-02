@@ -1,4 +1,6 @@
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
+import {RpcClient} from '@subsquid/rpc-client'
 import {
     getOldTypesBundle,
     OldSpecsBundle,
@@ -12,11 +14,10 @@ import {
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
 import {addErrorContext, def, last, runProgram} from '@subsquid/util-internal'
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {
     applyRangeBound,
+    Batch,
     BatchRequest,
-    BatchResponse,
     Database,
     getOrGenerateSquidId,
     mergeBatchRequests,
@@ -24,7 +25,6 @@ import {
     Range,
     Runner
 } from '@subsquid/util-internal-processor-tools'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import {Chain, ChainManager} from './chain'
 import {SubstrateArchive} from './ds-archive/client'
 import {BlockData, DataRequest} from './interfaces/data'
@@ -645,7 +645,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: 20_000,
+            httpTimeout: 30_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('archive')
         })
@@ -656,15 +656,13 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     @def
     private getChainClient(): RpcClient {
         let url = this.getChainEndpoint()
-        let log = this.getLogger().child('chain-rpc', {url})
-
         let client = new RpcClient({
-            endpoints: [{url, capacity: 10}],
-            requestTimeout: 20_000,
-            log
+            url,
+            requestTimeout: 30_000,
+            capacity: 10,
+            retryAttempts: Number.MAX_SAFE_INTEGER
         })
-
-        this.prometheus.addChainRpcMetrics(client)
+        this.prometheus.addChainRpcMetrics(() => client.getMetrics())
         return client
     }
 
@@ -690,7 +688,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
 
     private async processBatch<Store>(
         store: Store,
-        batch: BatchResponse<BlockData<Item>>,
+        batch: Batch<BlockData<Item>>,
         handler: (ctx: DataHandlerContext<Store, Item>) => Promise<void>
     ): Promise<void> {
         for await (let {chain, blocks} of this.splitBySpec(batch)) {
@@ -700,7 +698,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
                     log: this.getLogger().child('mapping'),
                     store,
                     blocks,
-                    isHead: last(blocks).header.height === batch.chainHeight
+                    isHead: batch.isHead && last(blocks) === last(batch.blocks)
                 })
             } catch(err: any) {
                 throw addErrorContext(err, {
@@ -713,7 +711,7 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         }
     }
 
-    private async *splitBySpec(batch: BatchResponse<BlockData<Item>>): AsyncIterable<{
+    private async *splitBySpec(batch: Batch<BlockData<Item>>): AsyncIterable<{
         chain: Chain
         blocks: BlockData<Item>[]
     }> {
@@ -767,22 +765,15 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
         this.assertNotRunning()
         this.running = true
         let log = this.getLogger()
-
         runProgram(async () => {
-            let runner = new Runner({
+            return new Runner({
                 database,
                 requests: this.getBatchRequests(),
                 archive: this.getArchiveDataSource(),
-                archivePollInterval: 2000,
+                process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log
-            })
-
-            runner.processBatch = (store, batch) => {
-                return this.processBatch(store, batch as any, handler)
-            }
-
-            return runner.run()
+            }).run()
         }, err => log.fatal(err))
     }
 }

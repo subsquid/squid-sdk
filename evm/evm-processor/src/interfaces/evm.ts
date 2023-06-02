@@ -70,6 +70,7 @@ export interface EvmTraceBase {
     traceAddress: number[]
     subtraces: number
     error: string | null
+    revertReason?: string
 }
 
 
@@ -103,12 +104,13 @@ export interface EvmTraceCall extends EvmTraceBase {
 
 
 export interface EvmTraceCallAction {
+    callType: string
     from: Bytes20
     to: Bytes20
-    value: bigint
+    value?: bigint
     gas: bigint
-    sighash: Bytes
     input: Bytes
+    sighash: Bytes
 }
 
 

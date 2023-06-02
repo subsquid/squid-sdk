@@ -1,7 +1,14 @@
 import {maybeLast, withErrorContext} from '@subsquid/util-internal'
 import {Output} from '@subsquid/util-internal-code-printer'
 import {HttpClient} from '@subsquid/http-client'
-import {ArchiveDataSource, BatchRequest, BatchResponse} from '@subsquid/util-internal-processor-tools'
+import {
+    archiveIngest,
+    Batch,
+    BatchRequest,
+    DataSource,
+    DataSplit,
+    PollingHeightTracker
+} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {BlockDataP, DataRequest} from '../interfaces/data'
 import {SpecId, SpecMetadata} from '../interfaces/substrate'
@@ -10,33 +17,43 @@ import {printGqlArguments} from './gql'
 import {mapGatewayBlock} from './mapping'
 
 
-export class SubstrateArchive implements ArchiveDataSource<DataRequest> {
-    constructor(private http: HttpClient) {}
+export class SubstrateArchive implements DataSource<BlockDataP, DataRequest> {
+    constructor(private http: HttpClient) {
+    }
 
-    async getFinalizedBatch(request: BatchRequest<DataRequest>): Promise<BatchResponse> {
+    getBlockHash(height: number): Promise<string> {
+        return this.getBlock(height).then(b => b.header.hash)
+    }
+
+    getFinalizedBlocks(requests: BatchRequest<DataRequest>[], stopOnHead?: boolean | undefined): AsyncIterable<Batch<BlockDataP>> {
+        return archiveIngest({
+            requests,
+            heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight()),
+            query: s => this.getSplit(s),
+            stopOnHead
+        })
+    }
+
+    async getSplit(s: DataSplit<DataRequest>): Promise<BlockDataP[]> {
         let ctx = {}
-        let {blocks, chainHeight, nextBlock} = await this
-            .fetchBatch(request, ctx)
+        let {blocks, nextBlock} = await this
+            .query(s, ctx)
             .catch(withErrorContext(ctx))
 
-        let batch: BatchResponse = {
-            range: {from: request.range.from, to: nextBlock - 1},
-            blocks,
-            chainHeight
-        }
+        let to = nextBlock - 1
 
-        if (maybeLast(batch.blocks)?.header.height !== batch.range.to) {
-            batch.blocks.push(
-                await this.fetchBlock(batch.range.to)
+        if (maybeLast(blocks)?.header.height !== to) {
+            blocks.push(
+                await this.getBlock(to)
             )
         }
 
-        return batch
+        return blocks
     }
 
-    private fetchBlock(height: number): Promise<BlockDataP> {
+    private getBlock(height: number): Promise<BlockDataP> {
         let ctx = {}
-        return this.fetchBatch({
+        return this.query({
             range: {from: height, to: height},
             request: {
                 includeAllBlocks: true
@@ -49,7 +66,7 @@ export class SubstrateArchive implements ArchiveDataSource<DataRequest> {
         )
     }
 
-    private async fetchBatch(
+    private async query(
         request: BatchRequest<DataRequest>,
         ctx: {archiveQuery?: string}
     ): Promise<{

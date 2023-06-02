@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-timeout",
+      "comment": "refactor",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-timeout"
+}
