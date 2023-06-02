@@ -82,6 +82,12 @@ reef:
 		--write-batch-size 30 \
 		--start-block 4500000
 
+polymesh:
+	@node lib/main.js --out $(DB) \
+		-e wss://mainnet-rpc.polymesh.network \
+		-c 10 \
+		--start-block 390000 \
+		--disable-call-unwraping
 
 up:
 	@docker-compose up -d

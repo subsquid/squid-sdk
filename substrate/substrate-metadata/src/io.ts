@@ -78,6 +78,9 @@ export function getOldTypesBundle(chain: string): OldTypesBundle | undefined {
             return require('./old/definitions/unique').bundle
         case 'zeitgeist':
             return require('./old/definitions/zeitgeist').bundle
+        case 'polymesh_mainnet':
+        case 'polymesh-mainnet':
+            return require('./old/definitions/polymesh-mainnet').bundle
         default:
             return undefined
     }
