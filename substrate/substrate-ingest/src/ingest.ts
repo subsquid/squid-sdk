@@ -33,6 +33,7 @@ export interface IngestOptions {
     typesBundle?: OldTypesBundle | OldSpecsBundle
     startBlock?: number
     log?: Logger
+    unwrapCalls?: boolean
 }
 
 
@@ -46,6 +47,7 @@ export class Ingest {
     private maxStrides = 20
     private readonly strideSize = 10
     private log?: Logger
+    private unwrapCalls: boolean
 
     private stridesHead: number
     private strides: Promise<RawBlock[] | Error>[] = []
@@ -64,6 +66,7 @@ export class Ingest {
             this.stridesHead = 0
         }
         this.log = options.log
+        this.unwrapCalls = options.unwrapCalls ?? true
     }
 
     private async *loop(): AsyncGenerator<BlockData> {
@@ -95,7 +98,7 @@ export class Ingest {
     private async processRawBlock(raw: RawBlock): Promise<BlockData> {
         let prevSpec = await this.specs.get(Math.max(0, raw.blockHeight - 1))
         let validators = await this.validators.get(raw.blockHeight)
-        let block = parseRawBlock(prevSpec, validators, raw)
+        let block = parseRawBlock(prevSpec, validators, raw, this.unwrapCalls)
         let currentSpec = await this.specs.get(raw.blockHeight)
         if (raw.blockHeight == 0 || currentSpec.specId != prevSpec.specId) {
             let [spec_name, spec_version] = splitSpecId(currentSpec.specId)

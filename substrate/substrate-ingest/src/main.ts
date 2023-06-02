@@ -37,6 +37,9 @@ runProgram(async () => {
         'Port to use for built-in prometheus metrics server',
         positiveInteger
     )
+    program.option('--disable-call-unwraping',
+        'Flag for disabling calls unwrapping. By default ingester will try to extract all wrapped calls'
+    )
 
     let options = program.parse().opts() as {
         endpoint: string[]
@@ -47,6 +50,7 @@ runProgram(async () => {
         startBlock?: number
         writeBatchSize?: number,
         promPort?: number
+        disableCallUnwraping?: boolean
     }
 
     let capacities = (options.endpointCapacity || []).map(s => {
@@ -92,6 +96,7 @@ runProgram(async () => {
         : readOldTypesBundle(options.typesBundle)
 
     let startBlock = options.startBlock || 0
+    let unwrapCalls = !options.disableCallUnwraping
     let writeSpeed = new Speed()
     let progress = new Progress({
         initialValue: startBlock,
@@ -167,7 +172,8 @@ runProgram(async () => {
         client,
         typesBundle,
         startBlock,
-        log
+        log,
+        unwrapCalls,
     })
 
     for await (let block of blocks) {

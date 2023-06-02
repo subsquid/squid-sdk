@@ -38,7 +38,8 @@ export class BlockParser {
     constructor(
         private spec: Spec,
         private validators: Account[],
-        private raw: RawBlock
+        private raw: RawBlock,
+        private unwrapCalls: boolean
     ) {
     }
 
@@ -223,7 +224,8 @@ export class BlockParser {
             {
                 spec: this.spec,
                 blockHeight: this.raw.blockHeight,
-                blockHash: this.raw.blockHash
+                blockHash: this.raw.blockHash,
+                unwrapCalls: this.unwrapCalls,
             },
             this.events(),
             this._extrinsics()
@@ -242,8 +244,8 @@ export class BlockParser {
 }
 
 
-export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock): BlockData {
-    let bp = new BlockParser(spec, validators, raw)
+export function parseRawBlock(spec: Spec, validators: Account[], raw: RawBlock, unwrapCalls: boolean): BlockData {
+    let bp = new BlockParser(spec, validators, raw, unwrapCalls)
     return  {
         header: bp.header(),
         extrinsics: bp.extrinsics(),
