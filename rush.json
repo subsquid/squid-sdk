@@ -446,12 +446,6 @@
     //   // "versionPolicyName": ""
     // },
     {
-      "packageName": "@subsquid/evm-ingest",
-      "projectFolder": "evm/evm-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
@@ -693,12 +687,6 @@
     {
       "packageName": "@subsquid/util-internal-read-lines",
       "projectFolder": "util/util-internal-read-lines",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-resilient-rpc",
-      "projectFolder": "util/util-internal-resilient-rpc",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

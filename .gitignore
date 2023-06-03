@@ -1,6 +1,9 @@
 # Dependency directories
 node_modules/
 
+# Private ENV vars
+.envrc
+
 # Tooling logs
 *.log
 

@@ -1,256 +1,344 @@
-import {w3cwebsocket as WebSocket} from "websocket"
-import {RpcErrorInfo, RpcResponse} from "./rpc"
+import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
+import {createLogger, Logger} from '@subsquid/logger'
+import {last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {Heap} from '@subsquid/util-internal-binary-heap'
+import {RpcConnectionError, RpcError} from './errors'
+import {Connection, RpcRequest, RpcResponse} from './interfaces'
+import {HttpConnection} from './transport/http'
+import {WsConnection} from './transport/ws'
 
-const MEGABYTE = 1024 * 1024
 
-
-interface Handle {
-    resolve(val?: any): void
-    reject(err: Error): void
+export interface RpcClientOptions {
+    url: string
+    maxBatchCallSize?: number
+    capacity?: number
+    requestTimeout?: number
+    retryAttempts?: number
+    retrySchedule?: number[]
+    log?: Logger | null
 }
 
 
-type Call = string | [method: string] | [method: string, params?: unknown[]]
+export interface CallOptions {
+    priority?: number
+    retryAttempts?: number
+    timeout?: number
+}
+
+
+interface Req {
+    call: RpcRequest | RpcRequest[]
+    priority: number
+    timeout: number
+    retryAttempts: number
+    resolve(result: any): void
+    reject(error: Error): void
+}
 
 
 export class RpcClient {
-    private ids = 0
-    private requests: Record<number | string, Handle> = {}
-    private sendQueue: string[] = []
-    private ws: WebSocket
-    private connection: Promise<void>
-    private error?: Error
-    private _connected = false
-    public onclose?: (err: Error) => void
+    private counter = 0
+    private queue = new Heap<Req>(byPriority)
+    public readonly url: string
+    private con: Connection
+    private maxBatchCallSize: number
+    private requestTimeout: number
+    private retrySchedule: number[]
+    private retryAttempts: number
+    private capacity: number
+    private log?: Logger
+    private schedulingScheduled = false
+    private connectionErrorsInRow = 0
+    private connectionErrors = 0
+    private requestsServed = 0
+    private backoffEpoch = 0
+    private closed = false
 
-    constructor(private url: string) {
-        this.ws = new WebSocket(this.url, undefined, undefined, undefined, undefined, {
-            // default: true
-            fragmentOutgoingMessages: true,
-            // default: 16K (bump, the Node has issues with too many fragments, e.g. on setCode)
-            fragmentationThreshold: MEGABYTE,
-            // default: 1MiB (also align with maxReceivedMessageSize)
-            maxReceivedFrameSize: 24 * MEGABYTE,
-            // default: 8MB (however Polkadot api.query.staking.erasStakers.entries(356) is over that, 16M is ok there)
-            maxReceivedMessageSize: 24 * MEGABYTE
-        })
+    constructor(options: RpcClientOptions) {
+        this.url = trimCredentials(options.url)
+        this.con = this.createConnection(options.url)
+        this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
+        this.capacity = options.capacity ?? 10
+        this.requestTimeout = options.requestTimeout ?? 0
+        this.retryAttempts = options.retryAttempts ?? 0
+        this.retrySchedule = options.retrySchedule ?? [10, 100, 500, 2000, 10000, 20000]
+        this.log = options.log === null
+            ? undefined
+            : options.log || createLogger('sqd:rpc-client', {rpcUrl: this.url})
+    }
 
-        this.connection = new Promise((resolve, reject) => {
-            this.ws.onopen = () => {
-                this._connected = true
-                for (let i = 0; i < this.sendQueue.length; i++) {
-                    this.ws.send(this.sendQueue[i])
-                }
-                this.sendQueue.length = 0
-                resolve()
-            }
-
-            this.ws.onerror = () => {
-                this.setError(new RpcConnectionError('Socket error'))
-                reject(this.error)
-            }
-
-            this.ws.onclose = () => {
-                let err = this.error || new RpcConnectionError('Connection terminated')
-                this.setError(err)
-                reject(err)
-                this.onclose?.(err)
-            }
-        })
-
-        this.connection.catch(err => {})
-
-        this.ws.onmessage = event => {
-            try {
-                this.onMessage(event.data)
-            } catch(e: any) {
-                this.close(e)
-            }
+    private createConnection(url: string): Connection {
+        let protocol = new URL(url).protocol
+        switch(protocol) {
+            case 'ws:':
+            case 'wss:':
+                return new WsConnection(url)
+            case 'http:':
+            case 'https:':
+                return new HttpConnection(url)
+            default:
+                throw new TypeError(`unsupported protocol: ${protocol}`)
         }
     }
 
-    private onMessage(data: string | Buffer | ArrayBuffer): void {
-        // https://github.com/Luka967/websocket-close-codes
-        if (typeof data != 'string') {
-            throw new RpcProtocolError(1003, 'Received non-text frame')
-        }
-        let msg: RpcResponse | RpcResponse[]
-        try {
-            msg = JSON.parse(data)
-        } catch(e: any) {
-            throw new RpcProtocolError(1007, 'Received invalid JSON message')
-        }
-        if (Array.isArray(msg)) {
-            for (let i = 0; i < msg.length; i++) {
-                this.handleResponse(msg[i])
-            }
-        } else {
-            this.handleResponse(msg)
+    getMetrics() {
+        return {
+            url: this.url,
+            requestsServed: this.requestsServed,
+            connectionErrors: this.connectionErrors
         }
     }
 
-    private handleResponse(res: RpcResponse): void {
-        // TODO: more strictness, more validation
-        let h = this.requests[res.id]
-        if (h == null) {
-            throw new RpcProtocolError(undefined, `Got response for unknown request ${res.id}`)
-        }
-        delete this.requests[res.id]
-        if (res.error) {
-            h.reject(new RpcError(res.error))
-        } else {
-            h.resolve(res.result)
-        }
-    }
-
-    close(err?: Error): void {
-        if (this.error) return
-        err = err || new RpcConnectionError('Connection was closed')
-        this.setError(err)
-        let code: number | undefined
-        if (err instanceof RpcProtocolError) {
-            code = err.code
-        }
-        this.ws.close(code)
-    }
-
-    private setError(err: Error): void {
-        if (this.error) return
-        this.error = err
-        this.rejectRequests(err)
-        this.sendQueue.length = 0
-    }
-
-    private rejectRequests(err: Error): void {
-        for (let key in this.requests) {
-            this.requests[key].reject(err)
-        }
-        this.requests = {}
-    }
-
-    connect(): Promise<void> {
-        if (this.error) return Promise.reject(this.error)
-        return this.connection
-    }
-
-    get isConnected(): boolean {
-        return this._connected && this.error == null
-    }
-
-    call<T=any>(method: string, params?: unknown[]): Promise<T> {
-        return this._callWithId(this.ids++, method, params)
-    }
-
-    _callWithId<T=any>(id: number| string, method: string, params?: unknown[]): Promise<T> {
+    call<T=any>(method: string, params?: any[], options?: CallOptions): Promise<T> {
         return new Promise((resolve, reject) => {
-            if (this.error) return reject(this.error)
-            let payload = JSON.stringify({
-                id,
+            let call: RpcRequest = {
+                id: this.counter += 1,
                 jsonrpc: '2.0',
                 method,
                 params
+            }
+
+            if (this.log?.isDebug()) {
+                this.log.debug({
+                    rpcId: call.id,
+                    rpcMethod: call.method,
+                    rpcParams: call.params
+                }, 'rpc call')
+            }
+
+            this.enqueue({
+                call,
+                priority: options?.priority ?? 0,
+                timeout: options?.timeout ?? this.requestTimeout,
+                retryAttempts: options?.retryAttempts ?? this.retryAttempts,
+                resolve,
+                reject
             })
-            this.requests[id] = {resolve, reject}
-            this.send(payload)
         })
     }
 
-    batch(calls: Call[]): Promise<(any | Error)[]> {
-        return new Promise((resolve, reject) => {
-            if (this.error) return reject(this.error)
-            if (calls.length == 0) return resolve([])
-            let results: any[] = new Array(calls.length)
-            let received = 0
-            let offset = this.ids
+    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<T[]> {
+        switch(batch.length) {
+            case 0: return Promise.resolve([])
+            case 1: return this.call(batch[0].method, batch[0].params, options).then(res => [res])
+            default: return splitParallelWork(
+                this.maxBatchCallSize,
+                batch,
+                b => this.batchCallInternal(b, options)
+            )
+        }
+    }
 
-            function receive(id: number, error?: Error, result?: unknown): void {
-                results[id - offset] = error || result
-                received += 1
-                if (results.length == received) {
-                    resolve(results)
+    private batchCallInternal(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<any[]> {
+        return new Promise((resolve, reject) => {
+            if (batch.length == 0) return resolve([])
+
+            let calls: RpcRequest[] = batch.map(it => {
+                return {
+                    ...it,
+                    id: this.counter += 1,
+                    jsonrpc: '2.0'
+                }
+            })
+
+            if (this.log?.isDebug()) {
+                for (let call of calls) {
+                    this.log.debug({
+                        rpcId: call.id,
+                        rpcMethod: call.method,
+                        rpcParams: call.params
+                    }, 'rpc call')
                 }
             }
 
-            let requests: Record<number, Handle> = {}
-            let msg = calls.map(call => {
-                let method: string
-                let params: unknown[] | undefined
-                if (typeof call == 'string') {
-                    method = call
-                } else {
-                    method = call[0]
-                    params = call[1]
-                }
-                let id = this.ids++
-                requests[id] = {
-                    resolve(val: unknown) {
-                        receive(id, undefined, val)
-                    },
-                    reject(err: Error) {
-                        receive(id, err)
-                    }
-                }
-                return {
-                    id,
-                    jsonrpc: '2.0',
-                    method,
-                    params
-                }
+            this.enqueue({
+                call: calls,
+                priority: options?.priority ?? 0,
+                timeout: options?.timeout ?? this.requestTimeout,
+                retryAttempts: options?.retryAttempts ?? this.retryAttempts,
+                resolve,
+                reject
             })
-            let payload = JSON.stringify(msg)
-            Object.assign(this.requests, requests)
-            this.send(payload)
         })
     }
 
-    private send(payload: string): void {
-        if (this.ws.readyState == WebSocket.OPEN) {
-            this.ws.send(payload)
+    private enqueue(req: Req): void {
+        this.assertNotClosed()
+        this.queue.push(req)
+        this.schedule()
+    }
+
+    private schedule(): void {
+        if (this.schedulingScheduled || this.closed) return
+        if (this.queue.peek() == null || this.capacity <= 0) return
+        this.schedulingScheduled = true
+        Promise.resolve().then(() => this.performScheduling())
+    }
+
+    private performScheduling(): void {
+        this.waitForConnection().then(() => {
+            if (this.closed) return
+            this.schedulingScheduled = false
+            while (this.capacity > 0 && this.queue.peek()) {
+                this.send(this.queue.pop()!)
+            }
+        }, err => {
+            this.close(err)
+        })
+    }
+
+    private send(req: Req): void {
+        this.capacity -= 1
+        let backoffEpoch = this.backoffEpoch
+        let promise: Promise<any>
+        if (Array.isArray(req.call)) {
+            let call = req.call
+            this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
+            promise = this.con.batchCall(call, req.timeout).then(res => {
+                let result = new Array(res.length)
+                for (let i = 0; i < res.length; i++) {
+                    result[i] = this.receiveResult(call[i], res[i])
+                }
+                return result
+            })
         } else {
-            this.sendQueue.push(payload)
+            let call = req.call
+            this.log?.debug({rpcId: call.id}, 'rpc send')
+            promise = this.con.call(call, req.timeout).then(res => {
+                return this.receiveResult(call, res)
+            })
+        }
+        promise.then(result => {
+            this.requestsServed += 1
+            if (this.backoffEpoch == backoffEpoch) {
+                this.connectionErrorsInRow = 0
+            }
+            req.resolve(result)
+        }, err => {
+            if (this.closed) return req.reject(err)
+            if (this.isConnectionError(err)) {
+                if (req.retryAttempts > 0) {
+                    req.retryAttempts -= 1
+                    this.enqueue(req)
+                } else {
+                    req.reject(err)
+                }
+                if (this.backoffEpoch == backoffEpoch) {
+                    this.backoff(err)
+                }
+            } else {
+                req.reject(err)
+            }
+        }).finally(() => {
+            this.capacity += 1
+            this.schedule()
+        })
+    }
+
+    private async waitForConnection(): Promise<void> {
+        while (true) {
+            if (this.getBackoffPause()) {
+                await wait(this.getBackoffPause())
+            }
+            if (this.closed) return
+            try {
+                return await this.con.connect()
+            } catch(err: any) {
+                if (this.closed) return
+                if (err instanceof RpcConnectionError) {
+                    this.backoff(err)
+                } else {
+                    throw err
+                }
+            }
+        }
+    }
+
+    private backoff(reason: Error): void {
+        this.log?.warn({reason: reason.toString()}, 'connection failure')
+        this.backoffEpoch += 1
+        this.connectionErrorsInRow += 1
+        this.connectionErrors += 1
+        this.log?.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+    }
+
+    private getBackoffPause(): number {
+        if (this.connectionErrorsInRow == 0) return 0
+        let idx = Math.min(this.connectionErrorsInRow, this.retrySchedule.length) - 1
+        return this.retrySchedule[idx]
+    }
+
+    private receiveResult(call: RpcRequest, res: RpcResponse): any {
+        if (this.log?.isDebug()) {
+            this.log.debug({
+                rpcId: call.id,
+                rpcMethod: call.method,
+                rpcParams: call.params,
+                rpcResponse: res
+            }, 'rpc response')
+        }
+        if (res.error) {
+            throw new RpcError(res.error)
+        } else {
+            return res.result
+        }
+    }
+
+    isConnectionError(err: Error): boolean {
+        if (err instanceof RpcConnectionError) return true
+        if (isHttpConnectionError(err)) return true
+        if (err instanceof HttpTimeoutError) return true
+        if (err instanceof HttpError) {
+            switch(err.response.status) {
+                case 429:
+                case 502:
+                case 503:
+                case 504:
+                    return true
+                default:
+                    return false
+            }
+        }
+        return false
+    }
+
+    close(err?: Error) {
+        if (this.closed) return
+        this.closed = true
+        this.con.close(err)
+        while (this.queue.peek()) { // drain queue
+            let req = this.queue.pop()!
+            req.reject(err || new Error('RpcClient was closed'))
+        }
+    }
+
+    private assertNotClosed(): void {
+        if (this.closed) {
+            throw new Error('RpcClient was closed')
         }
     }
 }
 
 
-/**
- * Server violated RPC protocol
- */
-export class RpcProtocolError extends Error {
-    constructor(public readonly code?: number, msg?: string) {
-        super(msg)
-    }
+function byPriority(a: Req, b: Req): number {
+    let p = a.priority - b.priority
+    if (p != 0) return p
+    return getCallPriority(a) - getCallPriority(b)
+}
 
-    get name(): string {
-        return 'RpcProtocolError'
+
+function getCallPriority(req: Req): number {
+    if (Array.isArray(req.call)) {
+        return req.call[0].id
+    } else {
+        return req.call.id
     }
 }
 
 
-/**
- * Received error message from server
- */
-export class RpcError extends Error {
-    public readonly code: number
-    public readonly data?: number | string
-
-    constructor(info: RpcErrorInfo) {
-        super(info.message)
-        this.code = info.code
-        this.data = info.data
-    }
-
-    get name(): string {
-        return 'RpcError'
-    }
-}
-
-
-/**
- * Problem with websocket connection
- */
-export class RpcConnectionError extends Error {
-    get name(): string {
-        return 'RpcConnectionError'
-    }
+function trimCredentials(url: string): string {
+    let u = new URL(url)
+    u.password = ''
+    u.username = ''
+    return u.toString()
 }

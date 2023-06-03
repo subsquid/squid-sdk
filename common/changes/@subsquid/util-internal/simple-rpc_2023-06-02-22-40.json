@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add async utilities",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add slice splitting functions",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

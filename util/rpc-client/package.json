@@ -11,12 +11,16 @@
     "lib",
     "src"
   ],
-  "main": "lib/client.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-timeout": "^2.0.0",
+    "@subsquid/http-client": "^1.0.0",
+    "@subsquid/logger": "^1.0.0",
+    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal-binary-heap": "^1.0.0",
+    "@subsquid/util-internal-counters": "^1.0.0",
     "websocket": "^1.0.34"
   },
   "devDependencies": {

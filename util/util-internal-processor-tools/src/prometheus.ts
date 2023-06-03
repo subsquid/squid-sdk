@@ -1,12 +1,10 @@
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
-import {collectDefaultMetrics, Counter, Gauge, Registry} from 'prom-client'
+import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
 import {RunnerMetrics} from './runner-metrics'
 
 
-interface RpcConnectionMetrics {
-    id: number
+interface ConnectionMetrics {
     url: string
-    avgResponseTimeSeconds: number
     requestsServed: number
     connectionErrors: number
 }
@@ -15,13 +13,6 @@ interface RpcConnectionMetrics {
 export class PrometheusServer {
     private registry = new Registry()
     private port?: number | string
-
-    private archiveErrorsCounter = new Counter({
-        name: 'sqd_processor_archive_errors',
-        help: 'Number of archive connection errors',
-        registers: [this.registry],
-        labelNames: ['url']
-    })
 
     constructor() {
         collectDefaultMetrics({register: this.registry})
@@ -54,15 +45,8 @@ export class PrometheusServer {
         })
 
         new Gauge({
-            name: 'sqd_processor_ingest_blocks_per_second',
-            help: 'Data fetching speed',
-            registers: [this.registry],
-            collect: collect(() => metrics.getIngestSpeed())
-        })
-
-        new Gauge({
             name: 'sqd_processor_sync_eta_seconds',
-            help: 'Estimated time until all required blocks will be processed or until chain height will be reached',
+            help: 'Estimated time until all required blocks will be processed or until the chain height will be reached',
             registers: [this.registry],
             collect: collect(() => metrics.getSyncEtaSeconds())
         })
@@ -75,49 +59,38 @@ export class PrometheusServer {
         })
     }
 
-    addChainRpcMetrics(client: {
-        getMetrics(): RpcConnectionMetrics[]
-    }): void {
+    private addConnectionMetric(
+        name: string,
+        help: string,
+        collect: () => ConnectionMetrics,
+        get: (m: ConnectionMetrics) => number
+    ): void {
+        new Gauge({
+            name,
+            help,
+            registers: [this.registry],
+            labelNames: ['url'],
+            collect() {
+                let m = collect()
+                this.set({url: m.url}, get(m))
+            }
+        })
+    }
 
-        const gauge = (
-            name: string,
-            help: string,
-            get: (con: RpcConnectionMetrics) => number
-        ) => {
-            new Gauge({
-                name,
-                help,
-                registers: [this.registry],
-                labelNames: ['id', 'url'],
-                collect() {
-                    for (let con of client.getMetrics()) {
-                        this.set({url: con.url, id: con.id}, get(con))
-                    }
-                }
-            })
-        }
-
-        gauge(
+    addChainRpcMetrics(collect: () => ConnectionMetrics): void {
+        this.addConnectionMetric(
             'sqd_processor_chain_rpc_requests_served',
             'Number of chain rpc requests served',
+            collect,
             con => con.requestsServed
         )
 
-        gauge(
+        this.addConnectionMetric(
             'sqd_processor_chain_rpc_errors',
             'Number of chain rpc connection errors',
+            collect,
             con => con.connectionErrors
         )
-
-        gauge(
-            'sqd_processor_chain_rpc_avg_response_time_seconds',
-            'Avg response time',
-            con => con.avgResponseTimeSeconds
-        )
-    }
-
-    registerArchiveError(archiveUrl: string): void {
-        this.archiveErrorsCounter.inc({url: archiveUrl})
     }
 
     serve(): Promise<ListeningServer> {

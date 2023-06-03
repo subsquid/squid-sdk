@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "adapt for new processor tools",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
