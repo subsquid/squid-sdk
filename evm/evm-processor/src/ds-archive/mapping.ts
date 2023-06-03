@@ -209,8 +209,13 @@ function mapTrace(src: gw.Trace): Partial<Trace<AllFields>> {
                 for (key in action) {
                     switch(key) {
                         case 'gas':
-                        case 'value':
                             tr.action[key] = BigInt(action[key])
+                            break
+                        case 'value':
+                            let val = action[key]
+                            if (val != null) {
+                                tr.action[key] = BigInt(val)
+                            }
                             break
                         default:
                             tr.action[key] = action[key]
