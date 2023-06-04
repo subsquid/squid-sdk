@@ -1,7 +1,7 @@
 import {
     EvmBlock,
     EvmLog,
-    EvmStateDiff,
+    EvmStateDiff, EvmStateDiffBase,
     EvmTraceBase,
     EvmTraceCallAction,
     EvmTraceCallResult,
@@ -98,7 +98,7 @@ type GetFields<F extends FieldSelection, P extends keyof DefaultFields>
     = TrueFields<MergeDefault<F[P], DefaultFields[P]>>
 
 
-type Select<T, F> = Simplify<Pick<T, Extract<keyof T, F>>>
+type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : never
 
 
 export type BlockHeader<F extends FieldSelection = {}> = Simplify<
@@ -213,7 +213,7 @@ export type Trace<F extends FieldSelection = {}> =
 
 
 export type StateDiff<F extends FieldSelection = {}> = Simplify<
-    Pick<EvmStateDiff, StateDiffRequiredFields> &
+    EvmStateDiffBase &
     Select<EvmStateDiff, GetFields<F, 'stateDiff'>> &
     {block: BlockHeader<F>, transaction?: Transaction<F>}
 >
