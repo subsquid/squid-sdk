@@ -23,6 +23,14 @@ import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequ
 export type DataSource = ArchiveDataSource | ChainDataSource
 
 
+type ChainRpc = string | {
+    url: string
+    capacity?: number
+    requestTimeout?: number
+    maxBatchCallSize?: number
+}
+
+
 interface ArchiveDataSource {
     /**
      * Subsquid evm archive endpoint URL
@@ -31,16 +39,16 @@ interface ArchiveDataSource {
     /**
      * Chain node RPC endpoint URL
      */
-    chain?: string
+    chain?: ChainRpc
 }
 
 
 interface ChainDataSource {
+    archive?: undefined
     /**
      * Chain node RPC endpoint URL
      */
-    chain: string
-    archive?: undefined
+    chain: ChainRpc
 }
 
 
@@ -75,6 +83,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private finalityConfirmation?: number
     private _useTraceApi?: boolean
     private _useDebugApiForStateDiffs?: boolean
+    private _useArchiveOnly?: boolean
     private chainPollInterval?: number
     private running = false
 
@@ -205,6 +214,12 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
+    useArchiveOnly(yes?: boolean): this {
+        this.assertNotRunning()
+        this._useArchiveOnly = yes !== false
+        return this
+    }
+
     private assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -235,15 +250,18 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getChainRpcClient(): RpcClient {
-        let url = this.src?.chain
-        if (url == null) {
+        let options = this.src?.chain
+        if (options == null) {
             throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
         }
+        if (typeof options == 'string') {
+            options = {url: options}
+        }
         let client = new RpcClient({
-            url,
-            maxBatchCallSize: 100,
-            requestTimeout: 30_000,
-            capacity: 10,
+            url: options.url,
+            maxBatchCallSize: options.maxBatchCallSize ?? 100,
+            requestTimeout:  options.requestTimeout ?? 30_000,
+            capacity: options.capacity ?? 10,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
@@ -284,7 +302,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: 20_000,
+            httpTimeout: 30_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('archive')
         })
@@ -337,11 +355,16 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             let chain = this.getChain()
             let mappingLog = log.child('mapping')
 
+            if (src.archive == null && this._useArchiveOnly) {
+                throw new Error('Archive URL is required when .useArchiveOnly() flag is set')
+            }
+
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
                 archive: src.archive ? this.getArchiveDataSource() : undefined,
-                hotDataSource: src.chain ? this.getHotDataSource() : undefined,
+                hotDataSource: src.chain && !this._useArchiveOnly ? this.getHotDataSource() : undefined,
+                allBlocksAreFinal: this.finalityConfirmation === 0,
                 prometheus: this.getPrometheusServer(),
                 log,
                 process(store, batch) {
