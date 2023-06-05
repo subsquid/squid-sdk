@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.0.0",
     "@subsquid/logger": "^1.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-internal-commander": "^1.0.0",
     "@subsquid/util-internal-hex": "^1.0.0",
     "@subsquid/util-internal-read-lines": "^1.0.0",

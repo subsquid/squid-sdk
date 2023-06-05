@@ -24,7 +24,7 @@
     "@subsquid/scale-codec": "^2.0.0",
     "@subsquid/substrate-metadata": "^3.0.0",
     "@subsquid/substrate-metadata-explorer": "^2.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-internal-code-printer": "^1.0.0",
     "@subsquid/util-internal-config": "^2.0.0",
     "@subsquid/util-internal-read-lines": "^1.0.0",

@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@subsquid/substrate-metadata": "^3.0.0",
-    "@subsquid/util-internal": "^2.0.0"
+    "@subsquid/util-internal": "^2.1.0"
   },
   "peerDependencies": {
     "ethers": "^6.3.0"

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-processor-tools",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Common tools for data fetching and mapping execution",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-internal-binary-heap": "^1.0.0",
     "@subsquid/util-internal-counters": "^1.0.0",
     "@subsquid/util-internal-http-client": "^0.1.0",
