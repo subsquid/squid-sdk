@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+This log was last generated on Mon, 05 Jun 2023 09:30:42 GMT and should not be manually modified.
+
+## 4.0.0
+Mon, 05 Jun 2023 09:30:42 GMT
+
+### Breaking changes
+
+- rework to support http, resiliency, etc
 
 ## 3.0.0
 Mon, 01 May 2023 18:57:46 GMT

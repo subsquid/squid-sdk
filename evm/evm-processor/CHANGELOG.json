@@ -2,6 +2,29 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/evm-processor_v1.1.0",
+      "date": "Mon, 05 Jun 2023 09:30:42 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "adapt for new processor tools"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^3.0.0` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.0.0` to `^2.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/evm-processor_v1.0.1",
       "date": "Mon, 08 May 2023 12:14:55 GMT",

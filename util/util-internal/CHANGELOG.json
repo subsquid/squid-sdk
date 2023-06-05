@@ -2,6 +2,21 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/util-internal_v2.1.0",
+      "date": "Mon, 05 Jun 2023 09:30:42 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add async utilities"
+          },
+          {
+            "comment": "add slice splitting functions"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/util-internal_v2.0.0",
       "date": "Mon, 01 May 2023 18:57:46 GMT",

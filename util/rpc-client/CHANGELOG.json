@@ -2,6 +2,23 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@subsquid/rpc-client_v4.0.0",
+      "date": "Mon, 05 Jun 2023 09:30:42 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "rework to support http, resiliency, etc"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.0.0` to `^2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@subsquid/rpc-client_v3.0.0",
       "date": "Mon, 01 May 2023 18:57:46 GMT",
