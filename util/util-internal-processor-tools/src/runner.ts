@@ -92,6 +92,8 @@ export class Runner<R, S> {
         let minimumCommitHeight = state.height + state.top.length
         let prevBatch: Batch<Block> | undefined
 
+        await assertBlockIsOnChain(args.src, state)
+
         for await (let batch of args.src.getFinalizedBlocks(
             this.getLeftRequests(args.state),
             args.shouldStopOnHead
@@ -259,5 +261,16 @@ export class Runner<R, S> {
 
     private get log(): Logger {
         return this.config.log
+    }
+}
+
+
+async function assertBlockIsOnChain(src: DataSource<unknown, unknown>, ref: HashAndHeight): Promise<void> {
+    if (ref.height < 0) return
+    let hash = await src.getBlockHash(ref.height)
+    if (ref.hash !== hash) {
+        throw new Error(
+            `already indexed block ${formatHead(ref)} is not found on chain`
+        )
     }
 }

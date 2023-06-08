@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "add assertion, that we are staying on the same chain while changing datasources and after restarts",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}
