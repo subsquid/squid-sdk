@@ -58,6 +58,6 @@ export class ContractBase {
             item.key,
             '0x' + this.blockHeight.toString(16),
         ])
-        return item.decodeValue(result)
+        return item.decode(result)
     }
 }
