@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "adapt for new processor tools",
+      "comment": "add `TraceRequest.parents` option",
       "type": "minor"
     }
   ],

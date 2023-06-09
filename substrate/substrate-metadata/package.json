@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^2.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-naming": "^1.0.0"
   },
   "devDependencies": {

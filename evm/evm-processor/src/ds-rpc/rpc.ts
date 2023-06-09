@@ -83,7 +83,8 @@ export interface TraceFrameBase {
     traceAddress: number[]
     subtraces: number
     error: string | null
-    transactionHash?: Bytes32 // Some networks have this set on old blocks
+    transactionHash?: Bytes32
+    blockHash?: Bytes32
 }
 
 

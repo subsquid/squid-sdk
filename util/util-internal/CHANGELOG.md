@@ -1,6 +1,14 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Mon, 01 May 2023 18:57:46 GMT and should not be manually modified.
+This log was last generated on Mon, 05 Jun 2023 09:30:42 GMT and should not be manually modified.
+
+## 2.1.0
+Mon, 05 Jun 2023 09:30:42 GMT
+
+### Minor changes
+
+- add async utilities
+- add slice splitting functions
 
 ## 2.0.0
 Mon, 01 May 2023 18:57:46 GMT

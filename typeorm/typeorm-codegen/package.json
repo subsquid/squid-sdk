@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/openreader": "^4.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-internal-code-printer": "^1.0.0",
     "@subsquid/util-naming": "^1.0.0",
     "commander": "^10.0.1"

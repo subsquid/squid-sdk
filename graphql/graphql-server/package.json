@@ -27,7 +27,7 @@
     "@subsquid/openreader": "^4.0.0",
     "@subsquid/typeorm-config": "^3.0.0",
     "@subsquid/logger": "^1.0.0",
-    "@subsquid/util-internal": "^2.0.0",
+    "@subsquid/util-internal": "^2.1.0",
     "@subsquid/util-internal-commander": "^1.0.0",
     "@subsquid/util-internal-http-server": "^1.0.0",
     "apollo-server-core": "^3.12.0",

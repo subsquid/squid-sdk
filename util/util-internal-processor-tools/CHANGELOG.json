@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-processor-tools_v1.0.0",
+      "date": "Mon, 05 Jun 2023 09:30:42 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "rework data ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.0.0` to `^2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/util-internal-processor-tools_v0.0.1",
       "date": "Mon, 01 May 2023 18:57:46 GMT",

@@ -3,7 +3,7 @@ import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
 import assert from 'assert'
 import {applyRangeBound, BatchRequest} from './batch'
 import {Database, HashAndHeight, HotDatabaseState} from './database'
-import {HotUpdate, Block, DataSource, HotDataSource, Batch} from './datasource'
+import {Batch, Block, DataSource, HotDataSource} from './datasource'
 import {PrometheusServer} from './prometheus'
 import {rangeEnd} from './range'
 import {RunnerMetrics} from './runner-metrics'
@@ -13,6 +13,7 @@ import {formatHead, getItemsCount} from './util'
 export interface RunnerConfig<R, S> {
     archive?: DataSource<Block, R>
     hotDataSource?: HotDataSource<Block, R>
+    allBlocksAreFinal?: boolean
     process: (store: S, batch: Batch<Block>) => Promise<void>
     requests: BatchRequest<R>[]
     database: Database<S>
@@ -74,7 +75,7 @@ export class Runner<R, S> {
             state = await this.processFinalizedBlocks({
                 state,
                 src: hot,
-                shouldStopOnHead: this.config.database.supportsHotBlocks
+                shouldStopOnHead: this.config.database.supportsHotBlocks && !this.config.allBlocksAreFinal
             })
             if (this.getLeftRequests(state).length == 0) return
         }
@@ -90,6 +91,8 @@ export class Runner<R, S> {
         let state = args.state
         let minimumCommitHeight = state.height + state.top.length
         let prevBatch: Batch<Block> | undefined
+
+        await assertBlockIsOnChain(args.src, state)
 
         for await (let batch of args.src.getFinalizedBlocks(
             this.getLeftRequests(args.state),
@@ -258,5 +261,16 @@ export class Runner<R, S> {
 
     private get log(): Logger {
         return this.config.log
+    }
+}
+
+
+async function assertBlockIsOnChain(src: DataSource<unknown, unknown>, ref: HashAndHeight): Promise<void> {
+    if (ref.height < 0) return
+    let hash = await src.getBlockHash(ref.height)
+    if (ref.hash !== hash) {
+        throw new Error(
+            `already indexed block ${formatHead(ref)} is not found on chain`
+        )
     }
 }

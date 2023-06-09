@@ -38,6 +38,7 @@ export interface TraceRequest {
     rewardAuthor?: Bytes20[]
     transaction?: boolean
     subtraces?: boolean
+    parents?: boolean
 }
 
 
