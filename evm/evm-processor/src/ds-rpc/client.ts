@@ -30,8 +30,8 @@ export interface EvmRpcDataSourceOptions {
     finalityConfirmation: number
     pollInterval?: number
     strideSize?: number
+    preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
-    useTraceApi?: boolean
 }
 
 
@@ -41,7 +41,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private finalityConfirmation: number
     private pollInterval: number
     private useDebugApiForStateDiffs: boolean
-    private useTraceApi: boolean
+    private preferTraceApi: boolean
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
@@ -49,7 +49,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         this.strideSize = options.strideSize ?? 10
         this.pollInterval = options.pollInterval ?? 1000
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs ?? false
-        this.useTraceApi = options.useTraceApi ?? false
+        this.preferTraceApi = options.preferTraceApi ?? false
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -117,9 +117,9 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                             blocks0,
                             getBlockHeight,
                             (blocks0, req) => splitParallelWork(
-                                20,
+                                10,
                                 blocks0,
-                                bks0 => this.processBlocks(bks0, req)
+                                bks0 => this.processBlocks(bks0, req, finalizedHead.height)
                             )
                         )
                         return {
@@ -201,13 +201,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return blocks
     }
 
-    private async processBlocks(blocks: rpc.Block[], request?: rpc.DataRequest): Promise<Block[]> {
+    private async processBlocks(blocks: rpc.Block[], request?: rpc.DataRequest, finalizedHeight?: number): Promise<Block[]> {
+        if (blocks.length == 0) return []
         let req = request ?? toRpcDataRequest()
-        await this.fetchRequestedData(blocks, req)
+        await this.fetchRequestedData(blocks, req, finalizedHeight)
         return blocks.map(b => mapBlock(b, !!req.transactionList))
     }
 
-    private async fetchRequestedData(blocks: rpc.Block[], req: rpc.DataRequest): Promise<void> {
+    private async fetchRequestedData(blocks: rpc.Block[], req: rpc.DataRequest, finalizedHeight?: number): Promise<void> {
         let subtasks = []
 
         if (req.logs && !req.receipts) {
@@ -215,7 +216,12 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         }
 
         if (req.receipts) {
-            subtasks.push(this.fetchReceipts(blocks))
+            let byBlockMethod = await this.getBlockReceiptsMethod()
+            if (byBlockMethod) {
+                subtasks.push(this.fetchReceiptsByBlock(blocks, byBlockMethod))
+            } else {
+                subtasks.push(this.fetchReceiptsByTx(blocks))
+            }
         }
 
         if (req.traces || req.stateDiffs) {
@@ -223,30 +229,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             if (isArbitrumOne) {
                 subtasks.push(this.fetchArbitrumOneTraces(blocks, req))
             } else {
-                let replayTracers: rpc.TraceTracers[] = []
-                if (req.traces) {
-                    if (this.useTraceApi) {
-                        replayTracers.push('trace')
-                    } else {
-                        subtasks.push(
-                            this.fetchDebugFrames(blocks)
-                        )
-                    }
-                }
-                if (req.stateDiffs) {
-                    if (this.useDebugApiForStateDiffs) {
-                        subtasks.push(
-                            this.fetchDebugStateDiffs(blocks)
-                        )
-                    } else {
-                        replayTracers.push('stateDiff')
-                    }
-                }
-                if (replayTracers.length) {
-                    subtasks.push(
-                        this.fetchReplays(blocks, replayTracers)
-                    )
-                }
+                subtasks.push(this.fetchTraces(blocks, req, finalizedHeight ?? Number.MAX_SAFE_INTEGER))
             }
         }
 
@@ -273,7 +256,54 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         }
     }
 
-    private async fetchReceipts(blocks: rpc.Block[]): Promise<void> {
+    private async fetchReceiptsByBlock(
+        blocks: rpc.Block[],
+        method: 'eth_getBlockReceipts' | 'alchemy_getTransactionReceipts'
+    ): Promise<void> {
+        let call = blocks.map(block => {
+            if (method == 'eth_getBlockReceipts') {
+                return {
+                    method,
+                    params: [block.hash]
+                }
+            } else {
+                return {
+                    method,
+                    params: [{blockHash: block.hash}]
+                }
+            }
+        })
+
+        let results: rpc.TransactionReceipt[][] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let receipts = results[i]
+            assert(block.transactions.length === receipts.length)
+            block._receipts = receipts
+        }
+    }
+
+    @def
+    private async getBlockReceiptsMethod(): Promise<'eth_getBlockReceipts' | 'alchemy_getTransactionReceipts' | undefined> {
+        let eth = await this.rpc.call('eth_getBlockReceipts', ['latest']).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (eth) return 'eth_getBlockReceipts'
+
+        let alchemy = await this.rpc.call('alchemy_getTransactionReceipts', [{blockNumber: '0x0'}]).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (alchemy) return 'alchemy_getTransactionReceipts'
+
+        return undefined
+    }
+
+    private async fetchReceiptsByTx(blocks: rpc.Block[]): Promise<void> {
         let call = []
         for (let block of blocks) {
             for (let tx of block.transactions) {
@@ -295,13 +325,39 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             if (rs.length !== block.transactions.length) {
                 throw new ConsistencyError(block)
             }
-            for (let i = 0; i < rs.length; i++) {
-                if (rs[i].transactionHash !== getTxHash(block.transactions[i])) {
-                    throw new ConsistencyError(block)
-                }
-            }
             block._receipts = rs
         }
+    }
+
+    private fetchTraces(blocks: rpc.Block[], req: rpc.DataRequest, finalizedHeight: number): Promise<void> {
+        let tasks: Promise<void>[] = []
+        let replayTracers: rpc.TraceTracers[] = []
+
+        if (req.stateDiffs) {
+            if (finalizedHeight < getBlockHeight(last(blocks)) || this.useDebugApiForStateDiffs) {
+                tasks.push(this.fetchDebugStateDiffs(blocks))
+            } else {
+                replayTracers.push('stateDiff')
+            }
+        }
+
+        if (req.traces) {
+            if (this.preferTraceApi) {
+                if (finalizedHeight < getBlockHeight(last(blocks)) || replayTracers.length == 0) {
+                    tasks.push(this.fetchTraceBlock(blocks))
+                } else {
+                    replayTracers.push('trace')
+                }
+            } else {
+                tasks.push(this.fetchDebugFrames(blocks))
+            }
+        }
+
+        if (replayTracers.length) {
+            tasks.push(this.fetchReplays(blocks, replayTracers))
+        }
+
+        return Promise.all(tasks).then()
     }
 
     private async fetchReplays(
@@ -311,13 +367,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     ): Promise<void> {
         if (tracers.length == 0) return
 
-        let call = []
-        for (let block of blocks) {
-            call.push({
-                method,
-                params: [block.number, tracers]
-            })
-        }
+        let call = blocks.map(block => ({
+            method,
+            params: [block.number, tracers]
+        }))
 
         let replaysByBlock: rpc.TraceTransactionReplay[][] = await this.rpc.batchCall(call, {
             priority: getBlockHeight(blocks[0])
@@ -329,7 +382,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             let txs = new Set(block.transactions.map(getTxHash))
 
             for (let rep of replays) {
-                if (!rep.transactionHash) { // TODO: Who behaves like that? Arbitrum?
+                if (!rep.transactionHash) { // FIXME: Who behaves like that? Arbitrum?
                     let txHash: Bytes32 | undefined = undefined
                     for (let frame of rep.trace || []) {
                         assert(txHash == null || txHash === frame.transactionHash)
@@ -338,13 +391,46 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                     assert(txHash, "Can't match transaction replay with its transaction")
                     rep.transactionHash = txHash
                 }
-                // Sometimes replays might be missing for pre-compiled contracts
+                // Sometimes replays might be missing. FIXME: when?
                 if (!txs.has(rep.transactionHash)) {
                     throw new ConsistencyError(block)
                 }
             }
 
             block._traceReplays = replays
+        }
+    }
+
+    private async fetchTraceBlock(blocks: rpc.Block[]): Promise<void> {
+        let call = blocks.map(block => ({
+            method: 'trace_block',
+            params: [block.number]
+        }))
+
+        let results: rpc.TraceFrame[][] = await this.rpc.batchCall(call, {
+            priority: getBlockHeight(blocks[0])
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+            if (frames.length == 0) {
+                if (block.transactions.length > 0) throw new ConsistencyError(block)
+            } else {
+                for (let frame of frames) {
+                    if (frame.blockHash !== block.hash) throw new ConsistencyError(block)
+                }
+                block._traceReplays = []
+                let byTx = groupBy(frames, f => f.transactionHash)
+                for (let [transactionHash, txFrames] of byTx.entries()) {
+                    if (transactionHash) {
+                        block._traceReplays.push({
+                            transactionHash,
+                            trace: txFrames
+                        })
+                    }
+                }
+            }
         }
     }
 
@@ -357,13 +443,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         }
 
-        let call = []
-        for (let block of blocks) {
-            call.push({
-                method: 'debug_traceBlockByHash',
-                params: [block.hash, traceConfig]
-            })
-        }
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
 
         let results: any[][] = await this.rpc.batchCall(call, {
             priority: getBlockHeight(blocks[0])
@@ -395,13 +478,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         }
 
-        let call = []
-        for (let block of blocks) {
-            call.push({
-                method: 'debug_traceBlockByHash',
-                params: [block.hash, traceConfig]
-            })
-        }
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
 
         let results: rpc.DebugStateDiffResult[][] = await this.rpc.batchCall(call, {
             priority: getBlockHeight(blocks[0])

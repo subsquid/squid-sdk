@@ -81,7 +81,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private _useTraceApi?: boolean
+    private _preferTraceApi?: boolean
     private _useDebugApiForStateDiffs?: boolean
     private _useArchiveOnly?: boolean
     private chainPollInterval?: number
@@ -202,9 +202,9 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
-    useTraceApi(yes?: boolean): this {
+    preferTraceApi(yes?: boolean): this {
         this.assertNotRunning()
-        this._useTraceApi = yes !== false
+        this._preferTraceApi = yes !== false
         return this
     }
 
@@ -281,12 +281,12 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     @def
     private getHotDataSource(): EvmRpcDataSource {
         if (this.finalityConfirmation == null) {
-            throw new Error(`use .setFinalityConfirmation() to specify number of children required to conform block's finality`)
+            throw new Error(`use .setFinalityConfirmation() to specify number of children required to confirm block's finality`)
         }
         return new EvmRpcDataSource({
             rpc: this.getChainRpcClient(),
             finalityConfirmation: this.finalityConfirmation,
-            useTraceApi: this._useTraceApi,
+            preferTraceApi: this._preferTraceApi,
             useDebugApiForStateDiffs: this._useDebugApiForStateDiffs,
             pollInterval: this.chainPollInterval
         })
