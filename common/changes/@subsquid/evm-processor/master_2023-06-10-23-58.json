@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "add `.rateLimit` option to RPC connection settings",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "fix: `eth_getBlockReceipts` doesn't accept block hash on some endpoints",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}

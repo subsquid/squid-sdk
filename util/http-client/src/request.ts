@@ -19,6 +19,9 @@ export const nodeFetch = {
         assert(mod, 'node-fetch ESM is not loaded')
         return mod.FetchError
     },
+    get isLoaded() {
+        return !!mod
+    },
     async request(url: string, init?: RequestInit): Promise<Response> {
         let m = await nodeFetch.load()
         return m.default(url, init)

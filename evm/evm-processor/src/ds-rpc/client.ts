@@ -264,7 +264,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             if (method == 'eth_getBlockReceipts') {
                 return {
                     method,
-                    params: [block.hash]
+                    params: [block.number]
                 }
             } else {
                 return {
@@ -281,7 +281,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
-            assert(block.transactions.length === receipts.length)
+            if (block.transactions.length !== receipts.length) throw new ConsistencyError(block)
+            for (let receipt of receipts) {
+                if (receipt.blockHash !== block.hash) throw new ConsistencyError(block)
+            }
             block._receipts = receipts
         }
     }

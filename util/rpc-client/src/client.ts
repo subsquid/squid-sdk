@@ -2,8 +2,10 @@ import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http
 import {createLogger, Logger} from '@subsquid/logger'
 import {last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
+import assert from 'assert'
 import {RpcConnectionError, RpcError} from './errors'
 import {Connection, RpcRequest, RpcResponse} from './interfaces'
+import {RateMeter} from './rate'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
 
@@ -13,6 +15,7 @@ export interface RpcClientOptions {
     maxBatchCallSize?: number
     capacity?: number
     requestTimeout?: number
+    rateLimit?: number
     retryAttempts?: number
     retrySchedule?: number[]
     log?: Logger | null
@@ -47,6 +50,8 @@ export class RpcClient {
     private retryAttempts: number
     private capacity: number
     private log?: Logger
+    private rate?: RateMeter
+    private rateLimit: number = Number.MAX_SAFE_INTEGER
     private schedulingScheduled = false
     private connectionErrorsInRow = 0
     private connectionErrors = 0
@@ -62,9 +67,18 @@ export class RpcClient {
         this.requestTimeout = options.requestTimeout ?? 0
         this.retryAttempts = options.retryAttempts ?? 0
         this.retrySchedule = options.retrySchedule ?? [10, 100, 500, 2000, 10000, 20000]
+
         this.log = options.log === null
             ? undefined
             : options.log || createLogger('sqd:rpc-client', {rpcUrl: this.url})
+
+        if (options.rateLimit) {
+            assert(Number.isSafeInteger(options.rateLimit))
+            assert(options.rateLimit > 1)
+            this.rate = new RateMeter()
+            this.rateLimit = options.rateLimit
+            this.maxBatchCallSize = Math.min(this.maxBatchCallSize, Math.max(1, Math.floor(this.rateLimit / 5)))
+        }
     }
 
     private createConnection(url: string): Connection {
@@ -118,18 +132,16 @@ export class RpcClient {
     }
 
     batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<T[]> {
-        switch(batch.length) {
-            case 0: return Promise.resolve([])
-            case 1: return this.call(batch[0].method, batch[0].params, options).then(res => [res])
-            default: return splitParallelWork(
-                this.maxBatchCallSize,
-                batch,
-                b => this.batchCallInternal(b, options)
-            )
-        }
+        return splitParallelWork(
+            this.maxBatchCallSize,
+            batch,
+            b => this.batchCallInternal(b, options)
+        )
     }
 
     private batchCallInternal(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<any[]> {
+        if (batch.length == 0) return Promise.resolve([])
+        if (batch.length == 1) return this.call(batch[0].method, batch[0].params, options).then(res => [res])
         return new Promise((resolve, reject) => {
             if (batch.length == 0) return resolve([])
 
@@ -175,12 +187,32 @@ export class RpcClient {
         Promise.resolve().then(() => this.performScheduling())
     }
 
+    private delayScheduling(): void {
+        this.schedulingScheduled = true
+        setTimeout(() => this.performScheduling(), 100)
+    }
+
     private performScheduling(): void {
         this.waitForConnection().then(() => {
             if (this.closed) return
             this.schedulingScheduled = false
-            while (this.capacity > 0 && this.queue.peek()) {
-                this.send(this.queue.pop()!)
+            if (this.rate) {
+                let now = Date.now()
+                let rate = this.rate.getRate(now)
+                let rateCapacity = this.rateLimit - rate
+                while (this.capacity > 0 && this.queue.peek()) {
+                    let req = this.queue.peek()!
+                    let size = Array.isArray(req.call) ? req.call.length : 1
+                    rateCapacity -= size
+                    if (rateCapacity < 0) return this.delayScheduling()
+                    this.rate.inc(size, now)
+                    this.queue.pop()
+                    this.send(req)
+                }
+            } else {
+                while (this.capacity > 0 && this.queue.peek()) {
+                    this.send(this.queue.pop()!)
+                }
             }
         }, err => {
             this.close(err)

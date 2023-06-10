@@ -26,6 +26,7 @@ export type DataSource = ArchiveDataSource | ChainDataSource
 type ChainRpc = string | {
     url: string
     capacity?: number
+    rateLimit?: number
     requestTimeout?: number
     maxBatchCallSize?: number
 }
@@ -262,6 +263,7 @@ export class EvmBatchProcessor<const F extends FieldSelection = {}> {
             maxBatchCallSize: options.maxBatchCallSize ?? 100,
             requestTimeout:  options.requestTimeout ?? 30_000,
             capacity: options.capacity ?? 10,
+            rateLimit: options.rateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
