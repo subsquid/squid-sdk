@@ -2,6 +2,37 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/util-internal-processor-tools_v1.1.0",
+      "date": "Sat, 10 Jun 2023 15:11:09 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add assertion, that we are staying on the same chain while switching between data sources or after restarts"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "migrate to TypeScript 5 and update other dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.1.0` to `^2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^1.0.0` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/util-internal-processor-tools_v1.0.0",
       "date": "Mon, 05 Jun 2023 09:30:42 GMT",

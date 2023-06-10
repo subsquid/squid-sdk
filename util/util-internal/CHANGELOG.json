@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "2.2.0",
+      "tag": "@subsquid/util-internal_v2.2.0",
+      "date": "Sat, 10 Jun 2023 15:11:09 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "migrate to TypeScript 5 and update other dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/util-internal_v2.1.0",
       "date": "Mon, 05 Jun 2023 09:30:42 GMT",

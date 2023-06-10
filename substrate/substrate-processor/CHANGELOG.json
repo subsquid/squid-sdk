@@ -2,6 +2,53 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "3.2.0",
+      "tag": "@subsquid/substrate-processor_v3.2.0",
+      "date": "Sat, 10 Jun 2023 15:11:09 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "migrate to TypeScript 5 and update other dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.0.0` to `^4.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^2.0.0` to `^2.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.1.0` to `^2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^1.0.0` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.0",
       "tag": "@subsquid/substrate-processor_v3.1.0",
       "date": "Mon, 05 Jun 2023 09:30:42 GMT",

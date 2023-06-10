@@ -2,6 +2,35 @@
   "name": "@subsquid/substrate-explorer",
   "entries": [
     {
+      "version": "3.1.0",
+      "tag": "@subsquid/substrate-explorer_v3.1.0",
+      "date": "Sat, 10 Jun 2023 15:11:08 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "migrate to TypeScript 5 and update other dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^4.0.0` to `^4.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.1.0` to `^2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^1.0.0` to `^1.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^3.0.0` to `^3.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@subsquid/substrate-explorer_v3.0.0",
       "date": "Mon, 01 May 2023 18:57:46 GMT",

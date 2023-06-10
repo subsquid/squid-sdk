@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 05 Jun 2023 09:30:42 GMT and should not be manually modified.
+This log was last generated on Sat, 10 Jun 2023 15:11:09 GMT and should not be manually modified.
+
+## 3.2.0
+Sat, 10 Jun 2023 15:11:09 GMT
+
+### Minor changes
+
+- migrate to TypeScript 5 and update other dependencies
 
 ## 3.1.0
 Mon, 05 Jun 2023 09:30:42 GMT
