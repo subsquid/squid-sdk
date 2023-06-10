@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "comment": "migrate to TypeScript 5 and update other dependencies",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/ink-typegen"
+}

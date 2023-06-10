@@ -27,8 +27,8 @@
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
-    "@types/node": "^16.18.25",
+    "@types/node": "^18.16.17",
     "@types/supports-color": "^8.1.1",
-    "typescript": "~4.9.5"
+    "typescript": "~5.1.3"
   }
 }

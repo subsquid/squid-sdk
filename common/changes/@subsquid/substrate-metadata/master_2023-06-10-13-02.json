@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata",
+      "comment": "migrate to TypeScript 5 and update other dependencies",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata"
+}

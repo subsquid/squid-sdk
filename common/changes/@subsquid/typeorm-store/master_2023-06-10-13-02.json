@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "migrate to TypeScript 5 and update other dependencies",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

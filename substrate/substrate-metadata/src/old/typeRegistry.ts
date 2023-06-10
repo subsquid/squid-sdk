@@ -1,9 +1,9 @@
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import {toCamelCase} from "@subsquid/util-naming"
-import assert from "assert"
-import {Field, Primitive, Ti, Type, TypeKind, Variant} from "../types"
-import {normalizeMetadataTypes} from "../util"
-import * as texp from "./typeExp"
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {toCamelCase} from '@subsquid/util-naming'
+import assert from 'assert'
+import {Field, Primitive, Ti, Type, TypeKind, Variant} from '../types'
+import {normalizeMetadataTypes} from '../util'
+import * as texp from './typeExp'
 import {
     OldEnumDefinition,
     OldSetDefinition,
@@ -11,7 +11,7 @@ import {
     OldTypeDefinition,
     OldTypeExp,
     OldTypes
-} from "./types"
+} from './types'
 
 
 interface TypeAlias {
@@ -31,7 +31,7 @@ export class OldTypeRegistry {
 
     getTypes(): Type[] {
         this.replaceAliases()
-        return normalizeMetadataTypes(this.types)
+        return normalizeMetadataTypes(this.types as Type[])
     }
 
     private replaceAliases(): void {
@@ -205,7 +205,7 @@ export class OldTypeRegistry {
         }
     }
 
-    private buildScaleType(type: texp.Type): Type {
+    private buildScaleType(type: texp.Type): Type | TypeAlias {
         switch(type.kind) {
             case 'named':
                 return this.buildNamedType(type)
@@ -218,7 +218,7 @@ export class OldTypeRegistry {
         }
     }
 
-    private buildNamedType(type: texp.NamedType): Type {
+    private buildNamedType(type: texp.NamedType): Type | TypeAlias {
         if (this.definitions[type.name]) return this.definitions[type.name]()
 
         let def = this.oldTypes.types[type.name]
@@ -404,7 +404,7 @@ export class OldTypeRegistry {
         return this.types.push(type) - 1
     }
 
-    get(ti: Ti): Type {
+    get(ti: Ti): Type | TypeAlias {
         return assertNotNull(this.types[ti])
     }
 }

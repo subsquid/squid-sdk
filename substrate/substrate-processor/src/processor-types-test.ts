@@ -11,14 +11,14 @@ function getItem<I>(cb: (item: I) => void) {
 }
 
 
-new SubstrateBatchProcessor()
-    .addEvent('*')
-    .run(db, getItem(item => {
-        if (item.kind == 'event') {
-            console.log(item.event.args)
-            console.log(item.event.call?.parent)
-        }
-    }))
+// new SubstrateBatchProcessor()
+//     .addEvent('*')
+//     .run(db, getItem(item => {
+//         if (item.kind == 'event') {
+//             console.log(item.event.args)
+//             console.log(item.event.call?.parent)
+//         }
+//     }))
 
 
 new SubstrateBatchProcessor()

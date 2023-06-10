@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "migrate to TypeScript 5 and update other dependencies",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

@@ -16,10 +16,10 @@
     "@subsquid/util-internal-read-lines": "^1.0.0",
     "@subsquid/util-internal-resilient-rpc": "^1.0.0",
     "@subsquid/util-naming": "^1.0.0",
-    "@types/node": "^16.18.25",
-    "@types/pg": "^8.6.6",
+    "@types/node": "^18.16.17",
+    "@types/pg": "^8.10.2",
     "expect": "^29.5.0",
-    "pg": "^8.10.0",
-    "typescript": "~4.9.5"
+    "pg": "^8.11.0",
+    "typescript": "~5.1.3"
   }
 }
