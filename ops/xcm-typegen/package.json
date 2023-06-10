@@ -7,10 +7,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-metadata": "^3.0.0",
-    "@subsquid/substrate-typegen": "^3.0.0",
-    "@subsquid/util-internal": "^2.1.0",
-    "@subsquid/util-internal-code-printer": "^1.0.0"
+    "@subsquid/substrate-metadata": "^3.1.0",
+    "@subsquid/substrate-typegen": "^3.1.0",
+    "@subsquid/util-internal": "^2.2.0",
+    "@subsquid/util-internal-code-printer": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-xxhash",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "xxhash function",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

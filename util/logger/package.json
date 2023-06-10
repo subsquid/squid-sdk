@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/logger",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lightweight library for structured logging",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,8 +17,8 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^1.0.0",
-    "@subsquid/util-internal-json": "^1.0.0",
+    "@subsquid/util-internal-hex": "^1.1.0",
+    "@subsquid/util-internal-json": "^1.1.0",
     "supports-color": "^8.1.1"
   },
   "devDependencies": {

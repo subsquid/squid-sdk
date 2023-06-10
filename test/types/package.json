@@ -7,7 +7,7 @@
     "test": "./test.sh"
   },
   "dependencies": {
-    "@subsquid/substrate-typegen": "^3.0.0",
+    "@subsquid/substrate-typegen": "^3.1.0",
     "@types/node": "^18.16.17",
     "typescript": "~5.1.3"
   }

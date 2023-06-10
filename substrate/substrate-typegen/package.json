@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-typegen",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Generates TypeScript definitions for substrate events and calls",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,15 +20,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.0.0",
-    "@subsquid/scale-codec": "^2.0.0",
-    "@subsquid/substrate-metadata": "^3.0.0",
-    "@subsquid/substrate-metadata-explorer": "^2.0.0",
-    "@subsquid/util-internal": "^2.1.0",
-    "@subsquid/util-internal-code-printer": "^1.0.0",
-    "@subsquid/util-internal-config": "^2.0.0",
-    "@subsquid/util-internal-read-lines": "^1.0.0",
-    "@subsquid/util-naming": "^1.0.0",
+    "@subsquid/logger": "^1.1.0",
+    "@subsquid/scale-codec": "^2.1.0",
+    "@subsquid/substrate-metadata": "^3.1.0",
+    "@subsquid/substrate-metadata-explorer": "^2.1.0",
+    "@subsquid/util-internal": "^2.2.0",
+    "@subsquid/util-internal-code-printer": "^1.1.0",
+    "@subsquid/util-internal-config": "^2.1.0",
+    "@subsquid/util-internal-read-lines": "^1.1.0",
+    "@subsquid/util-naming": "^1.1.0",
     "commander": "^10.0.1"
   },
   "devDependencies": {
