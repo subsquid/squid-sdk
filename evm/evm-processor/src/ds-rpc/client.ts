@@ -495,38 +495,22 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         }
     }
 
-    private fetchArbitrumOneTraces(blocks: rpc.Block[], req: rpc.DataRequest): Promise<void> {
+    private async fetchArbitrumOneTraces(blocks: rpc.Block[], req: rpc.DataRequest): Promise<void> {
+        if (req.stateDiffs) {
+            throw new Error('State diffs are not supported on Arbitrum One')
+        }
+        if (!req.traces) return
+
         let arbBlocks = blocks.filter(b => getBlockHeight(b) <= 22207815)
         let debugBlocks = blocks.filter(b => getBlockHeight(b) >= 22207818)
 
-        let tasks = []
         if (arbBlocks.length) {
-            let tracers: rpc.TraceTracers[] = []
-            if (req.traces) {
-                tracers.push('trace')
-            }
-            if (req.stateDiffs) {
-                tracers.push('stateDiff')
-            }
-            tasks.push(
-                this.fetchReplays(arbBlocks, tracers, 'arbtrace_replayBlockTransactions')
-            )
+            await this.fetchReplays(arbBlocks, ['trace'], 'arbtrace_replayBlockTransactions')
         }
 
         if (debugBlocks.length) {
-            if (req.traces) {
-                tasks.push(
-                    this.fetchDebugFrames(debugBlocks)
-                )
-            }
-            if (req.stateDiffs) {
-                tasks.push(
-                    this.fetchDebugStateDiffs(debugBlocks)
-                )
-            }
+            await this.fetchDebugFrames(debugBlocks)
         }
-
-        return Promise.all(tasks).then()
     }
 }
 
