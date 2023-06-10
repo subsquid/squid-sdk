@@ -29,7 +29,7 @@ export class TypeormDatabase {
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema || 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
-        this.supportsHotBlocks = !!options?.supportHotBlocks
+        this.supportsHotBlocks = options?.supportHotBlocks !== false
         this.projectDir = options?.projectDir || process.cwd()
     }
 
