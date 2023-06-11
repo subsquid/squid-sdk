@@ -1,5 +1,5 @@
 import {Logger} from "@subsquid/logger"
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import {RpcClient} from '@subsquid/rpc-client'
 import {findSpecVersions} from "./binarySearch"
 import {ExploreApi} from "./explore"
 import {SpecVersion, SpecVersionRecord} from "./specVersion"

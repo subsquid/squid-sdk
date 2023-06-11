@@ -521,12 +521,12 @@
       "shouldPublish": true,
       "versionPolicyName": "docker"
     },
-    {
-      "packageName": "@subsquid/substrate-ingest",
-      "projectFolder": "substrate/substrate-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/substrate-ingest",
+//      "projectFolder": "substrate/substrate-ingest",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate/substrate-metadata",

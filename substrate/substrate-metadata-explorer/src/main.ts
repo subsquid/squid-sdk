@@ -1,7 +1,7 @@
 import {createLogger} from '@subsquid/logger'
+import {RpcClient} from '@subsquid/rpc-client'
 import {runProgram} from '@subsquid/util-internal'
 import {Url} from '@subsquid/util-internal-commander'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import {Command} from 'commander'
 import * as process from 'process'
 import {ArchiveApi} from './archiveApi'
@@ -46,10 +46,8 @@ but rather try to augment it.
         api = new ArchiveApi(options.archive, log)
     } else if (options.chain) {
         let client = new RpcClient({
-            endpoints: [{
-                url: options.chain,
-                capacity: 5
-            }],
+            url: options.chain,
+            capacity: 5,
             retryAttempts: 3,
             log: log.child('chain-rpc')
         })

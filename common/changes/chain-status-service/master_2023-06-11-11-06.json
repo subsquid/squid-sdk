@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "migrate to `@subsquid/rpc-client`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "chain-status-service"
+}

@@ -21,11 +21,11 @@
   "dependencies": {
     "@subsquid/http-client": "^1.1.0",
     "@subsquid/logger": "^1.1.0",
+    "@subsquid/rpc-client": "^4.1.0",
     "@subsquid/util-internal": "^2.2.0",
     "@subsquid/util-internal-commander": "^1.1.0",
     "@subsquid/util-internal-hex": "^1.1.0",
     "@subsquid/util-internal-read-lines": "^1.1.0",
-    "@subsquid/util-internal-resilient-rpc": "^1.0.0",
     "commander": "^10.0.1"
   },
   "devDependencies": {

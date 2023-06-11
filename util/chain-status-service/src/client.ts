@@ -1,6 +1,6 @@
 import type {Logger} from '@subsquid/logger'
+import {RpcClient} from '@subsquid/rpc-client'
 import {addErrorContext} from '@subsquid/util-internal'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
 import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
 import assert from 'assert'
 import {createFuture, Future} from './util'
@@ -75,7 +75,7 @@ export class Client {
 
     private newClient(url: string): RpcClient {
         return new RpcClient({
-            endpoints: [{url}],
+            url,
             retryAttempts: 0,
             log: this.log?.child({endpoint: url})
         })
