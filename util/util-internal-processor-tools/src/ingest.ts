@@ -92,8 +92,9 @@ export function archiveIngest<R, B extends Block>(
                     chainHeight: s.chainHeight
                 })
                 assert(blocks.length > 0, 'boundary blocks are expected to be included')
-                from = last(blocks).header.height + 1
-                yield {blocks, isHead: to == s.chainHeight}
+                let top = last(blocks).header.height
+                yield {blocks, isHead: top == s.chainHeight}
+                from = top + 1
             }
         }
     }
