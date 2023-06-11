@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "update chain height metric after switching to a hot datasource",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

@@ -68,9 +68,9 @@ export class Runner<R, S> {
 
         assert(hot)
 
+        this.log.info('using chain RPC data source')
         let chainFinalizedHeight = await hot.getFinalizedHeight()
         await this.initMetrics(chainFinalizedHeight, state)
-        this.log.info('using chain RPC data source')
         if (chainFinalizedHeight > state.height + state.top.length) {
             state = await this.processFinalizedBlocks({
                 state,
@@ -216,8 +216,9 @@ export class Runner<R, S> {
     }
 
     private async initMetrics(chainHeight: number, state: HotDatabaseState): Promise<void> {
-        if (this.metrics.getChainHeight() >= 0) return
+        let initialized = this.metrics.getChainHeight() >= 0
         this.metrics.setChainHeight(chainHeight)
+        if (initialized) return
         this.metrics.setLastProcessedBlock(state.height + state.top.length)
         this.metrics.updateProgress()
         return this.startPrometheusServer()
