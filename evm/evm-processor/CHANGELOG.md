@@ -1,6 +1,19 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sat, 10 Jun 2023 15:11:08 GMT and should not be manually modified.
+This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+
+## 1.3.0
+Sun, 11 Jun 2023 15:49:45 GMT
+
+### Minor changes
+
+- add `.rateLimit` option to RPC connection settings
+- downgrade `TypeScript` to `4.9.5`
+
+### Patches
+
+- fix: `eth_getBlockReceipts` doesn't accept block hash on some endpoints
+- catch `Expect block number from id` as concisitency error
 
 ## 1.2.0
 Sat, 10 Jun 2023 15:11:08 GMT

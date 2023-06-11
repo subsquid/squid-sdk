@@ -2,6 +2,40 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@subsquid/rpc-client_v4.2.0",
+      "date": "Sun, 11 Jun 2023 15:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "implement `.rateLimit` option"
+          },
+          {
+            "comment": "downgrade `TypeScript` to `4.9.5`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "better capture rate limit errors"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.2.0` to `^2.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^1.1.0` to `^1.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@subsquid/rpc-client_v4.1.0",
       "date": "Sat, 10 Jun 2023 15:11:08 GMT",

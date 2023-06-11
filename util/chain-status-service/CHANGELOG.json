@@ -2,6 +2,38 @@
   "name": "chain-status-service",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "chain-status-service_v1.2.0",
+      "date": "Sun, 11 Jun 2023 15:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "migrate to `@subsquid/rpc-client`"
+          },
+          {
+            "comment": "downgrade `TypeScript` to `4.9.5`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.1.0` to `^4.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.2.0` to `^2.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-timeout\" from `^2.2.0` to `^2.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "chain-status-service_v1.1.0",
       "date": "Sat, 10 Jun 2023 15:11:09 GMT",

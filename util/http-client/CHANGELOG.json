@@ -2,6 +2,37 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/http-client_v1.2.0",
+      "date": "Sun, 11 Jun 2023 15:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix exception in `isHttpConnectionError()` when `node-fetch` ESM is not loaded"
+          },
+          {
+            "comment": "fix response headers logging"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "downgrade `TypeScript` to `4.9.5`"
+          },
+          {
+            "comment": "use default logger when no logger is passed"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.2.0` to `^2.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/http-client_v1.1.0",
       "date": "Sat, 10 Jun 2023 15:11:08 GMT",

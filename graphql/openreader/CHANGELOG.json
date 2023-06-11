@@ -2,6 +2,38 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@subsquid/openreader_v4.2.0",
+      "date": "Sun, 11 Jun 2023 15:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "downgrade `TypeScript` to `4.9.5`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.2.0` to `^2.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-commander\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^1.1.0` to `^1.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@subsquid/openreader_v4.1.0",
       "date": "Sat, 10 Jun 2023 15:11:08 GMT",

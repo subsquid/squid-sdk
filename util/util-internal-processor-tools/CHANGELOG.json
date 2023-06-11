@@ -2,6 +2,37 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/util-internal-processor-tools_v1.2.0",
+      "date": "Sun, 11 Jun 2023 15:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "downgrade `TypeScript` to `4.9.5`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "update chain height metric after switching to a hot datasource"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.2.0` to `^2.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^1.1.0` to `^1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^1.1.0` to `^1.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/util-internal-processor-tools_v1.1.0",
       "date": "Sat, 10 Jun 2023 15:11:09 GMT",

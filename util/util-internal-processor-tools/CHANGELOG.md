@@ -1,6 +1,17 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sat, 10 Jun 2023 15:11:09 GMT and should not be manually modified.
+This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+
+## 1.2.0
+Sun, 11 Jun 2023 15:49:45 GMT
+
+### Minor changes
+
+- downgrade `TypeScript` to `4.9.5`
+
+### Patches
+
+- update chain height metric after switching to a hot datasource
 
 ## 1.1.0
 Sat, 10 Jun 2023 15:11:09 GMT
