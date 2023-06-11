@@ -1,4 +1,5 @@
 import type {Logger} from '@subsquid/logger'
+import {createLogger} from '@subsquid/logger'
 import {addErrorContext, ensureError, wait} from '@subsquid/util-internal'
 import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
@@ -19,7 +20,7 @@ export interface HttpClientOptions {
     httpTimeout?: number
     retryAttempts?: number
     retrySchedule?: number[]
-    log?: Logger
+    log?: Logger | null
 }
 
 
@@ -60,7 +61,7 @@ export class HttpClient {
     private requestCounter = 0
 
     constructor(options: HttpClientOptions = {}) {
-        this.log = options.log
+        this.log = options.log === null ? undefined : options.log || createLogger('sqd:http-client')
         this.headers = options.headers
         this.setBaseUrl(options.baseUrl)
         this.agent = options.agent || defaultAgentProvider
@@ -149,7 +150,7 @@ export class HttpClient {
                 httpRequestId: req.id,
                 httpResponseUrl: url,
                 httpResponseStatus: status,
-                httpResponseHeaders: headers
+                httpResponseHeaders: Array.from(headers)
             }, 'http headers')
         }
     }
