@@ -76,7 +76,7 @@ export type EvmBatchProcessorFields<T> = T extends EvmBatchProcessor<infer F> ? 
 /**
  * Provides methods to configure and launch data processing.
  */
-export class EvmBatchProcessor<const F extends FieldSelection = {}> {
+export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private requests: BatchRequest<DataRequest>[] = []
     private src?: DataSource
     private blockRange?: Range
@@ -98,7 +98,7 @@ export class EvmBatchProcessor<const F extends FieldSelection = {}> {
     /**
      * Configure a set of fetched fields
      */
-    setFields<const T extends FieldSelection>(fields: T): EvmBatchProcessor<T> {
+    setFields<T extends FieldSelection>(fields: T): EvmBatchProcessor<T> {
         this.assertNotRunning()
         this.fields = fields
         return this as any
