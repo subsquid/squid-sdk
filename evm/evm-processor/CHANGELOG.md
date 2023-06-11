@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Sun, 11 Jun 2023 23:05:24 GMT and should not be manually modified.
+
+## 1.4.0
+Sun, 11 Jun 2023 23:05:24 GMT
+
+### Minor changes
+
+- add ability to request logs by `topic1-topic3`
 
 ## 1.3.0
 Sun, 11 Jun 2023 15:49:45 GMT

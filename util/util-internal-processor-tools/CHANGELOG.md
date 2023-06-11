@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Sun, 11 Jun 2023 23:05:24 GMT and should not be manually modified.
+
+## 1.2.1
+Sun, 11 Jun 2023 23:05:24 GMT
+
+### Patches
+
+- fix `.isHead` definition for archive data batches
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT
