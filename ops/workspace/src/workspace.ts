@@ -1,4 +1,4 @@
-import {def} from '@subsquid/util-internal'
+import {assertNotNull, def} from '@subsquid/util-internal'
 import fs from 'fs'
 import * as JSONC from 'jsonc-parser'
 import latestVersion from 'latest-version'
@@ -30,7 +30,7 @@ interface Rush {
 
 
 export class Workspace {
-    constructor(private dir: string) {}
+    constructor(private dir: string, protected options: {preferLowerVersion?: boolean}) {}
 
     save(): void {
         this.packages().forEach(def => {
@@ -92,14 +92,23 @@ export class Workspace {
                 ...def.json.dependencies
             }
             for (let key in all) {
-                if (packages.has(key)) continue
-                let version = all[key]!
+                let version
+                if (packages.has(key)) {
+                    version = prefix(all[key]!) + assertNotNull(packages.get(key)?.json.version)
+                } else {
+                    version = all[key]!
+                }
                 let sv = semver.clean(pure(version))
                 if (sv == null) continue
-                let dep = deps[key]!
+                let dep = deps[key]
                 if (dep) {
                     let current = pure(dep)
-                    let v = semver.gte(sv, current) ? sv : current
+                    let v
+                    if (this.options.preferLowerVersion) {
+                        v = semver.lte(sv, current) ? sv : current
+                    } else {
+                        v = semver.gte(sv, current) ? sv : current
+                    }
                     let p = combinePrefix(prefix(version), prefix(dep))
                     deps[key] = p + v
                 } else {

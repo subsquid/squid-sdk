@@ -14,7 +14,7 @@
     {
       "name": "unify-dependencies",
       "commandKind": "global",
-      "summary": "Unify external dependencies across project",
+      "summary": "Unify dependencies across the project",
       "shellCommand": "node ops/workspace/lib/unify.js"
     },
     {
@@ -42,6 +42,12 @@
       "parameterKind": "flag",
       "longName": "--update",
       "description": "upgrade dependencies",
+      "associatedCommands": ["unify-dependencies"]
+    },
+    {
+      "parameterKind": "flag",
+      "longName": "--lower",
+      "description": "prefer lower versions",
       "associatedCommands": ["unify-dependencies"]
     },
     {
