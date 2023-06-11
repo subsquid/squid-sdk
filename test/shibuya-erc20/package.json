@@ -20,6 +20,6 @@
     "@subsquid/typeorm-codegen": "^1.1.0",
     "@subsquid/ink-typegen": "^1.1.0",
     "@types/node": "^18.16.17",
-    "typescript": "~5.1.3"
+    "typescript": "~4.9.5"
   }
 }

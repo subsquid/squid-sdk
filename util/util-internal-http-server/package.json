@@ -21,6 +21,6 @@
   "devDependencies": {
     "@types/node": "^18.16.17",
     "@types/stoppable": "^1.1.1",
-    "typescript": "~5.1.3"
+    "typescript": "~4.9.5"
   }
 }

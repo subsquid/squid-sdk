@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "downgrade `TypeScript` to `4.9.5`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

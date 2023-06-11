@@ -7,7 +7,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "2.2.0",
+    "@subsquid/util-internal": "^2.2.0",
     "commander": "^10.0.1",
     "jsonc-parser": "^3.2.0",
     "latest-version": "^5.1.0",
@@ -17,6 +17,6 @@
     "@types/node": "^18.16.17",
     "@types/semver": "^7.5.0",
     "type-fest": "^2.19.0",
-    "typescript": "~5.1.3"
+    "typescript": "~4.9.5"
   }
 }

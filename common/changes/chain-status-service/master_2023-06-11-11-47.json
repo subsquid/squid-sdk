@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "downgrade `TypeScript` to `4.9.5`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "chain-status-service"
+}
