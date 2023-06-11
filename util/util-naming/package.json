@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-naming",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Naming conventions for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

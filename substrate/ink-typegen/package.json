@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ink-typegen",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Generates TypeScript API for decoding ink! events, messages and constructors",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -14,10 +14,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/ink-abi": "^2.1.0",
-    "@subsquid/substrate-typegen": "^3.1.0",
-    "@subsquid/util-internal": "^2.2.0",
-    "@subsquid/util-internal-code-printer": "^1.1.0",
+    "@subsquid/ink-abi": "^2.2.0",
+    "@subsquid/substrate-typegen": "^3.2.0",
+    "@subsquid/util-internal": "^2.3.0",
+    "@subsquid/util-internal-code-printer": "^1.2.0",
     "commander": "^10.0.1"
   },
   "devDependencies": {

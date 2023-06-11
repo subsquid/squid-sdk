@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Spec version explorer for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,13 +19,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.1.0",
-    "@subsquid/logger": "^1.1.0",
-    "@subsquid/rpc-client": "^4.1.0",
-    "@subsquid/util-internal": "^2.2.0",
-    "@subsquid/util-internal-commander": "^1.1.0",
-    "@subsquid/util-internal-hex": "^1.1.0",
-    "@subsquid/util-internal-read-lines": "^1.1.0",
+    "@subsquid/http-client": "^1.2.0",
+    "@subsquid/logger": "^1.2.0",
+    "@subsquid/rpc-client": "^4.2.0",
+    "@subsquid/util-internal": "^2.3.0",
+    "@subsquid/util-internal-commander": "^1.2.0",
+    "@subsquid/util-internal-hex": "^1.2.0",
+    "@subsquid/util-internal-read-lines": "^1.2.0",
     "commander": "^10.0.1"
   },
   "devDependencies": {

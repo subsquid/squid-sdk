@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-hex",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Squid framework conventions around hex encoding",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
