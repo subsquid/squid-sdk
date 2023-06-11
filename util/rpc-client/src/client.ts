@@ -317,6 +317,7 @@ export class RpcClient {
     }
 
     isConnectionError(err: Error): boolean {
+        if (isRateLimitError(err)) return true
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true
         if (err instanceof HttpTimeoutError) return true
@@ -373,4 +374,9 @@ function trimCredentials(url: string): string {
     u.password = ''
     u.username = ''
     return u.toString()
+}
+
+
+function isRateLimitError(err: unknown): boolean {
+    return err instanceof RpcError && /rate limit/i.test(err.message)
 }
