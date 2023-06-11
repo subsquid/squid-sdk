@@ -15,6 +15,9 @@ export interface DataRequest {
 export interface LogRequest {
     address?: Bytes20[]
     topic0?: Bytes32[]
+    topic1?: Bytes32[]
+    topic2?: Bytes32[]
+    topic3?: Bytes32[]
     transaction?: boolean
 }
 
