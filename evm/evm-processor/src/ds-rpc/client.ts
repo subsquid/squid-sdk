@@ -1,4 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, RpcError} from '@subsquid/rpc-client'
 import {assertNotNull, concurrentMap, def, groupBy, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {
     Batch,
@@ -130,7 +130,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                     })
                     break
                 } catch(err: any) {
-                    if (err instanceof ConsistencyError && retries) {
+                    if (isConsistencyError(err) && retries) {
                         retries -= 1
                         await wait(200)
                     } else {
@@ -531,4 +531,14 @@ function toRpcBatchRequest(request: BatchRequest<DataRequest>): BatchRequest<rpc
         range: request.range,
         request: toRpcDataRequest(request.request)
     }
+}
+
+
+function isConsistencyError(err: unknown): boolean {
+    if (err instanceof ConsistencyError) return true
+    if (err instanceof RpcError) {
+        // eth_gelBlockByNumber on Moonbeam reacts like that when block is not present
+        if (/Expect block number from id/i.test(err.message)) return true
+    }
+    return false
 }

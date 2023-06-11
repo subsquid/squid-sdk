@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "catch `Expect block number from id` as concisitency error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
