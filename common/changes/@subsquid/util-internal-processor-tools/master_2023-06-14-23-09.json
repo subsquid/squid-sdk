@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "handle the case when the range of requested blocks is above the finalized head",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

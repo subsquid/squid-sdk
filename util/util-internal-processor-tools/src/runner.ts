@@ -55,8 +55,9 @@ export class Runner<R, S> {
         if (archive) {
             let archiveHeight = await archive.getFinalizedHeight()
             if (archiveHeight > state.height + state.top.length || hot == null) {
-                await this.initMetrics(archiveHeight, state)
                 this.log.info('using archive data source')
+                await assertBlockIsOnChain(archive, state)
+                await this.initMetrics(archiveHeight, state)
                 state = await this.processFinalizedBlocks({
                     state,
                     src: archive,
@@ -69,6 +70,7 @@ export class Runner<R, S> {
         assert(hot)
 
         this.log.info('using chain RPC data source')
+        await assertBlockIsOnChain(hot, state)
         let chainFinalizedHeight = await hot.getFinalizedHeight()
         await this.initMetrics(chainFinalizedHeight, state)
         if (chainFinalizedHeight > state.height + state.top.length) {
@@ -78,6 +80,28 @@ export class Runner<R, S> {
                 shouldStopOnHead: this.config.database.supportsHotBlocks && !this.config.allBlocksAreFinal
             })
             if (this.getLeftRequests(state).length == 0) return
+        }
+
+        if (chainFinalizedHeight > state.height) {
+            // finalized block processing haven't kicked in during previous steps
+            // this can happen if the next requested block is above the finalized head.
+            // We'll advance the processor in order to:
+            //   1. guarantee, that the state passed to `hot.getHotBlocks()` is a real block reference
+            //      rather than a dummy `{height: -1, hash: '0x'}`.
+            //   2. ease a work of `hot.getHotBlocks()`, which is likely not optimized for such case
+            let nextRequestedBlock = this.getLeftRequests(state)[0].range.from
+            assert(nextRequestedBlock > chainFinalizedHeight)
+            let nextState = {
+                height: chainFinalizedHeight,
+                hash: await hot.getBlockHash(chainFinalizedHeight),
+                top: []
+            }
+            await this.config.database.transact({
+                prevHead: state,
+                nextHead: nextState,
+                isOnTop: true
+            }, async () => {})
+            state = nextState
         }
 
         return this.processHotBlocks(state)
@@ -91,8 +115,6 @@ export class Runner<R, S> {
         let state = args.state
         let minimumCommitHeight = state.height + state.top.length
         let prevBatch: Batch<Block> | undefined
-
-        await assertBlockIsOnChain(args.src, state)
 
         for await (let batch of args.src.getFinalizedBlocks(
             this.getLeftRequests(args.state),
