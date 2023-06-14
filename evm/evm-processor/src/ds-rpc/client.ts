@@ -1,3 +1,4 @@
+import {Logger} from '@subsquid/logger'
 import {RpcClient, RpcError} from '@subsquid/rpc-client'
 import {assertNotNull, concurrentMap, def, groupBy, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {
@@ -32,6 +33,7 @@ export interface EvmRpcDataSourceOptions {
     strideSize?: number
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    log?: Logger
 }
 
 
@@ -42,6 +44,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private pollInterval: number
     private useDebugApiForStateDiffs: boolean
     private preferTraceApi: boolean
+    private log?: Logger
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
@@ -50,6 +53,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         this.pollInterval = options.pollInterval ?? 1000
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs ?? false
         this.preferTraceApi = options.preferTraceApi ?? false
+        this.log = options.log
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -105,7 +109,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 
         for await (let top of getHeightUpdates(heightTracker, nav.getHeight() + 1)) {
             let update: HotUpdate<Block>
-            let retries = 3
+            let retries = 0
             while (true) {
                 try {
                     update = await nav.transact(async () => {
@@ -130,9 +134,12 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                     })
                     break
                 } catch(err: any) {
-                    if (isConsistencyError(err) && retries) {
-                        retries -= 1
-                        await wait(200)
+                    if (isConsistencyError(err) && retries < 5) {
+                        retries += 1
+                        if (retries > 2) {
+                            this.log?.warn(err.message)
+                        }
+                        await wait(200 * retries)
                     } else {
                         throw err
                     }
@@ -521,7 +528,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 class ConsistencyError extends Error {
     constructor(block: rpc.Block | number | string) {
         let name = typeof block == 'object' ? getBlockName(block) : block
-        super(`Seems like the chain node navigated to another branch while we were fetching block ${name}`)
+        super(`Seems like the chain node navigated to another branch while we were fetching block ${name} or lost it`)
     }
 }
 
@@ -534,7 +541,7 @@ function toRpcBatchRequest(request: BatchRequest<DataRequest>): BatchRequest<rpc
 }
 
 
-function isConsistencyError(err: unknown): boolean {
+function isConsistencyError(err: unknown): err is Error {
     if (err instanceof ConsistencyError) return true
     if (err instanceof RpcError) {
         // eth_gelBlockByNumber on Moonbeam reacts like that when block is not present

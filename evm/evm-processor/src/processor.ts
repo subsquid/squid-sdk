@@ -264,7 +264,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             requestTimeout:  options.requestTimeout ?? 30_000,
             capacity: options.capacity ?? 10,
             rateLimit: options.rateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            log: this.getLogger().child('rpc', {rpcUrl: options.url})
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
@@ -290,7 +291,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             finalityConfirmation: this.finalityConfirmation,
             preferTraceApi: this._preferTraceApi,
             useDebugApiForStateDiffs: this._useDebugApiForStateDiffs,
-            pollInterval: this.chainPollInterval
+            pollInterval: this.chainPollInterval,
+            log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }
 

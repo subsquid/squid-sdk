@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "handle `ConsistencyError` with exponential backoff and warnings",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "move RPC client logs to `sqd:processor:rpc` namespace",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
