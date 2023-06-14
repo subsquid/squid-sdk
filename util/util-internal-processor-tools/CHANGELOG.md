@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sun, 11 Jun 2023 23:05:24 GMT and should not be manually modified.
+This log was last generated on Wed, 14 Jun 2023 23:56:25 GMT and should not be manually modified.
+
+## 1.2.2
+Wed, 14 Jun 2023 23:56:25 GMT
+
+### Patches
+
+- handle the case when the range of requested blocks is above the finalized head
 
 ## 1.2.1
 Sun, 11 Jun 2023 23:05:24 GMT

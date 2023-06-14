@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 14 Jun 2023 08:58:04 GMT and should not be manually modified.
+This log was last generated on Wed, 14 Jun 2023 23:56:25 GMT and should not be manually modified.
+
+## 1.5.1
+Wed, 14 Jun 2023 23:56:25 GMT
+
+### Patches
+
+- decrease probability of consistency errors while fetching hot blocks
 
 ## 1.5.0
 Wed, 14 Jun 2023 08:58:04 GMT
