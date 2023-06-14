@@ -25,7 +25,7 @@
     "@subsquid/util-internal": "^2.3.0",
     "@subsquid/util-internal-code-printer": "^1.2.0",
     "@subsquid/util-internal-hex": "^1.2.0",
-    "@subsquid/util-internal-processor-tools": "^1.2.1",
+    "@subsquid/util-internal-processor-tools": "^1.2.2",
     "@subsquid/util-xxhash": "^1.2.0",
     "blake2b": "^2.1.4"
   },
