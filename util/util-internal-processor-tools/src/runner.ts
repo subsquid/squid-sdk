@@ -82,7 +82,7 @@ export class Runner<R, S> {
             if (this.getLeftRequests(state).length == 0) return
         }
 
-        if (chainFinalizedHeight > state.height) {
+        if (chainFinalizedHeight > state.height + state.top.length) {
             // finalized block processing haven't kicked in during previous steps
             // this can happen if the next requested block is above the finalized head.
             // We'll advance the processor in order to:
