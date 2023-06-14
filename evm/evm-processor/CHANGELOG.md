@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sun, 11 Jun 2023 23:05:24 GMT and should not be manually modified.
+This log was last generated on Wed, 14 Jun 2023 08:58:04 GMT and should not be manually modified.
+
+## 1.5.0
+Wed, 14 Jun 2023 08:58:04 GMT
+
+### Minor changes
+
+- handle `ConsistencyError` with exponential backoff and warnings
+- move RPC client logs to `sqd:processor:rpc` namespace
 
 ## 1.4.0
 Sun, 11 Jun 2023 23:05:24 GMT

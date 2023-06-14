@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.5.0",
+      "tag": "@subsquid/evm-processor_v1.5.0",
+      "date": "Wed, 14 Jun 2023 08:58:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "handle `ConsistencyError` with exponential backoff and warnings"
+          },
+          {
+            "comment": "move RPC client logs to `sqd:processor:rpc` namespace"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "tag": "@subsquid/evm-processor_v1.4.0",
       "date": "Sun, 11 Jun 2023 23:05:24 GMT",
