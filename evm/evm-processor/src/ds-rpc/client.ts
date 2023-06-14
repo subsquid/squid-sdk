@@ -1,6 +1,6 @@
 import {Logger} from '@subsquid/logger'
 import {RpcClient, RpcError} from '@subsquid/rpc-client'
-import {assertNotNull, concurrentMap, def, groupBy, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {assertNotNull, concurrentMap, def, groupBy, last, wait} from '@subsquid/util-internal'
 import {
     Batch,
     BatchRequest,
@@ -93,61 +93,57 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             state,
             ref => {
                 let height = assertNotNull(ref.height)
-                let withTransactions = !!requestsTracker.getRequestAt(height)?.transactions
-                if (ref.hash) {
-                    return this.getBlock0(ref.hash, withTransactions)
-                } else {
-                    return this.getBlock0(height, withTransactions)
-                }
+                let req = requestsTracker.getRequestAt(height)
+                return this.fetchHotBlock({height, hash: ref.hash}, req)
             },
-            block => ({
-                height: qty2Int(block.number),
-                hash: block.hash,
-                parentHash: block.parentHash
-            })
+            block => block.header
         )
 
         for await (let top of getHeightUpdates(heightTracker, nav.getHeight() + 1)) {
-            let update: HotUpdate<Block>
-            let retries = 0
-            while (true) {
-                try {
-                    update = await nav.transact(async () => {
-                        let {baseHead, finalizedHead, blocks: blocks0} = await nav.move({
-                            best: top,
-                            finalized: top - this.finalityConfirmation
-                        })
-                        let blocks = await requestsTracker.processBlocks(
-                            blocks0,
-                            getBlockHeight,
-                            (blocks0, req) => splitParallelWork(
-                                10,
-                                blocks0,
-                                bks0 => this.processBlocks(bks0, req, finalizedHead.height)
-                            )
-                        )
-                        return {
-                            blocks,
-                            baseHead,
-                            finalizedHead
-                        }
-                    })
-                    break
-                } catch(err: any) {
-                    if (isConsistencyError(err) && retries < 5) {
-                        retries += 1
-                        if (retries > 2) {
-                            this.log?.warn(err.message)
-                        }
-                        await wait(200 * retries)
-                    } else {
-                        throw err
+            let finalized = Math.max(top - this.finalityConfirmation, 0)
+            for (let number = nav.getHeight() + 1; number <= top; number++) {
+                let update = await this.getHotUpdate(nav, number, finalized)
+                yield update
+                if (!requestsTracker.hasRequestsAfter(update.finalizedHead.height)) return
+            }
+        }
+    }
+
+    private async getHotUpdate(nav: ForkNavigator<Block>, blockHeight: number, finalizedHeight: number): Promise<HotUpdate<Block>> {
+        let retries = 0
+        while (true) {
+            try {
+                return await nav.move({
+                    best: blockHeight,
+                    finalized: Math.min(blockHeight, finalizedHeight)
+                })
+            } catch(err: any) {
+                if (isConsistencyError(err) && retries < 10) {
+                    retries += 1
+                    if (retries > 2) {
+                        this.log?.warn(err.message)
                     }
+                    await wait(200 * retries)
+                } else {
+                    throw err
                 }
             }
-            yield update
-            if (!requestsTracker.hasRequestsAfter(update.finalizedHead.height)) return
         }
+    }
+
+    private async fetchHotBlock(ref: {height: number, hash?: string}, req: rpc.DataRequest | undefined): Promise<Block> {
+        let withTransactions = !!req?.transactions
+        let block0: rpc.Block | null
+        if (ref.hash) {
+            block0 = await this.rpc.call('eth_getBlockByHash', [ref.hash, withTransactions])
+        } else {
+            block0 = await this.rpc.call('eth_getBlockByNumber', ['0x'+ref.height.toString(16), withTransactions])
+        }
+        if (block0 == null) {
+            throw new ConsistencyError(ref)
+        }
+        let processed = await this.processBlocks([block0], req, 0)
+        return processed[0]
     }
 
     getFinalizedBlocks(
@@ -171,20 +167,6 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                 }
             }
         )
-    }
-
-    private async getBlock0(ref: number | string, withTransactions: boolean): Promise<rpc.Block> {
-        let block: rpc.Block | null
-        if (typeof ref == 'string') {
-            block = await this.rpc.call('eth_getBlockByHash', [ref, withTransactions])
-        } else {
-            block = await this.rpc.call('eth_getBlockByNumber', ['0x'+ref.toString(16), withTransactions])
-        }
-        if (block == null) {
-            throw new ConsistencyError(ref)
-        } else {
-            return block
-        }
     }
 
     private async getStride0(s: DataSplit<rpc.DataRequest>): Promise<rpc.Block[]> {
@@ -526,7 +508,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 
 
 class ConsistencyError extends Error {
-    constructor(block: rpc.Block | number | string) {
+    constructor(block: rpc.Block | {height: number, hash?: string, number?: undefined} | number | string) {
         let name = typeof block == 'object' ? getBlockName(block) : block
         super(`Seems like the chain node navigated to another branch while we were fetching block ${name} or lost it`)
     }

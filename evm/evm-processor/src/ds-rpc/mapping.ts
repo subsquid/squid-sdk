@@ -1,4 +1,5 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {AllFields, BlockData, BlockHeader, FieldSelection, Transaction} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
@@ -589,8 +590,21 @@ export function getTxHash(tx: Bytes32 | rpc.Transaction): Bytes32 {
 }
 
 
-export function getBlockName(block: rpc.Block): string {
-    return `${qty2Int(block.number)}#${block.hash.slice(2, 8)}`
+export function getBlockName(block: rpc.Block | {height: number, hash?: string, number?: undefined}): string {
+    let height: number
+    let hash: string | undefined
+    if (block.number == null) {
+        height = block.height
+        hash = block.hash
+    } else {
+        height = qty2Int(block.number)
+        hash = block.hash
+    }
+    if (hash) {
+        return `${height}#${hash.slice(2, 8)}`
+    } else {
+        return ''+height
+    }
 }
 
 
