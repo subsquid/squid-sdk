@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Wed, 14 Jun 2023 23:56:25 GMT and should not be manually modified.
+This log was last generated on Thu, 15 Jun 2023 10:53:31 GMT and should not be manually modified.
+
+## 1.2.3
+Thu, 15 Jun 2023 10:53:31 GMT
+
+### Patches
+
+- fix: allow to index FireSquid databases
 
 ## 1.2.2
 Wed, 14 Jun 2023 23:56:25 GMT
