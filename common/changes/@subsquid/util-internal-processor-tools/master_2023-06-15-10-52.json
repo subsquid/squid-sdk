@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "fix: allow to index FireSquid databases",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

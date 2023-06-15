@@ -56,7 +56,7 @@ export class Runner<R, S> {
             let archiveHeight = await archive.getFinalizedHeight()
             if (archiveHeight > state.height + state.top.length || hot == null) {
                 this.log.info('using archive data source')
-                await assertBlockIsOnChain(archive, state)
+                await this.assertWeAreOnTheSameChain(archive, state)
                 await this.initMetrics(archiveHeight, state)
                 state = await this.processFinalizedBlocks({
                     state,
@@ -70,7 +70,7 @@ export class Runner<R, S> {
         assert(hot)
 
         this.log.info('using chain RPC data source')
-        await assertBlockIsOnChain(hot, state)
+        await this.assertWeAreOnTheSameChain(hot, state)
         let chainFinalizedHeight = await hot.getFinalizedHeight()
         await this.initMetrics(chainFinalizedHeight, state)
         if (chainFinalizedHeight > state.height + state.top.length) {
@@ -105,6 +105,24 @@ export class Runner<R, S> {
         }
 
         return this.processHotBlocks(state)
+    }
+
+    private async assertWeAreOnTheSameChain(src: DataSource<unknown, unknown>, state: HashAndHeight): Promise<void> {
+        if (state.height < 0) return
+        if (state.hash === '0x') {
+            this.log.warn(
+                'seems like we are migrating from the FireSquid, ' +
+                'this can only work if the next block to index was already finalized ' +
+                'or we are not indexing hot blocks at all'
+            )
+            return
+        }
+        let hash = await src.getBlockHash(state.height)
+        if (state.hash !== hash) {
+            throw new Error(
+                `already indexed block ${formatHead(state)} was not found on chain`
+            )
+        }
     }
 
     private async processFinalizedBlocks(args: {
@@ -284,16 +302,5 @@ export class Runner<R, S> {
 
     private get log(): Logger {
         return this.config.log
-    }
-}
-
-
-async function assertBlockIsOnChain(src: DataSource<unknown, unknown>, ref: HashAndHeight): Promise<void> {
-    if (ref.height < 0) return
-    let hash = await src.getBlockHash(ref.height)
-    if (ref.hash !== hash) {
-        throw new Error(
-            `already indexed block ${formatHead(ref)} is not found on chain`
-        )
     }
 }
