@@ -12,8 +12,8 @@ type Deps = Partial<Record<string, string>>
 
 
 interface Pkg {
+    project: RushProject
     json: PkgJson
-    loc: string
     changed?: boolean
 }
 
@@ -21,6 +21,8 @@ interface Pkg {
 interface RushProject {
     packageName: string
     projectFolder: string
+    versionPolicyName?: string
+    shouldPublish?: boolean
 }
 
 
@@ -36,7 +38,7 @@ export class Workspace {
         this.packages().forEach(def => {
             if (!def.changed) return
             this.write(
-                path.join(def.loc, 'package.json'),
+                path.join(def.project.projectFolder, 'package.json'),
                 def.json
             )
             def.changed = false
@@ -124,10 +126,9 @@ export class Workspace {
         let packages = new Map<string, Pkg>()
         let rush: Rush = this.read('rush.json')
         rush.projects.forEach(project => {
-            let loc = project.projectFolder
-            let json: PkgJson = this.read(path.join(loc, 'package.json'))
+            let json: PkgJson = this.read(path.join(project.projectFolder, 'package.json'))
             packages.set(project.packageName, {
-                loc,
+                project,
                 json
             })
         })

@@ -1,0 +1,13 @@
+name: ArrowSquid tag
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Tag ArrowSquid npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set tags
+        run: ./ops/npm-tag-arrowsquid.sh
