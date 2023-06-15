@@ -1,4 +1,4 @@
-name: ArrowSquid tag
+name: tag ArrowSquid
 on:
   workflow_dispatch:
 
@@ -11,11 +11,11 @@ jobs:
 
       - name: Write npm credentials
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> common/config/rush/.npmrc
-          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> common/config/rush/.npmrc-publish
-          cd common/config/rush && npm whoami
+          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> .npmrc-publish
+          npm whoami
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Set tags
-        run: cd common/config/rush && ../../../ops/npm-tag-arrowsquid.sh
+        run: ops/npm-tag-arrowsquid.sh
