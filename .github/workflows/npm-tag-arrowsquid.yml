@@ -18,4 +18,4 @@ jobs:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Set tags
-        run: ./ops/npm-tag-arrowsquid.sh
+        run: ops/npm-tag-arrowsquid.sh
