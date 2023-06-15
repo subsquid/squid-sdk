@@ -22,7 +22,7 @@
     "@subsquid/rpc-client": "^4.2.0",
     "@subsquid/util-internal": "^2.3.0",
     "@subsquid/util-internal-hex": "^1.2.0",
-    "@subsquid/util-internal-processor-tools": "^1.2.2"
+    "@subsquid/util-internal-processor-tools": "^1.2.3"
   },
   "devDependencies": {
     "@subsquid/typeorm-store": "^1.2.0",
