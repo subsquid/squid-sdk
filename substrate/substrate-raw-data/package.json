@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/util-internal-processor-tools",
-  "version": "1.2.3",
-  "description": "Common tools for data fetching and mapping execution",
+  "name": "@subsquid/substrate-raw-data",
+  "version": "0.0.0",
+  "description": "Raw data fetcher for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -16,12 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.2.0",
     "@subsquid/util-internal": "^2.3.0",
-    "@subsquid/util-internal-counters": "^1.2.0",
-    "@subsquid/util-internal-prometheus-server": "^1.2.0",
-    "@subsquid/util-internal-range": "^0.0.0",
-    "prom-client": "^14.2.0"
+    "@subsquid/util-internal-range": "^0.0.0"
+  },
+  "peerDependencies": {
+    "@subsquid/rpc-client": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",

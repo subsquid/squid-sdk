@@ -1,13 +1,13 @@
+import {HttpClient} from '@subsquid/http-client'
 import {maybeLast, withErrorContext} from '@subsquid/util-internal'
 import {Output} from '@subsquid/util-internal-code-printer'
-import {HttpClient} from '@subsquid/http-client'
 import {
     archiveIngest,
     Batch,
-    BatchRequest,
     DataSource,
-    DataSplit,
-    PollingHeightTracker
+    PollingHeightTracker,
+    RangeRequest,
+    SplitRequest
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {BlockDataP, DataRequest} from '../interfaces/data'
@@ -25,16 +25,16 @@ export class SubstrateArchive implements DataSource<BlockDataP, DataRequest> {
         return this.getBlock(height).then(b => b.header.hash)
     }
 
-    getFinalizedBlocks(requests: BatchRequest<DataRequest>[], stopOnHead?: boolean | undefined): AsyncIterable<Batch<BlockDataP>> {
+    getFinalizedBlocks(requests: RangeRequest<DataRequest>[], stopOnHead?: boolean | undefined): AsyncIterable<Batch<BlockDataP>> {
         return archiveIngest({
             requests,
-            heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight()),
+            heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), 1000),
             query: s => this.getSplit(s),
             stopOnHead
         })
     }
 
-    async getSplit(s: DataSplit<DataRequest>): Promise<BlockDataP[]> {
+    async getSplit(s: SplitRequest<DataRequest>): Promise<BlockDataP[]> {
         let ctx = {}
         let {blocks, nextBlock} = await this
             .query(s, ctx)
@@ -67,7 +67,7 @@ export class SubstrateArchive implements DataSource<BlockDataP, DataRequest> {
     }
 
     private async query(
-        request: BatchRequest<DataRequest>,
+        request: RangeRequest<DataRequest>,
         ctx: {archiveQuery?: string}
     ): Promise<{
         blocks: BlockDataP[]
@@ -139,7 +139,7 @@ export class SubstrateArchive implements DataSource<BlockDataP, DataRequest> {
 }
 
 
-function printBatchQuery(request: BatchRequest<DataRequest>): string {
+function printBatchQuery(request: RangeRequest<DataRequest>): string {
     let from = request.range.from
 
     let args: gw.BatchRequest = {

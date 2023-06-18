@@ -17,12 +17,12 @@ import {addErrorContext, def, last, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
     Batch,
-    BatchRequest,
     Database,
     getOrGenerateSquidId,
-    mergeBatchRequests,
+    mergeRangeRequests,
     PrometheusServer,
     Range,
+    RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
 import {Chain, ChainManager} from './chain'
@@ -80,7 +80,7 @@ export interface DataHandlerContext<Store, Item> {
  * Provides methods to configure and launch data processing.
  */
 export class SubstrateBatchProcessor<Item extends {kind: string, name: string} = EventItem<'*'> | CallItem<"*">> {
-    private requests: BatchRequest<DataRequest>[] = []
+    private requests: RangeRequest<DataRequest>[] = []
     private blockRange?: Range
     private src?: DataSource
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -681,8 +681,8 @@ export class SubstrateBatchProcessor<Item extends {kind: string, name: string} =
     }
 
     @def
-    private getBatchRequests(): BatchRequest<DataRequest>[] {
-        let requests = mergeBatchRequests(this.requests, mergeDataRequests)
+    private getBatchRequests(): RangeRequest<DataRequest>[] {
+        let requests = mergeRangeRequests(this.requests, mergeDataRequests)
         return applyRangeBound(requests, this.blockRange)
     }
 

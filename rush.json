@@ -546,6 +546,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-raw-data",
+      "projectFolder": "substrate/substrate-raw-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate/substrate-typegen",
       "shouldPublish": true,
@@ -674,6 +680,12 @@
     {
       "packageName": "@subsquid/util-internal-prometheus-server",
       "projectFolder": "util/util-internal-prometheus-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-range",
+      "projectFolder": "util/util-internal-range",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

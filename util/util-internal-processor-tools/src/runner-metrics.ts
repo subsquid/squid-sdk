@@ -1,6 +1,6 @@
+import {def} from '@subsquid/util-internal'
 import {Progress, Speed} from '@subsquid/util-internal-counters'
-import {getBlocksCount} from './batch'
-import {Range} from './range'
+import {assertRangeList, getSize, Range, RangeList} from '@subsquid/util-internal-range'
 import {timeInterval} from './util'
 
 
@@ -38,12 +38,25 @@ export class RunnerMetrics {
         this.mappingItemSpeed.push(batchItemSize || 1, batchMappingStartTime, batchMappingEndTime)
     }
 
+    @def
+    private getRequestedBlockRanges(): RangeList {
+        let ranges = this.requests.map(req => req.range)
+        assertRangeList(ranges)
+        return ranges
+    }
+
     getEstimatedTotalBlocksCount(): number {
-        return getBlocksCount(this.requests, 0,  Math.max(this.chainHeight, this.lastBlock))
+        return getSize(this.getRequestedBlockRanges(), {
+            from: 0,
+            to: Math.max(this.chainHeight, this.lastBlock)
+        })
     }
 
     getEstimatedBlocksLeft(): number {
-        let count = getBlocksCount(this.requests, this.lastBlock, Math.max(this.chainHeight, this.lastBlock))
+        let count = getSize(this.getRequestedBlockRanges(), {
+            from: this.lastBlock,
+            to: Math.max(this.chainHeight, this.lastBlock)
+        })
         return count == 1 ? 0 : count
     }
 

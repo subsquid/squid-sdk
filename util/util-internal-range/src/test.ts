@@ -1,12 +1,12 @@
-import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import * as fc from 'fast-check'
 import {Arbitrary} from 'fast-check'
-import {BatchRequest, mergeBatchRequests} from './batch'
-import {Range, rangeContains, rangeDifference, rangeEnd} from './range'
+import {describe, it} from 'node:test'
+import {Range, RangeRequest} from './interfaces'
+import {assertRange, assertRangeList, mergeRangeRequests, rangeContains, rangeDifference} from './util'
 
 
-const aClosedRange = fc.tuple(fc.nat(), fc.nat()).map(([a, b]) => {
+const aFiniteRange = fc.tuple(fc.nat(), fc.nat()).map(([a, b]) => {
     if (a < b) {
         return {from: a, to: b}
     } else {
@@ -21,7 +21,7 @@ const aOpenRange = fc.nat().map(a => ({from: a}))
 const aPointRange = fc.nat().map(a => ({from: a, to: a}))
 
 
-const aRange = fc.oneof(aClosedRange, aOpenRange, aPointRange)
+const aRange = fc.oneof(aFiniteRange, aOpenRange, aPointRange)
 
 
 const aOptionalRange = fc.option(aRange, {freq: 10, nil: undefined})
@@ -33,7 +33,7 @@ interface Req {
 }
 
 
-const aBatch: Arbitrary<BatchRequest<Req[]>[]> = fc.array(aOptionalRange).map(ranges => {
+const aBatch: Arbitrary<RangeRequest<Req[]>[]> = fc.array(aOptionalRange).map(ranges => {
     return ranges.map((maybeRange, id) => {
         let range = maybeRange || {from: 0}
         return {
@@ -47,33 +47,38 @@ const aBatch: Arbitrary<BatchRequest<Req[]>[]> = fc.array(aOptionalRange).map(ra
 
 
 function assertion(
-    test: (merged: BatchRequest<Req[]>[], original: BatchRequest<Req[]>[]) => void | boolean,
+    test: (merged: RangeRequest<Req[]>[], original: RangeRequest<Req[]>[]) => void | boolean,
     params?: fc.Parameters<unknown>
 ): void {
     let prop = fc.property(aBatch, original => {
-        let merged = mergeBatchRequests(original, (a, b) => a.concat(b))
+        let merged = mergeRangeRequests(original, (a, b) => a.concat(b))
         return test(merged, original)
     })
     fc.assert(prop, params)
 }
 
 
-describe('batch requests merge', function() {
+describe('merge range requests', function() {
     it('ranges are well formed', function () {
         assertion(batches => {
             return batches.every(b => {
-                let {from, to} = b.range
-                return from >= 0 && (to == null || from <= to)
+                try {
+                    assertRange(b.range)
+                    return true
+                } catch(e: any) {
+                    return false
+                }
             })
         })
     })
 
     it('ranges are properly sorted and do not intersect', function () {
         assertion(batches => {
-            for (let i = 1; i < batches.length; i++) {
-                let current = batches[i].range
-                let prev = batches[i-1].range
-                if (rangeEnd(prev) >= current.from) return false
+            try {
+                assertRangeList(batches.map(b => b.range))
+                return true
+            } catch(e: any) {
+                return false
             }
         })
     })
@@ -93,7 +98,8 @@ describe('batch requests merge', function() {
             let uncovered = new Map(original.flatMap(b => b.request).map(h => [h.id, h.range]))
             merged.forEach(b => {
                 b.request.forEach(h => {
-                    let uncoveredRange = assertNotNull(uncovered.get(h.id))
+                    let uncoveredRange = uncovered.get(h.id)
+                    assert(uncoveredRange != null)
                     let diff = rangeDifference(uncoveredRange, b.range)
                     if (diff.length == 0) {
                         uncovered.delete(h.id)
