@@ -516,6 +516,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-dump",
+      "projectFolder": "substrate/substrate-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-explorer",
       "projectFolder": "substrate/substrate-explorer",
       "shouldPublish": true,
@@ -650,6 +656,12 @@
     {
       "packageName": "@subsquid/util-internal-counters",
       "projectFolder": "util/util-internal-counters",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-fs",
+      "projectFolder": "util/util-internal-fs",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
