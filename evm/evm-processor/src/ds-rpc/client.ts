@@ -201,15 +201,21 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         let subtasks = []
 
         if (req.logs && !req.receipts) {
-            subtasks.push(this.fetchLogs(blocks))
+            subtasks.push(catching(
+                this.fetchLogs(blocks)
+            ))
         }
 
         if (req.receipts) {
             let byBlockMethod = await this.getBlockReceiptsMethod()
             if (byBlockMethod) {
-                subtasks.push(this.fetchReceiptsByBlock(blocks, byBlockMethod))
+                subtasks.push(catching(
+                    this.fetchReceiptsByBlock(blocks, byBlockMethod)
+                ))
             } else {
-                subtasks.push(this.fetchReceiptsByTx(blocks))
+                subtasks.push(catching(
+                    this.fetchReceiptsByTx(blocks)
+                ))
             }
         }
 
@@ -327,7 +333,9 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 
         if (req.stateDiffs) {
             if (finalizedHeight < getBlockHeight(last(blocks)) || this.useDebugApiForStateDiffs) {
-                tasks.push(this.fetchDebugStateDiffs(blocks))
+                tasks.push(catching(
+                    this.fetchDebugStateDiffs(blocks)
+                ))
             } else {
                 replayTracers.push('stateDiff')
             }
@@ -336,17 +344,23 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         if (req.traces) {
             if (this.preferTraceApi) {
                 if (finalizedHeight < getBlockHeight(last(blocks)) || replayTracers.length == 0) {
-                    tasks.push(this.fetchTraceBlock(blocks))
+                    tasks.push(catching(
+                        this.fetchTraceBlock(blocks)
+                    ))
                 } else {
                     replayTracers.push('trace')
                 }
             } else {
-                tasks.push(this.fetchDebugFrames(blocks))
+                tasks.push(catching(
+                    this.fetchDebugFrames(blocks)
+                ))
             }
         }
 
         if (replayTracers.length) {
-            tasks.push(this.fetchReplays(blocks, replayTracers))
+            tasks.push(catching(
+                this.fetchReplays(blocks, replayTracers)
+            ))
         }
 
         return Promise.all(tasks).then()
@@ -530,4 +544,11 @@ function isConsistencyError(err: unknown): err is Error {
         if (/Expect block number from id/i.test(err.message)) return true
     }
     return false
+}
+
+
+function catching<T>(promise: Promise<T>): Promise<T> {
+    // prevent unhandled promise rejection crashes
+    promise.catch(() => {})
+    return promise
 }

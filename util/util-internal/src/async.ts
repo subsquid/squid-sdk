@@ -1,4 +1,5 @@
 import assert from 'assert'
+import {assertNotNull} from './misc'
 
 
 export interface Future<T> {
@@ -9,7 +10,7 @@ export interface Future<T> {
 
 
 export function createFuture<T>(): Future<T> {
-    let future: Future<T>
+    let future: Future<T> | undefined
     let promise = new Promise<T>((resolve, reject) => {
         future = {
             resolve,
@@ -17,7 +18,7 @@ export function createFuture<T>(): Future<T> {
             promise: () => promise
         }
     })
-    return future!
+    return assertNotNull(future)
 }
 
 
@@ -118,6 +119,7 @@ export async function* concurrentMap<T, R>(
     async function map() {
         for await (let val of stream) {
             let promise = f(val)
+            promise.catch(() => {}) // prevent unhandled rejection crashes
             await queue.put({promise})
         }
     }
