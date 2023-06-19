@@ -11,6 +11,7 @@ specifiers:
   '@graphql-tools/schema': ^8
   '@graphql-tools/utils': ^8
   '@keyv/redis': ~2.5.8
+  '@rush-temp/archive-layout': file:./projects/archive-layout.tgz
   '@rush-temp/astar-erc20': file:./projects/astar-erc20.tgz
   '@rush-temp/balances': file:./projects/balances.tgz
   '@rush-temp/big-decimal': file:./projects/big-decimal.tgz
@@ -131,6 +132,7 @@ dependencies:
   '@graphql-tools/schema': 8.5.1_graphql@15.8.0
   '@graphql-tools/utils': 8.13.1_graphql@15.8.0
   '@keyv/redis': 2.5.8_supports-color@8.1.1
+  '@rush-temp/archive-layout': file:projects/archive-layout.tgz
   '@rush-temp/astar-erc20': file:projects/astar-erc20.tgz_supports-color@8.1.1
   '@rush-temp/balances': file:projects/balances.tgz_supports-color@8.1.1
   '@rush-temp/big-decimal': file:projects/big-decimal.tgz
@@ -4690,6 +4692,15 @@ packages:
   /yocto-queue/0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+    dev: false
+
+  file:projects/archive-layout.tgz:
+    resolution: {integrity: sha512-HulrJUNvWTsEUz8CbWMzkc3V1kTuDsP/MP2yMBALHe7VTHrEVRtb3GyZJgeXRHbeXYnIoxAmHDe5pY1jYVH8cA==, tarball: file:projects/archive-layout.tgz}
+    name: '@rush-temp/archive-layout'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.16.17
+      typescript: 4.9.5
     dev: false
 
   file:projects/astar-erc20.tgz_supports-color@8.1.1:
