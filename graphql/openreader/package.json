@@ -28,7 +28,7 @@
     "@graphql-tools/merge": "^8",
     "@subsquid/graphiql-console": "^0.3.0",
     "@subsquid/logger": "^1.2.0",
-    "@subsquid/util-internal": "^2.3.0",
+    "@subsquid/util-internal": "^2.3.1",
     "@subsquid/util-internal-commander": "^1.2.0",
     "@subsquid/util-internal-hex": "^1.2.0",
     "@subsquid/util-internal-http-server": "^1.2.0",

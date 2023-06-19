@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.2.0",
-    "@subsquid/util-internal": "^2.3.0",
+    "@subsquid/util-internal": "^2.3.1",
     "@subsquid/util-internal-config": "^2.2.0",
     "glob": "^8.1.0",
     "supports-color": "^8.1.1"
