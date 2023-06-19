@@ -397,6 +397,8 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                     }
                 }
                 break
+            case 'INVALID':
+                break
             default:
                 throw unexpectedCase(rec.frame.type)
         }
