@@ -1,6 +1,18 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 14 Jun 2023 23:56:25 GMT and should not be manually modified.
+This log was last generated on Mon, 19 Jun 2023 22:07:46 GMT and should not be manually modified.
+
+## 1.6.0
+Mon, 19 Jun 2023 22:07:46 GMT
+
+### Minor changes
+
+- expose `ctx._chain.client.batchCall()`
+
+### Patches
+
+- fix unhandled promise rejection crashes
+- skip `INVALID` debug frames
 
 ## 1.5.1
 Wed, 14 Jun 2023 23:56:25 GMT
