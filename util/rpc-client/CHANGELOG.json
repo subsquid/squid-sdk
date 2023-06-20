@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.3.0",
+      "tag": "@subsquid/rpc-client_v4.3.0",
+      "date": "Tue, 20 Jun 2023 11:29:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `CallOptions.validateResult()` and `RetryError` for call result validation with ability to re-use built-in retry mechanism"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.0",
       "tag": "@subsquid/rpc-client_v4.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

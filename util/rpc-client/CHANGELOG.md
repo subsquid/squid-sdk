@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Tue, 20 Jun 2023 11:29:34 GMT and should not be manually modified.
+
+## 4.3.0
+Tue, 20 Jun 2023 11:29:34 GMT
+
+### Minor changes
+
+- add `CallOptions.validateResult()` and `RetryError` for call result validation with ability to re-use built-in retry mechanism
 
 ## 4.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

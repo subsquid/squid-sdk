@@ -2,6 +2,28 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.7.0",
+      "tag": "@subsquid/evm-processor_v1.7.0",
+      "date": "Tue, 20 Jun 2023 11:29:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "fix: handle `INVALID` debug frame as a regular call\""
+          }
+        ],
+        "patch": [
+          {
+            "comment": "handle `null` results from `eth_getBlockByNumber`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.2.0` to `^4.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.6.0",
       "tag": "@subsquid/evm-processor_v1.6.0",
       "date": "Mon, 19 Jun 2023 22:07:46 GMT",
