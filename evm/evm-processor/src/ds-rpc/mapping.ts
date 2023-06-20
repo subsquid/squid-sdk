@@ -368,6 +368,7 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
             case 'CALL':
             case 'STATICCALL':
             case 'DELEGATECALL':
+            case 'INVALID':
                 yield {
                     ...base,
                     type: 'call',
@@ -396,8 +397,6 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                         balance: BigInt(assertNotNull(rec.frame.value))
                     }
                 }
-                break
-            case 'INVALID':
                 break
             default:
                 throw unexpectedCase(rec.frame.type)
