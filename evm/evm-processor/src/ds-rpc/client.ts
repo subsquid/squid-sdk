@@ -1,5 +1,6 @@
 import {Logger} from '@subsquid/logger'
-import {RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RetryError, RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
 import {assertNotNull, concurrentMap, def, groupBy, last, wait} from '@subsquid/util-internal'
 import {
     Batch,
@@ -178,7 +179,8 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             })
         }
         let blocks: rpc.Block[] = await this.rpc.batchCall(call, {
-            priority: s.range.from
+            priority: s.range.from,
+            validateResult: nonNull
         })
         for (let i = 1; i < blocks.length; i++) {
             assert.strictEqual(
@@ -551,4 +553,19 @@ function catching<T>(promise: Promise<T>): Promise<T> {
     // prevent unhandled promise rejection crashes
     promise.catch(() => {})
     return promise
+}
+
+
+class UnexpectedResponse extends RetryError {
+    get name(): string {
+        return 'UnexpectedResponse'
+    }
+}
+
+
+function nonNull(result: any, req: RpcRequest): any {
+    if (result == null) throw new UnexpectedResponse(
+        `Result of call ${JSON.stringify(req)} was null. Perhaps, you should find a better endpoint.`
+    )
+    return result
 }
