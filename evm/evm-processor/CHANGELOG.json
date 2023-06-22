@@ -2,6 +2,31 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.6.0",
+      "tag": "@subsquid/evm-processor_v1.6.0",
+      "date": "Mon, 19 Jun 2023 22:07:46 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "expose `ctx._chain.client.batchCall()`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix unhandled promise rejection crashes"
+          },
+          {
+            "comment": "skip `INVALID` debug frames"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.3.0` to `^2.3.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.1",
       "tag": "@subsquid/evm-processor_v1.5.1",
       "date": "Wed, 14 Jun 2023 23:56:25 GMT",

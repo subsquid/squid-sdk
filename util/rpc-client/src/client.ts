@@ -3,7 +3,7 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
-import {RpcConnectionError, RpcError} from './errors'
+import {RetryError, RpcConnectionError, RpcError} from './errors'
 import {Connection, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {HttpConnection} from './transport/http'
@@ -22,11 +22,21 @@ export interface RpcClientOptions {
 }
 
 
-export interface CallOptions {
+export interface CallOptions<R=any> {
     priority?: number
     retryAttempts?: number
     timeout?: number
+    /**
+     * Result validator/transformer
+     *
+     * This option is mainly a way to utilize built-in retry machinery by throwing {@link RetryError}.
+     * Otherwise, `client.call(...).then(validateResult)` is a better option.
+     */
+    validateResult?: ResultValidator
 }
+
+
+type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
 
 
 interface Req {
@@ -36,6 +46,7 @@ interface Req {
     retryAttempts: number
     resolve(result: any): void
     reject(error: Error): void
+    validateResult?: ResultValidator | undefined
 }
 
 
@@ -103,7 +114,7 @@ export class RpcClient {
         }
     }
 
-    call<T=any>(method: string, params?: any[], options?: CallOptions): Promise<T> {
+    call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return new Promise((resolve, reject) => {
             let call: RpcRequest = {
                 id: this.counter += 1,
@@ -126,12 +137,13 @@ export class RpcClient {
                 timeout: options?.timeout ?? this.requestTimeout,
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
-                reject
+                reject,
+                validateResult: options?.validateResult
             })
         })
     }
 
-    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<T[]> {
+    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
         return splitParallelWork(
             this.maxBatchCallSize,
             batch,
@@ -169,7 +181,8 @@ export class RpcClient {
                 timeout: options?.timeout ?? this.requestTimeout,
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
-                reject
+                reject,
+                validateResult: options?.validateResult
             })
         })
     }
@@ -229,7 +242,7 @@ export class RpcClient {
             promise = this.con.batchCall(call, req.timeout).then(res => {
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
-                    result[i] = this.receiveResult(call[i], res[i])
+                    result[i] = this.receiveResult(call[i], res[i], req.validateResult)
                 }
                 return result
             })
@@ -237,7 +250,7 @@ export class RpcClient {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
             promise = this.con.call(call, req.timeout).then(res => {
-                return this.receiveResult(call, res)
+                return this.receiveResult(call, res, req.validateResult)
             })
         }
         promise.then(result => {
@@ -300,7 +313,7 @@ export class RpcClient {
         return this.retrySchedule[idx]
     }
 
-    private receiveResult(call: RpcRequest, res: RpcResponse): any {
+    private receiveResult(call: RpcRequest, res: RpcResponse, validateResult: ResultValidator | undefined): any {
         if (this.log?.isDebug()) {
             this.log.debug({
                 rpcId: call.id,
@@ -311,12 +324,15 @@ export class RpcClient {
         }
         if (res.error) {
             throw new RpcError(res.error)
+        } else if (validateResult) {
+            return validateResult(res.result, call)
         } else {
             return res.result
         }
     }
 
     isConnectionError(err: Error): boolean {
+        if (err instanceof RetryError) return true
         if (isRateLimitError(err)) return true
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true

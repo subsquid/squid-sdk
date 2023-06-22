@@ -41,3 +41,10 @@ export class RpcConnectionError extends Error {
         return 'RpcConnectionError'
     }
 }
+
+
+/**
+ * This error can be thrown from `CallOptions.validateResult()` to invoke built-in
+ * retry machinery
+ */
+export class RetryError extends Error {}

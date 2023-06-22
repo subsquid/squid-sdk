@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Mon, 19 Jun 2023 22:07:46 GMT and should not be manually modified.
+
+## 2.3.1
+Mon, 19 Jun 2023 22:07:46 GMT
+
+### Patches
+
+- fix unhandled promise rejection crashes
 
 ## 2.3.0
 Sun, 11 Jun 2023 15:49:45 GMT

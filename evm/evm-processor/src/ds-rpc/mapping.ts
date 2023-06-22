@@ -368,6 +368,7 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
             case 'CALL':
             case 'STATICCALL':
             case 'DELEGATECALL':
+            case 'INVALID':
                 yield {
                     ...base,
                     type: 'call',
