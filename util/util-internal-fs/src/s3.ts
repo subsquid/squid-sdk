@@ -1,4 +1,10 @@
-import {ListObjectsV2Command, PutObjectCommand, S3Client} from '@aws-sdk/client-s3'
+import {
+    DeleteObjectsCommand,
+    ListObjectsV2Command,
+    ObjectIdentifier,
+    PutObjectCommand,
+    S3Client
+} from '@aws-sdk/client-s3'
 import assert from 'assert'
 import {Readable} from 'stream'
 import Upath from 'upath'
@@ -64,7 +70,7 @@ export class S3Fs implements Fs {
                     Bucket,
                     Prefix,
                     Delimiter: '/',
-                    ContinuationToken: ContinuationToken ? ContinuationToken : undefined,
+                    ContinuationToken
                 })
             )
 
@@ -110,12 +116,48 @@ export class S3Fs implements Fs {
             Body: content
         }))
     }
+
+    async delete(path: string): Promise<void> {
+        let [Bucket, Key] = splitPath(this.resolve([path]))
+        let ContinuationToken: string | undefined
+        while (true) {
+            let list = await this.client.send(
+                new ListObjectsV2Command({
+                    Bucket,
+                    Prefix: Key,
+                    ContinuationToken
+                })
+            )
+
+            if (list.Contents) {
+                let Objects: ObjectIdentifier[] = []
+                for (let Content of list.Contents) {
+                    if (!Content.Key) continue
+                    if (Content.Key === Key || Content.Key.startsWith(Key + '/')) {
+                        Objects.push({Key: Content.Key})
+                    }
+                }
+                Objects.length && await this.client.send(new DeleteObjectsCommand({
+                    Bucket,
+                    Delete: {
+                        Objects
+                    }
+                }))
+            }
+
+            if (list.IsTruncated) {
+                ContinuationToken = list.NextContinuationToken
+            } else {
+                break
+            }
+        }
+    }
 }
 
 
 function splitPath(path: string): [bucket: string, prefix: string] {
     let parts = path.split('/')
     let bucket = parts[0]
-    assert(/^[a-z0-9\-]+$/i.test(bucket), 'Valid S3 path should begin with a bucket')
+    assert(/^[a-z0-9\-_]+$/i.test(bucket), 'Valid S3 path should begin with a bucket')
     return [bucket, parts.slice(1).join('/')]
 }

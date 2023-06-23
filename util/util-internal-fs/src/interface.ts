@@ -10,4 +10,5 @@ export interface Fs {
      * Note, that this method is not supposed to take ownership over `Readable`
      */
     write(path: string, content: Readable | Uint8Array | string): Promise<void>
+    delete(path: string): Promise<void>
 }

@@ -588,12 +588,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/archive-layout",
-      "projectFolder": "util/archive-layout",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/big-decimal",
       "projectFolder": "util/big-decimal",
       "shouldPublish": true,
@@ -632,6 +626,12 @@
     {
       "packageName": "@subsquid/util-internal",
       "projectFolder": "util/util-internal",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "projectFolder": "util/util-internal-archive-layout",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

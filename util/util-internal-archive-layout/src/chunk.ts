@@ -1,4 +1,5 @@
 import {DataChunkError} from './errors'
+import {formatBlockNumber} from './util'
 
 
 export interface DataChunk {
@@ -22,9 +23,9 @@ export interface DataChunk {
 
 
 export function getChunkPath(chunk: DataChunk): string {
-    let top = String(chunk.top).padStart(10, '0')
-    let from = String(chunk.from).padStart(10, '0')
-    let to = String(chunk.to).padStart(10, '0')
+    let top = formatBlockNumber(chunk.top)
+    let from = formatBlockNumber(chunk.from)
+    let to = formatBlockNumber(chunk.to)
     return `${top}/${from}-${to}-${chunk.hash || '000000'}`
 }
 

@@ -39,4 +39,12 @@ export class LocalFs implements Fs {
         let target = this.abs(path)
         await fs.writeFile(target, content)
     }
+
+    delete(path: string): Promise<void> {
+        let item = this.abs(path)
+        return fs.rm(item, {
+            recursive: true,
+            force: true
+        })
+    }
 }

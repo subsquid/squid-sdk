@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/archive-layout",
+  "name": "@subsquid/util-internal-archive-layout",
   "version": "0.0.0",
   "description": "Utilities for Subsquid Archive filesystem layout",
   "license": "GPL-3.0-or-later",
@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/util-internal": "^2.3.1",
     "@subsquid/util-internal-hex": "^1.2.0",
     "@subsquid/util-internal-range": "^0.0.0"
   },
