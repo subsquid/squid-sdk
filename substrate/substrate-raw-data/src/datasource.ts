@@ -27,6 +27,12 @@ export class RpcDataSource {
         this.pollInterval = options.pollInterval ?? 1000
     }
 
+    async getFinalizedHeight(): Promise<number> {
+        let head = await this.rpc.getFinalizedHead()
+        let block = await this.rpc.getBlock0(head)
+        return block.height
+    }
+
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<BlockBatch> {
         assertRangeList(requests.map(req => req.range))
 

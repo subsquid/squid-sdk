@@ -20,7 +20,13 @@ export class LocalFs implements Fs {
     }
 
     ls(...path: string[]): Promise<string[]> {
-        return fs.readdir(this.abs(...path))
+        return fs.readdir(this.abs(...path)).catch(err => {
+            if (err.code == 'ENOENT') {
+                return []
+            } else {
+                throw err
+            }
+        })
     }
 
     async transactDir(path: string, cb: (fs: LocalFs) => Promise<void>): Promise<void> {

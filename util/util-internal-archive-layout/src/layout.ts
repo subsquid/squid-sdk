@@ -1,10 +1,11 @@
-import {last} from '@subsquid/util-internal'
+import {assertNotNull, last} from '@subsquid/util-internal'
 import {Fs} from '@subsquid/util-internal-fs'
-import {assertRange, Range} from '@subsquid/util-internal-range'
+import {assertRange, printRange, Range} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import * as zlib from 'zlib'
 import {DataChunk, getChunkPath, getDataChunkErrorMessage, tryParseChunkDir, tryParseTop} from './chunk'
 import {ArchiveLayoutError, TopDirError} from './errors'
-import {formatBlockNumber} from './util'
+import {formatBlockNumber, getShortHash} from './util'
 
 
 export class ArchiveLayout {
@@ -88,7 +89,11 @@ export class ArchiveLayout {
     async append(
         range: Range,
         chunkCheck: (files: string[]) => boolean,
-        writer: ArchiveWriter
+        writer: (
+            getNextChunk: (firstBlock: HashAndHeight, lastBlock: HashAndHeight) => Fs,
+            nextBlock: number,
+            prevHash?: string
+        ) => Promise<void>
     ): Promise<void> {
         let {top, chunks} = await this.getAppendState(range)
         let nextBlock: number
@@ -106,20 +111,26 @@ export class ArchiveLayout {
         } else {
             nextBlock = top
         }
-        let gen = writer(nextBlock, prevHash)
-        let it = await gen.next()
-        while (!it.done) {
-            assert(nextBlock == it.value.from)
-            assert(it.value.from <= it.value.to)
+
+        const getNextChunk = (first: HashAndHeight, last: HashAndHeight): Fs => {
+            assert(nextBlock == first.height)
+            assert(first.height <= last.height)
             if (chunks.length >= 500) {
                 top = nextBlock
                 chunks = []
             }
-            let newChunk = {...it.value, top}
+            let newChunk = {
+                top,
+                from: first.height,
+                to: last.height,
+                hash: getShortHash(last.hash)
+            }
             chunks.push(newChunk)
             nextBlock = newChunk.to + 1
-            it = await gen.next(this.fs.cd(getChunkPath(newChunk)))
+            return this.fs.cd(getChunkPath(newChunk))
         }
+
+        return writer(getNextChunk, nextBlock, prevHash)
     }
 
     private async getAppendState(range: Range): Promise<{top: number, chunks: DataChunk[]}> {
@@ -152,15 +163,61 @@ export class ArchiveLayout {
         }
         return {top: from, chunks: []}
     }
+
+    appendRawBlocks(
+        args: {
+            blocks: (nextBlock: number, prevHash?: string) => AsyncIterable<HashAndHeight[]>
+            range?: Range
+            chunkSize?: number
+        }
+    ): Promise<void> {
+        return this.append(
+            args.range || {from: 0},
+            () => true,
+            async (getNextChunk, nextBlock, prevHash) => {
+                let chunkSize = args.chunkSize || 40
+                let firstBlock: HashAndHeight | undefined
+                let lastBlock: HashAndHeight | undefined
+                let out = zlib.createGzip()
+
+                async function save(): Promise<void> {
+                    out.end()
+                    await getNextChunk(
+                        assertNotNull(firstBlock),
+                        assertNotNull(lastBlock)
+                    ).transactDir('.', fs => {
+                        return fs.write('blocks.jsonl.gz', out)
+                    })
+                    firstBlock = undefined
+                    lastBlock = undefined
+                    out = zlib.createGzip()
+                }
+
+                for await (let bb of args.blocks(nextBlock, prevHash)) {
+                    if (bb.length == 0) continue
+                    if (firstBlock == null) {
+                        firstBlock = peekHashAndHeight(bb[0])
+                    }
+                    lastBlock = peekHashAndHeight(last(bb))
+                    for (let b of bb) {
+                        out.write(JSON.stringify(b) + '\n')
+                    }
+                    if (out.readableLength > chunkSize) {
+                        await save()
+                    }
+                }
+
+                if (firstBlock) {
+                    await save()
+                }
+            }
+        )
+    }
 }
 
-
-export interface ArchiveWriter {
-    (nextBlock: number, prevHash?: string): AsyncGenerator<
-        {from: number, to: number, hash: string},
-        void,
-        Fs
-    >
+interface HashAndHeight {
+    hash: string
+    height: number
 }
 
 
@@ -176,10 +233,7 @@ function getRange(range?: Range): {from: number, to: number} {
 }
 
 
-function printRange(range?: Range): string {
-    if (range?.to != null) {
-        return `[${range.from}, ${range.to}]`
-    } else {
-        return `[${range?.from ?? 0})`
-    }
+function peekHashAndHeight(block: HashAndHeight): HashAndHeight {
+    let {hash, height} = block
+    return {hash, height}
 }

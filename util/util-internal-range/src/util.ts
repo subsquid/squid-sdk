@@ -132,3 +132,12 @@ export function applyRangeBound<R>(requests: RangeRequestList<R>, range?: Range)
     }
     return result
 }
+
+
+export function printRange(range?: Range): string {
+    if (range?.to != null) {
+        return `[${range.from}, ${range.to}]`
+    } else {
+        return `[${range?.from ?? 0})`
+    }
+}
