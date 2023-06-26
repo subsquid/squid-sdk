@@ -16,6 +16,7 @@ export interface Options {
     dest?: string
     firstBlock?: number
     lastBlock?: number
+    chunkSize: number
 }
 
 
@@ -164,7 +165,8 @@ export class Dumper {
             let archive = new ArchiveLayout(this.fs())
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.stripAndSaveMetadata(this.process(nextBlock, prevHash)),
-                range: this.range()
+                range: this.range(),
+                chunkSize: this.options.chunkSize * 1024 * 1024
             })
         }
     }

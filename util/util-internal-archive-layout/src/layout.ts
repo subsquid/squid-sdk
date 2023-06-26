@@ -178,19 +178,19 @@ export class ArchiveLayout {
                 let chunkSize = args.chunkSize || 40 * 1024 * 1024
                 let firstBlock: HashAndHeight | undefined
                 let lastBlock: HashAndHeight | undefined
-                let out = zlib.createGzip()
+                let out = new GzipBuffer()
 
                 async function save(): Promise<void> {
-                    out.end()
                     await getNextChunk(
                         assertNotNull(firstBlock),
                         assertNotNull(lastBlock)
-                    ).transactDir('.', fs => {
-                        return fs.write('blocks.jsonl.gz', out)
+                    ).transactDir('.', async fs => {
+                        let content = await out.end()
+                        return fs.write('blocks.jsonl.gz', content)
                     })
                     firstBlock = undefined
                     lastBlock = undefined
-                    out = zlib.createGzip()
+                    out = new GzipBuffer()
                 }
 
                 for await (let bb of args.blocks(nextBlock, prevHash)) {
@@ -202,7 +202,8 @@ export class ArchiveLayout {
                     for (let b of bb) {
                         out.write(JSON.stringify(b) + '\n')
                     }
-                    if (out.readableLength > chunkSize) {
+                    await out.flush()
+                    if (out.getSize() > chunkSize) {
                         await save()
                     }
                 }
@@ -214,6 +215,49 @@ export class ArchiveLayout {
         )
     }
 }
+
+
+class GzipBuffer {
+    private stream = zlib.createGzip()
+    private buf: Buffer[] = []
+    private size = 0
+
+    constructor() {
+        this.stream.on('data', chunk => {
+            this.buf.push(chunk)
+            this.size += chunk.length
+        })
+    }
+
+    write(content: string): void {
+        this.stream.write(content)
+    }
+
+    flush(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.stream.on('error', reject)
+            this.stream.flush(() => {
+                this.stream.off('error', reject)
+                resolve()
+            })
+        })
+    }
+
+    getSize(): number {
+        return this.size
+    }
+
+    end(): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            this.stream.on('error', reject)
+            this.stream.on('end', () => {
+                resolve(Buffer.concat(this.buf))
+            })
+            this.stream.end()
+        })
+    }
+}
+
 
 interface HashAndHeight {
     hash: string

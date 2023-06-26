@@ -19,6 +19,7 @@ runProgram(() => {
     program.option('--dest <archive>', 'Either local dir or s3:// url where to store the dumped data', FileOrUrl(['s3:']))
     program.option('--first-block <number>', 'Height of the block from which to start data ingestion', nat)
     program.option('--last-block <number>', 'Height of the last block to dump', nat)
+    program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, 40)
 
     let args = program.parse().opts() as {
         endpoint: string
@@ -27,6 +28,7 @@ runProgram(() => {
         dest?: string
         firstBlock?: number
         lastBlock?: number
+        chunkSize: number
     }
 
     return new Dumper(args).dump()
