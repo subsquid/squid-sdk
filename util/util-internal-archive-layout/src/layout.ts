@@ -9,7 +9,7 @@ import {formatBlockNumber, getShortHash} from './util'
 
 
 export class ArchiveLayout {
-    constructor(private fs: Fs) {}
+    constructor(public readonly fs: Fs) {}
 
     async getTops(): Promise<number[]> {
         let items = await this.fs.ls()
@@ -175,7 +175,7 @@ export class ArchiveLayout {
             args.range || {from: 0},
             () => true,
             async (getNextChunk, nextBlock, prevHash) => {
-                let chunkSize = args.chunkSize || 40
+                let chunkSize = args.chunkSize || 40 * 1024 * 1024
                 let firstBlock: HashAndHeight | undefined
                 let lastBlock: HashAndHeight | undefined
                 let out = zlib.createGzip()

@@ -7,7 +7,7 @@ import {Fs} from './interface'
 export class LocalFs implements Fs {
     private root: string
 
-    constructor(root: string) {
+    constructor(root: string, private tx = true) {
         this.root = Path.resolve(root)
     }
 
@@ -31,19 +31,33 @@ export class LocalFs implements Fs {
 
     async transactDir(path: string, cb: (fs: LocalFs) => Promise<void>): Promise<void> {
         let targetDir = this.abs(path)
-        let tmpPrefix = Path.join(Path.dirname(targetDir), `temp--${Path.basename(targetDir)}`)
+        let tmpPrefix = Path.join(Path.dirname(targetDir), `temp--${Path.basename(targetDir)}--`)
+        await ensureDir(tmpPrefix)
         let tmpDir = await fs.mkdtemp(tmpPrefix)
         try {
-            await cb(this.cd(tmpDir))
+            await cb(new LocalFs(tmpDir, false))
             await fs.rename(tmpDir, targetDir)
-        } finally {
-            await fs.rm(tmpDir, {recursive: true, force: true})
+        } catch(err: any) {
+            await fs.rm(tmpDir, {recursive: true, force: true}).catch(() => {})
+            throw err
         }
     }
 
     async write(path: string, content: Readable | Uint8Array | string): Promise<void> {
         let target = this.abs(path)
-        await fs.writeFile(target, content)
+        await ensureDir(target)
+        if (this.tx) {
+            let tmp = Path.join(Path.dirname(target), `temp--${Date.now()}--${Path.basename(target)}`)
+            try {
+                await fs.writeFile(tmp, content)
+                await fs.rename(tmp, target)
+            } catch(err: any) {
+                await fs.rm(tmp, {recursive: true, force: true}).catch(() => {})
+                throw err
+            }
+        } else {
+            await fs.writeFile(target, content)
+        }
     }
 
     delete(path: string): Promise<void> {
@@ -53,4 +67,9 @@ export class LocalFs implements Fs {
             force: true
         })
     }
+}
+
+
+function ensureDir(path: string) {
+    return fs.mkdir(Path.dirname(path), {recursive: true})
 }

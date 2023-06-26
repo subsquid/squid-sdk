@@ -50,11 +50,15 @@ export interface PartialGetBlockResult {
 }
 
 
-export interface RuntimeVersion {
+export interface RuntimeVersionId {
     specName: string
     specVersion: number
     implName: string
     implVersion: number
+}
+
+
+export interface RuntimeVersion extends RuntimeVersionId {
     transactionVersion: number
     stateVersion: number
     apis: [apiId: string, apiVersion: number][]

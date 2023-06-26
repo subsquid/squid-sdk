@@ -15,16 +15,19 @@ interface Stride extends SplitRequest<DataRequest> {
 export interface RpcDataSourceOptions {
     rpc: RpcClient
     pollInterval?: number
+    strides?: number
 }
 
 
 export class RpcDataSource {
     private rpc: Rpc
     private pollInterval: number
+    private strides: number
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.pollInterval = options.pollInterval ?? 1000
+        this.strides = options.strides || 5
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -37,7 +40,7 @@ export class RpcDataSource {
         assertRangeList(requests.map(req => req.range))
 
         let batches1 = concurrentMap(
-            5,
+            this.strides,
             this.generateStrides(requests, stopOnHead),
             async s => {
                 let blocks = await new Fetcher(this.rpc.withPriority(s.range.from)).getStride1(s)

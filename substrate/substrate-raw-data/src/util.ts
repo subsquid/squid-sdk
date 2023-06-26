@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {Qty, RuntimeVersion} from './interfaces'
+import {Qty, RuntimeVersionId} from './interfaces'
 
 
 export function qty2Int(qty: Qty): number {
@@ -14,7 +14,7 @@ export function toQty(n: number): Qty {
 }
 
 
-export function runtimeVersionEquals(a: RuntimeVersion, b: RuntimeVersion): boolean {
+export function runtimeVersionEquals(a: RuntimeVersionId, b: RuntimeVersionId): boolean {
     return a.specName == b.specName
         && a.specVersion == b.specVersion
         && a.implName == b.implName

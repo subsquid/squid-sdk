@@ -1,11 +1,12 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {BlockBatch, BlockData, DataRequest, RpcDataSource} from '@subsquid/substrate-raw-data'
+import {BlockBatch, BlockData, Bytes, DataRequest, RpcDataSource} from '@subsquid/substrate-raw-data'
 import {assertNotNull, def, last, Throttler} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
-import {createFs} from '@subsquid/util-internal-fs'
+import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
+import {MetadataWriter} from './metadata-archive'
 
 
 export interface Options {
@@ -42,34 +43,38 @@ export class Dumper {
     }
 
     @def
-    archive(): ArchiveLayout {
+    fs(): Fs {
         let dest = assertNotNull(this.options.dest)
-        let fs = createFs(dest)
-        return new ArchiveLayout(fs)
+        return createFs(dest)
     }
 
     @def
     rpc(): RpcClient {
         return new RpcClient({
             url: this.options.endpoint,
-            capacity: this.options.endpointCapacity,
+            capacity: this.getEndpointCapacity(),
             rateLimit: this.options.endpointRateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })
+    }
+
+    getEndpointCapacity(): number {
+        return this.options.endpointCapacity || 10
     }
 
     @def
     src(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.rpc(),
-            pollInterval: 10_000
+            pollInterval: 10_000,
+            strides: Math.max(2, this.getEndpointCapacity() - 2)
         })
     }
 
     ingest(range: Range): AsyncIterable<BlockBatch> {
         let request: DataRequest = {
             runtimeVersion: true,
-            // metadata: true,
+            metadata: true,
             extrinsics: true,
             events: true
         }
@@ -87,7 +92,7 @@ export class Dumper {
         }
         assertRange(range)
 
-        let height = new Throttler(() => this.src().getFinalizedHeight(), 600_000)
+        let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
         let chainHeight = await height.get()
 
         let progress = new Progress({
@@ -126,16 +131,39 @@ export class Dumper {
         }
     }
 
+    private async *stripMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+        let prevMetadata: Bytes | undefined
+        for await (let batch of batches) {
+            for (let block of batch) {
+                if (block.metadata === prevMetadata) {
+                    block.metadata = undefined
+                } else {
+                    prevMetadata = block.metadata
+                }
+            }
+            yield batch
+        }
+    }
+
+    private async *stripAndSaveMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+        let writer = new MetadataWriter(this.fs().cd('metadata'))
+        for await (let batch of batches) {
+            await writer.stripAndSaveMetadata(batch)
+            yield batch
+        }
+    }
+
     async dump(): Promise<void> {
         if (this.options.dest == null) {
-            for await (let bb of this.process()) {
+            for await (let bb of this.stripMetadata(this.process())) {
                 for (let block of bb) {
                     process.stdout.write(JSON.stringify(block) + '\n')
                 }
             }
         } else {
-            await this.archive().appendRawBlocks({
-                blocks: this.process.bind(this),
+            let archive = new ArchiveLayout(this.fs())
+            await archive.appendRawBlocks({
+                blocks: (nextBlock, prevHash) => this.stripAndSaveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range()
             })
         }
