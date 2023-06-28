@@ -20,7 +20,7 @@ export interface RpcDataSourceOptions {
 
 
 export class RpcDataSource {
-    private rpc: Rpc
+    public readonly rpc: Rpc
     private pollInterval: number
     private strides: number
 

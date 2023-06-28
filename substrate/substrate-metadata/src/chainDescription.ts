@@ -1,6 +1,7 @@
 import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
 import {assertNotNull, def, last, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
+import {decodeMetadata} from './codec'
 import type {
     EventMetadataV9,
     FunctionMetadataV9,
@@ -12,11 +13,13 @@ import type {
     ModuleMetadataV13,
     ModuleMetadataV9
 } from './interfaces'
+import {getOldTypesBundle} from './io'
 import {OldTypeRegistry} from './old/typeRegistry'
-import {OldTypes} from './old/types'
+import {OldSpecsBundle, OldTypes, OldTypesBundle} from './old/types'
+import {getTypesFromBundle} from './old/typesBundle'
 import {Storage, StorageHasher, StorageItem} from './storage'
-import {Field, Ti, Type, TypeKind, Variant} from './types'
-import {isUnitType, normalizeMetadataTypes} from './util'
+import {Bytes, Field, Ti, Type, TypeKind, Variant} from './types'
+import {isPreV14, isUnitType, normalizeMetadataTypes} from './util'
 
 
 export interface ChainDescription {
@@ -46,6 +49,36 @@ export interface Constant {
     docs: string[]
 }
 
+
+export function getChainDescription(metadata: Metadata | Bytes | Uint8Array): ChainDescription
+export function getChainDescription(
+    metadata: Metadata | string | Uint8Array,
+    specName: string,
+    specVersion: number,
+    typesBundle?: OldTypesBundle | OldSpecsBundle
+): ChainDescription
+export function getChainDescription(
+    metadata: Metadata | Bytes | Uint8Array,
+    specName?: string,
+    specVersion?: number,
+    typesBundle?: OldTypesBundle | OldSpecsBundle
+): ChainDescription {
+    if (typeof metadata == 'string' || metadata instanceof Uint8Array) {
+        metadata = decodeMetadata(metadata)
+    }
+
+    let oldTypes: OldTypes | undefined
+    if (isPreV14(metadata)) {
+        assert(specName != null && specVersion != null, 'spec name and version are required for pre-V14 metadata')
+        typesBundle = assertNotNull(
+            typesBundle || getOldTypesBundle(specName),
+            `types bundle is required for ${specName} chain`
+        )
+        oldTypes = getTypesFromBundle(typesBundle, specVersion, specName)
+    }
+
+    return getChainDescriptionFromMetadata(metadata, oldTypes)
+}
 
 
 export function getChainDescriptionFromMetadata(metadata: Metadata, oldTypes?: OldTypes): ChainDescription {

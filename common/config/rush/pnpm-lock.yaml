@@ -37,6 +37,7 @@ specifiers:
   '@rush-temp/shibuya-psp22': file:./projects/shibuya-psp22.tgz
   '@rush-temp/ss58': file:./projects/ss58.tgz
   '@rush-temp/ss58-codec': file:./projects/ss58-codec.tgz
+  '@rush-temp/substrate-data': file:./projects/substrate-data.tgz
   '@rush-temp/substrate-dump': file:./projects/substrate-dump.tgz
   '@rush-temp/substrate-explorer': file:./projects/substrate-explorer.tgz
   '@rush-temp/substrate-metadata': file:./projects/substrate-metadata.tgz
@@ -158,6 +159,7 @@ dependencies:
   '@rush-temp/shibuya-psp22': file:projects/shibuya-psp22.tgz_supports-color@8.1.1
   '@rush-temp/ss58': file:projects/ss58.tgz
   '@rush-temp/ss58-codec': file:projects/ss58-codec.tgz
+  '@rush-temp/substrate-data': file:projects/substrate-data.tgz
   '@rush-temp/substrate-dump': file:projects/substrate-dump.tgz
   '@rush-temp/substrate-explorer': file:projects/substrate-explorer.tgz
   '@rush-temp/substrate-metadata': file:projects/substrate-metadata.tgz
@@ -5227,8 +5229,18 @@ packages:
       typescript: 4.9.5
     dev: false
 
+  file:projects/substrate-data.tgz:
+    resolution: {integrity: sha512-FXFP3RnAJcA6Fwi1fRkaqRvxVo6T+cQ9HTl1r2d7S5dLLf9Xe3WhbJdJSFQw8Uheuwo268ckJdthLTUp0iPpbw==, tarball: file:projects/substrate-data.tgz}
+    name: '@rush-temp/substrate-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.16.17
+      blake2b: 2.1.4
+      typescript: 4.9.5
+    dev: false
+
   file:projects/substrate-dump.tgz:
-    resolution: {integrity: sha512-efCARCD2mbb4yGqtdmBN9oBDleL1PTr+q96NfY9XYfPg3RTbUvz02hEa2wsKwRdpWN6LrghMlm5i5LyBXjNUpA==, tarball: file:projects/substrate-dump.tgz}
+    resolution: {integrity: sha512-seN/MYjipCRgrn+jqHJUgaRZcPGu+q+n9vJota/2CCXp0FICgTJBq8ta/fDoRCKL1b8itsYgwFYu9Wld0kMh9g==, tarball: file:projects/substrate-dump.tgz}
     name: '@rush-temp/substrate-dump'
     version: 0.0.0
     dependencies:
@@ -5417,7 +5429,7 @@ packages:
     dev: false
 
   file:projects/util-internal-archive-layout.tgz:
-    resolution: {integrity: sha512-GyHB7GqxxXhOXQPKOZdWafYRfzZy0O4P6OelsAsmrz7YNUehXMx0i7+AoFIESpN/F4jIuo0ereNaAKVVBrH6Ng==, tarball: file:projects/util-internal-archive-layout.tgz}
+    resolution: {integrity: sha512-m3hrE8L6r3IujZAe9t1W/WKmwQAgwvnl26AtD6gpmxBmbhvbCAqQvPtO9IZuQUdjksYI/d4IV/IJ/3sjade4VQ==, tarball: file:projects/util-internal-archive-layout.tgz}
     name: '@rush-temp/util-internal-archive-layout'
     version: 0.0.0
     dependencies:

@@ -6,7 +6,7 @@ import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layou
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
-import {MetadataWriter} from './metadata-archive'
+import {MetadataWriter} from './metadata'
 
 
 export interface Options {

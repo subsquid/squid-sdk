@@ -516,6 +516,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-data",
+      "projectFolder": "substrate/substrate-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-dump",
       "projectFolder": "substrate/substrate-dump",
       "shouldPublish": true,
