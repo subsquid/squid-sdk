@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "escape status schema everywhere",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
