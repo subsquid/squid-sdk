@@ -1,7 +1,6 @@
 {
   "name": "chain-status-service",
   "version": "1.2.0",
-  "private": true,
   "description": "Chain status service",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
