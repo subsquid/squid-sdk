@@ -5,9 +5,13 @@ import {prettyStderrSink} from "./sinks/pretty"
 export {LogLevel} from "./level"
 export * from "./logger"
 
+const prettyEnabled = process.env.FORCE_PRETTY_LOGGER ?
+    process.env.FORCE_PRETTY_LOGGER !== '0' :
+    process.stderr.isTTY
+
 
 const ROOT = new Logger(
-    process.stderr.isTTY ? prettyStderrSink : jsonLinesStderrSink,
+    prettyEnabled ? prettyStderrSink : jsonLinesStderrSink,
     ''
 )
 
