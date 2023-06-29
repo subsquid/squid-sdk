@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 20 Jun 2023 11:29:34 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Jun 2023 10:25:09 GMT and should not be manually modified.
+
+## 1.7.1
+Thu, 29 Jun 2023 10:25:09 GMT
+
+### Patches
+
+- handle `query returned more than 10000 results` error for logs requests
 
 ## 1.7.0
 Tue, 20 Jun 2023 11:29:34 GMT
