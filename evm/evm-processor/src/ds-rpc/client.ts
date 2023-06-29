@@ -20,7 +20,7 @@ import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
 import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {Bytes32, Qty} from '../interfaces/evm'
-import {getBlockHeight, getBlockName, getTxHash, mapBlock, qty2Int, toRpcDataRequest} from './mapping'
+import {getBlockHeight, getBlockName, getTxHash, mapBlock, qty2Int, toQty, toRpcDataRequest} from './mapping'
 import * as rpc from './rpc'
 
 
@@ -70,7 +70,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     async getBlockHash(height: number): Promise<string> {
         let block: rpc.Block = await this.rpc.call(
             'eth_getBlockByNumber',
-            ['0x'+height.toString(16), false]
+            [toQty(height), false]
         )
         return block.hash
     }
@@ -138,7 +138,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         if (ref.hash) {
             block0 = await this.rpc.call('eth_getBlockByHash', [ref.hash, withTransactions])
         } else {
-            block0 = await this.rpc.call('eth_getBlockByNumber', ['0x'+ref.height.toString(16), withTransactions])
+            block0 = await this.rpc.call('eth_getBlockByNumber', [toQty(ref.height), withTransactions])
         }
         if (block0 == null) {
             throw new ConsistencyError(ref)
@@ -176,7 +176,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         for (let i = s.range.from; i <= s.range.to; i++) {
             call.push({
                 method: 'eth_getBlockByNumber',
-                params: ['0x'+i.toString(16), s.request.transactions]
+                params: [toQty(i), s.request.transactions]
             })
         }
         let blocks: rpc.Block[] = await this.rpc.batchCall(call, {
@@ -235,12 +235,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     }
 
     private async fetchLogs(blocks: rpc.Block[]): Promise<void> {
-        let logs: rpc.Log[] = await this.rpc.call('eth_getLogs', [{
-            fromBlock: blocks[0].number,
-            toBlock: last(blocks).number
-        }], {
-            priority: getBlockHeight(blocks[0])
-        })
+        let logs: rpc.Log[] = await this.requestLogs(
+            getBlockHeight(blocks[0]),
+            getBlockHeight(last(blocks))
+        )
 
         let logsByBlock = groupBy(logs, log => log.blockHash)
 
@@ -252,6 +250,26 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                 block._logs = logs
             }
         }
+    }
+
+    private async requestLogs(from: number, to: number): Promise<rpc.Log[]> {
+        return this.rpc.call('eth_getLogs', [{
+            fromBlock: toQty(from),
+            toBlock: toQty(to)
+        }], {
+            priority: from
+        }).catch(async err => {
+            let range = toTryAnotherRangeError(err)
+            if (range && range.from == from && from <= range.to && range.to < to) {
+                let result = await Promise.all([
+                    this.requestLogs(range.from, range.to),
+                    this.requestLogs(range.to + 1, to)
+                ])
+                return result[0].concat(result[1])
+            } else {
+                throw err
+            }
+        })
     }
 
     private async fetchReceiptsByBlock(
@@ -569,4 +587,15 @@ function nonNull(result: any, req: RpcRequest): any {
         `Result of call ${JSON.stringify(req)} was null. Perhaps, you should find a better endpoint.`
     )
     return result
+}
+
+
+function toTryAnotherRangeError(err: unknown): {from: number, to: number} | undefined {
+    if (!(err instanceof RpcError)) return
+    let m = /Try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
+    if (m == null) return
+    return {
+        from: qty2Int(m[1]),
+        to: qty2Int(m[2])
+    }
 }

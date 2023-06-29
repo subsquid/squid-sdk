@@ -42,7 +42,9 @@ export class ChangeTracker {
         private em: EntityManager,
         private statusSchema: string,
         private blockHeight: number
-    ) {}
+    ) {
+        this.statusSchema = this.escape(this.statusSchema)
+    }
 
     trackInsert(type: EntityClass<Entity>, entities: Entity[]): Promise<void> {
         let meta = this.getEntityMetadata(type)

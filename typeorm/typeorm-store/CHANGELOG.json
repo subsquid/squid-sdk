@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/typeorm-store_v1.2.1",
+      "date": "Thu, 29 Jun 2023 10:25:09 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "escape status schema everywhere"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/typeorm-store_v1.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

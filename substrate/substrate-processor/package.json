@@ -18,7 +18,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.2.0",
     "@subsquid/logger": "^1.2.0",
-    "@subsquid/rpc-client": "^4.2.0",
+    "@subsquid/rpc-client": "^4.3.0",
     "@subsquid/scale-codec": "^2.2.0",
     "@subsquid/substrate-metadata": "^3.2.0",
     "@subsquid/typeorm-config": "^3.2.0",

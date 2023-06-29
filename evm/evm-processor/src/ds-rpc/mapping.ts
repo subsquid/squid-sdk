@@ -501,6 +501,11 @@ export function qty2Int(qty: Qty): number {
 }
 
 
+export function toQty(i: number): Qty {
+    return '0x'+i.toString(16)
+}
+
+
 export function toRpcDataRequest(req?: DataRequest): rpc.DataRequest {
     return {
         transactionList: transactionsRequested(req),

@@ -2,6 +2,45 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.7.1",
+      "tag": "@subsquid/evm-processor_v1.7.1",
+      "date": "Thu, 29 Jun 2023 10:25:09 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle `query returned more than 10000 results` error for logs requests"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^1.2.0` to `^1.2.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.7.0",
+      "tag": "@subsquid/evm-processor_v1.7.0",
+      "date": "Tue, 20 Jun 2023 11:29:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "fix: handle `INVALID` debug frame as a regular call\""
+          }
+        ],
+        "patch": [
+          {
+            "comment": "handle `null` results from `eth_getBlockByNumber`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.2.0` to `^4.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.6.0",
       "tag": "@subsquid/evm-processor_v1.6.0",
       "date": "Mon, 19 Jun 2023 22:07:46 GMT",

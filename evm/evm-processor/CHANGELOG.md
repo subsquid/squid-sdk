@@ -1,6 +1,24 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Mon, 19 Jun 2023 22:07:46 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Jun 2023 10:25:09 GMT and should not be manually modified.
+
+## 1.7.1
+Thu, 29 Jun 2023 10:25:09 GMT
+
+### Patches
+
+- handle `query returned more than 10000 results` error for logs requests
+
+## 1.7.0
+Tue, 20 Jun 2023 11:29:34 GMT
+
+### Minor changes
+
+- fix: handle `INVALID` debug frame as a regular call"
+
+### Patches
+
+- handle `null` results from `eth_getBlockByNumber`
 
 ## 1.6.0
 Mon, 19 Jun 2023 22:07:46 GMT
