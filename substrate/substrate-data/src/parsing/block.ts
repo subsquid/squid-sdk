@@ -2,19 +2,19 @@ import {Bytes} from '@subsquid/substrate-raw-data'
 import {assertNotNull, def} from '@subsquid/util-internal'
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import blake2b from 'blake2b'
-import {PartialCall, PartialEvent, PartialExtrinsic} from '../interfaces/data'
+import {Call, Event, Extrinsic} from '../interfaces/data'
+import * as decoded from '../interfaces/data-decoded'
+import {RawBlock} from '../interfaces/data-raw'
 import {Runtime} from '../runtime'
-import * as parsing from './types'
-import {formatId, getExtrinsicTip, unwrapArguments} from './util'
+import {CallParser} from './call'
+import {addressOrigin, getExtrinsicTip, noneOrigin, unwrapArguments} from './util'
 import {getBlockValidator} from './validator'
 
 
 export class BlockParser {
-    public readonly warnings: string[] = []
-
     constructor(
-        private runtime: Runtime,
-        private block: parsing.RawBlock,
+        public readonly runtime: Runtime,
+        public readonly block: RawBlock,
         private options: {
             withExtrinsicHash?: boolean
         } = {}
@@ -47,8 +47,8 @@ export class BlockParser {
     }
 
     @def
-    digest(): parsing.DigestItem[] {
-        return this.block.block.block.header.digest.logs.map<parsing.DigestItem>(bytes => {
+    digest(): decoded.DigestItem[] {
+        return this.block.block.block.header.digest.logs.map<decoded.DigestItem>(bytes => {
             return this.runtime.scaleCodec.decodeBinary(
                 this.runtime.description.digestItem,
                 bytes
@@ -62,7 +62,7 @@ export class BlockParser {
         if (extrinsics == null || events == null) return
         for (let e of events) {
             if (e.name == 'TransactionPayment.TransactionFeePaid') {
-                let exi = extrinsics[assertNotNull(e.callAddress)[0]]
+                let exi = extrinsics[assertNotNull(e.extrinsicIndex)]
                 let actualFee = BigInt(e.args.actualFee)
                 let tip = BigInt(e.args.tip ?? e.args.actualTip)
                 exi.extrinsic.fee = actualFee - tip
@@ -72,36 +72,32 @@ export class BlockParser {
     }
 
     @def
-    events(): PartialEvent[] | undefined {
+    events(): Event[] | undefined {
         if (this.block.events == null) return
-        let records: parsing.EventRecord[] = this.runtime.decodeStorageValue('System.Events', this.block.events)
-        return records.map((rec, idx) => {
+        let records: decoded.EventRecord[] = this.runtime.decodeStorageValue('System.Events', this.block.events)
+        return records.map((rec, index) => {
             let {name, args} = unwrapArguments(rec.event, this.runtime.events)
-            let e: PartialEvent = {
-                id: this.formatId(idx),
-                indexInBlock: idx,
+            let e: Event = {
+                index,
                 name,
                 args,
                 phase: rec.phase.__kind
             }
             if (rec.phase.__kind == 'ApplyExtrinsic') {
-                e.callAddress = [rec.phase.value]
+                e.extrinsicIndex = rec.phase.value
             }
             return e
         })
     }
 
     @def
-    extrinsics(): {extrinsic: PartialExtrinsic, call: PartialCall}[] | undefined {
+    extrinsics(): {extrinsic: Extrinsic, call: Call}[] | undefined {
         return this.block.block.block.extrinsics?.map((hex, idx) => {
             let bytes = decodeHex(hex)
             let src = this.runtime.decodeExtrinsic(bytes)
-            let {name, args} = unwrapArguments(src.call, this.runtime.calls)
-            let id = this.formatId(idx)
 
-            let extrinsic: PartialExtrinsic = {
-                id,
-                indexInBlock: idx,
+            let extrinsic: Extrinsic = {
+                index: idx,
                 version: src.version
             }
 
@@ -118,22 +114,33 @@ export class BlockParser {
                 extrinsic.hash = toHex(blake2b(32).digest(bytes))
             }
 
-            let call: PartialCall = {
-                id,
-                address: [extrinsic.indexInBlock],
-                name,
-                args
-            }
+            let address = extrinsic.signature?.address
+            let origin = address ? addressOrigin(address) : noneOrigin()
+            let call = this.createCall(extrinsic.index, [], src.call, origin)
 
             return {extrinsic, call}
         })
     }
 
-    parseCalls(): void {
-
+    createCall(extrinsicIndex: number, address: number[], src: decoded.Call, origin?: any): Call {
+        let {name, args} = unwrapArguments(src, this.runtime.calls)
+        return {
+            extrinsicIndex,
+            address,
+            name,
+            args,
+            origin
+        }
     }
 
-    private formatId(...address: number[]): string {
-        return formatId(this.block, ...address)
+    @def
+    calls(): Call[] | undefined {
+        let events = this.events()
+        if (events == null) return
+        let extrinsics = this.extrinsics()
+        if (extrinsics == null) return
+        let parser = new CallParser(this, extrinsics, events)
+        parser.parse()
+        return parser.calls
     }
 }

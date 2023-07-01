@@ -1,5 +1,5 @@
 import {FieldSelection} from './data'
-import {QualifiedName} from './data-base'
+import {QualifiedName} from '../interfaces/data'
 
 
 export interface DataRequest {

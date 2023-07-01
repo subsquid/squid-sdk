@@ -1,5 +1,5 @@
 import {Src} from "@subsquid/scale-codec"
-import * as parsing from './types'
+import * as parsing from '../interfaces/data-decoded'
 
 
 const BABE_ENGINE = Buffer.from('BABE')

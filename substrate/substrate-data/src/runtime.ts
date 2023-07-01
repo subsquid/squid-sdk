@@ -12,8 +12,8 @@ import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {Bytes} from '@subsquid/substrate-raw-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
-import {SpecId} from './interfaces/data-base'
-import * as parsing from './parsing/types'
+import {SpecId} from './interfaces/data'
+import * as decoded from './interfaces/data-decoded'
 
 
 export class Runtime {
@@ -80,8 +80,16 @@ export class Runtime {
         return this.scaleCodec.decodeBinary(item.value, value)
     }
 
-    decodeExtrinsic(bytes: Bytes | Uint8Array): parsing.Extrinsic {
+    decodeExtrinsic(bytes: Bytes | Uint8Array): decoded.Extrinsic {
         return decodeExtrinsic(bytes, this.description, this.scaleCodec)
+    }
+
+    decodeCall(bytes: Bytes | Uint8Array): decoded.Call {
+        return this.scaleCodec.decodeBinary(this.description.call, bytes)
+    }
+
+    hasEvent(name: QualifiedName): boolean {
+        return !!this.events.definitions[name]
     }
 }
 

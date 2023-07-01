@@ -1,7 +1,7 @@
 import {HashAndHeight} from '@subsquid/substrate-raw-data'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {assertNotNull} from '@subsquid/util-internal'
-import * as parsing from './types'
+import * as parsing from '../interfaces/data-decoded'
 
 
 export function formatId(block: HashAndHeight, ...address: number[]): string {

@@ -1,130 +1,136 @@
-import * as base from './data-base'
+import {Bytes, Hash} from '@subsquid/substrate-raw-data'
 
 
-type Simplify<T> = {
-    [K in keyof T]: T[K]
-} & {}
+export {Bytes, Hash}
 
 
-type Selector<Props extends string, Exclusion extends string = ''> = {
-    [P in Exclude<Props, Exclusion>]?: boolean
+export type QualifiedName = string
+
+
+/**
+ * Runtime spec id formatted as `<spec_name>@<spec_version>`
+ */
+export type SpecId = string
+
+
+export interface BlockHeader {
+    /**
+     * Block height
+     */
+    height: number
+    /**
+     * Block hash
+     */
+    hash: Hash
+    /**
+     * Hash of the parent block
+     */
+    parentHash: Hash
+    /**
+     * Root hash of the state merkle tree
+     */
+    stateRoot: Hash
+    /**
+     * Root hash of the extrinsics merkle tree
+     */
+    extrinsicsRoot: Hash
+    digest: {logs: Bytes[]}
+    /**
+     * Runtime spec id formatted as `{spec_name}@{spec_version}`
+     */
+    specId: SpecId
+    /**
+     * Block timestamp as set by `timestamp.now()` (unix epoch ms, compatible with `Date`).
+     */
+    timestamp?: number
+    /**
+     * Account address of block validator
+     */
+    validator?: Bytes
 }
 
 
-type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specId'
-type ExtrinsicRequiredFields = 'indexInBlock'
-type CallRequiredFields = 'address'
-type EventRequiredFields = 'indexInBlock'
-
-
-export interface FieldSelection {
-    block?: Selector<keyof base.BlockHeader, BlockRequiredFields>
-    extrinsic?: Selector<keyof base.Extrinsic, ExtrinsicRequiredFields>
-    call?: Selector<keyof base.Call, CallRequiredFields>
-    event?: Selector<keyof base.Event, EventRequiredFields>
+export interface Extrinsic {
+    /**
+     * Ordinal index in the extrinsics array of the current block
+     */
+    index: number
+    version: number
+    signature?: ExtrinsicSignature
+    fee?: bigint
+    tip?: bigint
+    error?: any
+    success?: boolean
+    /**
+     * Blake2b 128-bit hash of the raw extrinsic
+     */
+    hash?: string
 }
 
 
-export const DEFAULT_FIELDS = {
-    block: {},
-    extrinsic: {},
-    call: {
-        name: true,
-        args: true
-    },
-    event: {
-        name: true,
-        args: true,
-        callAddress: true
-    }
-} as const
-
-
-type DefaultFields = typeof DEFAULT_FIELDS
-
-
-type ExcludeUndefined<T> = {
-    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
-} & {}
-
-
-type MergeDefault<T, D> = Simplify<
-    undefined extends T ? D : Omit<D, keyof ExcludeUndefined<T>> & ExcludeUndefined<T>
->
-
-
-type TrueFields<F> = keyof {
-    [K in keyof F as true extends F[K] ? K : never]: true
+export interface ExtrinsicSignature {
+    address: any
+    signature: any
+    signedExtensions: any
 }
 
 
-type GetFields<F extends FieldSelection, P extends keyof DefaultFields>
-    = TrueFields<MergeDefault<F[P], DefaultFields[P]>>
-
-
-type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : never
-
-
-export type BlockHeader<F extends FieldSelection = {}> = Simplify<
-    {id: string} &
-    Pick<base.BlockHeader, BlockRequiredFields> &
-    Select<base.BlockHeader, GetFields<F, 'block'>>
->
-
-
-export type Extrinsic<F extends FieldSelection = {}> = Simplify<
-    {id: string} &
-    Pick<base.Extrinsic, ExtrinsicRequiredFields> &
-    Select<base.Extrinsic, GetFields<F, 'extrinsic'>>
->
-
-
-export type Call<F extends FieldSelection = {}> = Simplify<
-    {id: string} &
-    Pick<base.Call, CallRequiredFields> &
-    Select<base.Call, GetFields<F, 'call'>>
->
-
-
-export type Event<F extends FieldSelection = {}> = Simplify<
-    {id: string} &
-    Pick<base.Event, EventRequiredFields> &
-    Select<base.Event, GetFields<F, 'event'>>
->
-
-
-export interface BlockData<F extends FieldSelection = {}> {
-    header: BlockHeader<F>
-    extrinsics: Extrinsic<F>[]
-    calls: Call<F>[]
-    events: Event<F>[]
+export interface Call {
+    extrinsicIndex: number
+    address: number[]
+    name: QualifiedName
+    /**
+     * JSON encoded call arguments
+     */
+    args: any
+    origin?: any
+    /**
+     * Call error.
+     *
+     * Absence of error doesn't imply that the call was executed successfully,
+     * check {@link success} property for that.
+     */
+    error?: any
+    success?: boolean
 }
 
 
-type MakePartial<T, Required extends keyof T> = Simplify<
-    {id: string} &
-    Pick<T, Required> &
-    {
-        [K in keyof T as K extends Required ? never : K]+?: T[K]
-    }
->
-
-
-export type PartialBlockHeader = MakePartial<base.BlockHeader, BlockRequiredFields>
-export type PartialExtrinsic = MakePartial<base.Extrinsic, ExtrinsicRequiredFields>
-export type PartialCall = MakePartial<base.Call, CallRequiredFields>
-export type PartialEvent = MakePartial<base.Event, EventRequiredFields>
-
-
-export interface PartialBlockData {
-    header: PartialBlockHeader
-    extrinsics: PartialExtrinsic[]
-    calls: PartialCall[]
-    events: PartialEvent[]
+export interface Event {
+    /**
+     * Ordinal index in the event array of the current block
+     */
+    index: number
+    /**
+     * Event name
+     */
+    name: QualifiedName
+    /**
+     * JSON encoded event arguments
+     */
+    args: any
+    phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
+    extrinsicIndex?: number
+    callAddress?: number[]
 }
 
 
-export interface PartialBlockBatch {
-    blocks: PartialBlockData[]
+export interface Block {
+    header: BlockHeader
+    extrinsics?: Extrinsic[]
+    calls?: Call[]
+    events?: Event[]
+}
+
+
+export interface BlockBatch {
+    blocks: Block[]
     isHead: boolean
+}
+
+
+export interface DataRequest {
+    extrinsics?: boolean
+    extrinsicHash?: boolean
+    events?: boolean
+    validator?: boolean
 }

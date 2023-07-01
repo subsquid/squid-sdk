@@ -1,8 +1,7 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import * as raw from '@subsquid/substrate-raw-data'
 import {RangeRequestList} from '@subsquid/util-internal-range'
-import {PartialBlockBatch} from './interfaces/data'
-import {DataRequest} from './interfaces/data-request'
+import {BlockBatch, DataRequest} from './interfaces/data'
 
 
 export interface SubstrateRpcDataSourceOptions {
@@ -31,7 +30,7 @@ export class SubstrateRpcDataSource {
         return this.rds.rpc.getBlockHash(height)
     }
 
-    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<PartialBlockBatch> {
+    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<BlockBatch> {
         throw new Error()
     }
 }

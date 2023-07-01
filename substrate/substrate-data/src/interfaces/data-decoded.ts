@@ -1,10 +1,4 @@
-import {BlockData, Bytes} from '@subsquid/substrate-raw-data'
-import {ExtrinsicSignature} from '../interfaces/data-base'
-
-
-export interface RawBlock extends BlockData {
-    validators?: Bytes
-}
+import {ExtrinsicSignature} from './data'
 
 
 export interface EventRecord {
@@ -106,4 +100,13 @@ export interface NoneOrigin {
     value: {
         __kind: 'None'
     }
+}
+
+
+export type Result<R=any, E=any> = {
+    __kind: 'Ok'
+    value: R
+} | {
+    __kind: 'Err'
+    value: E
 }
