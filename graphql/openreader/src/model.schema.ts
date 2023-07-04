@@ -191,9 +191,6 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                                 description
                             }
                         } else {
-                            if (unique && nullable) {
-                                throw new SchemaError(`Unique property ${propName} must be non-nullable`)
-                            }
                             properties[key] = {
                                 type: {
                                     kind: 'fk',
