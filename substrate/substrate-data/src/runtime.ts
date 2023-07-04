@@ -9,7 +9,7 @@ import {
     StorageItem
 } from '@subsquid/substrate-metadata'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
-import {Bytes} from '@subsquid/substrate-raw-data'
+import {Bytes, RuntimeVersionId} from '@subsquid/substrate-raw-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {SpecId} from './interfaces/data'
@@ -17,6 +17,10 @@ import * as decoded from './interfaces/data-decoded'
 
 
 export class Runtime {
+    public readonly specName: string
+    public readonly specVersion: number
+    public readonly implName: string
+    public readonly implVersion: number
     public readonly specId: SpecId
     public readonly description: ChainDescription
     public readonly events: eac.Registry
@@ -25,13 +29,16 @@ export class Runtime {
     public readonly jsonCodec: JsonCodec
 
     constructor(
-        public readonly specName: string,
-        public readonly specVersion: number,
+        runtimeVersion: RuntimeVersionId,
         metadata: Bytes,
         typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
-        this.specId = `${specName}@${specVersion}`
-        this.description = getChainDescription(metadata, specName, specVersion, typesBundle)
+        this.specName = runtimeVersion.specName
+        this.specVersion = runtimeVersion.specVersion
+        this.implName = runtimeVersion.implName
+        this.implVersion = runtimeVersion.implVersion
+        this.specId = `${this.specName}@${this.specVersion}`
+        this.description = getChainDescription(metadata, this.specName, this.specVersion, typesBundle)
         this.events = new eac.Registry(this.description.types, this.description.event)
         this.calls = new eac.Registry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)

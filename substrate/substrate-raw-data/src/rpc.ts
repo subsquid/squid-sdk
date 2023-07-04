@@ -26,6 +26,10 @@ export class Rpc {
         return this.call('chain_getFinalizedHead')
     }
 
+    getHead(): Promise<Hash> {
+        return this.call('chain_getHead')
+    }
+
     getBlockHash(height: number): Promise<Hash> {
         return this.call('chain_getBlockHash', [toQty(height)])
     }

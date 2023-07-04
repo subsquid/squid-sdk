@@ -19,8 +19,9 @@
     "@subsquid/scale-codec": "^2.2.0",
     "@subsquid/substrate-raw-data": "^0.0.0",
     "@subsquid/util-internal": "^2.3.0",
-    "@subsquid/util-internal-range": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.0",
+    "@subsquid/util-internal-ingest-tools": "^0.0.0",
+    "@subsquid/util-internal-range": "^0.0.0",
     "blake2b": "^2.1.4"
   },
   "peerDependencies": {

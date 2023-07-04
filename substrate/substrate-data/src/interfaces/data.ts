@@ -38,7 +38,11 @@ export interface BlockHeader {
     /**
      * Runtime spec id formatted as `{spec_name}@{spec_version}`
      */
-    specId: SpecId
+    specId: string
+    /**
+     * Runtime impl id formatted as `{impl_name}@{impl_version}`
+     */
+    implId: string
     /**
      * Block timestamp as set by `timestamp.now()` (unix epoch ms, compatible with `Date`).
      */

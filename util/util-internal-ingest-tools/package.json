@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/substrate-raw-data",
+  "name": "@subsquid/util-internal-ingest-tools",
   "version": "0.0.0",
-  "description": "Raw data fetcher for substrate based chains",
+  "description": "Common tools for data fetching",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -16,12 +16,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^2.3.0",
-    "@subsquid/util-internal-ingest-tools": "^0.0.0",
+    "@subsquid/logger": "^1.2.0",
+    "@subsquid/util-internal": "^2.3.1",
     "@subsquid/util-internal-range": "^0.0.0"
-  },
-  "peerDependencies": {
-    "@subsquid/rpc-client": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",

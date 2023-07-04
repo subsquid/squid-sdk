@@ -2,7 +2,7 @@ import {Bytes} from '@subsquid/substrate-raw-data'
 import {assertNotNull, def} from '@subsquid/util-internal'
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import blake2b from 'blake2b'
-import {Call, Event, Extrinsic} from '../interfaces/data'
+import {BlockHeader, Call, Event, Extrinsic} from '../interfaces/data'
 import * as decoded from '../interfaces/data-decoded'
 import {RawBlock} from '../interfaces/data-raw'
 import {Runtime} from '../runtime'
@@ -11,14 +11,40 @@ import {addressOrigin, getExtrinsicTip, noneOrigin, unwrapArguments} from './uti
 import {getBlockValidator} from './validator'
 
 
+export interface ParsingOptions {
+    extrinsicHash?: boolean
+}
+
+
 export class BlockParser {
     constructor(
         public readonly runtime: Runtime,
         public readonly block: RawBlock,
-        private options: {
-            withExtrinsicHash?: boolean
-        } = {}
+        private options: ParsingOptions = {}
     ) {}
+
+    @def
+    header(): BlockHeader {
+        let src = this.block.block.block.header
+        let runtimeVersion = assertNotNull(this.block.runtimeVersion)
+        let header: BlockHeader = {
+            height: this.block.height,
+            hash: this.block.hash,
+            parentHash: src.parentHash,
+            digest: src.digest,
+            extrinsicsRoot: src.extrinsicsRoot,
+            stateRoot: src.stateRoot,
+            specId: `${runtimeVersion.specName}@${runtimeVersion.specVersion}`,
+            implId: `${runtimeVersion.implName}@${runtimeVersion.implVersion}`
+        }
+        if (this.timestamp()) {
+            header.timestamp = this.timestamp()
+        }
+        if (this.validator()) {
+            header.validator = this.validator()
+        }
+        return header
+    }
 
     @def
     timestamp(): number | undefined {
@@ -110,7 +136,7 @@ export class BlockParser {
                 extrinsic.tip = tip
             }
 
-            if (this.options.withExtrinsicHash) {
+            if (this.options.extrinsicHash) {
                 extrinsic.hash = toHex(blake2b(32).digest(bytes))
             }
 
@@ -136,11 +162,10 @@ export class BlockParser {
     @def
     calls(): Call[] | undefined {
         let events = this.events()
-        if (events == null) return
         let extrinsics = this.extrinsics()
-        if (extrinsics == null) return
+        if (events == null || extrinsics == null) return
         let parser = new CallParser(this, extrinsics, events)
         parser.parse()
-        return parser.calls
+        return parser.calls.reverse()
     }
 }
