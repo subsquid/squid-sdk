@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "support `FORCE_PRETTY_LOGGER` environment variable",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
