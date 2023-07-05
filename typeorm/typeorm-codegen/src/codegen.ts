@@ -103,7 +103,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             imports.useTypeorm('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
-                                `@OneToOne_(() => ${prop.type.entity}, {nullable: false})`
+                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
