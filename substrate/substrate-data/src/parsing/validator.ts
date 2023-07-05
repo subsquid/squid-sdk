@@ -1,4 +1,4 @@
-import {Src} from "@subsquid/scale-codec"
+import {Src} from '@subsquid/scale-codec'
 import * as parsing from '../interfaces/data-decoded'
 
 
@@ -8,10 +8,10 @@ const POW_ENGINE = Buffer.from('pow_')
 
 
 type Rec = [engine: Uint8Array, data: Uint8Array]
-type Account = Uint8Array
+export type AccountId = Uint8Array
 
 
-export function getBlockValidator(digestLog: parsing.DigestItem[], validators: Account[]): Account | undefined {
+export function getBlockValidator(digestLog: parsing.DigestItem[], validators: AccountId[]): AccountId | undefined {
     let preRuntime: Rec | undefined
     let consensus: Rec | undefined
     let seal: Rec | undefined
@@ -36,7 +36,7 @@ export function getBlockValidator(digestLog: parsing.DigestItem[], validators: A
 }
 
 
-function fromRecord(rec: Rec, validators: Account[]): Account | undefined {
+function fromRecord(rec: Rec, validators: AccountId[]): AccountId | undefined {
     let [engine, data] = rec
     if (BABE_ENGINE.equals(engine)) {
         let src = new Src(data)

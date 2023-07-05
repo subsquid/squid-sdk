@@ -60,13 +60,7 @@ export class BlockParser {
     @def
     validator(): Bytes | undefined {
         if (this.block.validators == null) return
-
-        let validators = this.runtime.decodeStorageValue(
-            'Session.Validators',
-            this.block.validators
-        )
-
-        let validator = getBlockValidator(this.digest(), validators)
+        let validator = getBlockValidator(this.digest(), this.block.validators)
         if (validator) {
             return toHex(validator)
         }

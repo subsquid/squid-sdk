@@ -53,6 +53,9 @@ export class RuntimeTracker {
         let runtimeVersion = await this.rpc.getRuntimeVersion(hash)
         let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle)
         this.cache.push({height, runtime})
+        if (this.cache.length > 2) {
+            this.cache.shift()
+        }
         return runtime
     }
 }

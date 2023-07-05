@@ -7,12 +7,6 @@ export {Bytes, Hash}
 export type QualifiedName = string
 
 
-/**
- * Runtime spec id formatted as `<spec_name>@<spec_version>`
- */
-export type SpecId = string
-
-
 export interface BlockHeader {
     /**
      * Block height

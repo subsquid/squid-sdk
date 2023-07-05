@@ -50,6 +50,10 @@ export class Rpc {
         return this.call('state_getMetadata', [blockHash])
     }
 
+    getStorage(blockHash: Hash, key: Bytes): Promise<Bytes> {
+        return this.call('state_getStorageAt', [key, blockHash])
+    }
+
     async getBlock0(hash: Hash, req?: DataRequest): Promise<BlockData> {
         let block: PartialGetBlockResult
         if (req?.extrinsics) {

@@ -1,12 +1,10 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import * as raw from '@subsquid/substrate-raw-data'
-import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
+import {HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import {Block, BlockBatch, DataRequest} from './interfaces/data'
-import {RawBlock} from './interfaces/data-raw'
-import {parseRawBlock} from './parsing'
-import {RuntimeTracker} from './runtime-tracker'
+import {Parser} from './parser'
 
 
 export interface SubstrateRpcDataSourceOptions {
@@ -54,34 +52,21 @@ export class SubstrateRpcDataSource {
             }
         }
     }
-}
 
-
-class Parser {
-    private requests: RequestsTracker<DataRequest>
-    private runtimeTracker: RuntimeTracker
-
-    constructor(
-        private rpc: raw.Rpc,
-        requests: RangeRequestList<DataRequest>,
-        typesBundle?: OldTypesBundle | OldSpecsBundle
-    ) {
-        this.requests = new RequestsTracker(requests)
-        this.runtimeTracker = new RuntimeTracker(this.rpc, typesBundle)
-    }
-
-    async parse(rawBlocks: RawBlock[]): Promise<Block[]> {
-        let result: Block[] = []
-        for (let rawBlock of rawBlocks) {
-            result.push(await this.parseBlock(rawBlock))
-        }
-        return result
-    }
-
-    async parseBlock(rawBlock: RawBlock): Promise<Block> {
-        let request = this.requests.getRequestAt(rawBlock.height)
-        let runtime = await this.runtimeTracker.getRuntime(rawBlock)
-        return parseRawBlock(runtime, rawBlock, request)
+    processHotBlocks(
+        requests: RangeRequest<DataRequest>[],
+        state: HotState,
+        cb: (upd: HotUpdate<Block>) => Promise<void>
+    ): Promise<void> {
+        let parser = new Parser(this.rpc, requests, this.typesBundle)
+        return this.rds.processHotBlocks(
+            requests.map(toRawRangeRequest),
+            state,
+            async upd => {
+                let blocks = await parser.parse(upd.blocks)
+                await cb({...upd, blocks})
+            }
+        )
     }
 }
 

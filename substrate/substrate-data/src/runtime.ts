@@ -12,7 +12,6 @@ import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {Bytes, RuntimeVersionId} from '@subsquid/substrate-raw-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
-import {SpecId} from './interfaces/data'
 import * as decoded from './interfaces/data-decoded'
 
 
@@ -21,7 +20,6 @@ export class Runtime {
     public readonly specVersion: number
     public readonly implName: string
     public readonly implVersion: number
-    public readonly specId: SpecId
     public readonly description: ChainDescription
     public readonly events: eac.Registry
     public readonly calls: eac.Registry
@@ -37,7 +35,6 @@ export class Runtime {
         this.specVersion = runtimeVersion.specVersion
         this.implName = runtimeVersion.implName
         this.implVersion = runtimeVersion.implVersion
-        this.specId = `${this.specName}@${this.specVersion}`
         this.description = getChainDescription(metadata, this.specName, this.specVersion, typesBundle)
         this.events = new eac.Registry(this.description.types, this.description.event)
         this.calls = new eac.Registry(this.description.types, this.description.call)
