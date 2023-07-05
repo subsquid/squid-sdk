@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "make unique fields nullable",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
