@@ -1,4 +1,4 @@
-import * as base from './data-base'
+import * as base from '../interfaces/data'
 
 
 type Simplify<T> = {
@@ -12,9 +12,9 @@ type Selector<Props extends string, Exclusion extends string = ''> = {
 
 
 type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specId'
-type ExtrinsicRequiredFields = 'indexInBlock'
+type ExtrinsicRequiredFields = 'index'
 type CallRequiredFields = 'address'
-type EventRequiredFields = 'indexInBlock'
+type EventRequiredFields = 'index'
 
 
 export interface FieldSelection {

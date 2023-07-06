@@ -1,14 +1,15 @@
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import * as raw from '@subsquid/substrate-raw-data'
-import {last} from '@subsquid/util-internal'
+import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-raw-data'
+import {assertNotNull, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
 import {BlockParser, ParsingOptions} from './parsing/block'
 import {AccountId} from './parsing/validator'
 import {Runtime} from './runtime'
-import {RuntimeTracker} from './runtime-tracker'
 
 
 const STORAGE = {
@@ -20,40 +21,131 @@ const STORAGE = {
 
 export class Parser {
     private requests: RequestsTracker<DataRequest>
-    private runtimeTracker: RuntimeTracker
-    private sessionCache = new Map<number, {session: Bytes, validators: AccountId[]}>()
+    private prevValidators = new Prev<{session: Bytes, validators: AccountId[]}>()
+    private prevRuntime = new Prev<Runtime>()
 
     constructor(
         private rpc: raw.Rpc,
         requests: RangeRequestList<DataRequest>,
-        typesBundle?: OldTypesBundle | OldSpecsBundle
+        private typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
         this.requests = new RequestsTracker(requests)
-        this.runtimeTracker = new RuntimeTracker(this.rpc, typesBundle)
     }
 
     async parse(blocks: RawBlock[]): Promise<Block[]> {
+        if (blocks.length == 0) return []
+
+        await this.setRuntime(blocks)
+
         let result: Block[] = []
-        for (let block of blocks) {
-            let request = this.requests.getRequestAt(block.height)
-            let runtime = await this.runtimeTracker.getRuntime(block)
-            let parsed = parseRawBlock(runtime, block, {
-                extrinsicHash: request?.extrinsicHash
-            })
-            result.push(parsed)
+
+        for (let batch of this.requests.splitBlocksByRequest(blocks, b => b.height)) {
+            if (batch.request?.validator) {
+                await this.setValidators(batch.blocks)
+            }
+
+            for (let block of batch.blocks) {
+                let parsed = parseRawBlock(block, {
+                    extrinsicHash: batch.request?.extrinsicHash
+                })
+                result.push(parsed)
+            }
         }
+
         return result
     }
 
-    private async fetchSession(blocks: RawBlock[]): Promise<void> {
+    private async setRuntime(blocks: RawBlock[]): Promise<void> {
+        if (blocks.length == 0) return
+
+        let prev = this.prevRuntime.getItem(getParent(blocks[0]).height)
+        if (prev == null) {
+            prev = await this.fetchRuntime(getParent(blocks[0]))
+        }
+
+        for (let block of blocks) {
+            if (runtimeVersionEquals(prev.value, assertNotNull(block.runtimeVersion))) {
+                block.runtime = prev.value
+                prev = {
+                    height: block.height,
+                    value: prev.value
+                }
+            } else if (prev.height == getParent(block).height) {
+                block.runtime = prev.value
+            } else {
+                prev = await this.fetchRuntime(getParent(block))
+                block.runtime = prev.value
+            }
+        }
+    }
+
+    private async fetchRuntime(
+        ref: HashAndHeight
+    ): Promise<{height: number, value: Runtime}> {
+        let [runtimeVersion, metadata] = await Promise.all([
+            this.rpc.getRuntimeVersion(ref.hash),
+            this.rpc.getMetadata(ref.hash)
+        ])
+        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle)
+        this.prevRuntime.set(ref.height, runtime)
+        return {height: ref.height, value: runtime}
+    }
+
+    private async setValidators(blocks: RawBlock[]): Promise<void> {
         if (blocks.length) return
-        last(blocks).session = await this.rpc.getStorage(last(blocks).hash, STORAGE.session)
+
+        let prev = this.prevValidators.get(blocks[0].height)
+        if (prev == null) {
+            prev = await this.fetchValidators(blocks[0])
+        }
+
+        let lastBlock = last(blocks)
+        if (lastBlock.session == null) {
+            lastBlock.session = await this.rpc.getStorage(lastBlock.hash, STORAGE.session)
+        }
+
+        for (let block of blocks) {
+            block.session = prev.session == lastBlock.session
+                ? prev.session
+                : await this.rpc.getStorage(block.hash, STORAGE.session)
+
+            if (prev.session == block.session) {
+                block.session = prev.session
+                block.validators = prev.validators
+            } else {
+                prev = await this.fetchValidators(block)
+            }
+        }
+    }
+
+    private async fetchValidators(block: RawBlock): Promise<{session: Bytes, validators: AccountId[]}> {
+        let [session, data] = await Promise.all([
+            block.session ? Promise.resolve(block.session) : this.rpc.getStorage(block.hash, STORAGE.session),
+            this.rpc.getStorage(block.hash, STORAGE.validators)
+        ])
+        let runtime = assertNotNull(block.runtime)
+        let validators = runtime.decodeStorageValue('Session.Validators', data)
+        assert(Array.isArray(validators))
+        block.session = session
+        block.validators = validators
+        let item = {session, validators}
+        this.prevValidators.set(block.height, item)
+        return item
     }
 }
 
 
-function parseRawBlock(runtime: Runtime, rawBlock: RawBlock, options?: ParsingOptions): Block {
-    let parser = new BlockParser(runtime, rawBlock, options)
+function getParent(block: RawBlock): HashAndHeight {
+    if (block.height == 0) return block
+    return {
+        height: block.height - 1,
+        hash: block.block.block.header.parentHash
+    }
+}
+
+
+function parseRawBlock(rawBlock: RawBlock, options?: ParsingOptions): Block {
+    let parser = new BlockParser(rawBlock, options)
     let block: Block = {
         header: parser.header()
     }

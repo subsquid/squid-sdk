@@ -1,6 +1,13 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {BlockBatch, BlockData, Bytes, DataRequest, RpcDataSource} from '@subsquid/substrate-raw-data'
+import {
+    BlockBatch,
+    BlockData,
+    DataRequest,
+    RpcDataSource,
+    runtimeVersionEquals,
+    RuntimeVersionId
+} from '@subsquid/substrate-raw-data'
 import {assertNotNull, def, last, Throttler} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
@@ -75,7 +82,6 @@ export class Dumper {
     ingest(range: Range): AsyncIterable<BlockBatch> {
         let request: DataRequest = {
             runtimeVersion: true,
-            metadata: true,
             extrinsics: true,
             events: true
         }
@@ -132,31 +138,50 @@ export class Dumper {
         }
     }
 
-    private async *stripMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
-        let prevMetadata: Bytes | undefined
+    private async *addMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+        let prevRuntimeVersion: RuntimeVersionId | undefined
         for await (let batch of batches) {
             for (let block of batch) {
-                if (block.metadata === prevMetadata) {
-                    block.metadata = undefined
+                if (prevRuntimeVersion && runtimeVersionEquals(prevRuntimeVersion, assertNotNull(block.runtimeVersion))) {
+
                 } else {
-                    prevMetadata = block.metadata
+                    block.metadata = await this.src().rpc.getMetadata(block.hash)
+                    prevRuntimeVersion = block.runtimeVersion
                 }
             }
             yield batch
         }
     }
 
-    private async *stripAndSaveMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+    private async *saveMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
         let writer = new MetadataWriter(this.fs().cd('metadata'))
+        let prevRuntimeVersion: RuntimeVersionId | undefined
         for await (let batch of batches) {
-            await writer.stripAndSaveMetadata(batch)
+            for (let block of batch) {
+                let v = assertNotNull(block.runtimeVersion)
+                if (prevRuntimeVersion && runtimeVersionEquals(prevRuntimeVersion, v)) {
+
+                } else {
+                    await writer.save({
+                        specName: v.specName,
+                        specVersion: v.specVersion,
+                        implName: v.implName,
+                        implVersion: v.implVersion,
+                        blockHeight: block.height,
+                        blockHash: getShortHash(block.hash)
+                    }, () => {
+                        return this.src().rpc.getMetadata(block.hash)
+                    })
+                    prevRuntimeVersion = v
+                }
+            }
             yield batch
         }
     }
 
     async dump(): Promise<void> {
         if (this.options.dest == null) {
-            for await (let bb of this.stripMetadata(this.process())) {
+            for await (let bb of this.addMetadata(this.process())) {
                 for (let block of bb) {
                     process.stdout.write(JSON.stringify(block) + '\n')
                 }
@@ -164,7 +189,7 @@ export class Dumper {
         } else {
             let archive = new ArchiveLayout(this.fs())
             await archive.appendRawBlocks({
-                blocks: (nextBlock, prevHash) => this.stripAndSaveMetadata(this.process(nextBlock, prevHash)),
+                blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024
             })

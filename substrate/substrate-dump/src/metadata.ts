@@ -1,6 +1,6 @@
-import {BlockData, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-raw-data'
+import {Bytes, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-raw-data'
 import {def} from '@subsquid/util-internal'
-import {formatBlockNumber, getShortHash} from '@subsquid/util-internal-archive-layout'
+import {formatBlockNumber} from '@subsquid/util-internal-archive-layout'
 import {Fs} from '@subsquid/util-internal-fs'
 import {decodeHex} from '@subsquid/util-internal-hex'
 import {basename} from 'path'
@@ -49,25 +49,12 @@ export class MetadataWriter {
         return versions
     }
 
-    async stripAndSaveMetadata(blocks: BlockData[]): Promise<void> {
+    async save(version: MetadataVersion, metadata: () => Promise<Bytes>): Promise<void> {
         let versions = await this.versions()
-        for (let block of blocks) {
-            if (block.runtimeVersion == null || block.metadata == null) continue
-            if (!isStored(versions, block.runtimeVersion)) {
-                let newVersion: MetadataVersion = {
-                    specName: block.runtimeVersion.specName,
-                    specVersion: block.runtimeVersion.specVersion,
-                    implName: block.runtimeVersion.implName,
-                    implVersion: block.runtimeVersion.implVersion,
-                    blockHeight: block.height,
-                    blockHash: getShortHash(block.hash)
-                }
-                let gz = zlib.gzipSync(decodeHex(block.metadata))
-                await this.fs.write(printMetadataVersion(newVersion) + '.gz', gz)
-                versions.push(newVersion)
-            }
-            block.metadata = undefined
-        }
+        if (isStored(versions, version)) return
+        let gz = zlib.gzipSync(decodeHex(await metadata()))
+        await this.fs.write(printMetadataVersion(version) + '.gz', gz)
+        versions.push(version)
     }
 }
 

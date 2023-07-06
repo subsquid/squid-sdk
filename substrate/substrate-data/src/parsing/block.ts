@@ -17,11 +17,14 @@ export interface ParsingOptions {
 
 
 export class BlockParser {
+    public readonly runtime: Runtime
+
     constructor(
-        public readonly runtime: Runtime,
         public readonly block: RawBlock,
         private options: ParsingOptions = {}
-    ) {}
+    ) {
+        this.runtime = assertNotNull(block.runtime)
+    }
 
     @def
     header(): BlockHeader {

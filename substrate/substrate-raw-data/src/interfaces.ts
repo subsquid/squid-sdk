@@ -88,7 +88,6 @@ export interface DataRequest {
     extrinsics?: boolean
     events?: boolean
     traces?: boolean
-    metadata?: boolean
     runtimeVersion?: boolean
 }
 
