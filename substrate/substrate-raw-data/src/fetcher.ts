@@ -72,8 +72,8 @@ export class Fetcher {
     }
 
     private fetchTrace(blocks: BlockData[], targets: string): Promise<void> {
-        return Promise.all(blocks.map(b => {
-            return this.rpc.call('state_traceBlock', [
+        return Promise.all(blocks.map(async b => {
+            b.trace = await this.rpc.call('state_traceBlock', [
                 b.hash,
                 targets,
                 '',
