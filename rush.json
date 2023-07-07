@@ -319,7 +319,12 @@
     /**
      * The list of shell commands to run after the Rush installation finishes
      */
-    "postRushInstall": [],
+    "postRushInstall": [
+      // This is needed to remove node_gyp_bins which contains symlinks outside the root
+      // @see https://github.com/nodejs/node-gyp/issues/2713
+      // @see https://github.com/nodejs/node-gyp/pull/2721
+      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;"
+    ],
 
     /**
      * The list of shell commands to run before the Rush build command starts
@@ -526,12 +531,6 @@
       "projectFolder": "substrate/substrate-dump",
       "shouldPublish": true,
       "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/substrate-explorer",
-      "projectFolder": "substrate/substrate-explorer",
-      "shouldPublish": true,
-      "versionPolicyName": "docker"
     },
 //    {
 //      "packageName": "@subsquid/substrate-ingest",

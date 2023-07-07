@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "substrate-dump": "lib/main.js"
+    "substrate-dump": "bin/run.js"
   },
   "files": [
     "lib",
