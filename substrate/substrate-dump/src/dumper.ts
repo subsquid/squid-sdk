@@ -16,19 +16,20 @@ import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-
 import {MetadataWriter} from './metadata'
 
 
-export interface Options {
+export interface DumperOptions {
     endpoint: string
     endpointCapacity?: number
     endpointRateLimit?: number
     dest?: string
     firstBlock?: number
     lastBlock?: number
+    withTrace?: boolean | string
     chunkSize: number
 }
 
 
 export class Dumper {
-    constructor(private options: Options) {}
+    constructor(private options: DumperOptions) {}
 
     @def
     log(): Logger {
@@ -83,7 +84,10 @@ export class Dumper {
         let request: DataRequest = {
             runtimeVersion: true,
             extrinsics: true,
-            events: true
+            events: true,
+            trace: typeof this.options.withTrace == 'string'
+                ? this.options.withTrace
+                : this.options.withTrace ? '' : undefined
         }
 
         return this.src().getFinalizedBlocks([{

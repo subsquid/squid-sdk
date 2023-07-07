@@ -42,9 +42,17 @@ export class Fetcher {
     }
 
     async fetch1(blocks: BlockData[], req: DataRequest): Promise<void> {
+        let tasks: Promise<void>[] = []
+
         if (req.events) {
-            await this.fetchEvents(blocks)
+            tasks.push(this.fetchEvents(blocks))
         }
+
+        if (req.trace != null) {
+            tasks.push(this.fetchTrace(blocks, req.trace))
+        }
+
+        await Promise.all(tasks)
     }
 
     private async fetchEvents(blocks: BlockData[]): Promise<void> {
@@ -61,6 +69,17 @@ export class Fetcher {
         for (let i = 0; i < blocks.length; i++) {
             blocks[i].events = events[i]
         }
+    }
+
+    private fetchTrace(blocks: BlockData[], targets: string): Promise<void> {
+        return Promise.all(blocks.map(b => {
+            return this.rpc.call('state_traceBlock', [
+                b.hash,
+                targets,
+                '',
+                ''
+            ])
+        })).then()
     }
 
     async fetchRuntimeVersion(blocks: BlockData[]): Promise<void> {

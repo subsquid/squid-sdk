@@ -75,6 +75,7 @@ export interface BlockData {
      * Contents of `System.Events` storage
      */
     events?: Bytes
+    trace?: any
 }
 
 
@@ -85,10 +86,13 @@ export interface BlockBatch {
 
 
 export interface DataRequest {
-    extrinsics?: boolean
     events?: boolean
-    traces?: boolean
+    extrinsics?: boolean
     runtimeVersion?: boolean
+    /**
+     * List of trace targets or an empty string to fetch all
+     */
+    trace?: string
 }
 
 

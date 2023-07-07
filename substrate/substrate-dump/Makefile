@@ -1,6 +1,8 @@
-kusama-local:
+westend-local:
 	@node lib/main.js \
-		-e https://kusama-rpc.polkadot.io \
+		-e https://westend-rpc.dwellir.com \
+		-c 20 \
 		--dest data.temp \
-		--first-block 18000000 \
-		--chunk-size 32
+		--first-block 16000000 \
+		--with-trace state \
+		--chunk-size 1
