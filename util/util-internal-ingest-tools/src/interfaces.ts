@@ -8,6 +8,11 @@ export interface HashAndHeight {
 }
 
 
+export interface BlockHeader extends HashAndHeight {
+    parentHash: string
+}
+
+
 export interface HotState extends HashAndHeight {
     top: HashAndHeight[]
 }
@@ -20,6 +25,7 @@ export interface HotUpdate<B> {
 }
 
 
-export interface BlockHeader extends HashAndHeight {
-    parentHash: string
+export interface Batch<B> {
+    blocks: B[]
+    isHead: boolean
 }

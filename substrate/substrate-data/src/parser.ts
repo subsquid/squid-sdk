@@ -37,7 +37,7 @@ export class Parser {
 
         await this.setRuntime(blocks)
 
-        let result: Block[] = []
+        let result = []
 
         for (let batch of this.requests.splitBlocksByRequest(blocks, b => b.height)) {
             if (batch.request?.validator) {
@@ -58,12 +58,21 @@ export class Parser {
     private async setRuntime(blocks: RawBlock[]): Promise<void> {
         if (blocks.length == 0) return
 
-        let prev = this.prevRuntime.getItem(getParent(blocks[0]).height)
+        let parentParentHeight = Math.max(0, blocks[0].height - 2)
+        let prev = this.prevRuntime.getItem(parentParentHeight)
         if (prev == null) {
-            prev = await this.fetchRuntime(getParent(blocks[0]))
+            prev = await this.fetchRuntime(await this.getParent(getParent(blocks[0])))
         }
 
-        for (let block of blocks) {
+        if (runtimeVersionEquals(prev.value, assertNotNull(blocks[0].runtimeVersion)) || prev.height == parentParentHeight) {
+            blocks[0].runtimeOfPreviousBlock = prev.value
+        } else {
+            prev = await this.fetchRuntime(await this.getParent(getParent(blocks[0])))
+            blocks[0].runtimeOfPreviousBlock = prev.value
+        }
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
             if (runtimeVersionEquals(prev.value, assertNotNull(block.runtimeVersion))) {
                 block.runtime = prev.value
                 prev = {
@@ -76,6 +85,19 @@ export class Parser {
                 prev = await this.fetchRuntime(getParent(block))
                 block.runtime = prev.value
             }
+            if (i > 0) {
+                assert(blocks[i-1].height + 1 == block.height)
+                block.runtimeOfPreviousBlock = blocks[i-1].runtime
+            }
+        }
+    }
+
+    private async getParent(ref: HashAndHeight): Promise<HashAndHeight> {
+        if (ref.height == 0) return ref
+        let header = await this.rpc.getBlockHeader(ref.hash)
+        return {
+            height: ref.height - 1,
+            hash: header.parentHash
         }
     }
 

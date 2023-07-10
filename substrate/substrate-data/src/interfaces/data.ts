@@ -1,4 +1,5 @@
-import {Bytes, Hash} from '@subsquid/substrate-raw-data'
+import type {Bytes, Hash} from '@subsquid/substrate-raw-data'
+import type {Runtime} from '../runtime'
 
 
 export {Bytes, Hash}
@@ -120,15 +121,15 @@ export interface Block {
 }
 
 
-export interface BlockBatch {
-    blocks: Block[]
-    isHead: boolean
-}
-
-
 export interface DataRequest {
     extrinsics?: boolean
     extrinsicHash?: boolean
     events?: boolean
     validator?: boolean
+}
+
+
+export interface WithRuntime {
+    runtime: Runtime
+    prevRuntime: Runtime
 }

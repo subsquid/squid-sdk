@@ -1,5 +1,5 @@
-import {FieldSelection} from './data'
-import {QualifiedName} from '../interfaces/data'
+import type {FieldSelection} from './data'
+import type {QualifiedName} from '@subsquid/substrate-data'
 
 
 export interface DataRequest {

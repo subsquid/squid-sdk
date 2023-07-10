@@ -1,118 +1,152 @@
-import type {
-    CallDataRequest,
-    EventDataRequest,
-    SubstrateCallP,
-    SubstrateEventP,
-    SubstrateExtrinsicP
-} from './data-selection'
-import type {EvmTopicSet} from './options'
-import type {SubstrateBlock} from './substrate'
+import type * as base from '@subsquid/substrate-data'
 
 
-export interface BlockData<Item> {
-    /**
-     * Block header
-     */
-    header: SubstrateBlock
-    /**
-     * A unified log of events and calls.
-     *
-     * All events deposited within a call are placed
-     * before the call. All child calls are placed before the parent call.
-     * List of block events is a subsequence of unified log.
-     */
-    items: Item[]
+type Simplify<T> = {
+    [K in keyof T]: T[K]
+} & {}
+
+
+type Selector<Props extends string, Exclusion extends string = ''> = {
+    [P in Exclude<Props, Exclusion>]?: boolean
 }
 
 
-export type BlockItemP = {
-    kind: 'call'
-    name: string
-    call: SubstrateCallP
-    extrinsic?: SubstrateExtrinsicP
-} | {
-    kind: 'event'
-    name: string
-    event: SubstrateEventP
+type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specId'
+type ExtrinsicRequiredFields = 'index'
+type CallRequiredFields = 'extrinsicIndex' | 'address'
+type EventRequiredFields = 'index' | 'extrinsicIndex' | 'callAddress'
+
+
+export interface FieldSelection {
+    block?: Selector<keyof base.BlockHeader, BlockRequiredFields>
+    extrinsic?: Selector<keyof base.Extrinsic, ExtrinsicRequiredFields>
+    call?: Selector<keyof base.Call, CallRequiredFields>
+    event?: Selector<keyof base.Event, EventRequiredFields>
 }
 
 
-export type BlockDataP = BlockData<BlockItemP>
+export const DEFAULT_FIELDS = {
+    block: {},
+    extrinsic: {},
+    call: {
+        name: true,
+        args: true
+    },
+    event: {
+        name: true,
+        args: true,
+        callAddress: true
+    }
+} as const
 
 
-export interface DataRequest {
-    includeAllBlocks?: boolean
-    events?: EventReq[]
-    calls?: CallReq[]
-    evmLogs?: EvmLogReq[]
-    ethereumTransactions?: EthereumTransactionReq[]
-    contractsEvents?: ContractsEventReq[]
-    gearMessagesEnqueued?: GearMessageEnqueuedReq[]
-    gearUserMessagesSent?: GearUserMessageSentReq[]
-    acalaEvmExecuted?: AcalaEvmExecutedReq[]
-    acalaEvmExecutedFailed?: AcalaEvmExecutedFailedReq[]
+type DefaultFields = typeof DEFAULT_FIELDS
+
+
+type ExcludeUndefined<T> = {
+    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
+} & {}
+
+
+type MergeDefault<T, D> = Simplify<
+    undefined extends T ? D : Omit<D, keyof ExcludeUndefined<T>> & ExcludeUndefined<T>
+>
+
+
+type TrueFields<F> = keyof {
+    [K in keyof F as true extends F[K] ? K : never]: true
 }
 
 
-type EventReq = {
-    name: string
-    data?: EventDataRequest
+type GetFields<F extends FieldSelection, P extends keyof DefaultFields>
+    = TrueFields<MergeDefault<F[P], DefaultFields[P]>>
+
+
+type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : never
+
+
+export type BlockHeader<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
+    Pick<base.BlockHeader, BlockRequiredFields> &
+    Select<base.BlockHeader, GetFields<F, 'block'>>
+>
+
+
+interface FullExtrinsic extends base.Extrinsic {
+    success: boolean
+    hash: string
 }
 
 
-type CallReq = {
-    name: string
-    data?: CallDataRequest
+export type Extrinsic<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
+    Pick<FullExtrinsic, ExtrinsicRequiredFields> &
+    Select<FullExtrinsic, GetFields<F, 'extrinsic'>>
+>
+
+
+interface FullCall extends base.Call {
+    success: boolean
 }
 
 
-type EvmLogReq = {
-    contract: string
-    filter?: EvmTopicSet[]
-    data?: EventDataRequest
+export type Call<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
+    Pick<FullCall, CallRequiredFields> &
+    Select<FullCall, GetFields<F, 'call'>>
+>
+
+
+interface ApplyExtrinsicEvent extends base.Event {
+    phase: 'ApplyExtrinsic'
+    extrinsicIndex: number
+    callAddress: number[]
 }
 
 
-type EthereumTransactionReq = {
-    contract: string
-    sighash?: string
-    data?: CallDataRequest
+interface NonExtrinsicEvent extends base.Event {
+    phase: 'Initialization' | 'Finalization'
+    extrinsicIndex?: undefined
+    callAddress?: undefined
 }
 
 
-type ContractsEventReq = {
-    contract: string
-    data?: EventDataRequest
+type BaseEvent = ApplyExtrinsicEvent | NonExtrinsicEvent
+
+
+export type Event<F extends FieldSelection = {}> = Simplify<
+    {id: string} &
+    Pick<BaseEvent, EventRequiredFields> &
+    Select<BaseEvent, GetFields<F, 'event'>>
+>
+
+
+export interface BlockData<F extends FieldSelection = {}> {
+    header: BlockHeader<F>
+    extrinsics: Extrinsic<F>[]
+    calls: Call<F>[]
+    events: Event<F>[]
 }
 
 
-type GearMessageEnqueuedReq = {
-    program: string
-    data?: EventDataRequest
-}
+type MakePartial<T, Required extends keyof T> = Simplify<
+    {id: string} &
+    Pick<T, Required> &
+    {
+        [K in keyof T as K extends Required ? never : K]+?: T[K]
+    }
+>
 
 
-type GearUserMessageSentReq = {
-    program: string
-    data?: EventDataRequest
-}
+export type PartialBlockHeader = MakePartial<base.BlockHeader, BlockRequiredFields>
+export type PartialExtrinsic = MakePartial<base.Extrinsic, ExtrinsicRequiredFields>
+export type PartialCall = MakePartial<base.Call, CallRequiredFields>
+export type PartialEvent = MakePartial<base.Event, EventRequiredFields>
 
 
-type AcalaEvmLogFilter = {
-    contract?: string
-    filter?: EvmTopicSet[]
-}
-
-
-type AcalaEvmExecutedReq = {
-    contract: string
-    logs?: AcalaEvmLogFilter[]
-    data?: EventDataRequest
-}
-
-
-type AcalaEvmExecutedFailedReq = {
-    contract: string
-    logs?: AcalaEvmLogFilter[]
-    data?: EventDataRequest
+export interface PartialBlockData {
+    header: PartialBlockHeader
+    extrinsics: PartialExtrinsic[]
+    calls: PartialCall[]
+    events: PartialEvent[]
 }
