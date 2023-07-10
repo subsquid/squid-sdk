@@ -1,6 +1,6 @@
 # @subsquid/ss58-codec
 
-Encoder and decoder for [SS58 address format](https://docs.substrate.io/v3/advanced/ss58/).
+Encoder and decoder for [SS58 address format](https://docs.substrate.io/reference/address-formats/).
 
 ## Usage
 
