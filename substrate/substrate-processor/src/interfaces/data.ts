@@ -1,20 +1,16 @@
 import type * as base from '@subsquid/substrate-data'
-
-
-type Simplify<T> = {
-    [K in keyof T]: T[K]
-} & {}
+import {
+    BlockRequiredFields,
+    CallRequiredFields,
+    EventRequiredFields,
+    ExtrinsicRequiredFields,
+    Simplify
+} from './data-partial'
 
 
 type Selector<Props extends string, Exclusion extends string = ''> = {
     [P in Exclude<Props, Exclusion>]?: boolean
 }
-
-
-type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specId'
-type ExtrinsicRequiredFields = 'index'
-type CallRequiredFields = 'extrinsicIndex' | 'address'
-type EventRequiredFields = 'index' | 'extrinsicIndex' | 'callAddress'
 
 
 export interface FieldSelection {
@@ -81,7 +77,14 @@ interface FullExtrinsic extends base.Extrinsic {
 export type Extrinsic<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<FullExtrinsic, ExtrinsicRequiredFields> &
-    Select<FullExtrinsic, GetFields<F, 'extrinsic'>>
+    Select<FullExtrinsic, GetFields<F, 'extrinsic'>> &
+    {
+        block: Block<F>
+        call?: Call<F>
+        getCall(): Call<F>
+        subcalls: Call<F>[]
+        events: Event<F>[]
+    }
 >
 
 
@@ -93,7 +96,16 @@ interface FullCall extends base.Call {
 export type Call<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<FullCall, CallRequiredFields> &
-    Select<FullCall, GetFields<F, 'call'>>
+    Select<FullCall, GetFields<F, 'call'>> &
+    {
+        block: Block<F>
+        extrinsic?: Extrinsic<F>
+        getExtrinsic(): Extrinsic<F>
+        parentCall?: Call<F>
+        getParentCall(): Call<F>
+        subcalls: Call<F>[]
+        events: Event<F>[]
+    }
 >
 
 
@@ -117,36 +129,20 @@ type BaseEvent = ApplyExtrinsicEvent | NonExtrinsicEvent
 export type Event<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<BaseEvent, EventRequiredFields> &
-    Select<BaseEvent, GetFields<F, 'event'>>
->
-
-
-export interface BlockData<F extends FieldSelection = {}> {
-    header: BlockHeader<F>
-    extrinsics: Extrinsic<F>[]
-    calls: Call<F>[]
-    events: Event<F>[]
-}
-
-
-type MakePartial<T, Required extends keyof T> = Simplify<
-    {id: string} &
-    Pick<T, Required> &
+    Select<BaseEvent, GetFields<F, 'event'>> &
     {
-        [K in keyof T as K extends Required ? never : K]+?: T[K]
+        block: Block<F>
+        call?: Call<F>
+        getCall(): Call<F>
+        extrinsic?: Extrinsic<F>
+        getExtrinsic(): Extrinsic<F>
     }
 >
 
 
-export type PartialBlockHeader = MakePartial<base.BlockHeader, BlockRequiredFields>
-export type PartialExtrinsic = MakePartial<base.Extrinsic, ExtrinsicRequiredFields>
-export type PartialCall = MakePartial<base.Call, CallRequiredFields>
-export type PartialEvent = MakePartial<base.Event, EventRequiredFields>
-
-
-export interface PartialBlockData {
-    header: PartialBlockHeader
-    extrinsics: PartialExtrinsic[]
-    calls: PartialCall[]
-    events: PartialEvent[]
+export interface Block<F extends FieldSelection = {}> {
+    header: BlockHeader<F>
+    extrinsics: Extrinsic<F>[]
+    calls: Call<F>[]
+    events: Event<F>[]
 }

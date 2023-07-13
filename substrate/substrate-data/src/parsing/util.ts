@@ -1,20 +1,6 @@
-import {HashAndHeight} from '@subsquid/substrate-raw-data'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {assertNotNull} from '@subsquid/util-internal'
 import * as parsing from '../interfaces/data-decoded'
-
-
-export function formatId(block: HashAndHeight, ...address: number[]): string {
-    let no = block.height.toString().padStart(10, '0')
-    let hash = block.hash.startsWith('0x')
-        ? block.hash.slice(2, 7)
-        : block.hash.slice(0, 5)
-    let id = `${no}-${hash}`
-    for (let index of address) {
-        id += '-' + index.toString().padStart(6, '0')
-    }
-    return id
-}
 
 
 export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, "__kind"> {

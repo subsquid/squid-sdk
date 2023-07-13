@@ -1,11 +1,12 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
+import {WithRuntime} from '@subsquid/substrate-data'
 import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
 import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {def, runProgram} from '@subsquid/util-internal'
+import {def, last, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
     Batch,
@@ -17,8 +18,10 @@ import {
     RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
+import assert from 'assert'
 import {Chain} from './chain'
-import {BlockData, FieldSelection} from './interfaces/data'
+import {RpcDataSource} from './ds-rpc'
+import {Block, FieldSelection} from './interfaces/data'
 import {CallRequest, DataRequest, EventRequest} from './interfaces/data-request'
 
 
@@ -69,7 +72,7 @@ export interface DataHandlerContext<Store, Fields extends FieldSelection> {
     _chain: Chain
     log: Logger
     store: Store
-    blocks: BlockData<Fields>[]
+    blocks: Block<Fields>[]
     /**
      * Signals, that the processor reached the head of a chain.
      *
@@ -90,6 +93,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private src?: DataSource
+    private chainPollInterval?: number
     private typesBundle?: OldTypesBundle | OldSpecsBundle
     private prometheus = new PrometheusServer()
     private running = false
@@ -137,19 +141,6 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
-     * Sets the port for a built-in prometheus metrics server.
-     *
-     * By default, the value of `PROMETHEUS_PORT` environment
-     * variable is used. When it is not set,
-     * the processor will pick up an ephemeral port.
-     */
-    setPrometheusPort(port: number | string): this {
-        this.assertNotRunning()
-        this.prometheus.setPort(port)
-        return this
-    }
-
-    /**
      * Limits the range of blocks to be processed.
      *
      * When the upper bound is specified,
@@ -173,6 +164,13 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         this.src = src
+        return this
+    }
+
+    setChainPollInterval(ms: number): this {
+        assert(ms >= 0)
+        this.assertNotRunning()
+        this.chainPollInterval = ms
         return this
     }
 
@@ -209,6 +207,19 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         } else {
             this.typesBundle = eliminatePolkadotjsTypesBundle(bundle)
         }
+        return this
+    }
+
+    /**
+     * Sets the port for a built-in prometheus metrics server.
+     *
+     * By default, the value of `PROMETHEUS_PORT` environment
+     * variable is used. When it is not set,
+     * the processor will pick up an ephemeral port.
+     */
+    setPrometheusPort(port: number | string): this {
+        this.assertNotRunning()
+        this.prometheus.setPort(port)
         return this
     }
 
@@ -254,6 +265,15 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
+    private getRpcDataSource(): RpcDataSource {
+        return new RpcDataSource({
+            rpc: this.getChainRpcClient(),
+            pollInterval: this.chainPollInterval,
+            typesBundle: this.typesBundle
+        })
+    }
+
+    @def
     private getLogger(): Logger {
         return createLogger('sqd:processor')
     }
@@ -279,22 +299,39 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             }
         })
 
-        requests = requests.map(req => {
-            return {
-                fields: this.fields,
-                ...req
-            }
-        })
+        if (this.fields) {
+            requests = requests.map(({range, request}) => {
+                return {
+                    range,
+                    request: {
+                        fields: this.fields,
+                        ...request
+                    }
+                }
+            })
+        }
 
         return applyRangeBound(requests, this.blockRange)
     }
 
-    private async processBatch<Store>(
+    private processBatch<Store>(
         store: Store,
-        batch: Batch<BlockData<F>>,
+        batch: Batch<Block<F>> & WithRuntime,
         handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>
     ): Promise<void> {
-
+        let chain = new Chain(
+            () => this.getChainRpcClient(),
+            {from: batch.blocks[0].header.height, to: last(batch.blocks).header.height},
+            batch.runtime,
+            batch.prevRuntime
+        )
+        return handler({
+            _chain: chain,
+            log: this.getLogger().child('mapping'),
+            store,
+            blocks: batch.blocks,
+            isHead: batch.isHead,
+        })
     }
 
     /**
@@ -317,6 +354,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
+                hotDataSource: this.getRpcDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log

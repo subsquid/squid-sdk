@@ -1,6 +1,4 @@
 export {assertNotNull} from '@subsquid/util-internal'
 export {toHex, decodeHex} from '@subsquid/util-internal-hex'
-export * from './interfaces/options'
-export * from './interfaces/substrate'
 export * from './processor'
-export {BlockData} from './interfaces/data'
+export * from './interfaces/data'

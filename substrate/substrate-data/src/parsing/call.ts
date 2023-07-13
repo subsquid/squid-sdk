@@ -40,6 +40,7 @@ export class CallParser {
                     this.extrinsic.success = false
                     this.extrinsic.error = err
                     this.visitFailedCall(call, err)
+                    this.takeEvents()
                     break
                 default:
                     throw unexpectedCase(event.name)
@@ -336,7 +337,7 @@ export class CallParser {
         while (this.eventPos >= 0) {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
-                if (event.callAddress![0] !== this.extrinsic.index) return
+                if (event.extrinsicIndex !== this.extrinsic.index) return
                 this.eventPos -= 1
                 return event
             } else {
