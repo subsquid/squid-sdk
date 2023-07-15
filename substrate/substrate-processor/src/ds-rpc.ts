@@ -1,4 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
+import type {RpcClient} from '@subsquid/rpc-client'
 import * as base from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import {AsyncQueue, ensureError} from '@subsquid/util-internal'

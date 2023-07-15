@@ -3,6 +3,7 @@ import * as ss58 from '@subsquid/ss58'
 import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
+import {BalancesTransferEvent} from './types/events'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -24,15 +25,16 @@ processor.run(new TypeormDatabase(), async ctx => {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Balances.Transfer') {
+                let e = new BalancesTransferEvent(ctx, event)
                 let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
-                if (Array.isArray(event.args)) {
-                    rec = {
-                        from: event.args[0],
-                        to: event.args[1],
-                        amount: event.args[2]
-                    }
+                if (e.isV1020) {
+                    let [from, to, amount, fee] = e.asV1020
+                    rec = {from, to, amount}
+                } else if (e.isV1050) {
+                    let [from, to, amount] = e.asV1020
+                    rec = {from, to, amount}
                 } else {
-                    rec = event.args
+                    rec = e.asV9130
                 }
                 transfers.push(new Transfer({
                     id: event.id,

@@ -12,6 +12,7 @@ import {
     StorageItem
 } from '@subsquid/substrate-metadata'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
 import {Bytes, RuntimeVersionId} from '@subsquid/substrate-raw-data'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
@@ -30,6 +31,7 @@ export class Runtime {
     public readonly scaleCodec: ScaleCodec
     public readonly jsonCodec: JsonCodec
     private constantValueCache = new Map<Constant, any>()
+    private storageHashCache = new Map<StorageItem, string>()
 
     constructor(
         runtimeVersion: RuntimeVersionId,
@@ -67,6 +69,17 @@ export class Runtime {
             `Unknown storage item: ${prefix}.${name}`
         )
         return def
+    }
+
+    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
+        let def = this.description.storage[prefix]?.[name]
+        if (def == null) return undefined
+        let hash = this.storageHashCache.get(def)
+        if (hash == null) {
+            hash = getStorageItemTypeHash(this.description.types, def)
+            this.storageHashCache.set(def, hash)
+        }
+        return hash
     }
 
     encodeStorageKey(prefix: string, name: string, ...key: any[]): Bytes {
