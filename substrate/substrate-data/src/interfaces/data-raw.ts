@@ -8,4 +8,5 @@ export interface RawBlock extends BlockData {
     session?: Bytes
     runtime?: Runtime
     runtimeOfPreviousBlock?: Runtime
+    feeMultiplier?: Bytes
 }

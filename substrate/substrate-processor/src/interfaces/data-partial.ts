@@ -5,7 +5,7 @@ export type Simplify<T> = {
 } & {}
 
 
-export type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specId'
+export type BlockRequiredFields = 'height' | 'hash' | 'parentHash' | 'specName' | 'specVersion'
 export type ExtrinsicRequiredFields = 'index'
 export type CallRequiredFields = 'extrinsicIndex' | 'address'
 export type EventRequiredFields = 'index' | 'extrinsicIndex' | 'callAddress'

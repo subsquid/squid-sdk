@@ -100,8 +100,8 @@ function toRawRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<raw.Dat
 function toRawRequest(req: DataRequest): raw.DataRequest {
     return {
         runtimeVersion: true,
-        extrinsics: req.extrinsics,
-        events: req.events
+        extrinsics: req.calls || req.blockTimestamp,
+        events: req.events || req.calls
     }
 }
 

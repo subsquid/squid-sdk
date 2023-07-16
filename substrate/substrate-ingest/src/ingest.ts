@@ -45,10 +45,12 @@ export class Ingest {
         return [{
             range: this.range(),
             request: {
-                extrinsics: true,
+                blockValidator: true,
+                blockTimestamp: true,
+                events: true,
+                calls: true,
                 extrinsicHash: true,
-                validator: true,
-                events: true
+                extrinsicFee: true
             }
         }]
     }
@@ -127,7 +129,7 @@ export class Ingest {
         }
     }
 
-    private async rpcIngest(cb: (blocks: Block[]) => Promise<void>) {
+    private async rpcIngest(cb: (blocks: Block[]) => Promise<void>): Promise<void> {
         let ds = new RpcDataSource({
             rpc: this.rpc(),
             typesBundle: this.typesBundle()
@@ -139,11 +141,11 @@ export class Ingest {
     }
 
     private async dumpToStdout(blocks: Block[]): Promise<void> {
-        let drain = false
+        let flushed = true
         for (let block of blocks) {
-            drain = process.stdout.write(JSON.stringify(toJSON(block)) + '\n')
+            flushed = process.stdout.write(JSON.stringify(toJSON(block)) + '\n')
         }
-        if (drain) {
+        if (!flushed) {
             await waitDrain(process.stdout)
         }
     }

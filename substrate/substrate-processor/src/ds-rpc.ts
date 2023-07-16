@@ -170,20 +170,18 @@ function toBaseRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<base.D
 
 
 function toBaseDataRequest(req: DataRequest): base.DataRequest {
-    let events = !!req.events?.length
-        || req.fields?.extrinsic?.success
-        || req.fields?.call?.success
-        || false
+    let events = !!req.events?.length || false
 
-    let extrinsics = !!req.calls?.length
+    let calls = !!req.calls?.length
         || req.events?.some(e => e.extrinsic || e.call || e.stack)
-        || req.fields?.block?.timestamp
         || false
 
     return {
+        blockTimestamp: !!req.fields?.block?.timestamp,
+        blockValidator: !!req.fields?.block?.validator,
         events,
-        extrinsics,
+        calls,
         extrinsicHash: !!req.fields?.extrinsic?.hash,
-        validator: !!req.fields?.block?.validator
+        extrinsicFee: !!req.fields?.extrinsic?.fee
     }
 }

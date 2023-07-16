@@ -7,7 +7,15 @@ import * as decoded from '../interfaces/data-decoded'
 import {RawBlock} from '../interfaces/data-raw'
 import {Runtime} from '../runtime'
 import {CallParser} from './call'
-import {addressOrigin, getExtrinsicTip, noneOrigin, unwrapArguments} from './util'
+import {getFeeCalc} from './fee'
+import {
+    addressOrigin,
+    getDispatchInfoFromExtrinsicFailed,
+    getDispatchInfoFromExtrinsicSuccess,
+    getExtrinsicTip,
+    noneOrigin,
+    unwrapArguments
+} from './util'
 import {getBlockValidator} from './validator'
 
 
@@ -30,23 +38,18 @@ export class BlockParser {
     header(): BlockHeader {
         let src = this.block.block.block.header
         let runtimeVersion = assertNotNull(this.block.runtimeVersion)
-        let header: BlockHeader = {
+        return {
             height: this.block.height,
             hash: this.block.hash,
             parentHash: src.parentHash,
             digest: src.digest,
             extrinsicsRoot: src.extrinsicsRoot,
             stateRoot: src.stateRoot,
-            specId: `${runtimeVersion.specName}@${runtimeVersion.specVersion}`,
-            implId: `${runtimeVersion.implName}@${runtimeVersion.implVersion}`
+            specName: runtimeVersion.specName,
+            specVersion: runtimeVersion.specVersion,
+            implName: runtimeVersion.implName,
+            implVersion: runtimeVersion.implVersion
         }
-        if (this.timestamp()) {
-            header.timestamp = this.timestamp()
-        }
-        if (this.validator()) {
-            header.validator = this.validator()
-        }
-        return header
     }
 
     @def
@@ -91,6 +94,34 @@ export class BlockParser {
                 exi.extrinsic.fee = actualFee - tip
                 exi.extrinsic.tip = tip
             }
+        }
+    }
+
+    calcExtrinsicFees(): void {
+        if (this.block.feeMultiplier == null) return
+        let extrinsics = this.extrinsics()
+        let events = this.events()
+        if (extrinsics == null || events == null) return
+        let calc = getFeeCalc(this.runtime, this.block.feeMultiplier)
+        for (let e of events) {
+            let extrinsicIndex: number
+            let dispatchInfo: decoded.DispatchInfo
+            switch(e.name) {
+                case 'System.ExtrinsicSuccess':
+                    extrinsicIndex = assertNotNull(e.extrinsicIndex)
+                    dispatchInfo = getDispatchInfoFromExtrinsicSuccess(e.args)
+                    break
+                case 'System.ExtrinsicFailed':
+                    extrinsicIndex = assertNotNull(e.extrinsicIndex)
+                    dispatchInfo = getDispatchInfoFromExtrinsicFailed(e.args)
+                    break
+                default:
+                    continue
+            }
+            let extrinsic = extrinsics[extrinsicIndex].extrinsic
+            if (extrinsic.signature == null) continue
+            let len = this.block.block.block.extrinsics![extrinsicIndex].length / 2 - 1
+            extrinsic.fee = calc(dispatchInfo, len)
         }
     }
 

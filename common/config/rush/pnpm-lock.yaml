@@ -197,6 +197,9 @@ dependencies:
   '@subsquid/util-internal-resilient-rpc':
     specifier: ^1.0.0
     version: 1.0.0
+  '@substrate/calc':
+    specifier: ^0.2.8
+    version: 0.2.8
   '@types/deep-equal':
     specifier: ^1.0.1
     version: 1.0.1
@@ -1782,6 +1785,10 @@ packages:
 
   /@subsquid/util-timeout@2.0.0:
     resolution: {integrity: sha512-2J/DAPsBY9xEz2ePW8P82EXqnUZa65EpAnLHmgsFyt3b5z+NfznfX5uo5KFDR+gd6GNQXbjc/+yIA6ey/md3qA==}
+    dev: false
+
+  /@substrate/calc@0.2.8:
+    resolution: {integrity: sha512-1c3mxf35FBeOswduhy0Wil9s4exHahXFo974qa0Ci2AORX8JTxmwhBb10+3Ls9iWoTFwvgOaFr9v1HeRL5tCig==}
     dev: false
 
   /@szmarczak/http-timer@1.1.2:
@@ -5129,10 +5136,11 @@ packages:
     dev: false
 
   file:projects/substrate-data.tgz:
-    resolution: {integrity: sha512-VKdmVBf/RvViON+LQRpn2CE0TzsEIZTHrzyHQszp3a9kZGavhILw/98VGvmQIMOdZzuhVNLynArTWg2iwGy2PA==, tarball: file:projects/substrate-data.tgz}
+    resolution: {integrity: sha512-Ds4UzJ/8P6U2j7O9D/wQY4hSSwCDxCMCMSWb7DVJGEJf82pwpydYmE5rnYOJqsQMR7yH8Vz46G5yTzRnc0sqPw==, tarball: file:projects/substrate-data.tgz}
     name: '@rush-temp/substrate-data'
     version: 0.0.0
     dependencies:
+      '@substrate/calc': 0.2.8
       '@types/node': 18.16.17
       blake2b: 2.1.4
       typescript: 4.9.5

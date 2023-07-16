@@ -49,6 +49,10 @@ export class Runtime {
         this.jsonCodec = new JsonCodec(this.description.types)
     }
 
+    hasStorageItem(prefix: string, name: string): boolean {
+        return !!this.description.storage[prefix]?.[name]
+    }
+
     getStorageItem(name: QualifiedName): StorageItem
     getStorageItem(prefix: string, name: string): StorageItem
     getStorageItem(prefixOrQualifiedName: string, name?: string): StorageItem {
@@ -223,6 +227,10 @@ export class Runtime {
         let decodedKey = this.decodeStorageKey(item, pair[0])
         let decodedValue = this.decodeStorageValue(item, pair[1])
         return [decodedKey, decodedValue]
+    }
+
+    hasConstant(pallet: string, name: string): boolean {
+        return !!this.description.constants[pallet]?.[name]
     }
 
     getConstant(pallet: string, name: string): any {

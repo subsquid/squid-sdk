@@ -30,14 +30,10 @@ export interface BlockHeader {
      */
     extrinsicsRoot: Hash
     digest: {logs: Bytes[]}
-    /**
-     * Runtime spec id formatted as `{spec_name}@{spec_version}`
-     */
-    specId: string
-    /**
-     * Runtime impl id formatted as `{impl_name}@{impl_version}`
-     */
-    implId: string
+    specName: string
+    specVersion: number
+    implName: string
+    implVersion: number
     /**
      * Block timestamp as set by `timestamp.now()` (unix epoch ms, compatible with `Date`).
      */
@@ -122,10 +118,12 @@ export interface Block {
 
 
 export interface DataRequest {
-    extrinsics?: boolean
-    extrinsicHash?: boolean
+    blockValidator?: boolean
+    blockTimestamp?: boolean
     events?: boolean
-    validator?: boolean
+    calls?: boolean
+    extrinsicHash?: boolean
+    extrinsicFee?: boolean
 }
 
 

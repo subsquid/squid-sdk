@@ -1,13 +1,14 @@
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import * as raw from '@subsquid/substrate-data-raw'
 import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-data-raw'
-import {assertNotNull, last} from '@subsquid/util-internal'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
-import {BlockParser, ParsingOptions} from './parsing/block'
+import {BlockParser} from './parsing/block'
+import {supportsFeeCalc} from './parsing/fee'
 import {AccountId} from './parsing/validator'
 import {Runtime} from './runtime'
 
@@ -40,14 +41,20 @@ export class Parser {
         let result = []
 
         for (let batch of this.requests.splitBlocksByRequest(blocks, b => b.height)) {
-            if (batch.request?.validator) {
+            if (batch.request?.blockValidator) {
                 await this.setValidators(batch.blocks)
             }
 
+            if (batch.request?.extrinsicFee && batch.request.calls) {
+                for (let [runtime, blocks] of groupBy(batch.blocks, b => b.runtime!).entries()) {
+                    if (!runtime.hasEvent('TransactionPayment.TransactionFeePaid') && supportsFeeCalc(runtime)) {
+                        await this.setFeeMultiplier(blocks)
+                    }
+                }
+            }
+
             for (let block of batch.blocks) {
-                let parsed = parseRawBlock(block, {
-                    extrinsicHash: batch.request?.extrinsicHash
-                })
+                let parsed = parseRawBlock(block, batch.request)
                 result.push(parsed)
             }
         }
@@ -154,6 +161,20 @@ export class Parser {
         this.prevValidators.set(block.height, item)
         return item
     }
+
+    private async setFeeMultiplier(blocks: RawBlock[]): Promise<void> {
+        let call = blocks.map(b => {
+            let parentHash = b.height == 0 ? b.hash : b.block.block.header.parentHash
+            return {
+                method: 'state_getStorageAt',
+                params: [STORAGE.nextFeeMultiplier, parentHash]
+            }
+        })
+        let values: Bytes[] = await this.rpc.batchCall(call)
+        for (let i = 0; i < blocks.length; i++) {
+            blocks[i].feeMultiplier = values[i]
+        }
+    }
 }
 
 
@@ -166,17 +187,37 @@ function getParent(block: RawBlock): HashAndHeight {
 }
 
 
-function parseRawBlock(rawBlock: RawBlock, options?: ParsingOptions): Block {
+function parseRawBlock(rawBlock: RawBlock, options?: DataRequest): Block {
     let parser = new BlockParser(rawBlock, options)
+
     let block: Block = {
         header: parser.header()
     }
-    if (parser.extrinsics()) {
-        block.extrinsics = parser.extrinsics()!.map(item => item.extrinsic)
-        block.calls = parser.calls() ?? parser.extrinsics()!.map(item => item.call)
+
+    if (options?.blockTimestamp && parser.timestamp()) {
+        block.header.timestamp = parser.timestamp()
     }
-    if (parser.events()) {
+
+    if (options?.blockValidator && parser.validator()) {
+        block.header.validator = parser.validator()
+    }
+
+    if (options?.calls) {
+        block.extrinsics = parser.extrinsics()?.map(item => item.extrinsic)
+        block.calls = parser.calls()
+    }
+
+    if (options?.events) {
         block.events = parser.events()
     }
+
+    if (options?.extrinsicFee) {
+        if (parser.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
+            parser.setExtrinsicFeesFromPaidEvent()
+        } else {
+            parser.calcExtrinsicFees()
+        }
+    }
+
     return block
 }
