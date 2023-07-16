@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/substrate-raw-data",
+  "name": "@subsquid/substrate-data-raw",
   "version": "0.0.0",
   "description": "Raw data fetcher for substrate based chains",
   "license": "GPL-3.0-or-later",

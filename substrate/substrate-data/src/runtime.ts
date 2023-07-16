@@ -13,7 +13,7 @@ import {
 } from '@subsquid/substrate-metadata'
 import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
 import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
-import {Bytes, RuntimeVersionId} from '@subsquid/substrate-raw-data'
+import {Bytes, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import * as decoded from './interfaces/data-decoded'

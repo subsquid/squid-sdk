@@ -1,6 +1,6 @@
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
-import * as raw from '@subsquid/substrate-raw-data'
-import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-raw-data'
+import * as raw from '@subsquid/substrate-data-raw'
+import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-data-raw'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'

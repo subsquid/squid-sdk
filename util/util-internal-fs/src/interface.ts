@@ -11,4 +11,5 @@ export interface Fs {
      */
     write(path: string, content: Readable | Uint8Array | string): Promise<void>
     delete(path: string): Promise<void>
+    readStream(path: string): Promise<Readable>
 }

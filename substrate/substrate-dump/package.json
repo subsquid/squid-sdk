@@ -20,7 +20,7 @@
   "dependencies": {
     "@subsquid/logger": "^1.2.0",
     "@subsquid/rpc-client": "^4.2.0",
-    "@subsquid/substrate-raw-data": "^0.0.0",
+    "@subsquid/substrate-data-raw": "^0.0.0",
     "@subsquid/util-internal": "^2.3.0",
     "@subsquid/util-internal-archive-layout": "^0.0.0",
     "@subsquid/util-internal-commander": "^1.2.0",

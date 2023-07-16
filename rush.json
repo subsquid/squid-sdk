@@ -527,17 +527,23 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-data-raw",
+      "projectFolder": "substrate/substrate-data-raw",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/substrate-dump",
       "projectFolder": "substrate/substrate-dump",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/substrate-ingest",
-//      "projectFolder": "substrate/substrate-ingest",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "projectFolder": "substrate/substrate-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate/substrate-metadata",
@@ -553,12 +559,6 @@
     {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate/substrate-processor",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/substrate-raw-data",
-      "projectFolder": "substrate/substrate-raw-data",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

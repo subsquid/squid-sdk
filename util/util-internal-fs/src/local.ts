@@ -1,3 +1,4 @@
+import {createReadStream} from 'fs'
 import * as fs from 'fs/promises'
 import * as Path from 'path'
 import {Readable} from 'stream'
@@ -66,6 +67,11 @@ export class LocalFs implements Fs {
             recursive: true,
             force: true
         })
+    }
+
+    async readStream(path: string): Promise<Readable> {
+        let item = this.abs(path)
+        return createReadStream(item)
     }
 }
 

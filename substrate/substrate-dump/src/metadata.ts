@@ -1,4 +1,4 @@
-import {Bytes, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-raw-data'
+import {Bytes, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {def} from '@subsquid/util-internal'
 import {formatBlockNumber} from '@subsquid/util-internal-archive-layout'
 import {Fs} from '@subsquid/util-internal-fs'

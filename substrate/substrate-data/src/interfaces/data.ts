@@ -1,4 +1,4 @@
-import type {Bytes, Hash} from '@subsquid/substrate-raw-data'
+import type {Bytes, Hash} from '@subsquid/substrate-data-raw'
 import type {Runtime} from '../runtime'
 
 

@@ -7,7 +7,7 @@ import {
     RpcDataSource,
     runtimeVersionEquals,
     RuntimeVersionId
-} from '@subsquid/substrate-raw-data'
+} from '@subsquid/substrate-data-raw'
 import {assertNotNull, def, last, Throttler} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'

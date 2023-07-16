@@ -1,4 +1,4 @@
-import type {BlockData, Bytes} from '@subsquid/substrate-raw-data'
+import type {BlockData, Bytes} from '@subsquid/substrate-data-raw'
 import {AccountId} from '../parsing/validator'
 import {Runtime} from '../runtime'
 

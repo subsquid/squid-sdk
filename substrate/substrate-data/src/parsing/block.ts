@@ -1,4 +1,4 @@
-import {Bytes} from '@subsquid/substrate-raw-data'
+import {Bytes} from '@subsquid/substrate-data-raw'
 import {assertNotNull, def} from '@subsquid/util-internal'
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import blake2b from 'blake2b'
@@ -134,7 +134,7 @@ export class BlockParser {
             }
 
             if (this.options.extrinsicHash) {
-                extrinsic.hash = toHex(blake2b(32).digest(bytes))
+                extrinsic.hash = toHex(blake2b(32).update(bytes).digest())
             }
 
             let address = extrinsic.signature?.address

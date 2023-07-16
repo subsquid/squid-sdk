@@ -11,6 +11,10 @@ import {formatBlockNumber, getShortHash} from './util'
 export class ArchiveLayout {
     constructor(public readonly fs: Fs) {}
 
+    getChunkFs(chunk: DataChunk): Fs {
+        return this.fs.cd(getChunkPath(chunk))
+    }
+
     async getTops(): Promise<number[]> {
         let items = await this.fs.ls()
         let tops: number[] = []

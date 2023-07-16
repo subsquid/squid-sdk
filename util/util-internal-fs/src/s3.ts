@@ -1,5 +1,6 @@
 import {
     DeleteObjectsCommand,
+    GetObjectCommand,
     ListObjectsV2Command,
     ObjectIdentifier,
     PutObjectCommand,
@@ -151,6 +152,16 @@ export class S3Fs implements Fs {
                 break
             }
         }
+    }
+
+    async readStream(path: string): Promise<Readable> {
+        let [Bucket, Key] = splitPath(this.resolve([path]))
+        let res = await this.client.send(new GetObjectCommand({
+            Bucket,
+            Key
+        }))
+        assert(res.Body instanceof Readable)
+        return res.Body
     }
 }
 
