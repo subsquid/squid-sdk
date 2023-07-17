@@ -72,14 +72,21 @@ export class Fetcher {
     }
 
     private fetchTrace(blocks: BlockData[], targets: string): Promise<void> {
-        return Promise.all(blocks.map(async b => {
-            b.trace = await this.rpc.call('state_traceBlock', [
-                b.hash,
-                targets,
-                '',
-                ''
-            ])
-        })).then()
+        let tasks = []
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            if (block.height != 0) {
+                tasks.push(async () => {
+                    block.trace = await this.rpc.call('state_traceBlock', [
+                        block.hash,
+                        targets,
+                        '',
+                        ''
+                    ])
+                });
+            }
+        }
+        return Promise.all(tasks).then()
     }
 
     async fetchRuntimeVersion(blocks: BlockData[]): Promise<void> {
