@@ -22,7 +22,16 @@ import assert from 'assert'
 import {Chain} from './chain'
 import {RpcDataSource} from './ds-rpc'
 import {Block, FieldSelection} from './interfaces/data'
-import {CallRequest, DataRequest, EventRequest} from './interfaces/data-request'
+import {
+    CallRequest,
+    ContractsContractEmittedRequest,
+    DataRequest,
+    EthereumTransactRequest,
+    EventRequest,
+    EvmLogRequest,
+    GearMessageEnqueuedRequest,
+    GearUserMessageSentRequest
+} from './interfaces/data-request'
 
 
 export type DataSource = ArchiveDataSource | ChainDataSource
@@ -123,6 +132,42 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     addCall(options: CallRequest & BlockRange): this {
         this.assertNotRunning()
         this.add({calls: [options]}, options.range)
+        return this
+    }
+
+    addEvmLog(options: EvmLogRequest & BlockRange): this {
+        this.assertNotRunning()
+        this.add({evmLogs: [{
+            ...options,
+            address: options.address?.map(s => s.toLowerCase())
+        }]}, options.range)
+        return this
+    }
+
+    addEthereumTransaction(options: EthereumTransactRequest & BlockRange): this {
+        this.assertNotRunning()
+        this.add({ethereumTransactions: [{
+            ...options,
+            to: options.to?.map(s => s.toLowerCase())
+        }]}, options.range)
+        return this
+    }
+
+    addContractsContractEmitted(options: ContractsContractEmittedRequest & BlockRange): this {
+        this.assertNotRunning()
+        this.add({contractsEvents: [options]}, options.range)
+        return this
+    }
+
+    addGearMessageEnqueued(options: GearMessageEnqueuedRequest & BlockRange): this {
+        this.assertNotRunning()
+        this.add({gearMessagesEnqueued: [options]}, options.range)
+        return this
+    }
+
+    addGearUserMessageSent(options: GearUserMessageSentRequest & BlockRange): this {
+        this.assertNotRunning()
+        this.add({gearUserMessagesSent: [options]}, options.range)
         return this
     }
 
@@ -295,7 +340,12 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             return {
                 includeAllBlocks: a.includeAllBlocks || b.includeAllBlocks,
                 events: concat(a.events, b.events),
-                calls: concat(a.calls, b.calls)
+                calls: concat(a.calls, b.calls),
+                evmLogs: concat(a.evmLogs, b.evmLogs),
+                ethereumTransactions: concat(a.ethereumTransactions, b.ethereumTransactions),
+                contractsEvents: concat(a.contractsEvents, b.contractsEvents),
+                gearMessagesEnqueued: concat(a.gearMessagesEnqueued, b.gearMessagesEnqueued),
+                gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent)
             }
         })
 
