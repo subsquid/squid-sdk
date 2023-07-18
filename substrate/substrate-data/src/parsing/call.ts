@@ -1,8 +1,7 @@
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import assert from 'assert'
 import {Call, Event, Extrinsic} from '../interfaces/data'
-import {Result} from '../interfaces/data-decoded'
 import * as decoded from '../interfaces/data-decoded'
+import {Result} from '../interfaces/data-decoded'
 import type {BlockParser} from './block'
 import {addressOrigin, getExtrinsicFailedError, rootOrigin, signedOrigin} from './util'
 
@@ -188,9 +187,8 @@ export class CallParser {
     }
 
     private unwrapProxy(call: Call): void {
-        let real = call.args.real
-        assert(real instanceof Uint8Array)
-        let sub = this.getSubcall(call, signedOrigin(real))
+        let real = assertNotNull(addressOrigin(assertNotNull(call.args.real)))
+        let sub = this.getSubcall(call, real)
         this.visitUnwrapped(sub, event => {
             if (event.name != 'Proxy.ProxyExecuted') return
             let result = 'result' in event.args ? event.args.result : event.args
