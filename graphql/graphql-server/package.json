@@ -32,7 +32,7 @@
     "@subsquid/util-internal-http-server": "^1.2.0",
     "apollo-server-core": "^3.12.0",
     "apollo-server-express": "^3.12.0",
-    "commander": "^10.0.1",
+    "commander": "^11.0.0",
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "graphql": "^15.8.0",

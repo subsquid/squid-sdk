@@ -17,7 +17,9 @@ export type Option<T> = {
 
 export interface Runtime {
     getCallTypeHash(name: string): string
+    decodeJsonCall(call: {name: string, args: any}): any
     getEventTypeHash(name: string): string
+    decodeJsonEvent(event: {name: string, args: any}): any
     getConstantTypeHash(pallet: string, name: string): string | undefined
     getConstant(pallet: string, name: string): any
     getStorageItemTypeHash(prefix: string, name: string): string | undefined

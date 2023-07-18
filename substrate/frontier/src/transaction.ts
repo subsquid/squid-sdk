@@ -50,7 +50,7 @@ export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transa
 export function getTransaction(ctx: ChainContext, ethereumTransact: Call): Transaction {
     assert(ethereumTransact.name === 'Ethereum.transact')
 
-    switch (ctx._chain.getCallHash('Ethereum.transact')) {
+    switch (ctx._chain.runtime.getCallTypeHash('Ethereum.transact')) {
         case registry.getHash('Ethereum.transactV0'):
         case registry.getHash('V14Ethereum.transactV0'):
             return getAsV0(ethereumTransact.args)

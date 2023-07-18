@@ -19,20 +19,20 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.1.0",
+    "@subsquid/logger": "^1.3.0",
     "@subsquid/rpc-client": "^4.3.0",
     "@subsquid/substrate-data": "^0.0.0",
     "@subsquid/substrate-data-raw": "^0.0.0",
     "@subsquid/substrate-metadata": "^3.2.0",
-    "@subsquid/util-internal": "^2.2.0",
+    "@subsquid/util-internal": "^2.3.1",
     "@subsquid/util-internal-archive-layout": "^0.0.0",
     "@subsquid/util-internal-commander": "^1.2.0",
-    "@subsquid/util-internal-counters": "^1.1.0",
+    "@subsquid/util-internal-counters": "^1.2.0",
     "@subsquid/util-internal-fs": "^0.0.0",
-    "@subsquid/util-internal-hex": "^1.1.0",
+    "@subsquid/util-internal-hex": "^1.2.0",
     "@subsquid/util-internal-json": "^1.2.0",
     "@subsquid/util-internal-range": "^0.0.0",
-    "commander": "^10.0.1"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17"

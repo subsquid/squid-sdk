@@ -10,7 +10,7 @@ export interface EvmLog {
 
 export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
     assert(event.name === 'EVM.Log')
-    switch (ctx._chain.getEventHash('EVM.Log')) {
+    switch (ctx._chain.runtime.getEventTypeHash('EVM.Log')) {
         case registry.getHash('EVM.LogV0'):
             return getAsV0(event.args)
         case registry.getHash('EVM.LogV1'):

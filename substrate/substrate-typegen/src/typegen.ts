@@ -120,7 +120,7 @@ export class Typegen {
                     out.blockComment(v.def.docs)
                     out.block(`get as${versionName}(): ${typeExp}`, () => {
                         out.line(`assert(this.is${versionName})`)
-                        out.line(`return this.${ctx}.args`)
+                        out.line(`return this.runtime.decodeJson${fix}(this.${ctx})`)
                     })
                 })
             })

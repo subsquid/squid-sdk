@@ -30,8 +30,7 @@ export const DEFAULT_FIELDS = {
     },
     event: {
         name: true,
-        args: true,
-        callAddress: true
+        args: true
     }
 } as const
 
@@ -112,7 +111,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
 interface ApplyExtrinsicEvent extends base.Event {
     phase: 'ApplyExtrinsic'
     extrinsicIndex: number
-    callAddress: number[]
+    callAddress?: number[]
 }
 
 

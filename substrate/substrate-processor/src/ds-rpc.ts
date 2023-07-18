@@ -2,6 +2,7 @@ import type {RpcClient} from '@subsquid/rpc-client'
 import * as base from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import {AsyncQueue, ensureError} from '@subsquid/util-internal'
+import {toJSON} from '@subsquid/util-internal-json'
 import {
     Batch,
     HotDatabaseState,
@@ -94,7 +95,7 @@ function mapBlock(src: PartialBlock): Block {
                 extrinsic.version = s.version
             }
             if (s.signature != null) {
-                extrinsic.signature = s.signature
+                extrinsic.signature = toJSON(s.signature)
             }
             if (s.fee != null) {
                 extrinsic.fee = s.fee
@@ -103,7 +104,7 @@ function mapBlock(src: PartialBlock): Block {
                 extrinsic.tip = s.tip
             }
             if (s.error != null) {
-                extrinsic.error = s.error
+                extrinsic.error = toJSON(s.error)
             }
             if (s.success != null) {
                 extrinsic.success = s.success
@@ -121,13 +122,13 @@ function mapBlock(src: PartialBlock): Block {
                 call.name = s.name
             }
             if (s.args != null) {
-                call.args = s.args
+                call.args = toJSON(s.args)
             }
             if (s.origin != null) {
-                call.origin = s.origin
+                call.origin = toJSON(s.origin)
             }
             if (s.error != null) {
-                call.error = s.error
+                call.error = toJSON(s.error)
             }
             if (s.success != null) {
                 call.success = s.success
@@ -142,7 +143,7 @@ function mapBlock(src: PartialBlock): Block {
                 event.name = s.name
             }
             if (s.args != null) {
-                event.args = s.args
+                event.args = toJSON(s.args)
             }
             if (s.phase != null) {
                 event.phase = s.phase
@@ -170,10 +171,22 @@ function toBaseRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<base.D
 
 
 function toBaseDataRequest(req: DataRequest): base.DataRequest {
-    let events = !!req.events?.length || false
+    let events = !!req.events?.length
+        || !!req.evmLogs?.length
+        || !!req.contractsEvents?.length
+        || !!req.gearMessagesEnqueued?.length
+        || !!req.gearUserMessagesSent?.length
+        || req.calls?.some(c => c.events)
+        || req.ethereumTransactions?.some(c => c.events)
+        || false
 
     let calls = !!req.calls?.length
+        || !!req.ethereumTransactions?.length
         || req.events?.some(e => e.extrinsic || e.call || e.stack)
+        || req.evmLogs?.some(e => e.extrinsic || e.call || e.stack)
+        || req.contractsEvents?.some(e => e.extrinsic || e.call || e.stack)
+        || req.gearMessagesEnqueued?.some(e => e.extrinsic || e.call || e.stack)
+        || req.gearUserMessagesSent?.some(e => e.extrinsic || e.call || e.stack)
         || false
 
     return {

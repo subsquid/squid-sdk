@@ -267,6 +267,9 @@ export function setUpItems(block: Block): void {
                 let parent = block.calls[pos]
                 if (isSubcall(parent, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
                     parent.events.push(event)
+                    if (addressCompare(parent.address, event.callAddress) == 0) {
+                        event.call = parent
+                    }
                 }
             }
         }
@@ -330,7 +333,7 @@ type CallKey = Pick<Call, 'extrinsicIndex' | 'address'>
 
 function isSubcall(parent: CallKey, call: CallKey): boolean {
     if (parent.extrinsicIndex != call.extrinsicIndex) return false
-    if (parent.address.length >= call.address.length) return false
+    if (parent.address.length > call.address.length) return false
     for (let i = 0; i < parent.address.length; i++) {
         if (parent.address[i] != call.address[i]) return false
     }

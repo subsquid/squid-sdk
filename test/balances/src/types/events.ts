@@ -25,7 +25,7 @@ export class BalancesTransferEvent {
      */
     get asV1020(): [Uint8Array, Uint8Array, bigint, bigint] {
         assert(this.isV1020)
-        return this.event.args
+        return this.runtime.decodeJsonEvent(this.event)
     }
 
     /**
@@ -40,7 +40,7 @@ export class BalancesTransferEvent {
      */
     get asV1050(): [Uint8Array, Uint8Array, bigint] {
         assert(this.isV1050)
-        return this.event.args
+        return this.runtime.decodeJsonEvent(this.event)
     }
 
     /**
@@ -55,6 +55,6 @@ export class BalancesTransferEvent {
      */
     get asV9130(): {from: Uint8Array, to: Uint8Array, amount: bigint} {
         assert(this.isV9130)
-        return this.event.args
+        return this.runtime.decodeJsonEvent(this.event)
     }
 }
