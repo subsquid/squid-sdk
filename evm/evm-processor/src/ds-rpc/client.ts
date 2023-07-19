@@ -291,7 +291,8 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         })
 
         let results: rpc.TransactionReceipt[][] = await this.rpc.batchCall(call, {
-            priority: getBlockHeight(blocks[0])
+            priority: getBlockHeight(blocks[0]),
+            validateResult: nonNull
         })
 
         for (let i = 0; i < blocks.length; i++) {
@@ -333,11 +334,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         }
 
-        let receipts: rpc.TransactionReceipt[] = await this.rpc.batchCall(call, {
+        let receipts: (rpc.TransactionReceipt | null)[] = await this.rpc.batchCall(call, {
             priority: getBlockHeight(blocks[0])
         })
 
-        let receiptsByBlock = groupBy(receipts, r => r.blockHash)
+        let receiptsByBlock = groupBy(
+            receipts.filter(r => r != null) as rpc.TransactionReceipt[],
+            r => r.blockHash
+        )
 
         for (let block of blocks) {
             let rs = receiptsByBlock.get(block.hash) || []

@@ -9,7 +9,7 @@ const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 
 const processor = new EvmBatchProcessor()
     .setDataSource({
-        // archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
+        archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
         chain: 'https://rpc.ankr.com/eth'
     })
     .addLog({
