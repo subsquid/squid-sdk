@@ -54,11 +54,26 @@ export class HttpConnection implements Connection {
         if (res.length != batch.length) {
             throw new RpcProtocolError(1008, `Invalid length of a batch response`)
         }
+        let reordered = false
         for (let i = 0; i < batch.length; i++) {
-            if (batch[i].id !== res[i].id) throw new RpcProtocolError(
-                1008,
-                `Results are expected to be in the same order as in the batch call`
-            )
+            if (batch[i].id !== res[i].id) {
+                reordered = true
+                break
+            }
+        }
+        if (reordered) {
+            let m = new Map(res.map(r => [r.id, r]))
+            res = new Array(batch.length)
+            for (let i = 0; i < batch.length; i++) {
+                let r = m.get(batch[i].id)
+                if (r == null) {
+                    throw new RpcProtocolError(
+                        1008,
+                        `Missing result from call ${JSON.stringify(batch[i])} in the batch response`
+                    )
+                }
+                res[i] = r
+            }
         }
         return res
     }
