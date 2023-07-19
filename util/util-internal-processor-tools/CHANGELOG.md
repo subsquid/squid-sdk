@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Thu, 15 Jun 2023 10:53:31 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 2.0.0
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Breaking changes
+
+- moving things around in preparation to support substrate networks
 
 ## 1.2.3
 Thu, 15 Jun 2023 10:53:31 GMT

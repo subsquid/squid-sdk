@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-commander
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 1.3.0
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Minor changes
+
+- introduce `positiveInt()` and `FileOrUrl()` validators
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

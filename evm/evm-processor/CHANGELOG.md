@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 29 Jun 2023 10:25:09 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 1.7.2
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Patches
+
+- handle `null` results from receipt RPC requests
+- adapt for refactored processor tools
 
 ## 1.7.1
 Thu, 29 Jun 2023 10:25:09 GMT

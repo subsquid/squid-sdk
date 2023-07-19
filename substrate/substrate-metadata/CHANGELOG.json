@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-metadata",
   "entries": [
     {
+      "version": "3.3.0",
+      "tag": "@subsquid/substrate-metadata_v3.3.0",
+      "date": "Wed, 19 Jul 2023 16:48:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "types: rename `EthAccessListItem.slots` to `EthAccessListItem.storageKeys` to match V14 metadata"
+          },
+          {
+            "comment": "introduce `getChainDescription()` function"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.3.1` to `^2.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.0",
       "tag": "@subsquid/substrate-metadata_v3.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

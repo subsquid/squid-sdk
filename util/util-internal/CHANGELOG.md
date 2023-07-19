@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Mon, 19 Jun 2023 22:07:46 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 2.4.0
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Minor changes
+
+- Introduce `Throttler`
 
 ## 2.3.1
 Mon, 19 Jun 2023 22:07:46 GMT

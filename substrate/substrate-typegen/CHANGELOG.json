@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@subsquid/substrate-typegen_v4.0.0",
+      "date": "Wed, 19 Jul 2023 16:48:14 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "adapt generated code for a new `ArrowSquid` data handler context"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata\" from `^3.2.0` to `^3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-metadata-explorer\" from `^2.2.0` to `^2.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.3.1` to `^2.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.0",
       "tag": "@subsquid/substrate-typegen_v3.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

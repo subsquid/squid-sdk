@@ -2,6 +2,18 @@
   "name": "@subsquid/ss58-codec",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/ss58-codec_v1.2.1",
+      "date": "Wed, 19 Jul 2023 16:48:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix broken link in the README"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/ss58-codec_v1.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

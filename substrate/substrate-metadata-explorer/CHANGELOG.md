@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 2.2.1
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Patches
+
+- upgrade `commander` from `10.0.1` to `11.0.0` 
 
 ## 2.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

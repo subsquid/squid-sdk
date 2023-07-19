@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-commander",
   "entries": [
     {
+      "version": "1.3.0",
+      "tag": "@subsquid/util-internal-commander_v1.3.0",
+      "date": "Wed, 19 Jul 2023 16:48:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "introduce `positiveInt()` and `FileOrUrl()` validators"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/util-internal-commander_v1.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

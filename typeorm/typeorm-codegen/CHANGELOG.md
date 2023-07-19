@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Wed, 05 Jul 2023 14:27:27 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 1.3.1
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Patches
+
+- upgrade `commander` from `10.0.1` to `11.0.0` 
 
 ## 1.3.0
 Wed, 05 Jul 2023 14:27:27 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Sat, 10 Jun 2023 15:11:08 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 3.0.0
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Breaking changes
+
+- actually introduce `ArrowSquid`
 
 ## 2.1.0
 Sat, 10 Jun 2023 15:11:08 GMT

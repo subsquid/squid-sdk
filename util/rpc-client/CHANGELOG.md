@@ -1,6 +1,17 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Tue, 20 Jun 2023 11:29:34 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+
+## 4.4.0
+Wed, 19 Jul 2023 16:48:14 GMT
+
+### Minor changes
+
+- annotate RPC errors with call info
+
+### Patches
+
+- handle unordered results from HTTP batch call
 
 ## 4.3.0
 Tue, 20 Jun 2023 11:29:34 GMT
