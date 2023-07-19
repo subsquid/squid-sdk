@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "moving things around in preparation to support substrate networks",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

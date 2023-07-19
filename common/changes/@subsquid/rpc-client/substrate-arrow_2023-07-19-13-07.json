@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "annotate RPC errors with call info",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

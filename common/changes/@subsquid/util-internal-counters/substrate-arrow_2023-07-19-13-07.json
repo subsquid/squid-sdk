@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-counters",
+      "comment": "add `.currentValue` to `ProgressOptions`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-counters"
+}
