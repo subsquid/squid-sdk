@@ -77,7 +77,8 @@ export const bundle: OldTypesBundle = {
                 SlashingSpans: 'SlashingSpansTo204',
                 StakingLedger: 'StakingLedgerTo223',
                 Votes: 'VotesTo230',
-                Weight: 'u32'
+                Weight: 'u32',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -96,7 +97,8 @@ export const bundle: OldTypesBundle = {
                 SlashingSpans: 'SlashingSpansTo204',
                 StakingLedger: 'StakingLedgerTo223',
                 Votes: 'VotesTo230',
-                Weight: 'u32'
+                Weight: 'u32',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -115,7 +117,8 @@ export const bundle: OldTypesBundle = {
                 ReferendumInfo: 'ReferendumInfoTo239',
                 StakingLedger: 'StakingLedgerTo223',
                 Votes: 'VotesTo230',
-                Weight: 'u32'
+                Weight: 'u32',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -132,7 +135,8 @@ export const bundle: OldTypesBundle = {
                 RefCount: 'RefCountTo259',
                 ReferendumInfo: 'ReferendumInfoTo239',
                 StakingLedger: 'StakingLedgerTo240',
-                Weight: 'u32'
+                Weight: 'u32',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -147,7 +151,8 @@ export const bundle: OldTypesBundle = {
                 OpenTip: 'OpenTipTo225',
                 RefCount: 'RefCountTo259',
                 StakingLedger: 'StakingLedgerTo240',
-                Weight: 'u32'
+                Weight: 'u32',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -159,7 +164,8 @@ export const bundle: OldTypesBundle = {
                 DispatchInfo: 'DispatchInfoTo244',
                 Heartbeat: 'HeartbeatTo244',
                 OpenTip: 'OpenTipTo225',
-                RefCount: 'RefCountTo259'
+                RefCount: 'RefCountTo259',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
@@ -169,7 +175,8 @@ export const bundle: OldTypesBundle = {
                 ...addrAccountIdTypes,
                 CompactAssignments: 'CompactAssignmentsTo257',
                 OpenTip: 'OpenTipTo225',
-                RefCount: 'RefCountTo259'
+                RefCount: 'RefCountTo259',
+                Scheduled: 'ScheduledTo254'
             }
         },
         {
