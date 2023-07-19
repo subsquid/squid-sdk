@@ -89,6 +89,9 @@ dependencies:
   '@rush-temp/scale-codec':
     specifier: file:./projects/scale-codec.tgz
     version: file:projects/scale-codec.tgz
+  '@rush-temp/shibuya-psp22':
+    specifier: file:./projects/shibuya-psp22.tgz
+    version: file:projects/shibuya-psp22.tgz(supports-color@8.1.1)
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -197,6 +200,9 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
+  '@subsquid/substrate-typegen':
+    specifier: ^2.2.1
+    version: 2.2.1
   '@subsquid/util-internal-resilient-rpc':
     specifier: ^1.0.0
     version: 1.0.0
@@ -1731,11 +1737,86 @@ packages:
       supports-color: 8.1.1
     dev: false
 
+  /@subsquid/rpc-client@2.0.0:
+    resolution: {integrity: sha512-El67TER6lmeoaeOlRNELlH2AGpG4YWg8YRnIw3yrfzYhiXsmpX1Hra4XJi53/RxU5tsS1qMON2bd44QbceL27Q==}
+    dependencies:
+      '@subsquid/util-timeout': 1.0.0
+      websocket: 1.0.34
+    dev: false
+
   /@subsquid/rpc-client@3.0.0:
     resolution: {integrity: sha512-oa15Cn4/vNfAkGAy3Lzx+0S9XpNJg3Agxn30KcWvXJGcEBc7Qgad5F9GIqji5Q9D6zGV0zk68rZN4hbuI45NSA==}
     dependencies:
       '@subsquid/util-timeout': 2.0.0
       websocket: 1.0.34
+    dev: false
+
+  /@subsquid/scale-codec@1.1.1:
+    resolution: {integrity: sha512-gDI0TnF0LXG5+nwXW6TUkTBVfbTcPqtPeAqAwy6Z9EtetHK8IoogkewIILisXcbVun2M66cZR+i/VABbaVy2Sw==}
+    dependencies:
+      '@subsquid/util-internal-hex': 0.0.2
+      '@subsquid/util-internal-json': 0.2.1
+    dev: false
+
+  /@subsquid/substrate-metadata-explorer@1.1.2:
+    resolution: {integrity: sha512-HE8g4PeDTGAXYBCbao7DayHkKzR+h0e7ocsJoEqKaNFO22Brnv9RVkcoUjswcWDWmXQyekS0hQI4O2JgYHy6cA==}
+    hasBin: true
+    dependencies:
+      '@subsquid/logger': 0.3.1
+      '@subsquid/util-internal': 1.1.0
+      '@subsquid/util-internal-commander': 0.0.2(commander@10.0.1)
+      '@subsquid/util-internal-hex': 0.0.2
+      '@subsquid/util-internal-http-client': 0.1.0
+      '@subsquid/util-internal-read-lines': 0.0.2
+      '@subsquid/util-internal-resilient-rpc': 0.0.3
+      commander: 10.0.1
+    dev: false
+
+  /@subsquid/substrate-metadata@2.3.0:
+    resolution: {integrity: sha512-jHmeShjbQdvAYhRQ/62yOaPlGr5veKdF9idazCEUYMHQsy0U/TNPtsGyAwmLU/9qvwqpCe775XBEetlb9pa9FA==}
+    dependencies:
+      '@subsquid/scale-codec': 1.1.1
+      '@subsquid/util-internal': 1.1.0
+      '@subsquid/util-naming': 0.0.2
+    dev: false
+
+  /@subsquid/substrate-typegen@2.2.1:
+    resolution: {integrity: sha512-kRV5aA4w6jUfiWdcRKUW/zjgtWLMKlai02AwN8BdW1T+6pOk0jI9PFvTbiGWjmqAjTHxCHOuNvhmvzNApl20gg==}
+    hasBin: true
+    dependencies:
+      '@subsquid/logger': 0.3.1
+      '@subsquid/scale-codec': 1.1.1
+      '@subsquid/substrate-metadata': 2.3.0
+      '@subsquid/substrate-metadata-explorer': 1.1.2
+      '@subsquid/util-internal': 1.1.0
+      '@subsquid/util-internal-code-printer': 0.1.1
+      '@subsquid/util-internal-config': 1.0.1
+      '@subsquid/util-internal-read-lines': 0.0.2
+      '@subsquid/util-naming': 0.0.2
+      commander: 10.0.1
+    dev: false
+
+  /@subsquid/util-internal-code-printer@0.1.1:
+    resolution: {integrity: sha512-367YmYeLoLaOiBdlrYElEC4AeM4Kx0XYWM9mA9VBllGvT9qWNnGllaJ+mY9UBhlhWQtCbUnTRtHXhjR5qL8g1w==}
+    dev: false
+
+  /@subsquid/util-internal-commander@0.0.2(commander@10.0.1):
+    resolution: {integrity: sha512-midCpkwu7NaXGhr0MiyQsJlIj284/0mAFBvVG8gRHqqRqb71GIAQq+aRcUSv8KNnAiRWnXK1OPak+gc40V9btw==}
+    peerDependencies:
+      commander: ^10.0.0
+    dependencies:
+      commander: 10.0.1
+    dev: false
+
+  /@subsquid/util-internal-config@1.0.1:
+    resolution: {integrity: sha512-F5jr3OWerUQ+dn0ecCtcizdZunlFN6wXy50SmfLY+x8f8ggXsk3Z2waIxJjOAB4GnuNYyvvQREM7pusjCyN2RQ==}
+    dependencies:
+      '@exodus/schemasafe': 1.0.1
+      jsonc-parser: 3.2.0
+    dev: false
+
+  /@subsquid/util-internal-counters@0.0.2:
+    resolution: {integrity: sha512-x/O+56bR/X41ZEKjxZy0IqiapKCN9gGJB7G8md+idvGeC15kw8r5pg2Ck9tulB07VQEOqWLNNuvobrfvH0hNkg==}
     dev: false
 
   /@subsquid/util-internal-counters@1.0.0:
@@ -1770,6 +1851,21 @@ packages:
       '@subsquid/util-internal-hex': 1.0.0
     dev: false
 
+  /@subsquid/util-internal-read-lines@0.0.2:
+    resolution: {integrity: sha512-XniSw0MTQXJVAB3pl3ZBylFeFGdPMEwLdWUfOePQYsCH13Y7nat2fJ5W4tK78yJ456UsuB+mw8qS2EuAfcOvfw==}
+    dev: false
+
+  /@subsquid/util-internal-resilient-rpc@0.0.3:
+    resolution: {integrity: sha512-HExQgeQFHEk7HfnjXZZApHtRF2mAsnu90E7hoWTrVnDzsvMTvtX9tPMjQXKXFoyDDb+WQcVs0yqnzl6rhQY2Iw==}
+    dependencies:
+      '@subsquid/logger': 0.3.1
+      '@subsquid/rpc-client': 2.0.0
+      '@subsquid/util-internal': 1.1.0
+      '@subsquid/util-internal-counters': 0.0.2
+      '@subsquid/util-internal-http-client': 0.1.0
+      '@subsquid/util-timeout': 1.0.0
+    dev: false
+
   /@subsquid/util-internal-resilient-rpc@1.0.0:
     resolution: {integrity: sha512-R6NnUfLwmcFDfi7f8xksiCMbrDfYBR107ZvpDyv4gqd8kg6zMJ4iMIKLlyeWkU0G6Cn8+JSeTMA+yRuEMMje5Q==}
     dependencies:
@@ -1787,6 +1883,17 @@ packages:
 
   /@subsquid/util-internal@2.0.0:
     resolution: {integrity: sha512-HzihJEV+kDwErw903TGztbRdYEY985W0wvkBePF2jVF725vUPZDufnLVR9dqhj1Hutn2vI7mPdKdR6iiUpzTmQ==}
+    dev: false
+
+  /@subsquid/util-naming@0.0.2:
+    resolution: {integrity: sha512-t23kWD5kdRi03HXAhMSO1SesmM6dyD8kmMKfBR5SoFScij0Z2zf4dZ/jQT0bH9V59r4eZvv+NxR5XC+uR8GBAQ==}
+    dependencies:
+      camelcase: 6.3.0
+      inflected: 2.1.0
+    dev: false
+
+  /@subsquid/util-timeout@1.0.0:
+    resolution: {integrity: sha512-6LiXYuRKIFcuUOsHPL3qN+cYDZJiCPGQFDdBECrZvXM/FtjF6dloX9JS4LJ7lMHsnKsu7v78+ioiUYpk1Jlyug==}
     dev: false
 
   /@subsquid/util-timeout@2.0.0:
@@ -2521,6 +2628,11 @@ packages:
 
   /color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+    dev: false
+
+  /commander@10.0.1:
+    resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
+    engines: {node: '>=14'}
     dev: false
 
   /commander@11.0.0:
@@ -4770,7 +4882,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-HGtPcfc9PAknf72/9FZdmC06WxBOhWl4E6YRVH3obrYhVC93NS6G5lAKZDJq6QSTeEyoremPs1yueQIlQkW2UA==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-Sraar2P27+fmnLs6CyeZWYujbWq1v7z/IMlUhHMPxKuJgOwprJ879ayYHawVutWbRe/EqvqhjMMyoz7t5+UiVQ==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -5141,6 +5253,38 @@ packages:
       typescript: 4.9.5
     dev: false
 
+  file:projects/shibuya-psp22.tgz(supports-color@8.1.1):
+    resolution: {integrity: sha512-QD9vpFkLNSrzlX1xTTsTtUAvRC0SnK6m88ZC5blCgb/dZsl5PxFRMwFH9EZ9cBrWBA9NWogDBlaqsyxtvlzAYA==, tarball: file:projects/shibuya-psp22.tgz}
+    id: file:projects/shibuya-psp22.tgz
+    name: '@rush-temp/shibuya-psp22'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/substrate-typegen': 2.2.1
+      '@types/node': 18.16.17
+      dotenv: 16.1.4
+      pg: 8.11.0
+      typeorm: 0.3.16(pg@8.11.0)(supports-color@8.1.1)
+      typescript: 4.9.5
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+    dev: false
+
   file:projects/ss58-codec.tgz:
     resolution: {integrity: sha512-/MOmPkV+0XLGCHA4Kk7PUh6E0mDiiMNVFbO+us1vhDbN7X7WMTEATWQQkSS0MJImTZECr0m+3q4zWTgNaaNbFg==, tarball: file:projects/ss58-codec.tgz}
     name: '@rush-temp/ss58-codec'
@@ -5223,7 +5367,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-BrtFNajmegh1toRplLgxu6oMXl2xvQKakg8ej/Bzb+BrU1X9NlaYqKbTGkJe8nHXOlrDcQEHsxO4DUYWjftTeg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-bKmDK0rh6LUqE3aBIyHd+ljv0XjY+v3aNZm5I8POp3Xht1TtlKrC+zwR0iy0G8psnqjZb9eBvTaldvZ2wu2Pmw==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:

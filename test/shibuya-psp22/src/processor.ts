@@ -1,9 +1,16 @@
-import * as ss58 from "@subsquid/ss58"
-import {assertNotNull, DataHandlerContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
-import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
-import {In} from "typeorm"
-import * as psp22 from "./psp22"
-import {Owner, Transfer, Token} from "./model"
+import * as ss58 from '@subsquid/ss58'
+import {
+    assertNotNull,
+    DataHandlerContext,
+    SubstrateBatchProcessor,
+    SubstrateBatchProcessorFields,
+    toHex
+} from '@subsquid/substrate-processor'
+import {Store, TypeormDatabase} from '@subsquid/typeorm-store'
+import {In} from 'typeorm'
+import {Owner, Token, Transfer} from './model'
+import * as psp22 from './psp22'
+import {ContractsContractEmittedEvent} from './types/events'
 
 
 const CONTRACT_ADDRESS = '0x10f48492ccc953b2948bc2bd027d854a73d08ad3744663bc433fd8ea9d845c8e'
@@ -11,23 +18,31 @@ const CONTRACT_ADDRESS = '0x10f48492ccc953b2948bc2bd027d854a73d08ad3744663bc433f
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: "wss://rpc.shibuya.astar.network",
-        archive: "https://shibuya.archive.subsquid.io/graphql",
+        chain: "https://rpc.shibuya.astar.network"
     })
-    .addContractsContractEmitted(CONTRACT_ADDRESS)
+    .setBlockRange({
+        from: 3176542
+    })
+    .setFields({
+        block: {
+            timestamp: true
+        }
+    })
+    .addContractsContractEmitted({
+        contractAddress: [CONTRACT_ADDRESS]
+    })
 
 
-type Item = BatchProcessorItem<typeof processor>
-type Ctx = DataHandlerContext<Store, Item>
+type Ctx = DataHandlerContext<Store, SubstrateBatchProcessorFields<typeof processor>>
 
 
 let token: Token | undefined
 
 
 export async function getOrCreateToken(ctx: Ctx): Promise<Token> {
-    if (token == undefined) {
+    if (token == null) {
         token = await ctx.store.get(Token, CONTRACT_ADDRESS)
-        if (token == undefined) {
+        if (token == null) {
             let contract = new psp22.Contract(ctx, CONTRACT_ADDRESS)
             let tokenName = await contract.PSP22Metadata_token_name()
             let tokenSymbol = await contract.PSP22Metadata_token_symbol()
@@ -42,10 +57,10 @@ export async function getOrCreateToken(ctx: Ctx): Promise<Token> {
                 symbol: decoder.decode(assertNotNull(tokenSymbol)),
                 decimals: tokenDecimals,
             })
-            ctx.store.insert(token)
+            await ctx.store.insert(token)
         }
     }
-    return assertNotNull(token)
+    return token
 }
 
 
@@ -117,18 +132,21 @@ interface TransferRecord {
 function extractTransferRecords(ctx: Ctx): TransferRecord[] {
     let records: TransferRecord[] = []
     for (let block of ctx.blocks) {
-        for (let item of block.items) {
-            if (item.name == 'Contracts.ContractEmitted' && item.event.args.contract == CONTRACT_ADDRESS) {
-                let event = psp22.decodeEvent(item.event.args.data)
-                if (event.__kind == 'Transfer') {
-                    records.push({
-                        id: item.event.id,
-                        from: event.from && ss58.codec(5).encode(event.from),
-                        to: event.to && ss58.codec(5).encode(event.to),
-                        amount: event.value,
-                        block: block.header.height,
-                        timestamp: new Date(block.header.timestamp)
-                    })
+        for (let event of block.events) {
+            if (event.name == 'Contracts.ContractEmitted') {
+                let {contract, data} = new ContractsContractEmittedEvent(ctx, event).asV31
+                if (toHex(contract) == CONTRACT_ADDRESS) {
+                    let ce = psp22.decodeEvent(toHex(data))
+                    if (ce.__kind == 'Transfer') {
+                        records.push({
+                            id: event.id,
+                            from: ce.from && ss58.codec(5).encode(ce.from),
+                            to: ce.to && ss58.codec(5).encode(ce.to),
+                            amount: ce.value,
+                            block: block.header.height,
+                            timestamp: new Date(block.header.timestamp ?? 0)
+                        })
+                    }
                 }
             }
         }

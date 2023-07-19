@@ -16,6 +16,9 @@ codegen:
 typegen:
 	@npx squid-ink-typegen --abi metadata.json --output src/psp22.ts
 
+substrate-typegen:
+	@npx squid-substrate-typegen typegen.json
+
 up:
 	@docker-compose up -d
 
