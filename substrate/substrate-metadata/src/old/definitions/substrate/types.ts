@@ -1154,7 +1154,7 @@ export const types = {
   "EthereumSignature": "[u8; 65]",
   "EthAccessListItem": {
     "address": "EthAddress",
-    "slots": "Vec<H256>"
+    "storageKeys": "Vec<H256>"
   },
   "EthAccessList": "Vec<EthAccessListItem>",
   "EthAccount": {
