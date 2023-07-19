@@ -1,32 +1,68 @@
 import {concurrentMap, last, wait} from '@subsquid/util-internal'
+import {RangeRequest, splitRange, SplitRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {BatchRequest} from './batch'
 import {HashAndHeight, HotDatabaseState} from './database'
 import {Batch, Block, BlockHeader, HotUpdate} from './datasource'
-import {ClosedRange, splitRange} from './range'
 
 
 export interface HeightTracker {
-    wait(height: number): Promise<number>
     getHeight(): Promise<number>
+    getLastHeight(): number
+    wait(height: number): Promise<number>
 }
 
 
-export interface DataSplit<R> {
-    range: ClosedRange
-    request: R
-    chainHeight: number
+export class PollingHeightTracker implements HeightTracker {
+    private lastAccess = 0
+    private lastHeight = 0
+
+    constructor(
+        private height: () => Promise<number>,
+        public readonly pollInterval: number
+    ) {
+    }
+
+    async getHeight(): Promise<number> {
+        let height = await this.height()
+        this.lastAccess = Date.now()
+        this.lastHeight = height
+        return height
+    }
+
+    getLastHeight(): number {
+        return this.lastHeight
+    }
+
+    async wait(height: number): Promise<number> {
+        let current = this.lastHeight
+        while (current < height) {
+            let pause = this.pollInterval - Math.min(Date.now() - this.lastAccess, this.pollInterval)
+            if (pause) {
+                await wait(pause)
+            }
+            current = await this.getHeight()
+        }
+        return current
+    }
 }
 
 
-export async function* generateDataSplits<R>(
+export async function* getHeightUpdates(heightTracker: HeightTracker, from: number): AsyncIterable<number> {
+    while (true) {
+        yield from = await heightTracker.wait(from)
+        from += 1
+    }
+}
+
+
+export async function* generateSplitRequests<R>(
     args: {
-        requests: BatchRequest<R>[]
+        requests: RangeRequest<R>[]
         heightTracker: HeightTracker
         stopOnHead?: boolean
     }
-): AsyncIterable<DataSplit<R>> {
-    let top = await args.heightTracker.getHeight()
+): AsyncIterable<SplitRequest<R>> {
+    let top = args.heightTracker.getLastHeight()
     for (let req of args.requests) {
         let from = req.range.from
         let end = req.range.to ?? Infinity
@@ -41,8 +77,7 @@ export async function* generateDataSplits<R>(
             let to = Math.min(end, top)
             yield {
                 range: {from, to},
-                request: req.request,
-                chainHeight: top
+                request: req.request
             }
             from = to + 1
         }
@@ -52,19 +87,18 @@ export async function* generateDataSplits<R>(
 
 export async function* generateFetchStrides<R>(
     args: {
-        requests: BatchRequest<R>[]
+        requests: RangeRequest<R>[]
         heightTracker: HeightTracker
         strideSize?: number
         stopOnHead?: boolean
     }
-): AsyncIterable<DataSplit<R>> {
+): AsyncIterable<SplitRequest<R>> {
     let {strideSize = 10, ...params} = args
-    for await (let s of generateDataSplits(params)) {
+    for await (let s of generateSplitRequests(params)) {
         for (let range of splitRange(strideSize, s.range)) {
             yield {
                 range,
-                request: s.request,
-                chainHeight: s.chainHeight
+                request: s.request
             }
         }
     }
@@ -73,27 +107,26 @@ export async function* generateFetchStrides<R>(
 
 export function archiveIngest<R, B extends Block>(
     args: {
-        requests: BatchRequest<R>[]
+        requests: RangeRequest<R>[]
         heightTracker: HeightTracker
-        query: (s: DataSplit<R>) => Promise<B[]>
+        query: (s: SplitRequest<R>) => Promise<B[]>
         stopOnHead?: boolean
     }
 ): AsyncIterable<Batch<B>> {
     let {query, ...params} = args
 
     async function* ingest(): AsyncIterable<Batch<B>> {
-        for await (let s of generateDataSplits(params)) {
+        for await (let s of generateSplitRequests(params)) {
             let from = s.range.from
             let to = s.range.to
             while (from <= to) {
                 let blocks = await query({
                     range: {from, to},
-                    request: s.request,
-                    chainHeight: s.chainHeight
+                    request: s.request
                 })
                 assert(blocks.length > 0, 'boundary blocks are expected to be included')
                 let top = last(blocks).header.height
-                yield {blocks, isHead: top == s.chainHeight}
+                yield {blocks, isHead: top >= args.heightTracker.getLastHeight()}
                 from = top + 1
             }
         }
@@ -104,45 +137,6 @@ export function archiveIngest<R, B extends Block>(
         ingest(),
         b => Promise.resolve(b)
     )
-}
-
-
-export class PollingHeightTracker implements HeightTracker {
-    private lastAccess = 0
-    private lastHeight = 0
-
-    constructor(
-        private height: () => Promise<number>,
-        public readonly pollInterval: number = 1000
-    ) {
-    }
-
-    async getHeight(): Promise<number> {
-        let height = await this.height()
-        this.lastAccess = Date.now()
-        this.lastHeight = height
-        return height
-    }
-
-    async wait(height: number): Promise<number> {
-        while (this.lastHeight < height) {
-            let pause = this.pollInterval - Math.min(Date.now() - this.lastAccess, this.pollInterval)
-            if (pause) {
-                await wait(pause)
-            }
-            await this.getHeight()
-        }
-        return this.lastHeight
-    }
-}
-
-
-export async function* getHeightUpdates(heightTracker: HeightTracker, from: number): AsyncIterable<number> {
-    let height = from
-    while (true) {
-        yield height = await heightTracker.wait(height)
-        height += 1
-    }
 }
 
 
@@ -276,7 +270,7 @@ function getParent(hdr: BlockHeader): HashAndHeight {
 
 
 export class RequestsTracker<R> {
-    constructor(private requests: BatchRequest<R>[]) {}
+    constructor(private requests: RangeRequest<R>[]) {}
 
     getRequestAt(height: number): R | undefined {
         for (let req of this.requests) {

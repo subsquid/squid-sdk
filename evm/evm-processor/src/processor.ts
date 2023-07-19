@@ -4,12 +4,12 @@ import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
-    BatchRequest,
     Database,
     getOrGenerateSquidId,
-    mergeBatchRequests,
+    mergeRangeRequests,
     PrometheusServer,
     Range,
+    RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
@@ -77,7 +77,7 @@ export type EvmBatchProcessorFields<T> = T extends EvmBatchProcessor<infer F> ? 
  * Provides methods to configure and launch data processing.
  */
 export class EvmBatchProcessor<F extends FieldSelection = {}> {
-    private requests: BatchRequest<DataRequest>[] = []
+    private requests: RangeRequest<DataRequest>[] = []
     private src?: DataSource
     private blockRange?: Range
     private fields?: FieldSelection
@@ -315,8 +315,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getBatchRequests(): BatchRequest<DataRequest>[] {
-        let requests = mergeBatchRequests(this.requests, function merge(a: DataRequest, b: DataRequest) {
+    private getBatchRequests(): RangeRequest<DataRequest>[] {
+        let requests = mergeRangeRequests(this.requests, function merge(a: DataRequest, b: DataRequest) {
             let res: DataRequest = {}
             if (a.includeAllBlocks || b.includeAllBlocks) {
                 res.includeAllBlocks = true

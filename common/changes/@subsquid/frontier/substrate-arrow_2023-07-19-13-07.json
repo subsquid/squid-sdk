@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "adapt for `ArrowSquid` data handler context",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}

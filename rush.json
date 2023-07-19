@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.74.0",
+  "rushVersion": "5.100.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "6.32.22",
+  "pnpmVersion": "8.6.5",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -319,7 +319,12 @@
     /**
      * The list of shell commands to run after the Rush installation finishes
      */
-    "postRushInstall": [],
+    "postRushInstall": [
+      // This is needed to remove node_gyp_bins which contains symlinks outside the root
+      // @see https://github.com/nodejs/node-gyp/issues/2713
+      // @see https://github.com/nodejs/node-gyp/pull/2721
+      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;"
+    ],
 
     /**
      * The list of shell commands to run before the Rush build command starts
@@ -516,17 +521,29 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-explorer",
-      "projectFolder": "substrate/substrate-explorer",
+      "packageName": "@subsquid/substrate-data",
+      "projectFolder": "substrate/substrate-data",
       "shouldPublish": true,
-      "versionPolicyName": "docker"
+      "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/substrate-ingest",
-//      "projectFolder": "substrate/substrate-ingest",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    {
+      "packageName": "@subsquid/substrate-data-raw",
+      "projectFolder": "substrate/substrate-data-raw",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "projectFolder": "substrate/substrate-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "projectFolder": "substrate/substrate-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
     {
       "packageName": "@subsquid/substrate-metadata",
       "projectFolder": "substrate/substrate-metadata",
@@ -618,6 +635,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "projectFolder": "util/util-internal-archive-layout",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-binary-heap",
       "projectFolder": "util/util-internal-binary-heap",
       "shouldPublish": true,
@@ -648,6 +671,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-fs",
+      "projectFolder": "util/util-internal-fs",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-hex",
       "projectFolder": "util/util-internal-hex",
       "shouldPublish": true,
@@ -656,6 +685,12 @@
     {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util/util-internal-http-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-ingest-tools",
+      "projectFolder": "util/util-internal-ingest-tools",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -674,6 +709,12 @@
     {
       "packageName": "@subsquid/util-internal-prometheus-server",
       "projectFolder": "util/util-internal-prometheus-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-range",
+      "projectFolder": "util/util-internal-range",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -726,26 +767,26 @@
       "projectFolder": "test/types",
       "shouldPublish": false
     },
-    {
-      "packageName": "shibuya-erc20",
-      "projectFolder": "test/shibuya-erc20",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "shibuya-erc20",
+//      "projectFolder": "test/shibuya-erc20",
+//      "shouldPublish": false
+//    },
     {
       "packageName": "shibuya-psp22",
       "projectFolder": "test/shibuya-psp22",
       "shouldPublish": false
     },
-    {
-      "packageName": "karura-erc20",
-      "projectFolder": "test/karura-erc20",
-      "shouldPublish": false
-    },
-    {
-      "packageName": "gear-nft",
-      "projectFolder": "test/gear-nft",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "karura-erc20",
+//      "projectFolder": "test/karura-erc20",
+//      "shouldPublish": false
+//    },
+//    {
+//      "packageName": "gear-nft",
+//      "projectFolder": "test/gear-nft",
+//      "shouldPublish": false
+//    },
     {
       "packageName": "astar-erc20",
       "projectFolder": "test/astar-erc20",

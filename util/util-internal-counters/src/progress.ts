@@ -4,6 +4,7 @@ import assert from "assert"
 export interface ProgressOptions {
     initialValue?: number
     targetValue?: number
+    currentValue?: number
     windowSize?: number
     windowGranularitySeconds?: number
 }
@@ -27,6 +28,9 @@ export class Progress {
         this.granularity = BigInt(windowGranularitySeconds) * 1_000_000_000n
         this.initialValue = options?.initialValue
         this.targetValue = options?.targetValue
+        if (options?.currentValue != null) {
+            this.setCurrentValue(options.currentValue)
+        }
     }
 
     setInitialValue(value: number): void {

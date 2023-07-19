@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "upgrade `commander` from `10.0.1` to `11.0.0` ",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

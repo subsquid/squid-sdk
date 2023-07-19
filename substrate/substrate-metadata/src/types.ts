@@ -56,6 +56,8 @@ export type Type =
 
 
 export type TypeRegistry = Type[]
-
-
 export type QualifiedName = string
+/**
+ * Hex-encoded raw bytes
+ */
+export type Bytes = string

@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@subsquid/util-internal": "^2.3.1",
-    "commander": "^10.0.1",
+    "commander": "^11.0.0",
     "jsonc-parser": "^3.2.0",
     "latest-version": "^5.1.0",
     "semver": "^7.5.1"

@@ -4,8 +4,6 @@ import {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
 import {assertNotNull, concurrentMap, def, groupBy, last, wait} from '@subsquid/util-internal'
 import {
     Batch,
-    BatchRequest,
-    DataSplit,
     ForkNavigator,
     generateFetchStrides,
     getHeightUpdates,
@@ -13,7 +11,9 @@ import {
     HotDataSource,
     HotUpdate,
     PollingHeightTracker,
-    RequestsTracker
+    RangeRequest,
+    RequestsTracker,
+    SplitRequest
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
@@ -80,7 +80,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return this.getBlockHash(0)
     }
 
-    async *getHotBlocks(requests: BatchRequest<DataRequest>[], state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
+    async *getHotBlocks(requests: RangeRequest<DataRequest>[], state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
         let requestsTracker = new RequestsTracker(
             requests.map(toRpcBatchRequest)
         )
@@ -148,14 +148,15 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     }
 
     getFinalizedBlocks(
-        requests: BatchRequest<DataRequest>[],
+        requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean
     ): AsyncIterable<Batch<Block>> {
+        let heightTracker = new PollingHeightTracker(() => this.getFinalizedHeight(), this.pollInterval)
         return concurrentMap(
             5,
             generateFetchStrides({
                 requests: requests.map(toRpcBatchRequest),
-                heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), this.pollInterval),
+                heightTracker,
                 strideSize: this.strideSize,
                 stopOnHead
             }),
@@ -164,13 +165,13 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                 let blocks = await this.processBlocks(blocks0, s.request)
                 return {
                     blocks,
-                    isHead: s.range.to === s.chainHeight
+                    isHead: s.range.to >= heightTracker.getLastHeight()
                 }
             }
         )
     }
 
-    private async getStride0(s: DataSplit<rpc.DataRequest>): Promise<rpc.Block[]> {
+    private async getStride0(s: SplitRequest<rpc.DataRequest>): Promise<rpc.Block[]> {
         let call = []
         for (let i = s.range.from; i <= s.range.to; i++) {
             call.push({
@@ -549,7 +550,7 @@ class ConsistencyError extends Error {
 }
 
 
-function toRpcBatchRequest(request: BatchRequest<DataRequest>): BatchRequest<rpc.DataRequest> {
+function toRpcBatchRequest(request: RangeRequest<DataRequest>): RangeRequest<rpc.DataRequest> {
     return {
         range: request.range,
         request: toRpcDataRequest(request.request)

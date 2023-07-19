@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-commander",
+      "comment": "introduce `positiveInt()` and `FileOrUrl()` validators",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-commander"
+}

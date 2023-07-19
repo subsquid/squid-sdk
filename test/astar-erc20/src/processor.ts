@@ -6,38 +6,51 @@ import * as erc20 from './abi/erc20'
 import {Transaction} from './model'
 
 
+const CONTRACTS = [
+    '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98'.toLowerCase(),
+    '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283'.toLowerCase(),
+]
+
+
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: 'wss://public-rpc.pinknode.io/astar',
-        archive: 'https://astar.archive.subsquid.io/graphql',
+        chain: 'https://rpc.astar.network/'
     })
-    .addEthereumTransaction([
-        '0x6a2d262D56735DbA19Dd70682B39F6bE9a931D98',
-        '0x3795C36e7D12A8c252A20C5a7B455f7c57b60283',
-    ])
+    .setBlockRange({
+        from: 4_021_130
+    })
+    .setFields({
+        block: {
+            timestamp: true
+        }
+    })
+    .addEthereumTransaction({
+        to: CONTRACTS,
+        events: true
+    })
 
 
 processor.run(new TypeormDatabase(), async (ctx) => {
     let transactions = []
 
     for (let block of ctx.blocks) {
-        for (let item of block.items) {
-            if (item.name == 'Ethereum.Executed') {
-                let result = getTransactionResult(ctx, item.event)
+        for (let event of block.events) {
+            if (event.name == 'Ethereum.Executed' && event.call) {
+                let result = getTransactionResult(ctx, event)
+                if (!CONTRACTS.includes(result.to)) continue
+
                 if (result.status !== 'Succeed') {
                     ctx.log.warn(result, `failed transaction`)
                     continue
                 }
 
-                let call = assertNotNull(item.event.call)
-                let transaction = getTransaction(ctx, call)
-
+                let transaction = getTransaction(ctx, event.call)
                 let input = decodeTxInput(transaction.input)
                 if (input) transactions.push(
                     new Transaction({
-                        id: call.id,
+                        id: event.call.id,
                         block: block.header.height,
-                        timestamp: new Date(block.header.timestamp),
+                        timestamp: new Date(assertNotNull(block.header.timestamp)),
                         txHash: transaction.hash,
                         from: transaction.from,
                         to: transaction.to,

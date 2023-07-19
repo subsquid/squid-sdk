@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/util-internal-range",
+  "version": "0.0.0",
+  "description": "Interval arithmetic for block ranges",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "node lib/test.js"
+  },
+  "dependencies": {
+    "@subsquid/util-internal": "^2.3.1",
+    "@subsquid/util-internal-binary-heap": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.16.17",
+    "fast-check": "^3.10.0",
+    "typescript": "~4.9.5"
+  }
+}

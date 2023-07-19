@@ -1,4 +1,4 @@
-import {BatchRequest} from './batch'
+import {RangeRequestList} from '@subsquid/util-internal-range'
 import {HashAndHeight, HotDatabaseState} from './database'
 
 
@@ -28,12 +28,12 @@ export interface HotUpdate<B> {
 
 
 export interface DataSource<B, R> {
-    getFinalizedBlocks(requests: BatchRequest<R>[], stopOnHead?: boolean): AsyncIterable<Batch<B>>
+    getFinalizedBlocks(requests: RangeRequestList<R>, stopOnHead?: boolean): AsyncIterable<Batch<B>>
     getFinalizedHeight(): Promise<number>
     getBlockHash(height: number): Promise<string>
 }
 
 
 export interface HotDataSource<B, R> extends DataSource<B, R> {
-    getHotBlocks(requests: BatchRequest<R>[], state: HotDatabaseState): AsyncIterable<HotUpdate<B>>
+    getHotBlocks(requests: RangeRequestList<R>, state: HotDatabaseState): AsyncIterable<HotUpdate<B>>
 }

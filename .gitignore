@@ -9,6 +9,7 @@ node_modules/
 
 # Our temprorary files (e.g. ad-hoc scripts)
 *.temp.*
+*.temp
 
 # Rush temporary files
 common/deploy/

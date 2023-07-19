@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "Introduce `Throttler`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "comment": "adapt generated code for a new `ArrowSquid` data handler context",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/ink-typegen"
+}

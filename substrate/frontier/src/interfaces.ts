@@ -1,10 +1,11 @@
-export interface Chain {
-    getEventHash(name: string): string
-    getCallHash(name: string): string
-}
 
 export interface ChainContext {
-    _chain: Chain
+    _chain: {
+        runtime: {
+            getEventTypeHash(name: string): string
+            getCallTypeHash(name: string): string
+        }
+    }
 }
 
 export interface Event {

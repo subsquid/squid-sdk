@@ -1,6 +1,6 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
@@ -322,12 +322,20 @@ export class RpcClient {
                 rpcResponse: res
             }, 'rpc response')
         }
-        if (res.error) {
-            throw new RpcError(res.error)
-        } else if (validateResult) {
-            return validateResult(res.result, call)
-        } else {
-            return res.result
+        try {
+            if (res.error) {
+                throw new RpcError(res.error)
+            } else if (validateResult) {
+                return validateResult(res.result, call)
+            } else {
+                return res.result
+            }
+        } catch(err: any) {
+            throw addErrorContext(err, {
+                rpcId: call.id,
+                rpcMethod: call.method,
+                rpcParams: call.params
+            })
         }
     }
 

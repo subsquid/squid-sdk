@@ -3,9 +3,9 @@ import {wait, withErrorContext} from '@subsquid/util-internal'
 import {
     archiveIngest,
     Batch,
-    BatchRequest,
+    RangeRequest,
     DataSource,
-    DataSplit,
+    SplitRequest,
     PollingHeightTracker
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
@@ -36,7 +36,7 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
         return blocks[0].header.hash
     }
 
-    getFinalizedBlocks(requests: BatchRequest<DataRequest>[], stopOnHead?: boolean | undefined): AsyncIterable<Batch<Block>> {
+    getFinalizedBlocks(requests: RangeRequest<DataRequest>[], stopOnHead?: boolean | undefined): AsyncIterable<Batch<Block>> {
         return archiveIngest({
             requests,
             heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), 10_000),
@@ -45,7 +45,7 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
         })
     }
 
-    private async fetchSplit(s: DataSplit<DataRequest>): Promise<Block[]> {
+    private async fetchSplit(s: SplitRequest<DataRequest>): Promise<Block[]> {
         let blocks = await this.query({
             fromBlock: s.range.from,
             toBlock: s.range.to,

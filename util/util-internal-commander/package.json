@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "peerDependencies": {
-    "commander": "^10.0.1"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",

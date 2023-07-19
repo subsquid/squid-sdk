@@ -29,7 +29,7 @@
     "@subsquid/util-internal-config": "^2.2.0",
     "@subsquid/util-internal-read-lines": "^1.2.0",
     "@subsquid/util-naming": "^1.2.0",
-    "commander": "^10.0.1"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",

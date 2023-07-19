@@ -102,8 +102,8 @@ export class Typegen {
 
         this.out.line()
         this.out.block('export interface Chain', () => {
-            this.out.block('client:', () => {
-                this.out.line('call: <T=any>(method: string, params?: unknown[]) => Promise<T>')
+            this.out.block('rpc:', () => {
+                this.out.line('call<T=any>(method: string, params?: unknown[]): Promise<T>')
             })
         })
 
@@ -132,7 +132,7 @@ export class Typegen {
             this.out.block('private async stateCall<T>(selector: string, args: any[]): Promise<T>', () => {
                 this.out.line('let input = _abi.encodeMessageInput(selector, args)')
                 this.out.line('let data = encodeCall(this.address, input)')
-                this.out.line("let result = await this.ctx._chain.client.call('state_call', ['ContractsApi_call', data, this.blockHash])")
+                this.out.line("let result = await this.ctx._chain.rpc.call('state_call', ['ContractsApi_call', data, this.blockHash])")
                 this.out.line('let value = decodeResult(result)')
                 this.out.line('return _abi.decodeMessageOutput(selector, value)')
             })

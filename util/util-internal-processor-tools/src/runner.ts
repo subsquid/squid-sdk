@@ -1,11 +1,10 @@
 import type {Logger} from '@subsquid/logger'
 import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
+import {applyRangeBound, rangeEnd, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {applyRangeBound, BatchRequest} from './batch'
 import {Database, HashAndHeight, HotDatabaseState} from './database'
 import {Batch, Block, DataSource, HotDataSource} from './datasource'
 import {PrometheusServer} from './prometheus'
-import {rangeEnd} from './range'
 import {RunnerMetrics} from './runner-metrics'
 import {formatHead, getItemsCount} from './util'
 
@@ -15,7 +14,7 @@ export interface RunnerConfig<R, S> {
     hotDataSource?: HotDataSource<Block, R>
     allBlocksAreFinal?: boolean
     process: (store: S, batch: Batch<Block>) => Promise<void>
-    requests: BatchRequest<R>[]
+    requests: RangeRequest<R>[]
     database: Database<S>
     log: Logger
     prometheus: PrometheusServer
@@ -264,7 +263,7 @@ export class Runner<R, S> {
         return this.startPrometheusServer()
     }
 
-    private getLeftRequests(after: HashAndHeight): BatchRequest<R>[] {
+    private getLeftRequests(after: HashAndHeight): RangeRequest<R>[] {
         return applyRangeBound(this.config.requests, {from: after.height + 1})
     }
 
