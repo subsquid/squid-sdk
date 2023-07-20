@@ -104,6 +104,7 @@ function mapBlockHeader(src: gw.Block): BlockHeader<AllFields> {
 
     let key: keyof gw.Block
     for (key in src) {
+        if (src[key] == null) continue
         switch(key) {
             case 'number':
                 header.height = src.number
@@ -135,6 +136,7 @@ function mapTransaction(block: BlockHeader<AllFields>, src: gw.Transaction): Tra
 
     let key: keyof gw.Transaction
     for (key in src) {
+        if (src[key] == null) continue
         switch(key) {
             case 'gas':
             case 'gasPrice':
