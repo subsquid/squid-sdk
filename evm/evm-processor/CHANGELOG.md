@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jul 2023 23:47:03 GMT and should not be manually modified.
+
+## 1.7.3
+Thu, 20 Jul 2023 23:47:03 GMT
+
+### Patches
+
+- fix `TypeError: Cannot convert null to a BigInt` during data mapping
 
 ## 1.7.2
 Wed, 19 Jul 2023 16:48:14 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.7.3",
+      "tag": "@subsquid/evm-processor_v1.7.3",
+      "date": "Thu, 20 Jul 2023 23:47:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `TypeError: Cannot convert null to a BigInt` during data mapping"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.7.2",
       "tag": "@subsquid/evm-processor_v1.7.2",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",
