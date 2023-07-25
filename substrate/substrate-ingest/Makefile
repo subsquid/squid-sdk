@@ -1,10 +1,9 @@
 
 kusama:
 	@node lib/main.js \
-		-a s3://kusama-test \
+		-a s3://kusama-mainnet-raw \
 		-e https://kusama-rpc.polkadot.io \
-		--first-block 18000000 \
-		> blocks.temp.jsonl
+		--service 0
 
 
 .PHONY: kusama

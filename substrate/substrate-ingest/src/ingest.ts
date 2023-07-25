@@ -7,7 +7,7 @@ import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
 import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {createFs} from '@subsquid/util-internal-fs'
 import {toJSON} from '@subsquid/util-internal-json'
-import {assertRange, Range, rangeEnd, RangeRequestList} from '@subsquid/util-internal-range'
+import {Range, rangeEnd} from '@subsquid/util-internal-range'
 import * as readline from 'readline'
 import {Writable} from 'stream'
 import {pipeline} from 'stream/promises'
@@ -19,8 +19,6 @@ export interface IngestOptions {
     endpoint?: string
     endpointCapacity: number
     endpointRateLimit?: number
-    firstBlock?: number
-    lastBlock?: number
     typesBundle?: string
 }
 
@@ -31,28 +29,15 @@ export class Ingest {
     constructor(private options: IngestOptions) {}
 
     @def
-    range(): Range {
-        let range = {
-            from: this.options.firstBlock ?? 0,
-            to: this.options.lastBlock
+    dataRequest(): DataRequest {
+        return {
+            blockValidator: true,
+            blockTimestamp: true,
+            events: true,
+            calls: true,
+            extrinsicHash: true,
+            extrinsicFee: true
         }
-        assertRange(range)
-        return range
-    }
-
-    @def
-    dataRequest(): RangeRequestList<DataRequest> {
-        return [{
-            range: this.range(),
-            request: {
-                blockValidator: true,
-                blockTimestamp: true,
-                events: true,
-                calls: true,
-                extrinsicHash: true,
-                extrinsicFee: true
-            }
-        }]
     }
 
     @def
@@ -77,8 +62,7 @@ export class Ingest {
         return new ArchiveLayout(fs)
     }
 
-    private async *getArchiveChunks(): AsyncIterable<DataChunk> {
-        let range = this.range()
+    private async *getArchiveChunks(range: Range): AsyncIterable<DataChunk> {
         while (true) {
             for await (let chunk of this.archive().getDataChunks(range)) {
                 yield chunk
@@ -89,12 +73,13 @@ export class Ingest {
         }
     }
 
-    private async archiveIngest(cb: (blocks: Block[]) => Promise<void>): Promise<void> {
-        let range = this.range()
-
+    private async archiveIngest(range: Range, cb: (blocks: Block[]) => Promise<void>): Promise<void> {
         let parser = new Parser(
             new raw.Rpc(this.rpc()),
-            this.dataRequest(),
+            [{
+                range,
+                request: this.dataRequest()
+            }],
             this.typesBundle()
         )
 
@@ -104,7 +89,7 @@ export class Ingest {
             await cb(blocks)
         }
 
-        for await (let chunk of this.getArchiveChunks()) {
+        for await (let chunk of this.getArchiveChunks(range)) {
             this.log.info(`processing chunk ${getChunkPath(chunk)}`)
             let fs = this.archive().getChunkFs(chunk)
             await pipeline(
@@ -129,33 +114,32 @@ export class Ingest {
         }
     }
 
-    private async rpcIngest(cb: (blocks: Block[]) => Promise<void>): Promise<void> {
+    private async rpcIngest(range: Range, cb: (blocks: Block[]) => Promise<void>): Promise<void> {
         let ds = new RpcDataSource({
             rpc: this.rpc(),
             typesBundle: this.typesBundle()
         })
 
-        for await (let batch of ds.getFinalizedBlocks(this.dataRequest())) {
+        for await (let batch of ds.getFinalizedBlocks([{range, request: this.dataRequest()}])) {
             await cb(batch.blocks)
         }
     }
 
-    private async dumpToStdout(blocks: Block[]): Promise<void> {
+    private async write(out: Writable, blocks: Block[]): Promise<void> {
         let flushed = true
         for (let block of blocks) {
-            flushed = process.stdout.write(JSON.stringify(toJSON(block)) + '\n')
+            flushed = out.write(JSON.stringify(toJSON(block)) + '\n')
         }
         if (!flushed) {
-            await waitDrain(process.stdout)
+            await waitDrain(out)
         }
     }
 
-    @def
-    async run(): Promise<void> {
+    async run(range: Range, out: Writable): Promise<void> {
         if (this.options.rawArchive) {
-            await this.archiveIngest(blocks => this.dumpToStdout(blocks))
+            await this.archiveIngest(range, blocks => this.write(out, blocks))
         } else {
-            await this.rpcIngest(blocks => this.dumpToStdout(blocks))
+            await this.rpcIngest(range, blocks => this.write(out, blocks))
         }
     }
 }
