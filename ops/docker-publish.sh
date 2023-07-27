@@ -23,5 +23,6 @@ function publish() {
 }
 
 publish substrate/substrate-dump || exit 1
+publish substrate/substrate-ingest || exit 1
 
 #git push origin "HEAD:release/${release}" --follow-tags --verbose
