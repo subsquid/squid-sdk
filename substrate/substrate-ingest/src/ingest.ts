@@ -67,6 +67,10 @@ export class Ingest {
             for await (let chunk of this.archive().getDataChunks(range)) {
                 yield chunk
                 if (chunk.to >= rangeEnd(range)) return
+                range = {
+                    from: chunk.to + 1,
+                    to: range.to
+                }
             }
             this.log.info('waiting 1 minute for new chunks')
             await wait(60_000)
@@ -147,6 +151,10 @@ export class Ingest {
 
 function waitDrain(out: Writable): Promise<void> {
     return new Promise((resolve, reject) => {
+        if (out.errored || out.destroyed || out.closed) {
+            return reject(new Error('output stream is no longer writable'))
+        }
+
         function cleanup() {
             out.removeListener('error', error)
             out.removeListener('drain', drain)
