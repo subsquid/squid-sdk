@@ -15,7 +15,7 @@
     "@subsquid/typeorm-store": "^1.2.1",
     "@subsquid/util-internal-json": "^1.2.0",
     "dotenv": "^16.1.4",
-    "ethers": "^6.5.1",
+    "ethers": "^6.6.5",
     "pg": "^8.11.0",
     "typeorm": "^0.3.16"
   },

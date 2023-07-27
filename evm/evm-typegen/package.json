@@ -27,7 +27,7 @@
     "commander": "^11.0.0"
   },
   "peerDependencies": {
-    "ethers": "^6.5.1"
+    "ethers": "^6.6.5"
   },
   "devDependencies": {
     "@types/node": "^18.16.17",
