@@ -1,6 +1,13 @@
 # Change Log - @subsquid/frontier
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Jul 2023 13:21:04 GMT and should not be manually modified.
+
+## 2.0.1
+Thu, 27 Jul 2023 13:21:04 GMT
+
+### Patches
+
+- bump `ethers` peer to `^6.6.5`
 
 ## 2.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

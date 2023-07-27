@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "3.2.2",
+      "tag": "@subsquid/evm-typegen_v3.2.2",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "bump `ethers` peer to `^6.6.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.1",
       "tag": "@subsquid/evm-typegen_v3.2.1",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

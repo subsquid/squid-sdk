@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-data_v0.0.1",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix block validator parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-data_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",
