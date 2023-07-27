@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/frontier",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A set of tools to decode EVM transactions and logs coming from Frontier pallets",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
