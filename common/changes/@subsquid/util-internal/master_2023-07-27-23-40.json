@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "introduce `annotateSyncError` and `annotateAsyncError` decorators ",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

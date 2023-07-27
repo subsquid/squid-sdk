@@ -1,7 +1,7 @@
 import * as raw from '@subsquid/substrate-data-raw'
 import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
-import {assertNotNull, groupBy, last} from '@subsquid/util-internal'
+import {annotateAsyncError, annotateSyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
@@ -54,12 +54,48 @@ export class Parser {
             }
 
             for (let block of batch.blocks) {
-                let parsed = parseRawBlock(block, batch.request)
+                let parsed = this.parseBlock(block, batch.request)
                 result.push(parsed)
             }
         }
 
         return result
+    }
+
+    @annotateSyncError(getRefCtx)
+    private parseBlock(rawBlock: RawBlock, options?: DataRequest): Block {
+        let parser = new BlockParser(rawBlock, options)
+
+        let block: Block = {
+            header: parser.header()
+        }
+
+        if (options?.blockTimestamp && parser.timestamp()) {
+            block.header.timestamp = parser.timestamp()
+        }
+
+        if (options?.blockValidator && parser.validator()) {
+            block.header.validator = parser.validator()
+        }
+
+        if (options?.calls) {
+            block.extrinsics = parser.extrinsics()?.map(item => item.extrinsic)
+            block.calls = parser.calls()
+        }
+
+        if (options?.events) {
+            block.events = parser.events()
+        }
+
+        if (options?.extrinsicFee) {
+            if (parser.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
+                parser.setExtrinsicFeesFromPaidEvent()
+            } else {
+                parser.calcExtrinsicFees()
+            }
+        }
+
+        return block
     }
 
     private async setRuntime(blocks: RawBlock[]): Promise<void> {
@@ -108,6 +144,7 @@ export class Parser {
         }
     }
 
+    @annotateAsyncError(getRefCtx)
     private async fetchRuntime(
         ref: HashAndHeight
     ): Promise<{height: number, value: Runtime}> {
@@ -147,6 +184,7 @@ export class Parser {
         }
     }
 
+    @annotateAsyncError(getRefCtx)
     private async fetchValidators(block: RawBlock): Promise<{session: Bytes, validators: AccountId[]}> {
         let [session, data] = await Promise.all([
             block.session ? Promise.resolve(block.session) : this.rpc.getStorage(block.hash, STORAGE.session),
@@ -187,37 +225,9 @@ function getParent(block: RawBlock): HashAndHeight {
 }
 
 
-function parseRawBlock(rawBlock: RawBlock, options?: DataRequest): Block {
-    let parser = new BlockParser(rawBlock, options)
-
-    let block: Block = {
-        header: parser.header()
+function getRefCtx(ref: RawBlock | HashAndHeight) {
+    return {
+        blockHeight: ref.height,
+        blockHash: ref.hash
     }
-
-    if (options?.blockTimestamp && parser.timestamp()) {
-        block.header.timestamp = parser.timestamp()
-    }
-
-    if (options?.blockValidator && parser.validator()) {
-        block.header.validator = parser.validator()
-    }
-
-    if (options?.calls) {
-        block.extrinsics = parser.extrinsics()?.map(item => item.extrinsic)
-        block.calls = parser.calls()
-    }
-
-    if (options?.events) {
-        block.events = parser.events()
-    }
-
-    if (options?.extrinsicFee) {
-        if (parser.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
-            parser.setExtrinsicFeesFromPaidEvent()
-        } else {
-            parser.calcExtrinsicFees()
-        }
-    }
-
-    return block
 }

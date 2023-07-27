@@ -77,6 +77,54 @@ export function withErrorContext(ctx: any): (err: Error) => never {
 }
 
 
+export function annotateSyncError(getCtx: (...args: any[]) => any): (proto: any, prop: string, d: PropertyDescriptor) => PropertyDescriptor {
+    return function decorate(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
+        let {value: fn, ...options} = d
+
+        function annotate(err: any, args: any[]) {
+            return addErrorContext(
+                ensureError(err),
+                getCtx(...args)
+            )
+        }
+
+        let value = function(this: any, ...args: any[]) {
+            try {
+                return fn.apply(this, args)
+            } catch(err: any) {
+                throw annotate(err, args)
+            }
+        } as any
+
+        return {value, ...options}
+    }
+}
+
+
+export function annotateAsyncError(getCtx: (...args: any[]) => any): (proto: any, prop: string, d: PropertyDescriptor) => PropertyDescriptor {
+    return function decorate(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
+        let {value: fn, ...options} = d
+
+        function annotate(err: any, args: any[]) {
+            return addErrorContext(
+                ensureError(err),
+                getCtx(...args)
+            )
+        }
+
+        let value = function(this: any, ...args: any[]) {
+            try {
+                return fn.apply(this, args).catch((err: any) => annotate(err, args))
+            } catch(err: any) {
+                throw annotate(err, args)
+            }
+        } as any
+
+        return {value, ...options}
+    }
+}
+
+
 export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
     if (abortSignal) {
         return new Promise((resolve, reject) => {
