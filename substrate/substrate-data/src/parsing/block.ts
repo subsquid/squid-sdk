@@ -102,7 +102,14 @@ export class BlockParser {
         let extrinsics = this.extrinsics()
         let events = this.events()
         if (extrinsics == null || events == null) return
-        let calc = getFeeCalc(this.runtime, this.block.feeMultiplier)
+        let parentRuntime = assertNotNull(this.block.runtimeOfPreviousBlock)
+        let calc = getFeeCalc(
+            this.runtime,
+            this.block.feeMultiplier,
+            parentRuntime.specName,
+            parentRuntime.specVersion
+        )
+        if (calc == null) return
         for (let e of events) {
             let extrinsicIndex: number
             let dispatchInfo: decoded.DispatchInfo

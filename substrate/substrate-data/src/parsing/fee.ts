@@ -1,7 +1,6 @@
 import type {Bytes} from '@subsquid/substrate-metadata'
-import {assertNotNull, def} from '@subsquid/util-internal'
+import {def} from '@subsquid/util-internal'
 import {CalcFee as SubstrateFeeCalc} from '@substrate/calc'
-import assert from 'assert'
 import {DispatchInfo} from '../interfaces/data-decoded'
 import {Runtime} from '../runtime'
 
@@ -16,8 +15,13 @@ export function supportsFeeCalc(runtime: Runtime): boolean {
 }
 
 
-export function getFeeCalc(runtime: Runtime, feeMultiplier: Bytes): FeeCalc {
-    return getFactory(runtime).get(feeMultiplier)
+export function getFeeCalc(
+    runtime: Runtime,
+    feeMultiplier: Bytes,
+    specName: string,
+    specVersion: number
+): FeeCalc | undefined {
+    return getFactory(runtime).get(feeMultiplier, specName, specVersion)
 }
 
 
@@ -43,13 +47,18 @@ class CalcFactory {
         if (this.perByteFee() == null) return false
         if (this.baseWeights() == null) return false
         if (this.coefficients() == null) return false
-        return this.createCalc(1) != null
+        return this.createCalc(1, this.runtime.specName, this.runtime.specVersion) != null
     }
 
-    get(feeMultiplier: Bytes): FeeCalc {
-        assert(this.isAvailable())
+    get(
+        feeMultiplier: Bytes,
+        specName: string,
+        specVersion: number
+    ): FeeCalc | undefined {
+        if (!this.isAvailable()) return
         let multiplier = this.runtime.decodeStorageValue('TransactionPayment.NextFeeMultiplier', feeMultiplier)
-        let calc = assertNotNull(this.createCalc(multiplier))
+        const calc = this.createCalc(multiplier, specName, specVersion)
+        if (calc == null) return
         let baseWeights = this.baseWeights()
         return (dispatchInfo, len) => {
             if (!paysFee(dispatchInfo)) return undefined
@@ -59,13 +68,17 @@ class CalcFactory {
         }
     }
 
-    private createCalc(feeMultiplier: number | bigint): SubstrateFeeCalc | undefined {
+    private createCalc(
+        feeMultiplier: number | bigint,
+        specName: string,
+        specVersion: number
+    ): SubstrateFeeCalc | undefined {
         return SubstrateFeeCalc.from_params(
             this.coefficients(),
             feeMultiplier.toString(),
             this.perByteFee().toString(),
-            this.runtime.specName,
-            this.runtime.specVersion
+            specName,
+            specVersion
         )
     }
 
