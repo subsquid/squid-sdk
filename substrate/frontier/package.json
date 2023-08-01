@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/frontier",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "A set of tools to decode EVM transactions and logs coming from Frontier pallets",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@subsquid/substrate-metadata": "^3.3.0",
-    "@subsquid/util-internal": "^2.4.0"
+    "@subsquid/util-internal": "^2.5.0"
   },
   "peerDependencies": {
     "ethers": "^6.6.5"
