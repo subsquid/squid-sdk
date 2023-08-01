@@ -364,19 +364,20 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return applyRangeBound(requests, this.blockRange)
     }
 
+    @def
+    private getChain(): Chain {
+        return new Chain(
+            () => this.getChainRpcClient(),
+        )
+    }
+
     private processBatch<Store>(
         store: Store,
-        batch: Batch<Block<F>> & WithRuntime,
+        batch: Batch<Block<F>>,
         handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>
     ): Promise<void> {
-        let chain = new Chain(
-            () => this.getChainRpcClient(),
-            {from: batch.blocks[0].header.height, to: last(batch.blocks).header.height},
-            batch.runtime,
-            batch.prevRuntime
-        )
         return handler({
-            _chain: chain,
+            _chain: this.getChain(),
             log: this.getLogger().child('mapping'),
             store,
             blocks: batch.blocks,

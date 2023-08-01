@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {ChainContext, Event} from './interfaces'
+import {Event} from './interfaces'
 
 
 export interface TransactionResult {
@@ -11,7 +11,7 @@ export interface TransactionResult {
 }
 
 
-export function getTransactionResult(ctx: ChainContext, ethereumExecuted: Event): TransactionResult {
+export function getTransactionResult(ethereumExecuted: Event): TransactionResult {
     assert(ethereumExecuted.name === 'Ethereum.Executed')
     let args = ethereumExecuted.args
     if (Array.isArray(args)) {

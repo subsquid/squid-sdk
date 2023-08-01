@@ -102,7 +102,7 @@ export class BlockParser {
         let extrinsics = this.extrinsics()
         let events = this.events()
         if (extrinsics == null || events == null) return
-        let parentRuntime = assertNotNull(this.block.runtimeOfPreviousBlock)
+        let parentRuntime = assertNotNull(this.block.runtimeOfPrevBlock)
         let calc = getFeeCalc(
             this.runtime,
             this.block.feeMultiplier,

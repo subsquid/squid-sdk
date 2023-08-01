@@ -11,9 +11,8 @@ import {
     RangeRequest,
     RangeRequestList
 } from '@subsquid/util-internal-processor-tools'
-import {PartialBlock} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
-import {Block, Call, Event, Extrinsic, setUpItems} from './mapping'
+import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
 
 export interface RpcDataSourceOptions {
@@ -45,7 +44,7 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
     async *getFinalizedBlocks(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
-    ): AsyncIterable<Batch<Block> & base.WithRuntime> {
+    ): AsyncIterable<Batch<Block>> {
         for await (let batch of this.ds.getFinalizedBlocks(
             requests.map(toBaseRangeRequest),
             stopOnHead
@@ -60,8 +59,8 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
     async *getHotBlocks(
         requests: RangeRequestList<DataRequest>,
         state: HotDatabaseState
-    ): AsyncIterable<HotUpdate<Block> & base.WithRuntime> {
-        let queue = new AsyncQueue<(HotUpdate<PartialBlock> & base.WithRuntime) | Error>(1)
+    ): AsyncIterable<HotUpdate<Block>> {
+        let queue = new AsyncQueue<HotUpdate<base.Block> | Error>(1)
 
         this.ds.processHotBlocks(
             requests.map(toBaseRangeRequest),
@@ -86,8 +85,13 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
 }
 
 
-function mapBlock(src: PartialBlock): Block {
-    let block = new Block(src.header)
+function mapBlock(src: base.Block): Block {
+    let block = new Block(new BlockHeader(
+        src.runtime,
+        src.runtimeOfPrevBlock,
+        src.header
+    ))
+
     if (src.extrinsics) {
         for (let s of src.extrinsics) {
             let extrinsic = new Extrinsic(block.header, s.index)

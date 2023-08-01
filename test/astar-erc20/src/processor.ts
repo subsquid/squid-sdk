@@ -36,7 +36,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Ethereum.Executed' && event.call) {
-                let result = getTransactionResult(ctx, event)
+                let result = getTransactionResult(event)
                 if (!CONTRACTS.includes(result.to)) continue
 
                 if (result.status !== 'Succeed') {
@@ -44,7 +44,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
                     continue
                 }
 
-                let transaction = getTransaction(ctx, event.call)
+                let transaction = getTransaction(event.call)
                 let input = decodeTxInput(transaction.input)
                 if (input) transactions.push(
                     new Transaction({

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "adapt to per block runtime tracking in substrate processor",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}

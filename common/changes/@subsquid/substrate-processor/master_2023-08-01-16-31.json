@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "migrate to per block runtime tracking",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

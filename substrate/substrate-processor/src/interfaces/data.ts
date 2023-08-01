@@ -63,7 +63,11 @@ type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : nev
 export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<base.BlockHeader, BlockRequiredFields> &
-    Select<base.BlockHeader, GetFields<F, 'block'>>
+    Select<base.BlockHeader, GetFields<F, 'block'>> &
+    {
+        _runtime: base.Runtime
+        _runtimeOfPrevBlock: base.Runtime
+    }
 >
 
 
@@ -78,7 +82,7 @@ export type Extrinsic<F extends FieldSelection = {}> = Simplify<
     Pick<FullExtrinsic, ExtrinsicRequiredFields> &
     Select<FullExtrinsic, GetFields<F, 'extrinsic'>> &
     {
-        block: Block<F>
+        block: BlockHeader<F>
         call?: Call<F>
         getCall(): Call<F>
         subcalls: Call<F>[]
@@ -97,7 +101,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
     Pick<FullCall, CallRequiredFields> &
     Select<FullCall, GetFields<F, 'call'>> &
     {
-        block: Block<F>
+        block: BlockHeader<F>
         extrinsic?: Extrinsic<F>
         getExtrinsic(): Extrinsic<F>
         parentCall?: Call<F>
@@ -130,7 +134,7 @@ export type Event<F extends FieldSelection = {}> = Simplify<
     Pick<BaseEvent, EventRequiredFields> &
     Select<BaseEvent, GetFields<F, 'event'>> &
     {
-        block: Block<F>
+        block: BlockHeader<F>
         call?: Call<F>
         getCall(): Call<F>
         extrinsic?: Extrinsic<F>

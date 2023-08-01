@@ -25,7 +25,7 @@ processor.run(new TypeormDatabase(), async ctx => {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Balances.Transfer') {
-                let e = new BalancesTransferEvent(ctx, event)
+                let e = new BalancesTransferEvent(event)
                 let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
                 if (e.isV1020) {
                     let [from, to, amount, fee] = e.asV1020

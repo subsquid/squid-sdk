@@ -1,9 +1,9 @@
-import assert from 'assert'
-import {Call, ChainContext} from './interfaces'
-import {registry} from './registry'
-import * as ethers from 'ethers'
-import {normalizeAccessListItem, normalizeU256} from './util'
 import {assertNotNull} from '@subsquid/util-internal'
+import assert from 'assert'
+import * as ethers from 'ethers'
+import {Call} from './interfaces'
+import {registry} from './registry'
+import {normalizeAccessListItem, normalizeU256} from './util'
 
 export enum TransactionType {
     Legacy,
@@ -47,10 +47,10 @@ export interface EIP1559Transaction extends BaseTransaction {
 
 export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transaction
 
-export function getTransaction(ctx: ChainContext, ethereumTransact: Call): Transaction {
+export function getTransaction(ethereumTransact: Call): Transaction {
     assert(ethereumTransact.name === 'Ethereum.transact')
 
-    switch (ctx._chain.runtime.getCallTypeHash('Ethereum.transact')) {
+    switch (ethereumTransact.block._runtime.getCallTypeHash('Ethereum.transact')) {
         case registry.getHash('Ethereum.transactV0'):
         case registry.getHash('V14Ethereum.transactV0'):
             return getAsV0(ethereumTransact.args)

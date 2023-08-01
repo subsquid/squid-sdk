@@ -109,11 +109,32 @@ export interface Event {
 }
 
 
-export interface Block {
+export class Block {
+    #runtime: Runtime
+    #runtimeOfPrevBlock: Runtime
+
     header: BlockHeader
     extrinsics?: Extrinsic[]
     calls?: Call[]
     events?: Event[]
+
+    constructor(
+        runtime: Runtime,
+        runtimeOfPrevBlock: Runtime,
+        header: BlockHeader
+    ) {
+        this.#runtime = runtime
+        this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+        this.header = header
+    }
+
+    get runtime(): Runtime {
+        return this.#runtime
+    }
+
+    get runtimeOfPrevBlock(): Runtime {
+        return this.#runtimeOfPrevBlock
+    }
 }
 
 

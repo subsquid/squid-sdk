@@ -32,6 +32,20 @@ export interface Runtime {
 }
 
 
+export type RuntimeCtx = Runtime | {
+    _runtime: Runtime
+}
+
+
+export function getRuntime(ctx: RuntimeCtx): Runtime {
+    if ('_runtime' in ctx) {
+        return (ctx as {_runtime: Runtime})._runtime
+    } else {
+        return ctx as Runtime
+    }
+}
+
+
 interface RpcClient {
     call(method: string, params?: any[]): Promise<any>
     batchCall(calls: {method: string, params?: any[]}[]): Promise<any[]>
@@ -44,8 +58,6 @@ export interface ChainContext {
 
 
 export interface Chain {
-    at(height: number): Chain
-    runtime: Runtime
     rpc: RpcClient
 }
 
@@ -53,22 +65,18 @@ export interface Chain {
 export interface Event {
     name: string
     args: any
-}
-
-
-export interface EventContext extends ChainContext {
-    event: Event
+    block: {
+        _runtime: Runtime
+    }
 }
 
 
 export interface Call {
     name: string
     args: any
-}
-
-
-export interface CallContext extends ChainContext {
-    call: Call
+    block: {
+        _runtime: Runtime
+    }
 }
 
 
@@ -80,19 +88,22 @@ export interface BlockContext extends ChainContext {
 export interface Block {
     hash: string
     height: number
+    _runtime: Runtime
 }
 
 
 export class StorageBase {
     protected readonly _chain: Chain
     protected readonly blockHash: string
+    protected readonly runtime: Runtime
 
     constructor(ctx: BlockContext)
     constructor(ctx: ChainContext, block: Block)
     constructor(ctx: BlockContext, block?: Block) {
         block = block || ctx.block
-        this._chain = ctx._chain.at(block.height)
+        this._chain = ctx._chain
         this.blockHash = block.hash
+        this.runtime = block._runtime
     }
 
     protected getPrefix(): string {
@@ -104,7 +115,7 @@ export class StorageBase {
     }
 
     protected getTypeHash(): string | undefined {
-        return this._chain.runtime.getStorageItemTypeHash(this.getPrefix(), this.getName())
+        return this.runtime.getStorageItemTypeHash(this.getPrefix(), this.getName())
     }
 
     /**
@@ -115,30 +126,30 @@ export class StorageBase {
     }
 
     protected get(...args: any[]): Promise<any> {
-        return this._chain.runtime.getStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+        return this.runtime.getStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 
     protected getMany(keyList: any[]): Promise<any[]> {
-        return this._chain.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), keyList)
+        return this.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), keyList)
     }
 
     protected getAll(): Promise<any[]> {
-        return this._chain.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName())
+        return this.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName())
     }
 
     protected getKeys(...args: any[]): Promise<any[]> {
-        return this._chain.runtime.getKeys(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+        return this.runtime.getKeys(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 
     protected getKeysPaged(pageSize: number, ...args: any[]): AsyncIterable<any[]> {
-        return this._chain.runtime.getKeysPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
+        return this.runtime.getKeysPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 
     protected getPairs(...args: any[]): Promise<[k: any, v: any][]> {
-        return this._chain.runtime.getPairs(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+        return this.runtime.getPairs(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 
     protected getPairsPaged(pageSize: number, ...args: any[]): AsyncIterable<[k: any, v: any][]> {
-        return this._chain.runtime.getPairsPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
+        return this.runtime.getPairsPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
     }
 }

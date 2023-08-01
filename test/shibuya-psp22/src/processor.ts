@@ -134,7 +134,7 @@ function extractTransferRecords(ctx: Ctx): TransferRecord[] {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Contracts.ContractEmitted') {
-                let {contract, data} = new ContractsContractEmittedEvent(ctx, event).asV31
+                let {contract, data} = new ContractsContractEmittedEvent(event).asV31
                 if (toHex(contract) == CONTRACT_ADDRESS) {
                     let ce = psp22.decodeEvent(toHex(data))
                     if (ce.__kind == 'Transfer') {

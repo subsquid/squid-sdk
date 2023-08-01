@@ -82,7 +82,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {Runtime, ChainContext, ${fix}Context, ${fix}, Result, Option} from './support'`)
+        out.line(`import {Runtime, ChainContext, ${fix}, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(name => {
             let versions = items.get(name)!
@@ -90,14 +90,7 @@ export class Typegen {
             let className = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}`)) + fix
             out.line()
             out.block(`export class ${className}`, () => {
-                out.line(`private readonly runtime: Runtime`)
-                out.line(`private readonly ${ctx}: ${fix}`)
-                out.line()
-                out.line(`constructor(ctx: ${fix}Context)`)
-                out.line(`constructor(ctx: ChainContext, ${ctx}: ${fix})`)
-                out.block(`constructor(ctx: ${fix}Context, ${ctx}?: ${fix})`, () => {
-                    out.line(`this.runtime = ctx._chain.runtime`)
-                    out.line(`this.${ctx} = ${ctx} || ctx.${ctx}`)
+                out.block(`constructor(private readonly ${ctx}: ${fix})`, () => {
                     out.line(`assert(this.${ctx}.name === '${name}')`)
                 })
                 versions.forEach(v => {
@@ -114,13 +107,13 @@ export class Typegen {
                     out.blockComment(v.def.docs)
                     out.block(`get is${versionName}(): boolean`, () => {
                         let hash = v.chain[kind].getHash(name)
-                        out.line(`return this.runtime.get${fix}TypeHash('${name}') === '${hash}'`)
+                        out.line(`return this.${ctx}.block._runtime.get${fix}TypeHash('${name}') === '${hash}'`)
                     })
                     out.line()
                     out.blockComment(v.def.docs)
                     out.block(`get as${versionName}(): ${typeExp}`, () => {
                         out.line(`assert(this.is${versionName})`)
-                        out.line(`return this.runtime.decodeJson${fix}(this.${ctx})`)
+                        out.line(`return this.${ctx}.block._runtime.decodeJson${fix}(this.${ctx})`)
                     })
                 })
             })
@@ -159,7 +152,7 @@ export class Typegen {
         let names = Array.from(items.keys()).sort()
 
         out.line(`import assert from 'assert'`)
-        out.line(`import {ChainContext, Runtime, Result, Option} from './support'`)
+        out.line(`import {getRuntime, Runtime, Result, Option} from './support'`)
         let importedInterfaces = this.importInterfaces(out)
         names.forEach(qualifiedName => {
             let versions = items.get(qualifiedName)!
@@ -168,8 +161,8 @@ export class Typegen {
             out.block(`export class ${pallet}${name}Constant`, () => {
                 out.line(`private readonly runtime: Runtime`)
                 out.line()
-                out.block(`constructor(ctx: ChainContext)`, () => {
-                    out.line(`this.runtime = ctx._chain.runtime`)
+                out.block(`constructor(runtime: RuntimeCtx)`, () => {
+                    out.line(`this.runtime = getRuntime(runtime)`)
                 })
                 versions.forEach(v => {
                     let versionName = this.getVersionName(v.chain)

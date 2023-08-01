@@ -1,5 +1,6 @@
 import * as base from '@subsquid/substrate-data'
 
+
 export type Simplify<T> = {
     [K in keyof T]: T[K]
 } & {}

@@ -66,9 +66,11 @@ export class Parser {
     private parseBlock(rawBlock: RawBlock, options?: DataRequest): Block {
         let parser = new BlockParser(rawBlock, options)
 
-        let block: Block = {
-            header: parser.header()
-        }
+        let block = new Block(
+            assertNotNull(rawBlock.runtime),
+            assertNotNull(rawBlock.runtimeOfPrevBlock),
+            parser.header()
+        )
 
         if (options?.blockTimestamp && parser.timestamp()) {
             block.header.timestamp = parser.timestamp()
@@ -108,10 +110,10 @@ export class Parser {
         }
 
         if (runtimeVersionEquals(prev.value, assertNotNull(blocks[0].runtimeVersion)) || prev.height == parentParentHeight) {
-            blocks[0].runtimeOfPreviousBlock = prev.value
+            blocks[0].runtimeOfPrevBlock = prev.value
         } else {
             prev = await this.fetchRuntime(await this.getParent(getParent(blocks[0])))
-            blocks[0].runtimeOfPreviousBlock = prev.value
+            blocks[0].runtimeOfPrevBlock = prev.value
         }
 
         for (let i = 0; i < blocks.length; i++) {
@@ -130,7 +132,7 @@ export class Parser {
             }
             if (i > 0) {
                 assert(blocks[i-1].height + 1 == block.height)
-                block.runtimeOfPreviousBlock = blocks[i-1].runtime
+                block.runtimeOfPrevBlock = blocks[i-1].runtime
             }
         }
     }
