@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "5.0.0",
+      "tag": "@subsquid/substrate-processor_v5.0.0",
+      "date": "Tue, 01 Aug 2023 16:40:12 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to per block runtime tracking"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.4.0` to `^2.5.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.1",
       "tag": "@subsquid/substrate-processor_v4.0.1",
       "date": "Thu, 27 Jul 2023 13:21:04 GMT",
