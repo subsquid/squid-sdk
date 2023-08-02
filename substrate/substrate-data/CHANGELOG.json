@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-data_v1.1.0",
+      "date": "Wed, 02 Aug 2023 22:59:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support indexing of special events and calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/substrate-data_v1.0.0",
       "date": "Tue, 01 Aug 2023 16:40:12 GMT",
