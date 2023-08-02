@@ -9,7 +9,7 @@
     "@subsquid/ss58": "^1.2.0",
     "@subsquid/graphql-server": "^4.2.1",
     "@subsquid/substrate-metadata": "^3.3.0",
-    "@subsquid/substrate-processor": "^5.0.0",
+    "@subsquid/substrate-processor": "^5.0.1",
     "@subsquid/typeorm-migration": "^1.2.1",
     "@subsquid/typeorm-store": "^1.2.1",
     "@subsquid/ink-abi": "^2.2.0",
