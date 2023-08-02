@@ -8,6 +8,7 @@ import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
 import {BlockParser} from './parsing/block'
+import {setEmittedContractAddress, setEthereumTransact, setEvmLog, setGearProgramId} from './parsing/extension'
 import {supportsFeeCalc} from './parsing/fee'
 import {AccountId} from './parsing/validator'
 import {Runtime} from './runtime'
@@ -83,10 +84,22 @@ export class Parser {
         if (options?.calls) {
             block.extrinsics = parser.extrinsics()?.map(item => item.extrinsic)
             block.calls = parser.calls()
+            if (block.calls) {
+                for (let call of block.calls!) {
+                    setEthereumTransact(call)
+                }
+            }
         }
 
         if (options?.events) {
             block.events = parser.events()
+            if (block.events) {
+                for (let event of block.events!) {
+                    setEvmLog(event)
+                    setEmittedContractAddress(event)
+                    setGearProgramId(event)
+                }
+            }
         }
 
         if (options?.extrinsicFee) {

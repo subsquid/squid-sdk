@@ -9,7 +9,7 @@ import {
 
 
 type Selector<Props extends string, Exclusion extends string = ''> = {
-    [P in Exclude<Props, Exclusion>]?: boolean
+    [P in Exclude<Props, Exclusion> as P extends `_${string}` ? never : P]?: boolean
 }
 
 

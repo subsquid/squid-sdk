@@ -87,6 +87,8 @@ export interface Call {
      */
     error?: any
     success?: boolean
+    _ethereumTransactTo?: Bytes
+    _ethereumTransactSighash?: Bytes
 }
 
 
@@ -106,6 +108,10 @@ export interface Event {
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
+    _evmLogAddress?: Bytes
+    _evmLogTopics?: Bytes[]
+    _contractAddress?: Bytes
+    _gearProgramId?: Bytes
 }
 
 
@@ -145,10 +151,4 @@ export interface DataRequest {
     calls?: boolean
     extrinsicHash?: boolean
     extrinsicFee?: boolean
-}
-
-
-export interface WithRuntime {
-    runtime: Runtime
-    prevRuntime: Runtime
 }

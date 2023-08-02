@@ -1,12 +1,11 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {WithRuntime} from '@subsquid/substrate-data'
 import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
 import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {def, last, runProgram} from '@subsquid/util-internal'
+import {def, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
     Batch,

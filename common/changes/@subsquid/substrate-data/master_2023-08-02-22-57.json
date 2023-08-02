@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "support indexing of special events and calls",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}
