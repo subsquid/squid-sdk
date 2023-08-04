@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 02 Aug 2023 22:59:19 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Aug 2023 07:25:15 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 04 Aug 2023 07:25:15 GMT
+
+### Minor changes
+
+- introduce ArrowSquid archive
 
 ## 5.0.1
 Wed, 02 Aug 2023 22:59:19 GMT

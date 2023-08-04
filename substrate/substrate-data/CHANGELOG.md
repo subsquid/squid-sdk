@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 02 Aug 2023 22:59:19 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Aug 2023 07:25:15 GMT and should not be manually modified.
+
+## 1.2.0
+Fri, 04 Aug 2023 07:25:15 GMT
+
+### Minor changes
+
+- extract and expose `RuntimeTracker`
+- re-export `Rpc` from raw package
 
 ## 1.1.0
 Wed, 02 Aug 2023 22:59:19 GMT
