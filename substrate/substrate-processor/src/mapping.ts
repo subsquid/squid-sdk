@@ -13,8 +13,8 @@ export class BlockHeader implements PartialBlockHeader {
     digest?: {logs: Bytes[]}
     specName!: string
     specVersion!: number
-    implName?: string
-    implVersion?: number
+    implName!: string
+    implVersion!: number
     timestamp?: number
     validator?: Bytes
     #runtime: Runtime

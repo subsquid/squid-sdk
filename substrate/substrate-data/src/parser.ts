@@ -1,5 +1,4 @@
-import * as raw from '@subsquid/substrate-data-raw'
-import {HashAndHeight, Prev, runtimeVersionEquals} from '@subsquid/substrate-data-raw'
+import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
 import {annotateAsyncError, annotateSyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
@@ -11,7 +10,7 @@ import {BlockParser} from './parsing/block'
 import {setEmittedContractAddress, setEthereumTransact, setEvmLog, setGearProgramId} from './parsing/extension'
 import {supportsFeeCalc} from './parsing/fee'
 import {AccountId} from './parsing/validator'
-import {Runtime} from './runtime'
+import {RuntimeTracker} from './runtime-tracker'
 
 
 const STORAGE = {
@@ -24,20 +23,31 @@ const STORAGE = {
 export class Parser {
     private requests: RequestsTracker<DataRequest>
     private prevValidators = new Prev<{session: Bytes, validators: AccountId[]}>()
-    private prevRuntime = new Prev<Runtime>()
+    private runtimeTracker: RuntimeTracker<RawBlock>
 
     constructor(
-        private rpc: raw.Rpc,
+        private rpc: Rpc,
         requests: RangeRequestList<DataRequest>,
-        private typesBundle?: OldTypesBundle | OldSpecsBundle
+        typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
         this.requests = new RequestsTracker(requests)
+
+        this.runtimeTracker = new RuntimeTracker<RawBlock>(
+            block => ({
+                height: block.height,
+                hash: block.hash,
+                parentHash: block.block.block.header.parentHash
+            }),
+            block => assertNotNull(block.runtimeVersion),
+            this.rpc,
+            typesBundle
+        )
     }
 
     async parse(blocks: RawBlock[]): Promise<Block[]> {
         if (blocks.length == 0) return []
 
-        await this.setRuntime(blocks)
+        await this.runtimeTracker.setRuntime(blocks)
 
         let result = []
 
@@ -113,65 +123,6 @@ export class Parser {
         return block
     }
 
-    private async setRuntime(blocks: RawBlock[]): Promise<void> {
-        if (blocks.length == 0) return
-
-        let parentParentHeight = Math.max(0, blocks[0].height - 2)
-        let prev = this.prevRuntime.getItem(parentParentHeight)
-        if (prev == null) {
-            prev = await this.fetchRuntime(await this.getParent(getParent(blocks[0])))
-        }
-
-        if (runtimeVersionEquals(prev.value, assertNotNull(blocks[0].runtimeVersion)) || prev.height == parentParentHeight) {
-            blocks[0].runtimeOfPrevBlock = prev.value
-        } else {
-            prev = await this.fetchRuntime(await this.getParent(getParent(blocks[0])))
-            blocks[0].runtimeOfPrevBlock = prev.value
-        }
-
-        for (let i = 0; i < blocks.length; i++) {
-            let block = blocks[i]
-            if (runtimeVersionEquals(prev.value, assertNotNull(block.runtimeVersion))) {
-                block.runtime = prev.value
-                prev = {
-                    height: block.height,
-                    value: prev.value
-                }
-            } else if (prev.height == getParent(block).height) {
-                block.runtime = prev.value
-            } else {
-                prev = await this.fetchRuntime(getParent(block))
-                block.runtime = prev.value
-            }
-            if (i > 0) {
-                assert(blocks[i-1].height + 1 == block.height)
-                block.runtimeOfPrevBlock = blocks[i-1].runtime
-            }
-        }
-    }
-
-    private async getParent(ref: HashAndHeight): Promise<HashAndHeight> {
-        if (ref.height == 0) return ref
-        let header = await this.rpc.getBlockHeader(ref.hash)
-        return {
-            height: ref.height - 1,
-            hash: header.parentHash
-        }
-    }
-
-    @annotateAsyncError(getRefCtx)
-    private async fetchRuntime(
-        ref: HashAndHeight
-    ): Promise<{height: number, value: Runtime}> {
-        let [runtimeVersion, metadata] = await Promise.all([
-            this.rpc.getRuntimeVersion(ref.hash),
-            this.rpc.getMetadata(ref.hash)
-        ])
-        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle)
-        this.prevRuntime.set(ref.height, runtime)
-        return {height: ref.height, value: runtime}
-    }
-
     private async setValidators(blocks: RawBlock[]): Promise<void> {
         if (blocks.length == 0) return
 
@@ -231,16 +182,7 @@ export class Parser {
 }
 
 
-function getParent(block: RawBlock): HashAndHeight {
-    if (block.height == 0) return block
-    return {
-        height: block.height - 1,
-        hash: block.block.block.header.parentHash
-    }
-}
-
-
-function getRefCtx(ref: RawBlock | HashAndHeight) {
+function getRefCtx(ref: HashAndHeight) {
     return {
         blockHeight: ref.height,
         blockHash: ref.hash

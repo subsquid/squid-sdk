@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "extract and expose `RuntimeTracker`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "re-export `Rpc` from raw package",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

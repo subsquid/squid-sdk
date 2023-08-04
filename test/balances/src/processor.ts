@@ -8,15 +8,17 @@ import {BalancesTransferEvent} from './types/events'
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: 'https://kusama-rpc.polkadot.io'
+        chain: 'https://kusama-rpc.polkadot.io',
+        archive: 'https://substrate.archive.subsquid.io/network/kusama'
     })
     .addEvent({
         name: ['Balances.Transfer']
     })
     .setFields({
-        block: {timestamp: true}
+        block: {
+            timestamp: true
+        }
     })
-    .setBlockRange({from: 18_774_000})
 
 
 processor.run(new TypeormDatabase(), async ctx => {
@@ -31,7 +33,7 @@ processor.run(new TypeormDatabase(), async ctx => {
                     let [from, to, amount, fee] = e.asV1020
                     rec = {from, to, amount}
                 } else if (e.isV1050) {
-                    let [from, to, amount] = e.asV1020
+                    let [from, to, amount] = e.asV1050
                     rec = {from, to, amount}
                 } else {
                     rec = e.asV9130

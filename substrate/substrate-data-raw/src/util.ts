@@ -36,8 +36,6 @@ export class Prev<T> {
         assert(maxSize >= 1)
     }
 
-
-
     get(height: number): T | undefined {
         return this.getItem(height)?.value
     }
