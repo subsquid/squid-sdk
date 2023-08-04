@@ -10,7 +10,7 @@
     "@subsquid/frontier": "^3.0.0",
     "@subsquid/graphql-server": "^4.2.1",
     "@subsquid/substrate-metadata": "^3.3.0",
-    "@subsquid/substrate-processor": "^5.0.1",
+    "@subsquid/substrate-processor": "^5.1.0",
     "@subsquid/typeorm-migration": "^1.2.1",
     "@subsquid/typeorm-store": "^1.2.1",
     "@subsquid/util-internal-json": "^1.2.0",
