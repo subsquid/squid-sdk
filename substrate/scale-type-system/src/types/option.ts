@@ -1,0 +1,17 @@
+import {Type as ScaleType, TypeKind} from '@subsquid/scale-codec'
+import {BaseType, Type, TypeChecker} from '../type-checker'
+
+
+export class OptionType<T> extends BaseType<T | undefined> {
+    constructor(private value: Type<T>) {
+        super()
+    }
+
+    match(typeChecker: TypeChecker, ty: ScaleType): boolean {
+        if (ty.kind == TypeKind.Option) {
+            return typeChecker.match(this.value, ty.type)
+        } else {
+            return false
+        }
+    }
+}

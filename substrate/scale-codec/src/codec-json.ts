@@ -1,9 +1,9 @@
-import {decodeHex} from "@subsquid/util-internal-hex"
-import {toJSON} from "@subsquid/util-internal-json"
-import assert from "assert"
-import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
-import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from "./types-codec"
-import {checkSignedInt, checkUnsignedInt, isObject, throwUnexpectedCase, toSignedBigInt, toUnsignedBigInt} from "./util"
+import {decodeHex, isHex} from '@subsquid/util-internal-hex'
+import {toJSON} from '@subsquid/util-internal-json'
+import assert from 'assert'
+import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from './types'
+import {CodecStructType, CodecType, CodecVariantType, toCodecTypes} from './types-codec'
+import {checkSignedInt, checkUnsignedInt, isObject, throwUnexpectedCase, toSignedBigInt, toUnsignedBigInt} from './util'
 
 
 export class JsonCodec {
@@ -44,6 +44,10 @@ export class JsonCodec {
                 return decodeHex(val as string)
             case TypeKind.BytesArray:
                 return decodeBinaryArray(def.len, val)
+            case TypeKind.HexBytes:
+            case TypeKind.HexBytesArray:
+                assert(isHex(val))
+                return val
             case TypeKind.DoNotConstruct:
                 throwUnexpectedCase('DoNotConstruct type reached')
             default:

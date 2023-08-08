@@ -1,3 +1,9 @@
+/**
+ * Hex encoded binary data
+ */
+export type Bytes = string
+
+
 export type Ti = number
 
 
@@ -24,18 +30,11 @@ export enum TypeKind {
     Variant,
     Option,
     DoNotConstruct,
-    /**
-     * @internal
-     */
     BooleanOption,
-    /**
-     * @internal
-     */
     Bytes,
-    /**
-     * @internal
-     */
     BytesArray,
+    HexBytes,
+    HexBytesArray,
     /**
      * @internal
      */
@@ -72,6 +71,28 @@ export interface ArrayType {
     kind: TypeKind.Array
     len: number
     type: Ti
+}
+
+
+export interface BytesType {
+    kind: TypeKind.Bytes
+}
+
+
+export interface BytesArrayType {
+    kind: TypeKind.BytesArray
+    len: number
+}
+
+
+export interface HexBytesType {
+    kind: TypeKind.HexBytes
+}
+
+
+export interface HexBytesArrayType {
+    kind: TypeKind.HexBytesArray
+    len: number
 }
 
 
@@ -112,6 +133,11 @@ export interface OptionType {
 }
 
 
+export interface BooleanOption {
+    kind: TypeKind.BooleanOption
+}
+
+
 export interface DoNotConstructType {
     kind: TypeKind.DoNotConstruct
 }
@@ -123,8 +149,13 @@ export type Type =
     SequenceType |
     BitSequenceType |
     ArrayType |
+    BytesType |
+    BytesArrayType |
+    HexBytesType |
+    HexBytesArrayType |
     TupleType |
     CompositeType |
     VariantType |
     OptionType |
+    BooleanOption |
     DoNotConstructType

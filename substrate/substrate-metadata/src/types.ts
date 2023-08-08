@@ -1,11 +1,11 @@
-import * as scale from "@subsquid/scale-codec"
-import {Primitive, Ti, TypeKind} from "@subsquid/scale-codec"
+import * as scale from '@subsquid/scale-codec'
+import {Primitive, Ti, TypeKind} from '@subsquid/scale-codec'
 
 
 export {Primitive, Ti, TypeKind}
 
 
-interface TypeInfo {
+export interface TypeInfo {
     path?: string[]
     docs?: string[]
 }
@@ -19,6 +19,8 @@ export interface BitSequenceType extends scale.BitSequenceType, TypeInfo {}
 export interface ArrayType extends scale.ArrayType, TypeInfo {}
 export interface TupleType extends scale.TupleType, TypeInfo {}
 export interface OptionType extends scale.OptionType, TypeInfo {}
+export interface HexBytesType extends scale.HexBytesType, TypeInfo {}
+export interface HexBytesArrayType extends scale.HexBytesArrayType, TypeInfo {}
 
 
 export interface Field extends scale.Field {
@@ -48,6 +50,8 @@ export type Type =
     SequenceType |
     BitSequenceType |
     ArrayType |
+    HexBytesType |
+    HexBytesArrayType |
     TupleType |
     OptionType |
     CompositeType |

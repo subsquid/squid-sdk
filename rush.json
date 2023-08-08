@@ -509,6 +509,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/scale-type-system",
+      "projectFolder": "substrate/scale-type-system",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/ss58",
       "projectFolder": "substrate/ss58",
       "shouldPublish": true,

@@ -1,13 +1,15 @@
-import {decodeHex} from "@subsquid/util-internal-hex"
-import assert from "assert"
-import {UTF8_DECODER} from "./util"
+import {decodeHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+
+import {Bytes} from './types'
+import {UTF8_DECODER} from './util'
 
 
 export class Src {
     private idx = 0
     private buf: Uint8Array
 
-    constructor(buf: Uint8Array | string) {
+    constructor(buf: Uint8Array | Bytes) {
         if (typeof buf == 'string') {
             this.buf = decodeHex(buf)
         } else {

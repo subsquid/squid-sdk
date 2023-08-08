@@ -1,18 +1,22 @@
-import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
+import {throwUnexpectedCase} from '@subsquid/scale-codec/lib/util'
 import {last, maybeLast} from '@subsquid/util-internal'
 import {toCamelCase} from '@subsquid/util-naming'
+import assert from 'assert'
 import crypto from 'crypto'
-import type {Metadata} from './interfaces'
-import {Field, Type, TypeKind, VariantType} from './types'
+import {Metadata} from './interfaces'
+import {Field, Type, TypeInfo, TypeKind, VariantType} from './types'
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
     types = fixWrapperKeepOpaqueTypes(types)
     types = fixU256Structs(types)
+    types = eliminateWrappers(types)
+    types = removeUnitFieldsFromVariants(types)
+    types = fixCompactTypes(types)
     types = introduceOptionType(types)
-    types = eliminateOptionsChain(types)
-    types = removeUnitFieldsFromStructs(types)
     types = replaceUnitOptionWithBoolean(types)
+    types = eliminateOptionsChain(types)
+    types = introduceHexBytes(types)
     types = normalizeFieldNames(types)
     return types
 }
@@ -21,12 +25,12 @@ export function normalizeMetadataTypes(types: Type[]): Type[] {
 function fixWrapperKeepOpaqueTypes(types: Type[]): Type[] {
     let u8 = types.length
     let replaced = false
-    types = types.map(type => {
-        if (!type.path?.length) return type
-        if (last(type.path) != 'WrapperKeepOpaque') return type
-        if (type.kind != TypeKind.Composite) return type
-        if (type.fields.length != 2) return type
-        if (types[type.fields[0].type].kind != TypeKind.Compact) return type
+    types = types.map(ty => {
+        if (!ty.path?.length) return ty
+        if (last(ty.path) != 'WrapperKeepOpaque') return ty
+        if (ty.kind != TypeKind.Composite) return ty
+        if (ty.fields.length != 2) return ty
+        if (types[ty.fields[0].type].kind != TypeKind.Compact) return ty
         replaced = true
         return {
             kind: TypeKind.Sequence,
@@ -44,13 +48,13 @@ function fixWrapperKeepOpaqueTypes(types: Type[]): Type[] {
 
 
 function fixU256Structs(types: Type[]): Type[] {
-    return types.map(type => {
+    return types.map(ty => {
         let field
         let element
-        let isU256 = type.path && maybeLast(type.path) == 'U256'
-            && type.kind == TypeKind.Composite
-            && type.fields.length == 1
-            && (field = types[type.fields[0].type])
+        let isU256 = ty.path && maybeLast(ty.path) == 'U256'
+            && ty.kind == TypeKind.Composite
+            && ty.fields.length == 1
+            && (field = types[ty.fields[0].type])
             && field.kind == TypeKind.Array
             && field.len == 4
             && (element = types[field.type])
@@ -61,22 +65,147 @@ function fixU256Structs(types: Type[]): Type[] {
             kind: TypeKind.Primitive,
             primitive: 'U256'
         }
-        return type
+        return ty
+    })
+}
+
+
+function eliminateWrappers(types: Type[]): Type[] {
+    let changed = true
+    while (changed) {
+        changed = false
+        types = types.map(ty => {
+            switch(ty.kind) {
+                case TypeKind.Tuple:
+                    if (ty.tuple.length == 1) {
+                        changed = true
+                        return replaceType(ty, types[ty.tuple[0]])
+                    } else {
+                        return ty
+                    }
+                case TypeKind.Composite: {
+                    if (ty.fields.length == 0) {
+                        changed = true
+                        return replaceType(ty, {
+                            kind: TypeKind.Tuple,
+                            tuple: []
+                        })
+                    }
+                    if (ty.fields[0].name == null) {
+                        changed = true
+                        return replaceType(ty, {
+                            kind: TypeKind.Tuple,
+                            tuple: ty.fields.map(f => {
+                                assert(f.name == null)
+                                return f.type
+                            })
+                        })
+                    }
+
+                    let nonUnitFields = ty.fields.filter(f => {
+                        return !isUnitType(types[f.type])
+                    })
+
+                    if (nonUnitFields.length != ty.fields.length) {
+                        changed = true
+                        return {
+                            ...ty,
+                            fields: nonUnitFields
+                        }
+                    }
+
+                    return ty
+                }
+                default:
+                    return ty
+            }
+        })
+    }
+    return types
+}
+
+
+function replaceType(prev: Type, next: Type): Type {
+    let {path, docs, ...def} = next
+    let info: TypeInfo = {}
+    if (prev.path) {
+        info.path = prev.path
+    }
+    if (prev.docs) {
+        info.docs = prev.docs
+    }
+    return {...info, ...def}
+}
+
+
+function removeUnitFieldsFromVariants(types: Type[]): Type[] {
+    return types.map(ty => {
+        if (ty.kind != TypeKind.Variant) return ty
+        let variants = ty.variants.map(v => {
+            let nonUnitFields = v.fields.filter(f => {
+                return !isUnitType(types[f.type])
+            })
+            if (nonUnitFields.length == v.fields.length) return v
+            if (v.fields[0]?.name == null && nonUnitFields.length > 0) return v
+            return {
+                ...v,
+                fields: nonUnitFields
+            }
+        })
+        return {
+            ...ty,
+            variants
+        }
+    })
+}
+
+
+export function isUnitType(type: Type): boolean {
+    return type.kind == TypeKind.Tuple && type.tuple.length == 0
+}
+
+
+function fixCompactTypes(types: Type[]): Type[] {
+    return types.map(ty => {
+        if (ty.kind != TypeKind.Compact) return ty
+        let compact = types[ty.type]
+        switch(compact.kind) {
+            case TypeKind.Primitive:
+                assert(compact.primitive[0] == 'U')
+                return ty
+            case TypeKind.Tuple:
+                assert(compact.tuple.length == 0)
+                return replaceType(ty, {
+                    kind: TypeKind.Tuple,
+                    tuple: []
+                })
+            case TypeKind.Composite:
+                assert(compact.fields.length == 1)
+                let compactTi = compact.fields[0].type
+                compact = types[compactTi]
+                // FIXME: as far as I understand, CompactAs chain can be arbitrary long
+                assert(compact.kind == TypeKind.Primitive)
+                assert(compact.primitive[0] == 'U')
+                return {
+                    ...ty,
+                    type: compactTi
+                }
+            default:
+                throwUnexpectedCase(compact.kind)
+        }
     })
 }
 
 
 function introduceOptionType(types: Type[]): Type[] {
-    return types.map(type => {
-        if (isOptionType(type)) {
-            return {
+    return types.map(ty => {
+        if (isOptionType(ty)) {
+            return replaceType(ty, {
                 kind: TypeKind.Option,
-                type: type.variants[1].fields[0].type,
-                docs: type.docs,
-                path: type.path
-            }
+                type: ty.variants[1].fields[0].type
+            })
         } else {
-            return type
+            return ty
         }
     })
 }
@@ -98,10 +227,10 @@ function isOptionType(type: Type): type is VariantType {
 
 
 function eliminateOptionsChain(types: Type[]): Type[] {
-    return types.map(type => {
-        if (type.kind != TypeKind.Option) return type
-        let param = type.type
-        if (types[param].kind != TypeKind.Option) return type
+    return types.map(ty => {
+        if (ty.kind != TypeKind.Option) return ty
+        let param = ty.type
+        if (types[param].kind != TypeKind.Option) return ty
         return {
             kind: TypeKind.Variant,
             variants: [
@@ -121,70 +250,48 @@ function eliminateOptionsChain(types: Type[]): Type[] {
 }
 
 
-function removeUnitFieldsFromStructs(types: Type[]): Type[] {
-    let changed = true
-    while (changed) {
-        changed = false
-        types = types.map(type => {
-            switch (type.kind) {
-                case TypeKind.Composite: {
-                    let fields = type.fields.filter(f => {
-                        let fieldType = getUnwrappedType(types, f.type)
-                        return !isUnitType(fieldType)
-                    })
-                    if (fields.length == type.fields.length) return type
-                    changed = true
-                    return {
-                        ...type,
-                        fields
-                    }
-                }
-                case TypeKind.Variant: {
-                    let variants = type.variants.map(v => {
-                        let fields = v.fields.filter(f => {
-                            let fieldType = getUnwrappedType(types, f.type)
-                            return !isUnitType(fieldType)
-                        })
-                        if (fields.length == v.fields.length) return v
-                        if (v.fields[0]?.name == null && fields.length > 0) return v
-                        changed = true
-                        return {
-                            ...v,
-                            fields
-                        }
-                    })
-                    return {
-                        ...type,
-                        variants
-                    }
-                }
-                default:
-                    return type
-            }
-        })
-    }
-    return types
-}
-
-
-export function isUnitType(type: Type): boolean {
-    return type.kind == TypeKind.Tuple && type.tuple.length == 0
-}
-
-
 function replaceUnitOptionWithBoolean(types: Type[]): Type[] {
-    return types.map(type => {
-        if (type.kind == TypeKind.Option && isUnitType(getUnwrappedType(types, type.type))) {
-            return {
+    return types.map(ty => {
+        if (ty.kind == TypeKind.Option && isUnitType(types[ty.type])) {
+            return replaceType(ty, {
                 kind: TypeKind.Primitive,
-                primitive: 'Bool',
-                path: type.path,
-                docs: type.docs
-            }
+                primitive: 'Bool'
+            })
         } else {
-            return type
+            return ty
         }
     })
+}
+
+
+function introduceHexBytes(types: Type[]): Type[] {
+    return types.map(ty => {
+        switch(ty.kind) {
+            case TypeKind.Sequence:
+                if (isU8(types[ty.type])) {
+                    return replaceType(ty, {
+                        kind: TypeKind.HexBytes
+                    })
+                }
+                return ty
+            case TypeKind.Array: {
+                if (isU8(types[ty.type])) {
+                    return replaceType(ty, {
+                        kind: TypeKind.HexBytesArray,
+                        len: ty.len
+                    })
+                }
+                return ty
+            }
+            default:
+                return ty
+        }
+    })
+}
+
+
+function isU8(type: Type): boolean {
+    return type.kind == TypeKind.Primitive && type.primitive == 'U8'
 }
 
 
