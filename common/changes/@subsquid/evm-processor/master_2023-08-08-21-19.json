@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "allow to configure archive request timeout and increase the default up to 180 seconds",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
