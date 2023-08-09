@@ -45,7 +45,7 @@ export class EntitySqlPrinter {
         }
         if (args.orderBy) {
             this.traverseOrderBy(args.orderBy, (field, cursor, order) => {
-                this.orderBy.push(cursor.native(field) + ' ' + order + ' NULLS LAST')
+                this.orderBy.push(cursor.native(field) + ' ' + order.replace(/_/g, ' '))
             })
         }
     }

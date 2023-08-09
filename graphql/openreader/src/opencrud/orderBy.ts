@@ -1,7 +1,7 @@
 import assert from "assert"
-import type {Model} from "../model"
-import {getUnionProps, getUniversalProperties} from '../model.tools'
-import {OrderBy} from "../ir/args"
+import type { Model } from "../model"
+import { getUniversalProperties } from '../model.tools'
+import { OrderBy } from "../ir/args"
 
 
 /**
@@ -26,41 +26,45 @@ export function getOrderByMapping(model: Model, typeName: string): OpenCrud_Orde
         MAPPING_CACHE.set(model, cache)
     }
     if (cache[typeName]) return cache[typeName]
-    return cache[typeName] = buildOrderByMapping(model, typeName, 2)
+    return cache[typeName] = buildOrderByMapping(model, typeName, 2, false)
 }
 
 
-function buildOrderByMapping(model: Model, typeName: string, depth: number): OpenCrud_OrderBy_Mapping {
+function buildOrderByMapping(model: Model, typeName: string, depth: number, nullable: boolean): OpenCrud_OrderBy_Mapping {
     if (depth <= 0) return new Map()
     let properties = getUniversalProperties(model, typeName)
     let m = new Map<string, OrderBy>()
     for (let key in properties) {
         let propType = properties[key].type
-        switch(propType.kind) {
+        switch (propType.kind) {
             case 'scalar':
             case 'enum':
                 if (propType.name != 'JSON') {
-                    m.set(key + '_ASC', {[key]: 'ASC'})
-                    m.set(key + '_DESC', {[key]: 'DESC'})
+                    m.set(key + '_ASC', { [key]: 'ASC' })
+                    m.set(key + '_DESC', { [key]: 'DESC' })
+                    if (properties[key].nullable || nullable) {
+                        m.set(key + '_ASC_NULLS_FIRST', { [key]: 'ASC_NULLS_FIRST' });
+                        m.set(key + '_DESC_NULLS_LAST', { [key]: 'DESC_NULLS_LAST' });
+                    }
                 }
                 break
             case 'object':
             case 'union':
-                for (let [name, spec] of buildOrderByMapping(model, propType.name, depth - 1)) {
-                    m.set(key + '_' + name, {[key]: spec})
+                for (let [name, spec] of buildOrderByMapping(model, propType.name, depth - 1, properties[key].nullable)) {
+                    m.set(key + '_' + name, { [key]: spec })
                 }
                 break
             case 'fk':
             case 'lookup':
-                for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1)) {
-                    m.set(key + '_' + name, {[key]: spec})
+                for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1, properties[key].nullable)) {
+                    m.set(key + '_' + name, { [key]: spec })
                 }
                 break
         }
     }
     if (model[typeName].kind == 'interface') {
-        m.set('_type_ASC', {_type: 'ASC'})
-        m.set('_type_DESC', {_type: 'DESC'})
+        m.set('_type_ASC', { _type: 'ASC' })
+        m.set('_type_DESC', { _type: 'DESC' })
     }
     return m
 }
@@ -83,7 +87,7 @@ export function mergeOrderBy(list: OrderBy[]): OrderBy {
     list.forEach(item => {
         for (let key in item) {
             let current = result[key]
-            if (current == null ) {
+            if (current == null) {
                 result[key] = item[key]
             } else if (typeof current != 'string') {
                 let it = item[key]
