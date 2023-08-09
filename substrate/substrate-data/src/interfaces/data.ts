@@ -87,6 +87,8 @@ export interface Call {
      */
     error?: any
     success?: boolean
+    _ethereumTransactTo?: Bytes
+    _ethereumTransactSighash?: Bytes
 }
 
 
@@ -106,14 +108,39 @@ export interface Event {
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
+    _evmLogAddress?: Bytes
+    _evmLogTopics?: Bytes[]
+    _contractAddress?: Bytes
+    _gearProgramId?: Bytes
 }
 
 
-export interface Block {
+export class Block {
+    #runtime: Runtime
+    #runtimeOfPrevBlock: Runtime
+
     header: BlockHeader
     extrinsics?: Extrinsic[]
     calls?: Call[]
     events?: Event[]
+
+    constructor(
+        runtime: Runtime,
+        runtimeOfPrevBlock: Runtime,
+        header: BlockHeader
+    ) {
+        this.#runtime = runtime
+        this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+        this.header = header
+    }
+
+    get runtime(): Runtime {
+        return this.#runtime
+    }
+
+    get runtimeOfPrevBlock(): Runtime {
+        return this.#runtimeOfPrevBlock
+    }
 }
 
 
@@ -124,10 +151,4 @@ export interface DataRequest {
     calls?: boolean
     extrinsicHash?: boolean
     extrinsicFee?: boolean
-}
-
-
-export interface WithRuntime {
-    runtime: Runtime
-    prevRuntime: Runtime
 }

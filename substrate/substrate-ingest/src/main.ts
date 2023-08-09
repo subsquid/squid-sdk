@@ -40,8 +40,18 @@ runProgram(async () => {
         assertRange(range)
         await ingest.run(range, process.stdout)
     } else {
-        let server = await createHttpServer(ctx => ingestHandler(ingest, ctx))
-        log.info(`Data service is listening in port ${server.port}. Note, that the service is dumb and not supposed to be public.`)
+        let server = await createHttpServer(ctx => {
+            return ingestHandler(ingest, ctx).catch(err => {
+                log.error(err)
+                throw err
+            })
+        }, options.service)
+
+        log.info(
+            `Data service is listening in port ${server.port}. ` +
+            `Note, that the service is dumb and not supposed to be public.`
+        )
+
         await waitForInterruption(server)
     }
 }, err => log.fatal(err))

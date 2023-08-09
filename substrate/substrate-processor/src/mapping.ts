@@ -1,6 +1,44 @@
-import {ExtrinsicSignature, QualifiedName} from '@subsquid/substrate-data'
+import {Bytes, ExtrinsicSignature, Hash, QualifiedName, Runtime} from '@subsquid/substrate-data'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import {PartialBlockHeader} from './interfaces/data-partial'
+
+
+export class BlockHeader implements PartialBlockHeader {
+    id: string
+    height!: number
+    hash!: Hash
+    parentHash!: Hash
+    stateRoot?: Hash
+    extrinsicsRoot?: Hash
+    digest?: {logs: Bytes[]}
+    specName!: string
+    specVersion!: number
+    implName!: string
+    implVersion!: number
+    timestamp?: number
+    validator?: Bytes
+    #runtime: Runtime
+    #runtimeOfPrevBlock: Runtime
+
+    constructor(
+        runtime: Runtime,
+        runtimeOfPrevBlock: Runtime,
+        src: PartialBlockHeader
+    ) {
+        Object.assign(this, src)
+        this.id = formatId(this)
+        this.#runtime = runtime
+        this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+    }
+
+    get _runtime(): Runtime {
+        return this.#runtime
+    }
+
+    get _runtimeOfPrevBlock(): Runtime {
+        return this.#runtimeOfPrevBlock
+    }
+}
 
 
 export class Extrinsic {
@@ -19,7 +57,7 @@ export class Extrinsic {
     #subcalls?: Call[]
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         index: number
     ) {
         this.id = formatId(block, index)
@@ -87,7 +125,7 @@ export class Call {
     #events?: Event[]
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         extrinsicIndex: number,
         address: number[]
     ) {
@@ -165,12 +203,12 @@ export class Event {
     phase?: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #extrinsic?: Extrinsic
     #call?: Call
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         index: number
     ) {
         this.id = formatId(block, index)
@@ -178,11 +216,11 @@ export class Event {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -221,16 +259,10 @@ export class Event {
 
 
 export class Block {
-    id: string
-    header: PartialBlockHeader
+    constructor(public header: BlockHeader) {}
     extrinsics: Extrinsic[] = []
     calls: Call[] = []
     events: Event[] = []
-
-    constructor(header: PartialBlockHeader) {
-        this.id = formatId(header)
-        this.header = header
-    }
 }
 
 

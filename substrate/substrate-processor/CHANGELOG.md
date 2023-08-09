@@ -1,6 +1,32 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Aug 2023 07:25:15 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 04 Aug 2023 07:25:15 GMT
+
+### Minor changes
+
+- introduce ArrowSquid archive
+
+## 5.0.1
+Wed, 02 Aug 2023 22:59:19 GMT
+
+### Patches
+
+- upgrade `substrate-data` dependency
+
+## 5.0.0
+Tue, 01 Aug 2023 16:40:12 GMT
+
+### Breaking changes
+
+- migrate to per block runtime tracking
+
+## 4.0.1
+Thu, 27 Jul 2023 13:21:04 GMT
+
+_Version update only_
 
 ## 4.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

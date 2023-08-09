@@ -1,6 +1,25 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Wed, 02 Aug 2023 22:59:19 GMT and should not be manually modified.
+
+## 3.2.0
+Wed, 02 Aug 2023 22:59:19 GMT
+
+### Minor changes
+
+- support indexing of special events and calls
+
+## 3.1.1
+Tue, 01 Aug 2023 16:40:12 GMT
+
+_Version update only_
+
+## 3.1.0
+Thu, 27 Jul 2023 13:21:04 GMT
+
+### Minor changes
+
+- introduce HTTP service mode
 
 ## 3.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

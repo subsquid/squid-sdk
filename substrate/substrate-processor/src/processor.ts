@@ -1,12 +1,12 @@
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {WithRuntime} from '@subsquid/substrate-data'
 import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
 import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {def, last, runProgram} from '@subsquid/util-internal'
+import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
     Batch,
@@ -20,6 +20,7 @@ import {
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {Chain} from './chain'
+import {SubstrateArchive} from './ds-archive'
 import {RpcDataSource} from './ds-rpc'
 import {Block, FieldSelection} from './interfaces/data'
 import {
@@ -34,7 +35,16 @@ import {
 } from './interfaces/data-request'
 
 
-export type DataSource = ArchiveDataSource | ChainDataSource
+export interface DataSource {
+    /**
+     * Subsquid archive endpoint URL
+     */
+    archive?: string
+    /**
+     * Chain node RPC endpoint URL
+     */
+    chain: ChainRpc
+}
 
 
 type ChainRpc = string | {
@@ -44,28 +54,6 @@ type ChainRpc = string | {
     requestTimeout?: number
     maxBatchCallSize?: number
 }
-
-
-interface ArchiveDataSource {
-    /**
-     * Subsquid evm archive endpoint URL
-     */
-    archive: string
-    /**
-     * Chain node RPC endpoint URL
-     */
-    chain?: ChainRpc
-}
-
-
-interface ChainDataSource {
-    archive?: undefined
-    /**
-     * Chain node RPC endpoint URL
-     */
-    chain: ChainRpc
-}
-
 
 
 interface BlockRange {
@@ -203,7 +191,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      * @example
      * processor.setDataSource({
      *     chain: 'wss://rpc.polkadot.io',
-     *     archive: 'https://polkadot.archive.subsquid.io/graphql'
+     *     archive: 'https://substrate.archive.subsquid.io/polkadot'
      * })
      */
     setDataSource(src: DataSource): this {
@@ -274,14 +262,6 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         }
     }
 
-    private getArchiveEndpoint(): string {
-        let url = this.src?.archive
-        if (url == null) {
-            throw new Error('use .setDataSource() to specify archive url')
-        }
-        return url
-    }
-
     @def
     private getSquidId(): string {
         return getOrGenerateSquidId()
@@ -314,6 +294,28 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return new RpcDataSource({
             rpc: this.getChainRpcClient(),
             pollInterval: this.chainPollInterval,
+            typesBundle: this.typesBundle
+        })
+    }
+
+    @def
+    private getArchiveDataSource(): SubstrateArchive {
+        let http = new HttpClient({
+            baseUrl: assertNotNull(this.src?.archive),
+            headers: {
+                'x-squid-id': this.getSquidId()
+            },
+            agent: new HttpAgent({
+                keepAlive: true
+            }),
+            httpTimeout: 30_000,
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            log: this.getLogger().child('archive')
+        })
+
+        return new SubstrateArchive({
+            http,
+            rpc: this.getChainRpcClient(),
             typesBundle: this.typesBundle
         })
     }
@@ -364,19 +366,20 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return applyRangeBound(requests, this.blockRange)
     }
 
+    @def
+    private getChain(): Chain {
+        return new Chain(
+            () => this.getChainRpcClient(),
+        )
+    }
+
     private processBatch<Store>(
         store: Store,
-        batch: Batch<Block<F>> & WithRuntime,
+        batch: Batch<Block<F>>,
         handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>
     ): Promise<void> {
-        let chain = new Chain(
-            () => this.getChainRpcClient(),
-            {from: batch.blocks[0].header.height, to: last(batch.blocks).header.height},
-            batch.runtime,
-            batch.prevRuntime
-        )
         return handler({
-            _chain: chain,
+            _chain: this.getChain(),
             log: this.getLogger().child('mapping'),
             store,
             blocks: batch.blocks,
@@ -404,6 +407,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
+                archive: this.src?.archive ? this.getArchiveDataSource() : undefined,
                 hotDataSource: this.getRpcDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,

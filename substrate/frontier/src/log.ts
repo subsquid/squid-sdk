@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {ChainContext, Event} from './interfaces'
+import {Event} from './interfaces'
 import {registry} from './registry'
 
 export interface EvmLog {
@@ -8,9 +8,9 @@ export interface EvmLog {
     topics: string[]
 }
 
-export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
+export function getEvmLog(event: Event): EvmLog {
     assert(event.name === 'EVM.Log')
-    switch (ctx._chain.runtime.getEventTypeHash('EVM.Log')) {
+    switch (event.block._runtime.getEventTypeHash('EVM.Log')) {
         case registry.getHash('EVM.LogV0'):
             return getAsV0(event.args)
         case registry.getHash('EVM.LogV1'):

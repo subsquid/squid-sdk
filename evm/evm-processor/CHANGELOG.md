@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 20 Jul 2023 23:47:03 GMT and should not be manually modified.
+This log was last generated on Tue, 08 Aug 2023 21:22:05 GMT and should not be manually modified.
+
+## 1.8.0
+Tue, 08 Aug 2023 21:22:05 GMT
+
+### Minor changes
+
+- allow to configure archive request timeout and increase the default up to 180 seconds
 
 ## 1.7.3
 Thu, 20 Jul 2023 23:47:03 GMT

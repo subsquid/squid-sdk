@@ -19,6 +19,15 @@ COPY --from=substrate-dump-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/substrate/substrate-dump/bin/run.js"]
 
 
+FROM builder AS substrate-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-ingest
+
+
+FROM node AS substrate-ingest
+COPY --from=substrate-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/substrate/substrate-ingest/bin/run.js"]
+
+
 FROM builder AS chain-status-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
 

@@ -1,9 +1,13 @@
 
 kusama:
 	@node lib/main.js \
-		-a s3://kusama-mainnet-raw \
 		-e https://kusama-rpc.polkadot.io \
-		--service 0
+		--first-block 2832535 \
+		--last-block 2832540 \
+		> blocks.temp.jsonl
+
+
+
 
 
 .PHONY: kusama

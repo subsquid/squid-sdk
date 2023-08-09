@@ -2,6 +2,70 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/substrate-data_v1.2.0",
+      "date": "Fri, 04 Aug 2023 07:25:15 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extract and expose `RuntimeTracker`"
+          },
+          {
+            "comment": "re-export `Rpc` from raw package"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-data_v1.1.0",
+      "date": "Wed, 02 Aug 2023 22:59:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support indexing of special events and calls"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-data_v1.0.0",
+      "date": "Tue, 01 Aug 2023 16:40:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "annotate block parsing errors with `.blockHeight` and `.blockHash`"
+          },
+          {
+            "comment": "fix extrinsic fee calculation"
+          }
+        ],
+        "major": [
+          {
+            "comment": "migrate to per block runtime tracking"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.4.0` to `^2.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-data_v0.0.1",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix block validator parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-data_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

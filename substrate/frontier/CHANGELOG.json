@@ -2,6 +2,35 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/frontier_v3.0.0",
+      "date": "Tue, 01 Aug 2023 16:40:12 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "adapt to per block runtime tracking in substrate processor"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.4.0` to `^2.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.1",
+      "tag": "@subsquid/frontier_v2.0.1",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "bump `ethers` peer to `^6.6.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/frontier_v2.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",
