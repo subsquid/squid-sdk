@@ -26,11 +26,11 @@ export function getOrderByMapping(model: Model, typeName: string): OpenCrud_Orde
         MAPPING_CACHE.set(model, cache)
     }
     if (cache[typeName]) return cache[typeName]
-    return cache[typeName] = buildOrderByMapping(model, typeName, 2, false)
+    return cache[typeName] = buildOrderByMapping(model, typeName, 2)
 }
 
 
-function buildOrderByMapping(model: Model, typeName: string, depth: number, nullable: boolean): OpenCrud_OrderBy_Mapping {
+function buildOrderByMapping(model: Model, typeName: string, depth: number): OpenCrud_OrderBy_Mapping {
     if (depth <= 0) return new Map()
     let properties = getUniversalProperties(model, typeName)
     let m = new Map<string, OrderBy>()
@@ -42,21 +42,20 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number, null
                 if (propType.name != 'JSON') {
                     m.set(key + '_ASC', { [key]: 'ASC' })
                     m.set(key + '_DESC', { [key]: 'DESC' })
-                    if (properties[key].nullable || nullable) {
-                        m.set(key + '_ASC_NULLS_FIRST', { [key]: 'ASC_NULLS_FIRST' });
-                        m.set(key + '_DESC_NULLS_LAST', { [key]: 'DESC_NULLS_LAST' });
-                    }
+                    m.set(key + '_ASC_NULLS_FIRST', { [key]: 'ASC NULLS FIRST' });
+                    m.set(key + '_DESC_NULLS_LAST', { [key]: 'DESC NULLS LAST' });
+                    
                 }
                 break
             case 'object':
             case 'union':
-                for (let [name, spec] of buildOrderByMapping(model, propType.name, depth - 1, properties[key].nullable)) {
+                for (let [name, spec] of buildOrderByMapping(model, propType.name, depth - 1)) {
                     m.set(key + '_' + name, { [key]: spec })
                 }
                 break
             case 'fk':
             case 'lookup':
-                for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1, properties[key].nullable)) {
+                for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1)) {
                     m.set(key + '_' + name, { [key]: spec })
                 }
                 break
