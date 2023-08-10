@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Fri, 04 Aug 2023 07:25:15 GMT and should not be manually modified.
+This log was last generated on Thu, 10 Aug 2023 11:43:45 GMT and should not be manually modified.
+
+## 1.2.1
+Thu, 10 Aug 2023 11:43:45 GMT
+
+### Patches
+
+- remove extra `0x` on storage key encoding
 
 ## 1.2.0
 Fri, 04 Aug 2023 07:25:15 GMT
