@@ -71,7 +71,7 @@ export function encodeKey(codec: Codec, prefix: string, name: string, item: Stor
         encoding += getKeyHash(
             item.hashers[i],
             codec.encodeToBinary(item.keys[i], key[i])
-        )
+        ).slice(2)
     }
     return encoding
 }
