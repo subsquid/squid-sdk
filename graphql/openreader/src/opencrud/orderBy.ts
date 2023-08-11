@@ -1,7 +1,7 @@
 import assert from "assert"
-import type {Model} from "../model"
-import {getUnionProps, getUniversalProperties} from '../model.tools'
-import {OrderBy} from "../ir/args"
+import type { Model } from "../model"
+import { getUniversalProperties } from '../model.tools'
+import { OrderBy } from "../ir/args"
 
 
 /**
@@ -36,31 +36,34 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
     let m = new Map<string, OrderBy>()
     for (let key in properties) {
         let propType = properties[key].type
-        switch(propType.kind) {
+        switch (propType.kind) {
             case 'scalar':
             case 'enum':
                 if (propType.name != 'JSON') {
-                    m.set(key + '_ASC', {[key]: 'ASC'})
-                    m.set(key + '_DESC', {[key]: 'DESC'})
+                    m.set(key + '_ASC', { [key]: 'ASC' })
+                    m.set(key + '_DESC', { [key]: 'DESC' })
+                    m.set(key + '_ASC_NULLS_FIRST', { [key]: 'ASC NULLS FIRST' });
+                    m.set(key + '_DESC_NULLS_LAST', { [key]: 'DESC NULLS LAST' });
+                    
                 }
                 break
             case 'object':
             case 'union':
                 for (let [name, spec] of buildOrderByMapping(model, propType.name, depth - 1)) {
-                    m.set(key + '_' + name, {[key]: spec})
+                    m.set(key + '_' + name, { [key]: spec })
                 }
                 break
             case 'fk':
             case 'lookup':
                 for (let [name, spec] of buildOrderByMapping(model, propType.entity, depth - 1)) {
-                    m.set(key + '_' + name, {[key]: spec})
+                    m.set(key + '_' + name, { [key]: spec })
                 }
                 break
         }
     }
     if (model[typeName].kind == 'interface') {
-        m.set('_type_ASC', {_type: 'ASC'})
-        m.set('_type_DESC', {_type: 'DESC'})
+        m.set('_type_ASC', { _type: 'ASC' })
+        m.set('_type_DESC', { _type: 'DESC' })
     }
     return m
 }
@@ -83,7 +86,7 @@ export function mergeOrderBy(list: OrderBy[]): OrderBy {
     list.forEach(item => {
         for (let key in item) {
             let current = result[key]
-            if (current == null ) {
+            if (current == null) {
                 result[key] = item[key]
             } else if (typeof current != 'string') {
                 let it = item[key]
