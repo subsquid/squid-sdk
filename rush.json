@@ -551,8 +551,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-metadata",
-      "projectFolder": "substrate/substrate-metadata",
+      "packageName": "@subsquid/substrate-runtime",
+      "projectFolder": "substrate/substrate-runtime",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

@@ -1,28 +1,15 @@
-import {ByteSink, Codec, Sink, Src} from "@subsquid/scale-codec"
-import assert from "assert"
-import {ChainDescription} from "./chainDescription"
-
-
-export interface ExtrinsicSignature {
-    address: any
-    signature: any
-    signedExtensions: any
-}
-
-
-export interface Extrinsic {
-    version: number
-    call: any
-    signature?: ExtrinsicSignature
-}
+import {ByteSink, Codec, Sink, Src} from '@subsquid/scale-codec'
+import assert from 'assert'
+import type {RuntimeDescription} from '../metadata'
+import {Extrinsic} from './interfaces'
 
 
 export function decodeExtrinsic(
     rawExtrinsic: string | Uint8Array,
-    chainDescription: ChainDescription,
+    runtimeDescription: RuntimeDescription,
     codec?: Codec
 ): Extrinsic {
-    codec = codec || new Codec(chainDescription.types)
+    codec = codec || new Codec(runtimeDescription.types)
 
     let src = new Src(rawExtrinsic)
     src.compact()
@@ -34,8 +21,8 @@ export function decodeExtrinsic(
     assert(version == 4, 'unsupported extrinsic version')
 
     if (signed) {
-        let signature = codec.decode(chainDescription.signature, src)
-        let call = codec.decode(chainDescription.call, src)
+        let signature = codec.decode(runtimeDescription.signature, src)
+        let call = codec.decode(runtimeDescription.call, src)
         return {
             version: 4,
             signature,
@@ -44,7 +31,7 @@ export function decodeExtrinsic(
     } else {
         return {
             version: 4,
-            call: codec.decode(chainDescription.call, src)
+            call: codec.decode(runtimeDescription.call, src)
         }
     }
 }
@@ -52,11 +39,11 @@ export function decodeExtrinsic(
 
 export function encodeExtrinsic(
     extrinsic: Extrinsic,
-    chainDescription: ChainDescription,
+    runtimeDescription: RuntimeDescription,
     codec?: Codec
 ): Uint8Array {
     assert(extrinsic.version == 4, 'unsupported extrinsic version')
-    codec = codec || new Codec(chainDescription.types)
+    codec = codec || new Codec(runtimeDescription.types)
     let sink = new ByteSink()
 
     let meta = 4
@@ -66,9 +53,9 @@ export function encodeExtrinsic(
 
     sink.u8(meta)
     if (extrinsic.signature) {
-        codec.encode(chainDescription.signature, extrinsic.signature, sink)
+        codec.encode(runtimeDescription.signature, extrinsic.signature, sink)
     }
-    codec.encode(chainDescription.call, extrinsic.call, sink)
+    codec.encode(runtimeDescription.call, extrinsic.call, sink)
 
     let bytes = sink.toBytes()
     sink = new ByteSink()
@@ -81,7 +68,7 @@ export function encodeExtrinsic(
 function encodeToSink(
     sink: Sink,
     extrinsic: Extrinsic,
-    chainDescription: ChainDescription,
+    chainDescription: RuntimeDescription,
     codec?: Codec
 ): void {
     assert(extrinsic.version == 4, 'unsupported extrinsic version')

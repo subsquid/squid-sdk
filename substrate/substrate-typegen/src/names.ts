@@ -1,12 +1,12 @@
 import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
+import {RuntimeDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
 import assert from "assert"
 import {asOptionType, asResultType} from './util'
 
 /**
  * Assign names to types
  */
-export function assignNames(d: ChainDescription): Map<Ti, string> {
+export function assignNames(d: RuntimeDescription): Map<Ti, string> {
     let names = new Names(d.types)
 
     // assign good names for events and calls

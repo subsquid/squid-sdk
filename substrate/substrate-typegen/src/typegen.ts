@@ -1,5 +1,5 @@
 import {
-    ChainDescription,
+    RuntimeDescription,
     Constant,
     decodeMetadata,
     getChainDescriptionFromMetadata,
@@ -442,7 +442,7 @@ interface VersionDescription {
     types: Type[]
     events: eac.Registry
     calls: eac.Registry
-    description: ChainDescription
+    description: RuntimeDescription
 }
 
 

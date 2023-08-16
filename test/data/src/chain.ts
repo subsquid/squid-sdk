@@ -1,6 +1,6 @@
 import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
 import {
-    ChainDescription,
+    RuntimeDescription,
     decodeExtrinsic,
     decodeMetadata,
     encodeExtrinsic,
@@ -373,7 +373,7 @@ export class Chain {
 
 
 interface VersionDescription extends SpecVersion {
-    description: ChainDescription
+    description: RuntimeDescription
     codec: ScaleCodec
     jsonCodec: JsonCodec
     events: eac.Registry

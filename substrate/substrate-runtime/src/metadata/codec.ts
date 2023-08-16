@@ -1,14 +1,15 @@
-import {Codec, Src, Ti} from "@subsquid/scale-codec"
-import assert from "assert"
-import {Metadata} from "./interfaces"
-import * as metadataDefinition from "./old/definitions/metadata"
-import {OldTypeRegistry} from "./old/typeRegistry"
+import {Codec, Src, Ti} from '@subsquid/scale-codec'
+import assert from 'assert'
+import {Metadata} from './interfaces'
+import * as metadataDefinition from './old/definitions/metadata'
+import {OldTypeRegistry} from './old/typeRegistry'
+import {Bytes} from './types'
 
 
 const {codec, versions} = createScaleCodec()
 
 
-export function decodeMetadata(data: string | Uint8Array): Metadata {
+export function decodeMetadata(data: Bytes | Uint8Array): Metadata {
     if (typeof data == 'string') {
         data = Buffer.from(data.slice(2), 'hex')
     }

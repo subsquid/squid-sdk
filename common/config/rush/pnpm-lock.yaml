@@ -113,15 +113,15 @@ dependencies:
   '@rush-temp/substrate-ingest':
     specifier: file:./projects/substrate-ingest.tgz
     version: file:projects/substrate-ingest.tgz
-  '@rush-temp/substrate-metadata':
-    specifier: file:./projects/substrate-metadata.tgz
-    version: file:projects/substrate-metadata.tgz
   '@rush-temp/substrate-metadata-explorer':
     specifier: file:./projects/substrate-metadata-explorer.tgz
     version: file:projects/substrate-metadata-explorer.tgz
   '@rush-temp/substrate-processor':
     specifier: file:./projects/substrate-processor.tgz
     version: file:projects/substrate-processor.tgz
+  '@rush-temp/substrate-runtime':
+    specifier: file:./projects/substrate-runtime.tgz
+    version: file:projects/substrate-runtime.tgz
   '@rush-temp/substrate-typegen':
     specifier: file:./projects/substrate-typegen.tgz
     version: file:projects/substrate-typegen.tgz
@@ -203,6 +203,9 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
+  '@subsquid/substrate-metadata':
+    specifier: ^3.3.0
+    version: 3.3.0
   '@subsquid/util-internal-resilient-rpc':
     specifier: ^1.0.0
     version: 1.0.0
@@ -1758,6 +1761,13 @@ packages:
       '@subsquid/util-internal-json': 0.2.1
     dev: false
 
+  /@subsquid/scale-codec@2.2.0:
+    resolution: {integrity: sha512-/VTMzpSqCaR3FOEi7RQiQlDgjn0bBxOUKyLH+PiPECLmrre8dsjNqDP21fY7UQiDIWr85lRraL36pQrJpIO87Q==}
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.0
+      '@subsquid/util-internal-json': 1.2.0
+    dev: false
+
   /@subsquid/substrate-metadata-explorer@1.1.2:
     resolution: {integrity: sha512-HE8g4PeDTGAXYBCbao7DayHkKzR+h0e7ocsJoEqKaNFO22Brnv9RVkcoUjswcWDWmXQyekS0hQI4O2JgYHy6cA==}
     hasBin: true
@@ -1778,6 +1788,14 @@ packages:
       '@subsquid/scale-codec': 1.1.1
       '@subsquid/util-internal': 1.1.0
       '@subsquid/util-naming': 0.0.2
+    dev: false
+
+  /@subsquid/substrate-metadata@3.3.0:
+    resolution: {integrity: sha512-WAx3j+R0PrV0QRKYUqVt0GHC/hd5zZOapse+DaUG7MSiWlQh6DY/onVv7RQmJ30+dU9zM18bS3sExHofG8sHHA==}
+    dependencies:
+      '@subsquid/scale-codec': 2.2.0
+      '@subsquid/util-internal': 2.5.0
+      '@subsquid/util-naming': 1.2.0
     dev: false
 
   /@subsquid/substrate-typegen@2.2.1:
@@ -1831,6 +1849,10 @@ packages:
     resolution: {integrity: sha512-/GRdTUr0Ewphy9LlEeyJDVaVMbSB5GzEHqIpgizXAH+GQrjgrEBYZy/3r/aXR+FG9HZLTNnZVBPEukM0C6nSQQ==}
     dev: false
 
+  /@subsquid/util-internal-hex@1.2.0:
+    resolution: {integrity: sha512-5Xf1Zp52gQlkNTeWFLGaf5ChXNCrOcz/nMYtylYASnfjEWXX8XutdDrUpz/YVQH88MP8CiQ/xkKprXAE9csqfg==}
+    dev: false
+
   /@subsquid/util-internal-http-client@0.1.0:
     resolution: {integrity: sha512-LOSOX1Yv4t/NA/90qrmmCArOYTntxWV4dcnTXadKXQiM9gPnVNGLCa+Z17HYjBrvZFHDdYglV2F9kOikOqDd/Q==}
     dependencies:
@@ -1849,6 +1871,12 @@ packages:
     resolution: {integrity: sha512-w2kcMssW3dOiFO8ZYiJRbpNKOimkadpu9/lqYz5FV/YNZVFZ50e1amkhHCrj2mKPlmrx22mkicIeqn8ynfXKZw==}
     dependencies:
       '@subsquid/util-internal-hex': 1.0.0
+    dev: false
+
+  /@subsquid/util-internal-json@1.2.0:
+    resolution: {integrity: sha512-r9DlJWs6GFF4uS486QTeBmmrMAFqUdSgOmx/HfxkOfEO/iSVaoh2n8FKKw0uQyCVmnsDvoz8v6COOovL4blZWA==}
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.0
     dev: false
 
   /@subsquid/util-internal-read-lines@0.0.2:
@@ -1885,8 +1913,19 @@ packages:
     resolution: {integrity: sha512-HzihJEV+kDwErw903TGztbRdYEY985W0wvkBePF2jVF725vUPZDufnLVR9dqhj1Hutn2vI7mPdKdR6iiUpzTmQ==}
     dev: false
 
+  /@subsquid/util-internal@2.5.0:
+    resolution: {integrity: sha512-uewLh2aZheCmMGXqJQwDSlQ5ZTCpkzEG3LAsSqzSwrE7fpTz+XzXTyv1E7wmDRy0CuAYuuILhS6sG+PVgEAK3Q==}
+    dev: false
+
   /@subsquid/util-naming@0.0.2:
     resolution: {integrity: sha512-t23kWD5kdRi03HXAhMSO1SesmM6dyD8kmMKfBR5SoFScij0Z2zf4dZ/jQT0bH9V59r4eZvv+NxR5XC+uR8GBAQ==}
+    dependencies:
+      camelcase: 6.3.0
+      inflected: 2.1.0
+    dev: false
+
+  /@subsquid/util-naming@1.2.0:
+    resolution: {integrity: sha512-mFFFh3CLd4IOm5OIl0tyhGvL6s+LQqtGgq8mD4oCZuzC2IhRNJ7D1KAv8JTZsxzOhHfLeibF2xvdN5jBwSLEyg==}
     dependencies:
       camelcase: 6.3.0
       inflected: 2.1.0
@@ -4882,11 +4921,12 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-D+mSHifptwdfIQcBVk8sEpYE3ImGP8mmWLDlEnZ8gne3oYO1yS0tny7o+9JnzknvV8ImNHZyCZdyipQgzrex+Q==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-XkR7ojmCzD5GGLv74qAGrhigqEKo+iobz+27/XfWmEAagfAZ3OV7ofnTBuK9WvuyWJJzWCSe6ALI9oIryliZQQ==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/node': 18.16.17
       dotenv: 16.1.4
       ethers: 6.6.5
@@ -4979,10 +5019,11 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-RWlZ4z5/1dJbiRz+8DR4HoIX39+J7dB/2kWZdeSagSaFnut85BT54ySXvOuW4/DmwxDenFvUKDttyECdmVCeAA==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-b+ImbTmT2QWiPZMlN7lwJ0/Esf0EhoKcYeMJPIWge8AHgx0EsuixgYQ4xuS9E3PocuSAE4FPtJKAk73TKC+MZQ==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@subsquid/util-internal-resilient-rpc': 1.0.0
       '@types/node': 18.16.17
       '@types/pg': 8.10.2
@@ -5051,10 +5092,11 @@ packages:
     dev: false
 
   file:projects/frontier.tgz:
-    resolution: {integrity: sha512-7lXOzIzULldyZGFyh6a5s4g5ZyVsuVColQ7K3xbv4s3haIGsbGMMIihVDXpciI1z5Gs2QT+8kT50D5zx/VQk/w==, tarball: file:projects/frontier.tgz}
+    resolution: {integrity: sha512-mX+KrTibY08o1sa1hubl5MgCgKuDk4VtEi9+uWG0+4jgpNRBKY0JqPbn0eB7xRVfgjPU+AihYWDbK2HYio4Phw==, tarball: file:projects/frontier.tgz}
     name: '@rush-temp/frontier'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/mocha': 10.0.1
       '@types/node': 18.16.17
       ethers: 6.6.5
@@ -5152,10 +5194,11 @@ packages:
     dev: false
 
   file:projects/ink-abi.tgz:
-    resolution: {integrity: sha512-fnIbeuufEYcQiDxSZFNa7jQ4v3FIoIMJFOu0b8BIbNVLj+UzpcfyqWN1KaNne60TRlUGiJTW+aIcWoEWTqpxPQ==, tarball: file:projects/ink-abi.tgz}
+    resolution: {integrity: sha512-XpC9lQFBROt47BO0cMYxyBRUMsP84Saxxob2wmCoU1wUpkDfO5ndDuRywfKdkBu7wGvkdE6W2Qy/K8otm0jW+w==, tarball: file:projects/ink-abi.tgz}
     name: '@rush-temp/ink-abi'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/mocha': 10.0.1
       '@types/node': 18.16.17
       ajv: 8.12.0
@@ -5225,10 +5268,11 @@ packages:
     dev: false
 
   file:projects/ops-xcm-typegen.tgz:
-    resolution: {integrity: sha512-nZY5NtTdFv9JTwCOYkEb4tdsAt+5tJSe7zGtGVaev4XraC/9Bvb9sbp7UDOxsqNDXVfpgS9Kw6L3kZOYIBYfMw==, tarball: file:projects/ops-xcm-typegen.tgz}
+    resolution: {integrity: sha512-0ddIHQhczslUPsYiGh+wgf9QT1CTrmFw31CVU0rgcrkpCW+WovFDMfeB6+JhHNOvSETV1boDIZ2HH/XzTMukeg==, tarball: file:projects/ops-xcm-typegen.tgz}
     name: '@rush-temp/ops-xcm-typegen'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/node': 18.16.17
       typescript: 4.9.5
     dev: false
@@ -5254,7 +5298,7 @@ packages:
     dev: false
 
   file:projects/scale-type-system.tgz:
-    resolution: {integrity: sha512-XS5cjgh9m1bawqLc/h1Q09vFFM/9q+NXGI/2EiM0y4D/Q1KzrvJ2RVUfeXGfCkhQgITXHvTTpZNtjXflm4RAhw==, tarball: file:projects/scale-type-system.tgz}
+    resolution: {integrity: sha512-eq7if+fclzjS2Bw2cJrjx96d1AzkBZkK6kFhgYMzlpMZ8euEmliCWl/i6yzimz2LbMmoWxLgxYfshFI0VtnDEQ==, tarball: file:projects/scale-type-system.tgz}
     name: '@rush-temp/scale-type-system'
     version: 0.0.0
     dependencies:
@@ -5263,11 +5307,12 @@ packages:
     dev: false
 
   file:projects/shibuya-psp22.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-yKtbUiFgShN5IiekHxvj1AnK8aCdFWhWCWPTa0gmvkxLFbDPhSd9LaMaL7mTWpMpKgkpFnW5BmglbuIjaGQszQ==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-vOtar5wq6I6iL3Pa3RVZrXuzCKa8BUiuZKetuJpDd872zmqzlKGytciMQKNOsssHfs/wHOIlleytVT3UXF9CjA==, tarball: file:projects/shibuya-psp22.tgz}
     id: file:projects/shibuya-psp22.tgz
     name: '@rush-temp/shibuya-psp22'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@subsquid/substrate-typegen': 2.2.1
       '@types/node': 18.16.17
       dotenv: 16.1.4
@@ -5324,10 +5369,11 @@ packages:
     dev: false
 
   file:projects/substrate-data.tgz:
-    resolution: {integrity: sha512-YLfr9DiiBiDu5T58GjlkA5sjObLMAhS4WzhnxOHWf/FMJwJQXSegTpOzr3RlLj4wtPt3uJ7yONxMmRVTcgyaig==, tarball: file:projects/substrate-data.tgz}
+    resolution: {integrity: sha512-KgboRKuPW79tFgXQAFHLAJHwCgR/f46RoqsYuZgbSux/+iszmduAttgo9inhACJxLrJqXd+I1EEvO+3mBRfL/w==, tarball: file:projects/substrate-data.tgz}
     name: '@rush-temp/substrate-data'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@substrate/calc': 0.2.8
       '@types/node': 18.16.17
       blake2b: 2.1.4
@@ -5345,10 +5391,11 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-jck8L8qyYcMRVhwKUB3q3B8dI3PUZReTLxJ+2mK8Ng3UBtXr++HzcTwrIFzpHNSWclUoLsXyN3wOSWUvwzJF6w==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-v8F8YGyOFxA206jx4RxOcd9+2/p+1RZN+SNmSUlW9kGb5n01ndO7pdhF4DiNEMIF16FzI4F/CcpfYBN8olKlNw==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/node': 18.16.17
       commander: 11.0.0
     dev: false
@@ -5363,33 +5410,36 @@ packages:
       typescript: 4.9.5
     dev: false
 
-  file:projects/substrate-metadata.tgz:
-    resolution: {integrity: sha512-M0XcN5sZftKU1IAIF/5gWxObJEXxQnPANLNBPH+8fcX/mO7L1qQ2Aq6Pq4jHbZB4zTOGlaqi4S/Sc8AnArz3Sg==, tarball: file:projects/substrate-metadata.tgz}
-    name: '@rush-temp/substrate-metadata'
-    version: 0.0.0
-    dependencies:
-      '@types/mocha': 10.0.1
-      '@types/node': 18.16.17
-      expect: 29.5.0
-      mocha: 10.2.0
-      typescript: 4.9.5
-    dev: false
-
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-26BwRwlJCe8RjvzaJWEnFeh27Ho0vcfDB2+MXYJUjj9YBwVgXRCTR/p07wqfb/bElQfRiIb4fTwZQeFuOpP5Bg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-DLku03/RfXdgJOzOvaYo4K38p1csROX6yACA6ts8T8p5doZdlnMG/wGxU1mEvXz6+DYBZj/zSwxUb9h+I65f6g==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/node': 18.16.17
       blake2b: 2.1.4
       typescript: 4.9.5
     dev: false
 
+  file:projects/substrate-runtime.tgz:
+    resolution: {integrity: sha512-7xla5EPSWx+l8PKqObOS36O4EtldIZ/fO14suTT2durEVz2h0F75UFLOYxSDUsH87/cKJnjg80RycFOiENqASg==, tarball: file:projects/substrate-runtime.tgz}
+    name: '@rush-temp/substrate-runtime'
+    version: 0.0.0
+    dependencies:
+      '@types/mocha': 10.0.1
+      '@types/node': 18.16.17
+      blake2b: 2.1.4
+      expect: 29.5.0
+      mocha: 10.2.0
+      typescript: 4.9.5
+    dev: false
+
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-AI7uKBd51zyOviGC4173YHHaKKcIRyvUJ9TKi2vUxVAlCJVoS8N0UrjqOo6xVsLWgyQQ+GLXaH9GSYPk+bFafA==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-iQwLxj1A3Y7t2P1rSL+0TznVsuwV2yZodvXvc6DT6m8U8EodN3o0tjHtqhIzCr9w08nJDqjFWNsJQAKcm7+Mlw==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
+      '@subsquid/substrate-metadata': 3.3.0
       '@types/node': 18.16.17
       commander: 11.0.0
       typescript: 4.9.5

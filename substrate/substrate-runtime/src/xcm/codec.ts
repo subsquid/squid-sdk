@@ -1,6 +1,6 @@
 import {Codec, Src} from "@subsquid/scale-codec"
-import * as definitions from "../old/definitions/xcm"
-import {OldTypeRegistry} from "../old/typeRegistry"
+import * as definitions from "../metadata/old/definitions/xcm"
+import {OldTypeRegistry} from "../metadata/old/typeRegistry"
 import type {VersionedXcm} from "./interfaces"
 
 

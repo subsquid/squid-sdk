@@ -75,7 +75,7 @@ function matchVariant(typeChecker: TypeChecker, variant: Variant, type: Type | E
     } else if (variant.fields[0].name == null) {
         if (type instanceof EnumStruct) return false
         if (variant.fields.length == 1) {
-            return typeChecker.match(type, variant.fields[0].type)
+            return typeChecker.match(variant.fields[0].type, type)
         } else {
             return type.match(typeChecker, {
                 kind: TypeKind.Tuple,

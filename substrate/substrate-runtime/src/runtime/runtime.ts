@@ -1,23 +1,21 @@
 import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
-import {
-    RuntimeDescription,
-    Constant,
-    decodeExtrinsic,
-    Field,
-    getRuntimeDescription,
-    getTypeHash,
-    OldSpecsBundle,
-    OldTypesBundle,
-    QualifiedName,
-    StorageItem
-} from '@subsquid/substrate-metadata'
-import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
-import {getStorageItemTypeHash} from '@subsquid/substrate-metadata/lib/storage'
-import {Bytes, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
-import * as decoded from './interfaces/data-decoded'
-import * as sto from './runtime-storage'
+import {
+    Bytes,
+    Constant,
+    Field,
+    getRuntimeDescription,
+    Metadata,
+    OldSpecsBundle,
+    OldTypesBundle,
+    RuntimeDescription,
+    StorageItem
+} from '../metadata'
+import {EACDefinition, EACRegistry} from './events-and-calls'
+import {decodeExtrinsic} from './extrinsic'
+import {DecodedCall, Extrinsic, JsonCall, JsonEvent, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
+import * as sto from './storage'
 
 
 export class Runtime {
@@ -26,16 +24,15 @@ export class Runtime {
     public readonly implName: string
     public readonly implVersion: number
     public readonly description: RuntimeDescription
-    public readonly events: eac.Registry
-    public readonly calls: eac.Registry
+    public readonly events: EACRegistry
+    public readonly calls: EACRegistry
     public readonly scaleCodec: ScaleCodec
     public readonly jsonCodec: JsonCodec
     private constantValueCache = new Map<Constant, any>()
-    private storageHashCache = new Map<StorageItem, string>()
 
     constructor(
         runtimeVersion: RuntimeVersionId,
-        metadata: Bytes,
+        metadata: Bytes | Metadata,
         typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
         this.specName = runtimeVersion.specName
@@ -43,8 +40,8 @@ export class Runtime {
         this.implName = runtimeVersion.implName
         this.implVersion = runtimeVersion.implVersion
         this.description = getRuntimeDescription(metadata, this.specName, this.specVersion, typesBundle)
-        this.events = new eac.Registry(this.description.types, this.description.event)
-        this.calls = new eac.Registry(this.description.types, this.description.call)
+        this.events = new EACRegistry(this.description.types, this.description.event)
+        this.calls = new EACRegistry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)
         this.jsonCodec = new JsonCodec(this.description.types)
     }
@@ -53,17 +50,7 @@ export class Runtime {
         return !!this.description.storage[prefix]?.[name]
     }
 
-    getStorageItem(name: QualifiedName): StorageItem
-    getStorageItem(prefix: string, name: string): StorageItem
-    getStorageItem(prefixOrQualifiedName: string, name?: string): StorageItem {
-        let prefix: string
-        if (name == null) {
-            let [p, n] = splitQualifiedName(prefixOrQualifiedName)
-            prefix = p
-            name = n
-        } else {
-            prefix = prefixOrQualifiedName
-        }
+    getStorageItem(prefix: string, name: string): StorageItem {
         let items = this.description.storage[prefix]
         if (items == null) throw new Error(
             `There are no storage items under prefix ${prefix}`
@@ -73,17 +60,6 @@ export class Runtime {
             `Unknown storage item: ${prefix}.${name}`
         )
         return def
-    }
-
-    getStorageItemTypeHash(prefix: string, name: string): string | undefined {
-        let def = this.description.storage[prefix]?.[name]
-        if (def == null) return undefined
-        let hash = this.storageHashCache.get(def)
-        if (hash == null) {
-            hash = getStorageItemTypeHash(this.description.types, def)
-            this.storageHashCache.set(def, hash)
-        }
-        return hash
     }
 
     encodeStorageKey(prefix: string, name: string, ...key: any[]): Bytes {
@@ -96,18 +72,12 @@ export class Runtime {
         )
     }
 
-    decodeStorageKey(item: StorageItem | QualifiedName, key: Bytes): any {
-        if (typeof item == 'string') {
-            item = this.getStorageItem(item)
-        }
+    decodeStorageKey(item: StorageItem, key: Bytes): any {
         let decoded = sto.decodeKey(this.scaleCodec, item, key)
         return decoded.length > 1 ? decoded : decoded[0]
     }
 
-    decodeStorageValue(item: StorageItem | QualifiedName, value?: Bytes | Uint8Array): any {
-        if (typeof item == 'string') {
-            item = this.getStorageItem(item)
-        }
+    decodeStorageValue(item: StorageItem, value?: Bytes | Uint8Array): any {
         return sto.decodeValue(this.scaleCodec, item, value)
     }
 
@@ -250,31 +220,25 @@ export class Runtime {
         return value
     }
 
-    getConstantTypeHash(pallet: string, name: string): Bytes | undefined {
-        let def = this.description.constants[pallet]?.[name]
-        if (def == null) return undefined
-        return getTypeHash(this.description.types, def.type)
-    }
-
-    decodeExtrinsic(bytes: Bytes | Uint8Array): decoded.Extrinsic {
+    decodeExtrinsic(bytes: Bytes | Uint8Array): Extrinsic {
         return decodeExtrinsic(bytes, this.description, this.scaleCodec)
     }
 
-    decodeCall(bytes: Bytes | Uint8Array): decoded.Call {
+    decodeCall(bytes: Bytes | Uint8Array): DecodedCall {
         return this.scaleCodec.decodeBinary(this.description.call, bytes)
     }
 
-    decodeJsonCall(call: {name: QualifiedName, args: any}): any {
+    decodeJsonCallArguments(call: JsonCall): any {
         let def = this.calls.get(call.name)
         return this.decodeArgs(def, call.args)
     }
 
-    decodeJsonEvent(call: {name: QualifiedName, args: any}): any {
+    decodeJsonEventArguments(call: JsonEvent): any {
         let def = this.events.get(call.name)
         return this.decodeArgs(def, call.args)
     }
 
-    private decodeArgs(def: eac.Definition, args: any): any {
+    private decodeArgs(def: EACDefinition, args: any): any {
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeJsonTuple(def.fields, args)
         assert(args != null && typeof args == 'object', 'invalid args')
@@ -303,24 +267,6 @@ export class Runtime {
     hasEvent(name: QualifiedName): boolean {
         return !!this.events.definitions[name]
     }
-
-    getEventTypeHash(name: QualifiedName): string {
-        return this.events.getHash(name)
-    }
-
-    getCallTypeHash(name: QualifiedName): string {
-        return this.calls.getHash(name)
-    }
 }
 
 
-function splitQualifiedName(name: QualifiedName): [prefix: string, name: string] {
-    let split = name.split('.')
-    assert(split.length == 2)
-    return split as [string, string]
-}
-
-
-interface RpcClient {
-    call(method: string, params?: any[]): Promise<any>
-}

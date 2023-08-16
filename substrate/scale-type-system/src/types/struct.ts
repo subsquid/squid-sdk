@@ -28,7 +28,7 @@ export class StructType<F extends Record<string, Type>> extends BaseType<GetStru
         for (let f of ty.fields) {
             assert(f.name != null)
             let type = this.getFields()[f.name]
-            if (type && typeChecker.match(type, f.type)) return false
+            if (type && typeChecker.match(f.type, type)) return false
         }
         return true
     }

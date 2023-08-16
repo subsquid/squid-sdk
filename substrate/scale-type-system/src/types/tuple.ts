@@ -33,7 +33,7 @@ export class TupleType<T extends Type[]> extends BaseType<GetTupleType<T>> {
         }
         if (tuple.length != this.tuple.length) return false
         for (let i = 0; i < this.tuple.length; i++) {
-            if (!typeChecker.match(this.getTuple()[i], tuple[i])) return false
+            if (!typeChecker.match(tuple[i], this.getTuple()[i])) return false
         }
         return true
     }

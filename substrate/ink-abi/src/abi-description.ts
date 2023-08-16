@@ -1,5 +1,5 @@
 import {Field, Primitive, Ti, Type, TypeKind, Variant} from "@subsquid/substrate-metadata"
-import {normalizeMetadataTypes} from "@subsquid/substrate-metadata/lib/util"
+import {normalizeMetadataTypes} from "substrate/substrate-metadata/src/metadata/util"
 import {def, unexpectedCase} from "@subsquid/util-internal"
 import {
     ConstructorSpecFor_PortableForm,

@@ -2,9 +2,8 @@ import {throwUnexpectedCase} from '@subsquid/scale-codec/lib/util'
 import {last, maybeLast} from '@subsquid/util-internal'
 import {toCamelCase} from '@subsquid/util-naming'
 import assert from 'assert'
-import crypto from 'crypto'
-import {Metadata} from './interfaces'
 import {Field, Type, TypeInfo, TypeKind, VariantType} from './types'
+import {Metadata} from './interfaces'
 
 
 export function normalizeMetadataTypes(types: Type[]): Type[] {
@@ -333,14 +332,6 @@ function convertToCamelCase(fields: Field[]): Field[] {
             return f
         }
     })
-}
-
-
-export function sha256(obj: object | string): string {
-    let content = typeof obj == 'string' ? obj : JSON.stringify(obj)
-    let hash = crypto.createHash('sha256')
-    hash.update(content)
-    return hash.digest().toString('hex')
 }
 
 

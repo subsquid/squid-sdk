@@ -59,8 +59,6 @@ export type Type =
     DoNotConstructType
 
 
-export type TypeRegistry = Type[]
-export type QualifiedName = string
 /**
  * Hex-encoded raw bytes
  */

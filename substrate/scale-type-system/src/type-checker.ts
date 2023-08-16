@@ -33,7 +33,7 @@ export class TypeChecker {
         return this.types[ti]
     }
 
-    match(type: Type, ti: Ti): boolean {
+    match(ti: Ti, type: Type): boolean {
         assert(0 <= ti && ti < this.types.length)
         let checked = this.checked[ti]
         let ok = checked.get(type)

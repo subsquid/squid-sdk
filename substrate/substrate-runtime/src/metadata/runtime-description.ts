@@ -1,6 +1,6 @@
-import {getUnwrappedType} from '@subsquid/scale-codec/lib/types-codec'
 import {assertNotNull, def, last, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
+import {Bytes, Field, Ti, Type, TypeKind, Variant} from './types'
 import {decodeMetadata} from './codec'
 import type {
     EventMetadataV9,
@@ -17,12 +17,10 @@ import {getOldTypesBundle} from './io'
 import {OldTypeRegistry} from './old/typeRegistry'
 import {OldSpecsBundle, OldTypes, OldTypesBundle} from './old/types'
 import {getTypesFromBundle} from './old/typesBundle'
-import {Storage, StorageHasher, StorageItem} from './storage'
-import {Bytes, Field, Ti, Type, TypeKind, Variant} from './types'
 import {isPreV14, isUnitType, normalizeMetadataTypes} from './util'
 
 
-export interface ChainDescription {
+export interface RuntimeDescription {
     types: Type[]
     call: Ti
     digest: Ti
@@ -50,19 +48,46 @@ export interface Constant {
 }
 
 
-export function getChainDescription(metadata: Metadata | Bytes | Uint8Array): ChainDescription
-export function getChainDescription(
+export type StorageHasher =
+    'Blake2_128' |
+    'Blake2_256' |
+    'Blake2_128Concat' |
+    'Twox128' |
+    'Twox256' |
+    'Twox64Concat' |
+    'Identity'
+
+
+export interface StorageItem {
+    hashers: StorageHasher[]
+    keys: Ti[]
+    value: Ti
+    modifier: 'Optional' | 'Default' | 'Required'
+    fallback: Uint8Array
+    docs?: string[]
+}
+
+
+export interface Storage {
+    [prefix: string]: {
+        [name: string]: StorageItem
+    }
+}
+
+
+export function getRuntimeDescription(metadata: Metadata | Bytes | Uint8Array): RuntimeDescription
+export function getRuntimeDescription(
     metadata: Metadata | string | Uint8Array,
     specName: string,
     specVersion: number,
     typesBundle?: OldTypesBundle | OldSpecsBundle
-): ChainDescription
-export function getChainDescription(
+): RuntimeDescription
+export function getRuntimeDescription(
     metadata: Metadata | Bytes | Uint8Array,
     specName?: string,
     specVersion?: number,
     typesBundle?: OldTypesBundle | OldSpecsBundle
-): ChainDescription {
+): RuntimeDescription {
     if (typeof metadata == 'string' || metadata instanceof Uint8Array) {
         metadata = decodeMetadata(metadata)
     }
@@ -77,11 +102,6 @@ export function getChainDescription(
         oldTypes = getTypesFromBundle(typesBundle, specVersion, specName)
     }
 
-    return getChainDescriptionFromMetadata(metadata, oldTypes)
-}
-
-
-export function getChainDescriptionFromMetadata(metadata: Metadata, oldTypes?: OldTypes): ChainDescription {
     switch(metadata.__kind) {
         case "V9":
         case "V10":
@@ -101,7 +121,7 @@ export function getChainDescriptionFromMetadata(metadata: Metadata, oldTypes?: O
 class FromV14 {
     constructor(private metadata: MetadataV14) {}
 
-    convert(): ChainDescription {
+    convert(): RuntimeDescription {
         return {
             types: this.types(),
             call: this.call(),
@@ -170,7 +190,7 @@ class FromV14 {
                     type: ext.type
                 }
             }).filter(f => {
-                return !isUnitType(getUnwrappedType(types, f.type))
+                return !isUnitType(types[f.type])
             }),
             path: ['SignedExtensions']
         }
@@ -389,7 +409,7 @@ class FromOld {
         this.defineGenericSignature()
     }
 
-    convert(): ChainDescription {
+    convert(): RuntimeDescription {
         let signature = this.registry.use('GenericSignature')
         let call = this.registry.use('GenericCall')
         let digest = this.registry.use('Digest')
