@@ -293,12 +293,7 @@ export class Ingest {
             .then(header => {
                 let height = parseInt(header.number)
                 assert(Number.isSafeInteger(height))
-                if (height <= 10){
-                    return 0
-                }
-                else {
-                    return Math.max(0, height - 10);
-                }
+                return Math.max(0, height - 10);
             }).catch(withErrorContext({
                 blockHash: hash
             }))
