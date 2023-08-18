@@ -288,12 +288,12 @@ export class Ingest {
     }
 
     private async getChainHeight(): Promise<number> {
-        let hash = await this.client.call('chain_getFinalizedHead')
+        let hash = await this.client.call('chain_getHead')
         return this.client.call<sub.BlockHeader>('chain_getHeader', [hash])
             .then(header => {
                 let height = parseInt(header.number)
                 assert(Number.isSafeInteger(height))
-                return height
+                if (height%10 === 0) return height
             }).catch(withErrorContext({
                 blockHash: hash
             }))
