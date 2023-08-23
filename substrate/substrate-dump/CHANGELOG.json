@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/substrate-dump_v0.1.0",
+      "date": "Wed, 23 Aug 2023 14:37:23 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `--endpoint-max-batch-call-size` cli option"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-dump_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

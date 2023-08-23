@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 02 Aug 2023 22:59:19 GMT and should not be manually modified.
+This log was last generated on Wed, 23 Aug 2023 14:37:23 GMT and should not be manually modified.
+
+## 3.3.0
+Wed, 23 Aug 2023 14:37:23 GMT
+
+### Minor changes
+
+- add `--endpoint-max-batch-call-size` cli option
 
 ## 3.2.0
 Wed, 02 Aug 2023 22:59:19 GMT

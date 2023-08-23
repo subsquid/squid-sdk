@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Wed, 23 Aug 2023 14:37:23 GMT and should not be manually modified.
+
+## 4.4.0
+Wed, 23 Aug 2023 14:37:23 GMT
+
+### Minor changes
+
+- Add orderBy ASC_NULLS_FIRST and DESC_NULLS_LAST
 
 ## 4.3.1
 Wed, 19 Jul 2023 16:48:14 GMT
