@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/substrate-ingest",
       "comment": "add `--endpoint-max-batch-call-size` cli option",
-      "type": "patch"
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-ingest"
