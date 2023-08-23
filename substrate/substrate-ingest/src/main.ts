@@ -19,6 +19,7 @@ runProgram(async () => {
     program.option('-e, --endpoint <url>', 'RPC endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
     program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
     program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', nat)
+    program.option('-b, --endpoint-max-batch-call-size <number>', 'Maximum size of RPC batch call', positiveInt)
     program.option('--first-block <number>', 'Height of the first block to dump', nat, 0)
     program.option('--last-block <number>', 'Height of the last block to dump', nat)
     program.option('--types-bundle <file>', 'JSON file with custom type definitions')
