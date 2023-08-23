@@ -20,6 +20,7 @@ export interface DumperOptions {
     endpoint: string
     endpointCapacity?: number
     endpointRateLimit?: number
+    endpointMaxBatchCallSize?: number
     dest?: string
     firstBlock?: number
     lastBlock?: number
@@ -62,6 +63,7 @@ export class Dumper {
         return new RpcClient({
             url: this.options.endpoint,
             capacity: this.getEndpointCapacity(),
+            maxBatchCallSize: this.options.endpointMaxBatchCallSize,
             rateLimit: this.options.endpointRateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })
