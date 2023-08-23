@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "add `--endpoint-max-batch-call-size` cli option",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}
