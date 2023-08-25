@@ -1,6 +1,6 @@
 import type {BlockData, Bytes} from '@subsquid/substrate-data-raw'
-import {AccountId} from '../parsing/validator'
-import {Runtime} from '../runtime'
+import type {Runtime} from '@subsquid/substrate-runtime'
+import type {AccountId} from '../parsing/validator'
 
 
 export interface RawBlock extends BlockData {

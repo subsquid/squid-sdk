@@ -1,14 +1,14 @@
-import {Type as ScaleType, TypeKind} from '@subsquid/scale-codec'
+import {TypeKind} from '@subsquid/scale-codec'
 import {def} from '@subsquid/util-internal'
 import assert from 'assert'
-import {BaseType, Type, TypeChecker} from '../type-checker'
+import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 import {GetType, Simplify} from '../type-util'
 
 
 type UseOptionForUndefinedProps<T> = {
-    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
+    [K in keyof T as unknown extends T[K] ? K : undefined extends T[K] ? never : K]: T[K]
 } & {
-    [K in keyof T as undefined extends T[K] ? K : never]+?: Exclude<T[K], undefined>
+    [K in keyof T as unknown extends T[K] ? never : undefined extends T[K] ? K : never]+?: T[K]
 }
 
 

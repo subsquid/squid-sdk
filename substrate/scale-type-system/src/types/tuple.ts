@@ -1,17 +1,16 @@
-import {Ti, Type as ScaleType, TypeKind} from '@subsquid/scale-codec'
-import {def} from '@subsquid/util-internal'
+import {Ti, TypeKind} from '@subsquid/scale-codec'
 import assert from 'assert'
-import {BaseType, Type, TypeChecker} from '../type-checker'
+import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 import {GetType} from '../type-util'
 
 
-export type GetTupleType<T extends any[]> = {
+export type GetTupleType<T> = {
     [I in keyof T]: GetType<T[I]>
 }
 
 
-export class TupleType<T extends Type[]> extends BaseType<GetTupleType<T>> {
-    constructor(private tuple: () => T) {
+export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<T>> {
+    constructor(private tuple: T) {
         super()
     }
 
@@ -33,13 +32,8 @@ export class TupleType<T extends Type[]> extends BaseType<GetTupleType<T>> {
         }
         if (tuple.length != this.tuple.length) return false
         for (let i = 0; i < this.tuple.length; i++) {
-            if (!typeChecker.match(tuple[i], this.getTuple()[i])) return false
+            if (!typeChecker.match(tuple[i], this.tuple[i])) return false
         }
         return true
-    }
-
-    @def
-    private getTuple(): T {
-        return this.tuple()
     }
 }

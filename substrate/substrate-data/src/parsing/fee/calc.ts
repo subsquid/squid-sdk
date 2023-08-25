@@ -1,12 +1,20 @@
-import type {Bytes} from '@subsquid/substrate-metadata'
+import {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
+import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import {def} from '@subsquid/util-internal'
 import {CalcFee as SubstrateFeeCalc} from '@substrate/calc'
-import {DispatchInfo} from '../interfaces/data-decoded'
-import {Runtime} from '../runtime'
+import {
+    BlockWeightsConst,
+    ExtrinsicBaseWeightConst,
+    IDispatchInfo,
+    LengthToFeeConst,
+    NextFeeMultiplier,
+    TransactionByteFeeConst,
+    WeightToFeeConst
+} from './types'
 
 
-export interface FeeCalc {
-    (dispatchInfo: DispatchInfo, len: number): bigint | undefined
+export interface Calc {
+    (dispatchInfo: IDispatchInfo, len: number): bigint | undefined
 }
 
 
@@ -20,7 +28,7 @@ export function getFeeCalc(
     feeMultiplier: Bytes,
     specName: string,
     specVersion: number
-): FeeCalc | undefined {
+): Calc | undefined {
     return getFactory(runtime).get(feeMultiplier, specName, specVersion)
 }
 
@@ -38,28 +46,59 @@ function getFactory(runtime: Runtime): CalcFactory {
 }
 
 
+interface CalcCoefficient {
+    coeffInteger: string
+    coeffFrac: number
+    negative: boolean
+    degree: number
+}
+
+
+interface BaseWeights {
+    Normal: bigint
+    Operational: bigint
+    Mandatory: bigint
+}
+
+
 class CalcFactory {
     constructor(private runtime: Runtime) {}
 
     @def
     isAvailable(): boolean {
-        if (!this.runtime.hasStorageItem('TransactionPayment', 'NextFeeMultiplier')) return false
-        if (this.perByteFee() == null) return false
-        if (this.baseWeights() == null) return false
-        if (this.coefficients() == null) return false
-        return this.createCalc(1, this.runtime.specName, this.runtime.specVersion) != null
+        return this.hasNextFeeMultiplier()
+            && this.baseWeights() != null
+            && this.createCalc(1, this.runtime.specName, this.runtime.specVersion) != null
+    }
+
+    @def
+    private hasNextFeeMultiplier(): boolean {
+        return this.runtime.checkStorageType(
+            'TransactionPayment.NextFeeMultiplier',
+            false,
+            [],
+            NextFeeMultiplier
+        )
     }
 
     get(
         feeMultiplier: Bytes,
         specName: string,
         specVersion: number
-    ): FeeCalc | undefined {
-        if (!this.isAvailable()) return
-        let multiplier = this.runtime.decodeStorageValue('TransactionPayment.NextFeeMultiplier', feeMultiplier)
+    ): Calc | undefined {
+        if (!this.hasNextFeeMultiplier()) return
+
+        const baseWeights = this.baseWeights()
+        if (baseWeights == null) return
+
+        const multiplier: bigint | number = this.runtime.decodeStorageValue(
+            'TransactionPayment.NextFeeMultiplier',
+            feeMultiplier
+        )
+
         const calc = this.createCalc(multiplier, specName, specVersion)
         if (calc == null) return
-        let baseWeights = this.baseWeights()
+
         return (dispatchInfo, len) => {
             if (!paysFee(dispatchInfo)) return undefined
             let baseWeight = baseWeights[dispatchInfo.class.__kind]
@@ -73,38 +112,38 @@ class CalcFactory {
         specName: string,
         specVersion: number
     ): SubstrateFeeCalc | undefined {
+        let coefficients = this.coefficients()
+        if (coefficients == null) return
+
+        let perByteFee = this.perByteFee()
+        if (perByteFee == null) return
+
         return SubstrateFeeCalc.from_params(
-            this.coefficients(),
+            coefficients,
             feeMultiplier.toString(),
-            this.perByteFee().toString(),
+            perByteFee.toString(),
             specName,
             specVersion
         )
     }
 
     @def
-    perByteFee(): any | undefined {
-        let val = this.getConst('TransactionPayment', 'TransactionByteFee')
+    perByteFee(): bigint | number | undefined {
+        let val = this.getConst('TransactionPayment.TransactionByteFee', TransactionByteFeeConst)
         if (val != null) return val
-        let lengthToFee = this.getConst('TransactionPayment', 'LengthToFee')
+        let lengthToFee = this.getConst('TransactionPayment.LengthToFee', LengthToFeeConst)
         return lengthToFee?.[0].coeffInteger
     }
 
     @def
-    baseWeights(): any | undefined {
-        let perClass = this.getConst('System', 'BlockWeights') as {
-            perClass: {
-                normal: {baseExtrinsic: bigint | number}
-                operational: {baseExtrinsic: bigint | number}
-                mandatory: {baseExtrinsic: bigint | number}
-            }
-        } | undefined
+    baseWeights(): BaseWeights | undefined {
+        let perClass = this.getConst('System.BlockWeights', BlockWeightsConst)
         if (perClass) return {
             Normal: BigInt(perClass.perClass.normal.baseExtrinsic),
             Operational: BigInt(perClass.perClass.operational.baseExtrinsic),
             Mandatory: BigInt(perClass.perClass.mandatory.baseExtrinsic)
         }
-        let baseWeight = this.getConst('System', 'ExtrinsicBaseWeight')
+        let baseWeight = this.getConst('System.ExtrinsicBaseWeight', ExtrinsicBaseWeightConst)
         if (baseWeight) return {
             Normal: BigInt(baseWeight),
             Operational: BigInt(baseWeight),
@@ -113,9 +152,9 @@ class CalcFactory {
     }
 
     @def
-    coefficients(): any[] | undefined {
-        let weightToFee = this.getConst('TransactionPayment', 'WeightToFee') as any[] | undefined
-        return weightToFee?.map((c: any) => {
+    coefficients(): CalcCoefficient[] | undefined {
+        let weightToFee = this.getConst('TransactionPayment.WeightToFee', WeightToFeeConst)
+        return weightToFee?.map(c => {
             return {
                 coeffInteger: String(c.coeffInteger),
                 coeffFrac: c.coeffFrac,
@@ -125,18 +164,19 @@ class CalcFactory {
         })
     }
 
-    private getConst(pallet: string, name: string): any | undefined {
-        if (this.runtime.hasConstant(pallet, name)) {
-            return this.runtime.getConstant(pallet, name)
+    private getConst<T extends sts.Type>(name: QualifiedName, ty: T): sts.GetType<T> | undefined {
+        if (this.runtime.checkConstantType(name, ty)) {
+            return this.runtime.getConstant(name)
         }
     }
 }
 
 
-function paysFee(dispatchInfo: DispatchInfo): boolean {
+function paysFee(dispatchInfo: IDispatchInfo): boolean {
     if (typeof dispatchInfo.paysFee == 'boolean') {
         return dispatchInfo.paysFee
     } else {
         return dispatchInfo.paysFee.__kind == 'Yes'
     }
 }
+

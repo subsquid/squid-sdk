@@ -106,7 +106,7 @@ export function decodeKey(codec: Codec, item: StorageItem, key: Bytes | Uint8Arr
 }
 
 
-export function decodeValue(codec: Codec, item: StorageItem, value?: Bytes | Uint8Array): any {
+export function decodeValue(codec: Codec, item: StorageItem, value?: Bytes | Uint8Array | null): any {
     if (value == null) {
         switch(item.modifier) {
             case 'Optional':

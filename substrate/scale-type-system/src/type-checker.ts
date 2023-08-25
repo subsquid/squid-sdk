@@ -2,6 +2,9 @@ import {Ti, Type as ScaleType} from '@subsquid/scale-codec'
 import assert from 'assert'
 
 
+export {ScaleType}
+
+
 export interface Type<T=unknown> {
     match(typeChecker: TypeChecker, ty: ScaleType): boolean
     phantom(): T

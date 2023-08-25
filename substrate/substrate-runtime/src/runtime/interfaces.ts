@@ -1,3 +1,9 @@
+/**
+ * Hex encoded byte string
+ */
+export type Bytes = string
+
+
 export type DecodedCall = {
     __kind: string
     value: {__kind: string} & any
@@ -13,16 +19,17 @@ export type DecodedEvent = {
 export type QualifiedName = string
 
 
-export type JsonCall = {
+export type CallRecord<T = unknown> = {
     name: QualifiedName
-    args: any
+    args: T
 }
 
 
-export type JsonEvent = {
+export type EventRecord<T = unknown>  = {
     name: QualifiedName
-    args: any
+    args: T
 }
+
 
 export interface RuntimeVersionId {
     specName: string

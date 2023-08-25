@@ -1,5 +1,5 @@
 import type {Bytes, Hash} from '@subsquid/substrate-data-raw'
-import type {Runtime} from '../runtime'
+import {Runtime} from '@subsquid/substrate-runtime'
 
 
 export {Bytes, Hash}
@@ -77,7 +77,7 @@ export interface Call {
     /**
      * JSON encoded call arguments
      */
-    args: any
+    args: unknown
     origin?: any
     /**
      * Call error.
@@ -104,7 +104,7 @@ export interface Event {
     /**
      * JSON encoded event arguments
      */
-    args: any
+    args: unknown
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]

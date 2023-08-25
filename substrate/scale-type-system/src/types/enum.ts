@@ -1,7 +1,6 @@
-import {Type as ScaleType, TypeKind, Variant} from '@subsquid/scale-codec'
+import {TypeKind, Variant} from '@subsquid/scale-codec'
 import {def} from '@subsquid/util-internal'
-import {string} from '../dsl'
-import {BaseType, Type, TypeChecker} from '../type-checker'
+import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 import {GetType, Simplify} from '../type-util'
 
 
@@ -17,25 +16,23 @@ export class EnumStruct<T=unknown> {
 }
 
 
-export type GetEnumType<Variants, Open> = {
+export type GetEnumType<Variants> = Simplify<{
     [K in keyof Variants]: Variants[K] extends EnumStruct<infer S>
         ? Simplify<{__kind: K} & S>
-        : ExcludeNulls<{__kind: K, value: GetType<Variants[K]>}>
-}[keyof Variants] | (
-    Open extends true ? {__kind: '*'} : never
-)
+        : ValueVariant<K, GetType<Variants[K]>>
+}[keyof Variants]>
 
 
-type ExcludeNulls<T> = {
-    [K in keyof T as T[K] extends undefined | null ? never : K]: T[K]
-}
+type ValueVariant<K, T> = T extends (undefined | null)
+    ? {__kind: K}
+    : {__kind: K, value: T}
 
 
 export class EnumType<
     Variants extends EnumDefinition,
     Open extends boolean
 > extends BaseType<
-    GetEnumType<Variants, Open>
+    GetEnumType<Variants> | (Open extends [true] ? {__kind: '*'} : never)
 > {
     constructor(private variants: () => Variants, private open: Open) {
         super()

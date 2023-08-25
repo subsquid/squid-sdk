@@ -1,0 +1,270 @@
+import {DecodedCall, EventRecord, Runtime} from '@subsquid/substrate-runtime'
+import {array, bytes, externalEnum, struct, tuple, Type, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import assert from 'assert'
+import {Call, Event, Extrinsic} from '../../interfaces/data'
+import {Address, IOrigin} from '../../types/system'
+import {assertCall, assertEvent} from '../../types/util'
+import {addressOrigin, unwrapArguments} from '../util'
+
+
+export type Boundary<T> = (runtime: Runtime, event: Event) => T | undefined | null | false
+
+
+export interface CallResult {
+    ok: boolean
+    error?: unknown
+}
+
+
+type IExtrinsicFailed = {
+    dispatchError: unknown
+} | [
+    dispatchInfo: unknown,
+    dispatchError: unknown
+]
+
+
+const ExtrinsicFailed: Type<IExtrinsicFailed> = union(
+    struct({dispatchError: unknown()}),
+    tuple(unknown(), unknown())
+)
+
+
+const CallWrapper = struct({
+    call: union(externalEnum(), bytes())
+})
+
+
+const CallListWrapper = struct({
+    calls: array(externalEnum())
+})
+
+
+export class CallParser {
+    private calls: Call[] = []
+    private eventPos: number
+    private extrinsic!: Extrinsic
+    private address?: number[]
+    private boundary?: Boundary<unknown>
+
+    constructor(
+        public readonly runtime: Runtime,
+        private extrinsics: {extrinsic: Extrinsic, call: DecodedCall}[],
+        private events: Event[]
+    ) {
+        this.eventPos = events.length - 1
+    }
+
+    parse(): Call[] {
+        for (let i = this.extrinsics.length - 1; i >= 0; i--) {
+            this.extrinsic = this.extrinsics[i].extrinsic
+
+            let origin: IOrigin | undefined
+            if (this.extrinsic.signature && this.runtime.checkType(this.runtime.description.address, Address)) {
+                origin = addressOrigin(this.extrinsic.signature.address)
+            }
+
+            let call = this.createCall(
+                i,
+                [],
+                this.extrinsics[i].call,
+                origin
+            )
+
+            let event = this.next()
+            switch(event.name) {
+                case 'System.ExtrinsicSuccess':
+                    this.extrinsic.success = true
+                    this.visitCall(call)
+                    break
+                case 'System.ExtrinsicFailed':
+                    let err = this.getExtrinsicFailedError(event)
+                    this.extrinsic.success = false
+                    this.extrinsic.error = err
+                    this.visitFailedCall(call, err)
+                    this.takeEvents()
+                    break
+                default:
+                    throw unexpectedCase(event.name)
+            }
+        }
+
+        return this.calls
+    }
+
+    private getExtrinsicFailedError(event: EventRecord): unknown {
+        assert(event.name == 'System.ExtrinsicFailed')
+        assertEvent(this.runtime, ExtrinsicFailed, event)
+        if (Array.isArray(event.args)) {
+            return event.args[1]
+        } else {
+            return event.args.dispatchError
+        }
+    }
+
+    createCall(extrinsicIndex: number, address: number[], src: DecodedCall, origin?: IOrigin): Call {
+        let {name, args} = unwrapArguments(src, this.runtime.calls)
+        return {
+            extrinsicIndex,
+            address,
+            name,
+            args,
+            origin
+        }
+    }
+
+    visitCall(call: Call): void {
+        call.success = true
+        this.calls.push(call)
+
+        let parentAddress = this.address
+        this.address = call.address
+
+        switch(call.name) {
+            case 'Multisig.as_multi':
+                this.unwrapAsMulti(call)
+                break
+            case 'Multisig.as_multi_threshold_1':
+                // FIXME: compute origin
+                this.visitCall(this.getSubcall(call, null))
+                break
+            case 'Utility.batch':
+                this.unwrapBatch(call)
+                break
+            case 'Utility.batch_all':
+                this.unwrapBatchAll(call)
+                break
+            case 'Utility.force_batch':
+                this.unwrapForceBatch(call)
+                break
+            case 'Utility.dispatch_as':
+                this.unwrapDispatchAs(call)
+                break
+            case 'Utility.as_derivative':
+            case 'Utility.as_sub':
+            case 'Utility.as_limited_sub':
+                // FIXME: compute origin
+                this.visitCall(this.getSubcall(call, null))
+                break
+            case 'Proxy.proxy':
+            case 'Proxy.proxy_announced':
+                this.unwrapProxy(call)
+                break
+            case 'Sudo.sudo':
+            case 'Sudo.sudo_unchecked_weight':
+                this.unwrapSudo(call)
+                break
+            case 'Sudo.sudo_as':
+                this.unwrapSudoAs(call)
+                break
+        }
+
+        this.takeEvents()
+        this.address = parentAddress
+    }
+
+    visitUnwrapped(call: Call, boundary: Boundary<CallResult>): void {
+        let result = this.get(boundary)
+        if (result.ok) {
+            this.visitCall(call)
+        } else {
+            this.visitFailedCall(call, result.error)
+        }
+    }
+
+    visitFailedCall(call: Call, error?: unknown): void {
+        call.success = false
+        call.error = error
+        this.calls.push(call)
+    }
+
+    getSubcalls(call: Call, origin?: IOrigin | null): Call[] {
+        if (origin === undefined) {
+            origin = call.origin
+        }
+        assertCall(this.runtime, CallListWrapper, call)
+        let subcalls = call.args.calls
+        return subcalls.map((sub, idx) => {
+            return this.createCall(
+                call.extrinsicIndex,
+                call.address.concat([idx]),
+                sub,
+                origin ?? undefined
+            )
+        })
+    }
+
+    getSubcall(call: Call, origin?: IOrigin | null): Call {
+        if (origin === undefined) {
+            origin = call.origin
+        }
+        assertCall(this.runtime, CallWrapper, call)
+        let sub = call.args.call
+        if (typeof sub == 'string') {
+            sub = this.runtime.decodeCall(sub)
+        }
+        return this.createCall(
+            call.extrinsicIndex,
+            call.address.concat([0]),
+            sub,
+            origin ?? undefined
+        )
+    }
+
+    get<T>(boundary: Boundary<T>): T {
+        while (true) {
+            let event = this.next()
+            event.callAddress = this.address
+            let match = boundary(this.runtime, event)
+            if (match) return match
+        }
+    }
+
+    lookup(boundary: Boundary<unknown>): boolean {
+        let pos = this.eventPos
+        try {
+            let event: Event | undefined
+            while (event = this.maybeNext()) {
+                if (boundary(this.runtime, event)) {
+                    return true
+                }
+            }
+            return false
+        } finally {
+            this.eventPos = pos
+        }
+    }
+
+    takeEvents(): void {
+        let event: Event | undefined
+        while (event = this.maybeNext()) {
+            if (this.boundary?.(this.runtime, event)) {
+                this.eventPos += 1
+                return
+            } else {
+                event.callAddress = this.address
+            }
+        }
+    }
+
+    next(): Event {
+        return assertNotNull(
+            this.maybeNext(),
+            'missing required event'
+        )
+    }
+
+    maybeNext(): Event | undefined {
+        while (this.eventPos >= 0) {
+            let event = this.events[this.eventPos]
+            if (event.phase === 'ApplyExtrinsic') {
+                if (event.extrinsicIndex !== this.extrinsic.index) return
+                this.eventPos -= 1
+                return event
+            } else {
+                this.eventPos -= 1
+            }
+        }
+    }
+}

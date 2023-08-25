@@ -1,6 +1,6 @@
-import {Type as ScaleType, TypeKind} from '@subsquid/scale-codec'
+import {TypeKind} from '@subsquid/scale-codec'
 import {def} from '@subsquid/util-internal'
-import {BaseType, Type, TypeChecker} from '../type-checker'
+import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 
 
 export class OptionType<T> extends BaseType<T | undefined> {

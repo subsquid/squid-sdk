@@ -1,12 +1,18 @@
+import {Runtime} from '@subsquid/substrate-runtime'
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {Call, Event, Extrinsic} from '../interfaces/data'
-import * as decoded from '../interfaces/data-decoded'
-import {Result} from '../interfaces/data-decoded'
-import type {BlockParser} from './block'
-import {addressOrigin, getExtrinsicFailedError, rootOrigin, signedOrigin} from './util'
+import {Call, Event, Extrinsic} from '../../interfaces/data'
+import type {BlockParser} from '../block'
+import {addressOrigin, rootOrigin, signedOrigin} from '../util'
+import {MULTISIG_EXECUTED} from './multisig'
 
 
-type Boundary<T> = (event: Event) => T | undefined | null | false
+type Boundary<T> = (runtime: Runtime, event: Event) => T | undefined | null | false
+
+
+interface CallResult {
+    ok: boolean
+    error?: unknown
+}
 
 
 export class CallParser {
@@ -35,7 +41,7 @@ export class CallParser {
                     this.visitCall(call)
                     break
                 case 'System.ExtrinsicFailed':
-                    let err = getExtrinsicFailedError(event.args)
+                    let err = this.bp.getExtrinsicFailedError(event)
                     this.extrinsic.success = false
                     this.extrinsic.error = err
                     this.visitFailedCall(call, err)
@@ -119,7 +125,7 @@ export class CallParser {
 
     private unwrapBatch(call: Call): void {
         let items = this.getSubcalls(call)
-        let result = this.get(END_OF_BATCH)
+        let result = this.get(BATCH_CALL_END)
         if (result.ok) {
             this.unwrapBatchItems(items)
         } else {
@@ -153,7 +159,7 @@ export class CallParser {
     }
 
     private unwrapForceBatch(call: Call): void {
-        this.get(END_OF_FORCE_BATCH)
+        this.get(FORCE_BATCH_CALL_END)
         let items = this.getSubcalls(call)
         for (let i = items.length - 1; i >= 0; i--) {
             let result = this.get(FORCE_BATCH_ITEM)
@@ -289,7 +295,7 @@ export class CallParser {
         while (true) {
             let event = this.next()
             event.callAddress = this.address
-            let match = boundary(event)
+            let match = boundary(this.bp.runtime, event)
             if (match) return match
         }
     }
@@ -299,10 +305,10 @@ export class CallParser {
         try {
             let event: Event | undefined
             while (event = this.maybeNext()) {
-                if (this.boundary?.(event)) {
+                if (this.boundary?.(this.bp.runtime, event)) {
                     return false
                 }
-                if (boundary(event)) {
+                if (boundary(this.bp.runtime, event)) {
                     return true
                 }
             }
@@ -315,7 +321,7 @@ export class CallParser {
     private takeEvents(): void {
         let event: Event | undefined
         while (event = this.maybeNext()) {
-            if (this.boundary?.(event)) {
+            if (this.boundary?.(this.bp.runtime, event)) {
                 this.eventPos += 1
                 return
             } else {
@@ -345,75 +351,6 @@ export class CallParser {
     }
 }
 
-
-type EndOfBatch = {
-    ok: true
-} | {
-    ok: false
-    failedItem: number
-    error: any
-}
-
-
-function END_OF_BATCH(event: Event):  EndOfBatch | undefined {
-    switch(event.name) {
-        case 'Utility.BatchCompleted':
-            return {ok: true}
-        case 'Utility.BatchInterrupted':
-            let failedItem
-            let error
-            if (Array.isArray(event.args)) {
-                failedItem = event.args[0]
-                error = event.args[1]
-            } else {
-                failedItem = event.args.index
-                error = event.args.error
-            }
-            return {
-                ok: false,
-                failedItem,
-                error
-            }
-        default:
-            return undefined
-    }
-}
-
-
-function ITEM_COMPLETED(event: Event): boolean {
-   return event.name == 'Utility.ItemCompleted'
-}
-
-
-function END_OF_FORCE_BATCH(event: Event): boolean {
-    switch(event.name) {
-        case 'Utility.BatchCompleted':
-        case 'Utility.BatchCompletedWithErrors':
-            return true
-        default:
-            return false
-    }
-}
-
-interface CallResult {
-    ok: boolean
-    error?: any
-}
-
-
-function FORCE_BATCH_ITEM(event: Event): CallResult | undefined {
-    switch(event.name) {
-        case 'Utility.ItemCompleted':
-            return {ok: true}
-        case 'Utility.ItemFailed':
-            return {
-                ok: false,
-                error: event.args.error
-            }
-    }
-}
-
-
 function END_OF_SUDO(event: Event): CallResult | undefined {
     switch(event.name) {
         case "Sudo.Sudid":
@@ -438,41 +375,3 @@ function END_OF_SUDO(event: Event): CallResult | undefined {
 }
 
 
-interface MultisigExecuted extends CallResult {
-    multisig: unknown
-    callHash: Uint8Array
-}
-
-
-function MULTISIG_EXECUTED(event: Event): MultisigExecuted | undefined {
-    if (event.name != 'Multisig.MultisigExecuted') return
-    let multisig: unknown
-    let callHash: Uint8Array
-    let result: Result
-    if (Array.isArray(event.args)) {
-        multisig = event.args[2]
-        callHash = event.args[3]
-        result = event.args[4]
-    } else {
-        multisig = event.args.multisig
-        callHash = event.args.callHash
-        result = event.args.result
-    }
-    switch(result.__kind) {
-        case 'Ok':
-            return {
-                ok: true,
-                multisig,
-                callHash
-            }
-        case 'Err':
-            return {
-                ok: false,
-                error: result.value,
-                multisig,
-                callHash
-            }
-        default:
-            throw unexpectedCase()
-    }
-}

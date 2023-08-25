@@ -1,6 +1,6 @@
-import {Primitive, Ti, TypeKind, Type as ScaleType, Bytes} from '@subsquid/scale-codec'
+import {Bytes, Primitive, TypeKind} from '@subsquid/scale-codec'
 import assert from 'assert'
-import {BaseType, TypeChecker} from '../type-checker'
+import {BaseType, ScaleType, TypeChecker} from '../type-checker'
 
 
 function asPrimitive(typeChecker: TypeChecker, ty: ScaleType): Primitive | undefined {
@@ -36,6 +36,29 @@ export class NumberType extends BaseType<number> {
 export class BigIntType extends BaseType<bigint> {
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         switch(asPrimitive(typeChecker, ty)) {
+            case 'I64':
+            case 'U64':
+            case 'I128':
+            case 'U128':
+            case 'I256':
+            case 'U256':
+                return true
+            default:
+                return false
+        }
+    }
+}
+
+
+export class NumericType extends BaseType<number | bigint> {
+    match(typeChecker: TypeChecker, ty: ScaleType): boolean {
+        switch(asPrimitive(typeChecker, ty)) {
+            case 'I8':
+            case 'U8':
+            case 'I16':
+            case 'U16':
+            case 'I32':
+            case 'U32':
             case 'I64':
             case 'U64':
             case 'I128':

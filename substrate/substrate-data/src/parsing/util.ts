@@ -1,20 +1,20 @@
-import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
-import {assertNotNull} from '@subsquid/util-internal'
-import * as parsing from '../interfaces/data-decoded'
+import {Bytes, DecodedCall, DecodedEvent, Runtime} from '@subsquid/substrate-runtime'
+import {IAddress, IOrigin} from '../types/system'
 
 
-export function omitKind<T extends {__kind: string}>(obj: T): Omit<T, "__kind"> {
-    let {__kind, ...props} = obj
-    return props
-}
-
-
-export function unwrapArguments(call: parsing.Call | parsing.Event, registry: eac.Registry): {name: string, args: any} {
+export function unwrapArguments(
+    call: DecodedCall | DecodedEvent,
+    registry: Runtime['events' | 'calls']
+): {
+    name: string
+    args: unknown
+} {
     let name = call.__kind + "." + call.value.__kind
     let args: unknown
     let def = registry.get(name)
     if (def.fields[0]?.name != null) {
-        args = omitKind(call.value)
+        let {__kind, ...props} = call.value
+        args = props
     } else {
         args = call.value.value
     }
@@ -22,51 +22,8 @@ export function unwrapArguments(call: parsing.Call | parsing.Event, registry: ea
 }
 
 
-export function getExtrinsicTip(ex: parsing.Extrinsic): bigint | undefined {
-    let payment = ex.signature?.signedExtensions.ChargeTransactionPayment
-    switch(typeof payment) {
-        case 'bigint':
-        case 'number':
-            return BigInt(payment)
-        case 'object':
-            switch(typeof payment?.tip) {
-                case 'bigint':
-                case 'number': // Nikau network
-                    return BigInt(payment.tip)
-            }
-    }
-}
-
-
-export function getDispatchInfoFromExtrinsicSuccess(args: any): parsing.DispatchInfo {
-    if (args.dispatchInfo) {
-        return args.dispatchInfo
-    } else {
-        return args
-    }
-}
-
-
-export function getDispatchInfoFromExtrinsicFailed(args: any): parsing.DispatchInfo {
-    if (args.dispatchInfo) {
-        return args.dispatchInfo
-    } else {
-        return assertNotNull(args[1])
-    }
-}
-
-
-export function getExtrinsicFailedError(args: any): unknown {
-    if (args.dispatchError) {
-        return args.dispatchError
-    } else {
-        return assertNotNull(args[0])
-    }
-}
-
-
-export function addressOrigin(address: any): parsing.SignedOrigin | undefined {
-    if (address instanceof Uint8Array) {
+export function addressOrigin(address: IAddress): IOrigin| undefined {
+    if (typeof address == 'string') {
         return signedOrigin(address)
     }
     switch(address.__kind) {
@@ -77,7 +34,7 @@ export function addressOrigin(address: any): parsing.SignedOrigin | undefined {
 }
 
 
-export function signedOrigin(account: Uint8Array): parsing.SignedOrigin {
+export function signedOrigin(account: Bytes): IOrigin {
     return {
         __kind: 'system',
         value: {
@@ -88,7 +45,7 @@ export function signedOrigin(account: Uint8Array): parsing.SignedOrigin {
 }
 
 
-export function rootOrigin(): parsing.RootOrigin {
+export function rootOrigin(): IOrigin {
     return {
         __kind: 'system',
         value: {
@@ -98,7 +55,7 @@ export function rootOrigin(): parsing.RootOrigin {
 }
 
 
-export function noneOrigin(): parsing.NoneOrigin {
+export function noneOrigin(): IOrigin {
     return {
         __kind: 'system',
         value: {

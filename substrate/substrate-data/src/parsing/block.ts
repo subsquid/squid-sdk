@@ -1,22 +1,30 @@
-import {Bytes} from '@subsquid/substrate-data-raw'
+import {Bytes, DecodedCall, DecodedEvent, EventRecord, Runtime} from '@subsquid/substrate-runtime'
 import {assertNotNull, def} from '@subsquid/util-internal'
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
 import blake2b from 'blake2b'
-import {BlockHeader, Call, Event, Extrinsic} from '../interfaces/data'
-import * as decoded from '../interfaces/data-decoded'
+import {BlockHeader, Call, Event, Extrinsic, ExtrinsicSignature} from '../interfaces/data'
 import {RawBlock} from '../interfaces/data-raw'
-import {Runtime} from '../runtime'
-import {CallParser} from './call'
-import {getFeeCalc} from './fee'
 import {
-    addressOrigin,
-    getDispatchInfoFromExtrinsicFailed,
-    getDispatchInfoFromExtrinsicSuccess,
-    getExtrinsicTip,
-    noneOrigin,
-    unwrapArguments
-} from './util'
+    Address,
+    EventItemList,
+    ExtrinsicFailed,
+    ExtrinsicFailed_PartError,
+    ExtrinsicSuccessLatest,
+    ExtrinsicSuccessLegacy,
+    IDispatchInfo,
+    IEventItem,
+    IOrigin,
+    ISignature_PartTip,
+    Signature_PartTip,
+    TimestampSet
+} from '../types/system'
+import {assertCall, assertEvent, isEvent, UnexpectedEventType} from '../types/util'
+import {CallParser} from './call'
+import {getFeeCalc} from './fee/calc'
+import {addressOrigin, unwrapArguments} from './util'
 import {getBlockValidator} from './validator'
+import {DigestItem, IDigestItem} from './validator/types'
 
 
 export interface ParsingOptions {
@@ -58,6 +66,7 @@ export class BlockParser {
         if (extrinsics == null) return
         for (let {call} of extrinsics) {
             if (call.name === 'Timestamp.set') {
+                assertCall(this.runtime, TimestampSet, call)
                 return Number(call.args.now)
             }
         }
@@ -66,15 +75,15 @@ export class BlockParser {
     @def
     validator(): Bytes | undefined {
         if (this.block.validators == null) return
-        let validator = getBlockValidator(this.digest(), this.block.validators)
-        if (validator) {
-            return toHex(validator)
-        }
+        return getBlockValidator(this.digest(), this.block.validators)
     }
 
     @def
-    digest(): decoded.DigestItem[] {
-        return this.block.block.block.header.digest.logs.map<decoded.DigestItem>(bytes => {
+    digest(): IDigestItem[] {
+        if (!this.runtime.checkType(this.runtime.description.digestItem, DigestItem)) {
+            throw new Error('Unexpected type of digest item')
+        }
+        return this.block.block.block.header.digest.logs.map(bytes => {
             return this.runtime.scaleCodec.decodeBinary(
                 this.runtime.description.digestItem,
                 bytes
@@ -89,8 +98,9 @@ export class BlockParser {
         for (let e of events) {
             if (e.name == 'TransactionPayment.TransactionFeePaid') {
                 let exi = extrinsics[assertNotNull(e.extrinsicIndex)]
+                assertEvent(this.runtime, TransactionFeePaid, e)
                 let actualFee = BigInt(e.args.actualFee)
-                let tip = BigInt(e.args.tip ?? e.args.actualTip)
+                let tip = BigInt(e.args.tip)
                 exi.extrinsic.fee = actualFee - tip
                 exi.extrinsic.tip = tip
             }
@@ -102,7 +112,9 @@ export class BlockParser {
         let extrinsics = this.extrinsics()
         let events = this.events()
         if (extrinsics == null || events == null) return
+
         let parentRuntime = assertNotNull(this.block.runtimeOfPrevBlock)
+
         let calc = getFeeCalc(
             this.runtime,
             this.block.feeMultiplier,
@@ -110,21 +122,34 @@ export class BlockParser {
             parentRuntime.specVersion
         )
         if (calc == null) return
+
         for (let e of events) {
             let extrinsicIndex: number
-            let dispatchInfo: decoded.DispatchInfo
+            let dispatchInfo: IDispatchInfo
             switch(e.name) {
                 case 'System.ExtrinsicSuccess':
                     extrinsicIndex = assertNotNull(e.extrinsicIndex)
-                    dispatchInfo = getDispatchInfoFromExtrinsicSuccess(e.args)
+                    if (isEvent(this.runtime, ExtrinsicSuccessLatest, e)) {
+                        dispatchInfo = e.args.dispatchInfo
+                    } else if (isEvent(this.runtime, ExtrinsicSuccessLegacy, e)) {
+                        dispatchInfo = e.args
+                    } else {
+                        throw new UnexpectedEventType('System.ExtrinsicSuccess')
+                    }
                     break
                 case 'System.ExtrinsicFailed':
                     extrinsicIndex = assertNotNull(e.extrinsicIndex)
-                    dispatchInfo = getDispatchInfoFromExtrinsicFailed(e.args)
+                    assertEvent(this.runtime, ExtrinsicFailed, e)
+                    if (Array.isArray(e.args)) {
+                        dispatchInfo = e.args[1]
+                    } else {
+                        dispatchInfo = e.args.dispatchInfo
+                    }
                     break
                 default:
                     continue
             }
+
             let extrinsic = extrinsics[extrinsicIndex].extrinsic
             if (extrinsic.signature == null) continue
             let len = this.block.block.block.extrinsics![extrinsicIndex].length / 2 - 1
@@ -135,17 +160,22 @@ export class BlockParser {
     @def
     events(): Event[] | undefined {
         if (this.block.events == null) return
-        let records: decoded.EventRecord[] = this.runtime.decodeStorageValue('System.Events', this.block.events)
-        return records.map((rec, index) => {
-            let {name, args} = unwrapArguments(rec.event, this.runtime.events)
+
+        if (!this.runtime.checkStorageType('System.Events', false, [], EventItemList))
+            throw new Error('System.Events storage item has unexpected type')
+
+        let items: IEventItem[] = this.runtime.decodeStorageValue('System.Events', this.block.events)
+
+        return items.map((it, index) => {
+            let {name, args} = unwrapArguments(it.event as DecodedEvent, this.runtime.events)
             let e: Event = {
                 index,
                 name,
                 args,
-                phase: rec.phase.__kind
+                phase: it.phase.__kind
             }
-            if (rec.phase.__kind == 'ApplyExtrinsic') {
-                e.extrinsicIndex = rec.phase.value
+            if (it.phase.__kind == 'ApplyExtrinsic') {
+                e.extrinsicIndex = it.phase.value
             }
             return e
         })
@@ -164,26 +194,38 @@ export class BlockParser {
 
             if (src.signature) {
                 extrinsic.signature = src.signature
-            }
 
-            let tip = getExtrinsicTip(src)
-            if (tip != null) {
-                extrinsic.tip = tip
+                let tip = this.getTip(src.signature)
+                if (tip != null) {
+                    extrinsic.tip = tip
+                }
             }
 
             if (this.options.extrinsicHash) {
                 extrinsic.hash = toHex(blake2b(32).update(bytes).digest())
             }
 
-            let address = extrinsic.signature?.address
-            let origin = address ? addressOrigin(address) : noneOrigin()
-            let call = this.createCall(extrinsic.index, [], src.call, origin)
+            let origin: IOrigin | undefined
+            if (extrinsic.signature && this.runtime.checkType(this.runtime.description.address, Address)) {
+                origin = addressOrigin(extrinsic.signature.address)
+            }
 
+            let call = this.createCall(extrinsic.index, [], src.call, origin)
             return {extrinsic, call}
         })
     }
 
-    createCall(extrinsicIndex: number, address: number[], src: decoded.Call, origin?: any): Call {
+    getTip(signature: ExtrinsicSignature): bigint | undefined {
+        if (!this.runtime.checkType(this.runtime.description.signature, Signature_PartTip)) return
+        let sig = signature as ISignature_PartTip
+        if (typeof sig.signedExtensions.ChargeTransactionPayment == 'object') {
+            return BigInt(sig.signedExtensions.ChargeTransactionPayment.tip)
+        } else {
+            return BigInt(sig.signedExtensions.ChargeTransactionPayment)
+        }
+    }
+
+    createCall(extrinsicIndex: number, address: number[], src: DecodedCall, origin?: IOrigin): Call {
         let {name, args} = unwrapArguments(src, this.runtime.calls)
         return {
             extrinsicIndex,
@@ -202,5 +244,15 @@ export class BlockParser {
         let parser = new CallParser(this, extrinsics, events)
         parser.parse()
         return parser.calls.reverse()
+    }
+
+    getExtrinsicFailedError(event: EventRecord): any {
+        assert(event.name == 'System.ExtrinsicFailed')
+        assertEvent(this.runtime, ExtrinsicFailed_PartError, event)
+        if (Array.isArray(event.args)) {
+            return event.args[1]
+        } else {
+            return event.args.dispatchError
+        }
     }
 }

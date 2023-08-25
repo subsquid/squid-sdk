@@ -22,6 +22,7 @@ import {isPreV14, isUnitType, normalizeMetadataTypes} from './util'
 
 export interface RuntimeDescription {
     types: Type[]
+    address: Ti
     call: Ti
     digest: Ti
     digestItem: Ti
@@ -124,6 +125,7 @@ class FromV14 {
     convert(): RuntimeDescription {
         return {
             types: this.types(),
+            address: this.address(),
             call: this.call(),
             digest: this.digest(),
             digestItem: this.digestItem(),
@@ -410,6 +412,7 @@ class FromOld {
     }
 
     convert(): RuntimeDescription {
+        let address = this.registry.use('Address')
         let signature = this.registry.use('GenericSignature')
         let call = this.registry.use('GenericCall')
         let digest = this.registry.use('Digest')
@@ -421,6 +424,7 @@ class FromOld {
         let constants = this.constants()
         return {
             types: this.registry.getTypes(),
+            address,
             call,
             digest,
             digestItem,

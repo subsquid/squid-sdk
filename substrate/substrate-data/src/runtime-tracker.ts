@@ -1,7 +1,7 @@
 import {Hash, HashAndHeight, Prev, Rpc, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {Runtime} from '@subsquid/substrate-runtime'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateAsyncError} from '@subsquid/util-internal'
-import {Runtime} from './runtime'
 
 
 interface Header extends HashAndHeight {

@@ -1,14 +1,16 @@
 import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateAsyncError, annotateSyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import {setEmittedContractAddress} from './extension/contracts'
+import {setGearProgramId} from './extension/gear'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
 import {BlockParser} from './parsing/block'
-import {setEmittedContractAddress, setEthereumTransact, setEvmLog, setGearProgramId} from './parsing/extension'
-import {supportsFeeCalc} from './parsing/fee'
+import {supportsFeeCalc} from './parsing/fee/calc'
+import {setEthereumTransact, setEvmLog} from './extension/evm'
 import {AccountId} from './parsing/validator'
 import {RuntimeTracker} from './runtime-tracker'
 
@@ -96,7 +98,7 @@ export class Parser {
             block.calls = parser.calls()
             if (block.calls) {
                 for (let call of block.calls!) {
-                    setEthereumTransact(call)
+                    setEthereumTransact(block.runtime, call)
                 }
             }
         }
@@ -105,15 +107,15 @@ export class Parser {
             block.events = parser.events()
             if (block.events) {
                 for (let event of block.events!) {
-                    setEvmLog(event)
-                    setEmittedContractAddress(event)
-                    setGearProgramId(event)
+                    setEvmLog(block.runtime, event)
+                    setEmittedContractAddress(block.runtime, event)
+                    setGearProgramId(block.runtime, event)
                 }
             }
         }
 
         if (options?.extrinsicFee) {
-            if (parser.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
+            if (block.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
                 parser.setExtrinsicFeesFromPaidEvent()
             } else {
                 parser.calcExtrinsicFees()

@@ -1,6 +1,6 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import * as raw from '@subsquid/substrate-data-raw'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {Batch, HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import {Block, DataRequest} from './interfaces/data'
