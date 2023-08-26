@@ -1,9 +1,12 @@
 import {Runtime} from '@subsquid/substrate-runtime'
 import {assertNotNull, def} from '@subsquid/util-internal'
-import {Block, BlockHeader, Event, Extrinsic} from '../interfaces/data'
+import {Block, BlockHeader, Call, Event, Extrinsic} from '../interfaces/data'
 import {RawBlock} from '../interfaces/data-raw'
+import {parseCalls} from './call'
 import {decodeEvents} from './event'
 import {DecodedExtrinsic, decodeExtrinsics} from './extrinsic'
+import {AccountId, getBlockValidator} from './validator'
+import {DigestItem, IDigestItem} from './validator/types'
 
 
 export interface ParsingOptions {
@@ -66,5 +69,33 @@ class BlockParser {
     events(): Event[] {
         let events = assertNotNull(this.src.events, 'event data is not provided')
         return decodeEvents(this.runtime, events)
+    }
+
+    @def
+    calls(): Call[] {
+        return parseCalls(
+            this.runtime,
+            this.decodedExtrinsics(),
+            this.events()
+        )
+    }
+
+    @def
+    digest(): unknown[] {
+        return this.src.block.block.header.digest.logs.map(hex => {
+            return this.runtime.scaleCodec.decodeBinary(
+                this.runtime.description.digest,
+                hex
+            )
+        })
+    }
+
+    @def
+    validator(): AccountId | undefined {
+        if (this.runtime.checkType(this.runtime.description.digestItem, DigestItem)) {
+            let digest = this.digest() as IDigestItem[]
+            let validators = assertNotNull(this.src.validators, 'validator data is not provided')
+            return getBlockValidator(digest, validators)
+        }
     }
 }
