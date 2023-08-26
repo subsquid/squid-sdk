@@ -97,24 +97,3 @@ export const ExtrinsicFailed_PartError = union(
     struct({dispatchError: any()}),
     tuple(any(), any())
 )
-
-
-export const EventItem = struct({
-    phase: closedEnum({
-        Initialization: unknown(),
-        ApplyExtrinsic: number(),
-        Finalization: unknown()
-    }),
-    event: openEnum({})
-})
-
-
-export type IEventItem = GetType<typeof EventItem>
-
-
-export const EventItemList = array(EventItem)
-
-
-export const TimestampSet = struct({
-    now: bigint()
-})

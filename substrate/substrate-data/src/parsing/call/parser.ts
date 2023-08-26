@@ -5,7 +5,13 @@ import assert from 'assert'
 import {Call, Event, Extrinsic} from '../../interfaces/data'
 import {Address, IOrigin} from '../../types/system'
 import {assertCall, assertEvent} from '../../types/util'
+import {DecodedExtrinsic} from '../extrinsic'
 import {addressOrigin, unwrapArguments} from '../util'
+import {visitBatch, visitBatchAll, visitForceBatch} from './batch'
+import {visitDispatchAs} from './dispatch_as'
+import {visitAsMulti} from './multisig'
+import {visitProxy} from './proxy'
+import {visitSudo, visitSudoAs} from './sudo'
 
 
 export type Boundary<T> = (runtime: Runtime, event: Event) => T | undefined | null | false
@@ -50,7 +56,7 @@ export class CallParser {
 
     constructor(
         public readonly runtime: Runtime,
-        private extrinsics: {extrinsic: Extrinsic, call: DecodedCall}[],
+        private extrinsics: DecodedExtrinsic[],
         private events: Event[]
     ) {
         this.eventPos = events.length - 1
@@ -65,12 +71,12 @@ export class CallParser {
                 origin = addressOrigin(this.extrinsic.signature.address)
             }
 
-            let call = this.createCall(
-                i,
-                [],
-                this.extrinsics[i].call,
+            let call: Call = {
+                extrinsicIndex: i,
+                address: [],
+                ...this.extrinsics[i].call,
                 origin
-            )
+            }
 
             let event = this.next()
             switch(event.name) {
@@ -90,7 +96,7 @@ export class CallParser {
             }
         }
 
-        return this.calls
+        return this.calls.reverse()
     }
 
     private getExtrinsicFailedError(event: EventRecord): unknown {
@@ -123,23 +129,23 @@ export class CallParser {
 
         switch(call.name) {
             case 'Multisig.as_multi':
-                this.unwrapAsMulti(call)
+                visitAsMulti(this, call)
                 break
             case 'Multisig.as_multi_threshold_1':
                 // FIXME: compute origin
                 this.visitCall(this.getSubcall(call, null))
                 break
             case 'Utility.batch':
-                this.unwrapBatch(call)
+                visitBatch(this, call)
                 break
             case 'Utility.batch_all':
-                this.unwrapBatchAll(call)
+                visitBatchAll(this, call)
                 break
             case 'Utility.force_batch':
-                this.unwrapForceBatch(call)
+                visitForceBatch(this, call)
                 break
             case 'Utility.dispatch_as':
-                this.unwrapDispatchAs(call)
+                visitDispatchAs(this, call)
                 break
             case 'Utility.as_derivative':
             case 'Utility.as_sub':
@@ -149,14 +155,14 @@ export class CallParser {
                 break
             case 'Proxy.proxy':
             case 'Proxy.proxy_announced':
-                this.unwrapProxy(call)
+                visitProxy(this, call)
                 break
             case 'Sudo.sudo':
             case 'Sudo.sudo_unchecked_weight':
-                this.unwrapSudo(call)
+                visitSudo(this, call)
                 break
             case 'Sudo.sudo_as':
-                this.unwrapSudoAs(call)
+                visitSudoAs(this, call)
                 break
         }
 
@@ -210,6 +216,16 @@ export class CallParser {
             sub,
             origin ?? undefined
         )
+    }
+
+    withBoundary<T>(boundary: Boundary<unknown>, cb: () => T): T {
+        let current = this.boundary
+        this.boundary = boundary
+        try {
+            return cb()
+        } finally {
+            this.boundary = current
+        }
     }
 
     get<T>(boundary: Boundary<T>): T {

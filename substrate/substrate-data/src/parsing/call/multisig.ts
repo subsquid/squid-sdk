@@ -1,10 +1,30 @@
 import {Bytes, EventRecord, Runtime} from '@subsquid/substrate-runtime'
+import {bytes, closedEnum, struct, tuple, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {unexpectedCase} from '@subsquid/util-internal'
-import {MultisigExecuted} from '../../types/multisig'
+import {Call} from '../../interfaces/data'
 import {assertEvent} from '../../types/util'
+import {addressOrigin} from '../util'
+import type {CallParser} from './parser'
 
 
-export interface MultisigCallResult {
+const Result = closedEnum({
+    Ok: unknown(),
+    Err: unknown()
+})
+
+
+const MultisigExecuted = union(
+    struct({
+        multisig: bytes(),
+        callHash: bytes(),
+        result: Result
+    }),
+    tuple(unknown(), unknown(), bytes(), bytes(), Result)
+)
+
+
+
+interface MultisigCallResult {
     ok: boolean
     error?: unknown
     multisig: Bytes
@@ -12,7 +32,7 @@ export interface MultisigCallResult {
 }
 
 
-export function MULTISIG_EXECUTED(runtime: Runtime, event: EventRecord): MultisigCallResult | undefined {
+function MULTISIG_EXECUTED(runtime: Runtime, event: EventRecord): MultisigCallResult | undefined {
     if (event.name != 'Multisig.MultisigExecuted') return
     assertEvent(runtime, MultisigExecuted, event)
     let multisig
@@ -46,3 +66,14 @@ export function MULTISIG_EXECUTED(runtime: Runtime, event: EventRecord): Multisi
     }
 }
 
+
+export function visitAsMulti(cp: CallParser, call: Call): void {
+    if (!cp.lookup(MULTISIG_EXECUTED)) return
+    let result = cp.get(MULTISIG_EXECUTED)
+    let sub = cp.getSubcall(call, addressOrigin(result.multisig))
+    if (result.ok) {
+        cp.visitCall(sub)
+    } else {
+        cp.visitFailedCall(sub, result.error)
+    }
+}
