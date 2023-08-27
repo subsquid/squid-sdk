@@ -30,9 +30,15 @@ type ValueVariant<K, T> = T extends (undefined | null)
 
 export class EnumType<
     Variants extends EnumDefinition,
-    Open extends boolean
+    Open extends boolean | 'external'
 > extends BaseType<
-    GetEnumType<Variants> | (Open extends [true] ? {__kind: '*'} : never)
+    GetEnumType<Variants> |
+    (Open extends [true]
+        ? {__kind: '*'}
+        : Open extends 'external'
+            ? {__kind: '*', value: {__kind: string}}
+            : never
+    )
 > {
     constructor(private variants: () => Variants, private open: Open) {
         super()
@@ -40,17 +46,16 @@ export class EnumType<
 
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         if (ty.kind != TypeKind.Variant) return false
-        if (!this.open && ty.variants.length != Object.keys(this.variants).length) return false
+        let variants = this.getVariants()
+        if (!this.open && ty.variants.length != Object.keys(variants).length) return false
         for (let variant of ty.variants) {
-            let type = this.getVariants()[variant.name]
+            let type = variants[variant.name]
             if (type == null) {
-                if (this.open) {
-                    continue
-                } else {
-                    return false
-                }
+                if (!this.open) return false
+                if (this.open == 'external' && !matchTopExternalVariant(typeChecker, variant)) return false
+            } else if (!matchVariant(typeChecker, variant, type)) {
+                return false
             }
-            if (!matchVariant(typeChecker, variant, type)) return false
         }
         return true
     }
@@ -85,4 +90,11 @@ function matchVariant(typeChecker: TypeChecker, variant: Variant, type: Type | E
             fields: variant.fields
         })
     }
+}
+
+
+export function matchTopExternalVariant(typeChecker: TypeChecker, v: Variant): boolean {
+    return v.fields.length == 1
+        && v.fields[0].name == null
+        && typeChecker.getScaleType(v.fields[0].type).kind == TypeKind.Variant
 }

@@ -81,11 +81,6 @@ export function unit(): Type<null> {
 }
 
 
-export function externalEnum(): Type<ExternalEnum> {
-    return externalEnumType
-}
-
-
 export function array<T extends Type>(def: Get<T>): Type<GetType<T>[]> {
     return new ArrayType(getter(def))
 }
@@ -124,6 +119,19 @@ export function closedEnum<Variants extends EnumDefinition>(variants: Get<Varian
 
 export function enumStruct<T extends Record<string, Type>>(def: T): EnumStruct<GetStructType<T>> {
     return new EnumStruct(struct(def))
+}
+
+
+export function externalEnum(): Type<ExternalEnum>
+export function externalEnum<Variants extends EnumDefinition>(
+    variants: Get<Variants>
+): Type<GetEnumType<Variants> | {__kind: '*', value: {__kind: string}}>
+export function externalEnum(variants?: Get<EnumDefinition>): Type<any> {
+    if (variants == null) {
+        return externalEnumType
+    } else {
+        return new EnumType(getter(variants), 'external')
+    }
 }
 
 

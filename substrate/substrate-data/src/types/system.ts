@@ -1,20 +1,4 @@
-import {
-    any,
-    array,
-    bigint,
-    boolean,
-    bytes,
-    closedEnum,
-    GetType,
-    number,
-    numeric,
-    openEnum,
-    struct,
-    tuple,
-    union,
-    unit,
-    unknown
-} from '@subsquid/substrate-runtime/lib/sts'
+import {bytes, closedEnum, externalEnum, GetType, openEnum, union, unit} from '@subsquid/substrate-runtime/lib/sts'
 
 
 export const SystemOrigin = closedEnum({
@@ -24,7 +8,7 @@ export const SystemOrigin = closedEnum({
 })
 
 
-export const Origin = openEnum({
+export const Origin = externalEnum({
     system: SystemOrigin
 })
 
@@ -44,56 +28,3 @@ export const Address = union(
 
 
 export type IAddress = GetType<typeof Address>
-
-
-export const Signature_PartTip = struct({
-    signedExtensions: struct({
-        ChargeTransactionPayment: union(numeric(), struct({tip: numeric()}))
-    })
-})
-
-
-export type ISignature_PartTip = GetType<typeof Signature_PartTip>
-
-
-export const DispatchInfo = struct({
-    weight: bigint(),
-    class: closedEnum({
-        Normal: unit(),
-        Operational: unit(),
-        Mandatory: unit()
-    }),
-    paysFee: union(
-        boolean(),
-        closedEnum({
-            Yes: unit(),
-            No: unit()
-        })
-    )
-})
-
-
-export type IDispatchInfo = GetType<typeof DispatchInfo>
-
-
-export const ExtrinsicSuccessLatest = struct({
-    dispatchInfo: DispatchInfo
-})
-
-
-export const ExtrinsicSuccessLegacy = DispatchInfo
-
-
-export const ExtrinsicFailed = union(
-    struct({
-        dispatchInfo: DispatchInfo,
-        dispatchError: unknown()
-    }),
-    tuple(unknown(), DispatchInfo)
-)
-
-
-export const ExtrinsicFailed_PartError = union(
-    struct({dispatchError: any()}),
-    tuple(any(), any())
-)

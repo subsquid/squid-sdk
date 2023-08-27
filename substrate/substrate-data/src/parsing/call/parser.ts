@@ -3,7 +3,7 @@ import {array, bytes, externalEnum, struct, tuple, Type, union, unknown} from '@
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Call, Event, Extrinsic} from '../../interfaces/data'
-import {Address, IOrigin} from '../../types/system'
+import {Address, IAddress, IOrigin} from '../../types/system'
 import {assertCall, assertEvent} from '../../types/util'
 import {DecodedExtrinsic} from '../extrinsic'
 import {addressOrigin, unwrapArguments} from '../util'
@@ -68,7 +68,7 @@ export class CallParser {
 
             let origin: IOrigin | undefined
             if (this.extrinsic.signature && this.runtime.checkType(this.runtime.description.address, Address)) {
-                origin = addressOrigin(this.extrinsic.signature.address)
+                origin = addressOrigin(this.extrinsic.signature.address as IAddress)
             }
 
             let call: Call = {

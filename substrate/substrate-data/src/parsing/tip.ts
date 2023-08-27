@@ -5,20 +5,20 @@ import {GetType, numeric, struct, union} from '@subsquid/substrate-runtime/lib/s
 
 const SignatureWithTip = struct({
     signedExtensions: struct({
-        ChargeTransactionPayment: union(numeric(), struct({tip: numeric()}))
+        chargeTransactionPayment: union(numeric(), struct({tip: numeric()}))
     })
 })
 
 
-export function setExtrinsicTip(runtime: Runtime, extrinsics: Extrinsic[]): void {
+export function setExtrinsicTips(runtime: Runtime, extrinsics: Extrinsic[]): void {
     if (!runtime.checkType(runtime.description.signature, SignatureWithTip)) return
     for (let ex of extrinsics) {
         if (ex.signature) {
             let signature = ex.signature as GetType<typeof SignatureWithTip>
-            if (typeof signature.signedExtensions.ChargeTransactionPayment == 'object') {
-                ex.tip = BigInt(signature.signedExtensions.ChargeTransactionPayment.tip)
+            if (typeof signature.signedExtensions.chargeTransactionPayment == 'object') {
+                ex.tip = BigInt(signature.signedExtensions.chargeTransactionPayment.tip)
             } else {
-                ex.tip = BigInt(signature.signedExtensions.ChargeTransactionPayment)
+                ex.tip = BigInt(signature.signedExtensions.chargeTransactionPayment)
             }
         }
     }

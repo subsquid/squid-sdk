@@ -1,29 +1,68 @@
 import {Runtime} from '@subsquid/substrate-runtime'
 import {assertNotNull, def} from '@subsquid/util-internal'
-import {Block, BlockHeader, Call, Event, Extrinsic} from '../interfaces/data'
+import {setEmittedContractAddress} from '../extension/contracts'
+import {setEthereumTransact, setEvmLog} from '../extension/evm'
+import {setGearProgramId} from '../extension/gear'
+import {Block, BlockHeader, Call, DataRequest, Event, Extrinsic} from '../interfaces/data'
 import {RawBlock} from '../interfaces/data-raw'
 import {parseCalls} from './call'
 import {decodeEvents} from './event'
 import {DecodedExtrinsic, decodeExtrinsics} from './extrinsic'
+import {setExtrinsicFeesFromCalc, setExtrinsicFeesFromPaidEvent} from './fee'
+import {supportsFeeCalc} from './fee/calc'
+import {getBlockTimestamp} from './timestamp'
+import {setExtrinsicTips} from './tip'
 import {AccountId, getBlockValidator} from './validator'
 import {DigestItem, IDigestItem} from './validator/types'
 
 
-export interface ParsingOptions {
-    extrinsicHash?: boolean
-}
+export function parseBlock(src: RawBlock, options: DataRequest): Block {
+    let bp = new BlockParser(src, !!options.extrinsics?.hash)
+    let block = bp.block()
 
+    if (options.blockTimestamp) {
+        block.header.timestamp = bp.timestamp()
+    }
 
-export function parseBlock(src: RawBlock, options: ParsingOptions): Block {
-    let bp = new BlockParser(src, options)
-    return bp.block()
+    if (options.blockValidator) {
+        block.header.validator = bp.validator()
+    }
+
+    if (options.events) {
+        block.events = bp.events()
+    }
+
+    if (options.extrinsics) {
+        block.extrinsics = bp.extrinsics()
+        block.calls = bp.calls()
+        bp.setExtrinsicTips()
+        if (options.extrinsics.fee) {
+            bp.setExtrinsicFees()
+        }
+    }
+
+    if (block.events) {
+        for (let e of block.events) {
+            setEvmLog(block.runtime, e)
+            setEmittedContractAddress(block.runtime, e)
+            setGearProgramId(block.runtime, e)
+        }
+    }
+
+    if (block.calls) {
+        for (let c of block.calls) {
+            setEthereumTransact(block.runtime, c)
+        }
+    }
+
+    return block
 }
 
 
 class BlockParser {
     public readonly runtime: Runtime
 
-    constructor(private src: RawBlock, private options: ParsingOptions) {
+    constructor(private src: RawBlock, private withExtrinsicHash: boolean) {
         this.runtime = assertNotNull(src.runtime)
     }
 
@@ -57,7 +96,7 @@ class BlockParser {
     @def
     decodedExtrinsics(): DecodedExtrinsic[] {
         let extrinsics = assertNotNull(this.src.block.block.extrinsics, 'extrinsic data is not provided')
-        return decodeExtrinsics(this.runtime, extrinsics, !!this.options.extrinsicHash)
+        return decodeExtrinsics(this.runtime, extrinsics, this.withExtrinsicHash)
     }
 
     @def
@@ -84,7 +123,7 @@ class BlockParser {
     digest(): unknown[] {
         return this.src.block.block.header.digest.logs.map(hex => {
             return this.runtime.scaleCodec.decodeBinary(
-                this.runtime.description.digest,
+                this.runtime.description.digestItem,
                 hex
             )
         })
@@ -97,5 +136,35 @@ class BlockParser {
             let validators = assertNotNull(this.src.validators, 'validator data is not provided')
             return getBlockValidator(digest, validators)
         }
+    }
+
+    @def
+    timestamp(): number {
+        return getBlockTimestamp(this.runtime, this.decodedExtrinsics())
+    }
+
+    @def
+    setExtrinsicFees(): void {
+        if (this.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
+            setExtrinsicFeesFromPaidEvent(this.runtime, this.extrinsics(), this.events())
+        } else if (supportsFeeCalc(this.runtime)) {
+            let feeMultiplier = assertNotNull(this.src.feeMultiplier, 'fee multiplier value is not provided')
+            let extrinsics = this.extrinsics()
+            let rawExtrinsics = assertNotNull(this.src.block.block.extrinsics)
+            setExtrinsicFeesFromCalc(
+                this.runtime,
+                rawExtrinsics,
+                extrinsics,
+                this.events(),
+                this.block().runtimeOfPrevBlock.specName,
+                this.block().runtimeOfPrevBlock.specVersion,
+                feeMultiplier
+            )
+        }
+    }
+
+    @def
+    setExtrinsicTips(): void {
+        setExtrinsicTips(this.runtime, this.extrinsics())
     }
 }

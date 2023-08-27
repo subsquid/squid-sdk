@@ -1,5 +1,6 @@
-import type {Bytes, Hash} from '@subsquid/substrate-data-raw'
-import {Runtime} from '@subsquid/substrate-runtime'
+import type {Hash} from '@subsquid/substrate-data-raw'
+import type {Bytes, Runtime} from '@subsquid/substrate-runtime'
+import type {IOrigin} from '../types/system'
 
 
 export {Bytes, Hash}
@@ -41,7 +42,7 @@ export interface BlockHeader {
     /**
      * Account address of block validator
      */
-    validator?: Bytes
+    validator?: Hash
 }
 
 
@@ -54,19 +55,19 @@ export interface Extrinsic {
     signature?: ExtrinsicSignature
     fee?: bigint
     tip?: bigint
-    error?: any
+    error?: unknown
     success?: boolean
     /**
      * Blake2b 128-bit hash of the raw extrinsic
      */
-    hash?: string
+    hash?: Bytes
 }
 
 
 export interface ExtrinsicSignature {
-    address: any
-    signature: any
-    signedExtensions: any
+    address: unknown
+    signature: unknown
+    signedExtensions: unknown
 }
 
 
@@ -78,14 +79,14 @@ export interface Call {
      * JSON encoded call arguments
      */
     args: unknown
-    origin?: any
+    origin?: IOrigin
     /**
      * Call error.
      *
      * Absence of error doesn't imply that the call was executed successfully,
      * check {@link success} property for that.
      */
-    error?: any
+    error?: unknown
     success?: boolean
     _ethereumTransactTo?: Bytes
     _ethereumTransactSighash?: Bytes
@@ -148,7 +149,8 @@ export interface DataRequest {
     blockValidator?: boolean
     blockTimestamp?: boolean
     events?: boolean
-    calls?: boolean
-    extrinsicHash?: boolean
-    extrinsicFee?: boolean
+    extrinsics?: {
+        hash?: boolean
+        fee?: boolean
+    }
 }

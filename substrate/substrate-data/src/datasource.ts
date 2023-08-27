@@ -1,4 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
+import type {RpcClient} from '@subsquid/rpc-client'
 import * as raw from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {Batch, HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
@@ -88,7 +88,7 @@ function toRawRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<raw.Dat
 function toRawRequest(req: DataRequest): raw.DataRequest {
     return {
         runtimeVersion: true,
-        extrinsics: req.calls || req.blockTimestamp,
-        events: req.events || req.calls
+        extrinsics: req.blockTimestamp || !!req.extrinsics,
+        events: req.events || !!req.extrinsics
     }
 }
