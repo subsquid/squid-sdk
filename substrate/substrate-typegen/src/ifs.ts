@@ -1,10 +1,8 @@
-import {CodecStructType, getCodecType} from "@subsquid/scale-codec/lib/types-codec"
-import {Field, Ti, Type, TypeKind, VariantType} from "@subsquid/substrate-metadata"
-import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
-import {Output} from "@subsquid/util-internal-code-printer"
-import {toCamelCase} from "@subsquid/util-naming"
-import assert from "assert"
-import {needsName} from "./names"
+import {CompositeType, Field, Ti, Type, TypeKind, VariantType} from '@subsquid/substrate-runtime/lib/metadata'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {Output} from '@subsquid/util-internal-code-printer'
+import assert from 'assert'
+import {needsName} from './names'
 import {asOptionType, asResultType, toNativePrimitive} from './util'
 
 
@@ -35,7 +33,7 @@ export class Interfaces {
                 let typeExp = name
                 this.queue.push(out => {
                     out.line()
-                    out.blockComment( this.types[ti].docs)
+                    out.blockComment(this.types[ti].docs)
                     out.line(`export type ${alias} = ${typeExp}`)
                 })
             }
@@ -46,59 +44,60 @@ export class Interfaces {
     }
 
     private makeType(ti: Ti): string {
-        let codecType = getCodecType(this.types, ti)
-        switch(codecType.kind) {
+        let ty = this.types[ti]
+        switch(ty.kind) {
             case TypeKind.Primitive:
-                return toNativePrimitive(codecType.primitive)
-            case TypeKind.Compact:
-                return toNativePrimitive(codecType.integer)
+                return toNativePrimitive(ty.primitive)
+            case TypeKind.Compact: {
+                let compact = this.types[ty.type]
+                assert(compact.kind == TypeKind.Primitive)
+                return toNativePrimitive(compact.primitive)
+            }
             case TypeKind.BitSequence:
-            case TypeKind.Bytes:
-            case TypeKind.BytesArray:
                 return 'Uint8Array'
+            case TypeKind.HexBytes:
+            case TypeKind.HexBytesArray:
+                return 'Bytes'
             case TypeKind.Sequence:
             case TypeKind.Array:
-                return this.use(codecType.type) + '[]'
+                return this.use(ty.type) + '[]'
             case TypeKind.Tuple:
-                return this.makeTuple(codecType.tuple)
-            case TypeKind.Struct:
-                return this.makeStruct(codecType, ti)
+                return this.makeTuple(ty.tuple)
+            case TypeKind.Composite:
+                if (ty.fields.length == 0 || ty.fields[0].name == null) {
+                    return this.makeTuple(ty.fields.map(f => {
+                        assert(f.name == null)
+                        return f.type
+                    }))
+                } else {
+                    return this.makeStruct(ty, ti)
+                }
             case TypeKind.Variant: {
-                let type = this.types[ti]
-                assert(type.kind == TypeKind.Variant)
-                let result = asResultType(this.types[ti])
+                let result = asResultType(ty)
                 if (result) {
                     return `Result<${this.use(result.ok)}, ${this.use(result.err)}>`
                 }
-                let option = asOptionType(this.types[ti])
+                let option = asOptionType(ty)
                 if (option) {
                     return `Option<${this.use(option.some)}>`
                 }
-                return this.makeVariant(type, ti)
+                return this.makeVariant(ty, ti)
             }
             case TypeKind.Option:
-                return `(${this.use(codecType.type)} | undefined)`
-            case TypeKind.BooleanOption:
-                return `(boolean | undefined)`
+                return `(${this.use(ty.type)} | undefined)`
             case TypeKind.DoNotConstruct:
                 return 'never'
             default:
-                throw unexpectedCase((codecType as any).kind)
+                throw unexpectedCase((ty as any).kind)
         }
     }
 
-    makeTuple(fields: Ti[]): string {
-        switch(fields.length) {
-            case 0:
-                return 'null'
-            case 1:
-                return this.use(fields[0])
-            default:
-                return '[' + fields.map(f => this.use(f)).join(', ') + ']'
-        }
+    private makeTuple(fields: Ti[]): string {
+        if (fields.length == 0) return 'null'
+        return '[' + fields.map(f => this.use(f)).join(', ') + ']'
     }
 
-    private makeStruct(type: CodecStructType, ti: Ti): string {
+    private makeStruct(type: CompositeType, ti: Ti): string {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
         this.generatedNames.add(name)
@@ -114,7 +113,7 @@ export class Interfaces {
 
     private printStructFields(out: Output, fields: Field[]): void {
         fields.forEach(f => {
-            let name = toCamelCase(assertNotNull(f.name))
+            let name = assertNotNull(f.name)
             let type = this.use(f.type)
             out.blockComment(f.docs)
             out.line(`${name}: ${type}`)
@@ -141,6 +140,8 @@ export class Interfaces {
                     if (v.fields.length > 0) {
                         if (v.fields[0].name != null) {
                             this.printStructFields(out, v.fields)
+                        } else if (v.fields.length == 1) {
+                            out.line(`value: ${this.use(v.fields[0].type)}`)
                         } else {
                             out.line(`value: ${this.makeTuple(v.fields.map(f => f.type))}`)
                         }

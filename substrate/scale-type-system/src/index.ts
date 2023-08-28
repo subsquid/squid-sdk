@@ -4,6 +4,7 @@ import {Type, TypeChecker} from './type-checker'
 
 export * from './dsl'
 export * from './type-checker'
+export * from './hashing'
 
 
 const typeCheckers = new WeakMap<ScaleType[], TypeChecker>()

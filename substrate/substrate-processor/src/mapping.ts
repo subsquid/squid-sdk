@@ -1,4 +1,5 @@
-import {Bytes, ExtrinsicSignature, Hash, QualifiedName, Runtime} from '@subsquid/substrate-data'
+import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
+import {Runtime} from '@subsquid/substrate-runtime'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
@@ -25,10 +26,10 @@ export class BlockHeader implements PartialBlockHeader {
         runtimeOfPrevBlock: Runtime,
         src: PartialBlockHeader
     ) {
-        Object.assign(this, src)
         this.id = formatId(this)
         this.#runtime = runtime
         this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+        Object.assign(this, src)
     }
 
     get _runtime(): Runtime {

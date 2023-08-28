@@ -1,7 +1,7 @@
 import {HttpClient} from '@subsquid/http-client'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Rpc, RuntimeTracker, WithRuntime} from '@subsquid/substrate-data'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateSyncError, assertNotNull, wait, withErrorContext} from '@subsquid/util-internal'
 import {
     archiveIngest,
@@ -12,7 +12,7 @@ import {
     RangeRequestList
 } from '@subsquid/util-internal-processor-tools'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
-import {ArchiveBlock, ArchiveBlockHeader, PartialBlockHeader} from './interfaces/data-partial'
+import {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
@@ -74,6 +74,7 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
 
     private async query(req: RangeRequest<DataRequest>): Promise<ArchiveBlock[]> {
         let {fields, ...items} = req.request
+
         let q: ArchiveQuery = {
             type: 'substrate',
             fromBlock: req.range.from,

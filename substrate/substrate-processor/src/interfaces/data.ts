@@ -1,4 +1,5 @@
 import type * as base from '@subsquid/substrate-data'
+import {Runtime} from '@subsquid/substrate-runtime'
 import {
     BlockRequiredFields,
     CallRequiredFields,
@@ -65,8 +66,8 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     Pick<base.BlockHeader, BlockRequiredFields> &
     Select<base.BlockHeader, GetFields<F, 'block'>> &
     {
-        _runtime: base.Runtime
-        _runtimeOfPrevBlock: base.Runtime
+        _runtime: Runtime
+        _runtimeOfPrevBlock: Runtime
     }
 >
 

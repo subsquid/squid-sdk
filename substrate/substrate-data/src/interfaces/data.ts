@@ -1,12 +1,9 @@
 import type {Hash} from '@subsquid/substrate-data-raw'
-import type {Bytes, Runtime} from '@subsquid/substrate-runtime'
+import type {Bytes, Runtime, QualifiedName} from '@subsquid/substrate-runtime'
 import type {IOrigin} from '../types/system'
 
 
-export {Bytes, Hash}
-
-
-export type QualifiedName = string
+export {Bytes, Hash, QualifiedName}
 
 
 export interface BlockHeader {

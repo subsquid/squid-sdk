@@ -2,7 +2,7 @@ import {Ti, Type as ScaleType} from '@subsquid/scale-codec'
 import assert from 'assert'
 
 
-export {ScaleType}
+export {Ti, ScaleType}
 
 
 export interface Type<T=unknown> {
@@ -22,16 +22,18 @@ export abstract class BaseType<T> implements Type<T> {
 
 export class TypeChecker {
     private checked: WeakMap<Type, boolean>[]
-    private checking = new Set<Type>()
+    private checking: Set<Type>[]
 
     constructor(private types: ScaleType[]) {
         this.checked = new Array(this.types.length)
+        this.checking = new Array(this.types.length)
         for (let i = 0; i < this.checked.length; i++) {
             this.checked[i] = new WeakMap()
+            this.checking[i] = new Set()
         }
     }
 
-    getScaleType(ti: number): ScaleType {
+    getScaleType(ti: Ti): ScaleType {
         assert(0 <= ti && ti < this.types.length)
         return this.types[ti]
     }
@@ -41,12 +43,13 @@ export class TypeChecker {
         let checked = this.checked[ti]
         let ok = checked.get(type)
         if (ok == null) {
-            if (this.checking.has(type)) return true
-            this.checking.add(type)
+            let checking = this.checking[ti]
+            if (checking.has(type)) return true
+            checking.add(type)
             try {
                 ok = type.match(this, this.getScaleType(ti))
             } finally {
-                this.checking.delete(type)
+                checking.delete(type)
             }
             checked.set(type, ok)
         }

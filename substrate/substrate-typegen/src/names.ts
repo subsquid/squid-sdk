@@ -1,7 +1,8 @@
-import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {RuntimeDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
-import assert from "assert"
+import {RuntimeDescription, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
+import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
+import assert from 'assert'
 import {asOptionType, asResultType} from './util'
+
 
 /**
  * Assign names to types
@@ -105,7 +106,7 @@ export class Names {
 
 
 /**
- * Derive "the best" name from a path.
+ * Derive "the best" name from the path.
  */
 export function deriveName(type: Type): string | undefined {
     if (!type.path?.length) return undefined
@@ -120,10 +121,10 @@ export function deriveName(type: Type): string | undefined {
 
 
 export function needsName(types: Type[], ti: Ti): boolean {
-    let type = getUnwrappedType(types, ti)
-    switch(type.kind) {
+    let ty = types[ti]
+    switch(ty.kind) {
         case TypeKind.Variant:
-            return !(asResultType(type) || asOptionType(type))
+            return !(asResultType(ty) || asOptionType(ty))
         case TypeKind.Composite:
             return true
         default:

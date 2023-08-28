@@ -27,10 +27,10 @@
     "@subsquid/util-internal-processor-tools": "^2.0.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-metadata": "^3.3.0"
+    "@subsquid/substrate-runtime": "^0.0.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-metadata": "^3.3.0",
+    "@subsquid/substrate-runtime": "^0.0.0",
     "@types/node": "^18.16.17",
     "typescript": "~4.9.5"
   }

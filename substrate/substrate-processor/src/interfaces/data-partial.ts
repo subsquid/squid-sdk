@@ -11,6 +11,7 @@ export type BlockRequiredFields =
     'specName' | 'specVersion' |
     'implName' | 'implVersion'
 
+
 export type ExtrinsicRequiredFields = 'index'
 export type CallRequiredFields = 'extrinsicIndex' | 'address'
 export type EventRequiredFields = 'index' | 'extrinsicIndex' | 'callAddress'

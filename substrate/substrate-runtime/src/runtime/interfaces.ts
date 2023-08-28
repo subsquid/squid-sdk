@@ -1,19 +1,15 @@
+import type {ExternalEnum} from '@subsquid/scale-type-system'
+
 /**
  * Hex encoded byte string
  */
 export type Bytes = string
 
 
-export type DecodedCall = {
-    __kind: string
-    value: {__kind: string} & any
-}
+export type DecodedCall = ExternalEnum
 
 
-export type DecodedEvent = {
-    __kind: string
-    value: {__kind: string} & any
-}
+export type DecodedEvent = ExternalEnum
 
 
 export type QualifiedName = string
@@ -52,7 +48,7 @@ export interface Extrinsic {
 
 
 export interface ExtrinsicSignature {
-    address: any
-    signature: any
-    signedExtensions: any
+    address: unknown
+    signature: unknown
+    signedExtensions: unknown
 }

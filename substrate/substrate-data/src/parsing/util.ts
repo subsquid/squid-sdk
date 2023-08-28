@@ -16,7 +16,7 @@ export function unwrapArguments(
         let {__kind, ...props} = call.value
         args = props
     } else {
-        args = call.value.value
+        args = (call.value as any).value
     }
     return {name, args}
 }
