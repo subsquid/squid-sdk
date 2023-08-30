@@ -6,50 +6,118 @@ import {needsName} from './names'
 import {asOptionType, asResultType, toNativePrimitive} from './util'
 
 
-export class Interfaces {
-    private assignedNames: Set<string>
-    private generated: (string | undefined)[]
-    private generatedNames = new Set<string>()
+export type Exp = string
+
+
+export class Sink {
     private queue: ((out: Output) => void)[] = []
+    private assignedNames = new Set<string>()
 
     constructor(
-        private types: Type[],
+        public readonly types: Type[],
         private nameAssignment: Map<Ti, string>
     ) {
-        this.assignedNames = new Set(this.nameAssignment.values())
-        this.generated = new Array(this.types.length)
+        for (let name of this.nameAssignment.values()) {
+            this.assignedNames.add(name)
+            this.assignedNames.add('I'+name)
+        }
     }
 
-    use(ti: Ti): string {
-        let name = this.generated[ti]
-        if (name != null) return name
+    push(cb: (out: Output) => void): void {
+        this.queue.push(cb)
+    }
 
-        name = this.makeType(ti)
+    getName(ti: Ti): string {
+        return assertNotNull(this.nameAssignment.get(ti))
+    }
 
-        if (!needsName(this.types, ti) && this.nameAssignment.has(ti)) {
-            let alias = this.nameAssignment.get(ti)!
+    hasName(ti: Ti): boolean {
+        return this.nameAssignment.has(ti)
+    }
+
+    needsName(ti: Ti): boolean {
+        return needsName(this.types, ti)
+    }
+
+    isEmpty(): boolean {
+        return this.queue.length == 0
+    }
+
+    generate(out: Output): void {
+        for (let i = 0; i < this.queue.length; i++) {
+            this.queue[i](out)
+        }
+    }
+
+    qualify(ns: string, exp: Exp): Exp {
+        let names = exp
+            .split(/[<>&|,()\[\]{}:]/)
+            .map(t => t.trim())
+            .filter(t => !!t)
+
+        let local = new Set(
+            names.filter(
+                name => this.assignedNames.has(name) || name[0] == 'I' && this.assignedNames.has(name.slice(1))
+            )
+        )
+
+        local.forEach(name => {
+            exp = exp.replace(new RegExp(`\\b${name}\\b`, 'g'), ns + '.' + name)
+        })
+
+        return exp
+    }
+}
+
+
+export class Interfaces {
+    private generated: Exp[]
+    private generatedNames = new Set<string>()
+
+    constructor(
+        private sink: Sink,
+        private withPrefix: boolean
+    ) {
+        this.generated = new Array(this.sink.types.length).fill('')
+    }
+
+    use(ti: Ti): Exp {
+        let exp = this.generated[ti]
+        if (exp) return exp
+
+        exp = this.makeType(ti)
+
+        if (!this.sink.needsName(ti) && this.sink.hasName(ti)) {
+            let alias = this.getName(ti)
             if (!this.generatedNames.has(alias)) {
                 this.generatedNames.add(alias)
-                let typeExp = name
-                this.queue.push(out => {
+                this.sink.push(out => {
                     out.line()
-                    out.blockComment(this.types[ti].docs)
-                    out.line(`export type ${alias} = ${typeExp}`)
+                    out.blockComment(this.sink.types[ti].docs)
+                    out.line(`export type ${alias} = ${exp}`)
                 })
             }
-            name = alias
+            exp = alias
         }
 
-        return this.generated[ti] = name
+        return this.generated[ti] = exp
+    }
+
+    private getName(ti: Ti): string {
+        let name = this.sink.getName(ti)
+        if (this.withPrefix) {
+            name = 'I' + name
+        }
+        return name
     }
 
     private makeType(ti: Ti): string {
-        let ty = this.types[ti]
+        let ty = this.sink.types[ti]
         switch(ty.kind) {
             case TypeKind.Primitive:
                 return toNativePrimitive(ty.primitive)
             case TypeKind.Compact: {
-                let compact = this.types[ty.type]
+                let compact = this.sink.types[ty.type]
                 assert(compact.kind == TypeKind.Primitive)
                 return toNativePrimitive(compact.primitive)
             }
@@ -101,9 +169,9 @@ export class Interfaces {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
         this.generatedNames.add(name)
-        this.queue.push(out => {
+        this.sink.push(out => {
             out.line()
-            out.blockComment(this.types[ti].docs)
+            out.blockComment(this.sink.types[ti].docs)
             out.block(`export interface ${name}`, () => {
                 this.printStructFields(out, type.fields)
             })
@@ -114,17 +182,22 @@ export class Interfaces {
     private printStructFields(out: Output, fields: Field[]): void {
         fields.forEach(f => {
             let name = assertNotNull(f.name)
-            let type = this.use(f.type)
+            let exp = this.use(f.type)
+            let opt = this.isUndefined(f.type) ? '?' : ''
             out.blockComment(f.docs)
-            out.line(`${name}: ${type}`)
+            out.line(`${name}${opt}: ${exp},`)
         })
+    }
+
+    private isUndefined(ti: Ti): boolean {
+        return this.sink.types[ti].kind == TypeKind.Option
     }
 
     private makeVariant(type: VariantType, ti: Ti): string {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
         this.generatedNames.add(name)
-        this.queue.push(out => {
+        this.sink.push(out => {
             out.line()
             out.blockComment(type.docs)
             if (type.variants.length == 0) {
@@ -151,30 +224,126 @@ export class Interfaces {
         })
         return name
     }
+}
 
-    private getName(ti: Ti): string {
-        return assertNotNull(this.nameAssignment.get(ti))
+
+export class Sts {
+    private ifs: Interfaces
+    private generated: Exp[]
+    private generatedNames = new Set<string>()
+
+    constructor(public readonly sink: Sink) {
+        this.ifs = new Interfaces(this.sink, true)
+        this.generated = new Array(this.sink.types.length).fill('')
     }
 
-    isEmpty(): boolean {
-        return this.queue.length == 0
+    use(ti: Ti): Exp {
+        let exp = this.generated[ti]
+        if (exp) return exp
+
+        exp = this.makeType(ti)
+
+        if (!this.sink.needsName(ti) && this.sink.hasName(ti)) {
+            let alias = this.sink.getName(ti)
+            if (!this.generatedNames.has(alias)) {
+                this.generatedNames.add(alias)
+                this.sink.push(out => {
+                    out.line()
+                    out.blockComment(this.sink.types[ti].docs)
+                    out.line(`export const ${alias} = ${exp}`)
+                })
+            }
+            exp = alias
+        }
+
+        return this.generated[ti] = exp
     }
 
-    generate(out: Output): void {
-        for (let i = 0; i < this.queue.length; i++) {
-            this.queue[i](out)
+    private makeType(ti: Ti): Exp {
+        let ty = this.sink.types[ti]
+        switch(ty.kind) {
+            case TypeKind.Primitive:
+                return `sts.${toNativePrimitive(ty.primitive)}()`
+            case TypeKind.Compact: {
+                let compact = this.sink.types[ty.type]
+                assert(compact.kind == TypeKind.Primitive)
+                return `sts.${toNativePrimitive(compact.primitive)}()`
+            }
+            case TypeKind.BitSequence:
+                return `sts.uint8array()`
+            case TypeKind.HexBytes:
+            case TypeKind.HexBytesArray:
+                return 'sts.bytes()'
+            case TypeKind.Sequence:
+            case TypeKind.Array:
+                return `sts.array(${this.use(ty.type)})`
+            case TypeKind.Tuple:
+                return `sts.tuple(${ty.tuple.map(ti => this.use(ti)).join(', ')})`
+            case TypeKind.Composite:
+                if (ty.fields.length == 0 || ty.fields[0].name == null) {
+                    return `sts.tuple(${ty.fields.map(f => this.use(f.type)).join(', ')})`
+                } else {
+                    return this.makeStruct(ty, ti)
+                }
+            case TypeKind.Variant:
+                return this.makeVariant(ty, ti)
+            case TypeKind.Option:
+                return `sts.option(() => ${this.use(ty.type)})`
+            default:
+                throw unexpectedCase()
         }
     }
 
-    qualify(ns: string, typeExp: string): string {
-        let names = typeExp
-            .split(/[<>&|,()\[\]{}:]/)
-            .map((t) => t.trim())
-            .filter((t) => !!t)
-        let local = new Set(names.filter(name => this.assignedNames.has(name)))
-        local.forEach(name => {
-            typeExp = typeExp.replace(new RegExp(`\\b${name}\\b`, 'g'), ns + '.' + name)
+    private makeStruct(ty: CompositeType, ti: Ti): Exp {
+        let name = this.sink.getName(ti)
+        if (this.generatedNames.has(name)) return name
+        this.generatedNames.add(name)
+        this.sink.push(out => {
+            out.line()
+            out.line(`export const ${name}: sts.Type<${this.ifs.use(ti)}> = sts.struct(() => {`)
+            out.indentation(() => {
+                out.block('return ', () => this.printStructFields(out, ty.fields))
+            })
+            out.line('})')
         })
-        return typeExp
+        return name
+    }
+
+    private printStructFields(out: Output, fields: Field[]): void {
+        fields.forEach(f => {
+            let name = assertNotNull(f.name)
+            let exp = this.use(f.type)
+            out.line(`${name}: ${exp},`)
+        })
+    }
+
+    private makeVariant(ty: VariantType, ti: Ti): Exp {
+        let name = this.sink.getName(ti)
+        if (this.generatedNames.has(name)) return name
+        this.generatedNames.add(name)
+        this.sink.push(out => {
+            out.line()
+            out.blockComment(ty.docs)
+            out.line(`export const ${name}: sts.Type<${this.ifs.use(ti)}> = sts.closedEnum(() => {`)
+            out.indentation(() => {
+                out.block('return ', () => {
+                    for (let v of ty.variants) {
+                        if (v.fields.length == 0 || v.fields[0].name == null) {
+                            if (v.fields.length == 1) {
+                                out.line(`${v.name}: ${this.use(v.fields[0].type)},`)
+                            } else {
+                                out.line(`${v.name}: sts.tuple(${v.fields.map(f => this.use(f.type)).join(', ')}),`)
+                            }
+                        } else {
+                            out.line(`${v.name}: sts.enumStruct({`)
+                            out.indentation(() => this.printStructFields(out, v.fields))
+                            out.line('}),')
+                        }
+                    }
+                })
+            })
+            out.line('})')
+        })
+        return name
     }
 }

@@ -19,13 +19,8 @@ export class EnumStruct<T=unknown> {
 export type GetEnumType<Variants> = Simplify<{
     [K in keyof Variants]: Variants[K] extends EnumStruct<infer S>
         ? Simplify<{__kind: K} & S>
-        : ValueVariant<K, GetType<Variants[K]>>
+        : {__kind: K, value: GetType<Variants[K]>}
 }[keyof Variants]>
-
-
-type ValueVariant<K, T> = T extends (undefined | null)
-    ? {__kind: K}
-    : {__kind: K, value: T}
 
 
 export class EnumType<

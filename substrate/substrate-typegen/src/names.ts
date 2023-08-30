@@ -38,7 +38,7 @@ function forEachPallet(types: Type[], ti: Ti, cb: (name: string, ti: Ti) => void
 export class Names {
     private assignment = new Map<Ti, string>()
     private assigned = new Map<string, string>() // Map<Name, TypeHash>
-    private reserved = new Set<string>(['Result', 'Option'])
+    private reserved = new Set<string>(['Result', 'Option', 'Bytes'])
     private aliases = new Map<Ti, Set<string>>()
 
     constructor(private types: Type[]) {}
@@ -50,13 +50,13 @@ export class Names {
     }
 
     private isValidAssignment(ti: Ti, name: string): boolean {
-        if (this.reserved.has(name)) return false
+        if (this.reserved.has(name) || this.assigned.has('I'+name)) return false
         let hash = this.assigned.get(name)
         return hash == null || getTypeHash(this.types, ti) == hash
     }
 
     reserve(name: string): void {
-        assert(!this.assigned.has(name))
+        assert(!this.assigned.has(name) && !this.assigned.has('I'+name))
         this.reserved.add(name)
     }
 

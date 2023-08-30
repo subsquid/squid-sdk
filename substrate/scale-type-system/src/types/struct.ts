@@ -5,9 +5,9 @@ import {GetType, Simplify} from '../type-util'
 
 
 type UseOptionForUndefinedProps<T> = {
-    [K in keyof T as unknown extends T[K] ? K : undefined extends T[K] ? never : K]: T[K]
+    [K in keyof T as [unknown] extends [T[K]] ? K : [undefined] extends [T[K]] ? never : K]: T[K]
 } & {
-    [K in keyof T as unknown extends T[K] ? never : undefined extends T[K] ? K : never]+?: T[K]
+    [K in keyof T as [unknown] extends [T[K]] ? never : [undefined] extends [T[K]] ? K : never]+?: T[K]
 }
 
 

@@ -6,6 +6,12 @@ import assert from 'assert'
 export {sts}
 
 
+/**
+ * Hex encoded binary string
+ */
+export type Bytes = string
+
+
 interface Block {
     _runtime: Runtime
 }

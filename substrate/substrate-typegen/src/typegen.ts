@@ -4,8 +4,8 @@ import {OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-r
 import {def, last, maybeLast} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
+import {Sink, Sts} from './ifs'
 import {assignNames} from './names'
-import {Sts} from './sts'
 import {groupBy, isEmptyVariant, upperCaseFirst} from './util'
 
 
@@ -49,11 +49,11 @@ export class Typegen {
         // this.generateStorage()
         // this.generateConsts()
         this.sts.forEach((sts, runtime) => {
-            if (sts.isEmpty()) return
+            if (sts.sink.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
             let file = this.dir.file(fileName)
-            file.line(`import {sts} from './support'`)
-            sts.generate(file)
+            file.line(`import {Bytes, sts} from './support'`)
+            sts.sink.generate(file)
             file.write()
         })
         this.dir.add('support.ts', [__dirname, '../src/support.ts'])
@@ -393,7 +393,8 @@ export class Typegen {
     getSts(runtime: Runtime): Sts {
         let sts = this.sts.get(runtime)
         if (sts) return sts
-        sts = new Sts(runtime.description.types, assignNames(runtime.description))
+        let sink = new Sink(runtime.description.types, assignNames(runtime.description))
+        sts = new Sts(sink)
         this.sts.set(runtime, sts)
         return sts
     }
@@ -414,7 +415,7 @@ export class Typegen {
     private qualify(importedInterfaces: Set<Runtime>, runtime: Runtime, texp: Exp): Exp {
         let sts = this.getSts(runtime)
         let prefix = toCamelCase(this.getVersionName(runtime))
-        let qualified = sts.qualify(prefix, texp)
+        let qualified = sts.sink.qualify(prefix, texp)
         if (qualified != texp) {
             importedInterfaces.add(runtime)
         }
