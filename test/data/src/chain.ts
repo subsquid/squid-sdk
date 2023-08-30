@@ -173,7 +173,7 @@ export class Chain {
                 for (let name in rt.description.constants[pallet]) {
                     let def = rt.description.constants[pallet][name]
                     let value = rt.getConstant(pallet + '.' + name)
-                    let encoded = rt.scaleCodec.encodeToBinary(def.type, value)
+                    let encoded = toHex(rt.scaleCodec.encodeToBinary(def.type, value))
                     expect({pallet, name, bytes: encoded}).toEqual({pallet, name, bytes: def.value})
                 }
             }
