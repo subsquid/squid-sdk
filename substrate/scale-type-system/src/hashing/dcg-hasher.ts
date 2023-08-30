@@ -154,7 +154,7 @@ export class DCGHasher<N> implements Hasher {
 }
 
 
-function sha(obj: object): Hash {
+export function sha(obj: object): Hash {
     let content = JSON.stringify(obj)
     let hash = crypto.createHash('sha256')
     hash.update(content)

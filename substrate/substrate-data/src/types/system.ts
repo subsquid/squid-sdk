@@ -19,9 +19,7 @@ export type IOrigin = GetType<typeof Origin>
 export const Address = union(
     bytes(),
     openEnum({
-        Id: bytes()
-    }),
-    openEnum({
+        Id: bytes(),
         AccountId: bytes()
     })
 )

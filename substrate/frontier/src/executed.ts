@@ -1,11 +1,12 @@
+import {Bytes} from '@subsquid/substrate-runtime'
 import assert from 'assert'
 import {Event} from './interfaces'
 
 
 export interface TransactionResult {
-    from: string
-    to: string
-    transactionHash: string
+    from: Bytes
+    to: Bytes
+    transactionHash: Bytes
     status: 'Succeed' | 'Error' | 'Revert' | 'Fatal'
     statusReason: string
 }

@@ -1,4 +1,4 @@
-import {Abi, encodeCall, decodeResult} from "@subsquid/ink-abi"
+import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"
 
 export const metadata = {
   "source": {
@@ -1107,16 +1107,16 @@ export const metadata = {
 
 const _abi = new Abi(metadata)
 
-export function decodeEvent(hex: string): Event {
-    return _abi.decodeEvent(hex)
+export function decodeEvent(bytes: Bytes): Event {
+    return _abi.decodeEvent(bytes)
 }
 
-export function decodeMessage(hex: string): Message {
-    return _abi.decodeMessage(hex)
+export function decodeMessage(bytes: Bytes): Message {
+    return _abi.decodeMessage(bytes)
 }
 
-export function decodeConstructor(hex: string): Constructor {
-    return _abi.decodeConstructor(hex)
+export function decodeConstructor(bytes: Bytes): Constructor {
+    return _abi.decodeConstructor(bytes)
 }
 
 export interface Chain {
@@ -1130,9 +1130,9 @@ export interface ChainContext {
 }
 
 export class Contract {
-    constructor(private ctx: ChainContext, private address: string, private blockHash?: string) { }
+    constructor(private ctx: ChainContext, private address: Bytes, private blockHash?: Bytes) { }
 
-    PSP22_allowance(owner: Uint8Array, spender: Uint8Array): Promise<bigint> {
+    PSP22_allowance(owner: Bytes, spender: Bytes): Promise<bigint> {
         return this.stateCall('0x4d47d921', [owner, spender])
     }
 
@@ -1140,7 +1140,7 @@ export class Contract {
         return this.stateCall('0x162df8c2', [])
     }
 
-    PSP22_balance_of(owner: Uint8Array): Promise<bigint> {
+    PSP22_balance_of(owner: Bytes): Promise<bigint> {
         return this.stateCall('0x6568382f', [owner])
     }
 
@@ -1148,11 +1148,11 @@ export class Contract {
         return this.stateCall('0x7271b782', [])
     }
 
-    PSP22Metadata_token_name(): Promise<(Uint8Array | undefined)> {
+    PSP22Metadata_token_name(): Promise<(Bytes | undefined)> {
         return this.stateCall('0x3d261bd4', [])
     }
 
-    PSP22Metadata_token_symbol(): Promise<(Uint8Array | undefined)> {
+    PSP22Metadata_token_symbol(): Promise<(Bytes | undefined)> {
         return this.stateCall('0x34205be5', [])
     }
 
@@ -1165,28 +1165,43 @@ export class Contract {
     }
 }
 
-export type Event = Event_Transfer | Event_Approval
-
-export interface Event_Transfer {
-    __kind: 'Transfer'
-    from: (Uint8Array | undefined)
-    to: (Uint8Array | undefined)
-    value: bigint
-}
+export type Event = Event_Approval | Event_Transfer
 
 export interface Event_Approval {
     __kind: 'Approval'
-    owner: Uint8Array
-    spender: Uint8Array
+    owner: Bytes
+    spender: Bytes
     value: bigint
 }
 
-export type Message = Message_mint | Message_PSP22_allowance | Message_PSP22_approve | Message_PSP22_increase_allowance | Message_PSP22_transfer_from | Message_PSP22_total_supply | Message_PSP22_transfer | Message_PSP22_decrease_allowance | Message_PSP22_balance_of | Message_PSP22Metadata_token_decimals | Message_PSP22Metadata_token_name | Message_PSP22Metadata_token_symbol
+export interface Event_Transfer {
+    __kind: 'Transfer'
+    from: (Bytes | undefined)
+    to: (Bytes | undefined)
+    value: bigint
+}
 
-export interface Message_mint {
-    __kind: 'mint'
-    account: Uint8Array
-    amount: bigint
+export type Message = Message_PSP22Metadata_token_decimals | Message_PSP22Metadata_token_name | Message_PSP22Metadata_token_symbol | Message_PSP22_allowance | Message_PSP22_approve | Message_PSP22_balance_of | Message_PSP22_decrease_allowance | Message_PSP22_increase_allowance | Message_PSP22_total_supply | Message_PSP22_transfer | Message_PSP22_transfer_from | Message_mint
+
+/**
+ *  Returns the token decimals.
+ */
+export interface Message_PSP22Metadata_token_decimals {
+    __kind: 'PSP22Metadata_token_decimals'
+}
+
+/**
+ *  Returns the token name.
+ */
+export interface Message_PSP22Metadata_token_name {
+    __kind: 'PSP22Metadata_token_name'
+}
+
+/**
+ *  Returns the token symbol.
+ */
+export interface Message_PSP22Metadata_token_symbol {
+    __kind: 'PSP22Metadata_token_symbol'
 }
 
 /**
@@ -1196,8 +1211,8 @@ export interface Message_mint {
  */
 export interface Message_PSP22_allowance {
     __kind: 'PSP22_allowance'
-    owner: Uint8Array
-    spender: Uint8Array
+    owner: Bytes
+    spender: Bytes
 }
 
 /**
@@ -1216,8 +1231,38 @@ export interface Message_PSP22_allowance {
  */
 export interface Message_PSP22_approve {
     __kind: 'PSP22_approve'
-    spender: Uint8Array
+    spender: Bytes
     value: bigint
+}
+
+/**
+ *  Returns the account Balance for the specified `owner`.
+ * 
+ *  Returns `0` if the account is non-existent.
+ */
+export interface Message_PSP22_balance_of {
+    __kind: 'PSP22_balance_of'
+    owner: Bytes
+}
+
+/**
+ *  Atomically decreases the allowance granted to `spender` by the caller.
+ * 
+ *  An `Approval` event is emitted.
+ * 
+ *  # Errors
+ * 
+ *  Returns `InsufficientAllowance` error if there are not enough tokens allowed
+ *  by owner for `spender`.
+ * 
+ *  Returns `ZeroSenderAddress` error if sender's address is zero.
+ * 
+ *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
+ */
+export interface Message_PSP22_decrease_allowance {
+    __kind: 'PSP22_decrease_allowance'
+    spender: Bytes
+    deltaValue: bigint
 }
 
 /**
@@ -1233,37 +1278,8 @@ export interface Message_PSP22_approve {
  */
 export interface Message_PSP22_increase_allowance {
     __kind: 'PSP22_increase_allowance'
-    spender: Uint8Array
+    spender: Bytes
     deltaValue: bigint
-}
-
-/**
- *  Transfers `value` tokens on the behalf of `from` to the account `to`
- *  with additional `data` in unspecified format.
- * 
- *  This can be used to allow a contract to transfer tokens on ones behalf and/or
- *  to charge fees in sub-currencies, for example.
- * 
- *  On success a `Transfer` and `Approval` events are emitted.
- * 
- *  # Errors
- * 
- *  Returns `InsufficientAllowance` error if there are not enough tokens allowed
- *  for the caller to withdraw from `from`.
- * 
- *  Returns `InsufficientBalance` error if there are not enough tokens on
- *  the the account Balance of `from`.
- * 
- *  Returns `ZeroSenderAddress` error if sender's address is zero.
- * 
- *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
- */
-export interface Message_PSP22_transfer_from {
-    __kind: 'PSP22_transfer_from'
-    from: Uint8Array
-    to: Uint8Array
-    value: bigint
-    data: Uint8Array
 }
 
 /**
@@ -1290,60 +1306,44 @@ export interface Message_PSP22_total_supply {
  */
 export interface Message_PSP22_transfer {
     __kind: 'PSP22_transfer'
-    to: Uint8Array
+    to: Bytes
     value: bigint
-    data: Uint8Array
+    data: Bytes
 }
 
 /**
- *  Atomically decreases the allowance granted to `spender` by the caller.
+ *  Transfers `value` tokens on the behalf of `from` to the account `to`
+ *  with additional `data` in unspecified format.
  * 
- *  An `Approval` event is emitted.
+ *  This can be used to allow a contract to transfer tokens on ones behalf and/or
+ *  to charge fees in sub-currencies, for example.
+ * 
+ *  On success a `Transfer` and `Approval` events are emitted.
  * 
  *  # Errors
  * 
  *  Returns `InsufficientAllowance` error if there are not enough tokens allowed
- *  by owner for `spender`.
+ *  for the caller to withdraw from `from`.
+ * 
+ *  Returns `InsufficientBalance` error if there are not enough tokens on
+ *  the the account Balance of `from`.
  * 
  *  Returns `ZeroSenderAddress` error if sender's address is zero.
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_decrease_allowance {
-    __kind: 'PSP22_decrease_allowance'
-    spender: Uint8Array
-    deltaValue: bigint
+export interface Message_PSP22_transfer_from {
+    __kind: 'PSP22_transfer_from'
+    from: Bytes
+    to: Bytes
+    value: bigint
+    data: Bytes
 }
 
-/**
- *  Returns the account Balance for the specified `owner`.
- * 
- *  Returns `0` if the account is non-existent.
- */
-export interface Message_PSP22_balance_of {
-    __kind: 'PSP22_balance_of'
-    owner: Uint8Array
-}
-
-/**
- *  Returns the token decimals.
- */
-export interface Message_PSP22Metadata_token_decimals {
-    __kind: 'PSP22Metadata_token_decimals'
-}
-
-/**
- *  Returns the token name.
- */
-export interface Message_PSP22Metadata_token_name {
-    __kind: 'PSP22Metadata_token_name'
-}
-
-/**
- *  Returns the token symbol.
- */
-export interface Message_PSP22Metadata_token_symbol {
-    __kind: 'PSP22Metadata_token_symbol'
+export interface Message_mint {
+    __kind: 'mint'
+    account: Bytes
+    amount: bigint
 }
 
 export type Constructor = Constructor_new
@@ -1351,8 +1351,8 @@ export type Constructor = Constructor_new
 export interface Constructor_new {
     __kind: 'new'
     totalSupply: bigint
-    name: (Uint8Array | undefined)
-    symbol: (Uint8Array | undefined)
+    name: (Bytes | undefined)
+    symbol: (Bytes | undefined)
     decimals: u8
 }
 

@@ -50,14 +50,14 @@ export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transa
 export function getTransaction(ethereumTransact: Call): Transaction {
     assert(ethereumTransact.name === 'Ethereum.transact')
 
-    switch (ethereumTransact.block._runtime.getCallTypeHash('Ethereum.transact')) {
-        case registry.getHash('Ethereum.transactV0'):
-        case registry.getHash('V14Ethereum.transactV0'):
+    switch (ethereumTransact.block._runtime.calls.getTypeHash('Ethereum.transact')) {
+        case registry.getTypeHash('Ethereum.transactV0'):
+        case registry.getTypeHash('V14Ethereum.transactV0'):
             return getAsV0(ethereumTransact.args)
-        case registry.getHash('Ethereum.transactV1'):
-        case registry.getHash('Ethereum.transactV2'):
-        case registry.getHash('V14Ethereum.transactV1'):
-        case registry.getHash('V14Ethereum.transactV2'):
+        case registry.getTypeHash('Ethereum.transactV1'):
+        case registry.getTypeHash('Ethereum.transactV2'):
+        case registry.getTypeHash('V14Ethereum.transactV1'):
+        case registry.getTypeHash('V14Ethereum.transactV2'):
             return getAsV1(ethereumTransact.args)
         default:
             throw new Error('Unknown "Ethereum.transact" version')

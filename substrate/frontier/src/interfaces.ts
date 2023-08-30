@@ -1,7 +1,4 @@
-interface Runtime {
-    getEventTypeHash(name: string): string
-    getCallTypeHash(name: string): string
-}
+import type {Runtime} from '@subsquid/substrate-runtime'
 
 
 export interface Event {

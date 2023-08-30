@@ -77,7 +77,7 @@ export class Typegen {
         let d = this.description()
         let ifs = new Interfaces(d.types(), this.nameAssignment())
 
-        this.out.line(`import {Abi, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
+        this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
 
         this.out.line()
         this.out.line(`export const metadata = ${JSON.stringify(this.metadata(), null, 2)}`)
@@ -86,18 +86,18 @@ export class Typegen {
         this.out.line(`const _abi = new Abi(metadata)`)
 
         this.out.line()
-        this.out.block(`export function decodeEvent(hex: string): ${ifs.use(d.event())}`, () => {
-            this.out.line(`return _abi.decodeEvent(hex)`)
+        this.out.block(`export function decodeEvent(bytes: Bytes): ${ifs.use(d.event())}`, () => {
+            this.out.line(`return _abi.decodeEvent(bytes)`)
         })
 
         this.out.line()
-        this.out.block(`export function decodeMessage(hex: string): ${ifs.use(d.messages())}`, () => {
-            this.out.line(`return _abi.decodeMessage(hex)`)
+        this.out.block(`export function decodeMessage(bytes: Bytes): ${ifs.use(d.messages())}`, () => {
+            this.out.line(`return _abi.decodeMessage(bytes)`)
         })
 
         this.out.line()
-        this.out.block(`export function decodeConstructor(hex: string): ${ifs.use(d.constructors())}`, () => {
-            this.out.line(`return _abi.decodeConstructor(hex)`)
+        this.out.block(`export function decodeConstructor(bytes: Bytes): ${ifs.use(d.constructors())}`, () => {
+            this.out.line(`return _abi.decodeConstructor(bytes)`)
         })
 
         this.out.line()
@@ -114,7 +114,7 @@ export class Typegen {
 
         this.out.line()
         this.out.block('export class Contract', () => {
-            this.out.line('constructor(private ctx: ChainContext, private address: string, private blockHash?: string) { }')
+            this.out.line('constructor(private ctx: ChainContext, private address: Bytes, private blockHash?: Bytes) { }')
 
             this.project().spec.messages.forEach(m => {
                 if (!m.mutates) {

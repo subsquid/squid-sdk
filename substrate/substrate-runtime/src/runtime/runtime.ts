@@ -14,7 +14,7 @@ import {
     StorageItem
 } from '../metadata'
 import {EACDefinition, EACRegistry} from './events-and-calls'
-import {decodeExtrinsic} from './extrinsic'
+import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
 import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
 import * as sto from './storage'
 import {parseQualifiedName} from './util'
@@ -245,6 +245,10 @@ export class Runtime {
 
     decodeExtrinsic(bytes: Bytes | Uint8Array): Extrinsic {
         return decodeExtrinsic(bytes, this.description, this.scaleCodec)
+    }
+
+    encodeExtrinsic(extrinsic: Extrinsic): Uint8Array {
+        return encodeExtrinsic(extrinsic, this.description, this.scaleCodec)
     }
 
     decodeCall(bytes: Bytes | Uint8Array): DecodedCall {

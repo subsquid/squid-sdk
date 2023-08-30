@@ -26,7 +26,7 @@ export class BlockHeader implements PartialBlockHeader {
         runtimeOfPrevBlock: Runtime,
         src: PartialBlockHeader
     ) {
-        this.id = formatId(this)
+        this.id = formatId(src)
         this.#runtime = runtime
         this.#runtimeOfPrevBlock = runtimeOfPrevBlock
         Object.assign(this, src)

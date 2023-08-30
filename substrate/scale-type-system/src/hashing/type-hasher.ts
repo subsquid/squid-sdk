@@ -18,7 +18,7 @@ export class TypeHasher {
 }
 
 
-function computeHash(types: ScaleType[], hasher: Hasher, ty: ScaleType): object {
+export function computeHash(types: ScaleType[], hasher: Hasher, ty: ScaleType): object {
     switch(ty.kind) {
         case TypeKind.Primitive:
             return {primitive: toJsPrimitive(ty.primitive)}

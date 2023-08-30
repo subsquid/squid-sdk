@@ -1,5 +1,4 @@
-import {Codec as ScaleCodec, Src, ByteSink} from "@subsquid/scale-codec"
-import {Ti} from "@subsquid/substrate-metadata"
+import {Codec as ScaleCodec, Src, ByteSink, Ti} from '@subsquid/scale-codec'
 import {AbiDescription, SelectorsMap} from "./abi-description"
 import {getInkProject, InkProject} from "./metadata/validator"
 import {decodeHex} from "@subsquid/util-internal-hex"

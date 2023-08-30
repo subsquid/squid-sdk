@@ -1,7 +1,8 @@
-import {OldTypes} from '@subsquid/substrate-metadata'
-import {OldTypeRegistry} from '@subsquid/substrate-metadata/lib/old/typeRegistry'
-import {substrateBundle} from '@subsquid/substrate-metadata/lib/old/definitions/substrate'
-import {Registry} from '@subsquid/substrate-metadata/lib/events-and-calls'
+import {OldTypes} from '@subsquid/substrate-runtime/lib/metadata'
+import {substrateBundle} from '@subsquid/substrate-runtime/lib/metadata/old/definitions/substrate'
+import {OldTypeRegistry} from '@subsquid/substrate-runtime/lib/metadata/old/typeRegistry'
+import {EACRegistry} from '@subsquid/substrate-runtime/lib/runtime/events-and-calls'
+
 
 const definitions: OldTypes = {
     types: {
@@ -111,7 +112,9 @@ const definitions: OldTypes = {
     },
 }
 
+
 const typeRegistry = new OldTypeRegistry(definitions)
 const pallets = typeRegistry.use('P')
 
-export const registry = new Registry(typeRegistry.getTypes(), pallets)
+
+export const registry = new EACRegistry(typeRegistry.getTypes(), pallets)

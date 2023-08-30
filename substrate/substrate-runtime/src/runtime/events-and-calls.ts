@@ -1,4 +1,4 @@
-import {getTypeChecker} from '@subsquid/scale-type-system'
+import {getTypeChecker, getTypeHash} from '@subsquid/scale-type-system'
 import * as sts from '@subsquid/scale-type-system'
 import assert from 'assert'
 import {Ti, Type, TypeKind, Variant} from '../metadata'
@@ -86,6 +86,11 @@ export class EACRegistry {
                 fields: def.fields
             }
         }
+    }
+
+    getTypeHash(name: QualifiedName): string {
+        let rec = this.getTypeRecord(name)
+        return getTypeHash(this.types, rec.scaleType)
     }
 }
 

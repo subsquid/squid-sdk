@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "build": "",
-    "test": "./test.sh"
+    "test": ""
   },
   "dependencies": {
+    "@subsquid/substrate-runtime": "^0.0.0",
     "@subsquid/substrate-typegen": "^5.0.0",
     "@types/node": "^18.16.17",
     "typescript": "~4.9.5"

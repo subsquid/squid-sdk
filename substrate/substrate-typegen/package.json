@@ -26,6 +26,7 @@
     "@subsquid/util-internal-code-printer": "^1.2.0",
     "@subsquid/util-internal-config": "^2.2.0",
     "@subsquid/util-internal-read-lines": "^1.2.0",
+    "@subsquid/util-naming": "^1.2.0",
     "commander": "^11.0.0"
   },
   "peerDependencies": {

@@ -1,13 +1,19 @@
-import {Field, Primitive, Ti, Type, TypeKind, Variant} from "@subsquid/substrate-metadata"
-import {normalizeMetadataTypes} from "substrate/substrate-metadata/src/metadata/util"
-import {def, unexpectedCase} from "@subsquid/util-internal"
+import {Field, Primitive, Ti, Type, TypeKind, Variant} from '@subsquid/substrate-runtime/lib/metadata'
+import {normalizeMetadataTypes} from '@subsquid/substrate-runtime/lib/metadata/util'
+import {def, unexpectedCase} from '@subsquid/util-internal'
 import {
     ConstructorSpecFor_PortableForm,
     FieldFor_PortableForm,
     MessageSpecFor_PortableForm,
     PortableType
-} from "./metadata/v3/interfaces"
-import {InkProject} from "./metadata/validator"
+} from './metadata/v3/interfaces'
+import {InkProject} from './metadata/validator'
+
+
+/**
+ * Hex encoded byte string
+ */
+export type Bytes = string
 
 
 export interface SelectorsMap {

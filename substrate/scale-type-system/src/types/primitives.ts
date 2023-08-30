@@ -100,6 +100,13 @@ export class BytesType extends BaseType<Bytes> {
 }
 
 
+export class Uint8ArrayType extends BaseType<Uint8Array> {
+    match(typeChecker: TypeChecker, ty: ScaleType): boolean {
+        return ty.kind == TypeKind.BitSequence
+    }
+}
+
+
 export class UnitType extends BaseType<null> {
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         switch(ty.kind) {
