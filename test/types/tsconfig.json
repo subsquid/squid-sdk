@@ -10,7 +10,6 @@
     "sourceMap": false,
     "noEmit": true
   },
-  "include": ["gen"],
   "exclude": [
     "node_modules"
   ]

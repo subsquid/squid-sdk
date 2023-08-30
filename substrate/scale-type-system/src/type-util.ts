@@ -9,3 +9,9 @@ export type Simplify<T> = T extends any ? {
 } & {} : never
 
 
+export type ValueCase<K, T> = [null] extends [T]
+    ? {__kind: K}
+    : [undefined] extends [T]
+        ? {__kind: K, value?: T}
+        : {__kind: K, value: T}
+

@@ -124,7 +124,7 @@ export function needsName(types: Type[], ti: Ti): boolean {
     let ty = types[ti]
     switch(ty.kind) {
         case TypeKind.Variant:
-            return !(asResultType(ty) || asOptionType(ty))
+            return !asResultType(ty) && !asOptionType(ty)
         case TypeKind.Composite:
             return true
         default:

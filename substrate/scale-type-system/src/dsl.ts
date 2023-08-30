@@ -1,6 +1,6 @@
 import {Bytes} from '@subsquid/scale-codec'
 import {Type} from './type-checker'
-import {GetType} from './type-util'
+import {GetType, ValueCase} from './type-util'
 import {ArrayType} from './types/array'
 import {EnumDefinition, EnumStruct, EnumType, GetEnumType} from './types/enum'
 import {ExternalEnum, ExternalEnumType} from './types/externalEnum'
@@ -17,12 +17,13 @@ import {
     UnitType,
     UnknownType
 } from './types/primitives'
+import {Result, ResultType} from './types/result'
 import {GetStructType, StructType} from './types/struct'
 import {TupleType} from './types/tuple'
 import {UnionType} from './types/union'
 
 
-export {GetType, ExternalEnum}
+export {GetType, ExternalEnum, Result, ValueCase}
 
 
 const numberType = new NumberType()
@@ -147,6 +148,11 @@ export function externalEnum(variants?: Get<EnumDefinition>): Type<any> {
     } else {
         return new EnumType(getter(variants), 'external')
     }
+}
+
+
+export function result<T extends Type, E extends Type>(ok: T, err: E): Type<Result<GetType<T>, GetType<E>>> {
+    return new ResultType(ok, err)
 }
 
 

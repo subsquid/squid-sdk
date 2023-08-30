@@ -52,7 +52,7 @@ export class Typegen {
             if (sts.sink.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
             let file = this.dir.file(fileName)
-            file.line(`import {Bytes, sts} from './support'`)
+            file.line(`import {sts, Result, Option, Bytes} from './support'`)
             sts.sink.generate(file)
             file.write()
         })
@@ -81,7 +81,7 @@ export class Typegen {
         names.forEach(name => {
             let versions = items.get(name)!
             let {def: {pallet, name: unqualifiedName}} = versions[0]
-            let constantName = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}`))
+            let constantName = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}_${fix}`))
 
             for (let v of versions) {
                 let versionName = this.getVersionName(v.runtime)
@@ -89,7 +89,7 @@ export class Typegen {
 
                 out.line()
                 out.blockComment(v.def.docs)
-                out.line(`export const ${constantName}${versionName} = new EventType(`)
+                out.line(`export const ${constantName}${versionName} = new ${fix}Type(`)
                 out.indentation(() => {
                     if (v.def.fields.length == 0 || v.def.fields[0].name == null) {
                         if (v.def.fields.length == 1) {

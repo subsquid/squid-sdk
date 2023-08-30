@@ -44,8 +44,9 @@ export class Sink {
     }
 
     generate(out: Output): void {
-        for (let i = 0; i < this.queue.length; i++) {
-            this.queue[i](out)
+        let cb
+        while (cb = this.queue.pop()) {
+            cb(out)
         }
     }
 
@@ -75,7 +76,7 @@ export class Interfaces {
     private generatedNames = new Set<string>()
 
     constructor(
-        private sink: Sink,
+        public readonly sink: Sink,
         private withPrefix: boolean
     ) {
         this.generated = new Array(this.sink.types.length).fill('')
@@ -185,7 +186,7 @@ export class Interfaces {
             let exp = this.use(f.type)
             let opt = this.isUndefined(f.type) ? '?' : ''
             out.blockComment(f.docs)
-            out.line(`${name}${opt}: ${exp},`)
+            out.line(`${name}${opt}: ${exp}`)
         })
     }
 
@@ -243,6 +244,10 @@ export class Sts {
 
         exp = this.makeType(ti)
 
+        if (exp == 'sts.tuple()') {
+            exp = 'sts.unit()'
+        }
+
         if (!this.sink.needsName(ti) && this.sink.hasName(ti)) {
             let alias = this.sink.getName(ti)
             if (!this.generatedNames.has(alias)) {
@@ -285,8 +290,17 @@ export class Sts {
                 } else {
                     return this.makeStruct(ty, ti)
                 }
-            case TypeKind.Variant:
+            case TypeKind.Variant: {
+                let result = asResultType(ty)
+                if (result) {
+                    return `sts.result(${this.use(result.ok)}, ${this.use(result.err)})`
+                }
+                let option = asOptionType(ty)
+                if (option) {
+                    return `sts.closedEnum({Some: ${this.use(option.some)}, None: sts.unit()})`
+                }
                 return this.makeVariant(ty, ti)
+            }
             case TypeKind.Option:
                 return `sts.option(() => ${this.use(ty.type)})`
             default:

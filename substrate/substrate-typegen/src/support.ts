@@ -1,15 +1,13 @@
-import type {QualifiedName, Runtime} from '@subsquid/substrate-runtime'
+import type {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
+import {Result} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export {sts}
+export {sts, Result, Bytes}
 
 
-/**
- * Hex encoded binary string
- */
-export type Bytes = string
+export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
 
 
 interface Block {
