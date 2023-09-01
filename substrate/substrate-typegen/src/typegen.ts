@@ -1,6 +1,7 @@
 import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
 import {QualifiedName, Runtime} from '@subsquid/substrate-runtime'
-import {OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
+import {Constant, OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
+import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
 import {def, last, maybeLast} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
@@ -47,7 +48,7 @@ export class Typegen {
         this.generateEnums('events')
         this.generateEnums('calls')
         // this.generateStorage()
-        // this.generateConsts()
+        this.generateConsts()
         this.sts.forEach((sts, runtime) => {
             if (sts.sink.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
@@ -72,16 +73,14 @@ export class Typegen {
 
         let out = this.dir.file(`${kind}.ts`)
         let fix = kind == 'events' ? 'Event' : 'Call'
-        let names = Array.from(items.keys()).sort()
 
-        out.line(`import assert from 'assert'`)
         out.line(`import {${fix}Type, sts} from './support'`)
         let runtimeImports = this.runtimeImports(out)
 
-        names.forEach(name => {
-            let versions = items.get(name)!
-            let {def: {pallet, name: unqualifiedName}} = versions[0]
-            let constantName = upperCaseFirst(toCamelCase(`${pallet}_${unqualifiedName}_${fix}`))
+        for (let qualifiedName of Array.from(items.keys()).sort()) {
+            let versions = items.get(qualifiedName)!
+            let {def: {pallet, name}} = versions[0]
+            let constantName = upperCaseFirst(toCamelCase(`${pallet}_${name}_${fix}`))
 
             for (let v of versions) {
                 let versionName = this.getVersionName(v.runtime)
@@ -97,7 +96,11 @@ export class Typegen {
                         } else {
                             let texp = v.def.fields.map(f => sts.use(f.type)).join(', ')
                             texp = this.qualify(runtimeImports, v.runtime, texp)
-                            out.line(`sts.tuple(${texp})`)
+                            if (texp) {
+                                out.line(`sts.tuple(${texp})`)
+                            } else {
+                                out.line('sts.unit()')
+                            }
                         }
                     } else {
                         out.line('sts.struct({')
@@ -113,86 +116,66 @@ export class Typegen {
                 })
                 out.line(')')
             }
-        })
+        }
 
         out.write()
     }
 
-    //
-    // private generateConsts(): void {
-    //     let items = this.collectItems(
-    //         this.options.constants,
-    //         chain => {
-    //             let items: Item<Constant>[] = []
-    //             let consts = chain.description.constants
-    //             for (let prefix in consts) {
-    //                 for (let name in consts[prefix]) {
-    //                     items.push({
-    //                         chain,
-    //                         name: prefix + '.' + name,
-    //                         def: consts[prefix][name]
-    //                     })
-    //                 }
-    //             }
-    //             return items
-    //         },
-    //         (chain, name) => {
-    //             let [prefix, itemName] = name.split('.')
-    //             let def = chain.description.constants[prefix][itemName]
-    //             return getTypeHash(chain.description.types, def.type)
-    //         }
-    //     )
-    //
-    //     if (items.size == 0) return
-    //
-    //     let out = this.dir.file(`constants.ts`)
-    //     let names = Array.from(items.keys()).sort()
-    //
-    //     out.line(`import assert from 'assert'`)
-    //     out.line(`import {getRuntime, Runtime, Result, Option} from './support'`)
-    //     let importedInterfaces = this.importRuntimes(out)
-    //     names.forEach(qualifiedName => {
-    //         let versions = items.get(qualifiedName)!
-    //         let [pallet, name] = qualifiedName.split('.')
-    //         out.line()
-    //         out.block(`export class ${pallet}${name}Constant`, () => {
-    //             out.line(`private readonly runtime: Runtime`)
-    //             out.line()
-    //             out.block(`constructor(runtime: RuntimeCtx)`, () => {
-    //                 out.line(`this.runtime = getRuntime(runtime)`)
-    //             })
-    //             versions.forEach(v => {
-    //                 let versionName = this.getVersionName(v.chain)
-    //                 let hash = getTypeHash(v.chain.description.types, v.def.type)
-    //                 let ifs = this.getSts(v.chain)
-    //                 let type = ifs.use(v.def.type)
-    //                 let qualifiedType = this.qualify(importedInterfaces, v.chain, type)
-    //
-    //                 out.line()
-    //                 out.blockComment(v.def.docs)
-    //                 out.block(`get is${versionName}()`, () => {
-    //                     out.line(`return this.runtime.getConstantTypeHash('${pallet}', '${name}') === '${hash}'`)
-    //                 })
-    //
-    //                 out.line()
-    //                 out.blockComment(v.def.docs)
-    //                 out.block(`get as${versionName}(): ${qualifiedType}`, () => {
-    //                     out.line(`assert(this.is${versionName})`)
-    //                     out.line(`return this.runtime.getConstant('${pallet}', '${name}')`)
-    //                 })
-    //             })
-    //             out.line()
-    //             out.blockComment([
-    //                 'Checks whether the constant is defined for the current chain version.'
-    //             ])
-    //             out.block(`get isExists(): boolean`, () => {
-    //                 out.line(`return this.runtime.getConstantTypeHash('${pallet}', '${name}') != null`)
-    //             })
-    //         })
-    //     })
-    //
-    //     out.write()
-    // }
+    private generateConsts(): void {
+        let items = this.collectItems(
+            this.options.constants,
+            runtime => {
+                let items: Item<Constant>[] = []
+                let consts = runtime.description.constants
+                for (let prefix in consts) {
+                    for (let name in consts[prefix]) {
+                        items.push({
+                            runtime,
+                            name: prefix + '.' + name,
+                            def: consts[prefix][name]
+                        })
+                    }
+                }
+                return items
+            },
+            (runtime, qualifiedName) => {
+                let [prefix, name] = qualifiedName.split('.')
+                let def = runtime.description.constants[prefix][name]
+                return getTypeHash(runtime.description.types, def.type)
+            }
+        )
+
+        if (items.size == 0) return
+
+        let out = this.dir.file(`constants.ts`)
+        out.line(`import {ConstantType, sts} from './support'`)
+        let imports = this.runtimeImports(out)
+
+        for (let qualifiedName of Array.from(items.keys()).sort()) {
+            let [pallet, name] = qualifiedName.split('.')
+            let versions = items.get(qualifiedName)!
+            for (let v of versions) {
+                let versionName = this.getVersionName(v.runtime)
+                let sts = this.getSts(v.runtime)
+                let type = sts.use(v.def.type)
+                let qualifiedType = this.qualify(imports, v.runtime, type)
+                let constantName = upperCaseFirst(toCamelCase(
+                    `${pallet}_${name}_Const_${versionName}`
+                ))
+
+                out.line()
+                out.blockComment(v.def.docs)
+                out.line(`export const ${constantName} = new ConstantType(`)
+                out.indentation(() => {
+                    out.line(`'${qualifiedName}',`)
+                    out.line(qualifiedType)
+                })
+                out.line(')')
+            }
+        }
+
+        out.write()
+    }
     //
     // private generateStorage(): void {
     //     let items = this.collectItems(

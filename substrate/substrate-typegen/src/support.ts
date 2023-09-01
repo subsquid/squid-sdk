@@ -10,20 +10,23 @@ export {sts, Result, Bytes}
 export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
 
 
-interface Block {
+interface RuntimeCtx {
     _runtime: Runtime
 }
 
 
+interface Block extends RuntimeCtx {}
+
+
 interface Event {
-    block: Block
+    block: RuntimeCtx
     name: QualifiedName
     args: unknown
 }
 
 
 interface Call {
-    block: Block
+    block: RuntimeCtx
     name: QualifiedName
     args: unknown
 }
@@ -53,5 +56,19 @@ export class CallType<T extends sts.Type> {
     decode(call: Call): sts.GetType<T> {
         assert(this.is(call))
         return call.block._runtime.decodeCallRecordArguments(call)
+    }
+}
+
+
+export class ConstantType<T extends sts.Type> {
+    constructor(private name: QualifiedName, private type: T) {}
+
+    is(block: RuntimeCtx): boolean {
+        return block._runtime.checkConstantType(this.name, this.type)
+    }
+
+    get(block: RuntimeCtx): sts.GetType<T> {
+        assert(this.is(block))
+        return block._runtime.getConstant(this.name)
     }
 }

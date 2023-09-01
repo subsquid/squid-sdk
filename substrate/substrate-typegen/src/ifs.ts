@@ -244,10 +244,6 @@ export class Sts {
 
         exp = this.makeType(ti)
 
-        if (exp == 'sts.tuple()') {
-            exp = 'sts.unit()'
-        }
-
         if (!this.sink.needsName(ti) && this.sink.hasName(ti)) {
             let alias = this.sink.getName(ti)
             if (!this.generatedNames.has(alias)) {
@@ -283,10 +279,10 @@ export class Sts {
             case TypeKind.Array:
                 return `sts.array(${this.use(ty.type)})`
             case TypeKind.Tuple:
-                return `sts.tuple(${ty.tuple.map(ti => this.use(ti)).join(', ')})`
+                return this.renderTuple(ty.tuple)
             case TypeKind.Composite:
                 if (ty.fields.length == 0 || ty.fields[0].name == null) {
-                    return `sts.tuple(${ty.fields.map(f => this.use(f.type)).join(', ')})`
+                    return this.renderTuple(ty.fields.map(f => f.type))
                 } else {
                     return this.makeStruct(ty, ti)
                 }
@@ -346,7 +342,7 @@ export class Sts {
                             if (v.fields.length == 1) {
                                 out.line(`${v.name}: ${this.use(v.fields[0].type)},`)
                             } else {
-                                out.line(`${v.name}: sts.tuple(${v.fields.map(f => this.use(f.type)).join(', ')}),`)
+                                out.line(`${v.name}: ${this.renderTuple(v.fields.map(f => f.type))},`)
                             }
                         } else {
                             out.line(`${v.name}: sts.enumStruct({`)
@@ -359,5 +355,10 @@ export class Sts {
             out.line('})')
         })
         return name
+    }
+
+    private renderTuple(tuple: Ti[]): Exp {
+        let list = tuple.map(ti => this.use(ti)).join(', ')
+        return list ? `sts.tuple(${list})` : 'sts.unit()'
     }
 }
