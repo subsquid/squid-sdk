@@ -1,5 +1,6 @@
 import {Runtime} from '@subsquid/substrate-runtime'
 import {assertNotNull, def} from '@subsquid/util-internal'
+import assert from 'assert'
 import {setEmittedContractAddress} from '../extension/contracts'
 import {setEthereumTransact, setEvmLog} from '../extension/evm'
 import {setGearProgramId} from '../extension/gear'
@@ -148,7 +149,7 @@ class BlockParser {
         if (this.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
             setExtrinsicFeesFromPaidEvent(this.runtime, this.extrinsics(), this.events())
         } else if (supportsFeeCalc(this.runtime)) {
-            let feeMultiplier = assertNotNull(this.src.feeMultiplier, 'fee multiplier value is not provided')
+            assert('feeMultiplier' in this.src, 'fee multiplier value is not provided')
             let extrinsics = this.extrinsics()
             let rawExtrinsics = assertNotNull(this.src.block.block.extrinsics)
             setExtrinsicFeesFromCalc(
@@ -158,7 +159,7 @@ class BlockParser {
                 this.events(),
                 this.block().runtimeOfPrevBlock.specName,
                 this.block().runtimeOfPrevBlock.specVersion,
-                feeMultiplier
+                this.src.feeMultiplier
             )
         }
     }

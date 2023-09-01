@@ -47,7 +47,7 @@ export class Typegen {
         this.dir.del()
         this.generateEnums('events')
         this.generateEnums('calls')
-        // this.generateStorage()
+        this.generateStorage()
         this.generateConsts()
         this.sts.forEach((sts, runtime) => {
             if (sts.sink.isEmpty()) return
@@ -77,45 +77,40 @@ export class Typegen {
         out.line(`import {${fix}Type, sts} from './support'`)
         let runtimeImports = this.runtimeImports(out)
 
-        for (let qualifiedName of Array.from(items.keys()).sort()) {
-            let versions = items.get(qualifiedName)!
-            let {def: {pallet, name}} = versions[0]
-            let constantName = upperCaseFirst(toCamelCase(`${pallet}_${name}_${fix}`))
+        for (let [qn, v] of this.enumerateVersions(items)) {
+            let versionName = this.getVersionName(v.runtime)
+            let itemName = this.createName(v.def.pallet, v.def.name, fix, versionName)
+            let sts = this.getSts(v.runtime)
 
-            for (let v of versions) {
-                let versionName = this.getVersionName(v.runtime)
-                let sts = this.getSts(v.runtime)
-
-                out.line()
-                out.blockComment(v.def.docs)
-                out.line(`export const ${constantName}${versionName} = new ${fix}Type(`)
-                out.indentation(() => {
-                    if (v.def.fields.length == 0 || v.def.fields[0].name == null) {
-                        if (v.def.fields.length == 1) {
-                            out.line(this.qualify(runtimeImports, v.runtime, sts.use(v.def.fields[0].type)))
-                        } else {
-                            let texp = v.def.fields.map(f => sts.use(f.type)).join(', ')
-                            texp = this.qualify(runtimeImports, v.runtime, texp)
-                            if (texp) {
-                                out.line(`sts.tuple(${texp})`)
-                            } else {
-                                out.line('sts.unit()')
-                            }
-                        }
+            out.line()
+            out.blockComment(v.def.docs)
+            out.line(`export const ${itemName} = new ${fix}Type(`)
+            out.indentation(() => {
+                if (v.def.fields.length == 0 || v.def.fields[0].name == null) {
+                    if (v.def.fields.length == 1) {
+                        out.line(this.qualify(runtimeImports, v.runtime, sts.use(v.def.fields[0].type)))
                     } else {
-                        out.line('sts.struct({')
-                        out.indentation(() => {
-                            for (let f of v.def.fields) {
-                                let texp = this.qualify(runtimeImports, v.runtime, sts.use(f.type))
-                                out.blockComment(f.docs)
-                                out.line(`${f.name}: ${texp},`)
-                            }
-                        })
-                        out.line('})')
+                        let texp = v.def.fields.map(f => sts.use(f.type)).join(', ')
+                        texp = this.qualify(runtimeImports, v.runtime, texp)
+                        if (texp) {
+                            out.line(`sts.tuple(${texp})`)
+                        } else {
+                            out.line('sts.unit()')
+                        }
                     }
-                })
-                out.line(')')
-            }
+                } else {
+                    out.line('sts.struct({')
+                    out.indentation(() => {
+                        for (let f of v.def.fields) {
+                            let texp = this.qualify(runtimeImports, v.runtime, sts.use(f.type))
+                            out.blockComment(f.docs)
+                            out.line(`${f.name}: ${texp},`)
+                        }
+                    })
+                    out.line('})')
+                }
+            })
+            out.line(')')
         }
 
         out.write()
@@ -151,157 +146,159 @@ export class Typegen {
         out.line(`import {ConstantType, sts} from './support'`)
         let imports = this.runtimeImports(out)
 
-        for (let qualifiedName of Array.from(items.keys()).sort()) {
-            let [pallet, name] = qualifiedName.split('.')
-            let versions = items.get(qualifiedName)!
-            for (let v of versions) {
-                let versionName = this.getVersionName(v.runtime)
-                let sts = this.getSts(v.runtime)
-                let type = sts.use(v.def.type)
-                let qualifiedType = this.qualify(imports, v.runtime, type)
-                let constantName = upperCaseFirst(toCamelCase(
-                    `${pallet}_${name}_Const_${versionName}`
-                ))
+        for (let [qn, v] of this.enumerateVersions(items)) {
+            let [pallet, name] = qn.split('.')
+            let versionName = this.getVersionName(v.runtime)
+            let itemName = this.createName(pallet, name, 'Const', versionName)
+            let sts = this.getSts(v.runtime)
+            let type = sts.use(v.def.type)
+            let qualifiedType = this.qualify(imports, v.runtime, type)
 
-                out.line()
-                out.blockComment(v.def.docs)
-                out.line(`export const ${constantName} = new ConstantType(`)
-                out.indentation(() => {
-                    out.line(`'${qualifiedName}',`)
-                    out.line(qualifiedType)
-                })
-                out.line(')')
-            }
+            out.line()
+            out.blockComment(v.def.docs)
+            out.line(`export const ${itemName} = new ConstantType(`)
+            out.indentation(() => {
+                out.line(`'${qn}',`)
+                out.line(qualifiedType)
+            })
+            out.line(')')
         }
 
         out.write()
     }
-    //
-    // private generateStorage(): void {
-    //     let items = this.collectItems(
-    //         this.options.storage,
-    //         chain => {
-    //             let items: Item<StorageItem>[] = []
-    //             let storage = chain.description.storage
-    //             for (let prefix in storage) {
-    //                 for (let name in storage[prefix]) {
-    //                     items.push({
-    //                         chain,
-    //                         name: prefix + '.' + name,
-    //                         def: storage[prefix][name]
-    //                     })
-    //                 }
-    //             }
-    //             return items
-    //         },
-    //         (chain, name) => {
-    //             let [prefix, itemName] = name.split('.')
-    //             return getStorageItemTypeHash(chain.description.types, chain.description.storage[prefix][itemName])
-    //         }
-    //     )
-    //     if (items.size == 0) return
-    //
-    //     let out = this.dir.file('storage.ts')
-    //     let names = Array.from(items.keys()).sort()
-    //
-    //     out.line(`import assert from 'assert'`)
-    //     out.line(`import {StorageBase} from './support'`)
-    //     let importedInterfaces = this.importRuntimes(out)
-    //
-    //     names.forEach(qualifiedName => {
-    //         let versions = items.get(qualifiedName)!
-    //         let [prefix, name] = qualifiedName.split('.')
-    //
-    //         out.line()
-    //         out.block(`export class ${prefix}${name}Storage extends StorageBase`, () => {
-    //             out.block(`protected getPrefix()`, () => {
-    //                 out.line(`return '${prefix}'`)
-    //             })
-    //             out.line()
-    //             out.block(`protected getName()`, () => {
-    //                 out.line(`return '${name}'`)
-    //             })
-    //             versions.forEach(v => {
-    //                 let versionName = this.getVersionName(v.chain)
-    //                 let hash = getStorageItemTypeHash(v.chain.description.types, v.def)
-    //                 out.line()
-    //                 out.blockComment(v.def.docs)
-    //                 out.block(`get is${versionName}(): boolean`, () => {
-    //                     out.line(`return this.getTypeHash() === '${hash}'`)
-    //                 })
-    //                 if (isUnitStorageItem(v)) {
-    //                     // Meaning storage item can't hold any value
-    //                     // Let's just silently omit `asVxx` getter for this case
-    //                 } else {
-    //                     out.line()
-    //                     out.blockComment(v.def.docs)
-    //                     out.block(`get as${versionName}(): ${prefix}${name}Storage${versionName}`, () => {
-    //                         out.line(`assert(this.is${versionName})`)
-    //                         out.line(`return this as any`)
-    //                     })
-    //                 }
-    //             })
-    //         })
-    //
-    //         versions.forEach(v => {
-    //             if (isUnitStorageItem(v)) return // No asVxx getter
-    //
-    //             let versionName = this.getVersionName(v.chain)
-    //             let ifs = this.getSts(v.chain)
-    //             let types = v.def.keys.concat(v.def.value).map(ti => ifs.use(ti))
-    //             let qualifiedTypes = types.map(texp => this.qualify(importedInterfaces, v.chain, texp))
-    //             let valueType = qualifiedTypes.pop()!
-    //             let returnType = v.def.modifier == 'Optional' ? `(${valueType} | undefined)` : valueType
-    //             let keyTypes = qualifiedTypes
-    //
-    //             let keyArgs = keyTypes.map((texp, idx) => {
-    //                 let name = keyTypes.length > 1 ? `key${idx + 1}` : 'key'
-    //                 return name + ': ' + texp
-    //             })
-    //
-    //             let keyTuple = keyTypes.length == 1 ? keyTypes[0] : `[${keyTypes.join(', ')}]`
-    //             let keyValueTuple = `[k: ${keyTuple}, v: ${valueType}]`
-    //
-    //             function* enumeratePartialKeyArgs(leading?: string): Iterable<string> {
-    //                 let list: string[] = []
-    //                 if (leading) {
-    //                     list.push(leading)
-    //                 }
-    //                 yield list.join(', ')
-    //                 for (let arg of keyArgs) {
-    //                     list.push(arg)
-    //                     yield list.join(', ')
-    //                 }
-    //             }
-    //
-    //             out.line()
-    //             out.blockComment(v.def.docs)
-    //             out.block(`export interface ${prefix}${name}Storage${versionName}`, () => {
-    //                 out.line(`get(${keyArgs.join(', ')}): Promise<${returnType}>`)
-    //                 if (keyArgs.length > 0) {
-    //                     out.line(`getAll(): Promise<${valueType}[]>`)
-    //                     out.line(`getMany(keys: ${keyTuple}[]): Promise<${returnType}[]>`)
-    //                     if (isStorageKeyDecodable(v.def)) {
-    //                         for (let args of enumeratePartialKeyArgs()) {
-    //                             out.line(`getKeys(${args}): Promise<${keyTuple}[]>`)
-    //                         }
-    //                         for (let args of enumeratePartialKeyArgs('pageSize: number')) {
-    //                             out.line(`getKeysPaged(${args}): AsyncIterable<${keyTuple}[]>`)
-    //                         }
-    //                         for (let args of enumeratePartialKeyArgs()) {
-    //                             out.line(`getPairs(${args}): Promise<${keyValueTuple}[]>`)
-    //                         }
-    //                         for (let args of enumeratePartialKeyArgs('pageSize: number')) {
-    //                             out.line(`getPairsPaged(${args}): AsyncIterable<${keyValueTuple}[]>`)
-    //                         }
-    //                     }
-    //                 }
-    //             })
-    //         })
-    //     })
-    //
-    //     out.write()
-    // }
+
+    private generateStorage(): void {
+        let items = this.collectItems(
+            this.options.storage,
+            runtime => {
+                let items: Item<StorageItem>[] = []
+                let storage = runtime.description.storage
+                for (let prefix in storage) {
+                    for (let name in storage[prefix]) {
+                        items.push({
+                            runtime,
+                            name: prefix + '.' + name,
+                            def: storage[prefix][name]
+                        })
+                    }
+                }
+                return items
+            },
+            (runtime, qualifiedName) => {
+                let [prefix, name] = qualifiedName.split('.')
+                let def = runtime.description.storage[prefix][name]
+                return JSON.stringify({
+                    modifier: def.modifier,
+                    key: def.keys.map(ti => getTypeHash(runtime.description.types, ti)),
+                    value: getTypeHash(runtime.description.types, def.value)
+                })
+            }
+        )
+
+        if (items.size == 0) return
+
+        let out = this.dir.file('storage.ts')
+        out.line(`import {StorageType, sts, Block, Bytes, Option, Result} from './support'`)
+        let importedInterfaces = this.runtimeImports(out)
+
+        for (let [qn, v] of this.enumerateVersions(items)) {
+            if (isEmptyStorageItem(v)) continue // Storage item can't hold any value
+
+            let [prefix, name] = qn.split('.')
+            let an = this.createName(prefix, name, 'Storage', this.getVersionName(v.runtime))
+            let sts = this.getSts(v.runtime)
+
+            {
+                let keyListExp = this.qualify(
+                    importedInterfaces,
+                    v.runtime,
+                    v.def.keys.map(ti => sts.use(ti)).join(', ')
+                )
+
+                let valueExp = this.qualify(
+                    importedInterfaces,
+                    v.runtime,
+                    sts.use(v.def.value)
+                )
+
+                out.line()
+                out.blockComment(v.def.docs)
+                out.line(`export const ${an}: I${an} = new StorageType(`)
+                out.indentation(() => {
+                    out.line(`'${qn}',`)
+                    out.line(`'${v.def.modifier}',`)
+                    out.line(`[${keyListExp}],`)
+                    out.line(valueExp)
+                })
+                out.line(')')
+            }
+
+            out.line()
+            out.blockComment(v.def.docs)
+            out.block(`export interface I${an} `, () => {
+                let value = this.qualify(importedInterfaces, v.runtime, sts.ifs.use(v.def.value))
+
+                let keys = v.def.keys.map(ti => {
+                    return this.qualify(importedInterfaces, v.runtime, sts.ifs.use(ti))
+                })
+
+                let args = keys.length == 1
+                    ? [`key: ${keys[0]}`]
+                    : keys.map((exp, idx) => `key${idx+1}: ${exp}`)
+
+                let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
+
+                let ret = v.def.modifier == 'Required' ? value : `${value} | undefined`
+
+                let kv = `[k: ${fullKey}, v: ${ret}]`
+
+                function* enumeratePartialApps(leading?: string): Iterable<string> {
+                    let list: string[] = []
+                    if (leading) {
+                        list.push(leading)
+                    }
+                    list.push('block: Block')
+                    yield list.join(', ')
+                    for (let arg of args) {
+                        list.push(arg)
+                        yield list.join(', ')
+                    }
+                }
+
+                if (v.def.modifier == 'Default') {
+                    out.line(`getDefault(block: Block): ${value}`)
+                }
+
+                out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
+
+                if (args.length > 0) {
+                    out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
+                    if (isStorageKeyDecodable(v.def)) {
+                        for (let args of enumeratePartialApps()) {
+                            out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
+                        }
+                        for (let args of enumeratePartialApps('pageSize: number')) {
+                            out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
+                        }
+                        for (let args of enumeratePartialApps()) {
+                            out.line(`getPairs(${args}): Promise<${kv}[]>`)
+                        }
+                        for (let args of enumeratePartialApps('pageSize: number')) {
+                            out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
+                        }
+                    }
+                }
+            })
+        }
+
+        out.write()
+    }
+
+    createName(pallet: string, name: string, suffix: string, version: string): string {
+        return upperCaseFirst(
+            toCamelCase(`${pallet}_${name}_${suffix}_${version}`)
+        )
+    }
 
     /**
      * Create a mapping between qualified name and list of unique versions
@@ -341,6 +338,15 @@ export class Typegen {
         })
 
         return items
+    }
+
+    private *enumerateVersions<T>(items: Map<QualifiedName, Item<T>[]>): Iterable<[QualifiedName, Item<T>]> {
+        let names = Array.from(items.keys()).sort()
+        for (let name of names) {
+            for (let item of items.get(name)!) {
+                yield [name, item]
+            }
+        }
     }
 
     private getVersionName(runtime: Runtime): string {
@@ -410,7 +416,7 @@ export class Typegen {
 /**
  * Returns true when storage item actually can't hold any value
  */
-function isUnitStorageItem(item: Item<StorageItem>): boolean {
+function isEmptyStorageItem(item: Item<StorageItem>): boolean {
     return isEmptyVariant(item.runtime.description.types[item.def.value])
 }
 

@@ -18,7 +18,7 @@ const EventItemList = array(EventItem)
 
 
 export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes): Event[] {
-    if (!runtime.checkStorageType('System.Events', false, [], EventItemList))
+    if (!runtime.checkStorageType('System.Events', 'Required', [], EventItemList))
         throw new Error('System.Events storage item has unexpected type')
 
     let items: GetType<typeof EventItem>[] = runtime.decodeStorageValue(

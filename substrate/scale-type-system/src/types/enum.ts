@@ -1,7 +1,7 @@
 import {TypeKind, Variant} from '@subsquid/scale-codec'
 import {def} from '@subsquid/util-internal'
 import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
-import {GetType, Simplify} from '../type-util'
+import {GetType, Simplify, ValueCase} from '../type-util'
 
 
 export type EnumDefinition = Record<string, Type | EnumStruct>
@@ -19,7 +19,7 @@ export class EnumStruct<T=unknown> {
 export type GetEnumType<Variants> = Simplify<{
     [K in keyof Variants]: Variants[K] extends EnumStruct<infer S>
         ? Simplify<{__kind: K} & S>
-        : {__kind: K, value: GetType<Variants[K]>}
+        : ValueCase<K, GetType<Variants[K]>>
 }[keyof Variants]>
 
 

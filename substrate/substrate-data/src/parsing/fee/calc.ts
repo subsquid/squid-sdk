@@ -25,7 +25,7 @@ export function supportsFeeCalc(runtime: Runtime): boolean {
 
 export function getFeeCalc(
     runtime: Runtime,
-    feeMultiplier: Bytes,
+    feeMultiplier: Bytes | undefined,
     specName: string,
     specVersion: number
 ): Calc | undefined {
@@ -75,14 +75,14 @@ class CalcFactory {
     private hasNextFeeMultiplier(): boolean {
         return this.runtime.checkStorageType(
             'TransactionPayment.NextFeeMultiplier',
-            false,
+            'Default',
             [],
             NextFeeMultiplier
         )
     }
 
     get(
-        feeMultiplier: Bytes,
+        feeMultiplier: Bytes | undefined,
         specName: string,
         specVersion: number
     ): Calc | undefined {

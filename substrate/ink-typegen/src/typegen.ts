@@ -1,7 +1,7 @@
 import {AbiDescription} from "@subsquid/ink-abi/lib/abi-description"
 import {TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/v3/interfaces"
 import {getInkProject, InkProject} from "@subsquid/ink-abi/lib/metadata/validator"
-import {Interfaces} from "@subsquid/substrate-typegen/lib/ifs"
+import {Interfaces, Sink} from '@subsquid/substrate-typegen/lib/ifs'
 import {Names} from "@subsquid/substrate-typegen/lib/names"
 import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
@@ -75,7 +75,8 @@ export class Typegen {
     @def
     generate(): void {
         let d = this.description()
-        let ifs = new Interfaces(d.types(), this.nameAssignment())
+        let sink = new Sink(d.types(), this.nameAssignment())
+        let ifs = new Interfaces(sink, false)
 
         this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
 
@@ -138,7 +139,7 @@ export class Typegen {
             })
         })
 
-        ifs.generate(this.out)
+        sink.generate(this.out)
 
         this.out.line()
         // language=TypeScript

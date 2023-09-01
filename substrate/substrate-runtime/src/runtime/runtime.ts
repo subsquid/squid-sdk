@@ -1,4 +1,4 @@
-import {Codec as ScaleCodec, JsonCodec, Ti, TypeKind} from '@subsquid/scale-codec'
+import {Codec as ScaleCodec, JsonCodec, Ti} from '@subsquid/scale-codec'
 import * as sts from '@subsquid/scale-type-system'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
@@ -31,11 +31,13 @@ export class Runtime {
     public readonly scaleCodec: ScaleCodec
     public readonly jsonCodec: JsonCodec
     private constantValueCache = new Map<QualifiedName, any>()
+    private storageFallbackCache = new Map<QualifiedName, any>()
 
     constructor(
         runtimeVersion: RuntimeVersionId,
         metadata: Bytes | Metadata,
-        typesBundle?: OldTypesBundle | OldSpecsBundle
+        typesBundle?: OldTypesBundle | OldSpecsBundle,
+        private _rpc?: RpcClient
     ) {
         this.specName = runtimeVersion.specName
         this.specVersion = runtimeVersion.specVersion
@@ -46,6 +48,11 @@ export class Runtime {
         this.calls = new EACRegistry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)
         this.jsonCodec = new JsonCodec(this.description.types)
+    }
+
+    get rpc(): RpcClient {
+        if (this._rpc == null) throw new Error('RPC client is not available')
+        return this._rpc
     }
 
     hasStorageItem(name: QualifiedName): boolean {
@@ -91,22 +98,35 @@ export class Runtime {
         return this._decodeStorageValue(item, value)
     }
 
-    async getStorage(rpc: RpcClient, blockHash: string, name: QualifiedName, ...key: any[]): Promise<any> {
+    getStorageFallback(name: QualifiedName): any {
+        let value = this.storageFallbackCache.get(name)
+        if (value === undefined) {
+            let qn = parseQualifiedName(name)
+            let item = this._getStorageItem(qn)
+            assert(item.modifier == 'Default')
+            value = this._decodeStorageValue(item)
+            this.storageFallbackCache.set(name, value)
+        }
+        return value
+    }
+
+    async getStorage(blockHash: string, name: QualifiedName, ...key: any[]): Promise<any> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         assert(item.keys.length === key.length)
         let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, key)
-        let value: Bytes | undefined = await rpc.call('state_getStorageAt', [encodedKey, blockHash])
+        let value: Bytes | undefined = await this.rpc.call('state_getStorageAt', [encodedKey, blockHash])
+        if (value == null) return
         return this._decodeStorageValue(item, value)
     }
 
-    async queryStorage(rpc: RpcClient, blockHash: string, name: QualifiedName, keys?: any[]): Promise<any[]> {
+    async queryStorage(blockHash: string, name: QualifiedName, keys?: any[]): Promise<any[]> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
 
         let query: Bytes[]
         if (keys == null) {
-            query = await rpc.call('state_getKeys', [sto.encodeName(qn[0], qn[1]), blockHash])
+            query = await this.rpc.call('state_getKeys', [sto.encodeName(qn[0], qn[1]), blockHash])
         } else {
             query = keys.map(key => {
                 let ks = item.keys.length > 1 ? key : [key]
@@ -117,7 +137,7 @@ export class Runtime {
 
         if (query.length == 0) return []
 
-        let result: {changes: [key: string, value: string][]}[] = await rpc.call(
+        let result: {changes: [key: string, value: string | null][]}[] = await this.rpc.call(
             'state_queryStorageAt',
             [query, blockHash]
         )
@@ -130,31 +150,32 @@ export class Runtime {
         let changes = new Map(result[0].changes)
         return query.map(k => {
             let v = changes.get(k)
+            if (v == null) return
             return this._decodeStorageValue(item, v)
         })
     }
 
-    async getKeys(rpc: RpcClient, blockHash: string, name: QualifiedName, ...args: any[]): Promise<any[]> {
+    async getStorageKeys(blockHash: string, name: QualifiedName, ...args: any[]): Promise<any[]> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
-        let values: Bytes[] = await rpc.call('state_getKeys', [encodedKey, blockHash])
+        let values: Bytes[] = await this.rpc.call('state_getKeys', [encodedKey, blockHash])
         return values.map(v => this._decodeStorageKey(item, v))
     }
 
-    async getRawKeys(rpc: RpcClient, blockHash: string, name: QualifiedName, ...args: any[]): Promise<Bytes[]> {
+    async getStorageRawKeys(blockHash: string, name: QualifiedName, ...args: any[]): Promise<Bytes[]> {
         let encodedKey = this.encodeStorageKey(name, ...args)
-        return rpc.call('state_getKeys', [encodedKey, blockHash])
+        return this.rpc.call('state_getKeys', [encodedKey, blockHash])
     }
 
-    async *getKeysPaged(rpc: RpcClient, pageSize: number, blockHash: string, name: QualifiedName, ...args: any[]): AsyncIterable<any[]> {
+    async *getStorageKeysPaged(pageSize: number, blockHash: string, name: QualifiedName, ...args: any[]): AsyncIterable<any[]> {
         assert(pageSize > 0)
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
         let lastKey = null
         while (true) {
-            let keys: Bytes[] = await rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
+            let keys: Bytes[] = await this.rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
             if (keys.length == 0) return
 
             yield keys.map(k => this._decodeStorageKey(item, k))
@@ -167,15 +188,15 @@ export class Runtime {
         }
     }
 
-    async getPairs(rpc: RpcClient, blockHash: string, name: QualifiedName, ...args: any[]): Promise<[key: any, value: any][]> {
+    async getStoragePairs(blockHash: string, name: QualifiedName, ...args: any[]): Promise<[key: any, value: any][]> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
 
-        let query: Bytes[] = await rpc.call('state_getKeys', [encodedKey, blockHash])
+        let query: Bytes[] = await this.rpc.call('state_getKeys', [encodedKey, blockHash])
         if (query.length == 0) return []
 
-        let res: {changes: [key: string, value: string][]}[] = await rpc.call(
+        let res: {changes: [key: string, value: string][]}[] = await this.rpc.call(
             'state_queryStorageAt',
             [query, blockHash]
         )
@@ -183,17 +204,17 @@ export class Runtime {
         return res[0].changes.map(kv => this.decodeStoragePair(item, kv))
     }
 
-    async *getPairsPaged(rpc: RpcClient, pageSize: number, blockHash: string, name: QualifiedName, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
+    async *getStoragePairsPaged(pageSize: number, blockHash: string, name: QualifiedName, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
         assert(pageSize > 0)
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
         let lastKey = null
         while (true) {
-            let query: Bytes[] = await rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
+            let query: Bytes[] = await this.rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
             if (query.length == 0) return
 
-            let res: {changes: [key: string, value: string][]}[] = await rpc.call(
+            let res: {changes: [key: string, value: string][]}[] = await this.rpc.call(
                 'state_queryStorageAt',
                 [query, blockHash]
             )
@@ -318,11 +339,11 @@ export class Runtime {
         return this.checkType(def.type, ty)
     }
 
-    checkStorageType(name: QualifiedName, optional: boolean, key: sts.Type[], valueTy: sts.Type): boolean {
+    checkStorageType(name: QualifiedName, modifier: StorageItem['modifier'], key: sts.Type[], valueTy: sts.Type): boolean {
         let qn = parseQualifiedName(name)
         let def = this.description.storage[qn[0]]?.[qn[1]]
         if (def == null) return false
-        if (!optional && def.modifier == 'Optional') return false
+        if (def.modifier != modifier) return false
         if (def.keys.length !== key.length) return false
         for (let i = 0; i < key.length; i++) {
             if (!this.checkType(def.keys[i], key[i])) return false

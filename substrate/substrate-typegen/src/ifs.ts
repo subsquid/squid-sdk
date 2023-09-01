@@ -92,10 +92,11 @@ export class Interfaces {
             let alias = this.getName(ti)
             if (!this.generatedNames.has(alias)) {
                 this.generatedNames.add(alias)
+                let def = exp
                 this.sink.push(out => {
                     out.line()
                     out.blockComment(this.sink.types[ti].docs)
-                    out.line(`export type ${alias} = ${exp}`)
+                    out.line(`export type ${alias} = ${def}`)
                 })
             }
             exp = alias
@@ -229,7 +230,7 @@ export class Interfaces {
 
 
 export class Sts {
-    private ifs: Interfaces
+    public readonly ifs: Interfaces
     private generated: Exp[]
     private generatedNames = new Set<string>()
 
@@ -248,10 +249,11 @@ export class Sts {
             let alias = this.sink.getName(ti)
             if (!this.generatedNames.has(alias)) {
                 this.generatedNames.add(alias)
+                let def = exp
                 this.sink.push(out => {
                     out.line()
                     out.blockComment(this.sink.types[ti].docs)
-                    out.line(`export const ${alias} = ${exp}`)
+                    out.line(`export const ${alias} = ${def}`)
                 })
             }
             exp = alias
