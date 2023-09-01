@@ -1,5 +1,5 @@
 import {CompositeType, Field, Ti, Type, TypeKind, VariantType} from '@subsquid/substrate-runtime/lib/metadata'
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {assertNotNull, def, unexpectedCase} from '@subsquid/util-internal'
 import {Output} from '@subsquid/util-internal-code-printer'
 import assert from 'assert'
 import {needsName} from './names'
@@ -195,6 +195,18 @@ export class Interfaces {
         return this.sink.types[ti].kind == TypeKind.Option
     }
 
+    private isUnit(ti: Ti): boolean {
+        let ty = this.sink.types[ti]
+        switch(ty.kind) {
+            case TypeKind.Composite:
+                return ty.fields.length == 0
+            case TypeKind.Tuple:
+                return ty.tuple.length == 0
+            default:
+                return false
+        }
+    }
+
     private makeVariant(type: VariantType, ti: Ti): string {
         let name = this.getName(ti)
         if (this.generatedNames.has(name)) return name
@@ -216,7 +228,11 @@ export class Interfaces {
                         if (v.fields[0].name != null) {
                             this.printStructFields(out, v.fields)
                         } else if (v.fields.length == 1) {
-                            out.line(`value: ${this.use(v.fields[0].type)}`)
+                            let ti = v.fields[0].type
+                            if (!this.isUnit(ti)) {
+                                let opt = this.isUndefined(ti) ? '?' : ''
+                                out.line(`value${opt}: ${this.use(ti)}`)
+                            }
                         } else {
                             out.line(`value: ${this.makeTuple(v.fields.map(f => f.type))}`)
                         }
