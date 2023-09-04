@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "migrate to new substrate runtime packages",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

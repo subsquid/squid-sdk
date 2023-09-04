@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "readme fix",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}
