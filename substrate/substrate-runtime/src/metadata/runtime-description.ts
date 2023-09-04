@@ -1,4 +1,5 @@
 import {assertNotNull, def, last, unexpectedCase} from '@subsquid/util-internal'
+import {toCamelCase} from '@subsquid/util-naming'
 import assert from 'assert'
 import {Bytes, Field, Ti, Type, TypeKind, Variant} from './types'
 import {decodeMetadata} from './codec'
@@ -188,7 +189,7 @@ class FromV14 {
             kind: TypeKind.Composite,
             fields: this.metadata.extrinsic.signedExtensions.map(ext => {
                 return {
-                    name: ext.identifier,
+                    name: toCamelCase(ext.identifier),
                     type: ext.type
                 }
             }).filter(f => {
