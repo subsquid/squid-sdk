@@ -1,3 +1,3 @@
-# @subsquid/substrate-metadata
+# @subsquid/substrate-runtime
 
-Substrate metadata tools for squid framework.
+Substrate encoding/decoding/metadata tools for Squid SDK.

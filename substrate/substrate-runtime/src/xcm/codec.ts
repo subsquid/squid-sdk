@@ -1,4 +1,5 @@
 import {Codec, Src} from "@subsquid/scale-codec"
+import {Bytes} from '../metadata'
 import * as definitions from "../metadata/old/definitions/xcm"
 import {OldTypeRegistry} from "../metadata/old/typeRegistry"
 import type {VersionedXcm} from "./interfaces"
@@ -13,7 +14,7 @@ const [TI, CODEC] = (() => {
 })()
 
 
-export function decodeXcm(bytes: string | Uint8Array): VersionedXcm {
+export function decodeXcm(bytes: Uint8Array | Bytes): VersionedXcm {
     let src = new Src(bytes)
     return CODEC.decode(TI, src)
 }
