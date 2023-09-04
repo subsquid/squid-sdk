@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@subsquid/openreader_v4.4.0",
+      "date": "Wed, 23 Aug 2023 14:37:23 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add orderBy ASC_NULLS_FIRST and DESC_NULLS_LAST"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.1",
       "tag": "@subsquid/openreader_v4.3.1",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

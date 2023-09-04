@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-data_v1.2.1",
+      "date": "Thu, 10 Aug 2023 11:43:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove extra `0x` on storage key encoding"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/substrate-data_v1.2.0",
       "date": "Fri, 04 Aug 2023 07:25:15 GMT",

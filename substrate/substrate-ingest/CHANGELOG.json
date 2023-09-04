@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "3.3.0",
+      "tag": "@subsquid/substrate-ingest_v3.3.0",
+      "date": "Wed, 23 Aug 2023 14:37:23 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `--endpoint-max-batch-call-size` cli option"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.0",
       "tag": "@subsquid/substrate-ingest_v3.2.0",
       "date": "Wed, 02 Aug 2023 22:59:19 GMT",

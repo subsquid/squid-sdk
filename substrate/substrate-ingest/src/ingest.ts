@@ -19,6 +19,7 @@ export interface IngestOptions {
     endpoint?: string
     endpointCapacity: number
     endpointRateLimit?: number
+    endpointMaxBatchCallSize?: number
     typesBundle?: string
 }
 
@@ -47,6 +48,7 @@ export class Ingest {
             url: assertNotNull(this.options.endpoint, 'chain RPC endpoint is required'),
             capacity: this.options.endpointCapacity,
             rateLimit: this.options.endpointRateLimit,
+            maxBatchCallSize: this.options.endpointMaxBatchCallSize,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })
     }

@@ -32,11 +32,17 @@ type ChainRpc = string | {
 }
 
 
+type ArchiveConnection = string | {
+    url: string
+    requestTimeout?: number
+}
+
+
 interface ArchiveDataSource {
     /**
      * Subsquid evm archive endpoint URL
      */
-    archive: string
+    archive: ArchiveConnection
     /**
      * Chain node RPC endpoint URL
      */
@@ -298,15 +304,20 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getArchiveDataSource(): EvmArchive {
+        let archive = assertNotNull(this.getDataSource().archive)
+        if (typeof archive == 'string') {
+            archive = {url: archive}
+        }
+
         let http = new HttpClient({
-            baseUrl: assertNotNull(this.getDataSource().archive),
+            baseUrl: archive.url,
             headers: {
                 'x-squid-id': this.getSquidId()
             },
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: 30_000,
+            httpTimeout: archive.requestTimeout || 180_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('archive')
         })

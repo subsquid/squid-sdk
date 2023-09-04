@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.8.0",
+      "tag": "@subsquid/evm-processor_v1.8.0",
+      "date": "Tue, 08 Aug 2023 21:22:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to configure archive request timeout and increase the default up to 180 seconds"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.7.3",
       "tag": "@subsquid/evm-processor_v1.7.3",
       "date": "Thu, 20 Jul 2023 23:47:03 GMT",
