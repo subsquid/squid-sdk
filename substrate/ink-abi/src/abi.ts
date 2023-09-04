@@ -1,8 +1,8 @@
-import {Codec as ScaleCodec, Src, ByteSink, Ti} from '@subsquid/scale-codec'
-import {AbiDescription, SelectorsMap} from "./abi-description"
-import {getInkProject, InkProject} from "./metadata/validator"
-import {decodeHex} from "@subsquid/util-internal-hex"
-import assert from "assert"
+import {ByteSink, Codec as ScaleCodec, Src, Ti} from '@subsquid/scale-codec'
+import {decodeHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+import {AbiDescription, Bytes, SelectorsMap} from './abi-description'
+import {getInkProject, InkProject} from './metadata/validator'
 
 
 export class Abi {
@@ -38,22 +38,22 @@ export class Abi {
         return sink.toBytes()
     }
 
-    decodeMessageOutput<T=any>(selector: string, value: Uint8Array): T {
+    decodeMessageOutput<T=any>(selector: string, value: Uint8Array | Bytes): T {
         let message = this.getMessage(selector)
         assert(message.returnType?.type != null)
         return this.scaleCodec.decodeBinary(message.returnType.type, value)
     }
 
-    decodeEvent<T=any>(data: string): T {
+    decodeEvent<T=any>(data: Uint8Array | Bytes): T {
         return this.scaleCodec.decodeBinary(this.event, data)
     }
 
-    decodeConstructor<T=any>(data: string): T {
+    decodeConstructor<T=any>(data: Bytes): T {
         let src = new SelectorSource(data, this.constructorSelectors)
         return this.scaleCodec.decode(this.constructors, src)
     }
 
-    decodeMessage<T=any>(data: string): T {
+    decodeMessage<T=any>(data: Bytes): T {
         let src = new SelectorSource(data, this.messageSelectors)
         return this.scaleCodec.decode(this.messages, src)
     }
