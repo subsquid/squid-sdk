@@ -1165,20 +1165,16 @@ export class Contract {
     }
 }
 
-export type Event = Event_Approval | Event_Transfer
+export type u8 = number
 
-export interface Event_Approval {
-    __kind: 'Approval'
-    owner: Bytes
-    spender: Bytes
-    value: bigint
-}
+export type Constructor = Constructor_new
 
-export interface Event_Transfer {
-    __kind: 'Transfer'
-    from: (Bytes | undefined)
-    to: (Bytes | undefined)
-    value: bigint
+export interface Constructor_new {
+    __kind: 'new'
+    totalSupply: bigint
+    name?: (Bytes | undefined)
+    symbol?: (Bytes | undefined)
+    decimals: u8
 }
 
 export type Message = Message_PSP22Metadata_token_decimals | Message_PSP22Metadata_token_name | Message_PSP22Metadata_token_symbol | Message_PSP22_allowance | Message_PSP22_approve | Message_PSP22_balance_of | Message_PSP22_decrease_allowance | Message_PSP22_increase_allowance | Message_PSP22_total_supply | Message_PSP22_transfer | Message_PSP22_transfer_from | Message_mint
@@ -1346,16 +1342,20 @@ export interface Message_mint {
     amount: bigint
 }
 
-export type Constructor = Constructor_new
+export type Event = Event_Approval | Event_Transfer
 
-export interface Constructor_new {
-    __kind: 'new'
-    totalSupply: bigint
-    name: (Bytes | undefined)
-    symbol: (Bytes | undefined)
-    decimals: u8
+export interface Event_Approval {
+    __kind: 'Approval'
+    owner: Bytes
+    spender: Bytes
+    value: bigint
 }
 
-export type u8 = number
+export interface Event_Transfer {
+    __kind: 'Transfer'
+    from?: (Bytes | undefined)
+    to?: (Bytes | undefined)
+    value: bigint
+}
 
 export type Result<T, E> = {__kind: 'Ok', value: T} | {__kind: 'Err', value: E}
