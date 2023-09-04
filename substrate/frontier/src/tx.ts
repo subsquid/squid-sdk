@@ -1,9 +1,18 @@
+import {Bytes} from '@subsquid/substrate-runtime'
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import * as ethers from 'ethers'
-import {Call} from './interfaces'
-import {registry} from './registry'
-import {normalizeAccessListItem, normalizeU256} from './util'
+import {
+    EthereumTransactLatest,
+    EthereumTransactLegacy,
+    IAction,
+    IEIP1559Transaction,
+    IEIP2930Transaction,
+    ILegacyTransaction
+} from './tx-types'
+import {Call} from './types'
+import {normalizeAccessList, normalizeU256} from './util'
+
 
 export enum TransactionType {
     Legacy,
@@ -11,94 +20,78 @@ export enum TransactionType {
     EIP1559,
 }
 
+
 interface BaseTransaction {
-    hash: string
-    to?: string
-    from: string
+    hash: Bytes
+    to?: Bytes
+    from: Bytes
     nonce: bigint
     gasLimit: bigint
-    input: string
+    input: Bytes
     value: bigint
-    r: string
-    s: string
+    r: Bytes
+    s: Bytes
     v: bigint
     type: TransactionType
 }
+
+
+export interface AccessListItem {
+    address: Bytes
+    storageKeys: Bytes[]
+}
+
 
 export interface LegacyTransaction extends BaseTransaction {
     type: TransactionType.Legacy
     gasPrice: bigint
 }
 
+
 export interface EIP2930Transaction extends BaseTransaction {
     type: TransactionType.EIP2930
     gasPrice: bigint
-    accessList: {address: string; storageKeys: string[]}[]
+    accessList: AccessListItem[]
     chainId: bigint
 }
+
 
 export interface EIP1559Transaction extends BaseTransaction {
     type: TransactionType.EIP1559
-    accessList: {address: string; storageKeys: string[]}[]
-    maxPriorityFeePerGas?: bigint
-    maxFeePerGas?: bigint
+    accessList: AccessListItem[]
+    maxPriorityFeePerGas: bigint
+    maxFeePerGas: bigint
     chainId: bigint
 }
 
+
 export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transaction
+
 
 export function getTransaction(ethereumTransact: Call): Transaction {
     assert(ethereumTransact.name === 'Ethereum.transact')
-
-    switch (ethereumTransact.block._runtime.calls.getTypeHash('Ethereum.transact')) {
-        case registry.getTypeHash('Ethereum.transactV0'):
-        case registry.getTypeHash('V14Ethereum.transactV0'):
-            return getAsV0(ethereumTransact.args)
-        case registry.getTypeHash('Ethereum.transactV1'):
-        case registry.getTypeHash('Ethereum.transactV2'):
-        case registry.getTypeHash('V14Ethereum.transactV1'):
-        case registry.getTypeHash('V14Ethereum.transactV2'):
-            return getAsV1(ethereumTransact.args)
-        default:
-            throw new Error('Unknown "Ethereum.transact" version')
+    if (EthereumTransactLegacy.is(ethereumTransact)) {
+        let args = EthereumTransactLegacy.decode(ethereumTransact)
+        return normalizeLegacyTransaction(args.transaction)
+    } else if (EthereumTransactLatest.is(ethereumTransact)) {
+        let args = EthereumTransactLatest.decode(ethereumTransact)
+        switch(args.transaction.__kind) {
+            case 'Legacy':
+                return normalizeLegacyTransaction(args.transaction.value)
+            case 'EIP1559':
+                return normalizeEIP1559Transaction(args.transaction.value)
+            case 'EIP2930':
+                return normalizeEIP2930Transaction(args.transaction.value)
+        }
+    } else {
+        throw new Error('Ethereum.transact call has unexpected type')
     }
 }
 
-export function getAsV0(args: any): Transaction {
-    return normalizeLegacyTransaction(args.transaction)
-}
 
-export function getAsV1(args: any): Transaction {
-    const transaction = args.transaction
-    switch (transaction.__kind) {
-        case 'Legacy':
-            return normalizeLegacyTransaction(transaction.value)
-        case 'EIP2930':
-            return normalizeEIP2930Transaction(transaction.value)
-        case 'EIP1559':
-            return normalizeEIP1559Transaction(transaction.value)
-        default:
-            throw new Error(`Unexpected transaction type: ${transaction.__kind}`)
-    }
-}
-
-interface LegacyTransactionRaw {
-    nonce: string | string[]
-    gasPrice: string | string[]
-    gasLimit: string | string[]
-    action: {value?: string}
-    value: string | string[]
-    input: string
-    signature: {
-        v: string
-        r: string
-        s: string
-    }
-}
-
-function normalizeLegacyTransaction(raw: LegacyTransactionRaw): LegacyTransaction {
+function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction {
     const tx = ethers.Transaction.from({
-        to: raw.action.value,
+        to: getTo(raw.action),
         nonce: Number(normalizeU256(raw.nonce)),
         gasLimit: normalizeU256(raw.gasLimit),
         gasPrice: normalizeU256(raw.gasPrice),
@@ -119,46 +112,33 @@ function normalizeLegacyTransaction(raw: LegacyTransactionRaw): LegacyTransactio
         r: assertNotNull(tx.signature?.r),
         s: assertNotNull(tx.signature?.s),
         v: BigInt(assertNotNull(tx.signature?.networkV)),
-        type: TransactionType.Legacy,
         gasPrice: assertNotNull(tx.gasPrice),
+        type: TransactionType.Legacy
     }
 }
 
-interface EIP1559TransactionRaw {
-    chainId: string
-    nonce: string | string[]
-    maxPriorityFeePerGas: string | string[]
-    maxFeePerGas: string | string[]
-    gasLimit: string | string[]
-    action: {value?: string}
-    value: string | string[]
-    input: string
-    accessList: {address: string; storageKeys: string[]}[] | {address: string; slots: string[]}[]
-    oddYParity: boolean
-    r: string
-    s: string
-}
 
-function normalizeEIP1559Transaction(raw: EIP1559TransactionRaw): EIP1559Transaction {
+function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transaction {
     const tx = ethers.Transaction.from({
-        to: raw.action.value,
+        to: getTo(raw.action),
         chainId: Number(raw.chainId),
         nonce: Number(normalizeU256(raw.nonce)),
         gasLimit: normalizeU256(raw.gasLimit),
         maxFeePerGas: normalizeU256(raw.maxFeePerGas),
         maxPriorityFeePerGas: normalizeU256(raw.maxPriorityFeePerGas),
         value: normalizeU256(raw.value),
-        accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+        accessList: normalizeAccessList(raw.accessList),
         data: raw.input,
-        type: TransactionType.EIP1559,
         signature: {
             s: raw.s,
             r: raw.r,
             yParity: raw.oddYParity ? 1 : 0,
         },
+        type: TransactionType.EIP1559
     })
 
     return {
+        type: TransactionType.EIP1559,
         hash: assertNotNull(tx.hash),
         to: tx.to?.toLowerCase(),
         from: assertNotNull(tx.from).toLowerCase(),
@@ -169,47 +149,34 @@ function normalizeEIP1559Transaction(raw: EIP1559TransactionRaw): EIP1559Transac
         r: assertNotNull(tx.signature?.r),
         s: assertNotNull(tx.signature?.s),
         v: BigInt(assertNotNull(tx.signature?.yParity)),
-        type: TransactionType.EIP1559,
         maxFeePerGas: assertNotNull(tx.maxFeePerGas),
         maxPriorityFeePerGas: assertNotNull(tx.maxPriorityFeePerGas),
         accessList: assertNotNull(tx.accessList),
-        chainId: BigInt(tx.chainId),
+        chainId: BigInt(tx.chainId)
     }
 }
 
-interface EIP2930TransactionRaw {
-    chainId: string
-    nonce: string | string[]
-    gasPrice: string | string[]
-    gasLimit: string | string[]
-    action: {value?: string}
-    value: string | string[]
-    input: string
-    accessList: {address: string; storageKeys: string[]}[] | {address: string; slots: string[]}[]
-    oddYParity: boolean
-    r: string
-    s: string
-}
 
-function normalizeEIP2930Transaction(raw: EIP2930TransactionRaw): EIP2930Transaction {
+function normalizeEIP2930Transaction(raw: IEIP2930Transaction): EIP2930Transaction {
     const tx = ethers.Transaction.from({
-        to: raw.action.value,
+        type: TransactionType.EIP2930,
+        to: getTo(raw.action),
         chainId: Number(raw.chainId),
         nonce: Number(normalizeU256(raw.nonce)),
         gasLimit: normalizeU256(raw.gasLimit),
         gasPrice: normalizeU256(raw.gasPrice),
         value: normalizeU256(raw.value),
-        accessList: raw.accessList.map((li) => normalizeAccessListItem(li)),
+        accessList: normalizeAccessList(raw.accessList),
         data: raw.input,
-        type: TransactionType.EIP2930,
         signature: {
             s: raw.s,
             r: raw.r,
             yParity: raw.oddYParity ? 1 : 0,
-        },
+        }
     })
 
     return {
+        type: TransactionType.EIP2930,
         hash: assertNotNull(tx.hash),
         to: tx.to?.toLowerCase(),
         from: assertNotNull(tx.from).toLowerCase(),
@@ -220,9 +187,13 @@ function normalizeEIP2930Transaction(raw: EIP2930TransactionRaw): EIP2930Transac
         r: assertNotNull(tx.signature?.r),
         s: assertNotNull(tx.signature?.s),
         v: BigInt(assertNotNull(tx.signature?.yParity)),
-        type: TransactionType.EIP2930,
         gasPrice: assertNotNull(tx.gasPrice),
         accessList: assertNotNull(tx.accessList),
         chainId: BigInt(tx.chainId),
     }
+}
+
+
+function getTo(action: IAction): Bytes | undefined {
+    if (action.__kind == 'Call') return action.value
 }

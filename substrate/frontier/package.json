@@ -9,13 +9,11 @@
   },
   "files": [
     "lib",
-    "src",
-    "!src/test"
+    "src"
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "mocha ./lib/test/*.test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@subsquid/util-internal": "^2.5.0"
@@ -26,11 +24,8 @@
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^0.0.0",
-    "@types/mocha": "^10.0.1",
     "@types/node": "^18.16.17",
     "typescript": "~4.9.5",
-    "mocha": "^10.2.0",
-    "expect": "^29.5.0",
     "ethers": "^6.6.5"
   }
 }
