@@ -1,6 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from '@subsquid/ss58'
-import {decodeHex, SubstrateBatchProcessor} from '@subsquid/substrate-processor'
+import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {Bytes} from '@subsquid/substrate-runtime'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
@@ -40,8 +40,8 @@ processor.run(new TypeormDatabase(), async ctx => {
                 }
                 transfers.push(new Transfer({
                     id: event.id,
-                    from: ss58.codec('kusama').encode(decodeHex(rec.from)),
-                    to: ss58.codec('kusama').encode(decodeHex(rec.to)),
+                    from: ss58.codec('kusama').encode(rec.from),
+                    to: ss58.codec('kusama').encode(rec.to),
                     amount: BigDecimal(rec.amount, 12),
                     timestamp: BigInt(block.header.timestamp ?? 0),
                 }))
