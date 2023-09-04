@@ -1,4 +1,3 @@
-import {Bytes} from '@subsquid/substrate-runtime'
 import {
     array,
     bigint,
@@ -8,7 +7,6 @@ import {
     GetType,
     struct,
     tuple,
-    Type,
     union,
     unit
 } from '@subsquid/substrate-runtime/lib/sts'
@@ -33,24 +31,12 @@ const Action = closedEnum({
 export type IAction = GetType<typeof Action>
 
 
-const AccessListItem: Type<IAccessListItem> = union(
-    struct({address: bytes(), storageKeys: array(bytes)}),
-    struct({address: bytes(), slots: array(bytes)})
+const AccessList = array(
+    struct({
+        address: bytes(),
+        storageKeys: array(bytes)
+    })
 )
-
-
-export type IAccessListItem = {
-    address: Bytes,
-    storageKeys: Bytes[],
-    slots?: undefined
-} | {
-    address: Bytes,
-    slots: Bytes[],
-    storageKeys?: undefined
-}
-
-
-const AccessList = array(AccessListItem)
 
 
 export const LegacyTransaction = struct({

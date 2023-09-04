@@ -11,7 +11,7 @@ import {
     ILegacyTransaction
 } from './tx-types'
 import {Call} from './types'
-import {normalizeAccessList, normalizeU256} from './util'
+import {normalizeU256} from './util'
 
 
 export enum TransactionType {
@@ -127,7 +127,7 @@ function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transacti
         maxFeePerGas: normalizeU256(raw.maxFeePerGas),
         maxPriorityFeePerGas: normalizeU256(raw.maxPriorityFeePerGas),
         value: normalizeU256(raw.value),
-        accessList: normalizeAccessList(raw.accessList),
+        accessList: raw.accessList,
         data: raw.input,
         signature: {
             s: raw.s,
@@ -166,7 +166,7 @@ function normalizeEIP2930Transaction(raw: IEIP2930Transaction): EIP2930Transacti
         gasLimit: normalizeU256(raw.gasLimit),
         gasPrice: normalizeU256(raw.gasPrice),
         value: normalizeU256(raw.value),
-        accessList: normalizeAccessList(raw.accessList),
+        accessList: raw.accessList,
         data: raw.input,
         signature: {
             s: raw.s,
