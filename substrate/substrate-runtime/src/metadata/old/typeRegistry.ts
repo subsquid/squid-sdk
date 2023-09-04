@@ -248,7 +248,7 @@ export class OldTypeRegistry {
             case 'BitVec':
                 return {
                     kind: TypeKind.BitSequence,
-                    bitStoreType: this.use('U8'),
+                    bitStoreType: -1,
                     bitOrderType: -1
                 }
             case 'Option': {
