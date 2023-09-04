@@ -61,7 +61,7 @@ export const LegacyTransaction = struct({
     value: U256,
     input: bytes(),
     signature: struct({
-        v: bytes(),
+        v: bigint(),
         r: bytes(),
         s: bytes()
     })

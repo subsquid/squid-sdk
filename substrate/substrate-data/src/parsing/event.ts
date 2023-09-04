@@ -17,8 +17,8 @@ const EventItem = struct({
 const EventItemList = array(EventItem)
 
 
-export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes): Event[] {
-    if (!runtime.checkStorageType('System.Events', 'Required', [], EventItemList))
+export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undefined): Event[] {
+    if (!runtime.checkStorageType('System.Events', ['Required', 'Default'], [], EventItemList))
         throw new Error('System.Events storage item has unexpected type')
 
     let items: GetType<typeof EventItem>[] = runtime.decodeStorageValue(

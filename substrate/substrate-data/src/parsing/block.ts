@@ -107,8 +107,8 @@ class BlockParser {
 
     @def
     events(): Event[] {
-        let events = assertNotNull(this.src.events, 'event data is not provided')
-        return decodeEvents(this.runtime, events)
+        assert('events' in this.src, 'event data is not provided')
+        return decodeEvents(this.runtime, this.src.events)
     }
 
     @def

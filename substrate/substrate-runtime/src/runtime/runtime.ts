@@ -339,11 +339,20 @@ export class Runtime {
         return this.checkType(def.type, ty)
     }
 
-    checkStorageType(name: QualifiedName, modifier: StorageItem['modifier'], key: sts.Type[], valueTy: sts.Type): boolean {
+    checkStorageType(
+        name: QualifiedName,
+        modifier: StorageItem['modifier'] | StorageItem['modifier'][],
+        key: sts.Type[],
+        valueTy: sts.Type
+    ): boolean {
         let qn = parseQualifiedName(name)
         let def = this.description.storage[qn[0]]?.[qn[1]]
         if (def == null) return false
-        if (def.modifier != modifier) return false
+        if (Array.isArray(modifier)) {
+            if (!modifier.includes(def.modifier)) return false
+        } else {
+            if (def.modifier != modifier) return false
+        }
         if (def.keys.length !== key.length) return false
         for (let i = 0; i < key.length; i++) {
             if (!this.checkType(def.keys[i], key[i])) return false
