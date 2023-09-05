@@ -74,7 +74,7 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
 
 interface FullExtrinsic extends base.Extrinsic {
     success: boolean
-    hash: string
+    hash: base.Bytes
 }
 
 
@@ -94,6 +94,9 @@ export type Extrinsic<F extends FieldSelection = {}> = Simplify<
 
 interface FullCall extends base.Call {
     success: boolean
+    args: any
+    origin?: any
+    error?: any
 }
 
 
@@ -114,6 +117,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
 
 
 interface ApplyExtrinsicEvent extends base.Event {
+    args: any
     phase: 'ApplyExtrinsic'
     extrinsicIndex: number
     callAddress?: number[]
@@ -121,6 +125,7 @@ interface ApplyExtrinsicEvent extends base.Event {
 
 
 interface NonExtrinsicEvent extends base.Event {
+    args: any
     phase: 'Initialization' | 'Finalization'
     extrinsicIndex?: undefined
     callAddress?: undefined

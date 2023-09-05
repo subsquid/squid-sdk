@@ -296,13 +296,15 @@ export function setUpItems(block: Block): void {
         }
         if (event.callAddress && block.calls.length) {
             let pos = bisectCalls(block.calls, event.extrinsicIndex, event.callAddress)
-            for (let i = pos; i >= 0; i--) {
-                let parent = block.calls[pos]
-                if (isSubcall(parent, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
-                    parent.events.push(event)
-                    if (addressCompare(parent.address, event.callAddress) == 0) {
-                        event.call = parent
+            for (let i = pos; i < block.calls.length; i++) {
+                let call = block.calls[i]
+                if (isSubcall(call, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
+                    call.events.push(event)
+                    if (addressCompare(call.address, event.callAddress) == 0) {
+                        event.call = call
                     }
+                } else {
+                    break
                 }
             }
         }
