@@ -187,6 +187,8 @@ export class HttpClient {
             timeout: options.httpTimeout ?? this.httpTimeout
         }
 
+        this.handleBasicAuth(req)
+
         if (options.query) {
             let qs = new URLSearchParams(options.query as any).toString()
             if (req.url.includes('?')) {
@@ -225,6 +227,16 @@ export class HttpClient {
         }
 
         return req
+    }
+
+    private handleBasicAuth(req: FetchRequest): void {
+        let u = new URL(req.url)
+        if (u.username || u.password) {
+            req.headers.set('Authorization', `Basic ${btoa(u.username + ':' + u.password)}`)
+            u.username = ''
+            u.password = ''
+            req.url = u.toString()
+        }
     }
 
     private async performRequestWithTimeout(req: FetchRequest): Promise<HttpResponse> {
@@ -300,6 +312,18 @@ export class HttpClient {
             }
         }
         return false
+    }
+
+    private getRequestUrlAndAuth(url: string): {url: string, basic?: string} {
+        let u = new URL(this.getAbsUrl(url))
+        if (u.username || u.password) {
+            let basic = btoa(u.username + ':' + u.password)
+            u.username = ''
+            u.password = ''
+            return {url: u.toString(), basic}
+        } else {
+            return {url: u.toString()}
+        }
     }
 
     getAbsUrl(url: string): string {

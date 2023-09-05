@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "support basic auth urls",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

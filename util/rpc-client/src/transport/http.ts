@@ -1,5 +1,5 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {createLogger} from '@subsquid/logger'
+import {Logger} from '@subsquid/logger'
 import {RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
 
@@ -8,7 +8,7 @@ export class HttpConnection implements Connection {
     private agent: HttpAgent
     private http: HttpClient
 
-    constructor(private url: string) {
+    constructor(private url: string, private log?: Logger) {
         this.agent = new HttpAgent({
             keepAlive: true
         })
@@ -19,9 +19,7 @@ export class HttpConnection implements Connection {
 
     close(err?: Error): void {
         if (err) {
-            createLogger('sqd:rpc-client', {
-                rpcUrl: this.http.getAbsUrl('/')
-            }).error(err)
+            this.log?.error(err)
         }
         this.agent.close()
     }

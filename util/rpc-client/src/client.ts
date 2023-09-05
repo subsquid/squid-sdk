@@ -32,7 +32,7 @@ export interface CallOptions<R=any> {
      * This option is mainly a way to utilize built-in retry machinery by throwing {@link RetryError}.
      * Otherwise, `client.call(...).then(validateResult)` is a better option.
      */
-    validateResult?: ResultValidator
+    validateResult?: ResultValidator<R>
 }
 
 
@@ -100,7 +100,7 @@ export class RpcClient {
                 return new WsConnection(url)
             case 'http:':
             case 'https:':
-                return new HttpConnection(url)
+                return new HttpConnection(url, this.log)
             default:
                 throw new TypeError(`unsupported protocol: ${protocol}`)
         }

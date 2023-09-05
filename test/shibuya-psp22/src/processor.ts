@@ -1,10 +1,10 @@
 import * as ss58 from '@subsquid/ss58'
 import {
     assertNotNull,
-    DataHandlerContext, decodeHex,
+    DataHandlerContext,
+    decodeHex,
     SubstrateBatchProcessor,
-    SubstrateBatchProcessorFields,
-    toHex
+    SubstrateBatchProcessorFields
 } from '@subsquid/substrate-processor'
 import {Store, TypeormDatabase} from '@subsquid/typeorm-store'
 import {In} from 'typeorm'
