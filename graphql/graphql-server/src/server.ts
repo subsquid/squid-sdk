@@ -241,7 +241,8 @@ export class Server {
             password: params.password,
             statement_timeout: options?.sqlStatementTimeout || undefined,
             max: this.connectionPoolSize(),
-            min: this.connectionPoolSize()
+            min: this.connectionPoolSize(),
+            ssl: params.ssl
         })
     }
 

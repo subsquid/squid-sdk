@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "support `DB_SSL=true` to connect to the database via TLS",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
