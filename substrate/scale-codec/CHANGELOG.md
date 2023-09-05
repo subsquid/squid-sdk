@@ -1,6 +1,17 @@
 # Change Log - @subsquid/scale-codec
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 3.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- remove (T,) => T normalization
+
+### Minor changes
+
+- introduce `TypeKind.HexBytes`, `TypeKind.HexBytesArray`
 
 ## 2.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

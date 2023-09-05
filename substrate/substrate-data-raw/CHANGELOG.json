@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-data-raw_v0.0.1",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "readme fix"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.0` to `^4.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.0` to `^4.4.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-data-raw_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

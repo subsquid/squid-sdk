@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 3.3.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Minor changes
+
+- support `DB_SSL=true` to connect to the database via TLS
 
 ## 3.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

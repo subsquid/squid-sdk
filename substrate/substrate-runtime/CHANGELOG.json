@@ -1,0 +1,20 @@
+{
+  "name": "@subsquid/substrate-runtime",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-runtime_v0.0.1",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^2.2.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-type-system\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    }
+  ]
+}

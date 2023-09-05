@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Fri, 04 Aug 2023 07:25:15 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 6.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- migrate to new substrate runtime packages
+
+### Patches
+
+- fix event `call.events` assignment
 
 ## 5.1.0
 Fri, 04 Aug 2023 07:25:15 GMT

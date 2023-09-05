@@ -2,6 +2,23 @@
   "name": "@subsquid/scale-codec",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/scale-codec_v3.0.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "introduce `TypeKind.HexBytes`, `TypeKind.HexBytesArray`"
+          }
+        ],
+        "major": [
+          {
+            "comment": "remove (T,) => T normalization"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.0",
       "tag": "@subsquid/scale-codec_v2.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

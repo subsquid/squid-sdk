@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 4.3.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Minor changes
+
+- support `DB_SSL=true` to connect to the database via TLS
 
 ## 4.2.1
 Wed, 19 Jul 2023 16:48:14 GMT

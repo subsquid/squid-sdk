@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 23 Aug 2023 14:37:23 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 3.4.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Minor changes
+
+- migrate to new substrate runtime packages
 
 ## 3.3.0
 Wed, 23 Aug 2023 14:37:23 GMT

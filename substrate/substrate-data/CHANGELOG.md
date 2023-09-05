@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Thu, 10 Aug 2023 11:43:45 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 2.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- migrate to a new scale type system
 
 ## 1.2.1
 Thu, 10 Aug 2023 11:43:45 GMT

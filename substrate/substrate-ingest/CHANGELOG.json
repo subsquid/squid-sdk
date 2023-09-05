@@ -2,6 +2,32 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "3.4.0",
+      "tag": "@subsquid/substrate-ingest_v3.4.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "migrate to new substrate runtime packages"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.0` to `^4.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^1.2.1` to `^2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.3.0",
       "tag": "@subsquid/substrate-ingest_v3.3.0",
       "date": "Wed, 23 Aug 2023 14:37:23 GMT",

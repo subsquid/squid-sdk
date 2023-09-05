@@ -2,6 +2,23 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.2.2",
+      "tag": "@subsquid/typeorm-store_v1.2.2",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix cochroach compatibility"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^3.2.0` to `^3.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.1",
       "tag": "@subsquid/typeorm-store_v1.2.1",
       "date": "Thu, 29 Jun 2023 10:25:09 GMT",

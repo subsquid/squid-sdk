@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "6.0.0",
+      "tag": "@subsquid/substrate-typegen_v6.0.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to a new scale type system"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.0",
       "tag": "@subsquid/substrate-typegen_v5.0.0",
       "date": "Tue, 01 Aug 2023 16:40:12 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+
+## 1.2.1
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Patches
+
+- support basic auth urls
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT
