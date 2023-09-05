@@ -62,10 +62,10 @@ export class TypeormDatabase {
         )
         await em.query(
             `CREATE TABLE IF NOT EXISTS ${schema}.status (` +
-            `id int primary key, ` +
-            `height int not null, ` +
+            `id int4 primary key, ` +
+            `height int4 not null, ` +
             `hash text DEFAULT '0x', ` +
-            `nonce int DEFAULT 0`+
+            `nonce int4 DEFAULT 0`+
             `)`
         )
         await em.query( // for databases created by prev version of typeorm store
@@ -75,12 +75,12 @@ export class TypeormDatabase {
             `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
         )
         await em.query(
-            `CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int primary key, hash text not null)`
+            `CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int4 primary key, hash text not null)`
         )
         await em.query(
             `CREATE TABLE IF NOT EXISTS ${schema}.hot_change_log (` +
-            `block_height int not null references ${schema}.hot_block on delete cascade, ` +
-            `index int not null, ` +
+            `block_height int4 not null references ${schema}.hot_block on delete cascade, ` +
+            `index int4 not null, ` +
             `change jsonb not null, ` +
             `PRIMARY KEY (block_height, index)` +
             `)`
