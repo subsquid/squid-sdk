@@ -27,7 +27,7 @@ runProgram(async () => {
     out.line(`import {Bytes} from '../metadata'`)
 
     let sink = new Sink(types, nameAssignment)
-    let ifs = new Interfaces(sink, false)
+    let ifs = new Interfaces(sink)
     for (let type of xcmTypes) {
         ifs.use(type)
     }

@@ -76,7 +76,7 @@ export class Typegen {
     generate(): void {
         let d = this.description()
         let sink = new Sink(d.types(), this.nameAssignment())
-        let ifs = new Interfaces(sink, false)
+        let ifs = new Interfaces(sink)
 
         this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
 

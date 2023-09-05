@@ -1,5 +1,5 @@
 import {CompositeType, Field, Ti, Type, TypeKind, VariantType} from '@subsquid/substrate-runtime/lib/metadata'
-import {assertNotNull, def, unexpectedCase} from '@subsquid/util-internal'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {Output} from '@subsquid/util-internal-code-printer'
 import assert from 'assert'
 import {needsName} from './names'
@@ -19,7 +19,6 @@ export class Sink {
     ) {
         for (let name of this.nameAssignment.values()) {
             this.assignedNames.add(name)
-            this.assignedNames.add('I'+name)
         }
     }
 
@@ -75,10 +74,7 @@ export class Interfaces {
     private generated: Exp[]
     private generatedNames = new Set<string>()
 
-    constructor(
-        public readonly sink: Sink,
-        private withPrefix: boolean
-    ) {
+    constructor(public readonly sink: Sink) {
         this.generated = new Array(this.sink.types.length).fill('')
     }
 
@@ -106,11 +102,7 @@ export class Interfaces {
     }
 
     private getName(ti: Ti): string {
-        let name = this.sink.getName(ti)
-        if (this.withPrefix) {
-            name = 'I' + name
-        }
-        return name
+        return this.sink.getName(ti)
     }
 
     private makeType(ti: Ti): string {
@@ -251,7 +243,7 @@ export class Sts {
     private generatedNames = new Set<string>()
 
     constructor(public readonly sink: Sink) {
-        this.ifs = new Interfaces(this.sink, true)
+        this.ifs = new Interfaces(this.sink)
         this.generated = new Array(this.sink.types.length).fill('')
     }
 
