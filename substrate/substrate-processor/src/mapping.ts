@@ -39,6 +39,15 @@ export class BlockHeader implements PartialBlockHeader {
     get _runtimeOfPrevBlock(): Runtime {
         return this.#runtimeOfPrevBlock
     }
+
+    getParent() {
+        if (this.height == 0) return this
+        return {
+            _runtime: this._runtimeOfPrevBlock,
+            height: this.height - 1,
+            hash: this.parentHash
+        }
+    }
 }
 
 

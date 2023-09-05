@@ -68,8 +68,16 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     {
         _runtime: Runtime
         _runtimeOfPrevBlock: Runtime
+        getParent(): ParentBlockHeader
     }
 >
+
+
+interface ParentBlockHeader {
+    _runtime: Runtime
+    hash: base.Bytes
+    height: number
+}
 
 
 interface FullExtrinsic extends base.Extrinsic {
