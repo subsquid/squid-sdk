@@ -1,15 +1,16 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from '@subsquid/ss58'
 import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
+import {Bytes} from '@subsquid/substrate-runtime'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
-import {BalancesTransferEvent} from './types/events'
+import {BalancesTransferEventV1020, BalancesTransferEventV1050, BalancesTransferEventV9130} from './types/events'
 
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
         chain: 'https://kusama-rpc.polkadot.io',
-        archive: 'https://substrate.archive.subsquid.io/network/kusama'
+        archive: 'https://v2.archive.subsquid.io/network/kusama'
     })
     .addEvent({
         name: ['Balances.Transfer']
@@ -27,16 +28,15 @@ processor.run(new TypeormDatabase(), async ctx => {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Balances.Transfer') {
-                let e = new BalancesTransferEvent(event)
-                let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
-                if (e.isV1020) {
-                    let [from, to, amount, fee] = e.asV1020
+                let rec: {from: Bytes, to: Bytes, amount: bigint}
+                if (BalancesTransferEventV1020.is(event)) {
+                    let [from, to, amount, fee] = BalancesTransferEventV1020.decode(event)
                     rec = {from, to, amount}
-                } else if (e.isV1050) {
-                    let [from, to, amount] = e.asV1050
+                } else if (BalancesTransferEventV1050.is(event)) {
+                    let [from, to, amount] = BalancesTransferEventV1050.decode(event)
                     rec = {from, to, amount}
                 } else {
-                    rec = e.asV9130
+                    rec = BalancesTransferEventV9130.decode(event)
                 }
                 transfers.push(new Transfer({
                     id: event.id,

@@ -1,4 +1,5 @@
 import type * as base from '@subsquid/substrate-data'
+import {Runtime} from '@subsquid/substrate-runtime'
 import {
     BlockRequiredFields,
     CallRequiredFields,
@@ -65,15 +66,15 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     Pick<base.BlockHeader, BlockRequiredFields> &
     Select<base.BlockHeader, GetFields<F, 'block'>> &
     {
-        _runtime: base.Runtime
-        _runtimeOfPrevBlock: base.Runtime
+        _runtime: Runtime
+        _runtimeOfPrevBlock: Runtime
     }
 >
 
 
 interface FullExtrinsic extends base.Extrinsic {
     success: boolean
-    hash: string
+    hash: base.Bytes
 }
 
 
@@ -93,6 +94,9 @@ export type Extrinsic<F extends FieldSelection = {}> = Simplify<
 
 interface FullCall extends base.Call {
     success: boolean
+    args: any
+    origin?: any
+    error?: any
 }
 
 
@@ -113,6 +117,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
 
 
 interface ApplyExtrinsicEvent extends base.Event {
+    args: any
     phase: 'ApplyExtrinsic'
     extrinsicIndex: number
     callAddress?: number[]
@@ -120,6 +125,7 @@ interface ApplyExtrinsicEvent extends base.Event {
 
 
 interface NonExtrinsicEvent extends base.Event {
+    args: any
     phase: 'Initialization' | 'Finalization'
     extrinsicIndex?: undefined
     callAddress?: undefined

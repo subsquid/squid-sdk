@@ -1,0 +1,35 @@
+{
+  "name": "@subsquid/substrate-runtime",
+  "version": "0.0.0",
+  "description": "Encoding/decoding/metadata tools for Substrate based chains",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/runtime/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
+  },
+  "dependencies": {
+    "@subsquid/scale-codec": "^2.2.0",
+    "@subsquid/scale-type-system": "^0.0.0",
+    "@subsquid/util-internal": "^2.5.0",
+    "@subsquid/util-internal-hex": "^1.2.0",
+    "@subsquid/util-naming": "^1.2.0",
+    "@subsquid/util-xxhash": "^1.2.0",
+    "blake2b": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.16.17",
+    "expect": "^29.5.0",
+    "mocha": "^10.2.0",
+    "typescript": "~4.9.5"
+  }
+}

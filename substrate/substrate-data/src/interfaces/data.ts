@@ -1,11 +1,9 @@
-import type {Bytes, Hash} from '@subsquid/substrate-data-raw'
-import type {Runtime} from '../runtime'
+import type {Hash} from '@subsquid/substrate-data-raw'
+import type {Bytes, Runtime, QualifiedName} from '@subsquid/substrate-runtime'
+import type {IOrigin} from '../types/system'
 
 
-export {Bytes, Hash}
-
-
-export type QualifiedName = string
+export {Bytes, Hash, QualifiedName}
 
 
 export interface BlockHeader {
@@ -41,7 +39,7 @@ export interface BlockHeader {
     /**
      * Account address of block validator
      */
-    validator?: Bytes
+    validator?: Hash
 }
 
 
@@ -54,19 +52,19 @@ export interface Extrinsic {
     signature?: ExtrinsicSignature
     fee?: bigint
     tip?: bigint
-    error?: any
+    error?: unknown
     success?: boolean
     /**
      * Blake2b 128-bit hash of the raw extrinsic
      */
-    hash?: string
+    hash?: Bytes
 }
 
 
 export interface ExtrinsicSignature {
-    address: any
-    signature: any
-    signedExtensions: any
+    address: unknown
+    signature: unknown
+    signedExtensions: unknown
 }
 
 
@@ -77,15 +75,15 @@ export interface Call {
     /**
      * JSON encoded call arguments
      */
-    args: any
-    origin?: any
+    args: unknown
+    origin?: IOrigin
     /**
      * Call error.
      *
      * Absence of error doesn't imply that the call was executed successfully,
      * check {@link success} property for that.
      */
-    error?: any
+    error?: unknown
     success?: boolean
     _ethereumTransactTo?: Bytes
     _ethereumTransactSighash?: Bytes
@@ -104,7 +102,7 @@ export interface Event {
     /**
      * JSON encoded event arguments
      */
-    args: any
+    args: unknown
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
@@ -148,7 +146,8 @@ export interface DataRequest {
     blockValidator?: boolean
     blockTimestamp?: boolean
     events?: boolean
-    calls?: boolean
-    extrinsicHash?: boolean
-    extrinsicFee?: boolean
+    extrinsics?: {
+        hash?: boolean
+        fee?: boolean
+    }
 }

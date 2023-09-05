@@ -21,8 +21,6 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.3.0",
-    "@subsquid/scale-codec": "^2.2.0",
-    "@subsquid/substrate-metadata": "^3.3.0",
     "@subsquid/substrate-metadata-explorer": "^2.2.1",
     "@subsquid/util-internal": "^2.5.0",
     "@subsquid/util-internal-code-printer": "^1.2.0",
@@ -31,7 +29,11 @@
     "@subsquid/util-naming": "^1.2.0",
     "commander": "^11.0.0"
   },
+  "peerDependencies": {
+    "@subsquid/substrate-runtime": "^0.0.0"
+  },
   "devDependencies": {
+    "@subsquid/substrate-runtime": "^0.0.0",
     "@types/node": "^18.16.17",
     "typescript": "~4.9.5"
   }

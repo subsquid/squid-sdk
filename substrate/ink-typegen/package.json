@@ -20,7 +20,11 @@
     "@subsquid/util-internal-code-printer": "^1.2.0",
     "commander": "^11.0.0"
   },
+  "peerDependencies": {
+    "@subsquid/substrate-runtime": "^0.0.0"
+  },
   "devDependencies": {
+    "@subsquid/substrate-runtime": "^0.0.0",
     "@types/node": "^18.16.17",
     "typescript": "~4.9.5"
   }

@@ -1,155 +1,137 @@
-export type Result<T, E> = {
-    __kind: 'Ok'
-    value: T
-} | {
-    __kind: 'Err'
-    value: E
-}
+import type {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
+import * as sts from '@subsquid/substrate-runtime/lib/sts'
+import {Result} from '@subsquid/substrate-runtime/lib/sts'
+import assert from 'assert'
 
 
-export type Option<T> = {
-    __kind: 'Some',
-    value: T
-} | {
-    __kind: 'None'
-}
+export {sts, Result, Bytes}
 
 
-export interface Runtime {
-    getCallTypeHash(name: string): string
-    decodeJsonCall(call: {name: string, args: any}): any
-    getEventTypeHash(name: string): string
-    decodeJsonEvent(event: {name: string, args: any}): any
-    getConstantTypeHash(pallet: string, name: string): string | undefined
-    getConstant(pallet: string, name: string): any
-    getStorageItemTypeHash(prefix: string, name: string): string | undefined
-    getStorage(rpc: RpcClient, blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any>
-    queryStorage(rpc: RpcClient, blockHash: string, prefix: string, name: string, keyList?: any[]): Promise<any[]>
-    getKeys(rpc: RpcClient, blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any[]>
-    getPairs(rpc: RpcClient, blockHash: string, prefix: string, name: string, ...args: any[]): Promise<any[]>
-    getKeysPaged(rpc: RpcClient, pageSize: number, blockHash: string, prefix: string, name: string, ...args: any[]): AsyncIterable<any[]>
-    getPairsPaged(rpc: RpcClient, pageSize: number, blockHash: string, prefix: string, name: string, ...args: any[]): AsyncIterable<[key: any, value: any][]>
-}
+export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
 
 
-export type RuntimeCtx = Runtime | {
+interface RuntimeCtx {
     _runtime: Runtime
 }
 
 
-export function getRuntime(ctx: RuntimeCtx): Runtime {
-    if ('_runtime' in ctx) {
-        return (ctx as {_runtime: Runtime})._runtime
-    } else {
-        return ctx as Runtime
-    }
-}
-
-
-interface RpcClient {
-    call(method: string, params?: any[]): Promise<any>
-    batchCall(calls: {method: string, params?: any[]}[]): Promise<any[]>
-}
-
-
-export interface ChainContext {
-    _chain: Chain
-}
-
-
-export interface Chain {
-    rpc: RpcClient
-}
-
-
-export interface Event {
-    name: string
-    args: any
-    block: {
-        _runtime: Runtime
-    }
-}
-
-
-export interface Call {
-    name: string
-    args: any
-    block: {
-        _runtime: Runtime
-    }
-}
-
-
-export interface BlockContext extends ChainContext {
-    block: Block
-}
-
-
-export interface Block {
-    hash: string
+export interface Block extends RuntimeCtx {
+    hash: Bytes
     height: number
-    _runtime: Runtime
 }
 
 
-export class StorageBase {
-    protected readonly _chain: Chain
-    protected readonly blockHash: string
-    protected readonly runtime: Runtime
+interface Event {
+    block: RuntimeCtx
+    name: QualifiedName
+    args: unknown
+}
 
-    constructor(ctx: BlockContext)
-    constructor(ctx: ChainContext, block: Block)
-    constructor(ctx: BlockContext, block?: Block) {
-        block = block || ctx.block
-        this._chain = ctx._chain
-        this.blockHash = block.hash
-        this.runtime = block._runtime
+
+interface Call {
+    block: RuntimeCtx
+    name: QualifiedName
+    args: unknown
+}
+
+
+export class EventType<T extends sts.Type> {
+    constructor(private type: T) {}
+
+    is(event: Event): boolean {
+        return event.block._runtime.events.checkType(event.name, this.type)
     }
 
-    protected getPrefix(): string {
-        throw new Error('Not implemented')
+    decode(event: Event): sts.GetType<T> {
+        assert(this.is(event))
+        return event.block._runtime.decodeEventRecordArguments(event)
+    }
+}
+
+
+export class CallType<T extends sts.Type> {
+    constructor(private type: T) {}
+
+    is(call: Call): boolean {
+        return call.block._runtime.calls.checkType(call.name, this.type)
     }
 
-    protected getName(): string {
-        throw new Error('Not implemented')
+    decode(call: Call): sts.GetType<T> {
+        assert(this.is(call))
+        return call.block._runtime.decodeCallRecordArguments(call)
+    }
+}
+
+
+export class ConstantType<T extends sts.Type> {
+    constructor(private name: QualifiedName, private type: T) {}
+
+    is(block: RuntimeCtx): boolean {
+        return block._runtime.checkConstantType(this.name, this.type)
     }
 
-    protected getTypeHash(): string | undefined {
-        return this.runtime.getStorageItemTypeHash(this.getPrefix(), this.getName())
+    get(block: RuntimeCtx): sts.GetType<T> {
+        assert(this.is(block))
+        return block._runtime.getConstant(this.name)
+    }
+}
+
+
+export class StorageType {
+    constructor(
+        private name: QualifiedName,
+        private modifier: 'Required' | 'Optional' | 'Default',
+        private key: sts.Type[],
+        private value: sts.Type
+    ) {}
+
+    is(block: RuntimeCtx): boolean {
+        return block._runtime.checkStorageType(this.name, this.modifier, this.key, this.value)
     }
 
-    /**
-     * Checks whether the storage item is defined for the current chain version.
-     */
-    get isExists(): boolean {
-        return this.getTypeHash() != null
+    async get(block: Block, ...key: any[]): Promise<any> {
+        assert(this.is(block))
+        return block._runtime.getStorage(block.hash, this.name, ...key)
     }
 
-    protected get(...args: any[]): Promise<any> {
-        return this.runtime.getStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+    async getAll(block: Block): Promise<any[]> {
+        assert(this.is(block))
+        return block._runtime.queryStorage(block.hash, this.name)
     }
 
-    protected getMany(keyList: any[]): Promise<any[]> {
-        return this.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), keyList)
+    async getMany(block: Block, keys: any[]): Promise<any[]> {
+        assert(this.is(block))
+        return block._runtime.queryStorage(block.hash, this.name, keys)
     }
 
-    protected getAll(): Promise<any[]> {
-        return this.runtime.queryStorage(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName())
+    async getKeys(block: Block, ...args: any[]): Promise<any[]> {
+        assert(this.is(block))
+        return block._runtime.getStorageKeys(block.hash, this.name, ...args)
     }
 
-    protected getKeys(...args: any[]): Promise<any[]> {
-        return this.runtime.getKeys(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+    async getRawKeys(block: Block, ...args: any[]): Promise<Bytes[]> {
+        assert(this.is(block))
+        return block._runtime.getStorageRawKeys(block.hash, this.name, ...args)
     }
 
-    protected getKeysPaged(pageSize: number, ...args: any[]): AsyncIterable<any[]> {
-        return this.runtime.getKeysPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
+    getKeysPaged(pageSize: number, block: Block, ...args: any[]): AsyncIterable<any[]> {
+        assert(this.is(block))
+        return block._runtime.getStorageKeysPaged(pageSize, block.hash, this.name, ...args)
     }
 
-    protected getPairs(...args: any[]): Promise<[k: any, v: any][]> {
-        return this.runtime.getPairs(this._chain.rpc, this.blockHash, this.getPrefix(), this.getName(), ...args)
+    async getPairs(block: Block, ...args: any[]): Promise<[key: any, value: any][]> {
+        assert(this.is(block))
+        return block._runtime.getStoragePairs(block.hash, this.name, ...args)
     }
 
-    protected getPairsPaged(pageSize: number, ...args: any[]): AsyncIterable<[k: any, v: any][]> {
-        return this.runtime.getPairsPaged(this._chain.rpc, pageSize, this.blockHash, this.getPrefix(), this.getName(), ...args)
+    getPairsPaged(pageSize: number, block: Block, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
+        assert(this.is(block))
+        return block._runtime.getStoragePairsPaged(pageSize, block.hash, this.name, ...args)
+    }
+
+    getDefault(block: Block): any {
+        assert(this.modifier == 'Default')
+        assert(this.is(block))
+        return block._runtime.getStorageFallback(this.name)
     }
 }

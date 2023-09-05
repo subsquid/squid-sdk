@@ -14,7 +14,8 @@ const CONTRACTS = [
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: 'https://rpc.astar.network/'
+        chain: 'https://rpc.astar.network/',
+        archive: 'https://v2.archive.subsquid.io/network/astar-substrate'
     })
     .setBlockRange({
         from: 4_021_130
@@ -30,7 +31,7 @@ const processor = new SubstrateBatchProcessor()
     })
 
 
-processor.run(new TypeormDatabase(), async (ctx) => {
+processor.run(new TypeormDatabase(), async ctx => {
     let transactions = []
 
     for (let block of ctx.blocks) {

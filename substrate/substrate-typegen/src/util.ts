@@ -1,4 +1,4 @@
-import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-metadata'
+import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
 import {unexpectedCase} from '@subsquid/util-internal'
 
 

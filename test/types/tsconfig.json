@@ -3,13 +3,13 @@
     "module": "commonjs",
     "target": "es2020",
     "strict": true,
+    "noImplicitAny": true,
     "declaration": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "sourceMap": false,
     "noEmit": true
   },
-  "include": ["src"],
   "exclude": [
     "node_modules"
   ]

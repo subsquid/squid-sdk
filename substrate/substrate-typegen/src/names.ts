@@ -1,12 +1,13 @@
-import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
-import assert from "assert"
+import {RuntimeDescription, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
+import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
+import assert from 'assert'
 import {asOptionType, asResultType} from './util'
+
 
 /**
  * Assign names to types
  */
-export function assignNames(d: ChainDescription): Map<Ti, string> {
+export function assignNames(d: RuntimeDescription): Map<Ti, string> {
     let names = new Names(d.types)
 
     // assign good names for events and calls
@@ -37,7 +38,7 @@ function forEachPallet(types: Type[], ti: Ti, cb: (name: string, ti: Ti) => void
 export class Names {
     private assignment = new Map<Ti, string>()
     private assigned = new Map<string, string>() // Map<Name, TypeHash>
-    private reserved = new Set<string>(['Result', 'Option'])
+    private reserved = new Set<string>(['Result', 'Option', 'Bytes'])
     private aliases = new Map<Ti, Set<string>>()
 
     constructor(private types: Type[]) {}
@@ -49,13 +50,13 @@ export class Names {
     }
 
     private isValidAssignment(ti: Ti, name: string): boolean {
-        if (this.reserved.has(name)) return false
+        if (this.reserved.has(name) || this.assigned.has('I'+name)) return false
         let hash = this.assigned.get(name)
         return hash == null || getTypeHash(this.types, ti) == hash
     }
 
     reserve(name: string): void {
-        assert(!this.assigned.has(name))
+        assert(!this.assigned.has(name) && !this.assigned.has('I'+name))
         this.reserved.add(name)
     }
 
@@ -105,7 +106,7 @@ export class Names {
 
 
 /**
- * Derive "the best" name from a path.
+ * Derive "the best" name from the path.
  */
 export function deriveName(type: Type): string | undefined {
     if (!type.path?.length) return undefined
@@ -120,10 +121,10 @@ export function deriveName(type: Type): string | undefined {
 
 
 export function needsName(types: Type[], ti: Ti): boolean {
-    let type = getUnwrappedType(types, ti)
-    switch(type.kind) {
+    let ty = types[ti]
+    switch(ty.kind) {
         case TypeKind.Variant:
-            return !(asResultType(type) || asOptionType(type))
+            return !asResultType(ty) && !asOptionType(ty)
         case TypeKind.Composite:
             return true
         default:

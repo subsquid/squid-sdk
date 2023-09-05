@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "migrate to a new scale type system",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}

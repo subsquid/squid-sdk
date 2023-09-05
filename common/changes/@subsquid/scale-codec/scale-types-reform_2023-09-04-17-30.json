@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "introduce `TypeKind.HexBytes`, `TypeKind.HexBytesArray`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "remove (T,) => T normalization",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

@@ -1,14 +1,13 @@
 import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateAsyncError, annotateSyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
-import {BlockParser} from './parsing/block'
-import {setEmittedContractAddress, setEthereumTransact, setEvmLog, setGearProgramId} from './parsing/extension'
-import {supportsFeeCalc} from './parsing/fee'
+import {parseBlock} from './parsing/block'
+import {supportsFeeCalc} from './parsing/fee/calc'
 import {AccountId} from './parsing/validator'
 import {RuntimeTracker} from './runtime-tracker'
 
@@ -56,7 +55,7 @@ export class Parser {
                 await this.setValidators(batch.blocks)
             }
 
-            if (batch.request?.extrinsicFee && batch.request.calls) {
+            if (batch.request?.extrinsics?.fee) {
                 for (let [runtime, blocks] of groupBy(batch.blocks, b => b.runtime!).entries()) {
                     if (!runtime.hasEvent('TransactionPayment.TransactionFeePaid') && supportsFeeCalc(runtime)) {
                         await this.setFeeMultiplier(blocks)
@@ -75,52 +74,7 @@ export class Parser {
 
     @annotateSyncError(getRefCtx)
     private parseBlock(rawBlock: RawBlock, options?: DataRequest): Block {
-        let parser = new BlockParser(rawBlock, options)
-
-        let block = new Block(
-            assertNotNull(rawBlock.runtime),
-            assertNotNull(rawBlock.runtimeOfPrevBlock),
-            parser.header()
-        )
-
-        if (options?.blockTimestamp && parser.timestamp()) {
-            block.header.timestamp = parser.timestamp()
-        }
-
-        if (options?.blockValidator && parser.validator()) {
-            block.header.validator = parser.validator()
-        }
-
-        if (options?.calls) {
-            block.extrinsics = parser.extrinsics()?.map(item => item.extrinsic)
-            block.calls = parser.calls()
-            if (block.calls) {
-                for (let call of block.calls!) {
-                    setEthereumTransact(call)
-                }
-            }
-        }
-
-        if (options?.events) {
-            block.events = parser.events()
-            if (block.events) {
-                for (let event of block.events!) {
-                    setEvmLog(event)
-                    setEmittedContractAddress(event)
-                    setGearProgramId(event)
-                }
-            }
-        }
-
-        if (options?.extrinsicFee) {
-            if (parser.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
-                parser.setExtrinsicFeesFromPaidEvent()
-            } else {
-                parser.calcExtrinsicFees()
-            }
-        }
-
-        return block
+        return parseBlock(rawBlock, options ?? {})
     }
 
     private async setValidators(blocks: RawBlock[]): Promise<void> {

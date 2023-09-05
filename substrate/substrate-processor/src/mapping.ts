@@ -1,4 +1,5 @@
-import {Bytes, ExtrinsicSignature, Hash, QualifiedName, Runtime} from '@subsquid/substrate-data'
+import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
+import {Runtime} from '@subsquid/substrate-runtime'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
@@ -25,10 +26,10 @@ export class BlockHeader implements PartialBlockHeader {
         runtimeOfPrevBlock: Runtime,
         src: PartialBlockHeader
     ) {
-        Object.assign(this, src)
-        this.id = formatId(this)
+        this.id = formatId(src)
         this.#runtime = runtime
         this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+        Object.assign(this, src)
     }
 
     get _runtime(): Runtime {
@@ -295,13 +296,15 @@ export function setUpItems(block: Block): void {
         }
         if (event.callAddress && block.calls.length) {
             let pos = bisectCalls(block.calls, event.extrinsicIndex, event.callAddress)
-            for (let i = pos; i >= 0; i--) {
-                let parent = block.calls[pos]
-                if (isSubcall(parent, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
-                    parent.events.push(event)
-                    if (addressCompare(parent.address, event.callAddress) == 0) {
-                        event.call = parent
+            for (let i = pos; i < block.calls.length; i++) {
+                let call = block.calls[i]
+                if (isSubcall(call, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
+                    call.events.push(event)
+                    if (addressCompare(call.address, event.callAddress) == 0) {
+                        event.call = call
                     }
+                } else {
+                    break
                 }
             }
         }

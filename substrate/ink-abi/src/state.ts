@@ -1,10 +1,11 @@
-import {HexSink, Src} from "@subsquid/scale-codec"
-import {decodeHex} from "@subsquid/util-internal-hex"
+import {HexSink, Src} from '@subsquid/scale-codec'
+import {decodeHex} from '@subsquid/util-internal-hex'
+import {Bytes} from './abi-description'
 
 
-export function encodeCall(address: string, input: Uint8Array) {
+export function encodeCall(address: Uint8Array | Bytes, input: Uint8Array): Bytes {
     let sink = new HexSink()
-    let dest = decodeHex(address)
+    let dest = typeof address == 'string' ? decodeHex(address) : address
     sink.bytes(dest) // origin
     sink.bytes(dest) // dest
     sink.u128(0n) // balance
@@ -17,7 +18,7 @@ export function encodeCall(address: string, input: Uint8Array) {
 }
 
 
-export function decodeResult(result: string) {
+export function decodeResult(result: Uint8Array | Bytes): Uint8Array {
     let src = new Src(result);
     // gasConsumed
     src.compact()

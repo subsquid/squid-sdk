@@ -1,16 +1,10 @@
-import assert from "assert"
-import {ByteSink, HexSink, Sink} from "./sink"
-import {Src} from "./src"
-import {ArrayType, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from "./types"
-import {
-    CodecBytesArrayType,
-    CodecCompactType,
-    CodecStructType,
-    CodecType,
-    CodecVariantType,
-    toCodecTypes
-} from "./types-codec"
-import {throwUnexpectedCase} from "./util"
+import {decodeHex, toHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
+import {ByteSink, HexSink, Sink} from './sink'
+import {Src} from './src'
+import {ArrayType, Bytes, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from './types'
+import {CodecCompactType, CodecStructType, CodecType, CodecVariantType, toCodecTypes} from './types-codec'
+import {throwUnexpectedCase} from './util'
 
 
 export class Codec {
@@ -20,14 +14,14 @@ export class Codec {
         this.types = toCodecTypes(types)
     }
 
-    decodeBinary(type: Ti, data: string | Uint8Array): any {
+    decodeBinary(type: Ti, data: Bytes | Uint8Array): any {
         let src = new Src(data)
         let val = this.decode(type, src)
         src.assertEOF()
         return val
     }
 
-    encodeToHex(type: Ti, val: unknown): string {
+    encodeToHex(type: Ti, val: unknown): Bytes {
         let sink = new HexSink()
         this.encode(type, val, sink)
         return sink.toHex()
@@ -66,6 +60,10 @@ export class Codec {
                 return decodeBytes(src)
             case TypeKind.BytesArray:
                 return src.bytes(def.len)
+            case TypeKind.HexBytes:
+                return toHex(decodeBytes(src))
+            case TypeKind.HexBytesArray:
+                return toHex(src.bytes(def.len))
             case TypeKind.DoNotConstruct:
                 throwUnexpectedCase('DoNotConstruct type reached')
             default:
@@ -180,8 +178,14 @@ export class Codec {
             case TypeKind.BytesArray:
                 encodeBytesArray(def, val, sink)
                 break
+            case TypeKind.HexBytesArray:
+                encodeBytesArray(def, decodeHex(val), sink)
+                break
             case TypeKind.Bytes:
                 encodeBytes(val, sink)
+                break
+            case TypeKind.HexBytes:
+                encodeBytes(decodeHex(val), sink)
                 break
             case TypeKind.BooleanOption:
                 encodeBooleanOption(val, sink)
@@ -273,7 +277,7 @@ function encodeBytes(val: unknown, sink: Sink): void {
 }
 
 
-function encodeBytesArray(def: CodecBytesArrayType, val: unknown, sink: Sink): void {
+function encodeBytesArray(def: {len: number}, val: unknown, sink: Sink): void {
     assert(val instanceof Uint8Array && val.length == def.len)
     sink.bytes(val)
 }

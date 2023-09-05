@@ -1,11 +1,16 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypesBundle,
+    readOldTypesBundle
+} from '@subsquid/substrate-runtime/lib/metadata'
 import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
-} from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
+} from '@subsquid/substrate-runtime/lib/metadata/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {
     applyRangeBound,
@@ -63,7 +68,6 @@ interface BlockRange {
 
 export interface DataHandlerContext<Store, Fields extends FieldSelection> {
     /**
-     * Not yet public description of chain metadata
      * @internal
      */
     _chain: Chain
@@ -308,7 +312,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: 30_000,
+            httpTimeout: 120_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('archive')
         })

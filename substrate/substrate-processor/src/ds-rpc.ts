@@ -1,6 +1,6 @@
 import type {RpcClient} from '@subsquid/rpc-client'
 import * as base from '@subsquid/substrate-data'
-import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-metadata'
+import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime'
 import {annotateSyncError, AsyncQueue, ensureError} from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
 import {
@@ -196,12 +196,18 @@ function toBaseDataRequest(req: DataRequest): base.DataRequest {
         || req.gearUserMessagesSent?.some(e => e.extrinsic || e.call || e.stack)
         || false
 
-    return {
+    let baseReq: base.DataRequest = {
         blockTimestamp: !!req.fields?.block?.timestamp,
         blockValidator: !!req.fields?.block?.validator,
-        events,
-        calls,
-        extrinsicHash: !!req.fields?.extrinsic?.hash,
-        extrinsicFee: !!req.fields?.extrinsic?.fee
+        events
     }
+
+    if (calls) {
+        baseReq.extrinsics = {
+            hash: !!req.fields?.extrinsic?.hash,
+            fee: !!req.fields?.extrinsic?.fee
+        }
+    }
+
+    return baseReq
 }

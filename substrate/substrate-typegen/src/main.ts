@@ -1,13 +1,13 @@
 import {createLogger} from '@subsquid/logger'
+import {ArchiveApi} from '@subsquid/substrate-metadata-explorer/lib/archiveApi'
+import {readSpecVersions, SpecFileError, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
 import {
     getOldTypesBundle,
     OldSpecsBundle,
     OldTypesBundle,
     OldTypesBundleError,
     readOldTypesBundle
-} from '@subsquid/substrate-metadata'
-import {ArchiveApi} from '@subsquid/substrate-metadata-explorer/lib/archiveApi'
-import {readSpecVersions, SpecFileError, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+} from '@subsquid/substrate-runtime/lib/metadata'
 import {runProgram} from '@subsquid/util-internal'
 import {ConfigError} from '@subsquid/util-internal-config'
 import {Command} from 'commander'

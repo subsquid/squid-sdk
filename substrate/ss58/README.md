@@ -18,6 +18,6 @@ ss58.codec('kusama').decode(polkadotAddress) // => throws error
 
 let address = ss58.decode('EXtQYFeY2ivDsfazZvGC9aG87DxnhWH2f9kjUUq2pXTZKF5')
 address.prefix // => 2 (address type)
-address.bytes  // => Uint8Array of raw address bytes
+address.bytes  // => 0x569d... (hex encoded raw address bytes)
 ss58.encode(address) // => EXtQYFeY2ivDsfazZvGC9aG87DxnhWH2f9kjUUq2pXTZKF5
 ```

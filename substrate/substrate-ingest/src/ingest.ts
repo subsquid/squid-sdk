@@ -2,7 +2,7 @@ import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Block, DataRequest, Parser, RpcDataSource} from '@subsquid/substrate-data'
 import * as raw from '@subsquid/substrate-data-raw'
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
 import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {createFs} from '@subsquid/util-internal-fs'
@@ -35,9 +35,10 @@ export class Ingest {
             blockValidator: true,
             blockTimestamp: true,
             events: true,
-            calls: true,
-            extrinsicHash: true,
-            extrinsicFee: true
+            extrinsics: {
+                fee: true,
+                hash: true
+            }
         }
     }
 

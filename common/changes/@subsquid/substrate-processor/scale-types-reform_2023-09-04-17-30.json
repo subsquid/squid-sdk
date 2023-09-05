@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "migrate to new substrate runtime packages",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "fix event `call.events` assignment",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
