@@ -10,7 +10,7 @@ import {Store, TypeormDatabase} from '@subsquid/typeorm-store'
 import {In} from 'typeorm'
 import {Owner, Token, Transfer} from './model'
 import * as psp22 from './psp22'
-import {ContractsContractEmittedV31} from './types/events'
+import * as v31 from './types/v31'
 
 
 const CONTRACT_ADDRESS = '0x10f48492ccc953b2948bc2bd027d854a73d08ad3744663bc433fd8ea9d845c8e'
@@ -134,7 +134,7 @@ function extractTransferRecords(ctx: Ctx): TransferRecord[] {
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Contracts.ContractEmitted') {
-                let {contract, data} = ContractsContractEmittedV31.decode(event)
+                let {contract, data} = v31.events.Contracts.ContractEmitted.decode(event)
                 if (contract == CONTRACT_ADDRESS) {
                     let ce = psp22.decodeEvent(data)
                     if (ce.__kind == 'Transfer') {

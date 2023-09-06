@@ -1,10 +1,10 @@
-import assert from 'assert'
-import {EventType, sts} from './support'
+import {EventType, sts} from '../../support'
 
 /**
  * A custom event emitted by the contract.
  */
-export const ContractsContractEmittedV31 = new EventType(
+export const ContractEmitted = new EventType(
+    'Contracts.ContractEmitted',
     sts.struct({
         /**
          * The contract that emitted the event.
