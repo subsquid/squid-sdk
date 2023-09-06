@@ -4,7 +4,9 @@ import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {Bytes} from '@subsquid/substrate-runtime'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
-import {BalancesTransferEventV1020, BalancesTransferEventV1050, BalancesTransferEventV9130} from './types/events'
+import * as v1020 from './types/v1020'
+import * as v1050 from './types/v1050'
+import * as v9130 from './types/v9130'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -29,14 +31,14 @@ processor.run(new TypeormDatabase(), async ctx => {
         for (let event of block.events) {
             if (event.name == 'Balances.Transfer') {
                 let rec: {from: Bytes, to: Bytes, amount: bigint}
-                if (BalancesTransferEventV1020.is(event)) {
-                    let [from, to, amount, fee] = BalancesTransferEventV1020.decode(event)
+                if (v1020.events.BalancesTransfer.is(event)) {
+                    let [from, to, amount] = v1020.events.BalancesTransfer.decode(event)
                     rec = {from, to, amount}
-                } else if (BalancesTransferEventV1050.is(event)) {
-                    let [from, to, amount] = BalancesTransferEventV1050.decode(event)
+                } else if (v1050.events.BalancesTransfer.is(event)) {
+                    let [from, to, amount] = v1050.events.BalancesTransfer.decode(event)
                     rec = {from, to, amount}
                 } else {
-                    rec = BalancesTransferEventV9130.decode(event)
+                    rec = v9130.events.BalancesTransfer.decode(event)
                 }
                 transfers.push(new Transfer({
                     id: event.id,

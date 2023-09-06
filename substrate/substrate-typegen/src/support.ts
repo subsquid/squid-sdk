@@ -36,10 +36,19 @@ interface Call {
 
 
 export class EventType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(private name: QualifiedName, private type: T) {}
 
-    is(event: Event): boolean {
-        return event.block._runtime.events.checkType(event.name, this.type)
+    is(event: Event): boolean
+    is(block: RuntimeCtx): boolean
+    is(eventOrBlock: Event | RuntimeCtx): boolean {
+        let runtime: Runtime
+        if ('_runtime' in eventOrBlock) {
+            runtime = eventOrBlock._runtime
+        } else {
+            if (eventOrBlock.name !== this.name) return false
+            runtime = eventOrBlock.block._runtime
+        }
+        return runtime.events.checkType(this.name, this.type)
     }
 
     decode(event: Event): sts.GetType<T> {
@@ -50,10 +59,19 @@ export class EventType<T extends sts.Type> {
 
 
 export class CallType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(private name: QualifiedName, private type: T) {}
 
-    is(call: Call): boolean {
-        return call.block._runtime.calls.checkType(call.name, this.type)
+    is(call: Call): boolean
+    is(block: RuntimeCtx): boolean
+    is(callOrBlock: Call | RuntimeCtx): boolean {
+        let runtime: Runtime
+        if ('_runtime' in callOrBlock) {
+            runtime = callOrBlock._runtime
+        } else {
+            if (callOrBlock.name !== this.name) return false
+            runtime = callOrBlock.block._runtime
+        }
+        return runtime.events.checkType(this.name, this.type)
     }
 
     decode(call: Call): sts.GetType<T> {

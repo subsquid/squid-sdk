@@ -1,24 +1,13 @@
 import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
 import {QualifiedName, Runtime} from '@subsquid/substrate-runtime'
-import {Constant, OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
+import {OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
 import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
-import {def, last, maybeLast} from '@subsquid/util-internal'
+import {def} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
 import {Sink, Sts} from './ifs'
 import {assignNames} from './names'
-import {groupBy, isEmptyVariant, upperCaseFirst} from './util'
-
-
-type Exp = string
-
-
-interface Item<T> {
-    name: QualifiedName
-    def: T
-    runtime: Runtime
-}
-
+import {isEmptyVariant, upperCaseFirst} from './util'
 
 export interface TypegenOptions {
     outDir: string
@@ -30,13 +19,11 @@ export interface TypegenOptions {
     constants?: string[] | boolean
 }
 
-
 export class Typegen {
     static generate(options: TypegenOptions): void {
         new Typegen(options).generate()
     }
 
-    private sts = new Map<Runtime, Sts>()
     private dir: OutDir
 
     constructor(private options: TypegenOptions) {
@@ -45,53 +32,214 @@ export class Typegen {
 
     generate(): void {
         this.dir.del()
-        this.generateEnums('events')
-        this.generateEnums('calls')
-        this.generateStorage()
-        this.generateConsts()
-        this.sts.forEach((sts, runtime) => {
-            if (sts.sink.isEmpty()) return
-            let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
-            let file = this.dir.file(fileName)
-            file.line(`import {sts, Result, Option, Bytes} from './support'`)
-            sts.sink.generate(file)
-            file.write()
-        })
+
+        let eventCollector = new ItemCollector(
+            this.options.events,
+            (r) => Object.keys(r.events.definitions),
+            (r, n) => r.events.getTypeHash(n)
+        )
+        let callCollector = new ItemCollector(
+            this.options.calls,
+            (r) => Object.keys(r.calls.definitions),
+            (r, n) => r.calls.getTypeHash(n)
+        )
+        let constantCollector = new ItemCollector(
+            this.options.constants,
+            (r) => {
+                let items: string[] = []
+                let consts = r.description.constants
+                for (let prefix in consts) {
+                    for (let name in consts[prefix]) {
+                        items.push(prefix + '.' + name)
+                    }
+                }
+                return items
+            },
+            (r, n) => {
+                let [prefix, name] = n.split('.')
+                let def = r.description.constants[prefix][name]
+                return getTypeHash(r.description.types, def.type)
+            }
+        )
+        let storageCollector = new ItemCollector(
+            this.options.storage,
+            (r) => {
+                let items: string[] = []
+                let storage = r.description.storage
+                for (let prefix in storage) {
+                    for (let name in storage[prefix]) {
+                        items.push(prefix + '.' + name)
+                    }
+                }
+                return items
+            },
+            (r, n) => {
+                let [prefix, name] = n.split('.')
+                let def = r.description.storage[prefix][name]
+                return JSON.stringify({
+                    modifier: def.modifier,
+                    key: def.keys.map((ti) => getTypeHash(r.description.types, ti)),
+                    value: getTypeHash(r.description.types, def.value),
+                })
+            }
+        )
+
+        for (let runtime of this.runtimes()) {
+            let versionName = this.getVersionName(runtime)
+            let outDir = this.dir.path(versionName)
+
+            let events = eventCollector.get(runtime)
+            let calls = callCollector.get(runtime)
+            let constants = constantCollector.get(runtime)
+            let storage = storageCollector.get(runtime)
+
+            RuntimeTypegen.generate({
+                outDir,
+                runtime,
+                events,
+                calls,
+                constants,
+                storage,
+            })
+        }
+
         this.dir.add('support.ts', [__dirname, '../src/support.ts'])
     }
 
-    private generateEnums(kind: 'events' | 'calls'): void {
-        let items = this.collectItems(
-            this.options[kind],
-            runtime => Object.entries(runtime[kind].definitions).map(([name, def]) => {
-                return {name, def, runtime}
-            }),
-            (runtime, name) => runtime[kind].getTypeHash(name)
-        )
+    @def
+    runtimes(): Runtime[] {
+        return this.options.specVersions.map((v) => {
+            return new Runtime(
+                {
+                    specName: v.specName,
+                    specVersion: v.specVersion,
+                    implName: '-',
+                    implVersion: 0,
+                },
+                v.metadata,
+                this.options.typesBundle
+            )
+        })
+    }
 
-        if (items.size == 0) return
+    private getVersionName(runtime: Runtime): string {
+        if (this.specNameNotChanged()) {
+            return `v${runtime.specVersion}`
+        } else {
+            return `${toCamelCase(runtime.specName)}-v${runtime.specVersion}`
+        }
+    }
 
-        let out = this.dir.file(`${kind}.ts`)
-        let fix = kind == 'events' ? 'Event' : 'Call'
+    @def
+    private specNameNotChanged(): boolean {
+        return new Set(this.runtimes().map((v) => v.specName)).size < 2
+    }
+}
 
-        out.line(`import {${fix}Type, sts} from './support'`)
+enum RuntimeModule {
+    Events = 'events',
+    Calls = 'calls',
+    Storage = 'storage',
+    Constants = 'constants',
+    Types = 'types',
+}
+
+interface RuntimeTypegenOptions {
+    outDir: string
+    runtime: Runtime
+    events: QualifiedName[]
+    calls: QualifiedName[]
+    storage: QualifiedName[]
+    constants: QualifiedName[]
+}
+
+export class RuntimeTypegen {
+    static generate(options: RuntimeTypegenOptions): void {
+        new RuntimeTypegen(options).generate()
+    }
+
+    private dir: OutDir
+    private sts: Sts
+
+    private modules: Set<RuntimeModule>
+
+    constructor(private options: RuntimeTypegenOptions) {
+        this.dir = new OutDir(options.outDir)
+
+        let runtime = options.runtime
+        let sink = new Sink(runtime.description.types, assignNames(runtime.description))
+        this.sts = new Sts(sink)
+
+        this.modules = new Set()
+    }
+
+    generate(): void {
+        this.dir.del()
+        this.generateCalls()
+        this.generateEvents()
+        this.generateStorage()
+        this.generateConstants()
+        this.generateTypes()
+        this.generateIndex()
+    }
+
+    private generateIndex(): void {
+        if (this.modules.size == 0) return
+
+        let out = this.dir.file('index.ts')
+        for (let module of this.modules) {
+            out.line(`export * as ${module} from './${module}'`)
+        }
+        out.write()
+    }
+
+    private generateTypes(): void {
+        if (this.sts.sink.isEmpty()) return
+
+        this.useModule(RuntimeModule.Types)
+
+        let out = this.dir.file('types.ts')
+        out.line(`import {sts, Result, Option, Bytes} from '../support'`)
+        this.sts.sink.generate(out)
+        out.write()
+    }
+
+    private generateEvents() {
+        this.generateEnums(RuntimeModule.Events)
+    }
+
+    private generateCalls() {
+        this.generateEnums(RuntimeModule.Calls)
+    }
+
+    private generateEnums(module: RuntimeModule.Events | RuntimeModule.Calls): void {
+        let items = this.options[module]
+        if (items == null || items.length == 0) return
+
+        this.useModule(module)
+
+        let runtime = this.options.runtime
+        let out = this.dir.file(`${module}.ts`)
+
+        let prefix = module == RuntimeModule.Events ? 'Event' : 'Call'
+        out.line(`import {${prefix}Type, sts} from '../support'`)
         let runtimeImports = this.runtimeImports(out)
 
-        for (let [qn, v] of this.enumerateVersions(items)) {
-            let versionName = this.getVersionName(v.runtime)
-            let itemName = this.createName(v.def.pallet, v.def.name, fix, versionName)
-            let sts = this.getSts(v.runtime)
+        for (const item of items) {
+            let def = runtime[module].definitions[item]
+            let itemName = this.createName(def.pallet, def.name)
 
             out.line()
-            out.blockComment(v.def.docs)
-            out.line(`export const ${itemName} = new ${fix}Type(`)
+            out.blockComment(def.docs)
+            out.line(`export const ${itemName} = new ${prefix}Type(`)
             out.indentation(() => {
-                if (v.def.fields.length == 0 || v.def.fields[0].name == null) {
-                    if (v.def.fields.length == 1) {
-                        out.line(this.qualify(runtimeImports, v.runtime, sts.use(v.def.fields[0].type)))
+                out.line(`'${item}',`)
+                if (def.fields.length == 0 || def.fields[0].name == null) {
+                    if (def.fields.length == 1) {
+                        out.line(this.qualify(runtimeImports, this.sts.use(def.fields[0].type)))
                     } else {
-                        let texp = v.def.fields.map(f => sts.use(f.type)).join(', ')
-                        texp = this.qualify(runtimeImports, v.runtime, texp)
+                        let texp = def.fields.map((f) => this.sts.use(f.type)).join(', ')
+                        texp = this.qualify(runtimeImports, texp)
                         if (texp) {
                             out.line(`sts.tuple(${texp})`)
                         } else {
@@ -101,8 +249,8 @@ export class Typegen {
                 } else {
                     out.line('sts.struct({')
                     out.indentation(() => {
-                        for (let f of v.def.fields) {
-                            let texp = this.qualify(runtimeImports, v.runtime, sts.use(f.type))
+                        for (let f of def.fields) {
+                            let texp = this.qualify(runtimeImports, this.sts.use(f.type))
                             out.blockComment(f.docs)
                             out.line(`${f.name}: ${texp},`)
                         }
@@ -112,143 +260,91 @@ export class Typegen {
             })
             out.line(')')
         }
-
         out.write()
     }
 
-    private generateConsts(): void {
-        let items = this.collectItems(
-            this.options.constants,
-            runtime => {
-                let items: Item<Constant>[] = []
-                let consts = runtime.description.constants
-                for (let prefix in consts) {
-                    for (let name in consts[prefix]) {
-                        items.push({
-                            runtime,
-                            name: prefix + '.' + name,
-                            def: consts[prefix][name]
-                        })
-                    }
-                }
-                return items
-            },
-            (runtime, qualifiedName) => {
-                let [prefix, name] = qualifiedName.split('.')
-                let def = runtime.description.constants[prefix][name]
-                return getTypeHash(runtime.description.types, def.type)
-            }
-        )
+    private generateConstants(): void {
+        let items = this.options.constants
+        if (items == null || items.length == 0) return
 
-        if (items.size == 0) return
+        this.useModule(RuntimeModule.Constants)
 
+        let runtime = this.options.runtime
         let out = this.dir.file(`constants.ts`)
-        out.line(`import {ConstantType, sts} from './support'`)
-        let imports = this.runtimeImports(out)
 
-        for (let [qn, v] of this.enumerateVersions(items)) {
-            let [pallet, name] = qn.split('.')
-            let versionName = this.getVersionName(v.runtime)
-            let itemName = this.createName(pallet, name, 'Const', versionName)
-            let sts = this.getSts(v.runtime)
-            let type = sts.use(v.def.type)
-            let qualifiedType = this.qualify(imports, v.runtime, type)
+        out.line(`import {ConstantType, sts} from '../support'`)
+        let runtimeImports = this.runtimeImports(out)
+
+        for (const item of items) {
+            let [pallet, name] = item.split('.')
+
+            let def = runtime.description.constants[pallet][name]
+            let itemName = this.createName(pallet, name)
+
+            let type = this.sts.use(def.type)
+            let qualifiedType = this.qualify(runtimeImports, type)
 
             out.line()
-            out.blockComment(v.def.docs)
+            out.blockComment(def.docs)
             out.line(`export const ${itemName} = new ConstantType(`)
             out.indentation(() => {
-                out.line(`'${qn}',`)
+                out.line(`'${item}',`)
                 out.line(qualifiedType)
             })
             out.line(')')
         }
-
         out.write()
     }
 
     private generateStorage(): void {
-        let items = this.collectItems(
-            this.options.storage,
-            runtime => {
-                let items: Item<StorageItem>[] = []
-                let storage = runtime.description.storage
-                for (let prefix in storage) {
-                    for (let name in storage[prefix]) {
-                        items.push({
-                            runtime,
-                            name: prefix + '.' + name,
-                            def: storage[prefix][name]
-                        })
-                    }
-                }
-                return items
-            },
-            (runtime, qualifiedName) => {
-                let [prefix, name] = qualifiedName.split('.')
-                let def = runtime.description.storage[prefix][name]
-                return JSON.stringify({
-                    modifier: def.modifier,
-                    key: def.keys.map(ti => getTypeHash(runtime.description.types, ti)),
-                    value: getTypeHash(runtime.description.types, def.value)
-                })
-            }
-        )
+        let items = this.options.storage
+        if (items.length == 0) return
 
-        if (items.size == 0) return
+        this.useModule(RuntimeModule.Storage)
 
+        let runtime = this.options.runtime
         let out = this.dir.file('storage.ts')
-        out.line(`import {StorageType, sts, Block, Bytes, Option, Result} from './support'`)
+
+        out.line(`import {StorageType, sts, Block, Bytes, Option, Result} from '../support'`)
         let importedInterfaces = this.runtimeImports(out)
 
-        for (let [qn, v] of this.enumerateVersions(items)) {
-            if (isEmptyStorageItem(v)) continue // Storage item can't hold any value
+        for (let item of items) {
+            let [prefix, name] = item.split('.')
 
-            let [prefix, name] = qn.split('.')
-            let an = this.createName(prefix, name, 'Storage', this.getVersionName(v.runtime))
-            let sts = this.getSts(v.runtime)
+            let def = runtime.description.storage[prefix][name]
+            if (isEmptyVariant(runtime.description.types[def.value])) continue // Storage item can't hold any value
 
-            {
-                let keyListExp = this.qualify(
-                    importedInterfaces,
-                    v.runtime,
-                    v.def.keys.map(ti => sts.use(ti)).join(', ')
-                )
+            let an = this.createName(prefix, name)
 
-                let valueExp = this.qualify(
-                    importedInterfaces,
-                    v.runtime,
-                    sts.use(v.def.value)
-                )
+            let keyListExp = this.qualify(importedInterfaces, def.keys.map((ti) => this.sts.use(ti)).join(', '))
 
-                out.line()
-                out.blockComment(v.def.docs)
-                out.line(`export const ${an}: I${an} = new StorageType(`)
-                out.indentation(() => {
-                    out.line(`'${qn}',`)
-                    out.line(`'${v.def.modifier}',`)
-                    out.line(`[${keyListExp}],`)
-                    out.line(valueExp)
-                })
-                out.line(')')
-            }
+            let valueExp = this.qualify(importedInterfaces, this.sts.use(def.value))
 
             out.line()
-            out.blockComment(v.def.docs)
-            out.block(`export interface I${an} `, () => {
-                let value = this.qualify(importedInterfaces, v.runtime, sts.ifs.use(v.def.value))
+            out.blockComment(def.docs)
+            out.line(`export const ${an}: ${an}Storage = new StorageType(`)
+            out.indentation(() => {
+                out.line(`'${item}',`)
+                out.line(`'${def.modifier}',`)
+                out.line(`[${keyListExp}],`)
+                out.line(valueExp)
+            })
+            out.line(')')
 
-                let keys = v.def.keys.map(ti => {
-                    return this.qualify(importedInterfaces, v.runtime, sts.ifs.use(ti))
+            out.line()
+            out.blockComment(def.docs)
+            out.block(`export interface ${an}Storage `, () => {
+                let value = this.qualify(importedInterfaces, this.sts.ifs.use(def.value))
+
+                let keys = def.keys.map((ti) => {
+                    return this.qualify(importedInterfaces, this.sts.ifs.use(ti))
                 })
 
-                let args = keys.length == 1
-                    ? [`key: ${keys[0]}`]
-                    : keys.map((exp, idx) => `key${idx+1}: ${exp}`)
+                let args = keys.length == 1 ? [`key: ${keys[0]}`] : keys.map((exp, idx) => `key${idx + 1}: ${exp}`)
 
                 let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
 
-                let ret = v.def.modifier == 'Required' ? value : `${value} | undefined`
+                let ret = def.modifier == 'Required' ? value : `${value} | undefined`
 
                 let kv = `[k: ${fullKey}, v: ${ret}]`
 
@@ -265,7 +361,7 @@ export class Typegen {
                     }
                 }
 
-                if (v.def.modifier == 'Default') {
+                if (def.modifier == 'Default') {
                     out.line(`getDefault(block: Block): ${value}`)
                 }
 
@@ -273,7 +369,7 @@ export class Typegen {
 
                 if (args.length > 0) {
                     out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
-                    if (isStorageKeyDecodable(v.def)) {
+                    if (isStorageKeyDecodable(def)) {
                         for (let args of enumeratePartialApps()) {
                             out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
                         }
@@ -294,136 +390,71 @@ export class Typegen {
         out.write()
     }
 
-    createName(pallet: string, name: string, suffix: string, version: string): string {
-        return upperCaseFirst(
-            toCamelCase(`${pallet}_${name}_${suffix}_${version}`)
-        )
+    private useModule(name: RuntimeModule) {
+        this.modules.add(name)
     }
 
-    /**
-     * Create a mapping between qualified name and list of unique versions
-     */
-    private collectItems<T>(
-        req: string[] | boolean | undefined,
-        extract: (runtime: Runtime) => Item<T>[],
-        hash: (runtime: Runtime, name: QualifiedName) => string
-    ): Map<QualifiedName, Item<T>[]> {
-        if (!req) return new Map()
-        let requested = Array.isArray(req) ? new Set(req) : undefined
-        if (requested?.size === 0) return new Map()
-
-        let list = this.runtimes().flatMap(chain => extract(chain))
-        let items = groupBy(list, i => i.name)
-
-        requested?.forEach((name) => {
-            if (!items.has(name)) {
-                throw new Error(`${name} is not defined by the chain metadata`)
-            }
-        })
-
-        items.forEach((versions, name) => {
-            if (requested == null || requested.has(name)) {
-                let unique: Item<T>[] = []
-                versions.forEach((v) => {
-                    let prev = maybeLast(unique)
-                    if (prev && hash(v.runtime, name) === hash(prev.runtime, name)) {
-                    } else {
-                        unique.push(v)
-                    }
-                })
-                items.set(name, unique)
-            } else {
-                items.delete(name)
-            }
-        })
-
-        return items
-    }
-
-    private *enumerateVersions<T>(items: Map<QualifiedName, Item<T>[]>): Iterable<[QualifiedName, Item<T>]> {
-        let names = Array.from(items.keys()).sort()
-        for (let name of names) {
-            for (let item of items.get(name)!) {
-                yield [name, item]
-            }
-        }
-    }
-
-    private getVersionName(runtime: Runtime): string {
-        if (this.specNameNotChanged() || last(this.runtimes()).specName == runtime.specName) {
-            return `V${runtime.specVersion}`
-        } else {
-            let isName = toCamelCase(`is-${runtime.specName}-v${runtime.specVersion}`)
-            return isName.slice(2)
-        }
-    }
-
-    @def
-    private specNameNotChanged(): boolean {
-        return new Set(this.runtimes().map(v => v.specName)).size < 2
-    }
-
-    @def
-    runtimes(): Runtime[] {
-        return this.options.specVersions.map(v => {
-            return new Runtime(
-                {
-                    specName: v.specName,
-                    specVersion: v.specVersion,
-                    implName: '-',
-                    implVersion: 0
-                },
-                v.metadata,
-                this.options.typesBundle
-            )
-        })
-    }
-
-    getSts(runtime: Runtime): Sts {
-        let sts = this.sts.get(runtime)
-        if (sts) return sts
-        let sink = new Sink(runtime.description.types, assignNames(runtime.description))
-        sts = new Sts(sink)
-        this.sts.set(runtime, sts)
-        return sts
-    }
-
-    private runtimeImports(out: Output): Set<Runtime> {
-        let set = new Set<Runtime>()
-        out.lazy(() => {
-            Array.from(set)
-                .sort((a, b) => a.specVersion - b.specVersion)
-                .forEach((v) => {
-                    let name = toCamelCase(this.getVersionName(v))
-                    out.line(`import * as ${name} from './${name}'`)
-                })
-        })
-        return set
-    }
-
-    private qualify(importedInterfaces: Set<Runtime>, runtime: Runtime, texp: Exp): Exp {
-        let sts = this.getSts(runtime)
-        let prefix = toCamelCase(this.getVersionName(runtime))
-        let qualified = sts.sink.qualify(prefix, texp)
-        if (qualified != texp) {
-            importedInterfaces.add(runtime)
+    private qualify(importedInterfaces: Set<string>, texp: string): string {
+        let qualified = this.sts.sink.qualify(RuntimeModule.Types, texp)
+        if (texp !== qualified) {
+            importedInterfaces.add(texp)
         }
         return qualified
     }
+
+    private createName(pallet: string, name: string): string {
+        return upperCaseFirst(toCamelCase(`${pallet}_${name}`))
+    }
+
+    private runtimeImports(out: Output): Set<string> {
+        let set = new Set<string>()
+        out.lazy(() => {
+            if (set.size > 0) {
+                out.line(`import * as types from './${RuntimeModule.Types}'`)
+            }
+        })
+        return set
+    }
 }
 
+class ItemCollector {
+    private requested: Set<string> | undefined
+    private prevHashes: Map<string, string>
 
-/**
- * Returns true when storage item actually can't hold any value
- */
-function isEmptyStorageItem(item: Item<StorageItem>): boolean {
-    return isEmptyVariant(item.runtime.description.types[item.def.value])
+    constructor(
+        private req: string[] | boolean | undefined,
+        private extract: (runtime: Runtime) => string[],
+        private hash: (runtime: Runtime, name: string) => string
+    ) {
+        this.prevHashes = new Map()
+    }
+
+    get(runtime: Runtime) {
+        if (this.req == null) return []
+
+        this.requested = Array.isArray(this.req) ? new Set(this.req) : undefined
+        if (this.requested?.size === 0) return []
+
+        return this.extract(runtime).filter((name) => {
+            if (this.requested == null || this.requested.has(name)) {
+                let prev = this.prevHashes.get(name)
+                let cur = this.hash(runtime, name)
+                if (prev == null || cur !== prev) {
+                    this.prevHashes.set(name, cur)
+                    return true
+                } else {
+                    return false
+                }
+            } else {
+                return false
+            }
+        })
+    }
 }
-
 
 function isStorageKeyDecodable(item: StorageItem): boolean {
-    return item.hashers.every(hasher => {
-        switch(hasher) {
+    return item.hashers.every((hasher) => {
+        switch (hasher) {
             case 'Blake2_128Concat':
             case 'Twox64Concat':
             case 'Identity':

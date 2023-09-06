@@ -166,7 +166,7 @@ export class Interfaces {
         this.sink.push(out => {
             out.line()
             out.blockComment(this.sink.types[ti].docs)
-            out.block(`export interface ${name}`, () => {
+            out.block(`export type ${name} = `, () => {
                 this.printStructFields(out, type.fields)
             })
         })
