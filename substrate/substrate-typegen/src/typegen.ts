@@ -6,9 +6,9 @@ import {def, groupBy} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
 import {Sink, Sts} from './ifs'
-import {assignNames} from './names'
+import {assignNames, deriveName} from './names'
 import {isEmptyVariant, upperCaseFirst} from './util'
-import {Out} from '@subsquid/substrate-metadata-explorer/lib/out'
+
 
 export interface TypegenOptions {
     outDir: string
@@ -19,6 +19,7 @@ export interface TypegenOptions {
     storage?: string[] | boolean
     constants?: string[] | boolean
 }
+
 
 export class Typegen {
     static generate(options: TypegenOptions): void {
@@ -34,17 +35,40 @@ export class Typegen {
     generate(): void {
         this.dir.del()
 
-        let eventCollector = new ItemCollector(
+        let collectors = this.collectors()
+
+        for (let runtime of this.runtimes()) {
+            let versionName = this.getVersionName(runtime)
+            let outDir = this.dir.path(versionName)
+
+            RuntimeTypegen.generate({
+                outDir,
+                runtime,
+                events: collectors.events.get(runtime),
+                calls: collectors.calls.get(runtime),
+                constants: collectors.constants.get(runtime),
+                storage: collectors.storage.get(runtime),
+            })
+        }
+
+        this.dir.add('support.ts', [__dirname, '../src/support.ts'])
+    }
+
+    @def
+    collectors() {
+        let events = new ItemCollector(
             this.options.events,
             (r) => Object.keys(r.events.definitions),
             (r, n) => r.events.getTypeHash(n)
         )
-        let callCollector = new ItemCollector(
+
+        let calls = new ItemCollector(
             this.options.calls,
             (r) => Object.keys(r.calls.definitions),
             (r, n) => r.calls.getTypeHash(n)
         )
-        let constantCollector = new ItemCollector(
+
+        let constants = new ItemCollector(
             this.options.constants,
             (r) => {
                 let items: string[] = []
@@ -62,7 +86,8 @@ export class Typegen {
                 return getTypeHash(r.description.types, def.type)
             }
         )
-        let storageCollector = new ItemCollector(
+
+        let storage = new ItemCollector(
             this.options.storage,
             (r) => {
                 let items: string[] = []
@@ -85,26 +110,12 @@ export class Typegen {
             }
         )
 
-        for (let runtime of this.runtimes()) {
-            let versionName = this.getVersionName(runtime)
-            let outDir = this.dir.path(versionName)
-
-            let events = eventCollector.get(runtime)
-            let calls = callCollector.get(runtime)
-            let constants = constantCollector.get(runtime)
-            let storage = storageCollector.get(runtime)
-
-            RuntimeTypegen.generate({
-                outDir,
-                runtime,
-                events,
-                calls,
-                constants,
-                storage,
-            })
+        return {
+            events,
+            calls,
+            constants,
+            storage,
         }
-
-        this.dir.add('support.ts', [__dirname, '../src/support.ts'])
     }
 
     @def
@@ -447,6 +458,7 @@ export class RuntimeTypegen {
     }
 }
 
+
 class ItemCollector {
     private requested: Set<string> | undefined
     private prevHashes: Map<string, string>
@@ -481,6 +493,7 @@ class ItemCollector {
         })
     }
 }
+
 
 function isStorageKeyDecodable(item: StorageItem): boolean {
     return item.hashers.every((hasher) => {

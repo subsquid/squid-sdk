@@ -40,6 +40,6 @@ export async function readConfig(file: string): Promise<Config> {
         events: cfg.events,
         calls: cfg.calls,
         storage: cfg.storage,
-        constants: cfg.constants
+        constants: cfg.constants,
     }
 }
