@@ -2,12 +2,13 @@ import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion
 import {QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import {OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
 import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
-import {def} from '@subsquid/util-internal'
+import {def, groupBy} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
 import {Sink, Sts} from './ifs'
 import {assignNames} from './names'
 import {isEmptyVariant, upperCaseFirst} from './util'
+import {Out} from '@subsquid/substrate-metadata-explorer/lib/out'
 
 export interface TypegenOptions {
     outDir: string
@@ -219,46 +220,56 @@ export class RuntimeTypegen {
         this.useModule(module)
 
         let runtime = this.options.runtime
-        let out = this.dir.file(`${module}.ts`)
 
         let prefix = module == RuntimeModule.Events ? 'Event' : 'Call'
-        out.line(`import {${prefix}Type, sts} from '../support'`)
-        let runtimeImports = this.runtimeImports(out)
 
-        for (const item of items) {
-            let def = runtime[module].definitions[item]
-            let itemName = this.createName(def.pallet, def.name)
+        let itemsByPallets = groupBy(items, (i) => i.split('.')[0])
+        for (let [pallet, palletItems] of itemsByPallets) {
+            let out = this.dir.file(`${module}/${toCamelCase(pallet)}.ts`)
 
-            out.line()
-            out.blockComment(def.docs)
-            out.line(`export const ${itemName} = new ${prefix}Type(`)
-            out.indentation(() => {
-                out.line(`'${item}',`)
-                if (def.fields.length == 0 || def.fields[0].name == null) {
-                    if (def.fields.length == 1) {
-                        out.line(this.qualify(runtimeImports, this.sts.use(def.fields[0].type)))
-                    } else {
-                        let texp = def.fields.map((f) => this.sts.use(f.type)).join(', ')
-                        texp = this.qualify(runtimeImports, texp)
-                        if (texp) {
-                            out.line(`sts.tuple(${texp})`)
+            out.line(`import {${prefix}Type, sts} from '../../support'`)
+            let runtimeImports = this.runtimeImports(out)
+
+            for (let qn of palletItems) {
+                let def = runtime[module].definitions[qn]
+
+                out.line()
+                out.blockComment(def.docs)
+                out.line(`export const ${def.name} = new ${prefix}Type(`)
+                out.indentation(() => {
+                    out.line(`'${qn}',`)
+                    if (def.fields.length == 0 || def.fields[0].name == null) {
+                        if (def.fields.length == 1) {
+                            out.line(this.qualify(runtimeImports, this.sts.use(def.fields[0].type)))
                         } else {
-                            out.line('sts.unit()')
+                            let texp = def.fields.map((f) => this.sts.use(f.type)).join(', ')
+                            texp = this.qualify(runtimeImports, texp)
+                            if (texp) {
+                                out.line(`sts.tuple(${texp})`)
+                            } else {
+                                out.line('sts.unit()')
+                            }
                         }
+                    } else {
+                        out.line('sts.struct({')
+                        out.indentation(() => {
+                            for (let f of def.fields) {
+                                let texp = this.qualify(runtimeImports, this.sts.use(f.type))
+                                out.blockComment(f.docs)
+                                out.line(`${f.name}: ${texp},`)
+                            }
+                        })
+                        out.line('})')
                     }
-                } else {
-                    out.line('sts.struct({')
-                    out.indentation(() => {
-                        for (let f of def.fields) {
-                            let texp = this.qualify(runtimeImports, this.sts.use(f.type))
-                            out.blockComment(f.docs)
-                            out.line(`${f.name}: ${texp},`)
-                        }
-                    })
-                    out.line('})')
-                }
-            })
-            out.line(')')
+                })
+                out.line(')')
+            }
+            out.write()
+        }
+
+        let out = this.dir.file(`${module}/index.ts`)
+        for (let pallet of itemsByPallets.keys()) {
+            out.line(`export * as ${pallet} from './${toCamelCase(pallet)}'`)
         }
         out.write()
     }
@@ -267,31 +278,40 @@ export class RuntimeTypegen {
         let items = this.options.constants
         if (items == null || items.length == 0) return
 
-        this.useModule(RuntimeModule.Constants)
+        let module = RuntimeModule.Constants
+        this.useModule(module)
 
         let runtime = this.options.runtime
-        let out = this.dir.file(`constants.ts`)
 
-        out.line(`import {ConstantType, sts} from '../support'`)
-        let runtimeImports = this.runtimeImports(out)
+        let itemsByPallets = groupBy(items, (i) => i.split('.')[0])
+        for (let [pallet, palletItems] of itemsByPallets) {
+            let out = this.dir.file(`${module}/${toCamelCase(pallet)}.ts`)
 
-        for (const item of items) {
-            let [pallet, name] = item.split('.')
+            out.line(`import {ConstantType, sts} from '../../support'`)
+            let runtimeImports = this.runtimeImports(out)
 
-            let def = runtime.description.constants[pallet][name]
-            let itemName = this.createName(pallet, name)
+            for (let qn of palletItems) {
+                let [, name] = qn.split('.')
+                let def = runtime.description.constants[pallet][name]
 
-            let type = this.sts.use(def.type)
-            let qualifiedType = this.qualify(runtimeImports, type)
+                let type = this.sts.use(def.type)
+                let qualifiedType = this.qualify(runtimeImports, type)
 
-            out.line()
-            out.blockComment(def.docs)
-            out.line(`export const ${itemName} = new ConstantType(`)
-            out.indentation(() => {
-                out.line(`'${item}',`)
-                out.line(qualifiedType)
-            })
-            out.line(')')
+                out.line()
+                out.blockComment(def.docs)
+                out.line(`export const ${name} = new ConstantType(`)
+                out.indentation(() => {
+                    out.line(`'${qn}',`)
+                    out.line(qualifiedType)
+                })
+                out.line(')')
+            }
+            out.write()
+        }
+
+        let out = this.dir.file(`${module}/index.ts`)
+        for (let pallet of itemsByPallets.keys()) {
+            out.line(`export * as ${pallet} from './${toCamelCase(pallet)}'`)
         }
         out.write()
     }
@@ -300,93 +320,103 @@ export class RuntimeTypegen {
         let items = this.options.storage
         if (items.length == 0) return
 
-        this.useModule(RuntimeModule.Storage)
+        let module = RuntimeModule.Storage
+        this.useModule(module)
 
         let runtime = this.options.runtime
-        let out = this.dir.file('storage.ts')
 
-        out.line(`import {StorageType, sts, Block, Bytes, Option, Result} from '../support'`)
-        let importedInterfaces = this.runtimeImports(out)
+        let itemsByPallets = groupBy(items, (i) => i.split('.')[0])
+        for (let [prefix, palletItems] of itemsByPallets) {
+            let out = this.dir.file(`${module}/${toCamelCase(prefix)}.ts`)
 
-        for (let item of items) {
-            let [prefix, name] = item.split('.')
+            out.line(`import {StorageType, sts, Block, Bytes, Option, Result} from '../../support'`)
+            let runtimeImports = this.runtimeImports(out)
 
-            let def = runtime.description.storage[prefix][name]
-            if (isEmptyVariant(runtime.description.types[def.value])) continue // Storage item can't hold any value
+            for (let qn of palletItems) {
+                let [, name] = qn.split('.')
 
-            let an = this.createName(prefix, name)
+                let def = runtime.description.storage[prefix][name]
+                if (isEmptyVariant(runtime.description.types[def.value])) continue // Storage item can't hold any value
 
-            let keyListExp = this.qualify(importedInterfaces, def.keys.map((ti) => this.sts.use(ti)).join(', '))
+                let an = this.createName(prefix, name)
 
-            let valueExp = this.qualify(importedInterfaces, this.sts.use(def.value))
+                let keyListExp = this.qualify(runtimeImports, def.keys.map((ti) => this.sts.use(ti)).join(', '))
 
-            out.line()
-            out.blockComment(def.docs)
-            out.line(`export const ${an}: ${an}Storage = new StorageType(`)
-            out.indentation(() => {
-                out.line(`'${item}',`)
-                out.line(`'${def.modifier}',`)
-                out.line(`[${keyListExp}],`)
-                out.line(valueExp)
-            })
-            out.line(')')
+                let valueExp = this.qualify(runtimeImports, this.sts.use(def.value))
 
-            out.line()
-            out.blockComment(def.docs)
-            out.block(`export interface ${an}Storage `, () => {
-                let value = this.qualify(importedInterfaces, this.sts.ifs.use(def.value))
-
-                let keys = def.keys.map((ti) => {
-                    return this.qualify(importedInterfaces, this.sts.ifs.use(ti))
+                out.line()
+                out.blockComment(def.docs)
+                out.line(`export const ${name}: ${an}Storage = new StorageType(`)
+                out.indentation(() => {
+                    out.line(`'${qn}',`)
+                    out.line(`'${def.modifier}',`)
+                    out.line(`[${keyListExp}],`)
+                    out.line(valueExp)
                 })
+                out.line(')')
 
-                let args = keys.length == 1 ? [`key: ${keys[0]}`] : keys.map((exp, idx) => `key${idx + 1}: ${exp}`)
+                out.line()
+                out.blockComment(def.docs)
+                out.block(`export interface ${an}Storage `, () => {
+                    let value = this.qualify(runtimeImports, this.sts.ifs.use(def.value))
 
-                let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
+                    let keys = def.keys.map((ti) => {
+                        return this.qualify(runtimeImports, this.sts.ifs.use(ti))
+                    })
 
-                let ret = def.modifier == 'Required' ? value : `${value} | undefined`
+                    let args = keys.length == 1 ? [`key: ${keys[0]}`] : keys.map((exp, idx) => `key${idx + 1}: ${exp}`)
 
-                let kv = `[k: ${fullKey}, v: ${ret}]`
+                    let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
 
-                function* enumeratePartialApps(leading?: string): Iterable<string> {
-                    let list: string[] = []
-                    if (leading) {
-                        list.push(leading)
-                    }
-                    list.push('block: Block')
-                    yield list.join(', ')
-                    for (let arg of args) {
-                        list.push(arg)
+                    let ret = def.modifier == 'Required' ? value : `${value} | undefined`
+
+                    let kv = `[k: ${fullKey}, v: ${ret}]`
+
+                    function* enumeratePartialApps(leading?: string): Iterable<string> {
+                        let list: string[] = []
+                        if (leading) {
+                            list.push(leading)
+                        }
+                        list.push('block: Block')
                         yield list.join(', ')
-                    }
-                }
-
-                if (def.modifier == 'Default') {
-                    out.line(`getDefault(block: Block): ${value}`)
-                }
-
-                out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
-
-                if (args.length > 0) {
-                    out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
-                    if (isStorageKeyDecodable(def)) {
-                        for (let args of enumeratePartialApps()) {
-                            out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
-                        }
-                        for (let args of enumeratePartialApps('pageSize: number')) {
-                            out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
-                        }
-                        for (let args of enumeratePartialApps()) {
-                            out.line(`getPairs(${args}): Promise<${kv}[]>`)
-                        }
-                        for (let args of enumeratePartialApps('pageSize: number')) {
-                            out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
+                        for (let arg of args) {
+                            list.push(arg)
+                            yield list.join(', ')
                         }
                     }
-                }
-            })
+
+                    if (def.modifier == 'Default') {
+                        out.line(`getDefault(block: Block): ${value}`)
+                    }
+
+                    out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
+
+                    if (args.length > 0) {
+                        out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
+                        if (isStorageKeyDecodable(def)) {
+                            for (let args of enumeratePartialApps()) {
+                                out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
+                            }
+                            for (let args of enumeratePartialApps('pageSize: number')) {
+                                out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
+                            }
+                            for (let args of enumeratePartialApps()) {
+                                out.line(`getPairs(${args}): Promise<${kv}[]>`)
+                            }
+                            for (let args of enumeratePartialApps('pageSize: number')) {
+                                out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
+                            }
+                        }
+                    }
+                })
+            }
+            out.write()
         }
 
+        let out = this.dir.file(`${module}/index.ts`)
+        for (let pallet of itemsByPallets.keys()) {
+            out.line(`export * as ${pallet} from './${toCamelCase(pallet)}'`)
+        }
         out.write()
     }
 
@@ -410,7 +440,7 @@ export class RuntimeTypegen {
         let set = new Set<string>()
         out.lazy(() => {
             if (set.size > 0) {
-                out.line(`import * as types from './${RuntimeModule.Types}'`)
+                out.line(`import * as types from '../${RuntimeModule.Types}'`)
             }
         })
         return set
