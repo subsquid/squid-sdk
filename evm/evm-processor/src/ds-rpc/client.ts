@@ -308,17 +308,17 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 
     @def
     private async getBlockReceiptsMethod(): Promise<'eth_getBlockReceipts' | 'alchemy_getTransactionReceipts' | undefined> {
-        let eth = await this.rpc.call('eth_getBlockReceipts', ['latest']).then(
-            res => Array.isArray(res),
-            () => false
-        )
-        if (eth) return 'eth_getBlockReceipts'
-
         let alchemy = await this.rpc.call('alchemy_getTransactionReceipts', [{blockNumber: '0x0'}]).then(
             res => Array.isArray(res),
             () => false
         )
         if (alchemy) return 'alchemy_getTransactionReceipts'
+
+        let eth = await this.rpc.call('eth_getBlockReceipts', ['latest']).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (eth) return 'eth_getBlockReceipts'
 
         return undefined
     }
