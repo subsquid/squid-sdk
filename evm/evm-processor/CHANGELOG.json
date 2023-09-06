@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.8.1",
+      "tag": "@subsquid/evm-processor_v1.8.1",
+      "date": "Wed, 06 Sep 2023 13:16:47 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "prefer `alchemy_getTransactionReceipts` over `eth_getBlockReceipts`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.8.0",
       "tag": "@subsquid/evm-processor_v1.8.0",
       "date": "Tue, 08 Aug 2023 21:22:05 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 08 Aug 2023 21:22:05 GMT and should not be manually modified.
+This log was last generated on Wed, 06 Sep 2023 13:16:47 GMT and should not be manually modified.
+
+## 1.8.1
+Wed, 06 Sep 2023 13:16:47 GMT
+
+### Patches
+
+- prefer `alchemy_getTransactionReceipts` over `eth_getBlockReceipts`
 
 ## 1.8.0
 Tue, 08 Aug 2023 21:22:05 GMT
