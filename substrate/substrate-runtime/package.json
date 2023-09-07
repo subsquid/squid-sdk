@@ -19,7 +19,7 @@
   "dependencies": {
     "@subsquid/scale-codec": "^3.0.0",
     "@subsquid/scale-type-system": "^0.0.1",
-    "@subsquid/util-internal": "^2.5.0",
+    "@subsquid/util-internal": "^2.5.1",
     "@subsquid/util-internal-hex": "^1.2.0",
     "@subsquid/util-naming": "^1.2.0",
     "@subsquid/util-xxhash": "^1.2.0",

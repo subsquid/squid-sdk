@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^2.5.0"
+    "@subsquid/util-internal": "^2.5.1"
   },
   "peerDependencies": {
     "@subsquid/scale-codec": "^3.0.0"

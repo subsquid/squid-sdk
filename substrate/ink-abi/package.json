@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^3.0.0",
-    "@subsquid/util-internal": "^2.5.0",
+    "@subsquid/util-internal": "^2.5.1",
     "@subsquid/util-internal-hex": "^1.2.0",
     "ajv": "^8.12.0"
   },
