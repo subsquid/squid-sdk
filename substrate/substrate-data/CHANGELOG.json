@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "2.0.2",
+      "tag": "@subsquid/substrate-data_v2.0.2",
+      "date": "Thu, 07 Sep 2023 20:03:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip batch call handling for polymesh network"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.0` to `^2.5.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.1",
       "tag": "@subsquid/substrate-data_v2.0.1",
       "date": "Thu, 07 Sep 2023 18:37:04 GMT",
