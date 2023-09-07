@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "fix `@annotateAsyncError()`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

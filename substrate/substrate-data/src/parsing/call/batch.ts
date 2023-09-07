@@ -1,9 +1,12 @@
 import {EventRecord, Runtime} from '@subsquid/substrate-runtime'
-import {number, struct, tuple, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
+import {array, number, struct, tuple, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 import {Call, Event} from '../../interfaces/data'
 import {assertEvent} from '../../types/util'
 import type {CallParser, CallResult} from './parser'
+
+
+const PolymeshBatchCompleted = array(number())
 
 
 const BatchInterrupted = union(
@@ -55,6 +58,12 @@ function ITEM_COMPLETED(runtime: Runtime, event: Event): boolean {
 
 export function visitBatch(cp: CallParser, call: Call) {
     assert(call.name == 'Utility.batch')
+
+    if (cp.runtime.checkEventType('Utility.BatchCompleted', PolymeshBatchCompleted)) {
+        // Polymesh batch calls are different
+        return
+    }
+
     let items = cp.getSubcalls(call)
     let result = cp.get(BATCH_CALL_END)
     if (result.ok) {
