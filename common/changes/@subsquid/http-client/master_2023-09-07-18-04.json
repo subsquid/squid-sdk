@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "fix: `HttpClient.isRetryableError()` should handle `HttpError` instances",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

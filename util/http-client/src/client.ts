@@ -300,6 +300,9 @@ export class HttpClient {
     isRetryableError(error: HttpResponse | Error, req?: FetchRequest): boolean {
         if (isHttpConnectionError(error)) return true
         if (error instanceof HttpTimeoutError) return true
+        if (error instanceof HttpError) {
+            error = error.response
+        }
         if (error instanceof HttpResponse) {
             switch(error.status) {
                 case 429:
