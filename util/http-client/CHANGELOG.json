@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.2.2",
+      "tag": "@subsquid/http-client_v1.2.2",
+      "date": "Thu, 07 Sep 2023 18:37:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix: `HttpClient.isRetryableError()` should handle `HttpError` instances"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.1",
       "tag": "@subsquid/http-client_v1.2.1",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

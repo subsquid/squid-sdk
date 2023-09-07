@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-data_v2.0.1",
+      "date": "Thu, 07 Sep 2023 18:37:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "unwrap old batch calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-data_v2.0.0",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

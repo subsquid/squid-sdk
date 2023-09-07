@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Thu, 07 Sep 2023 18:37:04 GMT and should not be manually modified.
+
+## 2.0.1
+Thu, 07 Sep 2023 18:37:04 GMT
+
+### Patches
+
+- unwrap old batch calls
 
 ## 2.0.0
 Tue, 05 Sep 2023 20:32:34 GMT
