@@ -63,14 +63,25 @@ function getSudoCall(runtime: Runtime, call: Call): DecodedCall {
 }
 
 
-export function visitSudo(cp: CallParser, call: Call): void {
-    let sub = cp.createCall(
+function getSubcall(cp: CallParser, call: Call, origin: IOrigin | undefined): Call {
+    return cp.createCall(
         call.extrinsicIndex,
         call.address.concat([0]),
         getSudoCall(cp.runtime, call),
-        rootOrigin()
+        origin
     )
-    cp.visitUnwrapped(sub, END_OF_SUDO)
+}
+
+
+export function visitSudo(cp: CallParser, call: Call): void {
+    let sub = getSubcall(cp, call, rootOrigin())
+    cp.visitSubcall(sub, END_OF_SUDO)
+}
+
+
+export function unwrapSudo(cp: CallParser, call: Call, success: boolean): void {
+    let sub = getSubcall(cp, call, rootOrigin())
+    cp.unwrap(sub, success)
 }
 
 
@@ -89,12 +100,20 @@ export function visitSudoAs(cp: CallParser, call: Call): void {
         origin = signedOrigin(call.args.who.value)
     }
 
-    let sub = cp.createCall(
-        call.extrinsicIndex,
-        call.address.concat([0]),
-        getSudoCall(cp.runtime, call),
-        origin
-    )
+    let sub = getSubcall(cp, call, origin)
 
-    cp.visitUnwrapped(sub, END_OF_SUDO)
+    cp.visitSubcall(sub, END_OF_SUDO)
+}
+
+
+export function unwrapSudoAs(cp: CallParser, call: Call, success: boolean): void {
+    assertCall(cp.runtime, SudoAs, call)
+
+    let origin: IOrigin | undefined
+    if (call.args.who.__kind == 'AccountId') {
+        origin = signedOrigin(call.args.who.value)
+    }
+
+    let sub = getSubcall(cp, call, origin)
+    cp.unwrap(sub, success)
 }

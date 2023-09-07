@@ -23,7 +23,7 @@ const DispatchedAsLegacy = Result
 export function visitDispatchAs(cp: CallParser, call: Call): void {
     assertCall(cp.runtime, DispatchAs_Origin, call)
     let sub = cp.getSubcall(call, call.args.asOrigin)
-    cp.visitUnwrapped(sub, (runtime, event) => {
+    cp.visitSubcall(sub, (runtime, event) => {
         if (event.name != 'Utility.DispatchedAs') return
         let result
         if (isEvent(runtime, DispatchedAsLatest, event)) {
@@ -40,4 +40,11 @@ export function visitDispatchAs(cp: CallParser, call: Call): void {
                 return {ok: false, error: result.value}
         }
     })
+}
+
+
+export function unwrapDispatchAs(cp: CallParser, call: Call, success: boolean): void {
+    assertCall(cp.runtime, DispatchAs_Origin, call)
+    let sub = cp.getSubcall(call, call.args.asOrigin)
+    cp.unwrap(sub, success)
 }

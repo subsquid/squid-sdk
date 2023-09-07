@@ -1,5 +1,6 @@
 import {EventRecord, Runtime} from '@subsquid/substrate-runtime'
 import {number, struct, tuple, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
+import assert from 'assert'
 import {Call, Event} from '../../interfaces/data'
 import {assertEvent} from '../../types/util'
 import type {CallParser, CallResult} from './parser'
@@ -53,6 +54,7 @@ function ITEM_COMPLETED(runtime: Runtime, event: Event): boolean {
 
 
 export function visitBatch(cp: CallParser, call: Call) {
+    assert(call.name == 'Utility.batch')
     let items = cp.getSubcalls(call)
     let result = cp.get(BATCH_CALL_END)
     if (result.ok) {
@@ -66,23 +68,26 @@ export function visitBatch(cp: CallParser, call: Call) {
 
 function visitBatchItems(cp: CallParser, items: Call[]): void {
     if (items.length == 0) return
-    if (!cp.runtime.hasEvent('Utility.ItemCompleted')) {
+    if (cp.runtime.hasEvent('Utility.ItemCompleted')) {
+        for (let i = items.length - 1; i >= 0; i--) {
+            cp.get(ITEM_COMPLETED)
+            if (i > 0) {
+                cp.withBoundary(ITEM_COMPLETED, () => cp.visitCall(items[i]))
+            } else {
+                cp.visitCall(items[i])
+            }
+        }
+    } else {
         // Utility.ItemCompleted doesn't exist yet
-        // Don't expand this call
-        return
-    }
-    for (let i = items.length - 1; i >= 0; i--) {
-        cp.get(ITEM_COMPLETED)
-        if (i > 0) {
-            cp.withBoundary(ITEM_COMPLETED, () => cp.visitCall(items[i]))
-        } else {
-            cp.visitCall(items[i])
+        for (let item of items) {
+            cp.unwrap(item, true)
         }
     }
 }
 
 
 export function visitBatchAll(cp: CallParser, call: Call): void {
+    assert(call.name == 'Utility.batch_all')
     cp.get((_rt, e) => e.name == 'Utility.BatchCompleted')
     let items = cp.getSubcalls(call)
     visitBatchItems(cp, items)
@@ -120,6 +125,7 @@ function FORCE_BATCH_ITEM(runtime: Runtime, event: Event): CallResult | undefine
 
 
 export function visitForceBatch(cp: CallParser, call: Call): void {
+    assert(call.name == 'Utility.force_batch')
     cp.get(FORCE_BATCH_CALL_END)
     let items = cp.getSubcalls(call)
     for (let i = items.length - 1; i >= 0; i--) {

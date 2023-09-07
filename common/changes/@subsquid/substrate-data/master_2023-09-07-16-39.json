@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "unwrap old batch calls",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

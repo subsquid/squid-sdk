@@ -22,10 +22,8 @@ const ProxyExecutedLegacy = Result
 
 
 export function visitProxy(cp: CallParser, call: Call): void {
-    assertEvent(cp.runtime, Proxy_RealAddress, call)
-    let origin = addressOrigin(call.args.real)
-    let sub = cp.getSubcall(call, origin)
-    return cp.visitUnwrapped(sub, (runtime, event) => {
+    let sub = getSubcall(cp, call)
+    return cp.visitSubcall(sub, (runtime, event) => {
         if (event.name != 'Proxy.ProxyExecuted') return
         let result
         if (isEvent(runtime, ProxyExecutedLatest, event)) {
@@ -42,4 +40,17 @@ export function visitProxy(cp: CallParser, call: Call): void {
                 return {ok: false, error: result.value}
         }
     })
+}
+
+
+function getSubcall(cp: CallParser, call: Call): Call {
+    assertEvent(cp.runtime, Proxy_RealAddress, call)
+    let origin = addressOrigin(call.args.real) ?? null
+    return cp.getSubcall(call, origin)
+}
+
+
+export function unwrapProxy(cp: CallParser, call: Call, success: boolean): void {
+    let sub = getSubcall(cp, call)
+    cp.unwrap(sub, success)
 }

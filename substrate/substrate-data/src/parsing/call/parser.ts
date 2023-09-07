@@ -8,10 +8,10 @@ import {assertCall, assertEvent} from '../../types/util'
 import {DecodedExtrinsic} from '../extrinsic'
 import {addressOrigin, unwrapArguments} from '../util'
 import {visitBatch, visitBatchAll, visitForceBatch} from './batch'
-import {visitDispatchAs} from './dispatch_as'
+import {unwrapDispatchAs, visitDispatchAs} from './dispatch_as'
 import {visitAsMulti} from './multisig'
-import {visitProxy} from './proxy'
-import {visitSudo, visitSudoAs} from './sudo'
+import {unwrapProxy, visitProxy} from './proxy'
+import {unwrapSudo, unwrapSudoAs, visitSudo, visitSudoAs} from './sudo'
 
 
 export type Boundary<T> = (runtime: Runtime, event: Event) => T | undefined | null | false
@@ -170,7 +170,7 @@ export class CallParser {
         this.address = parentAddress
     }
 
-    visitUnwrapped(call: Call, boundary: Boundary<CallResult>): void {
+    visitSubcall(call: Call, boundary: Boundary<CallResult>): void {
         let result = this.get(boundary)
         if (result.ok) {
             this.visitCall(call)
@@ -183,6 +183,49 @@ export class CallParser {
         call.success = false
         call.error = error
         this.calls.push(call)
+    }
+
+    unwrap(call: Call, success: boolean): void {
+        this.calls.push(call)
+        call.success = success
+
+        let parentAddress = this.address
+        this.address = call.address
+
+        switch(call.name) {
+            case 'Utility.batch':
+            case 'Utility.batch_all':
+            case 'Utility.force_batch':
+                for (let sub of this.getSubcalls(call)) {
+                    this.unwrap(sub, success)
+                }
+                break
+            case 'Utility.dispatch_as':
+                unwrapDispatchAs(this, call, success)
+                break
+            case 'Utility.as_derivative':
+            case 'Utility.as_sub':
+            case 'Utility.as_limited_sub':
+            case 'Multisig.as_multi':
+            case 'Multisig.as_multi_threshold_1': {
+                let sub = this.getSubcall(call, null)
+                this.unwrap(sub, success)
+                break
+            }
+            case 'Proxy.proxy':
+            case 'Proxy.proxy_announced':
+                unwrapProxy(this, call, success)
+                break
+            case 'Sudo.sudo':
+            case 'Sudo.sudo_unchecked_weight':
+                unwrapSudo(this, call, success)
+                break
+            case 'Sudo.sudo_as':
+                unwrapSudoAs(this, call, success)
+                break
+        }
+
+        this.address = parentAddress
     }
 
     getSubcalls(call: Call, origin?: IOrigin | null): Call[] {
