@@ -73,6 +73,13 @@ export class LocalFs implements Fs {
         let item = this.abs(path)
         return createReadStream(item)
     }
+
+    async readFile(path: string): Promise<Uint8Array>
+    async readFile(path: string, encoding: BufferEncoding): Promise<string>
+    async readFile(path: string, encoding?: BufferEncoding): Promise<Uint8Array | string> {
+        let item = this.abs(path)
+        return fs.readFile(item)
+    }
 }
 
 

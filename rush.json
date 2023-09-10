@@ -563,6 +563,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/substrate-metadata-service",
+      "projectFolder": "substrate/substrate-metadata-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/substrate-processor",
       "projectFolder": "substrate/substrate-processor",
       "shouldPublish": true,

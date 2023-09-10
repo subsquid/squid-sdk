@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-fs",
+      "comment": "add `.readFile()` method",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-fs"
+}
