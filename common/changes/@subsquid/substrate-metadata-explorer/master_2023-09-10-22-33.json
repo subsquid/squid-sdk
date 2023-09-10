@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "remove FireSquid archive metadata source",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "rename `--chain` to `--rpc`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}

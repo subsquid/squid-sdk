@@ -26,7 +26,7 @@ export interface SpecVersion extends SpecVersionRecord {
 }
 
 
-function validateSpecVersion(rec: any): string | undefined {
+export function validateSpecVersion(rec: any): string | undefined {
     if (rec == null || Array.isArray(rec) || typeof rec != 'object') return 'record should be an object'
 
     function prop(name: string, type: 'hex' | 'nat' | 'string'): string | undefined {

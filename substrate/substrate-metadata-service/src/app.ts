@@ -46,7 +46,7 @@ export class App {
             res.write(JSON.stringify({
                 ...rec,
                 metadata: '0x'+metadata.toString('hex')
-            }))
+            }) + '\n')
         }
         res.end()
     }
@@ -70,7 +70,7 @@ async function listMetadataFiles(archive: Fs): Promise<MetadataFile[]> {
         let m = /^(\d+)-([\da-f]+)--([\w\-]+)@(\d+)--([\w-]+)@(\d+)\.gz$/.exec(name)
         if (!m) continue
         let blockNumber = parseInt(m[1])
-        let blockHash = m[2]
+        let blockHash = '0x'+m[2]
         let specName = m[3]
         let specVersion = parseInt(m[4])
         let specId = specName + '@' + specVersion

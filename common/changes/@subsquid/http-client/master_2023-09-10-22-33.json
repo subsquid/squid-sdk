@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "add response stream mode",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

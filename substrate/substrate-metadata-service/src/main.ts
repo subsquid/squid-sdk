@@ -19,7 +19,7 @@ export interface Options {
 runProgram(async () => {
     let program = new Command()
 
-    program.description('metadata service on top of raw substrate archive')
+    program.description('Metadata service on top of substrate-dump(1) archive')
     program.option('-n, --name <name...>', 'network name', [])
     program.option('-a, --archive <url...>', 'archive url', collectArchives, [])
     program.option('-p, --port <number>', 'port number', nat, 3000)
