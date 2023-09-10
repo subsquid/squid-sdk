@@ -1,13 +1,11 @@
-import {EventType, sts} from '../../support'
+import {sts} from '../../support'
 
 /**
  * Transfer succeeded.
  */
-export const Transfer = new EventType(
-    'Balances.Transfer',
+export const BalancesTransferEvent = 
     sts.struct({
         from: sts.bytes(),
         to: sts.bytes(),
         amount: sts.bigint(),
     })
-)

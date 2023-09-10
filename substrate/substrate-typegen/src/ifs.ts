@@ -4,6 +4,7 @@ import {Output} from '@subsquid/util-internal-code-printer'
 import assert from 'assert'
 import {needsName} from './names'
 import {asOptionType, asResultType, toNativePrimitive} from './util'
+import {EACDefinition} from '@subsquid/substrate-runtime/lib/runtime/events-and-calls'
 
 
 export type Exp = string
@@ -268,6 +269,11 @@ export class Sts {
         }
 
         return this.generated[ti] = exp
+    }
+
+
+    useEnum(kind: 'event' | 'call', def: EACDefinition) {
+
     }
 
     private makeType(ti: Ti): Exp {

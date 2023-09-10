@@ -15,73 +15,55 @@ interface RuntimeCtx {
 }
 
 
-export interface Block extends RuntimeCtx {
+export interface IBlock extends RuntimeCtx {
     hash: Bytes
     height: number
 }
 
 
-interface Event {
+interface IEvent {
     block: RuntimeCtx
     name: QualifiedName
     args: unknown
 }
 
 
-interface Call {
+interface ICall {
     block: RuntimeCtx
     name: QualifiedName
     args: unknown
 }
 
 
-export class EventType<T extends sts.Type> {
+export class Event<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
 
-    is(event: Event): boolean
-    is(block: RuntimeCtx): boolean
-    is(eventOrBlock: Event | RuntimeCtx): boolean {
-        let runtime: Runtime
-        if ('_runtime' in eventOrBlock) {
-            runtime = eventOrBlock._runtime
-        } else {
-            if (eventOrBlock.name !== this.name) return false
-            runtime = eventOrBlock.block._runtime
-        }
-        return runtime.events.checkType(this.name, this.type)
+    is(event: IEvent): boolean {
+        return event.name === this.name && event.block._runtime.events.checkType(this.name, this.type)
     }
 
-    decode(event: Event): sts.GetType<T> {
+    decode(event: IEvent): sts.GetType<T> {
         assert(this.is(event))
         return event.block._runtime.decodeEventRecordArguments(event)
     }
 }
 
 
-export class CallType<T extends sts.Type> {
+export class Call<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
 
-    is(call: Call): boolean
-    is(block: RuntimeCtx): boolean
-    is(callOrBlock: Call | RuntimeCtx): boolean {
-        let runtime: Runtime
-        if ('_runtime' in callOrBlock) {
-            runtime = callOrBlock._runtime
-        } else {
-            if (callOrBlock.name !== this.name) return false
-            runtime = callOrBlock.block._runtime
-        }
-        return runtime.events.checkType(this.name, this.type)
+    is(call: ICall): boolean {
+        return call.name === this.name && call.block._runtime.events.checkType(this.name, this.type)
     }
 
-    decode(call: Call): sts.GetType<T> {
+    decode(call: ICall): sts.GetType<T> {
         assert(this.is(call))
         return call.block._runtime.decodeCallRecordArguments(call)
     }
 }
 
 
-export class ConstantType<T extends sts.Type> {
+export class Constant<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
 
     is(block: RuntimeCtx): boolean {
@@ -95,7 +77,7 @@ export class ConstantType<T extends sts.Type> {
 }
 
 
-export class StorageType {
+export class Storage {
     constructor(
         private name: QualifiedName,
         private modifier: 'Required' | 'Optional' | 'Default',
@@ -107,47 +89,47 @@ export class StorageType {
         return block._runtime.checkStorageType(this.name, this.modifier, this.key, this.value)
     }
 
-    async get(block: Block, ...key: any[]): Promise<any> {
+    async get(block: IBlock, ...key: any[]): Promise<any> {
         assert(this.is(block))
         return block._runtime.getStorage(block.hash, this.name, ...key)
     }
 
-    async getAll(block: Block): Promise<any[]> {
+    async getAll(block: IBlock): Promise<any[]> {
         assert(this.is(block))
         return block._runtime.queryStorage(block.hash, this.name)
     }
 
-    async getMany(block: Block, keys: any[]): Promise<any[]> {
+    async getMany(block: IBlock, keys: any[]): Promise<any[]> {
         assert(this.is(block))
         return block._runtime.queryStorage(block.hash, this.name, keys)
     }
 
-    async getKeys(block: Block, ...args: any[]): Promise<any[]> {
+    async getKeys(block: IBlock, ...args: any[]): Promise<any[]> {
         assert(this.is(block))
         return block._runtime.getStorageKeys(block.hash, this.name, ...args)
     }
 
-    async getRawKeys(block: Block, ...args: any[]): Promise<Bytes[]> {
+    async getRawKeys(block: IBlock, ...args: any[]): Promise<Bytes[]> {
         assert(this.is(block))
         return block._runtime.getStorageRawKeys(block.hash, this.name, ...args)
     }
 
-    getKeysPaged(pageSize: number, block: Block, ...args: any[]): AsyncIterable<any[]> {
+    getKeysPaged(pageSize: number, block: IBlock, ...args: any[]): AsyncIterable<any[]> {
         assert(this.is(block))
         return block._runtime.getStorageKeysPaged(pageSize, block.hash, this.name, ...args)
     }
 
-    async getPairs(block: Block, ...args: any[]): Promise<[key: any, value: any][]> {
+    async getPairs(block: IBlock, ...args: any[]): Promise<[key: any, value: any][]> {
         assert(this.is(block))
         return block._runtime.getStoragePairs(block.hash, this.name, ...args)
     }
 
-    getPairsPaged(pageSize: number, block: Block, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
+    getPairsPaged(pageSize: number, block: IBlock, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
         assert(this.is(block))
         return block._runtime.getStoragePairsPaged(pageSize, block.hash, this.name, ...args)
     }
 
-    getDefault(block: Block): any {
+    getDefault(block: IBlock): any {
         assert(this.modifier == 'Default')
         assert(this.is(block))
         return block._runtime.getStorageFallback(this.name)
