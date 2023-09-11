@@ -20,6 +20,7 @@
   "deploymentProjectNames": [
     "@subsquid/substrate-dump",
     "@subsquid/substrate-ingest",
+    "@subsquid/substrate-metadata-service",
     "chain-status-service"
   ],
 
