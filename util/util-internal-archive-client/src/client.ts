@@ -79,7 +79,7 @@ export class ArchiveClient {
                 if (this.http.isRetryableError(err)) {
                     let pause = this.retrySchedule[Math.min(retries, this.retrySchedule.length - 1)]
                     if (this.log?.isWarn()) {
-                        let warn = pause > 30_000 || err instanceof HttpTimeoutError && err.ms > 10_000
+                        let warn = retries > 3 || err instanceof HttpTimeoutError && err.ms > 10_000
                         if (warn) {
                             this.log.warn({
                                 reason: err.message,
