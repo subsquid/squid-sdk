@@ -20,7 +20,6 @@ const processor = new EvmBatchProcessor()
         log: {transactionHash: true}
     })
     .setFinalityConfirmation(50)
-    .setBlockRange({from: 17_200_000})
 
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "expose `HttpBody` type",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

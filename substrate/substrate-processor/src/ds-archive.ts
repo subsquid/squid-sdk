@@ -1,8 +1,8 @@
-import {HttpClient} from '@subsquid/http-client'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Rpc, RuntimeTracker, WithRuntime} from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
-import {annotateSyncError, assertNotNull, wait, withErrorContext} from '@subsquid/util-internal'
+import {annotateSyncError, assertNotNull} from '@subsquid/util-internal'
+import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
     archiveIngest,
     Batch,
@@ -25,26 +25,25 @@ interface ArchiveQuery extends DataRequest {
 
 
 export interface SubstrateArchiveOptions {
-    http: HttpClient
+    client: ArchiveClient
     rpc: RpcClient
     typesBundle?:  OldTypesBundle | OldSpecsBundle
 }
 
 
 export class SubstrateArchive implements DataSource<Block, DataRequest> {
-    private http: HttpClient
+    private client: ArchiveClient
     private rpc: Rpc
     private typesBundle?:  OldTypesBundle | OldSpecsBundle
 
     constructor(options: SubstrateArchiveOptions) {
-        this.http = options.http
+        this.client = options.client
         this.rpc = new Rpc(options.rpc)
         this.typesBundle = options.typesBundle
     }
 
-    async getFinalizedHeight(): Promise<number> {
-        let s = await this.http.get('/height')
-        return parseInt(s)
+    getFinalizedHeight(): Promise<number> {
+        return this.client.getHeight()
     }
 
     getBlockHash(height: number): Promise<string> {
@@ -72,7 +71,7 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
         })
     }
 
-    private async query(req: RangeRequest<DataRequest>): Promise<ArchiveBlock[]> {
+    private query(req: RangeRequest<DataRequest>): Promise<ArchiveBlock[]> {
         let {fields, ...items} = req.request
 
         let q: ArchiveQuery = {
@@ -83,33 +82,7 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
             ...items
         }
 
-        let blocks: ArchiveBlock[] | null = null
-        let retrySchedule = [5000, 10000, 20000]
-        let retries = 0
-        while (blocks == null) {
-            blocks = await this.performQuery(q).catch(async err => {
-                if (this.http.isRetryableError(err)) {
-                    let pause = retrySchedule[Math.min(retries, retrySchedule.length - 1)]
-                    retries += 1
-                    await wait(pause)
-                    return null
-                }
-                throw err
-            })
-        }
-
-        return blocks
-    }
-
-    private async performQuery(q: ArchiveQuery): Promise<ArchiveBlock[]> {
-        let worker: string = await this.http.get(`/${q.fromBlock}/worker`)
-        return this.http.post(worker, {
-            json: q,
-            retryAttempts: 2,
-            retrySchedule: [1000]
-        }).catch(
-            withErrorContext({archiveQuery: q})
-        )
+        return this.client.query(q)
     }
 
     @annotateSyncError((src: ArchiveBlock) => ({blockHeight: src.header.number, blockHash: src.header.hash}))

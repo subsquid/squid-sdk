@@ -12,6 +12,7 @@ import {
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-runtime/lib/metadata/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
+import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
     applyRangeBound,
     Batch,
@@ -304,21 +305,22 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getArchiveDataSource(): SubstrateArchive {
+        let url = assertNotNull(this.src?.archive)
+
+        let log = this.getLogger().child('archive')
+
         let http = new HttpClient({
-            baseUrl: assertNotNull(this.src?.archive),
             headers: {
                 'x-squid-id': this.getSquidId()
             },
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: 120_000,
-            retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('archive')
+            log: log.child('http')
         })
 
         return new SubstrateArchive({
-            http,
+            client: new ArchiveClient({http, url, log}),
             rpc: this.getChainRpcClient(),
             typesBundle: this.typesBundle
         })

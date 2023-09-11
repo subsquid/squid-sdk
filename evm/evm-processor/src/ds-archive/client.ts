@@ -1,12 +1,11 @@
-import {HttpClient} from '@subsquid/http-client'
-import {wait, withErrorContext} from '@subsquid/util-internal'
+import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
     archiveIngest,
     Batch,
-    RangeRequest,
     DataSource,
-    SplitRequest,
-    PollingHeightTracker
+    PollingHeightTracker,
+    RangeRequest,
+    SplitRequest
 } from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {AllFields, BlockData} from '../interfaces/data'
@@ -20,10 +19,10 @@ type Block = BlockData<AllFields>
 
 
 export class EvmArchive implements DataSource<Block, DataRequest> {
-    constructor(private http: HttpClient) {}
+    constructor(private client: ArchiveClient) {}
 
     getFinalizedHeight(): Promise<number> {
-        return this.http.get('/height').then(s => parseInt(s))
+        return this.client.getHeight()
     }
 
     async getBlockHash(height: number): Promise<Bytes32> {
@@ -56,30 +55,11 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
             traces: s.request.traces,
             stateDiffs: s.request.stateDiffs
         })
+
         return blocks.map(mapGatewayBlock)
     }
 
-    private async query(q: gw.BatchRequest): Promise<gw.BlockData[]> {
-        let blocks: gw.BlockData[] | undefined = undefined
-        let retrySchedule = [5000, 10000, 20000]
-        let retries = 0
-        while (blocks == null) {
-            blocks = await this.performQuery(q).catch(async err => {
-                if (this.http.isRetryableError(err)) {
-                    let pause = retrySchedule[Math.min(retries, retrySchedule.length - 1)]
-                    retries += 1
-                    await wait(pause)
-                    return undefined
-                }
-                throw err
-            })
-        }
-        return blocks
-    }
-
-    private async performQuery(q: gw.BatchRequest): Promise<gw.BlockData[]> {
-        let worker: string = await this.http.get(`/${q.fromBlock}/worker`)
-        return this.http.post(worker, {json: q, retryAttempts: 2, retrySchedule: [1000]})
-            .catch(withErrorContext({archiveQuery: q}))
+    private query(q: gw.BatchRequest): Promise<gw.BlockData[]> {
+        return this.client.query(q)
     }
 }

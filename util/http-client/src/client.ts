@@ -7,6 +7,9 @@ import {HttpBody} from './body'
 import {nodeFetch} from './request'
 
 
+export {HttpBody}
+
+
 export interface HttpClientOptions {
     agent?: AgentProvider
     baseUrl?: string
@@ -428,7 +431,7 @@ export class HttpError extends Error {
 
 
 export class HttpTimeoutError extends Error {
-    constructor(ms: number) {
+    constructor(public readonly ms: number) {
         super(`request timed out after ${ms} ms`)
     }
 

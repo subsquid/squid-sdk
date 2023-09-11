@@ -146,6 +146,9 @@ dependencies:
   '@rush-temp/util-internal':
     specifier: file:./projects/util-internal.tgz
     version: file:projects/util-internal.tgz
+  '@rush-temp/util-internal-archive-client':
+    specifier: file:./projects/util-internal-archive-client.tgz
+    version: file:projects/util-internal-archive-client.tgz
   '@rush-temp/util-internal-archive-layout':
     specifier: file:./projects/util-internal-archive-layout.tgz
     version: file:projects/util-internal-archive-layout.tgz
@@ -5401,7 +5404,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-jjWy22oW8NWvenJ+1+Lvc3bTOlaBslvcwjPGQh24N11RhrvE24ESD882X3IXHsWOA9ox39qDebTC4yoOuj4wqw==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-C94VKxzyWuecFkCzB7N6oO632uRcrXSevDa4yMRqqlxzk+rsFtT90cowjAIjYT0scTAUmz1bxeuqfHOj+2DW+w==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -5411,7 +5414,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-service.tgz:
-    resolution: {integrity: sha512-mjQj2eE2D3xGzjWnvfHbc1bNj0+pYTNRBcixFhOU4NNeoBTmQkax7130lLdh1LPxtjRnQLN57+ahasC5m54Tag==, tarball: file:projects/substrate-metadata-service.tgz}
+    resolution: {integrity: sha512-oi1L1+t+l1Cba1ELgbUTjnzsgEbKX6GwkNPUnUZF+0WR6RqLM/A90SmM9lqjB7Scix3DBVOWNQDYr3SmSFQGVQ==, tarball: file:projects/substrate-metadata-service.tgz}
     name: '@rush-temp/substrate-metadata-service'
     version: 0.0.0
     dependencies:
@@ -5447,7 +5450,7 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-seEj9iVDwl+GuKtan8x8GeckDLMJhwFrE8YAPSRbxwIshm0oA+CG9TddWC+P3AtX/EajuM8ji+U3b51638ZddA==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-rzVCfNklH24EONf2S6YM3L/tueDBTnp90A7amEiXEIU1H7wW8fOG0mq/yyjsGLM3JxPMRkgme64VjbNGrykutw==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
@@ -5566,6 +5569,15 @@ packages:
   file:projects/types-test.tgz:
     resolution: {integrity: sha512-MjsqYABJmESYkK+o6f9iGwKeXMdN/U4FNIA7JnmIzJdijCrKVTHjHtRogXBM1Uqd6ZeFh+5IWTQMzmjEEkgkAA==, tarball: file:projects/types-test.tgz}
     name: '@rush-temp/types-test'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.16.17
+      typescript: 4.9.5
+    dev: false
+
+  file:projects/util-internal-archive-client.tgz:
+    resolution: {integrity: sha512-B+i5lJMxVH1GWc5uIqcmm4K6lTukJw80Vdu+dtoveGwL9AGwrdpBvG4SmMy6MEhAxihqVWJwL56tR7TOYmo6kQ==, tarball: file:projects/util-internal-archive-client.tgz}
+    name: '@rush-temp/util-internal-archive-client'
     version: 0.0.0
     dependencies:
       '@types/node': 18.16.17

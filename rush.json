@@ -647,6 +647,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-archive-client",
+      "projectFolder": "util/util-internal-archive-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-archive-layout",
       "projectFolder": "util/util-internal-archive-layout",
       "shouldPublish": true,
