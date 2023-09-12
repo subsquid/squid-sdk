@@ -2,6 +2,21 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/substrate-dump_v0.1.2",
+      "date": "Tue, 12 Sep 2023 08:42:04 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.0.0` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/substrate-dump_v0.1.1",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

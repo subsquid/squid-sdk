@@ -2,6 +2,21 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-archive-layout_v0.0.1",
+      "date": "Tue, 12 Sep 2023 08:42:04 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.0.0` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.0.0` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-archive-layout_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

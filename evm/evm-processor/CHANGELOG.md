@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 06 Sep 2023 13:16:47 GMT and should not be manually modified.
+This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+
+## 1.8.2
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Patches
+
+- don't warn users on partial archive unavailability which is part of its normal operation
 
 ## 1.8.1
 Wed, 06 Sep 2023 13:16:47 GMT

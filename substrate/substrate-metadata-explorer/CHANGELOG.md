@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+
+## 3.0.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Breaking changes
+
+- remove FireSquid archive metadata source
+- rename `--chain` to `--rpc`
 
 ## 2.2.1
 Wed, 19 Jul 2023 16:48:14 GMT
