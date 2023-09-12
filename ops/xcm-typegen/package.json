@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@subsquid/substrate-runtime": "^0.0.1",
-    "@subsquid/substrate-typegen": "^6.0.0",
+    "@subsquid/substrate-typegen": "^7.0.0",
     "@subsquid/util-internal": "^2.5.1",
     "@subsquid/util-internal-code-printer": "^1.2.0"
   },

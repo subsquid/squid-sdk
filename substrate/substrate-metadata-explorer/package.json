@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-explorer",
-  "version": "2.2.1",
+  "version": "3.0.0",
   "description": "Spec version explorer for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

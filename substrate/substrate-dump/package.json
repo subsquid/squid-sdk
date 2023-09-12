@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-dump",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Raw data archiving tool for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -22,10 +22,10 @@
     "@subsquid/rpc-client": "^4.4.1",
     "@subsquid/substrate-data-raw": "^0.0.1",
     "@subsquid/util-internal": "^2.5.1",
-    "@subsquid/util-internal-archive-layout": "^0.0.0",
+    "@subsquid/util-internal-archive-layout": "^0.0.1",
     "@subsquid/util-internal-commander": "^1.3.0",
     "@subsquid/util-internal-counters": "^1.3.0",
-    "@subsquid/util-internal-fs": "^0.0.0",
+    "@subsquid/util-internal-fs": "^0.1.0",
     "@subsquid/util-internal-hex": "^1.2.0",
     "@subsquid/util-internal-range": "^0.0.0",
     "commander": "^11.0.0"
