@@ -13,7 +13,8 @@
     "src"
   ],
   "bin": {
-    "substrate-metadata-explorer": "bin/run.js"
+    "substrate-metadata-explorer": "bin/run.js",
+    "squid-substrate-metadata-explorer": "bin/run.js"
   },
   "scripts": {
     "build": "rm -rf lib && tsc"

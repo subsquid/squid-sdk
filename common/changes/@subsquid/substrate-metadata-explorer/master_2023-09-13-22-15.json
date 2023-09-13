@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-explorer",
+      "comment": "add `squid-substrate-metadata-explorer(1)` back in addition to `substrate-metadata-explorer(1)`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-explorer"
+}
