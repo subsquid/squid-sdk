@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-ingest-tools",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-ingest-tools_v0.0.1",
+      "date": "Wed, 13 Sep 2023 22:16:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix fork navigation"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-ingest-tools_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

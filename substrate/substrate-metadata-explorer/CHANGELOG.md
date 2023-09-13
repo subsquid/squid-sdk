@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+This log was last generated on Wed, 13 Sep 2023 22:16:51 GMT and should not be manually modified.
+
+## 3.1.0
+Wed, 13 Sep 2023 22:16:51 GMT
+
+### Minor changes
+
+- add `squid-substrate-metadata-explorer(1)` back in addition to `substrate-metadata-explorer(1)`
 
 ## 3.0.0
 Tue, 12 Sep 2023 08:42:04 GMT
