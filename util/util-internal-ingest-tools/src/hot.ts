@@ -100,21 +100,11 @@ export class HotProcessor<B> {
     }
 
     private async moveToBlock(block: B): Promise<void> {
-        let chain = this.chain.slice()
         let newBlocks = [block]
         let head = getParent(this.getHeader(block))
 
         assert(head.height >= this.chain[0].height)
-
-        if (last(chain).height > head.height) {
-            let pos = head.height - chain[0].height
-            if (this.chain[pos].hash === head.hash) {
-                // no fork
-            } else {
-                // we have a proper fork
-                chain = chain.slice(0, pos)
-            }
-        }
+        let chain = this.chain.slice(0, head.height - this.chain[0].height + 1)
 
         while (last(chain).height < head.height) {
             let block = await this.getBlock(head)
@@ -122,6 +112,7 @@ export class HotProcessor<B> {
             head = getParent(this.getHeader(block))
         }
 
+        assert(last(chain).height === head.height)
         while (last(chain).hash !== head.hash) {
             let block = await this.getBlock(head)
             newBlocks.push(block)

@@ -20,6 +20,7 @@ const processor = new SubstrateBatchProcessor()
             timestamp: true
         }
     })
+    .setBlockRange({from: 19_666_100})
 
 
 processor.run(new TypeormDatabase(), async ctx => {
