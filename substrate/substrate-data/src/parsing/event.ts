@@ -27,7 +27,7 @@ export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undef
     )
 
     return items.map((it, index) => {
-        let {name, args} = unwrapArguments(it.event, runtime.events)
+        let {name, args} = unwrapArguments(it.event, runtime, 'events')
         let e: Event = {
             index,
             name,

@@ -25,7 +25,7 @@ export class EventType<T extends sts.Type> {
     constructor(private type: T) {}
 
     is(event: Event): boolean {
-        return event.block._runtime.events.checkType(event.name, this.type)
+        return event.block._runtime.checkEventType(event.name, this.type)
     }
 
     decode(event: Event): sts.GetType<T> {
@@ -39,7 +39,7 @@ export class CallType<T extends sts.Type> {
     constructor(private type: T) {}
 
     is(call: Call): boolean {
-        return call.block._runtime.calls.checkType(call.name, this.type)
+        return call.block._runtime.checkCallType(call.name, this.type)
     }
 
     decode(call: Call): sts.GetType<T> {

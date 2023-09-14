@@ -64,9 +64,9 @@ export function encodeName(prefix: string, name: string): Bytes {
 }
 
 
-export function encodeKey(codec: Codec, prefix: string, name: string, item: StorageItem, key: any[]): Bytes {
+export function encodeKey(codec: Codec, item: StorageItem, key: any[]): Bytes {
     assert(key.length <= item.hashers.length)
-    let encoding = getNameHash(prefix) + getNameHash(name).slice(2)
+    let encoding = getNameHash(item.prefix) + getNameHash(item.name).slice(2)
     for (let i = 0; i < key.length; i++) {
         encoding += getKeyHash(
             item.hashers[i],

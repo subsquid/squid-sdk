@@ -110,7 +110,7 @@ export class CallParser {
     }
 
     createCall(extrinsicIndex: number, address: number[], src: DecodedCall, origin?: IOrigin): Call {
-        let {name, args} = unwrapArguments(src, this.runtime.calls)
+        let {name, args} = unwrapArguments(src, this.runtime, 'calls')
         return {
             extrinsicIndex,
             address,

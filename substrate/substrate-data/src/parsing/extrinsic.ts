@@ -33,7 +33,7 @@ export function decodeExtrinsics(
             extrinsic.hash = toHex(blake2b(32).update(bytes).digest())
         }
 
-        let call = unwrapArguments(src.call, runtime.calls)
+        let call = unwrapArguments(src.call, runtime, 'calls')
 
         return {extrinsic, call}
     })

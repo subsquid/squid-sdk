@@ -1,4 +1,4 @@
-import {Codec as ScaleCodec, JsonCodec, Ti} from '@subsquid/scale-codec'
+import {Codec as ScaleCodec, JsonCodec, Ti, TypeKind} from '@subsquid/scale-codec'
 import * as sts from '@subsquid/scale-type-system'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
@@ -11,13 +11,15 @@ import {
     OldSpecsBundle,
     OldTypesBundle,
     RuntimeDescription,
-    StorageItem
+    StorageItem,
+    Type,
+    Variant
 } from '../metadata'
-import {EACDefinition, EACRegistry} from './events-and-calls'
 import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
 import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
 import * as sto from './storage'
 import {parseQualifiedName} from './util'
+import {getTypeChecker} from '@subsquid/scale-type-system'
 
 
 export class Runtime {
@@ -26,8 +28,6 @@ export class Runtime {
     public readonly implName: string
     public readonly implVersion: number
     public readonly description: RuntimeDescription
-    public readonly events: EACRegistry
-    public readonly calls: EACRegistry
     public readonly scaleCodec: ScaleCodec
     public readonly jsonCodec: JsonCodec
     private constantValueCache = new Map<QualifiedName, any>()
@@ -44,8 +44,6 @@ export class Runtime {
         this.implName = runtimeVersion.implName
         this.implVersion = runtimeVersion.implVersion
         this.description = getRuntimeDescription(metadata, this.specName, this.specVersion, typesBundle)
-        this.events = new EACRegistry(this.description.types, this.description.event)
-        this.calls = new EACRegistry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)
         this.jsonCodec = new JsonCodec(this.description.types)
     }
@@ -57,17 +55,17 @@ export class Runtime {
 
     hasStorageItem(name: QualifiedName): boolean {
         let qn = parseQualifiedName(name)
-        return !!this.description.storage[qn[0]]?.[qn[1]]
+        return !!this.description.pallets[qn[0]]?.storage[qn[1]]
     }
 
-    private _getStorageItem([prefix, name]: [string, string]): StorageItem  {
-        let items = this.description.storage[prefix]
+    private _getStorageItem([pallet, name]: [string, string]): StorageItem  {
+        let items = this.description.pallets[pallet]?.storage
         if (items == null) throw new Error(
-            `There are no storage items under prefix ${prefix}`
+            `There are no storage items in pallet ${pallet}`
         )
         let def = items[name]
         if (def == null) throw new Error(
-            `Unknown storage item: ${prefix}.${name}`
+            `Unknown storage item: ${pallet}.${name}`
         )
         return def
     }
@@ -76,8 +74,6 @@ export class Runtime {
         let qn = parseQualifiedName(name)
         return sto.encodeKey(
             this.scaleCodec,
-            qn[0],
-            qn[1],
             this._getStorageItem(qn),
             key
         )
@@ -114,7 +110,7 @@ export class Runtime {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         assert(item.keys.length === key.length)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, key)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item, key)
         let value: Bytes | undefined = await this.rpc.call('state_getStorageAt', [encodedKey, blockHash])
         if (value == null) return
         return this._decodeStorageValue(item, value)
@@ -131,7 +127,7 @@ export class Runtime {
             query = keys.map(key => {
                 let ks = item.keys.length > 1 ? key : [key]
                 assert(ks.length === item.keys.length)
-                return sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, ks)
+                return sto.encodeKey(this.scaleCodec, item, ks)
             })
         }
 
@@ -158,7 +154,7 @@ export class Runtime {
     async getStorageKeys(blockHash: string, name: QualifiedName, ...args: any[]): Promise<any[]> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item, args)
         let values: Bytes[] = await this.rpc.call('state_getKeys', [encodedKey, blockHash])
         return values.map(v => this._decodeStorageKey(item, v))
     }
@@ -172,7 +168,7 @@ export class Runtime {
         assert(pageSize > 0)
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item, args)
         let lastKey = null
         while (true) {
             let keys: Bytes[] = await this.rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
@@ -191,7 +187,7 @@ export class Runtime {
     async getStoragePairs(blockHash: string, name: QualifiedName, ...args: any[]): Promise<[key: any, value: any][]> {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item, args)
 
         let query: Bytes[] = await this.rpc.call('state_getKeys', [encodedKey, blockHash])
         if (query.length == 0) return []
@@ -208,7 +204,7 @@ export class Runtime {
         assert(pageSize > 0)
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, args)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item, args)
         let lastKey = null
         while (true) {
             let query: Bytes[] = await this.rpc.call('state_getKeysPaged', [encodedKey, pageSize, lastKey, blockHash])
@@ -238,7 +234,7 @@ export class Runtime {
 
     hasConstant(name: QualifiedName): boolean {
         let qn = parseQualifiedName(name)
-        return !!this.description.constants[qn[0]]?.[qn[1]]
+        return !!this.description.pallets[qn[0]]?.constants[qn[1]]
     }
 
     getConstant(name: QualifiedName): any {
@@ -253,7 +249,7 @@ export class Runtime {
 
     private getConstantDefinition(name: QualifiedName): Constant {
         let qn = parseQualifiedName(name)
-        let palletConstants = this.description.constants[qn[0]]
+        let palletConstants = this.description.pallets[qn[0]]?.constants
         if (palletConstants == null) throw new Error(
             `There are no constants in ${qn[0]} pallet`
         )
@@ -277,16 +273,31 @@ export class Runtime {
     }
 
     decodeCallRecordArguments(call: CallRecord): any {
-        let def = this.calls.get(call.name)
+        let qn = parseQualifiedName(call.name)
+        let calls = this.description.pallets[qn[0]]?.calls
+        if (calls == null) throw new Error(
+            `There are no calls in ${qn[0]} pallet`
+        )
+        let def = calls[qn[1]]
+        if (def == null) throw new Error(
+            `Unknown call: ${call.name}`
+        )
         return this.decodeArgs(def, call.args)
     }
 
-    decodeEventRecordArguments(call: EventRecord): any {
-        let def = this.events.get(call.name)
-        return this.decodeArgs(def, call.args)
+    decodeEventRecordArguments(event: EventRecord): any {
+        let qn = parseQualifiedName(event.name)
+        let events = this.description.pallets[qn[0]]?.events
+        if (events == null) throw new Error(
+            `There are no events in ${qn[0]} pallet`
+        )
+        let def = events[qn[1]]
+        if (def == null) throw new Error(
+            `Unknown call: ${event.name}`
+        )
     }
 
-    private decodeArgs(def: EACDefinition, args: any): any {
+    private decodeArgs(def: Variant, args: any): any {
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeJsonTuple(def.fields, args)
         assert(args != null && typeof args == 'object', 'invalid args')
@@ -313,28 +324,30 @@ export class Runtime {
     }
 
     hasEvent(name: QualifiedName): boolean {
-        return this.events.has(name)
+        let qn = parseQualifiedName(name)
+        return !!this.description.pallets[qn[0]]?.events[qn[1]]
     }
 
     hasCall(name: QualifiedName): boolean {
-        return this.calls.has(name)
-    }
-
-    checkEventType(name: QualifiedName, ty: sts.Type): boolean {
-        return this.events.checkType(name, ty)
-    }
-
-    checkCallType(name: QualifiedName, ty: sts.Type): boolean {
-        return this.calls.checkType(name, ty)
+        let qn = parseQualifiedName(name)
+        return !!this.description.pallets[qn[0]]?.calls[qn[1]]
     }
 
     checkType(ti: Ti, ty: sts.Type): boolean {
         return sts.match(this.description.types, ti, ty)
     }
 
-    checkConstantType(name: QualifiedName, ty: sts.Type): boolean {
+    checkEventType(name: QualifiedName, ty: sts.Type): boolean {
+        return this.checkEOCType('events', name, ty)
+    }
+
+    checkCallType(name: QualifiedName, ty: sts.Type): boolean {
+        return this.checkEOCType('calls', name, ty)
+    }
+
+        checkConstantType(name: QualifiedName, ty: sts.Type): boolean {
         let qn = parseQualifiedName(name)
-        let def = this.description.constants[qn[0]]?.[qn[1]]
+        let def = this.description.pallets[qn[0]]?.constants[qn[1]]
         if (def == null) return false
         return this.checkType(def.type, ty)
     }
@@ -346,7 +359,7 @@ export class Runtime {
         valueTy: sts.Type
     ): boolean {
         let qn = parseQualifiedName(name)
-        let def = this.description.storage[qn[0]]?.[qn[1]]
+        let def = this.description.pallets[qn[0]]?.storage[qn[1]]
         if (def == null) return false
         if (Array.isArray(modifier)) {
             if (!modifier.includes(def.modifier)) return false
@@ -358,5 +371,38 @@ export class Runtime {
             if (!this.checkType(def.keys[i], key[i])) return false
         }
         return this.checkType(def.value, valueTy)
+    }
+
+    private checkEOCType(kind: 'events' | 'calls', name: QualifiedName, ty: sts.Type): boolean {
+        let qn = parseQualifiedName(name)
+        let def = this.description.pallets[qn[0]]?.[kind][qn[1]]
+        if (def == null) return false
+        let scaleType = this.createScaleType(def)
+        return ty.match(getTypeChecker(this.description.types), scaleType)
+    }
+
+    private createScaleType(def: Variant): Type {
+        if (def.fields.length == 0) return {
+            kind: TypeKind.Tuple,
+            tuple: []
+        }
+        if (def.fields[0].name == null) {
+            if (def.fields.length == 1) {
+                return this.description.types[def.fields[0].type]
+            } else {
+                return {
+                    kind: TypeKind.Tuple,
+                    tuple: def.fields.map(f => {
+                        assert(f.name == null)
+                        return f.type
+                    })
+                }
+            }
+        } else {
+            return {
+                kind: TypeKind.Composite,
+                fields: def.fields
+            }
+        }
     }
 }

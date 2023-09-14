@@ -31,15 +31,12 @@ export interface RuntimeDescription {
     eventRecord: Ti
     eventRecordList: Ti
     signature: Ti
-    storage: Storage
-    constants: Constants
+    pallets: Pallets
 }
 
 
 export interface Constants {
-    [pallet: string]: {
-        [name: string]: Constant
-    }
+    [name: string]: Constant
 }
 
 
@@ -47,6 +44,8 @@ export interface Constant {
     type: Ti
     value: Uint8Array
     docs: string[]
+    pallet: string
+    name: string
 }
 
 
@@ -67,15 +66,42 @@ export interface StorageItem {
     modifier: 'Optional' | 'Default' | 'Required'
     fallback: Uint8Array
     docs?: string[]
+    pallet: string
+    prefix: string
+    name: string
 }
 
 
 export interface Storage {
-    [prefix: string]: {
-        [name: string]: StorageItem
-    }
+    [name: string]: StorageItem
 }
 
+export interface Call extends Variant {
+    pallet: string
+}
+
+export interface Calls {
+    [name: string]: Call
+}
+
+export interface Event extends Variant {
+    pallet: string
+}
+
+export interface Events {
+    [name: string]: Event
+}
+
+export interface Pallet {
+    calls: Calls
+    events: Events
+    storage: Storage
+    constants: Constants
+}
+
+export interface Pallets {
+    [name: string]: Pallet
+}
 
 export function getRuntimeDescription(metadata: Metadata | Bytes | Uint8Array): RuntimeDescription
 export function getRuntimeDescription(
@@ -134,8 +160,7 @@ class FromV14 {
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
             signature: this.signature(),
-            storage: this.storage(),
-            constants: this.constants()
+            pallets: this.pallets(),
         }
     }
 
@@ -162,7 +187,7 @@ class FromV14 {
     private event(): Ti {
         let rec = this.types()[this.eventRecord()]
         assert(rec.kind == TypeKind.Composite)
-        let eventField = rec.fields.find(f => f.name == 'event')
+        let eventField = rec.fields.find((f) => f.name == 'event')
         assert(eventField != null)
         return eventField.type
     }
@@ -187,15 +212,17 @@ class FromV14 {
 
         let signedExtensionsType: Type = {
             kind: TypeKind.Composite,
-            fields: this.metadata.extrinsic.signedExtensions.map(ext => {
-                return {
-                    name: toCamelCase(ext.identifier),
-                    type: ext.type
-                }
-            }).filter(f => {
-                return !isUnitType(types[f.type])
-            }),
-            path: ['SignedExtensions']
+            fields: this.metadata.extrinsic.signedExtensions
+                .map((ext) => {
+                    return {
+                        name: toCamelCase(ext.identifier),
+                        type: ext.type,
+                    }
+                })
+                .filter((f) => {
+                    return !isUnitType(types[f.type])
+                }),
+            path: ['SignedExtensions'],
         }
 
         let signedExtensions = types.push(signedExtensionsType) - 1
@@ -204,19 +231,19 @@ class FromV14 {
             kind: TypeKind.Composite,
             fields: [
                 {
-                    name: "address",
+                    name: 'address',
                     type: this.address(),
                 },
                 {
-                    name: "signature",
+                    name: 'signature',
                     type: this.extrinsicSignature(),
                 },
                 {
                     name: 'signedExtensions',
-                    type: signedExtensions
-                }
+                    type: signedExtensions,
+                },
             ],
-            path: ['ExtrinsicSignature']
+            path: ['ExtrinsicSignature'],
         }
 
         return types.push(signatureType) - 1
@@ -246,148 +273,171 @@ class FromV14 {
                 candidates.push(i)
             }
         }
-        switch(candidates.length) {
-            case 0: throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
-            case 1: return candidates[0]
+        switch (candidates.length) {
+            case 0:
+                throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)
+            case 1:
+                return candidates[0]
             default:
-                return candidates.includes(this.metadata.extrinsic.type)
-                    ? this.metadata.extrinsic.type
-                    : candidates[0]
+                return candidates.includes(this.metadata.extrinsic.type) ? this.metadata.extrinsic.type : candidates[0]
         }
     }
 
     private getTypeParameter(ti: Ti, idx: number): Ti {
         let def = this.metadata.lookup.types[ti]
         if (def.type.params.length <= idx) {
-            let name = def.type.path.length ? def.type.path.join('::') : ''+ti
-            throw new Error(
-                `Type ${name} should have at least ${idx + 1} type parameter${idx > 0 ? 's' : ''}`
-            )
+            let name = def.type.path.length ? def.type.path.join('::') : '' + ti
+            throw new Error(`Type ${name} should have at least ${idx + 1} type parameter${idx > 0 ? 's' : ''}`)
         }
         return assertNotNull(def.type.params[idx].type)
     }
 
-    private getStorageItem(prefix: string, name: string): StorageItem {
-        let storage = this.storage()
-        let item = storage[prefix]?.[name]
-        return assertNotNull(item, `Can't find ${prefix}.${name} storage item`)
+    private getStorageItem(pallet: string, name: string): StorageItem {
+        let pallets = this.pallets()
+        let item = pallets[pallet]?.storage[name]
+        return assertNotNull(item, `Can't find ${pallet}.${name} storage item`)
     }
 
     @def
-    private storage(): Storage {
-        let storage: Storage = {}
-        this.metadata.pallets.forEach(pallet => {
-            if (pallet.storage == null) return
-            let items: Record<string, StorageItem> = storage[pallet.storage.prefix] = {}
-            pallet.storage.items.forEach(e => {
-                let hashers: StorageHasher[]
-                let keys: Ti[]
-                switch(e.type.__kind) {
-                    case 'Plain':
-                        hashers = []
-                        keys = []
-                        break
-                    case 'Map':
-                        hashers = e.type.hashers.map(h => h.__kind)
-                        if (hashers.length == 1) {
-                            keys = [e.type.key]
-                        } else {
-                            let keyDef = this.types()[e.type.key]
-                            assert(keyDef.kind == TypeKind.Tuple)
-                            assert(keyDef.tuple.length == hashers.length)
-                            keys = keyDef.tuple
-                        }
-                        break
-                    default:
-                        throw unexpectedCase()
-                }
-                items[e.name] = {
-                    modifier: e.modifier.__kind,
-                    hashers,
-                    keys,
-                    value: e.type.value,
-                    fallback: e.fallback,
-                    docs: e.docs
-                }
-            })
-        })
-        return storage
-    }
+    private pallets(): Pallets {
+        let types = this.types()
 
-    @def
-    private constants(): Constants {
-        let constants: Constants = {}
-        this.metadata.pallets.forEach(pallet => {
-            pallet.constants.forEach(c => {
-                let pc = constants[pallet.name] || (constants[pallet.name] = {})
-                pc[c.name] = {
+        let pallets: Pallets = {}
+        this.metadata.pallets.forEach((pallet) => {
+            let p: Pallet = (pallets[pallet.name] = {calls: {}, constants: {}, events: {}, storage: {}})
+            if (pallet.storage != null) {
+                for (let e of pallet.storage.items) {
+                    let hashers: StorageHasher[]
+                    let keys: Ti[]
+                    switch (e.type.__kind) {
+                        case 'Plain':
+                            hashers = []
+                            keys = []
+                            break
+                        case 'Map':
+                            hashers = e.type.hashers.map((h) => h.__kind)
+                            if (hashers.length == 1) {
+                                keys = [e.type.key]
+                            } else {
+                                let keyDef = this.types()[e.type.key]
+                                assert(keyDef.kind == TypeKind.Tuple)
+                                assert(keyDef.tuple.length == hashers.length)
+                                keys = keyDef.tuple
+                            }
+                            break
+                        default:
+                            throw unexpectedCase()
+                    }
+                    p.storage[e.name] = {
+                        modifier: e.modifier.__kind,
+                        hashers,
+                        keys,
+                        value: e.type.value,
+                        fallback: e.fallback,
+                        docs: e.docs,
+                        pallet: pallet.name,
+                        prefix: pallet.storage.prefix,
+                        name: e.name,
+                    }
+                }
+            }
+
+            for (let c of pallet.constants) {
+                p.constants[c.name] = {
                     type: c.type,
                     value: c.value,
-                    docs: c.docs
+                    docs: c.docs,
+                    pallet: pallet.name,
+                    name: c.name,
                 }
-            })
+            }
+
+            if (pallet.calls != null) {
+                let def = types[pallet.calls.type]
+                assert(def.kind == TypeKind.Variant)
+
+                for (let v of def.variants) {
+                    p.calls[v.name] = {
+                        ...v,
+                        pallet: pallet.name,
+                    }
+                }
+            }
+
+            if (pallet.events != null) {
+                let def = types[pallet.events.type]
+                assert(def.kind == TypeKind.Variant)
+
+                for (let v of def.variants) {
+                    p.events[v.name] = {
+                        ...v,
+                        pallet: pallet.name,
+                    }
+                }
+            }
         })
-        return constants
+
+        return pallets
     }
 
     @def
     private types(): Type[] {
-        let types: Type[] = this.metadata.lookup.types.map(t => {
+        let types: Type[] = this.metadata.lookup.types.map((t) => {
             let info = {
                 path: t.type.path,
-                docs: t.type.docs
+                docs: t.type.docs,
             }
             let def = t.type.def
-            switch(def.__kind) {
+            switch (def.__kind) {
                 case 'Primitive':
                     return {
                         kind: TypeKind.Primitive,
                         primitive: def.value.__kind,
-                        ...info
+                        ...info,
                     }
-                case "Compact":
+                case 'Compact':
                     return {
                         kind: TypeKind.Compact,
                         type: def.value.type,
-                        ...info
+                        ...info,
                     }
-                case "Sequence":
+                case 'Sequence':
                     return {
                         kind: TypeKind.Sequence,
                         type: def.value.type,
-                        ...info
+                        ...info,
                     }
-                case "BitSequence":
+                case 'BitSequence':
                     return {
                         kind: TypeKind.BitSequence,
                         bitStoreType: def.value.bitStoreType,
                         bitOrderType: def.value.bitOrderType,
-                        ...info
+                        ...info,
                     }
-                case "Array":
+                case 'Array':
                     return {
                         kind: TypeKind.Array,
                         type: def.value.type,
                         len: def.value.len,
-                        ...info
+                        ...info,
                     }
-                case "Tuple":
+                case 'Tuple':
                     return {
                         kind: TypeKind.Tuple,
                         tuple: def.value,
-                        ...info
+                        ...info,
                     }
-                case "Composite":
+                case 'Composite':
                     return {
                         kind: TypeKind.Composite,
                         fields: def.value.fields,
-                        ...info
+                        ...info,
                     }
-                case "Variant":
+                case 'Variant':
                     return {
                         kind: TypeKind.Variant,
                         variants: def.value.variants,
-                        ...info
+                        ...info,
                     }
                 default:
                     throw unexpectedCase((def as any).__kind)
@@ -421,8 +471,7 @@ class FromOld {
         let event = this.registry.use('GenericEvent')
         let eventRecord = this.registry.use('EventRecord')
         let eventRecordList = this.registry.use('Vec<EventRecord>')
-        let storage = this.storage()
-        let constants = this.constants()
+        let pallets = this.pallets()
         return {
             types: this.registry.getTypes(),
             address,
@@ -433,8 +482,7 @@ class FromOld {
             eventRecord,
             eventRecordList,
             signature,
-            storage,
-            constants
+            pallets,
         }
     }
 
@@ -662,68 +710,107 @@ class FromOld {
     }
 
     @def
-    private storage(): Storage {
-        let storage: Storage = {}
-        this.forEachPallet(null, mod => {
-            if (mod.storage == null) return
-            let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
-            mod.storage.items.forEach(e => {
-                let hashers: StorageHasher[]
-                let keys: Ti[]
-                switch(e.type.__kind) {
-                    case 'Plain':
-                        hashers = []
-                        keys = []
-                        break
-                    case 'Map':
-                        hashers = [e.type.hasher.__kind]
-                        keys = [this.registry.use(e.type.key, mod.name)]
-                        break
-                    case 'DoubleMap':
-                        hashers = [
-                            e.type.hasher.__kind,
-                            e.type.key2Hasher.__kind
-                        ]
-                        keys = [
-                            this.registry.use(e.type.key1, mod.name),
-                            this.registry.use(e.type.key2, mod.name)
-                        ]
-                        break
-                    case 'NMap':
-                        hashers = e.type.hashers.map(h => h.__kind)
-                        keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
-                        break
-                    default:
-                        throw unexpectedCase()
-                }
-                items[e.name] = {
-                    modifier: e.modifier.__kind,
-                    hashers,
-                    keys,
-                    value: this.registry.use(e.type.value, mod.name),
-                    fallback: e.fallback,
-                    docs: e.docs
-                }
-            })
-            storage[mod.storage.prefix] = items
-        })
-        return storage
-    }
+    private pallets() {
+        let callTi = this.registry.use('GenericCall')
+        let call = this.registry.get(callTi)
+        assert(call.kind == TypeKind.Variant)
+        let palletCalls = new Map(call.variants.map((v) => [v.index, v]))
 
-    @def
-    private constants(): Constants {
-        let constants: Constants = {}
-        this.forEachPallet(null, mod => {
-            mod.constants.forEach(c => {
-                let pc = constants[mod.name] || (constants[mod.name] = {})
-                pc[c.name] = {
+        let eventTi = this.registry.use('GenericEvent')
+        let event = this.registry.get(eventTi)
+        assert(event.kind == TypeKind.Variant)
+        let palletEvents = new Map(event.variants.map((v) => [v.index, v]))
+
+        let pallets: Pallets = {}
+        this.forEachPallet(null, (mod, i) => {
+            let p: Pallet = pallets[mod.name] = {calls: {}, constants: {}, events: {}, storage: {}}
+            if (mod.storage != null) {
+                for (let e of mod.storage.items) {
+                    let hashers: StorageHasher[]
+                    let keys: Ti[]
+                    switch(e.type.__kind) {
+                        case 'Plain':
+                            hashers = []
+                            keys = []
+                            break
+                        case 'Map':
+                            hashers = [e.type.hasher.__kind]
+                            keys = [this.registry.use(e.type.key, mod.name)]
+                            break
+                        case 'DoubleMap':
+                            hashers = [
+                                e.type.hasher.__kind,
+                                e.type.key2Hasher.__kind
+                            ]
+                            keys = [
+                                this.registry.use(e.type.key1, mod.name),
+                                this.registry.use(e.type.key2, mod.name)
+                            ]
+                            break
+                        case 'NMap':
+                            hashers = e.type.hashers.map(h => h.__kind)
+                            keys = e.type.keyVec.map(k => this.registry.use(k, mod.name))
+                            break
+                        default:
+                            throw unexpectedCase()
+                    }
+                    p.storage[e.name] = {
+                        modifier: e.modifier.__kind,
+                        hashers,
+                        keys,
+                        value: this.registry.use(e.type.value, mod.name),
+                        fallback: e.fallback,
+                        docs: e.docs,
+                        pallet: mod.name,
+                        prefix: mod.storage.prefix,
+                        name: e.name,
+                    }
+                }
+            }
+            
+            for (let c of mod.constants) {
+                p.constants[c.name] = {
                     type: this.registry.use(c.type, mod.name),
                     value: c.value,
-                    docs: c.docs
+                    docs: c.docs,
+                    pallet: mod.name,
+                    name: c.name,
                 }
-            })
+            }
         })
-        return constants
+
+        // populate calls and events separately to keep the correct variant index for runtimes with metadata version <12
+        this.forEachPallet((mod) => mod.calls, (mod, i) => {
+            let p: Pallet = pallets[mod.name]
+
+            let defTi = palletCalls.get(i)!.fields[0].type
+            let def = this.registry.get(defTi)
+            assert(def.kind == TypeKind.Variant)
+
+            for (let v of def.variants) {
+                p.calls[v.name] = {
+                    ...v,
+                    pallet: mod.name,
+                }
+            }
+        })
+
+        this.forEachPallet((mod) => mod.events?.length, (mod, i) => {
+            let p: Pallet = pallets[mod.name]
+
+            let defTi = palletEvents.get(i)!.fields[0].type
+            let def = this.registry.get(defTi)
+            assert(def.kind == TypeKind.Variant)
+
+            for (let v of def.variants) {
+                p.events[v.name] = {
+                    ...v,
+                    pallet: mod.name,
+                }
+            }
+        })
+
+        return pallets
     }
 
     private defineOriginCaller(): void {

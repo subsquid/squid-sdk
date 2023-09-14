@@ -4,14 +4,17 @@ import {IAddress, IOrigin} from '../types/system'
 
 export function unwrapArguments(
     call: DecodedCall | DecodedEvent,
-    registry: Runtime['events' | 'calls']
+    runtime: Runtime,
+    kind: 'events' | 'calls'
 ): {
     name: string
     args: unknown
 } {
-    let name = call.__kind + "." + call.value.__kind
+    let pallet = call.__kind
+    let name = call.value.__kind
     let args: unknown
-    let def = registry.get(name)
+    let def = runtime.description.pallets[pallet]?.[kind][name]
+    if (def == null) throw new Error(`${name} not found`)
     if (def.fields[0]?.name != null) {
         let {__kind, ...props} = call.value
         args = props
