@@ -1,7 +1,7 @@
 import {closedEnum, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {Call} from '../../interfaces/data'
 import {Address} from '../../types/system'
-import {assertEvent, isEvent, UnexpectedEventType} from '../../types/util'
+import {assertCall, isEvent, UnexpectedEventType} from '../../types/util'
 import {addressOrigin} from '../util'
 import type {CallParser} from './parser'
 
@@ -44,7 +44,7 @@ export function visitProxy(cp: CallParser, call: Call): void {
 
 
 function getSubcall(cp: CallParser, call: Call): Call {
-    assertEvent(cp.runtime, Proxy_RealAddress, call)
+    assertCall(cp.runtime, Proxy_RealAddress, call)
     let origin = addressOrigin(call.args.real) ?? null
     return cp.getSubcall(call, origin)
 }
