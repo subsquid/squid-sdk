@@ -163,6 +163,26 @@ export class S3Fs implements Fs {
         assert(res.Body instanceof Readable)
         return res.Body
     }
+
+    async readFile(path: string): Promise<Uint8Array>
+    async readFile(path: string, encoding: BufferEncoding): Promise<string>
+    async readFile(path: string, encoding?: BufferEncoding): Promise<Uint8Array | string> {
+        let stream = await this.readStream(path)
+        if (encoding) {
+            stream.setEncoding(encoding)
+            let out = ''
+            for await (let chunk of stream) {
+                out += chunk
+            }
+            return out
+        } else {
+            let chunks = []
+            for await (let chunk of stream) {
+                chunks.push(chunk)
+            }
+            return Buffer.concat(chunks)
+        }
+    }
 }
 
 

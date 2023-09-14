@@ -28,6 +28,15 @@ COPY --from=substrate-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/substrate/substrate-ingest/bin/run.js"]
 
 
+FROM builder AS substrate-metadata-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-metadata-service
+
+
+FROM node AS substrate-metadata-service
+COPY --from=substrate-metadata-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/substrate/substrate-metadata-service/bin/run.js"]
+
+
 FROM builder AS chain-status-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
 

@@ -1,6 +1,21 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+
+## 1.3.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Minor changes
+
+- add response stream mode
+- expose `HttpBody` type
+
+## 1.2.2
+Thu, 07 Sep 2023 18:37:04 GMT
+
+### Patches
+
+- fix: `HttpClient.isRetryableError()` should handle `HttpError` instances
 
 ## 1.2.1
 Tue, 05 Sep 2023 20:32:34 GMT

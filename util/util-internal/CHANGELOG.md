@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Tue, 01 Aug 2023 16:40:12 GMT and should not be manually modified.
+This log was last generated on Thu, 07 Sep 2023 20:03:29 GMT and should not be manually modified.
+
+## 2.5.1
+Thu, 07 Sep 2023 20:03:29 GMT
+
+### Patches
+
+- fix `@annotateAsyncError()`
 
 ## 2.5.0
 Tue, 01 Aug 2023 16:40:12 GMT

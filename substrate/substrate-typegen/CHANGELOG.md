@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+
+## 7.0.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Breaking changes
+
+- when `.specVersions` is http url, fetch it as JSON lines
 
 ## 6.0.0
 Tue, 05 Sep 2023 20:32:34 GMT

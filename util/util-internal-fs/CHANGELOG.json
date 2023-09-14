@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-fs",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-fs_v0.1.0",
+      "date": "Tue, 12 Sep 2023 08:42:04 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `.readFile()` method"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-fs_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

@@ -1,6 +1,32 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Thu, 14 Sep 2023 12:05:35 GMT and should not be manually modified.
+
+## 2.0.4
+Thu, 14 Sep 2023 12:05:35 GMT
+
+### Patches
+
+- fix `Proxy.proxy` call expansion
+
+## 2.0.3
+Wed, 13 Sep 2023 22:16:51 GMT
+
+_Version update only_
+
+## 2.0.2
+Thu, 07 Sep 2023 20:03:29 GMT
+
+### Patches
+
+- skip batch call handling for polymesh network
+
+## 2.0.1
+Thu, 07 Sep 2023 18:37:04 GMT
+
+### Patches
+
+- unwrap old batch calls
 
 ## 2.0.0
 Tue, 05 Sep 2023 20:32:34 GMT

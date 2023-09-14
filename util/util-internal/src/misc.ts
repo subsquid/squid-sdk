@@ -114,7 +114,9 @@ export function annotateAsyncError(getCtx: (...args: any[]) => any): (proto: any
 
         let value = function(this: any, ...args: any[]) {
             try {
-                return fn.apply(this, args).catch((err: any) => annotate(err, args))
+                return fn.apply(this, args).catch((err: any) => {
+                    throw annotate(err, args)
+                })
             } catch(err: any) {
                 throw annotate(err, args)
             }

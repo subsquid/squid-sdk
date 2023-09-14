@@ -23,7 +23,7 @@ export async function readConfig(file: string): Promise<Config> {
 
     let specVersions = cfg.specVersions
     if (specVersions) {
-        if (!/^https?:\/\//.test(specVersions)) {
+        if (!/^https?:\//.test(specVersions)) {
             specVersions = path.resolve(dir, specVersions)
         }
     }

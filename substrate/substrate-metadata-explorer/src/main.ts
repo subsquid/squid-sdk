@@ -3,11 +3,9 @@ import {RpcClient} from '@subsquid/rpc-client'
 import {runProgram} from '@subsquid/util-internal'
 import {Url} from '@subsquid/util-internal-commander'
 import {Command} from 'commander'
-import * as process from 'process'
-import {ArchiveApi} from './archiveApi'
-import {ChainApi} from './chainApi'
-import {explore, ExploreApi} from './explore'
+import {explore} from './explore'
 import {Out} from './out'
+import {RpcApi} from './rpc-api'
 
 
 const log = createLogger('sqd:substrate-metadata-explorer')
@@ -17,45 +15,35 @@ runProgram(async () => {
     let program = new Command()
 
     program.description(`
-Finds all chain spec versions and stores its metadata in JSON lines file.
+Finds all spec versions by performing binary search over chain blocks.
 
-Either chain node RPC endpoint or squid archive can serve as a data source.
-
-If the output file already exists, it will not start from scratch, 
-but rather try to augment it.
+When output file already exists, 
+the search will not start from scratch and 
+output file will be augmented with newly discovered versions.
 `.trim())
 
-    program.usage('squid-substrate-metadata-explorer --chain <url> --out <file> [options]')
+    program.usage('substrate-metadata-explorer --rpc <url> --out <file>')
+    program.requiredOption('--rpc <url>', 'chain rpc endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
     program.requiredOption('--out <file>', 'output file')
-    program.option('--archive <url>', 'squid substrate archive', Url(['http:', 'https:']))
-    program.option('--chain <url>', 'chain rpc endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
 
     let options = program.parse().opts() as {
         out: string
-        chain?: string
-        archive?: string
+        rpc: string
     }
 
-    let api: ExploreApi
     let out = new Out(options.out)
     if (out.isJson()) {
         log.warn(`JSON lines (.jsonl) format is recommended instead of .json, but output file is set to ${options.out}`)
     }
 
-    if (options.archive) {
-        api = new ArchiveApi(options.archive, log)
-    } else if (options.chain) {
-        let client = new RpcClient({
-            url: options.chain,
-            capacity: 5,
-            retryAttempts: 3,
-            log: log.child('chain-rpc')
-        })
-        api = new ChainApi(client, log)
-    } else {
-        log.fatal('either --archive or --chain option is required')
-        process.exit(1)
-    }
+    let api = new RpcApi(
+        new RpcClient({
+            url: options.rpc,
+            capacity: 10,
+            retryAttempts: 5
+        }),
+        log
+    )
 
     await explore(api, out, log)
 }, err => log.fatal(err))

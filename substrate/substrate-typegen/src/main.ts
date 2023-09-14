@@ -1,6 +1,11 @@
+import {HttpClient} from '@subsquid/http-client'
 import {createLogger} from '@subsquid/logger'
-import {ArchiveApi} from '@subsquid/substrate-metadata-explorer/lib/archiveApi'
-import {readSpecVersions, SpecFileError, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
+import {
+    readSpecVersions,
+    SpecFileError,
+    SpecVersion,
+    validateSpecVersion
+} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
 import {
     getOldTypesBundle,
     OldSpecsBundle,
@@ -8,7 +13,7 @@ import {
     OldTypesBundleError,
     readOldTypesBundle
 } from '@subsquid/substrate-runtime/lib/metadata'
-import {runProgram} from '@subsquid/util-internal'
+import {last, runProgram} from '@subsquid/util-internal'
 import {ConfigError} from '@subsquid/util-internal-config'
 import {Command} from 'commander'
 import {readConfig} from './config'
@@ -40,7 +45,7 @@ Generates TypeScript classes for events, calls and storage items
         let specVersions: SpecVersion[]
         if (/^https?:\/\//.test(config.specVersions)) {
             log.info(`downloading spec versions from ${config.specVersions}`)
-            specVersions = await new ArchiveApi(config.specVersions, log.child('archive')).fetchVersions()
+            specVersions = await downloadSpecVersions(config.specVersions)
         } else {
             specVersions = readSpecVersions(config.specVersions)
         }
@@ -62,3 +67,41 @@ Generates TypeScript classes for events, calls and storage items
         log.fatal(err)
     }
 })
+
+
+async function downloadSpecVersions(url: string): Promise<SpecVersion[]> {
+    let versions: SpecVersion[] = []
+    let http = new HttpClient()
+    let res: NodeJS.ReadableStream = await http.get(url, {stream: true})
+    for await (let line of lines(res)) {
+        let rec = JSON.parse(line)
+        let error = validateSpecVersion(rec)
+        if (error) throw new Error(`invalid spec record in response: ${error}`)
+        versions.push(rec)
+    }
+    return versions
+}
+
+
+async function *lines(input: NodeJS.ReadableStream): AsyncIterable<string> {
+    input.setEncoding('utf-8')
+    let buf = ''
+    for await (let chunk of input) {
+        let ls = (chunk as string).split(/\r\n|\n|\r/)
+        if (ls.length == 1) {
+            buf += ls[0]
+        } else {
+            for (let i = 0; i < ls.length - 1; i++) {
+                let line = buf + ls[i]
+                if (line) {
+                    yield line
+                    buf = ''
+                }
+            }
+            buf = last(ls)
+        }
+    }
+    if (buf) {
+        yield buf
+    }
+}

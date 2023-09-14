@@ -1,11 +1,11 @@
-import {Logger} from "@subsquid/logger"
+import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {findSpecVersions} from "./binarySearch"
-import {ExploreApi} from "./explore"
-import {SpecVersion, SpecVersionRecord} from "./specVersion"
+import {findSpecVersions} from './binarySearch'
+import {ExploreApi} from './explore'
+import {SpecVersion, SpecVersionRecord} from './specVersion'
 
 
-export class ChainApi implements ExploreApi {
+export class RpcApi implements ExploreApi {
     constructor(private client: RpcClient, private log?: Logger) {}
 
     async getHeight(): Promise<number> {

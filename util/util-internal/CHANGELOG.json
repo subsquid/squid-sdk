@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "2.5.1",
+      "tag": "@subsquid/util-internal_v2.5.1",
+      "date": "Thu, 07 Sep 2023 20:03:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `@annotateAsyncError()`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.5.0",
       "tag": "@subsquid/util-internal_v2.5.0",
       "date": "Tue, 01 Aug 2023 16:40:12 GMT",

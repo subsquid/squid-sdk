@@ -2,6 +2,62 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "2.0.4",
+      "tag": "@subsquid/substrate-data_v2.0.4",
+      "date": "Thu, 14 Sep 2023 12:05:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `Proxy.proxy` call expansion"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.3",
+      "tag": "@subsquid/substrate-data_v2.0.3",
+      "date": "Wed, 13 Sep 2023 22:16:51 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.2",
+      "tag": "@subsquid/substrate-data_v2.0.2",
+      "date": "Thu, 07 Sep 2023 20:03:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip batch call handling for polymesh network"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.0` to `^2.5.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-data_v2.0.1",
+      "date": "Thu, 07 Sep 2023 18:37:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "unwrap old batch calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-data_v2.0.0",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

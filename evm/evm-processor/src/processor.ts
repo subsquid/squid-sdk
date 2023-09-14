@@ -2,6 +2,7 @@ import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
+import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
     applyRangeBound,
     Database,
@@ -309,20 +310,26 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             archive = {url: archive}
         }
 
+        let log = this.getLogger().child('archive')
+
         let http = new HttpClient({
-            baseUrl: archive.url,
             headers: {
                 'x-squid-id': this.getSquidId()
             },
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            httpTimeout: archive.requestTimeout || 180_000,
-            retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('archive')
+            log: log.child('http')
         })
 
-        return new EvmArchive(http)
+        return new EvmArchive(
+            new ArchiveClient({
+                http,
+                log,
+                url: archive.url,
+                queryTimeout: archive.requestTimeout
+            })
+        )
     }
 
     @def

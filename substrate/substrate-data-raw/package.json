@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-data-raw",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Raw data fetcher for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,8 +16,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^2.5.0",
-    "@subsquid/util-internal-ingest-tools": "^0.0.0",
+    "@subsquid/util-internal": "^2.5.1",
+    "@subsquid/util-internal-ingest-tools": "^0.0.1",
     "@subsquid/util-internal-range": "^0.0.0"
   },
   "peerDependencies": {

@@ -7,6 +7,9 @@ import {HttpBody} from './body'
 import {nodeFetch} from './request'
 
 
+export {HttpBody}
+
+
 export interface HttpClientOptions {
     agent?: AgentProvider
     baseUrl?: string
@@ -31,6 +34,7 @@ export interface RequestOptions {
     retrySchedule?: number[]
     httpTimeout?: number
     abort?: AbortSignal
+    stream?: boolean
 }
 
 
@@ -47,6 +51,7 @@ export interface FetchRequest extends RequestInit {
     headers: Headers
     timeout?: number
     signal?: AbortSignal
+    stream?: boolean
 }
 
 
@@ -156,7 +161,7 @@ export class HttpClient {
     }
 
     protected afterResponse(req: FetchRequest, res: HttpResponse): void {
-        if (this.log?.isDebug()) {
+        if (!res.stream && this.log?.isDebug()) {
             let httpResponseBody: any = res.body
             if (typeof res.body == 'string' || res.body instanceof Uint8Array) {
                 if (res.body.length > 1024 * 1024) {
@@ -184,7 +189,8 @@ export class HttpClient {
             url: this.getAbsUrl(url),
             signal: options.abort,
             compress: true,
-            timeout: options.httpTimeout ?? this.httpTimeout
+            timeout: options.httpTimeout ?? this.httpTimeout,
+            stream: options.stream
         }
 
         this.handleBasicAuth(req)
@@ -267,15 +273,19 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            req.signal?.removeEventListener('abort', abort)
         }
     }
 
     private async performRequest(req: FetchRequest): Promise<HttpResponse> {
         let res = await nodeFetch.request(req.url, req)
         this.afterResponseHeaders(req, res.url, res.status, res.headers)
-        let body = await this.handleResponseBody(req, res)
-        let httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, body)
+        let httpResponse
+        if (req.stream && res.ok) {
+           httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, res.body, res.body != null)
+        } else {
+            let body = await this.handleResponseBody(req, res)
+            httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, body, false)
+        }
         this.afterResponse(req, httpResponse)
         return httpResponse
     }
@@ -292,14 +302,16 @@ export class HttpClient {
         }
 
         let arrayBuffer = await res.arrayBuffer()
-        let bytes = Buffer.from(arrayBuffer)
-        if (bytes.length == 0) return undefined
-        return bytes
+        if (arrayBuffer.byteLength == 0) return undefined
+        return Buffer.from(arrayBuffer)
     }
 
     isRetryableError(error: HttpResponse | Error, req?: FetchRequest): boolean {
         if (isHttpConnectionError(error)) return true
         if (error instanceof HttpTimeoutError) return true
+        if (error instanceof HttpError) {
+            error = error.response
+        }
         if (error instanceof HttpResponse) {
             switch(error.status) {
                 case 429:
@@ -382,7 +394,8 @@ export class HttpResponse<T=any> {
         public readonly url: string,
         public readonly status: number,
         public readonly headers: Headers,
-        public readonly body: T
+        public readonly body: T,
+        public readonly stream: boolean
     ) {
     }
 
@@ -399,7 +412,7 @@ export class HttpResponse<T=any> {
         return {
             status: this.status,
             headers: Array.from(this.headers),
-            body: this.body,
+            body: this.stream ? undefined : this.body,
             url: this.url
         }
     }
@@ -418,7 +431,7 @@ export class HttpError extends Error {
 
 
 export class HttpTimeoutError extends Error {
-    constructor(ms: number) {
+    constructor(public readonly ms: number) {
         super(`request timed out after ${ms} ms`)
     }
 

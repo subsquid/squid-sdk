@@ -2,6 +2,38 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "6.0.2",
+      "tag": "@subsquid/substrate-processor_v6.0.2",
+      "date": "Wed, 13 Sep 2023 22:16:51 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^2.0.2` to `^2.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.1` to `^0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "6.0.1",
+      "tag": "@subsquid/substrate-processor_v6.0.1",
+      "date": "Tue, 12 Sep 2023 08:42:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't warn users on partial archive unavailability which is part of its normal operation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.2.2` to `^1.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "6.0.0",
       "tag": "@subsquid/substrate-processor_v6.0.0",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",
