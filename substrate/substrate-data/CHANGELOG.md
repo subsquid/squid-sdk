@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 13 Sep 2023 22:16:51 GMT and should not be manually modified.
+This log was last generated on Thu, 14 Sep 2023 12:05:35 GMT and should not be manually modified.
+
+## 2.0.4
+Thu, 14 Sep 2023 12:05:35 GMT
+
+### Patches
+
+- fix `Proxy.proxy` call expansion
 
 ## 2.0.3
 Wed, 13 Sep 2023 22:16:51 GMT
