@@ -132,7 +132,10 @@ class BlockParser {
 
     @def
     validator(): AccountId | undefined {
-        if (this.runtime.checkType(this.runtime.description.digestItem, DigestItem)) {
+        if (
+            this.runtime.hasStorageItem('Session.Validators') &&
+            this.runtime.checkType(this.runtime.description.digestItem, DigestItem)
+        ) {
             let digest = this.digest() as IDigestItem[]
             let validators = assertNotNull(this.src.validators, 'validator data is not provided')
             return getBlockValidator(digest, validators)

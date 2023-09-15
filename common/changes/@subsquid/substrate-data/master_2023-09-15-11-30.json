@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "don't panic when `Session.Validators` storage doesn't exist",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

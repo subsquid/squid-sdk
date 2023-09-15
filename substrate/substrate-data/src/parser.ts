@@ -78,6 +78,8 @@ export class Parser {
     }
 
     private async setValidators(blocks: RawBlock[]): Promise<void> {
+        blocks = blocks.filter(b => b.runtime!.hasStorageItem('Session.Validators'))
+
         if (blocks.length == 0) return
 
         let prev = this.prevValidators.get(blocks[0].height)
