@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "2.0.5",
+      "tag": "@subsquid/substrate-data_v2.0.5",
+      "date": "Fri, 15 Sep 2023 11:35:40 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't panic when `Session.Validators` storage doesn't exist"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.4",
       "tag": "@subsquid/substrate-data_v2.0.4",
       "date": "Thu, 14 Sep 2023 12:05:35 GMT",

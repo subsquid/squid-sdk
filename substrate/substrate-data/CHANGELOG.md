@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Thu, 14 Sep 2023 12:05:35 GMT and should not be manually modified.
+This log was last generated on Fri, 15 Sep 2023 11:35:40 GMT and should not be manually modified.
+
+## 2.0.5
+Fri, 15 Sep 2023 11:35:40 GMT
+
+### Patches
+
+- don't panic when `Session.Validators` storage doesn't exist
 
 ## 2.0.4
 Thu, 14 Sep 2023 12:05:35 GMT
