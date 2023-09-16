@@ -6,9 +6,9 @@ import {
     EthereumTransactLatest,
     EthereumTransactLegacy,
     IAction,
-    IEIP1559Transaction,
-    IEIP2930Transaction,
-    ILegacyTransaction
+    EIP1559TransactionCall,
+    EIP2930TransactionCall,
+    LegacyTransactionCall,
 } from './tx-types'
 import {Call} from './types'
 import {normalizeU256} from './util'
@@ -89,7 +89,7 @@ export function getTransaction(ethereumTransact: Call): Transaction {
 }
 
 
-function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction {
+function normalizeLegacyTransaction(raw: LegacyTransactionCall): LegacyTransaction {
     const tx = ethers.Transaction.from({
         to: getTo(raw.action),
         nonce: Number(normalizeU256(raw.nonce)),
@@ -118,7 +118,7 @@ function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction 
 }
 
 
-function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transaction {
+function normalizeEIP1559Transaction(raw: EIP1559TransactionCall): EIP1559Transaction {
     const tx = ethers.Transaction.from({
         to: getTo(raw.action),
         chainId: Number(raw.chainId),
@@ -157,7 +157,7 @@ function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transacti
 }
 
 
-function normalizeEIP2930Transaction(raw: IEIP2930Transaction): EIP2930Transaction {
+function normalizeEIP2930Transaction(raw: EIP2930TransactionCall): EIP2930Transaction {
     const tx = ethers.Transaction.from({
         type: TransactionType.EIP2930,
         to: getTo(raw.action),

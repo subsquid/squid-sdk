@@ -39,7 +39,7 @@ const AccessList = array(
 )
 
 
-export const LegacyTransaction = struct({
+export const LegacyTransactionCall = struct({
     action: Action,
     nonce: U256,
     gasPrice: U256,
@@ -54,10 +54,10 @@ export const LegacyTransaction = struct({
 })
 
 
-export type ILegacyTransaction = GetType<typeof LegacyTransaction>
+export type LegacyTransactionCall = GetType<typeof LegacyTransactionCall>
 
 
-export const EIP1559Transaction = struct({
+export const EIP1559TransactionCall = struct({
     chainId: bigint(),
     action: Action,
     nonce: U256,
@@ -73,10 +73,10 @@ export const EIP1559Transaction = struct({
 })
 
 
-export type IEIP1559Transaction = GetType<typeof EIP1559Transaction>
+export type EIP1559TransactionCall = GetType<typeof EIP1559TransactionCall>
 
 
-export const EIP2930Transaction = struct({
+export const EIP2930TransactionCall = struct({
     chainId: bigint(),
     action: Action,
     nonce: U256,
@@ -91,12 +91,12 @@ export const EIP2930Transaction = struct({
 })
 
 
-export type IEIP2930Transaction = GetType<typeof EIP2930Transaction>
+export type EIP2930TransactionCall = GetType<typeof EIP2930TransactionCall>
 
 
 export const EthereumTransactLegacy = new CallType(
     struct({
-        transaction: LegacyTransaction
+        transaction: LegacyTransactionCall,
     })
 )
 
@@ -104,9 +104,9 @@ export const EthereumTransactLegacy = new CallType(
 export const EthereumTransactLatest = new CallType(
     struct({
         transaction: closedEnum({
-            Legacy: LegacyTransaction,
-            EIP1559: EIP1559Transaction,
-            EIP2930: EIP2930Transaction
+            Legacy: LegacyTransactionCall,
+            EIP1559: EIP1559TransactionCall,
+            EIP2930: EIP2930TransactionCall,
         })
     })
 )

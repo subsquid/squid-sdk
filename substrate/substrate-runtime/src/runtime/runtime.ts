@@ -18,7 +18,7 @@ import {
 import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
 import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
 import * as sto from './storage'
-import {parseQualifiedName} from './util'
+import {createScaleType, parseQualifiedName} from './util'
 import {getTypeChecker} from '@subsquid/scale-type-system'
 
 
@@ -377,32 +377,7 @@ export class Runtime {
         let qn = parseQualifiedName(name)
         let def = this.description.pallets[qn[0]]?.[kind][qn[1]]
         if (def == null) return false
-        let scaleType = this.createScaleType(def)
+        let scaleType = createScaleType(this.description.types, def)
         return ty.match(getTypeChecker(this.description.types), scaleType)
-    }
-
-    private createScaleType(def: Variant): Type {
-        if (def.fields.length == 0) return {
-            kind: TypeKind.Tuple,
-            tuple: []
-        }
-        if (def.fields[0].name == null) {
-            if (def.fields.length == 1) {
-                return this.description.types[def.fields[0].type]
-            } else {
-                return {
-                    kind: TypeKind.Tuple,
-                    tuple: def.fields.map(f => {
-                        assert(f.name == null)
-                        return f.type
-                    })
-                }
-            }
-        } else {
-            return {
-                kind: TypeKind.Composite,
-                fields: def.fields
-            }
-        }
     }
 }
