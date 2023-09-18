@@ -13,9 +13,11 @@ Database connection and server port are configured via environment variables:
 
 ```
 DB_NAME
+DB_SCHEMA
 DB_USER
 DB_PASS
 DB_HOST
 DB_PORT
+DB_SYNCHRONIZE
 GRAPHQL_SERVER_PORT
 ```

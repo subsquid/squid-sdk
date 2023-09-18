@@ -22,6 +22,7 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
         namingStrategy: new SnakeNamingStrategy(),
         entities: [model],
         migrations: [migrationsDir + '/*.js'],
+        synchronize: process.env.DB_SYNCHRONIZE === 'true',
         ...createConnectionOptions()
     }
 }
