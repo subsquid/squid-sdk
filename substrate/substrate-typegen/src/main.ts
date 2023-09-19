@@ -54,10 +54,7 @@ Generates TypeScript classes for events, calls and storage items
             outDir: config.outDir,
             specVersions,
             typesBundle,
-            events: config.events,
-            calls: config.calls,
-            storage: config.storage,
-            constants: config.constants,
+            pallets: config.pallets,
         })
     }
 }, err => {

@@ -50,13 +50,12 @@ export class Names {
     }
 
     private isValidAssignment(ti: Ti, name: string): boolean {
-        if (this.reserved.has(name) || this.assigned.has('I'+name)) return false
-        let hash = this.assigned.get(name)
-        return hash == null || getTypeHash(this.types, ti) == hash
+        if (this.reserved.has(name)) return false
+        return !this.assigned.has(name)
     }
 
     reserve(name: string): void {
-        assert(!this.assigned.has(name) && !this.assigned.has('I'+name))
+        assert(!this.assigned.has(name))
         this.reserved.add(name)
     }
 

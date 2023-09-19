@@ -9,10 +9,7 @@ export interface Config {
     outDir: string
     specVersions: string
     typesBundle?: string
-    events?: QualifiedName[] | boolean
-    calls?: QualifiedName[] | boolean
-    storage?: QualifiedName[] | boolean
-    constants?: QualifiedName[] | boolean
+    pallets: string[]
 }
 
 
@@ -37,9 +34,6 @@ export async function readConfig(file: string): Promise<Config> {
         outDir,
         specVersions,
         typesBundle,
-        events: cfg.events,
-        calls: cfg.calls,
-        storage: cfg.storage,
-        constants: cfg.constants,
+        pallets: cfg.pallets
     }
 }

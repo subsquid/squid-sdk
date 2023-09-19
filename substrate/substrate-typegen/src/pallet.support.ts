@@ -35,11 +35,27 @@ interface ICall {
 }
 
 
+export function createEvent<T extends Record<string, sts.Type>>(...args: ConstructorParameters<typeof EventVersions<T>>) {
+    return new EventVersions(...args) as EventVersions<T> & {[k in keyof T]: Event<T[k]>}
+}
+
+
+export class EventVersions<T extends Record<string, sts.Type>> {
+    constructor (readonly name: QualifiedName, versions: T) {
+        for (let v in versions) {
+            Object.defineProperty(this, v, {value: new Event(this.name, versions[v])})
+        }
+    }
+
+    [k: `v${number}`]: Event<sts.Type>
+}
+
+
 export class Event<T extends sts.Type> {
-    constructor(private name: QualifiedName, private type: T) {}
+    constructor(readonly name: QualifiedName, readonly type: T) {}
 
     is(event: IEvent): boolean {
-        return event.name === this.name && event.block._runtime.events.checkType(this.name, this.type)
+        return event.name === this.name && event.block._runtime.checkEventType(this.name, this.type)
     }
 
     decode(event: IEvent): sts.GetType<T> {
@@ -53,7 +69,7 @@ export class Call<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
 
     is(call: ICall): boolean {
-        return call.name === this.name && call.block._runtime.events.checkType(this.name, this.type)
+        return call.name === this.name && call.block._runtime.checkCallType(this.name, this.type)
     }
 
     decode(call: ICall): sts.GetType<T> {
