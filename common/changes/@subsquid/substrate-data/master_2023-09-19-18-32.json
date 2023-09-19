@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "fix `Sudo.sudo_as` call parsing",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "fix `Sudo.sudo_as` call parsing",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

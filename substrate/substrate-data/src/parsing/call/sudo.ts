@@ -1,9 +1,9 @@
 import {DecodedCall, Runtime} from '@subsquid/substrate-runtime'
 import {bytes, closedEnum, externalEnum, openEnum, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {Call, Event} from '../../interfaces/data'
-import {IOrigin} from '../../types/system'
+import {Address, IOrigin} from '../../types/system'
 import {assertCall, isCall, isEvent, UnexpectedCallType, UnexpectedEventType} from '../../types/util'
-import {rootOrigin, signedOrigin} from '../util'
+import {addressOrigin, rootOrigin, signedOrigin} from '../util'
 import type {CallParser, CallResult} from './parser'
 
 
@@ -86,19 +86,14 @@ export function unwrapSudo(cp: CallParser, call: Call, success: boolean): void {
 
 
 const SudoAs = struct({
-    who: openEnum({
-        AccountId: bytes()
-    })
+    who: Address
 })
 
 
 export function visitSudoAs(cp: CallParser, call: Call): void {
     assertCall(cp.runtime, SudoAs, call)
 
-    let origin: IOrigin | undefined
-    if (call.args.who.__kind == 'AccountId') {
-        origin = signedOrigin(call.args.who.value)
-    }
+    let origin = addressOrigin(call.args.who)
 
     let sub = getSubcall(cp, call, origin)
 
@@ -109,11 +104,9 @@ export function visitSudoAs(cp: CallParser, call: Call): void {
 export function unwrapSudoAs(cp: CallParser, call: Call, success: boolean): void {
     assertCall(cp.runtime, SudoAs, call)
 
-    let origin: IOrigin | undefined
-    if (call.args.who.__kind == 'AccountId') {
-        origin = signedOrigin(call.args.who.value)
-    }
+    let origin = addressOrigin(call.args.who)
 
     let sub = getSubcall(cp, call, origin)
+
     cp.unwrap(sub, success)
 }
