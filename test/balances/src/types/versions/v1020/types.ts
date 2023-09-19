@@ -1,53 +1,126 @@
-import * as sts from '@subsquid/substrate-runtime/lib/sts'
+
+export const DispatchError = sts.struct(() => {
+    return  {
+        module: Type_165,
+        error: Type_11,
+    }
+})
+
+export const DispatchInfo = sts.struct(() => {
+    return  {
+        weight: Weight,
+        class: DispatchClass,
+        paysFee: Type_115,
+    }
+})
 
 export const AccountId = sts.bytes()
 
-export type AccountId = sts.GetType<typeof AccountId>
+export const AccountIndex = sts.number()
 
-export const Balance = sts.bytes()
+export const Balance = sts.bigint()
 
-export type Balance = sts.GetType<typeof Balance>
+export const Kind = sts.bytes()
 
-export const LookupSource = sts.bytes()
+export const OpaqueTimeSlot = sts.bytes()
 
-export type LookupSource = sts.GetType<typeof LookupSource>
+export const AuthorityId = sts.bytes()
 
-export const Type_4 = sts.bytes()
+export const AuthorityWeight = sts.bigint()
 
-export type Type_4 = sts.GetType<typeof Type_4>
+export const NextAuthority = sts.tuple(AuthorityId, AuthorityWeight)
 
-export const Type_5 = sts.bytes()
+export const ValidatorId = sts.bytes()
 
-export type Type_5 = sts.GetType<typeof Type_5>
+export const FullIdentification = sts.struct(() => {
+    return  {
+        total: Type_25,
+        own: Type_25,
+        others: Type_189,
+    }
+})
 
-export const Type_6 = sts.bytes()
+export const IdentificationTuple = sts.tuple(ValidatorId, FullIdentification)
 
-export type Type_6 = sts.GetType<typeof Type_6>
+export const ReferendumIndex = sts.number()
 
-export const Type_25 = sts.bytes()
+export const Type_115 = sts.boolean()
 
-export type Type_25 = sts.GetType<typeof Type_25>
+export const PropIndex = sts.number()
 
-export const Type_227 = sts.bytes()
+export const VoteThreshold = sts.closedEnum(() => {
+    return  {
+        SimpleMajority: sts.unit(),
+        SuperMajorityAgainst: sts.unit(),
+        SuperMajorityApprove: sts.unit(),
+    }
+})
 
-export type Type_227 = sts.GetType<typeof Type_227>
+export const Type_80 = sts.array(AccountId)
 
-export const BalanceLock = sts.bytes()
+export const Hash = sts.bytes()
 
-export type BalanceLock = sts.GetType<typeof BalanceLock>
+export const BlockNumber = sts.number()
 
-export const LockIdentifier = sts.bytes()
+export const ProposalIndex = sts.number()
 
-export type LockIdentifier = sts.GetType<typeof LockIdentifier>
+export const MemberCount = sts.number()
 
-export const BlockNumber = sts.bytes()
+export const Type_197 = sts.tuple(AccountId, Balance)
 
-export type BlockNumber = sts.GetType<typeof BlockNumber>
+export const EthereumAddress = sts.bytes()
 
-export const Type_232 = sts.bytes()
+export const AuctionIndex = sts.number()
 
-export type Type_232 = sts.GetType<typeof Type_232>
+export const LeasePeriod = sts.number()
 
-export const VestingSchedule = sts.bytes()
+export const NewBidder = sts.struct(() => {
+    return  {
+        who: AccountId,
+        sub: SubId,
+    }
+})
 
-export type VestingSchedule = sts.GetType<typeof VestingSchedule>
+export const SlotRange = sts.closedEnum(() => {
+    return  {
+        OneOne: sts.unit(),
+        OneThree: sts.unit(),
+        OneTwo: sts.unit(),
+        ThreeThree: sts.unit(),
+        TwoThree: sts.unit(),
+        TwoTwo: sts.unit(),
+        ZeroOne: sts.unit(),
+        ZeroThree: sts.unit(),
+        ZeroTwo: sts.unit(),
+        ZeroZero: sts.unit(),
+    }
+})
+
+export const ParaId = sts.number()
+
+export const Type_11 = sts.number()
+
+export const Type_165 = sts.option(() => Type_11)
+
+export const Weight = sts.number()
+
+export const DispatchClass = sts.closedEnum(() => {
+    return  {
+        Mandatory: sts.unit(),
+        Normal: sts.unit(),
+        Operational: sts.unit(),
+    }
+})
+
+export const Type_25 = bigint
+
+export const IndividualExposure = sts.struct(() => {
+    return  {
+        who: AccountId,
+        value: Type_25,
+    }
+})
+
+export const Type_189 = sts.array(IndividualExposure)
+
+export const SubId = sts.number()

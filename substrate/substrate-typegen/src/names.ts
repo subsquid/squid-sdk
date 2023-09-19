@@ -127,6 +127,6 @@ export function needsName(types: Type[], ti: Ti): boolean {
         case TypeKind.Composite:
             return true
         default:
-            return false
+            return true
     }
 }

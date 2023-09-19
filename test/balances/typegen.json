@@ -1,7 +1,5 @@
 {
   "outDir": "src/types",
   "specVersions": "https://v2.archive.subsquid.io/metadata/kusama",
-  "pallets": [
-    "Balances"
-  ]
+  "pallets": true
 }

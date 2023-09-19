@@ -1,6 +1,5 @@
 import assert from 'assert'
 import {QualifiedName} from './interfaces'
-import {ScaleType} from '@subsquid/scale-type-system'
 import {Type, TypeKind, Variant} from '../metadata'
 
 
@@ -30,6 +29,7 @@ export function createScaleType(types: Type[], def: Variant): Type {
         if (def.fields.length == 0) {
             sc = {
                 kind: TypeKind.Tuple,
+                docs: def.docs,
                 tuple: [],
             }
         } else if (def.fields[0].name == null) {
@@ -38,6 +38,7 @@ export function createScaleType(types: Type[], def: Variant): Type {
             } else {
                 sc = {
                     kind: TypeKind.Tuple,
+                    docs: def.docs,
                     tuple: def.fields.map((f) => {
                         assert(f.name == null)
                         return f.type
@@ -47,6 +48,7 @@ export function createScaleType(types: Type[], def: Variant): Type {
         } else {
             sc = {
                 kind: TypeKind.Composite,
+                docs: def.docs,
                 fields: def.fields,
             }
         }
