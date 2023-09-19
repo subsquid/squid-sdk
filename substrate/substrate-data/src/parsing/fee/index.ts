@@ -4,6 +4,7 @@ import {Event, Extrinsic} from '../../interfaces/data'
 import {assertEvent, isEvent, UnexpectedEventType} from '../../types/util'
 import {getFeeCalc} from './calc'
 import {
+    AcalaTransactionFeePaid,
     ExtrinsicFailed,
     ExtrinsicSuccessLatest,
     ExtrinsicSuccessLegacy,
@@ -20,9 +21,17 @@ export function setExtrinsicFeesFromPaidEvent(
     for (let e of events) {
         if (e.name == 'TransactionPayment.TransactionFeePaid') {
             let extrinsic = extrinsics[assertNotNull(e.extrinsicIndex)]
-            assertEvent(runtime, TransactionFeePaid, e)
-            let actualFee = BigInt(e.args.actualFee)
-            let tip = BigInt(e.args.tip)
+            let actualFee: bigint
+            let tip: bigint
+            if (isEvent(runtime, TransactionFeePaid, e)) {
+                actualFee = BigInt(e.args.actualFee)
+                tip = BigInt(e.args.tip)
+            } else if (isEvent(runtime, AcalaTransactionFeePaid, e)) {
+                actualFee = BigInt(e.args.actualFee)
+                tip = BigInt(e.args.actualTip)
+            } else {
+                throw new Error('TransactionPayment.TransactionFeePaid event has unexpected type')
+            }
             extrinsic.fee = actualFee - tip
             extrinsic.tip = tip
         }

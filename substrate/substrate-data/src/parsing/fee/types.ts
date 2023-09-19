@@ -85,3 +85,9 @@ export const TransactionFeePaid = struct({
     actualFee: numeric(),
     tip: numeric()
 })
+
+
+export const AcalaTransactionFeePaid = struct({
+    actualFee: numeric(),
+    actualTip: numeric()
+})

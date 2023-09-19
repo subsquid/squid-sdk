@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}
