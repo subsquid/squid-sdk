@@ -1,5 +1,12 @@
 import {sts} from '../../pallet.support'
-import {LookupSource} from './types'
+import {AccountId, ReserveData, LookupSource} from './types'
+
+/**
+ *  Named reserves on some account balances.
+ */
+export type BalancesReservesStorage = [[AccountId], ReserveData[]]
+
+export const BalancesReservesStorage: sts.Type<BalancesReservesStorage> = sts.tuple([sts.tuple(() => [AccountId]), sts.array(() => ReserveData)])
 
 /**
  *  Transfer the entire transferable balance from the caller account.
@@ -27,7 +34,7 @@ export type BalancesTransferAllCall = {
 }
 
 export const BalancesTransferAllCall: sts.Type<BalancesTransferAllCall> = sts.struct(() => {
-    return  {
+    return {
         dest: LookupSource,
         keep_alive: sts.boolean(),
     }

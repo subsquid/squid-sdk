@@ -22,7 +22,7 @@ interface EventRecord {
     args: unknown
 }
 
-interface ICall {
+interface CallRecord {
     block: RuntimeCtx
     name: QualifiedName
     args: unknown
@@ -42,18 +42,14 @@ export interface IEvent<T extends sts.Type> {
     decode: (event: EventRecord) => sts.GetType<T>
 }
 
-function createEvent<V extends Record<string, sts.Type>>(...args: ConstructorParameters<typeof Event<V>>) {
-    return new Event(...args) as Event<V> & {}
-}
-
 export class Call<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
 
-    is(call: ICall): boolean {
+    is(call: CallRecord): boolean {
         return call.name === this.name && call.block._runtime.checkCallType(this.name, this.type)
     }
 
-    decode(call: ICall): sts.GetType<T> {
+    decode(call: CallRecord): sts.GetType<T> {
         return call.block._runtime.decodeCallArguments(this.name, call.args)
     }
 }

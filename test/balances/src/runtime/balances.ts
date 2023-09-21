@@ -8,6 +8,7 @@ import * as v9090 from './types/v9090'
 import * as v9050 from './types/v9050'
 import * as v2028 from './types/v2028'
 import * as v2008 from './types/v2008'
+import * as v1054 from './types/v1054'
 import * as v1050 from './types/v1050'
 import * as v1032 from './types/v1032'
 import * as v1031 from './types/v1031'
@@ -293,6 +294,7 @@ export const storage = {
         'Balances.Account',
         {
             v1050: v1050.BalancesAccountStorage,
+            v1054: v1054.BalancesAccountStorage,
             v9420: v9420.BalancesAccountStorage,
         }
     ),
@@ -325,6 +327,7 @@ export const storage = {
         {
             v1020: v1020.BalancesLocksStorage,
             v1050: v1050.BalancesLocksStorage,
+            v1054: v1054.BalancesLocksStorage,
         }
     ),
     ReservedBalance: new Storage(

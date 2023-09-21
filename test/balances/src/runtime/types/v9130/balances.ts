@@ -10,7 +10,7 @@ export type BalancesWithdrawEvent = {
 }
 
 export const BalancesWithdrawEvent: sts.Type<BalancesWithdrawEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -25,7 +25,7 @@ export type BalancesUnreservedEvent = {
 }
 
 export const BalancesUnreservedEvent: sts.Type<BalancesUnreservedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -41,7 +41,7 @@ export type BalancesTransferEvent = {
 }
 
 export const BalancesTransferEvent: sts.Type<BalancesTransferEvent> = sts.struct(() => {
-    return  {
+    return {
         from: AccountId32,
         to: AccountId32,
         amount: sts.bigint(),
@@ -57,7 +57,7 @@ export type BalancesSlashedEvent = {
 }
 
 export const BalancesSlashedEvent: sts.Type<BalancesSlashedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -72,7 +72,7 @@ export type BalancesReservedEvent = {
 }
 
 export const BalancesReservedEvent: sts.Type<BalancesReservedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -90,7 +90,7 @@ export type BalancesReserveRepatriatedEvent = {
 }
 
 export const BalancesReserveRepatriatedEvent: sts.Type<BalancesReserveRepatriatedEvent> = sts.struct(() => {
-    return  {
+    return {
         from: AccountId32,
         to: AccountId32,
         amount: sts.bigint(),
@@ -107,7 +107,7 @@ export type BalancesEndowedEvent = {
 }
 
 export const BalancesEndowedEvent: sts.Type<BalancesEndowedEvent> = sts.struct(() => {
-    return  {
+    return {
         account: AccountId32,
         freeBalance: sts.bigint(),
     }
@@ -123,7 +123,7 @@ export type BalancesDustLostEvent = {
 }
 
 export const BalancesDustLostEvent: sts.Type<BalancesDustLostEvent> = sts.struct(() => {
-    return  {
+    return {
         account: AccountId32,
         amount: sts.bigint(),
     }
@@ -138,7 +138,7 @@ export type BalancesDepositEvent = {
 }
 
 export const BalancesDepositEvent: sts.Type<BalancesDepositEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -154,7 +154,7 @@ export type BalancesBalanceSetEvent = {
 }
 
 export const BalancesBalanceSetEvent: sts.Type<BalancesBalanceSetEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         free: sts.bigint(),
         reserved: sts.bigint(),

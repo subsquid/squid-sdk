@@ -77,7 +77,7 @@ export const ExtrinsicFailed = union(
     struct({
         dispatchInfo: DispatchInfo
     }),
-    tuple(unknown(), DispatchInfo)
+    tuple([unknown(), DispatchInfo])
 )
 
 

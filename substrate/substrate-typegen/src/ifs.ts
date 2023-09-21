@@ -200,8 +200,36 @@ export class Sts {
                 }
                 case ItemKind.Constant: {
                     let def = this.runtime.description.pallets[pallet][kind][item]
-                    let scaleType = {...this.runtime.description.types[def.type], docs: def.docs}
-                    this.makeType(queue, name, scaleType)
+                    queue.push((out, types) => {
+                        let exp = this.useType(def.type)
+                        this.extractNames(exp.type).forEach((n) => types?.add(n))
+
+                        out.line()
+                        out.blockComment(def.docs)
+                        out.line(`export type ${name} = ${exp.type}`)
+                        out.line()
+                        out.line(`export const ${name}: sts.Type<${name}> = ${exp.value}`)
+                    })
+                    break
+                }
+                case ItemKind.Storage: {
+                    let def = this.runtime.description.pallets[pallet][kind][item]
+                    queue.push((out, types) => {
+                        let keyListExp = this.renderTuple(def.keys)
+                        this.extractNames(keyListExp.type).forEach((n) => types?.add(n))
+
+                        let valueExp = this.useType(def.value)
+                        this.extractNames(valueExp.type).forEach((n) => types?.add(n))
+
+                        out.line()
+                        out.blockComment(def.docs)
+                        out.line(`export type ${name} = [${keyListExp.type}, ${valueExp.type}]`)
+                        out.line()
+                        out.line(
+                            `export const ${name}: sts.Type<${name}> = sts.tuple([${keyListExp.value}, ${valueExp.value}])`
+                        )
+                    })
+                    break
                 }
             }
         }
@@ -288,19 +316,17 @@ export class Sts {
             } else {
                 let fieldsExp = ty.fields.map((f) => this.useType(f.type))
                 fieldsExp.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n)))
-                out.line(`export type ${name} = {`)
-                out.indentation(() =>
+                out.block(`export type ${name} =`, () => {
                     ty.fields.forEach((f, i) => {
                         let name = assertNotNull(f.name)
                         let opt = this.isUndefined(f.type) ? '?' : ''
                         out.line(`${name}${opt}: ${fieldsExp[i].type},`)
                     })
-                )
-                out.line('}')
+                })
                 out.line()
                 out.line(`export const ${name}: sts.Type<${name}> = sts.struct(() => {`)
                 out.indentation(() => {
-                    out.block('return ', () =>
+                    out.block('return', () =>
                         ty.fields.forEach((f, i) => {
                             let name = assertNotNull(f.name)
                             out.line(`${name}: ${fieldsExp[i].value},`)
@@ -316,17 +342,22 @@ export class Sts {
         queue.push((out, types) => {
             out.line()
             out.blockComment(ty.docs)
-            let variantsExp = ty.variants.map((v) => v.fields.map((f) => this.useType(f.type)))
-            variantsExp.forEach((v) => v.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n))))
             if (ty.variants.length == 0) {
                 out.line(`export type ${name} = never`)
+                out.line()
+                out.line(`export const ${name}: sts.Type<${name}> = sts.closedEnum({})`)
                 return
             } else {
+                let variantsExp = ty.variants.map((v) => v.fields.map((f) => this.useType(f.type)))
+                variantsExp.forEach((v) =>
+                    v.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n)))
+                )
+
                 out.line(`export type ${name} = ${ty.variants.map((v) => name + '_' + v.name).join(' | ')}`)
                 ty.variants.forEach((v, i) => {
                     out.line()
                     out.blockComment(v.docs)
-                    out.block(`export interface ${name + '_' + v.name}`, () => {
+                    out.block(`export type ${name + '_' + v.name} =`, () => {
                         out.line(`__kind: '${v.name}'`)
                         if (v.fields.length > 0) {
                             if (v.fields[0].name != null) {
@@ -347,32 +378,32 @@ export class Sts {
                         }
                     })
                 })
-            }
-            out.line()
-            out.line(`export const ${name}: sts.Type<${name}> = sts.closedEnum(() => {`)
-            out.indentation(() => {
-                out.block('return ', () => {
-                    ty.variants.forEach((v, i) => {
-                        if (v.fields.length == 0 || v.fields[0].name == null) {
-                            if (v.fields.length == 1) {
-                                out.line(`${v.name}: ${variantsExp[i][0].value},`)
+                out.line()
+                out.line(`export const ${name}: sts.Type<${name}> = sts.closedEnum(() => {`)
+                out.indentation(() => {
+                    out.block('return', () => {
+                        ty.variants.forEach((v, i) => {
+                            if (v.fields.length == 0 || v.fields[0].name == null) {
+                                if (v.fields.length == 1) {
+                                    out.line(`${v.name}: ${variantsExp[i][0].value},`)
+                                } else {
+                                    out.line(`${v.name}: ${this.renderTuple(v.fields.map((f) => f.type)).value},`)
+                                }
                             } else {
-                                out.line(`${v.name}: ${this.renderTuple(v.fields.map((f) => f.type)).value},`)
+                                out.line(`${v.name}: sts.enumStruct({`)
+                                out.indentation(() =>
+                                    v.fields.forEach((f, j) => {
+                                        let name = assertNotNull(f.name)
+                                        out.line(`${name}: ${variantsExp[i][j].value},`)
+                                    })
+                                )
+                                out.line('}),')
                             }
-                        } else {
-                            out.line(`${v.name}: sts.enumStruct({`)
-                            out.indentation(() =>
-                                v.fields.forEach((f, j) => {
-                                    let name = assertNotNull(f.name)
-                                    out.line(`${name}: ${variantsExp[i][j].value},`)
-                                })
-                            )
-                            out.line('}),')
-                        }
+                        })
                     })
                 })
-            })
-            out.line('})')
+                out.line('})')
+            }
         })
     }
 
@@ -423,7 +454,7 @@ export class Sts {
                 }
             }
             case TypeKind.DoNotConstruct:
-                return {type: 'never', value: 'undefined'}
+                return {type: 'never', value: 'sts.unit()'}
             default:
                 throw unexpectedCase()
         }

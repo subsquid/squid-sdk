@@ -19,7 +19,7 @@ const MultisigExecuted = union(
         callHash: bytes(),
         result: Result
     }),
-    tuple(unknown(), unknown(), bytes(), bytes(), Result)
+    tuple([unknown(), unknown(), bytes(), bytes(), Result])
 )
 
 

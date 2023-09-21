@@ -1,5 +1,49 @@
 import {sts} from '../../pallet.support'
-import {AccountId32, MultiAddress} from './types'
+import {AccountId32, IdAmount, Type_544, AccountData, MultiAddress} from './types'
+
+/**
+ *  Holds on account balances.
+ */
+export type BalancesHoldsStorage = [[AccountId32], IdAmount[]]
+
+export const BalancesHoldsStorage: sts.Type<BalancesHoldsStorage> = sts.tuple([sts.tuple(() => [AccountId32]), sts.array(() => IdAmount)])
+
+/**
+ *  Freeze locks on account balances.
+ */
+export type BalancesFreezesStorage = [[AccountId32], Type_544[]]
+
+export const BalancesFreezesStorage: sts.Type<BalancesFreezesStorage> = sts.tuple([sts.tuple(() => [AccountId32]), sts.array(() => Type_544)])
+
+/**
+ *  The Balances pallet example of storing the balance of an account.
+ * 
+ *  # Example
+ * 
+ *  ```nocompile
+ *   impl pallet_balances::Config for Runtime {
+ *     type AccountStore = StorageMapShim<Self::Account<Runtime>, frame_system::Provider<Runtime>, AccountId, Self::AccountData<Balance>>
+ *   }
+ *  ```
+ * 
+ *  You can also store the balance of an account in the `System` pallet.
+ * 
+ *  # Example
+ * 
+ *  ```nocompile
+ *   impl pallet_balances::Config for Runtime {
+ *    type AccountStore = System
+ *   }
+ *  ```
+ * 
+ *  But this comes with tradeoffs, storing account balances in the system pallet stores
+ *  `frame_system` data alongside the account data contrary to storing account balances in the
+ *  `Balances` pallet, which uses a `StorageMap` to store balances data only.
+ *  NOTE: This is only used in the case that this pallet is used to store balances.
+ */
+export type BalancesAccountStorage = [[AccountId32], AccountData]
+
+export const BalancesAccountStorage: sts.Type<BalancesAccountStorage> = sts.tuple([sts.tuple(() => [AccountId32]), AccountData])
 
 /**
  *  The maximum number of holds that can exist on an account at any time.
@@ -30,7 +74,7 @@ export type BalancesUpgradeAccountsCall = {
 }
 
 export const BalancesUpgradeAccountsCall: sts.Type<BalancesUpgradeAccountsCall> = sts.struct(() => {
-    return  {
+    return {
         who: sts.array(() => AccountId32),
     }
 })
@@ -50,7 +94,7 @@ export type BalancesTransferAllowDeathCall = {
 }
 
 export const BalancesTransferAllowDeathCall: sts.Type<BalancesTransferAllowDeathCall> = sts.struct(() => {
-    return  {
+    return {
         dest: MultiAddress,
         value: sts.bigint(),
     }
@@ -71,7 +115,7 @@ export type BalancesSetBalanceDeprecatedCall = {
 }
 
 export const BalancesSetBalanceDeprecatedCall: sts.Type<BalancesSetBalanceDeprecatedCall> = sts.struct(() => {
-    return  {
+    return {
         who: MultiAddress,
         newFree: sts.bigint(),
         oldReserved: sts.bigint(),
@@ -89,7 +133,7 @@ export type BalancesForceSetBalanceCall = {
 }
 
 export const BalancesForceSetBalanceCall: sts.Type<BalancesForceSetBalanceCall> = sts.struct(() => {
-    return  {
+    return {
         who: MultiAddress,
         newFree: sts.bigint(),
     }
@@ -103,7 +147,7 @@ export type BalancesUpgradedEvent = {
 }
 
 export const BalancesUpgradedEvent: sts.Type<BalancesUpgradedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
     }
 })
@@ -117,7 +161,7 @@ export type BalancesUnlockedEvent = {
 }
 
 export const BalancesUnlockedEvent: sts.Type<BalancesUnlockedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -132,7 +176,7 @@ export type BalancesThawedEvent = {
 }
 
 export const BalancesThawedEvent: sts.Type<BalancesThawedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -147,7 +191,7 @@ export type BalancesSuspendedEvent = {
 }
 
 export const BalancesSuspendedEvent: sts.Type<BalancesSuspendedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -162,7 +206,7 @@ export type BalancesRestoredEvent = {
 }
 
 export const BalancesRestoredEvent: sts.Type<BalancesRestoredEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -176,7 +220,7 @@ export type BalancesRescindedEvent = {
 }
 
 export const BalancesRescindedEvent: sts.Type<BalancesRescindedEvent> = sts.struct(() => {
-    return  {
+    return {
         amount: sts.bigint(),
     }
 })
@@ -190,7 +234,7 @@ export type BalancesMintedEvent = {
 }
 
 export const BalancesMintedEvent: sts.Type<BalancesMintedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -205,7 +249,7 @@ export type BalancesLockedEvent = {
 }
 
 export const BalancesLockedEvent: sts.Type<BalancesLockedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -219,7 +263,7 @@ export type BalancesIssuedEvent = {
 }
 
 export const BalancesIssuedEvent: sts.Type<BalancesIssuedEvent> = sts.struct(() => {
-    return  {
+    return {
         amount: sts.bigint(),
     }
 })
@@ -233,7 +277,7 @@ export type BalancesFrozenEvent = {
 }
 
 export const BalancesFrozenEvent: sts.Type<BalancesFrozenEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -248,7 +292,7 @@ export type BalancesBurnedEvent = {
 }
 
 export const BalancesBurnedEvent: sts.Type<BalancesBurnedEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         amount: sts.bigint(),
     }
@@ -263,7 +307,7 @@ export type BalancesBalanceSetEvent = {
 }
 
 export const BalancesBalanceSetEvent: sts.Type<BalancesBalanceSetEvent> = sts.struct(() => {
-    return  {
+    return {
         who: AccountId32,
         free: sts.bigint(),
     }

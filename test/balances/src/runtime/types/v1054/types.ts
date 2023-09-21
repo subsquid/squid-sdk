@@ -1,9 +1,5 @@
 import {sts, Result, Option, Bytes} from '../../pallet.support'
 
-export type LookupSource = Bytes
-
-export const LookupSource: sts.Type<LookupSource> = sts.bytes()
-
 export type AccountData = {
     free: Balance,
     reserved: Balance,
@@ -19,6 +15,10 @@ export const AccountData: sts.Type<AccountData> = sts.struct(() => {
         feeFrozen: Balance,
     }
 })
+
+export type Balance = bigint
+
+export const Balance: sts.Type<Balance> = sts.bigint()
 
 export type BalanceLock = {
     id: LockIdentifier,
@@ -59,67 +59,6 @@ export const Reasons: sts.Type<Reasons> = sts.closedEnum(() => {
 export type LockIdentifier = Bytes
 
 export const LockIdentifier: sts.Type<LockIdentifier> = sts.bytes()
-
-export type Releases = Releases_V1 | Releases_V10 | Releases_V2 | Releases_V3 | Releases_V4 | Releases_V5 | Releases_V6 | Releases_V7 | Releases_V8 | Releases_V9
-
-export type Releases_V1 = {
-    __kind: 'V1'
-}
-
-export type Releases_V10 = {
-    __kind: 'V10'
-}
-
-export type Releases_V2 = {
-    __kind: 'V2'
-}
-
-export type Releases_V3 = {
-    __kind: 'V3'
-}
-
-export type Releases_V4 = {
-    __kind: 'V4'
-}
-
-export type Releases_V5 = {
-    __kind: 'V5'
-}
-
-export type Releases_V6 = {
-    __kind: 'V6'
-}
-
-export type Releases_V7 = {
-    __kind: 'V7'
-}
-
-export type Releases_V8 = {
-    __kind: 'V8'
-}
-
-export type Releases_V9 = {
-    __kind: 'V9'
-}
-
-export const Releases: sts.Type<Releases> = sts.closedEnum(() => {
-    return {
-        V1: sts.unit(),
-        V10: sts.unit(),
-        V2: sts.unit(),
-        V3: sts.unit(),
-        V4: sts.unit(),
-        V5: sts.unit(),
-        V6: sts.unit(),
-        V7: sts.unit(),
-        V8: sts.unit(),
-        V9: sts.unit(),
-    }
-})
-
-export type Balance = bigint
-
-export const Balance: sts.Type<Balance> = sts.bigint()
 
 export type AccountId = Bytes
 

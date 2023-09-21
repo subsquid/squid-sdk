@@ -2,8 +2,6 @@
   "outDir": "src/runtime",
   "specVersions": "https://v2.archive.subsquid.io/metadata/kusama",
   "pallets": {
-    "Balances": {
-      "events": ["Transfer"]
-    }
+    "Balances": true
   }
 }

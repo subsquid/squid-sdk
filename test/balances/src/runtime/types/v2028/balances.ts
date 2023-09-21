@@ -20,7 +20,7 @@ export type BalancesTransferKeepAliveCall = {
 }
 
 export const BalancesTransferKeepAliveCall: sts.Type<BalancesTransferKeepAliveCall> = sts.struct(() => {
-    return  {
+    return {
         dest: LookupSource,
         value: sts.bigint(),
     }
@@ -61,7 +61,7 @@ export type BalancesTransferCall = {
 }
 
 export const BalancesTransferCall: sts.Type<BalancesTransferCall> = sts.struct(() => {
-    return  {
+    return {
         dest: LookupSource,
         value: sts.bigint(),
     }
@@ -94,7 +94,7 @@ export type BalancesSetBalanceCall = {
 }
 
 export const BalancesSetBalanceCall: sts.Type<BalancesSetBalanceCall> = sts.struct(() => {
-    return  {
+    return {
         who: LookupSource,
         new_free: sts.bigint(),
         new_reserved: sts.bigint(),
@@ -116,7 +116,7 @@ export type BalancesForceTransferCall = {
 }
 
 export const BalancesForceTransferCall: sts.Type<BalancesForceTransferCall> = sts.struct(() => {
-    return  {
+    return {
         source: LookupSource,
         dest: LookupSource,
         value: sts.bigint(),

@@ -1,26 +1,81 @@
 import {sts} from '../../pallet.support'
-import {LookupSource, AccountId, Balance} from './types'
+import {AccountId, VestingSchedule, Balance, BalanceLock, LookupSource} from './types'
+
+/**
+ *  Information regarding the vesting of a given account.
+ */
+export type BalancesVestingStorage = [[AccountId], VestingSchedule]
+
+export const BalancesVestingStorage: sts.Type<BalancesVestingStorage> = sts.tuple([sts.tuple(() => [AccountId]), VestingSchedule])
+
+/**
+ *  The total units issued in the system.
+ */
+export type BalancesTotalIssuanceStorage = [null, Balance]
+
+export const BalancesTotalIssuanceStorage: sts.Type<BalancesTotalIssuanceStorage> = sts.tuple([sts.unit(), Balance])
+
+/**
+ *  The amount of the balance of a given account that is externally reserved; this can still get
+ *  slashed, but gets slashed last of all.
+ * 
+ *  This balance is a 'reserve' balance that other subsystems use in order to set aside tokens
+ *  that are still 'owned' by the account holder, but which are suspendable.
+ * 
+ *  When this balance falls below the value of `ExistentialDeposit`, then this 'reserve account'
+ *  is deleted: specifically, `ReservedBalance`.
+ * 
+ *  `system::AccountNonce` is also deleted if `FreeBalance` is also zero (it also gets
+ *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.)
+ */
+export type BalancesReservedBalanceStorage = [[AccountId], Balance]
+
+export const BalancesReservedBalanceStorage: sts.Type<BalancesReservedBalanceStorage> = sts.tuple([sts.tuple(() => [AccountId]), Balance])
+
+/**
+ *  Any liquidity locks on some account balances.
+ */
+export type BalancesLocksStorage = [[AccountId], BalanceLock[]]
+
+export const BalancesLocksStorage: sts.Type<BalancesLocksStorage> = sts.tuple([sts.tuple(() => [AccountId]), sts.array(() => BalanceLock)])
+
+/**
+ *  The 'free' balance of a given account.
+ * 
+ *  This is the only balance that matters in terms of most operations on tokens. It
+ *  alone is used to determine the balance when in the contract execution environment. When this
+ *  balance falls below the value of `ExistentialDeposit`, then the 'current account' is
+ *  deleted: specifically `FreeBalance`. Further, the `OnFreeBalanceZero` callback
+ *  is invoked, giving a chance to external modules to clean up data associated with
+ *  the deleted account.
+ * 
+ *  `system::AccountNonce` is also deleted if `ReservedBalance` is also zero (it also gets
+ *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.
+ */
+export type BalancesFreeBalanceStorage = [[AccountId], Balance]
+
+export const BalancesFreeBalanceStorage: sts.Type<BalancesFreeBalanceStorage> = sts.tuple([sts.tuple(() => [AccountId]), Balance])
 
 /**
  *  The fee required to make a transfer.
  */
-export type BalancesTransferFeeConstant = bigint
+export type BalancesTransferFeeConstant = Balance
 
-export const BalancesTransferFeeConstant: sts.Type<BalancesTransferFeeConstant> = sts.bigint()
+export const BalancesTransferFeeConstant: sts.Type<BalancesTransferFeeConstant> = Balance
 
 /**
  *  The minimum amount required to keep an account open.
  */
-export type BalancesExistentialDepositConstant = bigint
+export type BalancesExistentialDepositConstant = Balance
 
-export const BalancesExistentialDepositConstant: sts.Type<BalancesExistentialDepositConstant> = sts.bigint()
+export const BalancesExistentialDepositConstant: sts.Type<BalancesExistentialDepositConstant> = Balance
 
 /**
  *  The fee required to create an account.
  */
-export type BalancesCreationFeeConstant = bigint
+export type BalancesCreationFeeConstant = Balance
 
-export const BalancesCreationFeeConstant: sts.Type<BalancesCreationFeeConstant> = sts.bigint()
+export const BalancesCreationFeeConstant: sts.Type<BalancesCreationFeeConstant> = Balance
 
 /**
  *  Same as the [`transfer`] call, but with a check that the transfer will not kill the
@@ -36,7 +91,7 @@ export type BalancesTransferKeepAliveCall = {
 }
 
 export const BalancesTransferKeepAliveCall: sts.Type<BalancesTransferKeepAliveCall> = sts.struct(() => {
-    return  {
+    return {
         dest: LookupSource,
         value: sts.bigint(),
     }
@@ -75,7 +130,7 @@ export type BalancesTransferCall = {
 }
 
 export const BalancesTransferCall: sts.Type<BalancesTransferCall> = sts.struct(() => {
-    return  {
+    return {
         dest: LookupSource,
         value: sts.bigint(),
     }
@@ -103,7 +158,7 @@ export type BalancesSetBalanceCall = {
 }
 
 export const BalancesSetBalanceCall: sts.Type<BalancesSetBalanceCall> = sts.struct(() => {
-    return  {
+    return {
         who: LookupSource,
         new_free: sts.bigint(),
         new_reserved: sts.bigint(),
@@ -121,7 +176,7 @@ export type BalancesForceTransferCall = {
 }
 
 export const BalancesForceTransferCall: sts.Type<BalancesForceTransferCall> = sts.struct(() => {
-    return  {
+    return {
         source: LookupSource,
         dest: LookupSource,
         value: sts.bigint(),

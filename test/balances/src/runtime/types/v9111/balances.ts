@@ -1,5 +1,14 @@
 import {sts} from '../../pallet.support'
-import {MultiAddress} from './types'
+import {Releases, MultiAddress} from './types'
+
+/**
+ *  Storage version of the pallet.
+ * 
+ *  This is set to v2.0.0 for new networks.
+ */
+export type BalancesStorageVersionStorage = [null, Releases]
+
+export const BalancesStorageVersionStorage: sts.Type<BalancesStorageVersionStorage> = sts.tuple([sts.unit(), Releases])
 
 /**
  * Same as the [`transfer`] call, but with a check that the transfer will not kill the
@@ -20,7 +29,7 @@ export type BalancesTransferKeepAliveCall = {
 }
 
 export const BalancesTransferKeepAliveCall: sts.Type<BalancesTransferKeepAliveCall> = sts.struct(() => {
-    return  {
+    return {
         dest: MultiAddress,
         value: sts.bigint(),
     }
@@ -51,7 +60,7 @@ export type BalancesTransferAllCall = {
 }
 
 export const BalancesTransferAllCall: sts.Type<BalancesTransferAllCall> = sts.struct(() => {
-    return  {
+    return {
         dest: MultiAddress,
         keepAlive: sts.boolean(),
     }
@@ -93,7 +102,7 @@ export type BalancesTransferCall = {
 }
 
 export const BalancesTransferCall: sts.Type<BalancesTransferCall> = sts.struct(() => {
-    return  {
+    return {
         dest: MultiAddress,
         value: sts.bigint(),
     }
@@ -126,7 +135,7 @@ export type BalancesSetBalanceCall = {
 }
 
 export const BalancesSetBalanceCall: sts.Type<BalancesSetBalanceCall> = sts.struct(() => {
-    return  {
+    return {
         who: MultiAddress,
         newFree: sts.bigint(),
         newReserved: sts.bigint(),
@@ -144,7 +153,7 @@ export type BalancesForceUnreserveCall = {
 }
 
 export const BalancesForceUnreserveCall: sts.Type<BalancesForceUnreserveCall> = sts.struct(() => {
-    return  {
+    return {
         who: MultiAddress,
         amount: sts.bigint(),
     }
@@ -165,7 +174,7 @@ export type BalancesForceTransferCall = {
 }
 
 export const BalancesForceTransferCall: sts.Type<BalancesForceTransferCall> = sts.struct(() => {
-    return  {
+    return {
         source: MultiAddress,
         dest: MultiAddress,
         value: sts.bigint(),
