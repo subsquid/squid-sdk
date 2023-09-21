@@ -1,17 +1,12 @@
 import {SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
 import {Runtime} from '@subsquid/substrate-runtime'
 import type * as md from '@subsquid/substrate-runtime/lib/metadata'
-import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
-import {def, last, maybeLast} from '@subsquid/util-internal'
-import {FileOutput, OutDir, Output} from '@subsquid/util-internal-code-printer'
+import {def, last} from '@subsquid/util-internal'
+import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
-import {assignNames} from './names'
-import {groupBy, isEmptyVariant, upperCaseFirst} from './util'
-import {createScaleType} from '@subsquid/substrate-runtime/lib/runtime/util'
-import {create} from 'domain'
+import {PalletRequest} from './config'
 import {Sts} from './ifs'
-
-type Exp = string
+import {groupBy} from './util'
 
 interface Pallet {
     name: string
@@ -30,16 +25,7 @@ export interface TypegenOptions {
     outDir: string
     specVersions: SpecVersion[]
     typesBundle?: md.OldTypesBundle | md.OldSpecsBundle
-    pallets:
-        | {
-              [key: string]: {
-                  events: string[] | boolean
-                  calls: string[] | boolean
-                  storage: string[] | boolean
-                  constants: string[] | boolean
-              }
-          }
-        | boolean
+    pallets: Record<string, PalletRequest> | boolean
 }
 
 export class Typegen {
@@ -58,243 +44,17 @@ export class Typegen {
     generate(): void {
         this.dir.del()
 
-        let pallets = this.collectPallets()
+        let pallets = this.collectPallets(this.options.pallets)
         for (let pallet of pallets) {
             this.generatePallet(pallet)
         }
 
-        // this.sts.forEach((sts, runtime) => {
-        //     if (sts.sink.isEmpty()) return
-        //     let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
-        //     let file = this.dir.file(fileName)
-        //     file.line(`import {sts, Result, Option, Bytes} from './support'`)
-        //     sts.sink.generate(file)
-        //     file.write()
-        // })
         for (let s of this.sts.values()) {
             s.generate()
         }
 
         this.dir.add('pallet.support.ts', [__dirname, '../src/pallet.support.ts'])
     }
-
-    // private getConstants() {
-    //     return this.collectItems(
-    //         this.options.pallets,
-    //         (runtime) => {
-    //             let items: Item<Constant>[] = []
-    //             let consts = runtime.description.constants
-    //             for (let prefix in consts) {
-    //                 for (let name in consts[prefix]) {
-    //                     items.push({
-    //                         runtime,
-    //                         name: prefix + '.' + name,
-    //                         def: consts[prefix][name],
-    //                     })
-    //                 }
-    //             }
-    //             return items
-    //         },
-    //         (runtime, qualifiedName) => {
-    //             let [prefix, name] = qualifiedName.split('.')
-    //             let def = runtime.description.constants[prefix][name]
-    //             return getTypeHash(runtime.description.types, def.type)
-    //         }
-    //     )
-    // }
-
-    // private getStorage() {
-    //     return this.collectItems(
-    //         this.options.pallets,
-    //         (runtime) => {
-    //             let items: Item<StorageItem>[] = []
-    //             let storage = runtime.description.storage
-    //             for (let pallet in storage) {
-    //                 for (let name in storage[pallet]) {
-    //                     items.push({
-    //                         runtime,
-    //                         name: pallet + '.' + name,
-    //                         def: storage[pallet][name],
-    //                     })
-    //                 }
-    //             }
-    //             return items
-    //         },
-    //         (runtime, qualifiedName) => {
-    //             let [pallet, name] = qualifiedName.split('.')
-    //             let def = runtime.description.storage[pallet][name]
-    //             return JSON.stringify({
-    //                 modifier: def.modifier,
-    //                 key: def.keys.map((ti) => getTypeHash(runtime.description.types, ti)),
-    //                 value: getTypeHash(runtime.description.types, def.value),
-    //             })
-    //         }
-    //     )
-    // }
-
-    // private generateEnums(kind: 'events' | 'calls', items: Map<string, Item<EACDefinition>>): void {
-    //     if (items.size == 0) return
-
-    //     let out = this.dir.file(`${kind}.ts`)
-    //     let fix = kind == 'events' ? 'Event' : 'Call'
-
-    //     out.line(`import {${fix}, sts} from './support'`)
-    //     let runtimeImports = this.runtimeImports(out)
-
-    //     for (let [qn, v] of this.enumerateVersions(items)) {
-    //         let versionName = this.getVersionName(v.runtime)
-    //         let itemName = this.createName(v.def.pallet, v.def.name, fix)
-    //         let sts = this.getSts(v.runtime)
-
-    //         out.line()
-    //         out.blockComment(v.def.docs)
-    //         out.line(`export const ${itemName} = new ${fix}(`)
-    //         out.indentation(() => {
-    //             out.line(`'${qn}',`)
-    //             if (v.def.fields.length == 0 || v.def.fields[0].name == null) {
-    //                 if (v.def.fields.length == 1) {
-    //                     out.line(this.qualify(runtimeImports, v.runtime, v.def.fields[0].type))
-    //                 } else {
-    //                     if (v.def.fields.length > 0) {
-    //                         let texp = v.def.fields
-    //                             .map((f) => this.qualify(runtimeImports, v.runtime, f.type))
-    //                             .join(', ')
-    //                         out.line(`sts.tuple(${texp})`)
-    //                     } else {
-    //                         out.line('sts.unit()')
-    //                     }
-    //                 }
-    //             } else {
-    //                 out.line('sts.struct({')
-    //                 out.indentation(() => {
-    //                     for (let f of v.def.fields) {
-    //                         let texp = this.qualify(runtimeImports, v.runtime, f.type)
-    //                         out.blockComment(f.docs)
-    //                         out.line(`${f.name}: ${texp},`)
-    //                     }
-    //                 })
-    //                 out.line('})')
-    //             }
-    //         })
-    //         out.line(')')
-    //     }
-
-    //     out.write()
-    // }
-
-    // private generateConsts(items: Map<string, Item<Constant>>): void {
-    //     if (items.size == 0) return
-
-    //     let out = this.dir.file(`constants.ts`)
-    //     out.line(`import {Constant, sts} from './support'`)
-    //     let imports = this.runtimeImports(out)
-
-    //     for (let [qn, v] of this.enumerateVersions(items)) {
-    //         let [pallet, name] = qn.split('.')
-    //         let versionName = this.getVersionName(v.runtime)
-    //         let itemName = this.createName(pallet, name, 'Const')
-    //         let qualifiedType = this.qualify(imports, v.runtime, v.def.type)
-
-    //         out.line()
-    //         out.blockComment(v.def.docs)
-    //         out.line(`export const ${itemName} = new Constant(`)
-    //         out.indentation(() => {
-    //             out.line(`'${qn}',`)
-    //             out.line(qualifiedType)
-    //         })
-    //         out.line(')')
-    //     }
-
-    //     out.write()
-    // }
-
-    // private generateStorage(items: Map<string, Item<StorageItem>>): void {
-    //     if (items.size == 0) return
-
-    //     let out = this.dir.file('storage.ts')
-    //     out.line(`import {Storage, sts, Block, Bytes, Option, Result} from './support'`)
-    //     let importedInterfaces = this.runtimeImports(out)
-
-    //     for (let [qn, v] of this.enumerateVersions(items)) {
-    //         if (isEmptyStorageItem(v)) continue // Storage item can't hold any value
-
-    //         let [pallet, name] = qn.split('.')
-    //         let an = this.createName(pallet, name, 'Storage', this.getVersionName(v.runtime))
-    //         {
-    //             let keyListExp = v.def.keys.map((ti) => this.qualify(importedInterfaces, v.runtime, ti)).join(', ')
-
-    //             let valueExp = this.qualify(importedInterfaces, v.runtime, v.def.value)
-
-    //             out.line()
-    //             out.blockComment(v.def.docs)
-    //             out.line(`export const ${an}: I${an} = new Storage(`)
-    //             out.indentation(() => {
-    //                 out.line(`'${qn}',`)
-    //                 out.line(`'${v.def.modifier}',`)
-    //                 out.line(`[${keyListExp}],`)
-    //                 out.line(valueExp)
-    //             })
-    //             out.line(')')
-    //         }
-
-    //         out.line()
-    //         out.blockComment(v.def.docs)
-    //         out.block(`export interface I${an} `, () => {
-    //             let value = this.qualify(importedInterfaces, v.runtime, v.def.value)
-
-    //             let keys = v.def.keys.map((ti) => {
-    //                 return this.qualify(importedInterfaces, v.runtime, ti)
-    //             })
-
-    //             let args = keys.length == 1 ? [`key: ${keys[0]}`] : keys.map((exp, idx) => `key${idx + 1}: ${exp}`)
-
-    //             let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
-
-    //             let ret = v.def.modifier == 'Required' ? value : `${value} | undefined`
-
-    //             let kv = `[k: ${fullKey}, v: ${ret}]`
-
-    //             function* enumeratePartialApps(leading?: string): Iterable<string> {
-    //                 let list: string[] = []
-    //                 if (leading) {
-    //                     list.push(leading)
-    //                 }
-    //                 list.push('block: Block')
-    //                 yield list.join(', ')
-    //                 for (let arg of args) {
-    //                     list.push(arg)
-    //                     yield list.join(', ')
-    //                 }
-    //             }
-
-    //             if (v.def.modifier == 'Default') {
-    //                 out.line(`getDefault(block: Block): ${value}`)
-    //             }
-
-    //             out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
-
-    //             if (args.length > 0) {
-    //                 out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
-    //                 if (isStorageKeyDecodable(v.def)) {
-    //                     for (let args of enumeratePartialApps()) {
-    //                         out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
-    //                     }
-    //                     for (let args of enumeratePartialApps('pageSize: number')) {
-    //                         out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
-    //                     }
-    //                     for (let args of enumeratePartialApps()) {
-    //                         out.line(`getPairs(${args}): Promise<${kv}[]>`)
-    //                     }
-    //                     for (let args of enumeratePartialApps('pageSize: number')) {
-    //                         out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
-    //                     }
-    //                 }
-    //             }
-    //         })
-    //     }
-
-    //     out.write()
-    // }
 
     private generatePallet(pallet: Pallet) {
         let out = this.dir.file(toCamelCase(pallet.name) + '.ts')
@@ -412,9 +172,8 @@ export class Typegen {
         out.write()
     }
 
-    private collectPallets() {
-        let requested =
-            typeof this.options.pallets === 'boolean' ? undefined : new Set(Object.keys(this.options.pallets))
+    private collectPallets(req: Record<string, PalletRequest> | boolean) {
+        let requested = typeof req === 'boolean' ? undefined : new Set(Object.keys(this.options.pallets))
         if (requested?.size === 0) return []
 
         let list = this.runtimes().flatMap((runtime) =>
@@ -434,24 +193,37 @@ export class Typegen {
         pallets.forEach((versions, name) => {
             let runtimes = versions.map((p) => p.runtime)
 
-            let events = this.collectItems(runtimes, name, 'events', (r, def) =>
-                getTypeHash(r.description.types, createScaleType(r.description.types, def))
+            let events = this.collectItems(
+                typeof req === 'boolean' || req[name].events,
+                runtimes,
+                (r) => r.description.pallets[name].events,
+                (r, item) => r.getTypeHash(r.createScaleType(item))
             )
 
-            let calls = this.collectItems(runtimes, name, 'calls', (r, def) =>
-                getTypeHash(r.description.types, createScaleType(r.description.types, def))
+            let calls = this.collectItems(
+                typeof req === 'boolean' || req[name].calls,
+                runtimes,
+                (r) => r.description.pallets[name].calls,
+                (r, item) => r.getTypeHash(r.createScaleType(item))
             )
 
-            let constants = this.collectItems(runtimes, name, 'constants', (r, def) =>
-                getTypeHash(r.description.types, def.type)
+            let constants = this.collectItems(
+                typeof req === 'boolean' || req[name].constants,
+                runtimes,
+                (r) => r.description.pallets[name].constants,
+                (r, item) => r.getTypeHash(item.type)
             )
 
-            let storage = this.collectItems(runtimes, name, 'storage', (r, def) =>
-                JSON.stringify({
-                    modifier: def.modifier,
-                    key: def.keys.map((ti) => getTypeHash(r.description.types, ti)),
-                    value: getTypeHash(r.description.types, def.value),
-                })
+            let storage = this.collectItems(
+                typeof req === 'boolean' || req[name].storage,
+                runtimes,
+                (r) => r.description.pallets[name].storage,
+                (r, item) =>
+                    JSON.stringify({
+                        modifier: item.modifier,
+                        key: item.keys.map((ti) => r.getTypeHash(ti)),
+                        value: r.getTypeHash(item.value),
+                    })
             )
 
             res.push({
@@ -466,28 +238,31 @@ export class Typegen {
         return res
     }
 
-    private collectItems<K extends 'events' | 'calls' | 'storage' | 'constants', I extends md.Pallet[K][string]>(
+    private collectItems<I>(
+        req: string[] | boolean | undefined,
         runtimes: Runtime[],
-        pallet: string,
-        kind: K,
-        hash: (runtime: Runtime, def: I) => string
+        extract: (runtime: Runtime) => Record<string, I>,
+        hash: (runtime: Runtime, item: I) => string
     ) {
+        let requested = typeof req === 'boolean' ? undefined : new Set(req ?? [])
+        if (requested?.size === 0) return []
+
         let list = runtimes.flatMap((runtime) =>
-            Object.keys(runtime.description.pallets[pallet][kind]).map((name) => ({name, runtime}))
+            Object.entries(extract(runtime))
+                .filter(([name]) => requested?.has(name) ?? true)
+                .map(([name, def]) => ({name, def, runtime}))
         )
         let items = groupBy(list, (i) => i.name)
 
         return Array.from(items.entries()).map(([name, versions]) => {
             let uniques: Runtime[] = []
 
+            let prevHash: string | undefined
             versions.forEach((v) => {
-                let prev = maybeLast(uniques)
-                if (
-                    prev == null ||
-                    hash(v.runtime, v.runtime.description.pallets[pallet][kind][name] as any) !==
-                        hash(prev, prev.description.pallets[pallet][kind][name] as any)
-                ) {
+                let newHash = hash(v.runtime, v.def)
+                if (prevHash == null || newHash !== prevHash) {
                     uniques.push(v.runtime)
+                    prevHash = newHash
                 }
             })
 

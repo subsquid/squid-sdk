@@ -19,7 +19,7 @@ import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
 import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
 import * as sto from './storage'
 import {createScaleType, parseQualifiedName} from './util'
-import {getTypeChecker} from '@subsquid/scale-type-system'
+import {getTypeChecker, getTypeHash} from '@subsquid/scale-type-system'
 
 
 export class Runtime {
@@ -376,5 +376,13 @@ export class Runtime {
         if (def == null) return false
         let scaleType = createScaleType(this.description.types, def)
         return ty.match(getTypeChecker(this.description.types), scaleType)
+    }
+
+    createScaleType(def: Variant) {
+        return createScaleType(this.description.types, def)
+    }
+
+    getTypeHash(type: Ti | Type) {
+        return getTypeHash(this.description.types, type)
     }
 }

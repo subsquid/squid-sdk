@@ -13,7 +13,7 @@ type Exp = {
     value: string
 }
 
-type Queue = ((out: Output, types: Set<string>) => void)[]
+type Queue = ((out: Output, types?: Set<string>) => void)[]
 
 export class Sink {
     private pallets = new Map<string, Queue>()
@@ -46,12 +46,12 @@ export class Sink {
     }
 
     private writeIndex() {
-        let out = this.dir.file('index.ts')
+        if (this.modules.size === 0) return
 
+        let out = this.dir.file('index.ts')
         for (let module of this.modules) {
             out.line(`export * from './${module}'`)
         }
-
         out.write()
     }
 
@@ -61,11 +61,9 @@ export class Sink {
         let out = this.dir.file('types.ts')
         out.line(`import {sts, Result, Option, Bytes} from '../../pallet.support'`)
 
-        let types = new Set<string>()
-
         let cb
         while ((cb = this.types.pop())) {
-            cb(out, types)
+            cb(out)
         }
 
         out.write()
@@ -80,17 +78,17 @@ export class Sink {
 
         out.line(`import {sts} from '../../pallet.support'`)
 
-        let types = new Set<string>()
+        let imports = new Set<string>()
 
         out.lazy(() => {
-            if (types.size > 0) {
-                out.line(`import {${[...types].join(', ')}} from './types'`)
+            if (imports.size > 0) {
+                out.line(`import {${[...imports].join(', ')}} from './types'`)
             }
         })
 
         let cb
         while ((cb = queue.pop())) {
-            cb(out, types)
+            cb(out, imports)
         }
 
         out.write()
@@ -277,7 +275,7 @@ export class Sts {
                 let exp = this.renderType(ty)
                 if (name != null) {
                     queue.push((out, types) => {
-                        this.extractNames(exp.type).forEach((n) => types.add(n))
+                        this.extractNames(exp.type).forEach((n) => types?.add(n))
                         out.line()
                         out.blockComment(ty.docs)
                         out.line(`export type ${name} = ${exp.type}`)
@@ -298,13 +296,13 @@ export class Sts {
             out.blockComment(ty.docs)
             if (ty.fields.length == 0 || ty.fields[0].name == null) {
                 let exp = this.renderTuple(ty.fields.map((f) => f.type))
-                this.extractNames(exp.type).forEach((n) => types.add(n))
+                this.extractNames(exp.type).forEach((n) => types?.add(n))
                 out.line(`export type ${name} = ${exp.type}`)
                 out.line()
                 out.line(`export const ${name}: sts.Type<${name}> = ${exp.value}`)
             } else {
                 let fieldsExp = ty.fields.map((f) => this.useType(f.type))
-                fieldsExp.forEach((exp) => this.extractNames(exp.type).forEach((n) => types.add(n)))
+                fieldsExp.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n)))
                 out.line(`export type ${name} = {`)
                 out.indentation(() =>
                     ty.fields.forEach((f, i) => {
@@ -334,9 +332,7 @@ export class Sts {
             out.line()
             out.blockComment(ty.docs)
             let variantsExp = ty.variants.map((v) => v.fields.map((f) => this.useType(f.type)))
-            variantsExp.forEach((v) =>
-                v.forEach((exp) => this.extractNames(exp.type).forEach((n) => types.add(n)))
-            )
+            variantsExp.forEach((v) => v.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n))))
             if (ty.variants.length == 0) {
                 out.line(`export type ${name} = never`)
                 return

@@ -5,18 +5,19 @@ import * as path from 'path'
 import CONFIG_SCHEMA from './config.schema.json'
 
 
+export interface PalletRequest {
+    events?: string[] | boolean
+    calls?: string[] | boolean
+    storage?: string[] | boolean
+    constants?: string[] | boolean
+}
+
+
 export interface Config {
     outDir: string
     specVersions: string
     typesBundle?: string
-    pallets: {
-        [key: string]: {
-            events: string[] | boolean
-            calls: string[] | boolean
-            storage: string[] | boolean
-            constants: string[] | boolean
-        }
-    } | boolean
+    pallets: Record<string, PalletRequest> | boolean
 }
 
 
