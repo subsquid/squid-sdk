@@ -10,7 +10,7 @@ import {
     EIP2930TransactionCall,
     LegacyTransactionCall,
 } from './tx-types'
-import {Call} from './types'
+import {Call, CallRecord} from './types'
 import {normalizeU256} from './util'
 
 
@@ -68,7 +68,7 @@ export interface EIP1559Transaction extends BaseTransaction {
 export type Transaction = LegacyTransaction | EIP2930Transaction | EIP1559Transaction
 
 
-export function getTransaction(ethereumTransact: Call): Transaction {
+export function getTransaction(ethereumTransact: CallRecord): Transaction {
     assert(ethereumTransact.name === 'Ethereum.transact')
     if (EthereumTransactLegacy.is(ethereumTransact)) {
         let args = EthereumTransactLegacy.decode(ethereumTransact)

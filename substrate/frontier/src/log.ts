@@ -1,7 +1,7 @@
 import {Bytes} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
-import {Event, EventType} from './types'
+import {Event, EventRecord} from './types'
 
 
 const EvmLogType: sts.Type<EvmLog> = sts.struct({
@@ -11,8 +11,8 @@ const EvmLogType: sts.Type<EvmLog> = sts.struct({
 })
 
 
-const EvmLogEventLegacy = new EventType(EvmLogType)
-const EvmLogEventLatest = new EventType(sts.struct({log: EvmLogType}))
+const EvmLogEventLegacy = new Event(EvmLogType)
+const EvmLogEventLatest = new Event(sts.struct({log: EvmLogType}))
 
 
 export interface EvmLog {
@@ -22,7 +22,7 @@ export interface EvmLog {
 }
 
 
-export function getEvmLog(event: Event): EvmLog {
+export function getEvmLog(event: EventRecord): EvmLog {
     assert(event.name === 'EVM.Log')
     if (EvmLogEventLegacy.is(event)) {
         return EvmLogEventLegacy.decode(event)

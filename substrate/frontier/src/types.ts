@@ -3,7 +3,7 @@ import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export interface Event {
+export interface EventRecord {
     name: string
     args: unknown
     block: {
@@ -12,7 +12,7 @@ export interface Event {
 }
 
 
-export interface Call {
+export interface CallRecord {
     name: string
     args: unknown
     block: {
@@ -21,29 +21,29 @@ export interface Call {
 }
 
 
-export class EventType<T extends sts.Type> {
+export class Event<T extends sts.Type> {
     constructor(private type: T) {}
 
-    is(event: Event): boolean {
+    is(event: EventRecord): boolean {
         return event.block._runtime.checkEventType(event.name, this.type)
     }
 
-    decode(event: Event): sts.GetType<T> {
+    decode(event: EventRecord): sts.GetType<T> {
         assert(this.is(event))
-        return event.block._runtime.decodeEventRecordArguments(event)
+        return event.block._runtime.decodeEventArguments(event.name, event)
     }
 }
 
 
-export class CallType<T extends sts.Type> {
+export class Call<T extends sts.Type> {
     constructor(private type: T) {}
 
-    is(call: Call): boolean {
+    is(call: CallRecord): boolean {
         return call.block._runtime.checkCallType(call.name, this.type)
     }
 
-    decode(call: Call): sts.GetType<T> {
+    decode(call: CallRecord): sts.GetType<T> {
         assert(this.is(call))
-        return call.block._runtime.decodeCallRecordArguments(call)
+        return call.block._runtime.decodeCallArguments(call.name, call)
     }
 }

@@ -1,7 +1,7 @@
 import {Bytes} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
-import {Event, EventType} from './types'
+import {Event, EventRecord} from './types'
 
 
 const AnyEnum = sts.openEnum({})
@@ -20,9 +20,9 @@ const ExitReason = sts.closedEnum({
 })
 
 
-const EthereumExecuted = new EventType(
+const EthereumExecuted = new Event(
     sts.union(
-        sts.tuple(sts.bytes(), sts.bytes(), sts.bytes(), ExitReason),
+        sts.tuple([sts.bytes(), sts.bytes(), sts.bytes(), ExitReason]),
         sts.struct({
             from: sts.bytes(),
             to: sts.bytes(),
@@ -42,7 +42,7 @@ export interface TransactionResult {
 }
 
 
-export function getTransactionResult(ethereumExecuted: Event): TransactionResult {
+export function getTransactionResult(ethereumExecuted: EventRecord): TransactionResult {
     assert(ethereumExecuted.name === 'Ethereum.Executed')
     let args = EthereumExecuted.decode(ethereumExecuted)
     if (Array.isArray(args)) {

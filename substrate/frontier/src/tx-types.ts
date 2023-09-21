@@ -10,12 +10,12 @@ import {
     union,
     unit
 } from '@subsquid/substrate-runtime/lib/sts'
-import {CallType} from './types'
+import {Call} from './types'
 
 
 const U256 = union(
     bigint(),
-    tuple(bigint(), bigint(), bigint(), bigint())
+    tuple([bigint(), bigint(), bigint(), bigint()])
 )
 
 
@@ -94,14 +94,14 @@ export const EIP2930TransactionCall = struct({
 export type EIP2930TransactionCall = GetType<typeof EIP2930TransactionCall>
 
 
-export const EthereumTransactLegacy = new CallType(
+export const EthereumTransactLegacy = new Call(
     struct({
         transaction: LegacyTransactionCall,
     })
 )
 
 
-export const EthereumTransactLatest = new CallType(
+export const EthereumTransactLatest = new Call(
     struct({
         transaction: closedEnum({
             Legacy: LegacyTransactionCall,
