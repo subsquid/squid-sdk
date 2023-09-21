@@ -7,6 +7,7 @@ import {toCamelCase} from '@subsquid/util-naming'
 import {PalletRequest} from './config'
 import {Sts} from './ifs'
 import {groupBy} from './util'
+import {ItemKind, getItemName} from './items'
 
 interface Pallet {
     name: string
@@ -38,7 +39,6 @@ export class Typegen {
 
     constructor(private options: TypegenOptions) {
         this.dir = new OutDir(options.outDir)
-        // this.types = new StsManager(new OutDir(this.dir.path('versions')), this.runtimes())
     }
 
     generate(): void {
@@ -60,15 +60,17 @@ export class Typegen {
         let out = this.dir.file(toCamelCase(pallet.name) + '.ts')
         let exports = new Set()
 
-        out.line(`import {createEvent, createCall, createConstant, createStorage, sts} from './pallet.support'`)
+        out.line(`import {Event, Call, Constant, Storage, sts} from './pallet.support'`)
         let imports = this.runtimeImports(out)
 
-        let events = sortItems(pallet.events)
-        if (events.length > 0) {
+        const generateItems = (kind: ItemKind) => {
+            let items = sortItems(pallet[kind])
+            if (items.length === 0) return
+
             out.line()
-            out.block(`export const events =`, () => {
-                for (let i of events) {
-                    out.line(`${i.name}: createEvent(`)
+            out.block(`export const ${kind} =`, () => {
+                for (let i of items) {
+                    out.line(`${i.name}: new ${getItemName(kind)}(`)
                     out.indentation(() => {
                         out.line(`'${pallet.name}.${i.name}',`)
                         out.line('{')
@@ -77,7 +79,7 @@ export class Typegen {
                                 let sts = this.getSts(v)
                                 let versionName = toCamelCase(sts.name)
                                 imports.add(versionName)
-                                let exp = sts.useEvent(pallet.name, i.name)
+                                let exp = sts.useItem(pallet.name, i.name, kind)
                                 out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
                             }
                         })
@@ -86,85 +88,13 @@ export class Typegen {
                     out.line('),')
                 }
             })
-            exports.add('events')
+            exports.add(kind)
         }
 
-        let calls = sortItems(pallet.calls)
-        if (calls.length > 0) {
-            out.line()
-            out.block(`export const calls =`, () => {
-                for (let i of calls) {
-                    out.line(`${i.name}: createCall(`)
-                    out.indentation(() => {
-                        out.line(`'${pallet.name}.${i.name}',`)
-                        out.line('{')
-                        out.indentation(() => {
-                            for (let v of i.versions) {
-                                let sts = this.getSts(v)
-                                let versionName = toCamelCase(sts.name)
-                                imports.add(versionName)
-                                let exp = sts.useCall(pallet.name, i.name)
-                                out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
-                            }
-                        })
-                        out.line('}')
-                    })
-                    out.line('),')
-                }
-            })
-            exports.add('calls')
-        }
-
-        let constants = sortItems(pallet.constants)
-        if (constants.length > 0) {
-            out.line()
-            out.block(`export const constants =`, () => {
-                for (let i of constants) {
-                    out.line(`${i.name}: createConstant(`)
-                    out.indentation(() => {
-                        out.line(`'${pallet.name}.${i.name}',`)
-                        out.line('{')
-                        out.indentation(() => {
-                            for (let v of i.versions) {
-                                let sts = this.getSts(v)
-                                let versionName = toCamelCase(sts.name)
-                                imports.add(versionName)
-                                let type = sts.useConstant(pallet.name, i.name)
-                                out.line(`${versionName}: ${sts.qualify(type, versionName)},`)
-                            }
-                        })
-                        out.line('}')
-                    })
-                    out.line('),')
-                }
-            })
-            exports.add('constants')
-        }
-
-        let storage = sortItems(pallet.storage)
-        if (storage.length > 0) {
-            out.line()
-            out.block(`export const storage =`, () => {
-                for (let i of storage) {
-                    out.line(`${i.name}: createStorage(`)
-                    out.indentation(() => {
-                        out.line(`'${pallet.name}.${i.name}',`)
-                        out.line('{')
-                        out.indentation(() => {
-                            for (let v of i.versions) {
-                                let sts = this.getSts(v)
-                                let versionName = toCamelCase(sts.name)
-                                imports.add(versionName)
-                                let type = sts.useStorage(pallet.name, i.name)
-                                out.line(`${versionName}: ${sts.qualify(type, versionName)},`)
-                            }
-                        })
-                        out.line('}')
-                    })
-                    out.line('),')
-                }
-            })
-        }
+        generateItems(ItemKind.Event)
+        generateItems(ItemKind.Call)
+        generateItems(ItemKind.Constant)
+        generateItems(ItemKind.Storage)
 
         out.line()
         out.line(`export default {${[...exports].join(`, `)}}`)
@@ -172,8 +102,10 @@ export class Typegen {
         out.write()
     }
 
-    private collectPallets(req: Record<string, PalletRequest> | boolean) {
-        let requested = typeof req === 'boolean' ? undefined : new Set(Object.keys(this.options.pallets))
+    private collectPallets(req: Record<string, PalletRequest | boolean> | boolean) {
+        if (!req) return []
+
+        let requested = req === true ? undefined : new Set(Object.keys(req))
         if (requested?.size === 0) return []
 
         let list = this.runtimes().flatMap((runtime) =>
@@ -194,28 +126,28 @@ export class Typegen {
             let runtimes = versions.map((p) => p.runtime)
 
             let events = this.collectItems(
-                typeof req === 'boolean' || req[name].events,
+                req === true || getItemsRequest(req[name], ItemKind.Event),
                 runtimes,
                 (r) => r.description.pallets[name].events,
                 (r, item) => r.getTypeHash(r.createScaleType(item))
             )
 
             let calls = this.collectItems(
-                typeof req === 'boolean' || req[name].calls,
+                req === true || getItemsRequest(req[name], ItemKind.Call),
                 runtimes,
                 (r) => r.description.pallets[name].calls,
                 (r, item) => r.getTypeHash(r.createScaleType(item))
             )
 
             let constants = this.collectItems(
-                typeof req === 'boolean' || req[name].constants,
+                req === true || getItemsRequest(req[name], ItemKind.Constant),
                 runtimes,
                 (r) => r.description.pallets[name].constants,
                 (r, item) => r.getTypeHash(item.type)
             )
 
             let storage = this.collectItems(
-                typeof req === 'boolean' || req[name].storage,
+                req === true || getItemsRequest(req[name], ItemKind.Storage),
                 runtimes,
                 (r) => r.description.pallets[name].storage,
                 (r, item) =>
@@ -223,6 +155,7 @@ export class Typegen {
                         modifier: item.modifier,
                         key: item.keys.map((ti) => r.getTypeHash(ti)),
                         value: r.getTypeHash(item.value),
+                        isStorageKeyDecodable: isStorageKeyDecodable(item),
                     })
             )
 
@@ -244,6 +177,8 @@ export class Typegen {
         extract: (runtime: Runtime) => Record<string, I>,
         hash: (runtime: Runtime, item: I) => string
     ) {
+        if (!req) return []
+
         let requested = typeof req === 'boolean' ? undefined : new Set(req ?? [])
         if (requested?.size === 0) return []
 
@@ -330,6 +265,10 @@ function sortItems(items: Item[]) {
     return items.sort((a, b) => (a.name > b.name ? 1 : -1))
 }
 
+function getItemsRequest(req: PalletRequest | boolean, kind: ItemKind) {
+    return typeof req === 'boolean' ? req : req[kind]
+}
+
 /**
  * Returns true when storage item actually can't hold any value
  */
@@ -337,15 +276,15 @@ function sortItems(items: Item[]) {
 //     return isEmptyVariant(item.runtime.description.types[item.def.value])
 // }
 
-// function isStorageKeyDecodable(item: StorageItem): boolean {
-//     return item.hashers.every((hasher) => {
-//         switch (hasher) {
-//             case 'Blake2_128Concat':
-//             case 'Twox64Concat':
-//             case 'Identity':
-//                 return true
-//             default:
-//                 return false
-//         }
-//     })
-// }
+function isStorageKeyDecodable(item: md.StorageItem): boolean {
+    return item.hashers.every((hasher) => {
+        switch (hasher) {
+            case 'Blake2_128Concat':
+            case 'Twox64Concat':
+            case 'Identity':
+                return true
+            default:
+                return false
+        }
+    })
+}

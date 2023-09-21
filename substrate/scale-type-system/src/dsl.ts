@@ -95,20 +95,20 @@ export function array<T extends Type>(def: Get<T>): Type<GetType<T>[]> {
 
 
 export function tuple(): Type<null>
-export function tuple<T extends Type>(t: T): Type<[GetType<T>]>
-export function tuple<T1 extends Type, T2 extends Type>(t1: T1, t2: T2): Type<[GetType<T1>, GetType<T2>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type>(t1: T1, t2: T2, t3: T3): Type<[GetType<T1>, GetType<T2>, GetType<T3>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type, T7 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>, GetType<T7>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type, T7 extends Type, T8 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>, GetType<T7>, GetType<T8>]>
-export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type, T7 extends Type, T8 extends Type, T9 extends Type>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>, GetType<T7>, GetType<T8>, GetType<T9>]>
-export function tuple(...def: Type[]): Type<any[] | null> {
-    if (def.length == 0) {
+export function tuple<T extends [Type]>(def: Get<T>): Type<[GetType<T>]>
+export function tuple<T extends [Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>]>
+export function tuple<T extends [Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>]>
+export function tuple<T extends [Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>]>
+export function tuple<T extends [Type, Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>, GetType<T[4]>]>
+export function tuple<T extends [Type, Type, Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>, GetType<T[4]>, GetType<T[5]>]>
+export function tuple<T extends [Type, Type, Type, Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>, GetType<T[4]>, GetType<T[5]>, GetType<T[6]>]>
+export function tuple<T extends [Type, Type, Type, Type, Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>, GetType<T[4]>, GetType<T[5]>, GetType<T[6]>, GetType<T[7]>]>
+export function tuple<T extends [Type, Type, Type, Type, Type, Type, Type, Type, Type]>(def: Get<T>): Type<[GetType<T[0]>, GetType<T[1]>, GetType<T[2]>, GetType<T[3]>, GetType<T[4]>, GetType<T[5]>, GetType<T[6]>, GetType<T[7]>, GetType<T[8]>]>
+export function tuple(def?: Get<Type[]>): Type<any[] | null> {
+    if (def == null) {
         return unit()
     } else {
-        return new TupleType(def)
+        return new TupleType(getter(def))
     }
 }
 
@@ -151,8 +151,8 @@ export function externalEnum(variants?: Get<EnumDefinition>): Type<any> {
 }
 
 
-export function result<T extends Type, E extends Type>(ok: T, err: E): Type<Result<GetType<T>, GetType<E>>> {
-    return new ResultType(ok, err)
+export function result<T extends Type, E extends Type>(ok: Get<T>, err: Get<E>): Type<Result<GetType<T>, GetType<E>>> {
+    return new ResultType(getter(ok), getter(err))
 }
 
 

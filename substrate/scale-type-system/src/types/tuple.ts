@@ -2,6 +2,7 @@ import {Ti, TypeKind} from '@subsquid/scale-codec'
 import assert from 'assert'
 import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 import {GetType} from '../type-util'
+import {def} from '@subsquid/util-internal'
 
 
 export type GetTupleType<T> = {
@@ -9,8 +10,8 @@ export type GetTupleType<T> = {
 }
 
 
-export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<T>> {
-    constructor(private tuple: T) {
+export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<[...T]>> {
+    constructor(private tuple: () => T) {
         super()
     }
 
@@ -32,8 +33,13 @@ export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<
         }
         if (tuple.length != this.tuple.length) return false
         for (let i = 0; i < this.tuple.length; i++) {
-            if (!typeChecker.match(tuple[i], this.tuple[i])) return false
+            if (!typeChecker.match(tuple[i], this.getType()[i])) return false
         }
         return true
+    }
+
+    @def
+    private getType(): T {
+        return this.tuple()
     }
 }

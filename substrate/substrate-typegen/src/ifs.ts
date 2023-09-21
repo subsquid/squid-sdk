@@ -7,6 +7,7 @@ import {toCamelCase} from '@subsquid/util-naming'
 import assert from 'assert'
 import {assignNames} from './names'
 import {asOptionType, asResultType, toNativePrimitive, upperCaseFirst} from './util'
+import {ItemKind, getItemName} from './items'
 
 type Exp = {
     type: string
@@ -137,10 +138,12 @@ export class Sts {
 
     private typeNames: Map<Ti, string>
 
-    private events = new Map<string, Exp>()
-    private calls = new Map<string, Exp>()
-    private constants = new Map<string, Exp>()
-    private storage = new Map<string, Exp>()
+    private items = {
+        events: new Map<string, Exp>(),
+        calls: new Map<string, Exp>(),
+        constants: new Map<string, Exp>(),
+        storage: new Map<string, Exp>(),
+    }
     private types = new Map<Ti, Exp>()
 
     private assignedNames = new Set<string>()
@@ -175,51 +178,33 @@ export class Sts {
         return exp
     }
 
-    useEvent(pallet: string, event: string) {
-        let qn = `${pallet}.${event}`
-        let type = this.events.get(qn)
+    useItem(pallet: string, item: string, kind: ItemKind) {
+        let qn = `${pallet}.${item}`
+        let type = this.items[kind].get(qn)
         if (type == null) {
-            let name = createName(pallet, event, 'Event')
-            let def = this.runtime.description.pallets[pallet].events[event]
-            let scaleType = createScaleType(this.runtime.description.types, def)
-
-            type = {value: name, type: name}
-            this.events.set(qn, type)
+            let fix = getItemName(kind)
+            let name = createName(pallet, item, fix)
             this.assignedNames.add(name)
 
-            let queue = this.sink.pallet(pallet)
-            this.makeType(queue, name, scaleType)
-        }
-        return type
-    }
-
-    useCall(pallet: string, call: string) {
-        let qn = `${pallet}.${call}`
-        let type = this.events.get(qn)
-        if (type == null) {
-            let name = createName(pallet, call, 'Call')
-            let def = this.runtime.description.pallets[pallet].calls[call]
-            let scaleType = createScaleType(this.runtime.description.types, def)
-
             type = {value: name, type: name}
-            this.calls.set(qn, type)
-            this.assignedNames.add(name)
+            this.items[kind].set(qn, type)
 
             let queue = this.sink.pallet(pallet)
-            this.makeType(queue, name, scaleType)
+            switch (kind) {
+                case ItemKind.Call:
+                case ItemKind.Event: {
+                    let def = this.runtime.description.pallets[pallet][kind][item]
+                    let scaleType = createScaleType(this.runtime.description.types, def)
+                    this.makeType(queue, name, scaleType)
+                    break
+                }
+                case ItemKind.Constant: {
+                    let def = this.runtime.description.pallets[pallet][kind][item]
+                    let scaleType = {...this.runtime.description.types[def.type], docs: def.docs}
+                    this.makeType(queue, name, scaleType)
+                }
+            }
         }
-        return type
-    }
-
-    useConstant(pallet: string, name: string) {
-        let type = createName(pallet, name, 'Constant')
-        this.assignedNames.add(type)
-        return type
-    }
-
-    useStorage(pallet: string, name: string) {
-        let type = createName(pallet, name, 'Storage')
-        this.assignedNames.add(type)
         return type
     }
 
@@ -255,7 +240,7 @@ export class Sts {
                     let ok = this.useType(result.ok)
                     let err = this.useType(result.err)
                     return {
-                        value: `sts.result(${ok.value}, ${err.value})`,
+                        value: `sts.result(${this.renderGetter(ok.value)}, ${this.renderGetter(err.value)})`,
                         type: `Result<${ok.value}, ${err.value}>`,
                     }
                 }
@@ -263,7 +248,7 @@ export class Sts {
                 if (option) {
                     let some = this.useType(option.some)
                     return {
-                        value: `sts.closedEnum({Some: ${some.value}, None: sts.unit()})`,
+                        value: `sts.closedEnum({Some: ${this.renderGetter(some.value)}, None: sts.unit()})`,
                         type: `Option<${some.type}>`,
                     }
                 }
@@ -453,10 +438,14 @@ export class Sts {
         } else {
             let exps = tuple.map((ti) => this.useType(ti))
             return {
-                value: `sts.tuple(() => ${exps.map((exp) => exp.value).join(', ')})`,
+                value: `sts.tuple(() => [${exps.map((exp) => exp.value).join(', ')}])`,
                 type: '[' + exps.map((exp) => exp.type).join(', ') + ']',
             }
         }
+    }
+
+    private renderGetter(str: string) {
+        return this.assignedNames.has(str) ? `() => ${str}` : str
     }
 
     private isUndefined(ti: Ti): boolean {
@@ -476,6 +465,6 @@ export class Sts {
     }
 }
 
-function createName(pallet: string, name: string, suffix: string): string {
-    return upperCaseFirst(toCamelCase(`${pallet}_${name}_${suffix}`))
+function createName(pallet: string, name: string, fix: string): string {
+    return upperCaseFirst(toCamelCase(`${pallet}_${name}_${fix}`))
 }

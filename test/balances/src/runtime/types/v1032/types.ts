@@ -1,9 +1,5 @@
 import {sts, Result, Option, Bytes} from '../../pallet.support'
 
-export type LookupSource = Bytes
-
-export const LookupSource: sts.Type<LookupSource> = sts.bytes()
-
 export type Balance = bigint
 
 export const Balance: sts.Type<Balance> = sts.bigint()

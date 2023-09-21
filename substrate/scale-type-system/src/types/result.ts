@@ -7,7 +7,7 @@ export type Result<T, E> = ValueCase<'Ok', T> | ValueCase<'Err', E>
 
 
 export class ResultType<T extends Type, E extends Type> extends BaseType<Result<GetType<T>, GetType<E>>> {
-    constructor(private ok: T, private err: E) {
+    constructor(private ok: () => T, private err: () => E) {
         super()
     }
 
@@ -22,7 +22,7 @@ export class ResultType<T extends Type, E extends Type> extends BaseType<Result<
             && v1.name == 'Err'
             && v1.fields.length == 1
             && v1.fields[0].name == null
-            && typeChecker.match(v0.fields[0].type, this.ok)
-            && typeChecker.match(v1.fields[0].type, this.err)
+            && typeChecker.match(v0.fields[0].type, this.ok())
+            && typeChecker.match(v1.fields[0].type, this.err())
     }
 }

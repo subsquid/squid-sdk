@@ -17,6 +17,10 @@ export const BalanceStatus: sts.Type<BalanceStatus> = sts.closedEnum(() => {
     }
 })
 
-export type AccountId32 = Bytes
+export type Balance = bigint
 
-export const AccountId32: sts.Type<AccountId32> = sts.bytes()
+export const Balance: sts.Type<Balance> = sts.bigint()
+
+export type AccountId = Bytes
+
+export const AccountId: sts.Type<AccountId> = sts.bytes()

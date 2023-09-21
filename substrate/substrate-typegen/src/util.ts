@@ -1,18 +1,17 @@
 import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
 import {unexpectedCase} from '@subsquid/util-internal'
 
-
 export function isEmptyVariant(type: Type): boolean {
     return type.kind == TypeKind.Variant && type.variants.length == 0
 }
 
-
-export function asResultType(type: Type): {ok: Ti, err: Ti} | undefined {
+export function asResultType(type: Type): {ok: Ti; err: Ti} | undefined {
     if (type.kind != TypeKind.Variant) return undefined
     if (type.variants.length != 2) return undefined
     let v0 = type.variants[0]
     let v1 = type.variants[1]
-    let yes = v0.name == 'Ok' &&
+    let yes =
+        v0.name == 'Ok' &&
         v0.index == 0 &&
         v0.fields.length == 1 &&
         v0.fields[0].name == null &&
@@ -23,13 +22,13 @@ export function asResultType(type: Type): {ok: Ti, err: Ti} | undefined {
     return yes ? {ok: v0.fields[0].type, err: v1.fields[0].type} : undefined
 }
 
-
 export function asOptionType(type: Type): {some: Ti} | undefined {
     if (type.kind !== TypeKind.Variant) return
     if (type.variants.length != 2) return
     let v0 = type.variants[0]
     let v1 = type.variants[1]
-    let yes = v0.name == 'None' &&
+    let yes =
+        v0.name == 'None' &&
         v0.fields.length == 0 &&
         v0.index == 0 &&
         v1.name == 'Some' &&
@@ -37,37 +36,36 @@ export function asOptionType(type: Type): {some: Ti} | undefined {
         v1.fields.length == 1 &&
         v1.fields[0].name == null
 
-    if (yes) return {
-        some: v1.fields[0].type
-    }
+    if (yes)
+        return {
+            some: v1.fields[0].type,
+        }
 }
 
-
 export function toNativePrimitive(primitive: Primitive): string {
-    switch(primitive) {
-        case "I8":
-        case "U8":
-        case "I16":
-        case "U16":
-        case "I32":
-        case "U32":
-            return "number"
-        case "I64":
-        case "U64":
-        case "I128":
-        case "U128":
-        case "I256":
-        case "U256":
-            return "bigint"
-        case "Bool":
-            return "boolean"
-        case "Str":
-            return "string"
+    switch (primitive) {
+        case 'I8':
+        case 'U8':
+        case 'I16':
+        case 'U16':
+        case 'I32':
+        case 'U32':
+            return 'number'
+        case 'I64':
+        case 'U64':
+        case 'I128':
+        case 'U128':
+        case 'I256':
+        case 'U256':
+            return 'bigint'
+        case 'Bool':
+            return 'boolean'
+        case 'Str':
+            return 'string'
         default:
             throw unexpectedCase(primitive)
     }
 }
-
 
 export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
     let grouping = new Map<G, T[]>()
@@ -84,7 +82,21 @@ export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
     return grouping
 }
 
-
 export function upperCaseFirst(s: string): string {
     return s[0].toUpperCase() + s.slice(1)
+}
+
+export function kind2fix(kind: string) {
+    switch (kind) {
+        case 'events':
+            return 'Event'
+        case 'calls':
+            return 'Call'
+        case 'storage':
+            return 'Storage'
+        case 'constants':
+            return 'Constant'
+        default:
+            throw unexpectedCase(kind)
+    }
 }

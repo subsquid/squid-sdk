@@ -1,26 +1,5 @@
 import {sts} from '../../pallet.support'
-import {LookupSource, AccountId, Balance} from './types'
-
-/**
- *  The fee required to make a transfer.
- */
-export type BalancesTransferFeeConstant = bigint
-
-export const BalancesTransferFeeConstant: sts.Type<BalancesTransferFeeConstant> = sts.bigint()
-
-/**
- *  The minimum amount required to keep an account open.
- */
-export type BalancesExistentialDepositConstant = bigint
-
-export const BalancesExistentialDepositConstant: sts.Type<BalancesExistentialDepositConstant> = sts.bigint()
-
-/**
- *  The fee required to create an account.
- */
-export type BalancesCreationFeeConstant = bigint
-
-export const BalancesCreationFeeConstant: sts.Type<BalancesCreationFeeConstant> = sts.bigint()
+import {LookupSource} from './types'
 
 /**
  *  Same as the [`transfer`] call, but with a check that the transfer will not kill the
@@ -29,6 +8,11 @@ export const BalancesCreationFeeConstant: sts.Type<BalancesCreationFeeConstant> 
  *  99% of the time you want [`transfer`] instead.
  * 
  *  [`transfer`]: struct.Module.html#method.transfer
+ *  # <weight>
+ *  - Cheaper than transfer because account cannot be killed.
+ *  - Base Weight: 51.4 µs
+ *  - DB Weight: 1 Read and 1 Write to dest (sender is in overlay already)
+ *  #</weight>
  */
 export type BalancesTransferKeepAliveCall = {
     dest: LookupSource,
@@ -62,11 +46,13 @@ export const BalancesTransferKeepAliveCall: sts.Type<BalancesTransferKeepAliveCa
  *    - `ensure_can_withdraw` is always called internally but has a bounded complexity.
  *    - Transferring balances to accounts that did not exist before will cause
  *       `T::OnNewAccount::on_new_account` to be called.
- *    - Removing enough funds from an account will trigger
- *      `T::DustRemoval::on_unbalanced` and `T::OnFreeBalanceZero::on_free_balance_zero`.
+ *    - Removing enough funds from an account will trigger `T::DustRemoval::on_unbalanced`.
  *    - `transfer_keep_alive` works the same way as `transfer`, but has an additional
  *      check that the transfer will not kill the origin account.
- * 
+ *  ---------------------------------
+ *  - Base Weight: 73.64 µs, worst case scenario (account created, account removed)
+ *  - DB Weight: 1 Read and 1 Write to destination account
+ *  - Origin account is already in memory, so no DB operations for them.
  *  # </weight>
  */
 export type BalancesTransferCall = {
@@ -87,13 +73,18 @@ export const BalancesTransferCall: sts.Type<BalancesTransferCall> = sts.struct((
  *  This will alter `FreeBalance` and `ReservedBalance` in storage. it will
  *  also decrease the total issuance of the system (`TotalIssuance`).
  *  If the new free or reserved balance is below the existential deposit,
- *  it will reset the account nonce (`system::AccountNonce`).
+ *  it will reset the account nonce (`frame_system::AccountNonce`).
  * 
  *  The dispatch origin for this call is `root`.
  * 
  *  # <weight>
  *  - Independent of the arguments.
  *  - Contains a limited number of reads and writes.
+ *  ---------------------
+ *  - Base Weight:
+ *      - Creating: 27.56 µs
+ *      - Killing: 35.11 µs
+ *  - DB Weight: 1 Read, 1 Write to `who`
  *  # </weight>
  */
 export type BalancesSetBalanceCall = {
@@ -113,6 +104,10 @@ export const BalancesSetBalanceCall: sts.Type<BalancesSetBalanceCall> = sts.stru
 /**
  *  Exactly as `transfer`, except the origin must be root and the source account may be
  *  specified.
+ *  # <weight>
+ *  - Same as transfer, but additional read and write because the source account is
+ *    not assumed to be in the overlay.
+ *  # </weight>
  */
 export type BalancesForceTransferCall = {
     source: LookupSource,
@@ -127,24 +122,3 @@ export const BalancesForceTransferCall: sts.Type<BalancesForceTransferCall> = st
         value: sts.bigint(),
     }
 })
-
-/**
- *  Transfer succeeded (from, to, value, fees).
- */
-export type BalancesTransferEvent = [AccountId, AccountId, Balance, Balance]
-
-export const BalancesTransferEvent: sts.Type<BalancesTransferEvent> = sts.tuple(() => [AccountId, AccountId, Balance, Balance])
-
-/**
- *  An account was reaped.
- */
-export type BalancesReapedAccountEvent = [AccountId]
-
-export const BalancesReapedAccountEvent: sts.Type<BalancesReapedAccountEvent> = sts.tuple(() => [AccountId])
-
-/**
- *  A new account was created.
- */
-export type BalancesNewAccountEvent = [AccountId, Balance]
-
-export const BalancesNewAccountEvent: sts.Type<BalancesNewAccountEvent> = sts.tuple(() => [AccountId, Balance])
