@@ -92,9 +92,15 @@ export class Names {
         this.types.forEach((type, ti) => {
             if (this.assignment.has(ti)) return
             let aliases = this.aliases.get(ti)
-            if (aliases?.size !== 1) return
-            let name = Array.from(aliases)[0]
-            if (this.isValidAssignment(ti, name)) {
+
+            let name: string | undefined
+            if (aliases != null && aliases.size > 0) {
+                name = Array.from(aliases)[0]
+            } else {
+                name = deriveName(type)
+            }
+
+            if (name != null && this.isValidAssignment(ti, name)) {
                 this.assign(ti, name)
             }
         })
@@ -127,6 +133,6 @@ export function needsName(types: Type[], ti: Ti): boolean {
         case TypeKind.Composite:
             return true
         default:
-            return true
+            return false
     }
 }

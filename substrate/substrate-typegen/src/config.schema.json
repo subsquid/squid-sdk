@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "description": "Typegen config. All paths are resolved relative to location of this file",
   "type": "object",
   "properties": {
@@ -18,9 +18,75 @@
     "pallets": {
       "oneOf": [
         {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "events": {
+                    "description": "List of events to generate",
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "calls": {
+                    "description": "List of calls to generate",
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "storage": {
+                    "description": "List of storage items to generate",
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "constants": {
+                    "description": "List of constants to generate",
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "boolean"
+              }
+            ]
           }
         },
         {

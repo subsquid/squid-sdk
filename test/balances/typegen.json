@@ -1,5 +1,5 @@
 {
-  "outDir": "src/types",
+  "outDir": "src/runtime",
   "specVersions": "https://v2.archive.subsquid.io/metadata/kusama",
   "pallets": true
 }

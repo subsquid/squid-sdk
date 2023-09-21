@@ -272,29 +272,30 @@ export class Runtime {
         return this.scaleCodec.decodeBinary(this.description.call, bytes)
     }
 
-    decodeCallRecordArguments(call: CallRecord): any {
-        let qn = parseQualifiedName(call.name)
+    decodeCallArguments(name: QualifiedName, args: any): any {
+        let qn = parseQualifiedName(name)
         let calls = this.description.pallets[qn[0]]?.calls
         if (calls == null) throw new Error(
             `There are no calls in ${qn[0]} pallet`
         )
         let def = calls[qn[1]]
         if (def == null) throw new Error(
-            `Unknown call: ${call.name}`
+            `Unknown call: ${name}`
         )
-        return this.decodeArgs(def, call.args)
+        return this.decodeArgs(def, args)
     }
 
-    decodeEventRecordArguments(event: EventRecord): any {
-        let qn = parseQualifiedName(event.name)
+    decodeEventArguments(name: QualifiedName, args: any): any {
+        let qn = parseQualifiedName(name)
         let events = this.description.pallets[qn[0]]?.events
         if (events == null) throw new Error(
             `There are no events in ${qn[0]} pallet`
         )
         let def = events[qn[1]]
         if (def == null) throw new Error(
-            `Unknown call: ${event.name}`
+            `Unknown event: ${name}`
         )
+        return this.decodeArgs(def, args)
     }
 
     private decodeArgs(def: Variant, args: any): any {
@@ -311,16 +312,12 @@ export class Runtime {
     }
 
     private decodeJsonTuple(fields: Field[], args: unknown): any {
-        if (fields.length == 1) {
-            return this.jsonCodec.decode(fields[0].type, args)
-        } else {
-            assert(Array.isArray(args) && fields.length == args.length, 'invalid args')
-            let result: any[] = new Array(fields.length)
-            for (let i = 0; i < fields.length; i++) {
-                result[i] = this.jsonCodec.decode(fields[i].type, args[i])
-            }
-            return result
+        assert(Array.isArray(args) && fields.length == args.length, 'invalid args')
+        let result: any[] = new Array(fields.length)
+        for (let i = 0; i < fields.length; i++) {
+            result[i] = this.jsonCodec.decode(fields[i].type, args[i])
         }
+        return result
     }
 
     hasEvent(name: QualifiedName): boolean {

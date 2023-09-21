@@ -30,7 +30,16 @@ export interface TypegenOptions {
     outDir: string
     specVersions: SpecVersion[]
     typesBundle?: md.OldTypesBundle | md.OldSpecsBundle
-    pallets: string[] | boolean
+    pallets:
+        | {
+              [key: string]: {
+                  events: string[] | boolean
+                  calls: string[] | boolean
+                  storage: string[] | boolean
+                  constants: string[] | boolean
+              }
+          }
+        | boolean
 }
 
 export class Typegen {
@@ -292,6 +301,7 @@ export class Typegen {
         let exports = new Set()
 
         out.line(`import {createEvent, createCall, createConstant, createStorage, sts} from './pallet.support'`)
+        let imports = this.runtimeImports(out)
 
         let events = sortItems(pallet.events)
         if (events.length > 0) {
@@ -306,8 +316,9 @@ export class Typegen {
                             for (let v of i.versions) {
                                 let sts = this.getSts(v)
                                 let versionName = toCamelCase(sts.name)
-                                let type = sts.useEvent(pallet.name, i.name)
-                                out.line(`${versionName}: ${type},`)
+                                imports.add(versionName)
+                                let exp = sts.useEvent(pallet.name, i.name)
+                                out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
                             }
                         })
                         out.line('}')
@@ -331,8 +342,9 @@ export class Typegen {
                             for (let v of i.versions) {
                                 let sts = this.getSts(v)
                                 let versionName = toCamelCase(sts.name)
-                                let type = sts.useCall(pallet.name, i.name)
-                                out.line(`${versionName}: ${type},`)
+                                imports.add(versionName)
+                                let exp = sts.useCall(pallet.name, i.name)
+                                out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
                             }
                         })
                         out.line('}')
@@ -356,8 +368,9 @@ export class Typegen {
                             for (let v of i.versions) {
                                 let sts = this.getSts(v)
                                 let versionName = toCamelCase(sts.name)
+                                imports.add(versionName)
                                 let type = sts.useConstant(pallet.name, i.name)
-                                out.line(`${versionName}: ${type},`)
+                                out.line(`${versionName}: ${sts.qualify(type, versionName)},`)
                             }
                         })
                         out.line('}')
@@ -381,8 +394,9 @@ export class Typegen {
                             for (let v of i.versions) {
                                 let sts = this.getSts(v)
                                 let versionName = toCamelCase(sts.name)
+                                imports.add(versionName)
                                 let type = sts.useStorage(pallet.name, i.name)
-                                out.line(`${versionName}: ${type},`)
+                                out.line(`${versionName}: ${sts.qualify(type, versionName)},`)
                             }
                         })
                         out.line('}')
@@ -399,7 +413,8 @@ export class Typegen {
     }
 
     private collectPallets() {
-        let requested = Array.isArray(this.options.pallets) ? new Set(this.options.pallets) : undefined
+        let requested =
+            typeof this.options.pallets === 'boolean' ? undefined : new Set(Object.keys(this.options.pallets))
         if (requested?.size === 0) return []
 
         let list = this.runtimes().flatMap((runtime) =>
@@ -488,7 +503,7 @@ export class Typegen {
         if (sts) return sts
 
         let name = this.getVersionName(runtime)
-        sts = new Sts(new OutDir(this.dir.path('versions')), name, runtime)
+        sts = new Sts(new OutDir(this.dir.path('types')), name, runtime)
         this.sts.set(runtime, sts)
         return sts
     }
@@ -523,15 +538,13 @@ export class Typegen {
         })
     }
 
-    private runtimeImports(out: Output): Set<Runtime> {
-        let set = new Set<Runtime>()
+    private runtimeImports(out: Output): Set<string> {
+        let set = new Set<string>()
         out.lazy(() => {
             Array.from(set)
-                .sort((a, b) => a.specVersion - b.specVersion)
+                .sort((a, b) => (a > b ? -1 : 1))
                 .forEach((v) => {
-                    let sts = this.getSts(v)
-                    let versionName = toCamelCase(sts.name)
-                    out.line(`import * as ${versionName} from './${versionName}'`)
+                    out.line(`import * as ${v} from './types/${v}'`)
                 })
         })
         return set

@@ -30,10 +30,11 @@ processor.run(new TypeormDatabase(), async ctx => {
         for (let event of block.events) {
             if (event.name == balances.events.Transfer.name) {
                 let rec: {from: Bytes, to: Bytes, amount: bigint}
-                if (balances.events.Transfer.v1020.is(event)) {
-                    let [from, to, amount] = balances.events.Transfer.v1020.decode(event)
+                let t = balances.events.Transfer
+                if (t.is(event, 'v1020')) {
+                    let [from, to, amount] = t.decode(event)
                     rec = {from, to, amount}
-                } else if (balances.events.Transfer.v1050.is(event)) {
+                } else if (balances.events.Transfer.is(event)) {
                     let [from, to, amount] = balances.events.Transfer.v1050.decode(event)
                     rec = {from, to, amount}
                 } else {

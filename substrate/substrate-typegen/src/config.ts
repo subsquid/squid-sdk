@@ -9,7 +9,14 @@ export interface Config {
     outDir: string
     specVersions: string
     typesBundle?: string
-    pallets: string[]
+    pallets: {
+        [key: string]: {
+            events: string[] | boolean
+            calls: string[] | boolean
+            storage: string[] | boolean
+            constants: string[] | boolean
+        }
+    } | boolean
 }
 
 

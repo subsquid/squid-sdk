@@ -1,0 +1,191 @@
+import {sts} from '../../pallet.support'
+import {Call, Weight, OriginCaller, DispatchError, Type_462} from './types'
+
+/**
+ * Dispatch a function call with a specified weight.
+ * 
+ * This function does not check the weight of the call, and instead allows the
+ * Root origin to specify the weight of the call.
+ * 
+ * The dispatch origin for this call must be _Root_.
+ */
+export type UtilityWithWeightCall = {
+    call: Call,
+    weight: Weight,
+}
+
+export const UtilityWithWeightCall: sts.Type<UtilityWithWeightCall> = sts.struct(() => {
+    return  {
+        call: Call,
+        weight: Weight,
+    }
+})
+
+/**
+ * Send a batch of dispatch calls.
+ * Unlike `batch`, it allows errors and won't interrupt.
+ * 
+ * May be called from any origin except `None`.
+ * 
+ * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+ *   exceed the constant: `batched_calls_limit` (available in constant metadata).
+ * 
+ * If origin is root then the calls are dispatch without checking origin filter. (This
+ * includes bypassing `frame_system::Config::BaseCallFilter`).
+ * 
+ * ## Complexity
+ * - O(C) where C is the number of calls to be batched.
+ */
+export type UtilityForceBatchCall = {
+    calls: Call[],
+}
+
+export const UtilityForceBatchCall: sts.Type<UtilityForceBatchCall> = sts.struct(() => {
+    return  {
+        calls: sts.array(() => Call),
+    }
+})
+
+/**
+ * Dispatches a function call with a provided origin.
+ * 
+ * The dispatch origin for this call must be _Root_.
+ * 
+ * ## Complexity
+ * - O(1).
+ */
+export type UtilityDispatchAsCall = {
+    asOrigin: OriginCaller,
+    call: Call,
+}
+
+export const UtilityDispatchAsCall: sts.Type<UtilityDispatchAsCall> = sts.struct(() => {
+    return  {
+        asOrigin: OriginCaller,
+        call: Call,
+    }
+})
+
+/**
+ * Send a batch of dispatch calls and atomically execute them.
+ * The whole transaction will rollback and fail if any of the calls failed.
+ * 
+ * May be called from any origin except `None`.
+ * 
+ * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+ *   exceed the constant: `batched_calls_limit` (available in constant metadata).
+ * 
+ * If origin is root then the calls are dispatched without checking origin filter. (This
+ * includes bypassing `frame_system::Config::BaseCallFilter`).
+ * 
+ * ## Complexity
+ * - O(C) where C is the number of calls to be batched.
+ */
+export type UtilityBatchAllCall = {
+    calls: Call[],
+}
+
+export const UtilityBatchAllCall: sts.Type<UtilityBatchAllCall> = sts.struct(() => {
+    return  {
+        calls: sts.array(() => Call),
+    }
+})
+
+/**
+ * Send a batch of dispatch calls.
+ * 
+ * May be called from any origin except `None`.
+ * 
+ * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+ *   exceed the constant: `batched_calls_limit` (available in constant metadata).
+ * 
+ * If origin is root then the calls are dispatched without checking origin filter. (This
+ * includes bypassing `frame_system::Config::BaseCallFilter`).
+ * 
+ * ## Complexity
+ * - O(C) where C is the number of calls to be batched.
+ * 
+ * This will return `Ok` in all circumstances. To determine the success of the batch, an
+ * event is deposited. If a call failed and the batch was interrupted, then the
+ * `BatchInterrupted` event is deposited, along with the number of successful calls made
+ * and the error of the failed call. If all were successful, then the `BatchCompleted`
+ * event is deposited.
+ */
+export type UtilityBatchCall = {
+    calls: Call[],
+}
+
+export const UtilityBatchCall: sts.Type<UtilityBatchCall> = sts.struct(() => {
+    return  {
+        calls: sts.array(() => Call),
+    }
+})
+
+/**
+ * Send a call through an indexed pseudonym of the sender.
+ * 
+ * Filter from origin are passed along. The call will be dispatched with an origin which
+ * use the same filter as the origin of this call.
+ * 
+ * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
+ * because you expect `proxy` to have been used prior in the call stack and you do not want
+ * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
+ * in the Multisig pallet instead.
+ * 
+ * NOTE: Prior to version *12, this was called `as_limited_sub`.
+ * 
+ * The dispatch origin for this call must be _Signed_.
+ */
+export type UtilityAsDerivativeCall = {
+    index: number,
+    call: Call,
+}
+
+export const UtilityAsDerivativeCall: sts.Type<UtilityAsDerivativeCall> = sts.struct(() => {
+    return  {
+        index: sts.number(),
+        call: Call,
+    }
+})
+
+/**
+ * A single item within a Batch of dispatches has completed with error.
+ */
+export type UtilityItemFailedEvent = {
+    error: DispatchError,
+}
+
+export const UtilityItemFailedEvent: sts.Type<UtilityItemFailedEvent> = sts.struct(() => {
+    return  {
+        error: DispatchError,
+    }
+})
+
+/**
+ * A call was dispatched.
+ */
+export type UtilityDispatchedAsEvent = {
+    result: Type_462,
+}
+
+export const UtilityDispatchedAsEvent: sts.Type<UtilityDispatchedAsEvent> = sts.struct(() => {
+    return  {
+        result: Type_462,
+    }
+})
+
+/**
+ * Batch of dispatches did not complete fully. Index of first failing dispatch given, as
+ * well as the error.
+ */
+export type UtilityBatchInterruptedEvent = {
+    index: number,
+    error: DispatchError,
+}
+
+export const UtilityBatchInterruptedEvent: sts.Type<UtilityBatchInterruptedEvent> = sts.struct(() => {
+    return  {
+        index: sts.number(),
+        error: DispatchError,
+    }
+})

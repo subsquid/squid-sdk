@@ -33,17 +33,13 @@ export function createScaleType(types: Type[], def: Variant): Type {
                 tuple: [],
             }
         } else if (def.fields[0].name == null) {
-            if (def.fields.length == 1) {
-                sc = types[def.fields[0].type]
-            } else {
-                sc = {
-                    kind: TypeKind.Tuple,
-                    docs: def.docs,
-                    tuple: def.fields.map((f) => {
-                        assert(f.name == null)
-                        return f.type
-                    }),
-                }
+            sc = {
+                kind: TypeKind.Tuple,
+                docs: def.docs,
+                tuple: def.fields.map((f) => {
+                    assert(f.name == null)
+                    return f.type
+                }),
             }
         } else {
             sc = {
