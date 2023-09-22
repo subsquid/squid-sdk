@@ -172,7 +172,8 @@ export class ArchiveLayout {
         args: {
             blocks: (nextBlock: number, prevHash?: string) => AsyncIterable<HashAndHeight[]>
             range?: Range
-            chunkSize?: number
+            chunkSize?: number,
+            onSuccessWrite?: (lastBlock: number) => void
         }
     ): Promise<void> {
         return this.append(
@@ -190,6 +191,7 @@ export class ArchiveLayout {
                         assertNotNull(lastBlock)
                     ).transactDir('.', async fs => {
                         let content = await out.end()
+                        args.onSuccessWrite ? args.onSuccessWrite(lastBlock?.height || 0) : null;
                         return fs.write('blocks.jsonl.gz', content)
                     })
                     firstBlock = undefined

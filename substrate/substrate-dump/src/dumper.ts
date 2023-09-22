@@ -14,6 +14,7 @@ import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {MetadataWriter} from './metadata'
+import { PrometheusServer } from './prometheus'
 
 
 export interface DumperOptions {
@@ -26,6 +27,7 @@ export interface DumperOptions {
     lastBlock?: number
     withTrace?: boolean | string
     chunkSize: number
+    metricsPort?: number
 }
 
 
@@ -82,6 +84,11 @@ export class Dumper {
         })
     }
 
+    @def
+    prometheus() {
+        return new PrometheusServer(this.options.metricsPort ?? 3000);
+    }
+
     ingest(range: Range): AsyncIterable<BlockBatch> {
         let request: DataRequest = {
             runtimeVersion: true,
@@ -107,6 +114,7 @@ export class Dumper {
 
         let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
         let chainHeight = await height.get()
+        this.prometheus().setLastBlock(this.options.lastBlock ? this.options.lastBlock : chainHeight);
 
         let progress = new Progress({
             initialValue: this.range().from,
@@ -193,11 +201,14 @@ export class Dumper {
                 }
             }
         } else {
-            let archive = new ArchiveLayout(this.fs())
+            const archive = new ArchiveLayout(this.fs())
+            const prometheus = this.prometheus();
+            if (this.options.metricsPort) await prometheus.serve();
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
-                chunkSize: this.options.chunkSize * 1024 * 1024
+                chunkSize: this.options.chunkSize * 1024 * 1024,
+                onSuccessWrite: this.options.metricsPort ? ((block) => { prometheus.setLastSavedBlock(block); }) : undefined
             })
         }
     }
