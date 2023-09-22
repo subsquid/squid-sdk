@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ss58",
+      "comment": "fix false positive test errors",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ss58"
+}

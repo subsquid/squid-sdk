@@ -25,10 +25,10 @@ assert.strictEqual(ss58.registry.find('fakefoo'), undefined)
 // codec (ALICE)
 assert.deepEqual(
     ss58.codec(42).decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'),
-    Buffer.from('d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d', 'hex')
+    '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
 )
 assert.strictEqual(
-    ss58.codec(42).encode(Buffer.from('d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d', 'hex')),
+    ss58.codec(42).encode('0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'),
     '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 )
 assert.throws(() => ss58.codec(2).decode('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'))
