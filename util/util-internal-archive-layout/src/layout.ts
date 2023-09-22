@@ -191,8 +191,9 @@ export class ArchiveLayout {
                         assertNotNull(lastBlock)
                     ).transactDir('.', async fs => {
                         let content = await out.end()
-                        args.onSuccessWrite ? args.onSuccessWrite(lastBlock?.height || 0) : null;
-                        return fs.write('blocks.jsonl.gz', content)
+                        const writeResult = fs.write('blocks.jsonl.gz', content)
+                        writeResult.then(() => args.onSuccessWrite ? args.onSuccessWrite(lastBlock?.height || 0) : null)
+                        return writeResult
                     })
                     firstBlock = undefined
                     lastBlock = undefined

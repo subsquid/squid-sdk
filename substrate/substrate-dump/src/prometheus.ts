@@ -33,14 +33,8 @@ export class PrometheusServer {
         this.lastSavedBlockGauge.set(block);
     }
 
-    private getPort(): number | string {
-        return this.port == null
-            ? process.env.PROMETHEUS_PORT || 0
-            : this.port
-    }
-
 
     serve(): Promise<ListeningServer> {
-        return createPrometheusServer(this.registry, this.getPort())
+        return createPrometheusServer(this.registry, this.port)
     }
 }

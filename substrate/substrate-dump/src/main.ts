@@ -22,7 +22,7 @@ runProgram(() => {
     program.option('--last-block <number>', 'Height of the last block to dump', nat)
     program.option('--with-trace [targets]', 'Fetch block trace')
     program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, 32)
-    program.option('--metrics-port <port>', 'Port to serve metrics on', positiveInt)
+    program.option('--metrics-port <port>', 'Port to serve metrics on', nat)
 
     let args = program.parse().opts() as DumperOptions
 

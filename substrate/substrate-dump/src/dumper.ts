@@ -203,12 +203,15 @@ export class Dumper {
         } else {
             const archive = new ArchiveLayout(this.fs())
             const prometheus = this.prometheus();
-            if (this.options.metricsPort) await prometheus.serve();
+            if (this.options.metricsPort) {
+                await prometheus.serve();
+                this.log().info(`prometheus metrics are available on port {port}`)
+            }
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024,
-                onSuccessWrite: this.options.metricsPort ? ((block) => { prometheus.setLastSavedBlock(block); }) : undefined
+                onSuccessWrite: (block) => { prometheus.setLastSavedBlock(block); }
             })
         }
     }
