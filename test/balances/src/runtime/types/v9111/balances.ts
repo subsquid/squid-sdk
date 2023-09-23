@@ -1,14 +1,5 @@
 import {sts} from '../../pallet.support'
-import {Releases, MultiAddress} from './types'
-
-/**
- *  Storage version of the pallet.
- * 
- *  This is set to v2.0.0 for new networks.
- */
-export type BalancesStorageVersionStorage = [null, Releases]
-
-export const BalancesStorageVersionStorage: sts.Type<BalancesStorageVersionStorage> = sts.tuple([sts.unit(), Releases])
+import {MultiAddress} from './types'
 
 /**
  * Same as the [`transfer`] call, but with a check that the transfer will not kill the

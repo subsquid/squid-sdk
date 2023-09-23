@@ -1,15 +1,23 @@
 import {Runtime} from '@subsquid/substrate-runtime'
-import {CompositeType, Field, Ti, Type, TypeKind, VariantType} from '@subsquid/substrate-runtime/lib/metadata'
+import {
+    CompositeType,
+    Field,
+    StorageItem,
+    Ti,
+    Type,
+    TypeKind,
+    VariantType,
+} from '@subsquid/substrate-runtime/lib/metadata'
 import {createScaleType} from '@subsquid/substrate-runtime/lib/runtime/util'
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
 import assert from 'assert'
 import {assignNames} from './names'
-import {asOptionType, asResultType, toNativePrimitive, upperCaseFirst} from './util'
+import {asOptionType, asResultType, isEmptyVariant, toNativePrimitive, upperCaseFirst} from './util'
 import {ItemKind, getItemName} from './items'
 
-type Exp = {
+export interface Exp {
     type: string
     value: string
 }
@@ -134,8 +142,6 @@ export class Sink {
 }
 
 export class Sts {
-    // public readonly ifs: Interfaces
-
     private typeNames: Map<Ti, string>
 
     private items = {
@@ -215,19 +221,80 @@ export class Sts {
                 case ItemKind.Storage: {
                     let def = this.runtime.description.pallets[pallet][kind][item]
                     queue.push((out, types) => {
-                        let keyListExp = this.renderTuple(def.keys)
-                        this.extractNames(keyListExp.type).forEach((n) => types?.add(n))
+                        out.line()
+                        out.blockComment(def.docs)
+
+                        let keysExp = def.keys.map((k) => this.useType(k))
+                        keysExp.forEach((exp) => this.extractNames(exp.type).forEach((n) => types?.add(n)))
 
                         let valueExp = this.useType(def.value)
                         this.extractNames(valueExp.type).forEach((n) => types?.add(n))
 
+                        out.block(`export type ${name} =`, () => {
+                            let args =
+                                def.keys.length == 1
+                                    ? [`key: ${keysExp[0].type}`]
+                                    : keysExp.map((exp, idx) => `key${idx + 1}: ${exp.type}`)
+
+                            let fullKey =
+                                def.keys.length == 1
+                                    ? keysExp[0].type
+                                    : `[${keysExp.map((exp) => exp.type).join(', ')}]`
+
+                            let ret = def.modifier == 'Required' ? valueExp.type : `${valueExp.type} | undefined`
+
+                            let kv = `[k: ${fullKey}, v: ${ret}]`
+
+                            function* enumeratePartialApps(leading?: string): Iterable<string> {
+                                let list: string[] = []
+                                if (leading) {
+                                    list.push(leading)
+                                }
+                                list.push('block: Block')
+                                yield list.join(', ')
+                                for (let arg of args) {
+                                    list.push(arg)
+                                    yield list.join(', ')
+                                }
+                            }
+
+                            if (def.modifier === 'Default') {
+                                out.line(`getDefault(block: Block): ${valueExp.type}`)
+                            }
+
+                            out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
+
+                            for (let args of enumeratePartialApps()) {
+                                out.line(`getValues(${args}): Promise<${ret}[]>`)
+                            }
+                            for (let args of enumeratePartialApps('pageSize: number')) {
+                                out.line(`getValuesPaged(${args}): AsyncIterable<${ret}[]>`)
+                            }
+
+                            if (args.length > 0) {
+                                out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
+                                for (let args of enumeratePartialApps()) {
+                                    out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
+                                }
+                                for (let args of enumeratePartialApps('pageSize: number')) {
+                                    out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
+                                }
+                                for (let args of enumeratePartialApps()) {
+                                    out.line(`getPairs(${args}): Promise<${kv}[]>`)
+                                }
+                                for (let args of enumeratePartialApps('pageSize: number')) {
+                                    out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
+                                }
+
+                                out.line(`isStorageKeyDecodable(): boolean`)
+                            }
+                        })
                         out.line()
-                        out.blockComment(def.docs)
-                        out.line(`export type ${name} = [${keyListExp.type}, ${valueExp.type}]`)
-                        out.line()
-                        out.line(
-                            `export const ${name}: sts.Type<${name}> = sts.tuple([${keyListExp.value}, ${valueExp.value}])`
-                        )
+                        out.block(`export const ${name} =`, () => {
+                            out.line(`keys: [${keysExp.map((exp) => exp.value).join(', ')}],`)
+                            out.line(`value: ${valueExp.value},`)
+                            out.line(`modifier: '${def.modifier}',`)
+                        })
                     })
                     break
                 }
@@ -494,8 +561,28 @@ export class Sts {
                 return false
         }
     }
+
+    /**
+     * Returns true when storage item actually can't hold any value
+     */
+    private isEmptyStorageItem(item: StorageItem): boolean {
+        return isEmptyVariant(this.runtime.description.types[item.value])
+    }
 }
 
 function createName(pallet: string, name: string, fix: string): string {
     return upperCaseFirst(toCamelCase(`${pallet}_${name}_${fix}`))
 }
+
+// function isStorageKeyDecodable(item: StorageItem): boolean {
+//     return item.hashers.every((hasher) => {
+//         switch (hasher) {
+//             case 'Blake2_128Concat':
+//             case 'Twox64Concat':
+//             case 'Identity':
+//                 return true
+//             default:
+//                 return false
+//         }
+//     })
+// }

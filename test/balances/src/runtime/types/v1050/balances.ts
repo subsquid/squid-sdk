@@ -1,34 +1,5 @@
 import {sts} from '../../pallet.support'
-import {Releases, AccountId, BalanceLock, AccountData, LookupSource, Balance} from './types'
-
-/**
- *  Storage version of the pallet.
- * 
- *  This is set to v2.0.0 for new networks.
- */
-export type BalancesStorageVersionStorage = [null, Releases]
-
-export const BalancesStorageVersionStorage: sts.Type<BalancesStorageVersionStorage> = sts.tuple([sts.unit(), Releases])
-
-/**
- *  Any liquidity locks on some account balances.
- *  NOTE: Should only be accessed when setting, changing and freeing a lock.
- */
-export type BalancesLocksStorage = [[AccountId], BalanceLock[]]
-
-export const BalancesLocksStorage: sts.Type<BalancesLocksStorage> = sts.tuple([sts.tuple(() => [AccountId]), sts.array(() => BalanceLock)])
-
-/**
- *  The balance of an account.
- * 
- *  NOTE: THIS MAY NEVER BE IN EXISTENCE AND YET HAVE A `total().is_zero()`. If the total
- *  is ever zero, then the entry *MUST* be removed.
- * 
- *  NOTE: This is only used in the case that this module is used to store balances.
- */
-export type BalancesAccountStorage = [[AccountId], AccountData]
-
-export const BalancesAccountStorage: sts.Type<BalancesAccountStorage> = sts.tuple([sts.tuple(() => [AccountId]), AccountData])
+import {LookupSource, AccountId, Balance} from './types'
 
 /**
  *  Same as the [`transfer`] call, but with a check that the transfer will not kill the

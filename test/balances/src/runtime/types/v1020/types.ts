@@ -1226,44 +1226,6 @@ export const LookupSource: sts.Type<LookupSource> = sts.closedEnum(() => {
     }
 })
 
-export type BalanceLock = {
-    id: LockIdentifier,
-    amount: Balance,
-    until: BlockNumber,
-    reasons: number,
-}
-
-export const BalanceLock: sts.Type<BalanceLock> = sts.struct(() => {
-    return {
-        id: LockIdentifier,
-        amount: Balance,
-        until: BlockNumber,
-        reasons: sts.number(),
-    }
-})
-
-export type BlockNumber = number
-
-export const BlockNumber: sts.Type<BlockNumber> = sts.number()
-
-export type LockIdentifier = Bytes
-
-export const LockIdentifier: sts.Type<LockIdentifier> = sts.bytes()
-
-export type VestingSchedule = {
-    offset: Balance,
-    perBlock: Balance,
-    startingBlock: BlockNumber,
-}
-
-export const VestingSchedule: sts.Type<VestingSchedule> = sts.struct(() => {
-    return {
-        offset: Balance,
-        perBlock: Balance,
-        startingBlock: BlockNumber,
-    }
-})
-
 export type Balance = bigint
 
 export const Balance: sts.Type<Balance> = sts.bigint()

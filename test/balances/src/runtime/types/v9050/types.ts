@@ -37,6 +37,10 @@ export const LookupSource: sts.Type<LookupSource> = sts.closedEnum(() => {
     }
 })
 
+export type AccountId = Bytes
+
+export const AccountId: sts.Type<AccountId> = sts.bytes()
+
 export type H256 = Bytes
 
 export const H256: sts.Type<H256> = sts.bytes()
@@ -44,27 +48,3 @@ export const H256: sts.Type<H256> = sts.bytes()
 export type H160 = Bytes
 
 export const H160: sts.Type<H160> = sts.bytes()
-
-export type ReserveData = {
-    id: ReserveIdentifier,
-    amount: Balance,
-}
-
-export const ReserveData: sts.Type<ReserveData> = sts.struct(() => {
-    return {
-        id: ReserveIdentifier,
-        amount: Balance,
-    }
-})
-
-export type Balance = bigint
-
-export const Balance: sts.Type<Balance> = sts.bigint()
-
-export type ReserveIdentifier = Bytes
-
-export const ReserveIdentifier: sts.Type<ReserveIdentifier> = sts.bytes()
-
-export type AccountId = Bytes
-
-export const AccountId: sts.Type<AccountId> = sts.bytes()

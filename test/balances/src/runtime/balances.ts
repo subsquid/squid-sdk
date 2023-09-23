@@ -1,6 +1,5 @@
-import {Event, Call, Constant, Storage, sts} from './pallet.support'
+import {VersionedEvent, VersionedCall, VersionedConstant, VersionedStorage, sts} from './pallet.support'
 import * as v9420 from './types/v9420'
-import * as v9340 from './types/v9340'
 import * as v9130 from './types/v9130'
 import * as v9122 from './types/v9122'
 import * as v9111 from './types/v9111'
@@ -8,14 +7,13 @@ import * as v9090 from './types/v9090'
 import * as v9050 from './types/v9050'
 import * as v2028 from './types/v2028'
 import * as v2008 from './types/v2008'
-import * as v1054 from './types/v1054'
 import * as v1050 from './types/v1050'
 import * as v1032 from './types/v1032'
 import * as v1031 from './types/v1031'
 import * as v1020 from './types/v1020'
 
 export const events = {
-    BalanceSet: new Event(
+    BalanceSet: VersionedEvent(
         'Balances.BalanceSet',
         {
             v1031: v1031.BalancesBalanceSetEvent,
@@ -23,116 +21,116 @@ export const events = {
             v9420: v9420.BalancesBalanceSetEvent,
         }
     ),
-    Burned: new Event(
+    Burned: VersionedEvent(
         'Balances.Burned',
         {
             v9420: v9420.BalancesBurnedEvent,
         }
     ),
-    Deposit: new Event(
+    Deposit: VersionedEvent(
         'Balances.Deposit',
         {
             v1032: v1032.BalancesDepositEvent,
             v9130: v9130.BalancesDepositEvent,
         }
     ),
-    DustLost: new Event(
+    DustLost: VersionedEvent(
         'Balances.DustLost',
         {
             v1050: v1050.BalancesDustLostEvent,
             v9130: v9130.BalancesDustLostEvent,
         }
     ),
-    Endowed: new Event(
+    Endowed: VersionedEvent(
         'Balances.Endowed',
         {
             v1050: v1050.BalancesEndowedEvent,
             v9130: v9130.BalancesEndowedEvent,
         }
     ),
-    Frozen: new Event(
+    Frozen: VersionedEvent(
         'Balances.Frozen',
         {
             v9420: v9420.BalancesFrozenEvent,
         }
     ),
-    Issued: new Event(
+    Issued: VersionedEvent(
         'Balances.Issued',
         {
             v9420: v9420.BalancesIssuedEvent,
         }
     ),
-    Locked: new Event(
+    Locked: VersionedEvent(
         'Balances.Locked',
         {
             v9420: v9420.BalancesLockedEvent,
         }
     ),
-    Minted: new Event(
+    Minted: VersionedEvent(
         'Balances.Minted',
         {
             v9420: v9420.BalancesMintedEvent,
         }
     ),
-    NewAccount: new Event(
+    NewAccount: VersionedEvent(
         'Balances.NewAccount',
         {
             v1020: v1020.BalancesNewAccountEvent,
         }
     ),
-    ReapedAccount: new Event(
+    ReapedAccount: VersionedEvent(
         'Balances.ReapedAccount',
         {
             v1020: v1020.BalancesReapedAccountEvent,
             v1031: v1031.BalancesReapedAccountEvent,
         }
     ),
-    Rescinded: new Event(
+    Rescinded: VersionedEvent(
         'Balances.Rescinded',
         {
             v9420: v9420.BalancesRescindedEvent,
         }
     ),
-    ReserveRepatriated: new Event(
+    ReserveRepatriated: VersionedEvent(
         'Balances.ReserveRepatriated',
         {
             v2008: v2008.BalancesReserveRepatriatedEvent,
             v9130: v9130.BalancesReserveRepatriatedEvent,
         }
     ),
-    Reserved: new Event(
+    Reserved: VersionedEvent(
         'Balances.Reserved',
         {
             v2008: v2008.BalancesReservedEvent,
             v9130: v9130.BalancesReservedEvent,
         }
     ),
-    Restored: new Event(
+    Restored: VersionedEvent(
         'Balances.Restored',
         {
             v9420: v9420.BalancesRestoredEvent,
         }
     ),
-    Slashed: new Event(
+    Slashed: VersionedEvent(
         'Balances.Slashed',
         {
             v9122: v9122.BalancesSlashedEvent,
             v9130: v9130.BalancesSlashedEvent,
         }
     ),
-    Suspended: new Event(
+    Suspended: VersionedEvent(
         'Balances.Suspended',
         {
             v9420: v9420.BalancesSuspendedEvent,
         }
     ),
-    Thawed: new Event(
+    Thawed: VersionedEvent(
         'Balances.Thawed',
         {
             v9420: v9420.BalancesThawedEvent,
         }
     ),
-    Transfer: new Event(
+    Transfer: VersionedEvent(
         'Balances.Transfer',
         {
             v1020: v1020.BalancesTransferEvent,
@@ -140,26 +138,26 @@ export const events = {
             v9130: v9130.BalancesTransferEvent,
         }
     ),
-    Unlocked: new Event(
+    Unlocked: VersionedEvent(
         'Balances.Unlocked',
         {
             v9420: v9420.BalancesUnlockedEvent,
         }
     ),
-    Unreserved: new Event(
+    Unreserved: VersionedEvent(
         'Balances.Unreserved',
         {
             v2008: v2008.BalancesUnreservedEvent,
             v9130: v9130.BalancesUnreservedEvent,
         }
     ),
-    Upgraded: new Event(
+    Upgraded: VersionedEvent(
         'Balances.Upgraded',
         {
             v9420: v9420.BalancesUpgradedEvent,
         }
     ),
-    Withdraw: new Event(
+    Withdraw: VersionedEvent(
         'Balances.Withdraw',
         {
             v9122: v9122.BalancesWithdrawEvent,
@@ -169,13 +167,13 @@ export const events = {
 }
 
 export const calls = {
-    force_set_balance: new Call(
+    force_set_balance: VersionedCall(
         'Balances.force_set_balance',
         {
             v9420: v9420.BalancesForceSetBalanceCall,
         }
     ),
-    force_transfer: new Call(
+    force_transfer: VersionedCall(
         'Balances.force_transfer',
         {
             v1020: v1020.BalancesForceTransferCall,
@@ -184,13 +182,13 @@ export const calls = {
             v9111: v9111.BalancesForceTransferCall,
         }
     ),
-    force_unreserve: new Call(
+    force_unreserve: VersionedCall(
         'Balances.force_unreserve',
         {
             v9111: v9111.BalancesForceUnreserveCall,
         }
     ),
-    set_balance: new Call(
+    set_balance: VersionedCall(
         'Balances.set_balance',
         {
             v1020: v1020.BalancesSetBalanceCall,
@@ -199,13 +197,13 @@ export const calls = {
             v9111: v9111.BalancesSetBalanceCall,
         }
     ),
-    set_balance_deprecated: new Call(
+    set_balance_deprecated: VersionedCall(
         'Balances.set_balance_deprecated',
         {
             v9420: v9420.BalancesSetBalanceDeprecatedCall,
         }
     ),
-    transfer: new Call(
+    transfer: VersionedCall(
         'Balances.transfer',
         {
             v1020: v1020.BalancesTransferCall,
@@ -214,20 +212,20 @@ export const calls = {
             v9111: v9111.BalancesTransferCall,
         }
     ),
-    transfer_all: new Call(
+    transfer_all: VersionedCall(
         'Balances.transfer_all',
         {
             v9050: v9050.BalancesTransferAllCall,
             v9111: v9111.BalancesTransferAllCall,
         }
     ),
-    transfer_allow_death: new Call(
+    transfer_allow_death: VersionedCall(
         'Balances.transfer_allow_death',
         {
             v9420: v9420.BalancesTransferAllowDeathCall,
         }
     ),
-    transfer_keep_alive: new Call(
+    transfer_keep_alive: VersionedCall(
         'Balances.transfer_keep_alive',
         {
             v1020: v1020.BalancesTransferKeepAliveCall,
@@ -236,7 +234,7 @@ export const calls = {
             v9111: v9111.BalancesTransferKeepAliveCall,
         }
     ),
-    upgrade_accounts: new Call(
+    upgrade_accounts: VersionedCall(
         'Balances.upgrade_accounts',
         {
             v9420: v9420.BalancesUpgradeAccountsCall,
@@ -245,43 +243,43 @@ export const calls = {
 }
 
 export const constants = {
-    CreationFee: new Constant(
+    CreationFee: VersionedConstant(
         'Balances.CreationFee',
         {
             v1020: v1020.BalancesCreationFeeConstant,
         }
     ),
-    ExistentialDeposit: new Constant(
+    ExistentialDeposit: VersionedConstant(
         'Balances.ExistentialDeposit',
         {
             v1020: v1020.BalancesExistentialDepositConstant,
         }
     ),
-    MaxFreezes: new Constant(
+    MaxFreezes: VersionedConstant(
         'Balances.MaxFreezes',
         {
             v9420: v9420.BalancesMaxFreezesConstant,
         }
     ),
-    MaxHolds: new Constant(
+    MaxHolds: VersionedConstant(
         'Balances.MaxHolds',
         {
             v9420: v9420.BalancesMaxHoldsConstant,
         }
     ),
-    MaxLocks: new Constant(
+    MaxLocks: VersionedConstant(
         'Balances.MaxLocks',
         {
             v9090: v9090.BalancesMaxLocksConstant,
         }
     ),
-    MaxReserves: new Constant(
+    MaxReserves: VersionedConstant(
         'Balances.MaxReserves',
         {
             v9090: v9090.BalancesMaxReservesConstant,
         }
     ),
-    TransferFee: new Constant(
+    TransferFee: VersionedConstant(
         'Balances.TransferFee',
         {
             v1020: v1020.BalancesTransferFeeConstant,
@@ -289,78 +287,4 @@ export const constants = {
     ),
 }
 
-export const storage = {
-    Account: new Storage(
-        'Balances.Account',
-        {
-            v1050: v1050.BalancesAccountStorage,
-            v1054: v1054.BalancesAccountStorage,
-            v9420: v9420.BalancesAccountStorage,
-        }
-    ),
-    FreeBalance: new Storage(
-        'Balances.FreeBalance',
-        {
-            v1020: v1020.BalancesFreeBalanceStorage,
-        }
-    ),
-    Freezes: new Storage(
-        'Balances.Freezes',
-        {
-            v9420: v9420.BalancesFreezesStorage,
-        }
-    ),
-    Holds: new Storage(
-        'Balances.Holds',
-        {
-            v9420: v9420.BalancesHoldsStorage,
-        }
-    ),
-    InactiveIssuance: new Storage(
-        'Balances.InactiveIssuance',
-        {
-            v9340: v9340.BalancesInactiveIssuanceStorage,
-        }
-    ),
-    Locks: new Storage(
-        'Balances.Locks',
-        {
-            v1020: v1020.BalancesLocksStorage,
-            v1050: v1050.BalancesLocksStorage,
-            v1054: v1054.BalancesLocksStorage,
-        }
-    ),
-    ReservedBalance: new Storage(
-        'Balances.ReservedBalance',
-        {
-            v1020: v1020.BalancesReservedBalanceStorage,
-        }
-    ),
-    Reserves: new Storage(
-        'Balances.Reserves',
-        {
-            v9050: v9050.BalancesReservesStorage,
-        }
-    ),
-    StorageVersion: new Storage(
-        'Balances.StorageVersion',
-        {
-            v1050: v1050.BalancesStorageVersionStorage,
-            v9111: v9111.BalancesStorageVersionStorage,
-        }
-    ),
-    TotalIssuance: new Storage(
-        'Balances.TotalIssuance',
-        {
-            v1020: v1020.BalancesTotalIssuanceStorage,
-        }
-    ),
-    Vesting: new Storage(
-        'Balances.Vesting',
-        {
-            v1020: v1020.BalancesVestingStorage,
-        }
-    ),
-}
-
-export default {events, calls, constants, storage}
+export default {events, calls, constants}

@@ -39,20 +39,3 @@ export const MultiAddress: sts.Type<MultiAddress> = sts.closedEnum(() => {
 export type AccountId32 = Bytes
 
 export const AccountId32: sts.Type<AccountId32> = sts.bytes()
-
-export type Releases = Releases_V1_0_0 | Releases_V2_0_0
-
-export type Releases_V1_0_0 = {
-    __kind: 'V1_0_0'
-}
-
-export type Releases_V2_0_0 = {
-    __kind: 'V2_0_0'
-}
-
-export const Releases: sts.Type<Releases> = sts.closedEnum(() => {
-    return {
-        V1_0_0: sts.unit(),
-        V2_0_0: sts.unit(),
-    }
-})

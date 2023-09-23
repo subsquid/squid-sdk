@@ -1,49 +1,5 @@
 import {sts} from '../../pallet.support'
-import {AccountId32, IdAmount, Type_544, AccountData, MultiAddress} from './types'
-
-/**
- *  Holds on account balances.
- */
-export type BalancesHoldsStorage = [[AccountId32], IdAmount[]]
-
-export const BalancesHoldsStorage: sts.Type<BalancesHoldsStorage> = sts.tuple([sts.tuple(() => [AccountId32]), sts.array(() => IdAmount)])
-
-/**
- *  Freeze locks on account balances.
- */
-export type BalancesFreezesStorage = [[AccountId32], Type_544[]]
-
-export const BalancesFreezesStorage: sts.Type<BalancesFreezesStorage> = sts.tuple([sts.tuple(() => [AccountId32]), sts.array(() => Type_544)])
-
-/**
- *  The Balances pallet example of storing the balance of an account.
- * 
- *  # Example
- * 
- *  ```nocompile
- *   impl pallet_balances::Config for Runtime {
- *     type AccountStore = StorageMapShim<Self::Account<Runtime>, frame_system::Provider<Runtime>, AccountId, Self::AccountData<Balance>>
- *   }
- *  ```
- * 
- *  You can also store the balance of an account in the `System` pallet.
- * 
- *  # Example
- * 
- *  ```nocompile
- *   impl pallet_balances::Config for Runtime {
- *    type AccountStore = System
- *   }
- *  ```
- * 
- *  But this comes with tradeoffs, storing account balances in the system pallet stores
- *  `frame_system` data alongside the account data contrary to storing account balances in the
- *  `Balances` pallet, which uses a `StorageMap` to store balances data only.
- *  NOTE: This is only used in the case that this pallet is used to store balances.
- */
-export type BalancesAccountStorage = [[AccountId32], AccountData]
-
-export const BalancesAccountStorage: sts.Type<BalancesAccountStorage> = sts.tuple([sts.tuple(() => [AccountId32]), AccountData])
+import {AccountId32, MultiAddress} from './types'
 
 /**
  *  The maximum number of holds that can exist on an account at any time.

@@ -28,18 +28,55 @@ interface CallRecord {
     args: unknown
 }
 
-export class Event<T extends Record<string, sts.Type>> {
-    constructor(readonly name: QualifiedName, versions: T) {}
+export function VersionedEvent<V extends Record<string, sts.Type>>(name: string, versions: V) {
+    return new VersionedItem(name, Event, versions) as VersionedEvent<V>
+}
 
-    [k: `isV${number}`]: () => this is IEvent<sts.Type>
+export type VersionedEvent<V extends Record<string, sts.Type>> = VersionedItem<any, any> & {[K in keyof V]: Event<V[K]>}
+
+export function VersionedCall<V extends Record<string, sts.Type>>(name: string, versions: V) {
+    return new VersionedItem(name, Call, versions) as VersionedCall<V>
+}
+
+export type VersionedCall<V extends Record<string, sts.Type>> = VersionedItem<any, any> & {[K in keyof V]: Call<V[K]>}
+
+export function VersionedConstant<V extends Record<string, sts.Type>>(name: string, versions: V) {
+    return new VersionedItem(name, Call, versions) as VersionedConstant<V>
+}
+
+export type VersionedConstant<V extends Record<string, sts.Type>> = VersionedItem<any, any> & {
+    [K in keyof V]: Constant<V[K]>
+}
+
+export function VersionedStorage<V extends Record<string, any>>(
+    name: string,
+    versions: Record<string, StorageOptions>
+) {
+    return new VersionedItem(name, Storage, versions) as VersionedStorage<V>
+}
+
+export type VersionedStorage<V extends Record<string, any>> = VersionedItem<any, any> & {
+    [K in keyof V]: V[K]
+}
+
+export class VersionedItem<I, T> {
+    constructor(readonly name: QualifiedName, item: new (name: string, type: T) => I, versions: Record<string, T>) {
+        for (let version in versions) {
+            Object.defineProperty(this, version, {value: new item(this.name, versions[version])})
+        }
+    }
+}
+
+export class Event<T extends sts.Type> {
+    constructor(readonly name: QualifiedName, private type: T) {}
+
+    is(event: EventRecord): boolean {
+        return event.name === this.name && event.block._runtime.checkCallType(this.name, this.type)
+    }
 
     decode(event: EventRecord): any {
         return event.block._runtime.decodeEventArguments(this.name, event.args)
     }
-}
-
-export interface IEvent<T extends sts.Type> {
-    decode: (event: EventRecord) => sts.GetType<T>
 }
 
 export class Call<T extends sts.Type> {
@@ -67,16 +104,25 @@ export class Constant<T extends sts.Type> {
     }
 }
 
+export interface StorageOptions {
+    keys: sts.Type[]
+    value: sts.Type
+    modifier: 'Optional' | 'Required' | 'Default'
+}
+
 export class Storage {
-    constructor(
-        private name: QualifiedName,
-        private modifier: 'Required' | 'Optional' | 'Default',
-        private key: sts.Type[],
-        private value: sts.Type
-    ) {}
+    private keys: sts.Type[]
+    private value: sts.Type
+    private modifier: 'Optional' | 'Required' | 'Default'
+
+    constructor(private name: QualifiedName, options: StorageOptions) {
+        this.keys = options.keys
+        this.value = options.value
+        this.modifier = options.modifier
+    }
 
     is(block: RuntimeCtx): boolean {
-        return block._runtime.checkStorageType(this.name, this.modifier, this.key, this.value)
+        return block._runtime.checkStorageType(this.name, this.modifier, this.keys, this.value)
     }
 
     async get(block: IBlock, ...key: any[]): Promise<any> {
@@ -120,7 +166,6 @@ export class Storage {
     }
 
     getDefault(block: IBlock): any {
-        assert(this.modifier == 'Default')
         assert(this.is(block))
         return block._runtime.getStorageFallback(this.name)
     }

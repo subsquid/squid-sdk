@@ -4,7 +4,7 @@ import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {Bytes} from '@subsquid/substrate-runtime'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
-import balances from './types/balances'
+import balances from './runtime/balances'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -30,11 +30,10 @@ processor.run(new TypeormDatabase(), async ctx => {
         for (let event of block.events) {
             if (event.name == balances.events.Transfer.name) {
                 let rec: {from: Bytes, to: Bytes, amount: bigint}
-                let t = balances.events.Transfer
-                if (t.is(event, 'v1020')) {
-                    let [from, to, amount] = t.decode(event)
+                if (balances.events.Transfer.v1020.is(event)) {
+                    let [from, to, amount] = balances.events.Transfer.v1020.decode(event)
                     rec = {from, to, amount}
-                } else if (balances.events.Transfer.is(event)) {
+                } else if (balances.events.Transfer.v1050.is(event)) {
                     let [from, to, amount] = balances.events.Transfer.v1050.decode(event)
                     rec = {from, to, amount}
                 } else {

@@ -16,7 +16,7 @@ import {
     Variant
 } from '../metadata'
 import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
-import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
+import {DecodedCall, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
 import * as sto from './storage'
 import {createScaleType, parseQualifiedName} from './util'
 import {getTypeChecker, getTypeHash} from '@subsquid/scale-type-system'
@@ -342,7 +342,7 @@ export class Runtime {
         return this.checkEOCType('calls', name, ty)
     }
 
-        checkConstantType(name: QualifiedName, ty: sts.Type): boolean {
+    checkConstantType(name: QualifiedName, ty: sts.Type): boolean {
         let qn = parseQualifiedName(name)
         let def = this.description.pallets[qn[0]]?.constants[qn[1]]
         if (def == null) return false
@@ -352,8 +352,8 @@ export class Runtime {
     checkStorageType(
         name: QualifiedName,
         modifier: StorageItem['modifier'] | StorageItem['modifier'][],
-        key: sts.Type[],
-        valueTy: sts.Type
+        keys: sts.Type[],
+        value: sts.Type
     ): boolean {
         let qn = parseQualifiedName(name)
         let def = this.description.pallets[qn[0]]?.storage[qn[1]]
@@ -363,11 +363,11 @@ export class Runtime {
         } else {
             if (def.modifier != modifier) return false
         }
-        if (def.keys.length !== key.length) return false
-        for (let i = 0; i < key.length; i++) {
-            if (!this.checkType(def.keys[i], key[i])) return false
+        if (def.keys.length !== keys.length) return false
+        for (let i = 0; i < keys.length; i++) {
+            if (!this.checkType(def.keys[i], keys[i])) return false
         }
-        return this.checkType(def.value, valueTy)
+        return this.checkType(def.value, value)
     }
 
     private checkEOCType(kind: 'events' | 'calls', name: QualifiedName, ty: sts.Type): boolean {

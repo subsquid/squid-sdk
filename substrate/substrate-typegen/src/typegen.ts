@@ -60,7 +60,7 @@ export class Typegen {
         let out = this.dir.file(toCamelCase(pallet.name) + '.ts')
         let exports = new Set()
 
-        out.line(`import {Event, Call, Constant, Storage, sts} from './pallet.support'`)
+        out.line(`import {VersionedEvent, VersionedCall, VersionedConstant, VersionedStorage, sts} from './pallet.support'`)
         let imports = this.runtimeImports(out)
 
         const generateItems = (kind: ItemKind) => {
@@ -70,7 +70,7 @@ export class Typegen {
             out.line()
             out.block(`export const ${kind} =`, () => {
                 for (let i of items) {
-                    out.line(`${i.name}: new ${getItemName(kind)}(`)
+                    out.line(`${i.name}: Versioned${getItemName(kind)}(`)
                     out.indentation(() => {
                         out.line(`'${pallet.name}.${i.name}',`)
                         out.line('{')
@@ -94,7 +94,7 @@ export class Typegen {
         generateItems(ItemKind.Event)
         generateItems(ItemKind.Call)
         generateItems(ItemKind.Constant)
-        generateItems(ItemKind.Storage)
+        // generateItems(ItemKind.Storage)
 
         out.line()
         out.line(`export default {${[...exports].join(`, `)}}`)
@@ -152,10 +152,9 @@ export class Typegen {
                 (r) => r.description.pallets[name].storage,
                 (r, item) =>
                     JSON.stringify({
-                        modifier: item.modifier,
                         key: item.keys.map((ti) => r.getTypeHash(ti)),
                         value: r.getTypeHash(item.value),
-                        isStorageKeyDecodable: isStorageKeyDecodable(item),
+                        modifier: item.modifier,
                     })
             )
 
@@ -276,15 +275,15 @@ function getItemsRequest(req: PalletRequest | boolean, kind: ItemKind) {
 //     return isEmptyVariant(item.runtime.description.types[item.def.value])
 // }
 
-function isStorageKeyDecodable(item: md.StorageItem): boolean {
-    return item.hashers.every((hasher) => {
-        switch (hasher) {
-            case 'Blake2_128Concat':
-            case 'Twox64Concat':
-            case 'Identity':
-                return true
-            default:
-                return false
-        }
-    })
-}
+// function isStorageKeyDecodable(item: md.StorageItem): boolean {
+//     return item.hashers.every((hasher) => {
+//         switch (hasher) {
+//             case 'Blake2_128Concat':
+//             case 'Twox64Concat':
+//             case 'Identity':
+//                 return true
+//             default:
+//                 return false
+//         }
+//     })
+// }
