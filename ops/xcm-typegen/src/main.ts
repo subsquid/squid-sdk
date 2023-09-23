@@ -25,6 +25,7 @@ runProgram(async () => {
 
     let out = new OutDir(__dirname).file('../../../substrate/substrate-runtime/src/xcm/interfaces.ts')
     out.line(`import {Bytes} from '../metadata'`)
+    out.line(`import * as sts from '../sts'`)
 
     let ifs = new Sts(types, nameAssignment)
     for (let type of xcmTypes) {
