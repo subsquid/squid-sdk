@@ -31,9 +31,11 @@ export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<
             default:
                 return false
         }
-        if (tuple.length != this.tuple.length) return false
-        for (let i = 0; i < this.tuple.length; i++) {
-            if (!typeChecker.match(tuple[i], this.getType()[i])) return false
+
+        let type = this.getType()
+        if (tuple.length != type.length) return false
+        for (let i = 0; i < type.length; i++) {
+            if (!typeChecker.match(tuple[i], type[i])) return false
         }
         return true
     }

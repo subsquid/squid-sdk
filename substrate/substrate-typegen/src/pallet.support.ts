@@ -71,7 +71,7 @@ export class Event<T extends sts.Type> {
     constructor(readonly name: QualifiedName, private type: T) {}
 
     is(event: EventRecord): boolean {
-        return event.name === this.name && event.block._runtime.checkCallType(this.name, this.type)
+        return event.name === this.name && event.block._runtime.checkEventType(this.name, this.type)
     }
 
     decode(event: EventRecord): any {
