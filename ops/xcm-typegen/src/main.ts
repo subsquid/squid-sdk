@@ -1,6 +1,6 @@
 import * as definitions from '@subsquid/substrate-runtime/lib/metadata/old/definitions/xcm'
 import {OldTypeRegistry} from '@subsquid/substrate-runtime/lib/metadata/old/typeRegistry'
-import {Interfaces, Sink} from '@subsquid/substrate-typegen/lib/ifs'
+import {Sts} from '@subsquid/substrate-typegen/lib/ifs'
 import {runProgram} from '@subsquid/util-internal'
 import {OutDir} from '@subsquid/util-internal-code-printer'
 
@@ -26,11 +26,10 @@ runProgram(async () => {
     let out = new OutDir(__dirname).file('../../../substrate/substrate-runtime/src/xcm/interfaces.ts')
     out.line(`import {Bytes} from '../metadata'`)
 
-    let sink = new Sink(types, nameAssignment)
-    let ifs = new Interfaces(sink)
+    let ifs = new Sts(types, nameAssignment)
     for (let type of xcmTypes) {
-        ifs.use(type)
+        ifs.useType(type)
     }
-    sink.generate(out)
+    ifs.sink.generate(out)
     out.write()
 })

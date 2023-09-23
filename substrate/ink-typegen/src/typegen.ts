@@ -1,7 +1,7 @@
 import {AbiDescription} from "@subsquid/ink-abi/lib/abi-description"
 import {TypeSpecFor_PortableForm} from "@subsquid/ink-abi/lib/metadata/v3/interfaces"
 import {getInkProject, InkProject} from "@subsquid/ink-abi/lib/metadata/validator"
-import {Interfaces, Sink} from '@subsquid/substrate-typegen/lib/ifs'
+import {Sts, Sink} from '@subsquid/substrate-typegen/lib/ifs'
 import {Names} from "@subsquid/substrate-typegen/lib/names"
 import {assertNotNull, def, last} from "@subsquid/util-internal"
 import {Output} from "@subsquid/util-internal-code-printer"
@@ -75,10 +75,10 @@ export class Typegen {
     @def
     generate(): void {
         let d = this.description()
-        let sink = new Sink(d.types(), this.nameAssignment())
-        let ifs = new Interfaces(sink)
+        let ifs = new Sts(d.types(), this.nameAssignment())
 
-        this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
+        this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from '@subsquid/ink-abi'`)
+        this.out.line(`import * as sts from '@subsquid/substrate-runtime/lib/sts'`)
 
         this.out.line()
         this.out.line(`export const metadata = ${JSON.stringify(this.metadata(), null, 2)}`)
@@ -87,17 +87,17 @@ export class Typegen {
         this.out.line(`const _abi = new Abi(metadata)`)
 
         this.out.line()
-        this.out.block(`export function decodeEvent(bytes: Bytes): ${ifs.use(d.event())}`, () => {
+        this.out.block(`export function decodeEvent(bytes: Bytes): ${ifs.useType(d.event()).type}`, () => {
             this.out.line(`return _abi.decodeEvent(bytes)`)
         })
 
         this.out.line()
-        this.out.block(`export function decodeMessage(bytes: Bytes): ${ifs.use(d.messages())}`, () => {
+        this.out.block(`export function decodeMessage(bytes: Bytes): ${ifs.useType(d.messages()).type}`, () => {
             this.out.line(`return _abi.decodeMessage(bytes)`)
         })
 
         this.out.line()
-        this.out.block(`export function decodeConstructor(bytes: Bytes): ${ifs.use(d.constructors())}`, () => {
+        this.out.block(`export function decodeConstructor(bytes: Bytes): ${ifs.useType(d.constructors()).type}`, () => {
             this.out.line(`return _abi.decodeConstructor(bytes)`)
         })
 
@@ -119,11 +119,11 @@ export class Typegen {
 
             this.project().spec.messages.forEach(m => {
                 if (!m.mutates) {
-                    let args = m.args.map(arg => `${arg.label}: ${ifs.use(arg.type.type)}`).join(', ')
+                    let args = m.args.map(arg => `${arg.label}: ${ifs.useType(arg.type.type).type}`).join(', ')
                     let returnType = assertNotNull(m.returnType?.type)
                     let callArgs = m.args.map(arg => arg.label).join(', ')
                     this.out.line()
-                    this.out.block(`${m.label.replace('::', '_')}(${args}): Promise<${ifs.use(returnType)}>`, () => {
+                    this.out.block(`${m.label.replace('::', '_')}(${args}): Promise<${ifs.useType(returnType).type}>`, () => {
                         this.out.line(`return this.stateCall('${m.selector}', [${callArgs}])`)
                     })
                 }
@@ -139,7 +139,7 @@ export class Typegen {
             })
         })
 
-        sink.generate(this.out)
+        ifs.sink.generate(this.out)
 
         this.out.line()
         // language=TypeScript

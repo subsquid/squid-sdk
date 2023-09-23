@@ -5,7 +5,7 @@ import {def, last} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase} from '@subsquid/util-naming'
 import {PalletRequest} from './config'
-import {Sts} from './ifs'
+import {RuntimeSts} from './ifs'
 import {groupBy} from './util'
 import {ItemKind, getItemName} from './items'
 
@@ -34,7 +34,7 @@ export class Typegen {
         new Typegen(options).generate()
     }
 
-    private sts = new Map<Runtime, Sts>()
+    private sts = new Map<Runtime, RuntimeSts>()
     private dir: OutDir
 
     constructor(private options: TypegenOptions) {
@@ -44,62 +44,108 @@ export class Typegen {
     generate(): void {
         this.dir.del()
 
-        let pallets = this.collectPallets(this.options.pallets)
-        for (let pallet of pallets) {
-            this.generatePallet(pallet)
-        }
-
-        for (let s of this.sts.values()) {
-            s.generate()
-        }
+        this.generatePallets()
+        this.generateTypes()
 
         this.dir.add('pallet.support.ts', [__dirname, '../src/pallet.support.ts'])
     }
 
-    private generatePallet(pallet: Pallet) {
-        let out = this.dir.file(toCamelCase(pallet.name) + '.ts')
-        let exports = new Set()
+    private generatePallets() {
+        let pallets = this.collectPallets(this.options.pallets)
+        for (let pallet of pallets) {
+            let out = this.dir.file(toCamelCase(pallet.name) + '.ts')
+            let exports = new Set()
 
-        out.line(`import {VersionedEvent, VersionedCall, VersionedConstant, VersionedStorage, sts} from './pallet.support'`)
-        let imports = this.runtimeImports(out)
+            out.line(
+                `import {VersionedEvent, VersionedCall, VersionedConstant, VersionedStorage, sts} from './pallet.support'`
+            )
+            let imports = this.runtimeImports(out)
 
-        const generateItems = (kind: ItemKind) => {
-            let items = sortItems(pallet[kind])
-            if (items.length === 0) return
+            const generateItems = (kind: ItemKind) => {
+                let items = sortItems(pallet[kind])
+                if (items.length === 0) return
+
+                out.line()
+                out.block(`export const ${kind} =`, () => {
+                    for (let i of items) {
+                        out.line(`${i.name}: Versioned${getItemName(kind)}(`)
+                        out.indentation(() => {
+                            out.line(`'${pallet.name}.${i.name}',`)
+                            out.line('{')
+                            out.indentation(() => {
+                                for (let v of i.versions) {
+                                    let sts = this.getSts(v)
+                                    let versionName = this.getVersionName(v)
+                                    imports.add(versionName)
+                                    let exp = sts.useItem(pallet.name, i.name, kind)
+                                    out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
+                                }
+                            })
+                            out.line('}')
+                        })
+                        out.line('),')
+                    }
+                })
+                exports.add(kind)
+            }
+
+            generateItems(ItemKind.Event)
+            generateItems(ItemKind.Call)
+            generateItems(ItemKind.Constant)
+            // generateItems(ItemKind.Storage)
 
             out.line()
-            out.block(`export const ${kind} =`, () => {
-                for (let i of items) {
-                    out.line(`${i.name}: Versioned${getItemName(kind)}(`)
-                    out.indentation(() => {
-                        out.line(`'${pallet.name}.${i.name}',`)
-                        out.line('{')
-                        out.indentation(() => {
-                            for (let v of i.versions) {
-                                let sts = this.getSts(v)
-                                let versionName = toCamelCase(sts.name)
-                                imports.add(versionName)
-                                let exp = sts.useItem(pallet.name, i.name, kind)
-                                out.line(`${versionName}: ${sts.qualify(exp.value, versionName)},`)
-                            }
-                        })
-                        out.line('}')
-                    })
-                    out.line('),')
-                }
-            })
-            exports.add(kind)
+            out.line(`export default {${[...exports].join(`, `)}}`)
+
+            out.write()
         }
+    }
 
-        generateItems(ItemKind.Event)
-        generateItems(ItemKind.Call)
-        generateItems(ItemKind.Constant)
-        // generateItems(ItemKind.Storage)
+    private generateTypes() {
+        for (let [runtime, sts] of this.sts) {
+            let modules = new Set()
 
-        out.line()
-        out.line(`export default {${[...exports].join(`, `)}}`)
+            let versionName = this.getVersionName(runtime)
+            let basePath = `types/${versionName}`
 
-        out.write()
+            for (let [pallet, sink] of sts.palletSinks) {
+                if (sink.isEmpty()) continue
+
+                let out = this.dir.file(`${basePath}/${pallet}.ts`)
+                let imports = new Set<string>()
+
+                out.line(`import {sts} from '../../pallet.support'`)
+                out.lazy(() => {
+                    if (imports.size > 0) {
+                        out.line(`import {${[...imports].join(', ')}} from './types'`)
+                    }
+                })
+                sink.generate(out, imports)
+                out.write()
+
+                modules.add(pallet)
+            }
+
+            if (!sts.sink.isEmpty()) {
+                let out = this.dir.file(`${basePath}/types.ts`)
+
+                out.line(`import {sts, Result, Option, Bytes} from '../../pallet.support'`)
+                sts.sink.generate(out)
+                out.write()
+
+                modules.add('types')
+            }
+
+            if (modules.size > 0) {
+                let out = this.dir.file(`${basePath}/index.ts`)
+
+                for (let module of modules) {
+                    out.line(`export * from './${module}'`)
+                }
+
+                out.write()
+            }
+        }
     }
 
     private collectPallets(req: Record<string, PalletRequest | boolean> | boolean) {
@@ -207,19 +253,18 @@ export class Typegen {
         })
     }
 
-    private getSts(runtime: Runtime): Sts {
+    private getSts(runtime: Runtime): RuntimeSts {
         let sts = this.sts.get(runtime)
         if (sts) return sts
 
-        let name = this.getVersionName(runtime)
-        sts = new Sts(new OutDir(this.dir.path('types')), name, runtime)
+        sts = new RuntimeSts(runtime.description)
         this.sts.set(runtime, sts)
         return sts
     }
 
     private getVersionName(runtime: Runtime): string {
         if (this.specNameNotChanged() || last(this.runtimes()).specName == runtime.specName) {
-            return `V${runtime.specVersion}`
+            return toCamelCase(`V${runtime.specVersion}`)
         } else {
             let isName = toCamelCase(`is-${runtime.specName}-v${runtime.specVersion}`)
             return isName.slice(2)

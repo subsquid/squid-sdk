@@ -1,4 +1,5 @@
-import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"
+import {Abi, Bytes, encodeCall, decodeResult} from '@subsquid/ink-abi'
+import * as sts from '@subsquid/substrate-runtime/lib/sts'
 
 export const metadata = {
   "source": {
@@ -1132,15 +1133,15 @@ export interface ChainContext {
 export class Contract {
     constructor(private ctx: ChainContext, private address: Bytes, private blockHash?: Bytes) { }
 
-    PSP22_allowance(owner: Bytes, spender: Bytes): Promise<bigint> {
+    PSP22_allowance(owner: AccountId, spender: AccountId): Promise<Balance> {
         return this.stateCall('0x4d47d921', [owner, spender])
     }
 
-    PSP22_total_supply(): Promise<bigint> {
+    PSP22_total_supply(): Promise<Balance> {
         return this.stateCall('0x162df8c2', [])
     }
 
-    PSP22_balance_of(owner: Bytes): Promise<bigint> {
+    PSP22_balance_of(owner: AccountId): Promise<Balance> {
         return this.stateCall('0x6568382f', [owner])
     }
 
@@ -1148,11 +1149,11 @@ export class Contract {
         return this.stateCall('0x7271b782', [])
     }
 
-    PSP22Metadata_token_name(): Promise<(Bytes | undefined)> {
+    PSP22Metadata_token_name(): Promise<(TransferFromInput4 | undefined)> {
         return this.stateCall('0x3d261bd4', [])
     }
 
-    PSP22Metadata_token_symbol(): Promise<(Bytes | undefined)> {
+    PSP22Metadata_token_symbol(): Promise<(TransferFromInput4 | undefined)> {
         return this.stateCall('0x34205be5', [])
     }
 
@@ -1165,38 +1166,63 @@ export class Contract {
     }
 }
 
+export type TransferFromInput4 = Bytes
+
+export const TransferFromInput4: sts.Type<TransferFromInput4> = sts.bytes()
+
 export type u8 = number
+
+export const u8: sts.Type<u8> = sts.number()
+
+export type Balance = bigint
+
+export const Balance: sts.Type<Balance> = sts.bigint()
+
+export type AccountId = Bytes
+
+export const AccountId: sts.Type<AccountId> = sts.bytes()
 
 export type Constructor = Constructor_new
 
-export interface Constructor_new {
+export type Constructor_new = {
     __kind: 'new'
-    totalSupply: bigint
-    name?: (Bytes | undefined)
-    symbol?: (Bytes | undefined)
-    decimals: u8
+    totalSupply: Balance,
+    name?: (TransferFromInput4 | undefined),
+    symbol?: (TransferFromInput4 | undefined),
+    decimals: u8,
 }
+
+export const Constructor: sts.Type<Constructor> = sts.closedEnum(() => {
+    return {
+        new: sts.enumStruct({
+            totalSupply: Balance,
+            name: sts.option(() => TransferFromInput4),
+            symbol: sts.option(() => TransferFromInput4),
+            decimals: u8,
+        }),
+    }
+})
 
 export type Message = Message_PSP22Metadata_token_decimals | Message_PSP22Metadata_token_name | Message_PSP22Metadata_token_symbol | Message_PSP22_allowance | Message_PSP22_approve | Message_PSP22_balance_of | Message_PSP22_decrease_allowance | Message_PSP22_increase_allowance | Message_PSP22_total_supply | Message_PSP22_transfer | Message_PSP22_transfer_from | Message_mint
 
 /**
  *  Returns the token decimals.
  */
-export interface Message_PSP22Metadata_token_decimals {
+export type Message_PSP22Metadata_token_decimals = {
     __kind: 'PSP22Metadata_token_decimals'
 }
 
 /**
  *  Returns the token name.
  */
-export interface Message_PSP22Metadata_token_name {
+export type Message_PSP22Metadata_token_name = {
     __kind: 'PSP22Metadata_token_name'
 }
 
 /**
  *  Returns the token symbol.
  */
-export interface Message_PSP22Metadata_token_symbol {
+export type Message_PSP22Metadata_token_symbol = {
     __kind: 'PSP22Metadata_token_symbol'
 }
 
@@ -1205,10 +1231,10 @@ export interface Message_PSP22Metadata_token_symbol {
  * 
  *  Returns `0` if no allowance has been set `0`.
  */
-export interface Message_PSP22_allowance {
+export type Message_PSP22_allowance = {
     __kind: 'PSP22_allowance'
-    owner: Bytes
-    spender: Bytes
+    owner: AccountId,
+    spender: AccountId,
 }
 
 /**
@@ -1225,10 +1251,10 @@ export interface Message_PSP22_allowance {
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_approve {
+export type Message_PSP22_approve = {
     __kind: 'PSP22_approve'
-    spender: Bytes
-    value: bigint
+    spender: AccountId,
+    value: Balance,
 }
 
 /**
@@ -1236,9 +1262,9 @@ export interface Message_PSP22_approve {
  * 
  *  Returns `0` if the account is non-existent.
  */
-export interface Message_PSP22_balance_of {
+export type Message_PSP22_balance_of = {
     __kind: 'PSP22_balance_of'
-    owner: Bytes
+    owner: AccountId,
 }
 
 /**
@@ -1255,10 +1281,10 @@ export interface Message_PSP22_balance_of {
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_decrease_allowance {
+export type Message_PSP22_decrease_allowance = {
     __kind: 'PSP22_decrease_allowance'
-    spender: Bytes
-    deltaValue: bigint
+    spender: AccountId,
+    deltaValue: Balance,
 }
 
 /**
@@ -1272,16 +1298,16 @@ export interface Message_PSP22_decrease_allowance {
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_increase_allowance {
+export type Message_PSP22_increase_allowance = {
     __kind: 'PSP22_increase_allowance'
-    spender: Bytes
-    deltaValue: bigint
+    spender: AccountId,
+    deltaValue: Balance,
 }
 
 /**
  *  Returns the total token supply.
  */
-export interface Message_PSP22_total_supply {
+export type Message_PSP22_total_supply = {
     __kind: 'PSP22_total_supply'
 }
 
@@ -1300,11 +1326,11 @@ export interface Message_PSP22_total_supply {
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_transfer {
+export type Message_PSP22_transfer = {
     __kind: 'PSP22_transfer'
-    to: Bytes
-    value: bigint
-    data: Bytes
+    to: AccountId,
+    value: Balance,
+    data: TransferFromInput4,
 }
 
 /**
@@ -1328,34 +1354,92 @@ export interface Message_PSP22_transfer {
  * 
  *  Returns `ZeroRecipientAddress` error if recipient's address is zero.
  */
-export interface Message_PSP22_transfer_from {
+export type Message_PSP22_transfer_from = {
     __kind: 'PSP22_transfer_from'
-    from: Bytes
-    to: Bytes
-    value: bigint
-    data: Bytes
+    from: AccountId,
+    to: AccountId,
+    value: Balance,
+    data: TransferFromInput4,
 }
 
-export interface Message_mint {
+export type Message_mint = {
     __kind: 'mint'
-    account: Bytes
-    amount: bigint
+    account: AccountId,
+    amount: Balance,
 }
+
+export const Message: sts.Type<Message> = sts.closedEnum(() => {
+    return {
+        PSP22Metadata_token_decimals: sts.unit(),
+        PSP22Metadata_token_name: sts.unit(),
+        PSP22Metadata_token_symbol: sts.unit(),
+        PSP22_allowance: sts.enumStruct({
+            owner: AccountId,
+            spender: AccountId,
+        }),
+        PSP22_approve: sts.enumStruct({
+            spender: AccountId,
+            value: Balance,
+        }),
+        PSP22_balance_of: sts.enumStruct({
+            owner: AccountId,
+        }),
+        PSP22_decrease_allowance: sts.enumStruct({
+            spender: AccountId,
+            deltaValue: Balance,
+        }),
+        PSP22_increase_allowance: sts.enumStruct({
+            spender: AccountId,
+            deltaValue: Balance,
+        }),
+        PSP22_total_supply: sts.unit(),
+        PSP22_transfer: sts.enumStruct({
+            to: AccountId,
+            value: Balance,
+            data: TransferFromInput4,
+        }),
+        PSP22_transfer_from: sts.enumStruct({
+            from: AccountId,
+            to: AccountId,
+            value: Balance,
+            data: TransferFromInput4,
+        }),
+        mint: sts.enumStruct({
+            account: AccountId,
+            amount: Balance,
+        }),
+    }
+})
 
 export type Event = Event_Approval | Event_Transfer
 
-export interface Event_Approval {
+export type Event_Approval = {
     __kind: 'Approval'
-    owner: Bytes
-    spender: Bytes
-    value: bigint
+    owner: AccountId,
+    spender: AccountId,
+    value: Balance,
 }
 
-export interface Event_Transfer {
+export type Event_Transfer = {
     __kind: 'Transfer'
-    from?: (Bytes | undefined)
-    to?: (Bytes | undefined)
-    value: bigint
+    from?: (AccountId | undefined),
+    to?: (AccountId | undefined),
+    value: Balance,
 }
+
+export const Event: sts.Type<Event> = sts.closedEnum(() => {
+    return {
+        Approval: sts.enumStruct({
+            owner: AccountId,
+            spender: AccountId,
+            value: Balance,
+        }),
+        Transfer: sts.enumStruct({
+            from: sts.option(() => AccountId),
+            to: sts.option(() => AccountId),
+            value: Balance,
+        }),
+    }
+})
 
 export type Result<T, E> = {__kind: 'Ok', value: T} | {__kind: 'Err', value: E}
