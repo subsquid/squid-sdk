@@ -116,7 +116,7 @@ export class Interfaces {
                 return toNativePrimitive(compact.primitive)
             }
             case TypeKind.BitSequence:
-                return 'Uint8Array'
+                return 'BitSequence'
             case TypeKind.HexBytes:
             case TypeKind.HexBytesArray:
                 return 'Bytes'
@@ -281,7 +281,7 @@ export class Sts {
                 return `sts.${toNativePrimitive(compact.primitive)}()`
             }
             case TypeKind.BitSequence:
-                return `sts.uint8array()`
+                return `sts.bitseq()`
             case TypeKind.HexBytes:
             case TypeKind.HexBytesArray:
                 return 'sts.bytes()'

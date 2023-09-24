@@ -72,9 +72,6 @@ export interface Call {
     extrinsicIndex: number
     address: number[]
     name: QualifiedName
-    /**
-     * JSON encoded call arguments
-     */
     args: unknown
     origin?: IOrigin
     /**
@@ -99,9 +96,6 @@ export interface Event {
      * Event name
      */
     name: QualifiedName
-    /**
-     * JSON encoded event arguments
-     */
     args: unknown
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number

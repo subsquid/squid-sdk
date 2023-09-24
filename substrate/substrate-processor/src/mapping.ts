@@ -1,6 +1,8 @@
 import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
 import {Runtime} from '@subsquid/substrate-runtime'
+import {assertNotNull} from '@subsquid/util-internal'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
+import {ParentBlockHeader} from './interfaces/data'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
 
@@ -40,7 +42,7 @@ export class BlockHeader implements PartialBlockHeader {
         return this.#runtimeOfPrevBlock
     }
 
-    getParent() {
+    getParent(): ParentBlockHeader {
         if (this.height == 0) return this
         return {
             _runtime: this._runtimeOfPrevBlock,
@@ -61,7 +63,7 @@ export class Extrinsic {
     error?: any
     success?: boolean
     hash?: string
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #call?: Call
     #events?: Event[]
     #subcalls?: Call[]
@@ -75,11 +77,11 @@ export class Extrinsic {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -116,6 +118,27 @@ export class Extrinsic {
     set events(events: Event[]) {
         this.#events = events
     }
+
+    encode(): Uint8Array {
+        let runtime = this.block._runtime
+        let version = assertNotNull(this.version, 'missing .version property')
+
+        let callRecord = this.getCall()
+        let name = assertNotNull(callRecord.name, 'missing .name property on a call')
+        let args = runtime.decodeJsonCallRecordArguments({name, args: callRecord.args})
+        let call = runtime.toDecodedCall({name, args})
+
+        let signature = this.signature && runtime.jsonCodec.decode(
+            runtime.description.signature,
+            this.signature
+        )
+
+        return runtime.encodeExtrinsic({
+            version,
+            signature,
+            call
+        })
+    }
 }
 
 
@@ -128,7 +151,7 @@ export class Call {
     origin?: any
     error?: any
     success?: boolean
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #extrinsic?: Extrinsic
     #parentCall?: Call
     #subcalls?: Call[]
@@ -145,11 +168,11 @@ export class Call {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -201,6 +224,14 @@ export class Call {
 
     set events(events: Event[]) {
         this.#events = events
+    }
+
+    encode(): Uint8Array {
+        let runtime = this.block._runtime
+        let name = assertNotNull(this.name, 'missing .name property')
+        let args = runtime.decodeJsonCallRecordArguments({name, args: this.args})
+        let decodedCall = runtime.toDecodedCall({name, args})
+        return runtime.encodeCall(decodedCall)
     }
 }
 

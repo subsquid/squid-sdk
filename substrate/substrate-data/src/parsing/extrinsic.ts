@@ -2,7 +2,6 @@ import {Bytes, CallRecord, Runtime} from '@subsquid/substrate-runtime'
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import blake2b from 'blake2b'
 import {Extrinsic} from '../interfaces/data'
-import {unwrapArguments} from './util'
 
 
 export interface DecodedExtrinsic {
@@ -33,7 +32,7 @@ export function decodeExtrinsics(
             extrinsic.hash = toHex(blake2b(32).update(bytes).digest())
         }
 
-        let call = unwrapArguments(src.call, runtime.calls)
+        let call = runtime.toCallRecord(src.call)
 
         return {extrinsic, call}
     })

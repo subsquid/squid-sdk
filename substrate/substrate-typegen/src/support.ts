@@ -1,10 +1,10 @@
-import type {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
+import type {BitSequence, Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import {Result} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export {sts, Result, Bytes}
+export {sts, Bytes, BitSequence, Result}
 
 
 export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
@@ -44,7 +44,7 @@ export class EventType<T extends sts.Type> {
 
     decode(event: Event): sts.GetType<T> {
         assert(this.is(event))
-        return event.block._runtime.decodeEventRecordArguments(event)
+        return event.block._runtime.decodeJsonEventRecordArguments(event)
     }
 }
 
@@ -58,7 +58,7 @@ export class CallType<T extends sts.Type> {
 
     decode(call: Call): sts.GetType<T> {
         assert(this.is(call))
-        return call.block._runtime.decodeCallRecordArguments(call)
+        return call.block._runtime.decodeJsonCallRecordArguments(call)
     }
 }
 

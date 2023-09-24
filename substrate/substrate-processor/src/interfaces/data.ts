@@ -73,7 +73,7 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
 >
 
 
-interface ParentBlockHeader {
+export interface ParentBlockHeader {
     _runtime: Runtime
     hash: base.Bytes
     height: number
@@ -100,11 +100,14 @@ export type Extrinsic<F extends FieldSelection = {}> = Simplify<
 >
 
 
+export type Json = any
+
+
 interface FullCall extends base.Call {
     success: boolean
-    args: any
-    origin?: any
-    error?: any
+    args: Json
+    origin?: Json
+    error?: Json
 }
 
 
@@ -125,7 +128,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
 
 
 interface ApplyExtrinsicEvent extends base.Event {
-    args: any
+    args: Json
     phase: 'ApplyExtrinsic'
     extrinsicIndex: number
     callAddress?: number[]
@@ -133,7 +136,7 @@ interface ApplyExtrinsicEvent extends base.Event {
 
 
 interface NonExtrinsicEvent extends base.Event {
-    args: any
+    args: Json
     phase: 'Initialization' | 'Finalization'
     extrinsicIndex?: undefined
     callAddress?: undefined

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "change bit sequence JS representation to be backwards encodable",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

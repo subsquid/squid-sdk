@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "change bit sequence JS representation in decoded data",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

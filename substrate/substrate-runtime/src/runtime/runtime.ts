@@ -1,5 +1,6 @@
 import {Codec as ScaleCodec, JsonCodec, Ti} from '@subsquid/scale-codec'
 import * as sts from '@subsquid/scale-type-system'
+import {ExternalEnum} from '@subsquid/scale-type-system'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
@@ -15,7 +16,17 @@ import {
 } from '../metadata'
 import {EACDefinition, EACRegistry} from './events-and-calls'
 import {decodeExtrinsic, encodeExtrinsic} from './extrinsic'
-import {CallRecord, DecodedCall, EventRecord, Extrinsic, QualifiedName, RpcClient, RuntimeVersionId} from './interfaces'
+import {
+    CallRecord,
+    DecodedCall,
+    DecodedEvent,
+    EventRecord,
+    Extrinsic,
+    JsonArgs,
+    QualifiedName,
+    RpcClient,
+    RuntimeVersionId
+} from './interfaces'
 import * as sto from './storage'
 import {parseQualifiedName} from './util'
 
@@ -276,17 +287,86 @@ export class Runtime {
         return this.scaleCodec.decodeBinary(this.description.call, bytes)
     }
 
-    decodeCallRecordArguments(call: CallRecord): any {
+    encodeCall(call: DecodedCall): Uint8Array {
+        return this.scaleCodec.encodeToBinary(this.description.call, call)
+    }
+
+    toCallRecord(call: DecodedCall): CallRecord {
+        return this.toRecord(call, this.calls)
+    }
+
+    toEventRecord(event: DecodedEvent): EventRecord {
+        return this.toRecord(event, this.events)
+    }
+
+    private toRecord(item: ExternalEnum, registry: EACRegistry): {name: string, args: unknown} {
+        let name = item.__kind + "." + item.value.__kind
+        let args: unknown
+        let def = registry.get(name)
+        if (def.fields[0]?.name == null) {
+            args = (item.value as any).value
+        } else {
+            let {__kind, ...props} = item.value
+            args = props
+        }
+        return {name, args}
+    }
+
+    toDecodedCall(call: CallRecord): DecodedCall {
+        return this.toDecoded(call, this.calls)
+    }
+
+    toDecodedEvent(event: EventRecord): DecodedEvent {
+        return this.toDecoded(event, this.events)
+    }
+
+    private toDecoded(rec: {name: string, args: unknown}, registry: EACRegistry): ExternalEnum {
+        let qn = parseQualifiedName(rec.name)
+        let def = registry.get(rec.name)
+        if (def.fields[0]?.name == null) {
+            return {
+                __kind: qn[0],
+                value: {
+                    __kind: qn[1],
+                    value: rec.args
+                } as any
+            }
+        } else {
+            return {
+                __kind: qn[0],
+                value: {
+                    __kind: qn[1],
+                    ...rec.args as any
+                }
+            }
+        }
+    }
+
+    /**
+     * @deprecated
+     */
+    decodeCallRecordArguments(call: CallRecord<JsonArgs>): any {
+        return this.decodeJsonCallRecordArguments(call)
+    }
+
+    /**
+     * @deprecated
+     */
+    decodeEventRecordArguments(event: EventRecord<JsonArgs>): any {
+        return this.decodeJsonEventRecordArguments(event)
+    }
+
+    decodeJsonCallRecordArguments(call: CallRecord<JsonArgs>): any {
         let def = this.calls.get(call.name)
-        return this.decodeArgs(def, call.args)
+        return this.decodeJsonArgs(def, call.args)
     }
 
-    decodeEventRecordArguments(call: EventRecord): any {
-        let def = this.events.get(call.name)
-        return this.decodeArgs(def, call.args)
+    decodeJsonEventRecordArguments(event: EventRecord<JsonArgs>): any {
+        let def = this.events.get(event.name)
+        return this.decodeJsonArgs(def, event.args)
     }
 
-    private decodeArgs(def: EACDefinition, args: any): any {
+    private decodeJsonArgs(def: EACDefinition, args: any): any {
         if (def.fields.length == 0) return undefined
         if (def.fields[0].name == null) return this.decodeJsonTuple(def.fields, args)
         assert(args != null && typeof args == 'object', 'invalid args')

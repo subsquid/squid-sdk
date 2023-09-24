@@ -38,7 +38,7 @@ function forEachPallet(types: Type[], ti: Ti, cb: (name: string, ti: Ti) => void
 export class Names {
     private assignment = new Map<Ti, string>()
     private assigned = new Map<string, string>() // Map<Name, TypeHash>
-    private reserved = new Set<string>(['Result', 'Option', 'Bytes'])
+    private reserved = new Set<string>(['Result', 'Option', 'Bytes', 'BitSequence'])
     private aliases = new Map<Ti, Set<string>>()
 
     constructor(private types: Type[]) {}

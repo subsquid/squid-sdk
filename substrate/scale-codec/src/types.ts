@@ -159,3 +159,9 @@ export type Type =
     OptionType |
     BooleanOption |
     DoNotConstructType
+
+
+export interface BitSequence {
+    bytes: Uint8Array
+    bitLength: number
+}

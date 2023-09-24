@@ -2,7 +2,18 @@ import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import assert from 'assert'
 import {ByteSink, HexSink, Sink} from './sink'
 import {Src} from './src'
-import {ArrayType, Bytes, OptionType, Primitive, SequenceType, Ti, TupleType, Type, TypeKind} from './types'
+import {
+    ArrayType,
+    BitSequence,
+    Bytes,
+    OptionType,
+    Primitive,
+    SequenceType,
+    Ti,
+    TupleType,
+    Type,
+    TypeKind
+} from './types'
 import {CodecCompactType, CodecStructType, CodecType, CodecVariantType, toCodecTypes} from './types-codec'
 import {throwUnexpectedCase} from './util'
 
@@ -283,16 +294,28 @@ function encodeBytesArray(def: {len: number}, val: unknown, sink: Sink): void {
 }
 
 
-function decodeBitSequence(src: Src): Uint8Array {
-    let len = Math.ceil(src.compactLength() / 8)
-    return src.bytes(len)
+function decodeBitSequence(src: Src): BitSequence {
+    let bitLength = src.compactLength()
+    let byteLength = Math.ceil(bitLength / 8)
+    let bytes = src.bytes(byteLength)
+    return {
+        bytes,
+        bitLength
+    }
 }
 
 
-function encodeBitSequence(bits: unknown, sink: Sink): void {
-    assert(bits instanceof Uint8Array)
-    sink.compact(bits.length * 8)
-    sink.bytes(bits)
+function encodeBitSequence(val: any, sink: Sink): void {
+    assert(
+        val &&
+        typeof val == 'object' &&
+        Number.isInteger(val.bitLength) &&
+        val.bytes instanceof Uint8Array
+    )
+    let bits = val as BitSequence
+    assert(Math.ceil(bits.bitLength / 8) == bits.bytes.length)
+    sink.compact(bits.bitLength)
+    sink.bytes(bits.bytes)
 }
 
 

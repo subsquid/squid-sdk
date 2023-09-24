@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {QualifiedName} from './interfaces'
+import {Bytes, QualifiedName} from './interfaces'
 
 
 const qualifiedNames: Record<QualifiedName, [prefix: string, name: string]> = {}

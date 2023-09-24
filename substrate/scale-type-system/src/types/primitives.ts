@@ -1,4 +1,4 @@
-import {Bytes, Primitive, TypeKind} from '@subsquid/scale-codec'
+import {BitSequence, Bytes, Primitive, TypeKind} from '@subsquid/scale-codec'
 import assert from 'assert'
 import {BaseType, ScaleType, TypeChecker} from '../type-checker'
 
@@ -100,7 +100,7 @@ export class BytesType extends BaseType<Bytes> {
 }
 
 
-export class Uint8ArrayType extends BaseType<Uint8Array> {
+export class BitSequenceType extends BaseType<BitSequence> {
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         return ty.kind == TypeKind.BitSequence
     }

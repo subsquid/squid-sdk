@@ -1,7 +1,6 @@
 import {Bytes, Runtime} from '@subsquid/substrate-runtime'
 import {array, closedEnum, externalEnum, GetType, number, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {Event} from '../interfaces/data'
-import {unwrapArguments} from './util'
 
 
 const EventItem = struct({
@@ -27,7 +26,7 @@ export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undef
     )
 
     return items.map((it, index) => {
-        let {name, args} = unwrapArguments(it.event, runtime.events)
+        let {name, args} = runtime.toEventRecord(it.event)
         let e: Event = {
             index,
             name,

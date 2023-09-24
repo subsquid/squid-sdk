@@ -53,7 +53,7 @@ export class Typegen {
             if (sts.sink.isEmpty()) return
             let fileName = toCamelCase(this.getVersionName(runtime)) + '.ts'
             let file = this.dir.file(fileName)
-            file.line(`import {sts, Result, Option, Bytes} from './support'`)
+            file.line(`import {sts, Result, Option, Bytes, BitSequence} from './support'`)
             sts.sink.generate(file)
             file.write()
         })

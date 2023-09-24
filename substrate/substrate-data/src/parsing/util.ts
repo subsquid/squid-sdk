@@ -1,25 +1,5 @@
-import {Bytes, DecodedCall, DecodedEvent, Runtime} from '@subsquid/substrate-runtime'
+import {Bytes} from '@subsquid/substrate-runtime'
 import {IAddress, IOrigin} from '../types/system'
-
-
-export function unwrapArguments(
-    call: DecodedCall | DecodedEvent,
-    registry: Runtime['events' | 'calls']
-): {
-    name: string
-    args: unknown
-} {
-    let name = call.__kind + "." + call.value.__kind
-    let args: unknown
-    let def = registry.get(name)
-    if (def.fields[0]?.name != null) {
-        let {__kind, ...props} = call.value
-        args = props
-    } else {
-        args = (call.value as any).value
-    }
-    return {name, args}
-}
 
 
 export function addressOrigin(address: IAddress): IOrigin| undefined {

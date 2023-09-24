@@ -1,4 +1,9 @@
+import type {BitSequence} from '@subsquid/scale-codec'
 import type {ExternalEnum} from '@subsquid/scale-type-system'
+
+
+export {BitSequence}
+
 
 /**
  * Hex encoded byte string
@@ -13,6 +18,9 @@ export type DecodedEvent = ExternalEnum
 
 
 export type QualifiedName = string
+
+
+export type JsonArgs = unknown
 
 
 export type CallRecord<T = unknown> = {

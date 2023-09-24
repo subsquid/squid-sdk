@@ -30,7 +30,7 @@ export class EventType<T extends sts.Type> {
 
     decode(event: Event): sts.GetType<T> {
         assert(this.is(event))
-        return event.block._runtime.decodeEventRecordArguments(event)
+        return event.block._runtime.decodeJsonEventRecordArguments(event)
     }
 }
 
@@ -44,6 +44,6 @@ export class CallType<T extends sts.Type> {
 
     decode(call: Call): sts.GetType<T> {
         assert(this.is(call))
-        return call.block._runtime.decodeCallRecordArguments(call)
+        return call.block._runtime.decodeJsonCallRecordArguments(call)
     }
 }

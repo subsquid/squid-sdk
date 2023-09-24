@@ -6,7 +6,7 @@ import {Call, Event, Extrinsic} from '../../interfaces/data'
 import {Address, IAddress, IOrigin} from '../../types/system'
 import {assertCall, assertEvent} from '../../types/util'
 import {DecodedExtrinsic} from '../extrinsic'
-import {addressOrigin, unwrapArguments} from '../util'
+import {addressOrigin} from '../util'
 import {visitBatch, visitBatchAll, visitForceBatch} from './batch'
 import {unwrapDispatchAs, visitDispatchAs} from './dispatch_as'
 import {visitAsMulti} from './multisig'
@@ -110,7 +110,7 @@ export class CallParser {
     }
 
     createCall(extrinsicIndex: number, address: number[], src: DecodedCall, origin?: IOrigin): Call {
-        let {name, args} = unwrapArguments(src, this.runtime.calls)
+        let {name, args} = this.runtime.toCallRecord(src)
         return {
             extrinsicIndex,
             address,

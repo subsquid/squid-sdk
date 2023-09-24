@@ -137,12 +137,17 @@ export class Chain {
         for (let i = 0; i < encoded.length; i++) {
             try {
                 expect(encoded[i]).toEqual(original[i])
-            } catch(e) { // FIXME SQD-749
+            } catch(e: any) {
+                let enc = encoded[i].extrinsic
+                let org = original[i].extrinsic
+                let j = 0
+                for (j = 0; j < Math.min(enc.length, org.length); j++) {
+                    if (enc[j] !== org[j]) break
+                }
                 let b = original[i]
                 let runtime = this.getRuntime(b.blockNumber)
-                let fromEncoded = runtime.decodeExtrinsic(encoded[i].extrinsic)
-                let fromOriginal = runtime.decodeExtrinsic(b.extrinsic)
-                expect(fromEncoded).toEqual(fromOriginal)
+                let decoded = runtime.decodeExtrinsic(b.extrinsic)
+                throw e
             }
         }
     }

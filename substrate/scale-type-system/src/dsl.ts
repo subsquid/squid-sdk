@@ -1,4 +1,4 @@
-import {Bytes} from '@subsquid/scale-codec'
+import {BitSequence, Bytes} from '@subsquid/scale-codec'
 import {Type} from './type-checker'
 import {GetType, ValueCase} from './type-util'
 import {ArrayType} from './types/array'
@@ -8,12 +8,12 @@ import {OptionType} from './types/option'
 import {
     AnyType,
     BigIntType,
+    BitSequenceType,
     BooleanType,
     BytesType,
     NumberType,
     NumericType,
     StringType,
-    Uint8ArrayType,
     UnitType,
     UnknownType
 } from './types/primitives'
@@ -31,7 +31,7 @@ const bigintType = new BigIntType()
 const numericType = new NumericType()
 const stringType = new StringType()
 const bytesType = new BytesType()
-const uint8ArrayType = new Uint8ArrayType()
+const bitSequenceType = new BitSequenceType()
 const booleanType = new BooleanType()
 const anyType = new AnyType()
 const unknownType = new UnknownType()
@@ -64,8 +64,8 @@ export function bytes(): Type<Bytes> {
 }
 
 
-export function uint8array(): Type<Uint8Array> {
-    return uint8ArrayType
+export function bitseq(): Type<BitSequence> {
+    return bitSequenceType
 }
 
 
