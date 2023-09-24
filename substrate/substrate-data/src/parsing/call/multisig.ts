@@ -1,9 +1,12 @@
 import {Bytes, EventRecord, Runtime} from '@subsquid/substrate-runtime'
 import {bytes, closedEnum, struct, tuple, union, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {unexpectedCase} from '@subsquid/util-internal'
+import {isHex} from '@subsquid/util-internal-hex'
+import assert from 'assert'
 import {Call} from '../../interfaces/data'
-import {assertEvent} from '../../types/util'
-import {addressOrigin} from '../util'
+import {MissingStorageValue} from '../../parser'
+import {assertCall, assertEvent, assertStorage} from '../../types/util'
+import {signedOrigin} from '../util'
 import type {CallParser} from './parser'
 
 
@@ -21,7 +24,6 @@ const MultisigExecuted = union(
     }),
     tuple(unknown(), unknown(), bytes(), bytes(), Result)
 )
-
 
 
 interface MultisigCallResult {
@@ -68,9 +70,48 @@ function MULTISIG_EXECUTED(runtime: Runtime, event: EventRecord): MultisigCallRe
 
 
 export function visitAsMulti(cp: CallParser, call: Call): void {
-    if (!cp.lookup(MULTISIG_EXECUTED)) return
+    if (!cp.isPresent(MULTISIG_EXECUTED)) return
     let result = cp.get(MULTISIG_EXECUTED)
-    let sub = cp.getSubcall(call, addressOrigin(result.multisig))
+    let sub = cp.getSubcall(call, signedOrigin(result.multisig))
+    if (result.ok) {
+        cp.visitCall(sub)
+    } else {
+        cp.visitFailedCall(sub, result.error)
+    }
+}
+
+
+const ApproveAsMulti = struct({
+    callHash: bytes()
+})
+
+
+const CallsStorageValue = tuple(bytes(), unknown(), unknown())
+
+
+export function visitApproveAsMulti(cp: CallParser, call: Call): void {
+    if (!cp.isPresent(MULTISIG_EXECUTED)) return
+    let result = cp.get(MULTISIG_EXECUTED)
+
+    assertCall(cp.runtime, ApproveAsMulti, call)
+    assertStorage(cp.runtime, 'Multisig.Calls', ['Optional'], [bytes()], CallsStorageValue)
+
+    let key = cp.runtime.encodeStorageKey('Multisig.Calls', result.callHash)
+    let value = cp.block.storage?.[key]
+    if (value === undefined) throw new MissingStorageValue(key)
+
+    let subCallBytes: Bytes = cp.runtime.decodeStorageValue('Multisig.Calls', value)?.[0]
+    assert(isHex(subCallBytes))
+
+    let subCall = cp.runtime.decodeCall(subCallBytes)
+
+    let sub = cp.createCall(
+        call.extrinsicIndex,
+        call.address.concat([0]),
+        subCall,
+        signedOrigin(result.multisig)
+    )
+
     if (result.ok) {
         cp.visitCall(sub)
     } else {

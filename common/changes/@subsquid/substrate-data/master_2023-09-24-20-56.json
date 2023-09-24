@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "implement `Multisig.approve_as_multi` call traversal",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

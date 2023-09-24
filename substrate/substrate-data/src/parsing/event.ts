@@ -1,6 +1,7 @@
 import {Bytes, Runtime} from '@subsquid/substrate-runtime'
 import {array, closedEnum, externalEnum, GetType, number, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {Event} from '../interfaces/data'
+import {assertStorage} from '../types/util'
 
 
 const EventItem = struct({
@@ -17,8 +18,7 @@ const EventItemList = array(EventItem)
 
 
 export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undefined): Event[] {
-    if (!runtime.checkStorageType('System.Events', ['Required', 'Default'], [], EventItemList))
-        throw new Error('System.Events storage item has unexpected type')
+    assertStorage(runtime, 'System.Events', ['Required', 'Default'], [], EventItemList)
 
     let items: GetType<typeof EventItem>[] = runtime.decodeStorageValue(
         'System.Events',

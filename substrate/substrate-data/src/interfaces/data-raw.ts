@@ -9,4 +9,10 @@ export interface RawBlock extends BlockData {
     runtime?: Runtime
     runtimeOfPrevBlock?: Runtime
     feeMultiplier?: Bytes
+    /**
+     * Storage values of previous block
+     */
+    storage?: {
+        [key: Bytes]: Bytes | null
+    }
 }

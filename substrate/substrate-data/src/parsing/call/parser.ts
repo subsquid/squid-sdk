@@ -3,13 +3,14 @@ import {array, bytes, externalEnum, struct, tuple, Type, union, unknown} from '@
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Call, Event, Extrinsic} from '../../interfaces/data'
+import {RawBlock} from '../../interfaces/data-raw'
 import {Address, IAddress, IOrigin} from '../../types/system'
 import {assertCall, assertEvent} from '../../types/util'
 import {DecodedExtrinsic} from '../extrinsic'
 import {addressOrigin} from '../util'
 import {visitBatch, visitBatchAll, visitForceBatch} from './batch'
 import {unwrapDispatchAs, visitDispatchAs} from './dispatch_as'
-import {visitAsMulti} from './multisig'
+import {visitApproveAsMulti, visitAsMulti} from './multisig'
 import {unwrapProxy, visitProxy} from './proxy'
 import {unwrapSudo, unwrapSudoAs, visitSudo, visitSudoAs} from './sudo'
 
@@ -56,6 +57,7 @@ export class CallParser {
 
     constructor(
         public readonly runtime: Runtime,
+        public readonly block: RawBlock,
         private extrinsics: DecodedExtrinsic[],
         private events: Event[]
     ) {
@@ -130,6 +132,9 @@ export class CallParser {
         switch(call.name) {
             case 'Multisig.as_multi':
                 visitAsMulti(this, call)
+                break
+            case 'Multisig.approve_as_multi':
+                visitApproveAsMulti(this, call)
                 break
             case 'Multisig.as_multi_threshold_1':
                 // FIXME: compute origin
@@ -280,11 +285,14 @@ export class CallParser {
         }
     }
 
-    lookup(boundary: Boundary<unknown>): boolean {
+    isPresent(boundary: Boundary<unknown>): boolean {
         let pos = this.eventPos
         try {
             let event: Event | undefined
             while (event = this.maybeNext()) {
+                if (this.boundary?.(this.runtime, event)) {
+                    return false
+                }
                 if (boundary(this.runtime, event)) {
                     return true
                 }

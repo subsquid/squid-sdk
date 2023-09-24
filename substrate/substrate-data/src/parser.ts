@@ -1,6 +1,6 @@
 import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
-import {annotateAsyncError, annotateSyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
+import {addErrorContext, annotateAsyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
@@ -64,7 +64,7 @@ export class Parser {
             }
 
             for (let block of batch.blocks) {
-                let parsed = this.parseBlock(block, batch.request)
+                let parsed = await this.parseBlock(block, batch.request)
                 result.push(parsed)
             }
         }
@@ -72,9 +72,20 @@ export class Parser {
         return result
     }
 
-    @annotateSyncError(getRefCtx)
-    private parseBlock(rawBlock: RawBlock, options?: DataRequest): Block {
-        return parseBlock(rawBlock, options ?? {})
+    private async parseBlock(rawBlock: RawBlock, options?: DataRequest): Promise<Block> {
+        while (true) {
+            try {
+                return parseBlock(rawBlock, options ?? {})
+            } catch(err: any) {
+                if (err instanceof MissingStorageValue) {
+                    let val = await this.rpc.getStorage(rawBlock.block.block.header.parentHash, err.key)
+                    let storage = rawBlock.storage || (rawBlock.storage = {})
+                    storage[err.key] = val
+                } else {
+                    throw addErrorContext(err, getRefCtx(rawBlock))
+                }
+            }
+        }
     }
 
     private async setValidators(blocks: RawBlock[]): Promise<void> {
@@ -142,5 +153,18 @@ function getRefCtx(ref: HashAndHeight) {
     return {
         blockHeight: ref.height,
         blockHash: ref.hash
+    }
+}
+
+
+export class MissingStorageValue extends Error {
+    constructor(
+        public readonly key: Bytes
+    ) {
+        super()
+    }
+
+    get name() {
+        return 'MissingStorageValue'
     }
 }

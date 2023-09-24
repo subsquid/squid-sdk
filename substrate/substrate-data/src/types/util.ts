@@ -1,4 +1,5 @@
 import {CallRecord, EventRecord, Runtime} from '@subsquid/substrate-runtime'
+import {StorageItem} from '@subsquid/substrate-runtime/lib/metadata'
 import {GetType, Type} from '@subsquid/substrate-runtime/lib/sts'
 import {QualifiedName} from '../interfaces/data'
 
@@ -35,6 +36,13 @@ export class UnexpectedCallType extends Error {
 }
 
 
+export class UnexpectedStorageType extends Error {
+    constructor(name: QualifiedName) {
+        super(`${name} storage has unexpected type`)
+    }
+}
+
+
 export function assertEvent<T extends Type>(
     runtime: Runtime,
     ty: T,
@@ -50,4 +58,15 @@ export function assertCall<T extends Type>(
     event: EventRecord
 ): asserts event is CallRecord<GetType<T>> {
     if (!runtime.checkCallType(event.name, ty)) throw new UnexpectedCallType(event.name)
+}
+
+
+export function assertStorage(
+    runtime: Runtime,
+    name: QualifiedName,
+    allowedModifiers: StorageItem['modifier'][],
+    key: Type[],
+    value: Type
+): void {
+    if (!runtime.checkStorageType(name, allowedModifiers, key, value)) throw new UnexpectedStorageType(name)
 }

@@ -114,7 +114,7 @@ class BlockParser {
     @def
     calls(): Call[] {
         return parseCalls(
-            this.runtime,
+            this.src,
             this.decodedExtrinsics(),
             this.events()
         )
