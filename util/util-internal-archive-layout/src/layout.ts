@@ -186,15 +186,17 @@ export class ArchiveLayout {
                 let out = new GzipBuffer()
 
                 async function save(): Promise<void> {
-                    const fBlock = assertNotNull(firstBlock);
-                    const lBlock = assertNotNull(firstBlock);
-                    const chunk = getNextChunk(fBlock, lBlock)
+                    let blockRange = {
+                        from: assertNotNull(firstBlock),
+                        to: assertNotNull(lastBlock)
+                    }
+                    const chunk = getNextChunk(blockRange.from, blockRange.to)
                     chunk.transactDir('.', async fs => {
                         let content = await out.end()
                         const writeResult = fs.write('blocks.jsonl.gz', content)
                         writeResult.then(() => args.onSuccessWrite ? args.onSuccessWrite({
                             chunk: chunk.abs(),
-                            blockRange: { from: fBlock, to: lBlock }
+                            blockRange
                         }) : null)
                         return writeResult
                     })
