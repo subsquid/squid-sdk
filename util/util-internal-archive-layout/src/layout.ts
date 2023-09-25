@@ -173,7 +173,7 @@ export class ArchiveLayout {
             blocks: (nextBlock: number, prevHash?: string) => AsyncIterable<HashAndHeight[]>
             range?: Range
             chunkSize?: number,
-            onSuccessWrite?: (lastBlock: number) => void
+            onSuccessWrite?: (args: { chunk: string, blockRange: { from: HashAndHeight, to: HashAndHeight } }) => void
         }
     ): Promise<void> {
         return this.append(
@@ -186,13 +186,16 @@ export class ArchiveLayout {
                 let out = new GzipBuffer()
 
                 async function save(): Promise<void> {
-                    await getNextChunk(
-                        assertNotNull(firstBlock),
-                        assertNotNull(lastBlock)
-                    ).transactDir('.', async fs => {
+                    const fBlock = assertNotNull(firstBlock);
+                    const lBlock = assertNotNull(firstBlock);
+                    const chunk = getNextChunk(fBlock, lBlock)
+                    chunk.transactDir('.', async fs => {
                         let content = await out.end()
                         const writeResult = fs.write('blocks.jsonl.gz', content)
-                        writeResult.then(() => args.onSuccessWrite ? args.onSuccessWrite(lastBlock?.height || 0) : null)
+                        writeResult.then(() => args.onSuccessWrite ? args.onSuccessWrite({
+                            chunk: chunk.abs(),
+                            blockRange: { from: fBlock, to: lBlock }
+                        }) : null)
                         return writeResult
                     })
                     firstBlock = undefined

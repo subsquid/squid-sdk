@@ -5,19 +5,19 @@ import promClient, { collectDefaultMetrics, Gauge, Registry } from 'prom-client'
 export class PrometheusServer {
     private registry = new Registry()
     private port?: number | string
-    private lastBlockGauge: Gauge;
-    private lastSavedBlockGauge: Gauge;
+    private chainHeightGauge: Gauge;
+    private lastWrittenBlockGauge: Gauge;
 
     constructor(port: number) {
         this.port = port;
-        this.lastBlockGauge = new Gauge({
-            name: 'sqd_last_block_total',
+        this.chainHeightGauge = new Gauge({
+            name: 'sqd_dump_chain_height',
             help: 'Last block available in the chain',
             registers: [this.registry]
         });
 
-        this.lastSavedBlockGauge = new Gauge({
-            name: 'sqd_last_saved_block_total',
+        this.lastWrittenBlockGauge = new Gauge({
+            name: 'sqd_dump_last_written_block',
             help: 'Last saved block',
             registers: [this.registry]
         });
@@ -25,12 +25,12 @@ export class PrometheusServer {
         collectDefaultMetrics({register: this.registry})
     }
 
-    setLastBlock(block: number) {
-        this.lastBlockGauge.set(block);
+    setChainHeight(height: number) {
+        this.chainHeightGauge.set(height);
     }
 
-    setLastSavedBlock(block: number) {
-        this.lastSavedBlockGauge.set(block);
+    setLastWrittenBlock(block: number) {
+        this.lastWrittenBlockGauge.set(block);
     }
 
 

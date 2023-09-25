@@ -114,7 +114,7 @@ export class Dumper {
 
         let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
         let chainHeight = await height.get()
-        this.prometheus().setLastBlock(this.options.lastBlock ? this.options.lastBlock : chainHeight);
+        this.prometheus().setChainHeight(chainHeight);
 
         let progress = new Progress({
             initialValue: this.range().from,
@@ -211,7 +211,7 @@ export class Dumper {
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024,
-                onSuccessWrite: (block) => { prometheus.setLastSavedBlock(block); }
+                onSuccessWrite: ({ blockRange: { to } }) => { prometheus.setLastWrittenBlock(to.height); }
             })
         }
     }
