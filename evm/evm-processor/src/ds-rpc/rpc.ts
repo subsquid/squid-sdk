@@ -208,7 +208,7 @@ export type TraceTracers = 'trace' | 'stateDiff'
 
 
 export interface DebugFrame {
-    type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT' | 'INVALID'
+    type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT' | 'INVALID' | 'STOP'
     from: Bytes20
     to: Bytes20
     value?: Qty

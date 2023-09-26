@@ -398,6 +398,9 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                     }
                 }
                 break
+            case 'STOP':
+                // We ignore `STOP` frame because it doesn't affect indexing
+                break
             default:
                 throw unexpectedCase(rec.frame.type)
         }
