@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "",
-    "test": "./tesh.sh"
+    "test": "./test.sh"
   },
   "dependencies": {
     "@subsquid/substrate-runtime": "^0.0.1",

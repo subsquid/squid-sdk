@@ -1,10 +1,10 @@
-import type {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
+import type {BitSequence, Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import {Result} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export {sts, Result, Bytes}
+export {sts, Bytes, BitSequence, Result}
 
 
 export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
@@ -36,29 +36,37 @@ interface Call {
 
 
 export class EventType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(public readonly name: QualifiedName, private type: T) {}
+
+    matches(block: RuntimeCtx): boolean {
+        return block._runtime.events.checkType(this.name, this.type)
+    }
 
     is(event: Event): boolean {
-        return event.block._runtime.events.checkType(event.name, this.type)
+        return this.name == event.name && this.matches(event.block)
     }
 
     decode(event: Event): sts.GetType<T> {
         assert(this.is(event))
-        return event.block._runtime.decodeEventRecordArguments(event)
+        return event.block._runtime.decodeJsonEventRecordArguments(event)
     }
 }
 
 
 export class CallType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(public readonly name: QualifiedName, private type: T) {}
+
+    matches(block: RuntimeCtx): boolean {
+        return block._runtime.calls.checkType(this.name, this.type)
+    }
 
     is(call: Call): boolean {
-        return call.block._runtime.calls.checkType(call.name, this.type)
+        return this.name == call.name && this.matches(call.block)
     }
 
     decode(call: Call): sts.GetType<T> {
         assert(this.is(call))
-        return call.block._runtime.decodeCallRecordArguments(call)
+        return call.block._runtime.decodeJsonCallRecordArguments(call)
     }
 }
 

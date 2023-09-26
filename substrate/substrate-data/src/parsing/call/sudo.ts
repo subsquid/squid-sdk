@@ -1,9 +1,9 @@
 import {DecodedCall, Runtime} from '@subsquid/substrate-runtime'
-import {bytes, closedEnum, externalEnum, openEnum, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
+import {closedEnum, externalEnum, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
 import {Call, Event} from '../../interfaces/data'
 import {Address, IOrigin} from '../../types/system'
 import {assertCall, isCall, isEvent, UnexpectedCallType, UnexpectedEventType} from '../../types/util'
-import {addressOrigin, rootOrigin, signedOrigin} from '../util'
+import {addressOrigin, rootOrigin} from '../util'
 import type {CallParser, CallResult} from './parser'
 
 

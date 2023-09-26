@@ -14,7 +14,7 @@ const BatchInterrupted = union(
         index: number(),
         error: unknown()
     }),
-    tuple(number(), unknown())
+    tuple([number(), unknown()])
 )
 
 

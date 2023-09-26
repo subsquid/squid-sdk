@@ -34,7 +34,7 @@ type IExtrinsicFailed = {
 
 const ExtrinsicFailed: Type<IExtrinsicFailed> = union(
     struct({dispatchError: unknown()}),
-    tuple(unknown(), unknown())
+    tuple([unknown(), unknown()])
 )
 
 

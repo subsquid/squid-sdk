@@ -5,7 +5,7 @@ import {assertNotNull, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     Bytes,
-    Constant,
+    Constant, decodeMetadata,
     Field,
     getRuntimeDescription,
     Metadata,
@@ -36,6 +36,7 @@ export class Runtime {
     public readonly specVersion: number
     public readonly implName: string
     public readonly implVersion: number
+    public readonly metadata: Metadata
     public readonly description: RuntimeDescription
     public readonly events: EACRegistry
     public readonly calls: EACRegistry
@@ -46,15 +47,19 @@ export class Runtime {
 
     constructor(
         runtimeVersion: RuntimeVersionId,
-        metadata: Bytes | Metadata,
+        metadata: Bytes | Uint8Array | Metadata,
         typesBundle?: OldTypesBundle | OldSpecsBundle,
         private _rpc?: RpcClient
     ) {
+        if (typeof metadata == 'string' || metadata instanceof Uint8Array) {
+            metadata = decodeMetadata(metadata)
+        }
         this.specName = runtimeVersion.specName
         this.specVersion = runtimeVersion.specVersion
         this.implName = runtimeVersion.implName
         this.implVersion = runtimeVersion.implVersion
-        this.description = getRuntimeDescription(metadata, this.specName, this.specVersion, typesBundle)
+        this.metadata = metadata
+        this.description = getRuntimeDescription(this.metadata, this.specName, this.specVersion, typesBundle)
         this.events = new EACRegistry(this.description.types, this.description.event)
         this.calls = new EACRegistry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)

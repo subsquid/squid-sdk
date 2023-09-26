@@ -22,7 +22,7 @@ const ExitReason = sts.closedEnum({
 
 const EthereumExecuted = new EventType(
     sts.union(
-        sts.tuple(sts.bytes(), sts.bytes(), sts.bytes(), ExitReason),
+        sts.tuple([sts.bytes(), sts.bytes(), sts.bytes(), ExitReason]),
         sts.struct({
             from: sts.bytes(),
             to: sts.bytes(),

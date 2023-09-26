@@ -2,7 +2,7 @@ import {Bytes} from '@subsquid/substrate-runtime'
 import {bytes, GetType, openEnum, tuple, Type} from '@subsquid/substrate-runtime/lib/sts'
 
 
-export const ConsensusMessage: Type<IConsensusMessage> = tuple(bytes(), bytes())
+export const ConsensusMessage: Type<IConsensusMessage> = tuple([bytes(), bytes()])
 
 
 export type IConsensusMessage = [engine: Bytes, data: Bytes]

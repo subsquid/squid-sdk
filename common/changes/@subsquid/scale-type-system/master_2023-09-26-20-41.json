@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "change `tuple()` signature from `tuple(...types: Type[])` to `tuple(types: Type[])`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}

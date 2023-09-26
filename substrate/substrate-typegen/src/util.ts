@@ -1,5 +1,6 @@
 import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
 import {unexpectedCase} from '@subsquid/util-internal'
+import {toCamelCase} from '@subsquid/util-naming'
 
 
 export function isEmptyVariant(type: Type): boolean {
@@ -87,4 +88,57 @@ export function groupBy<T, G>(arr: T[], group: (t: T) => G): Map<G, T[]> {
 
 export function upperCaseFirst(s: string): string {
     return s[0].toUpperCase() + s.slice(1)
+}
+
+
+const jsReservedKeywords = new Set([
+    'break',
+    'case',
+    'catch',
+    'class',
+    'const',
+    'continue',
+    'debugger',
+    'default',
+    'delete',
+    'do',
+    'else',
+    'export',
+    'extends',
+    'false',
+    'finally',
+    'for',
+    'function',
+    'if',
+    'import',
+    'in',
+    'instanceof',
+    'new',
+    'null',
+    'return',
+    'super',
+    'switch',
+    'this',
+    'throw',
+    'true',
+    'try',
+    'typeof',
+    'var',
+    'void',
+    'while',
+    'with',
+    'let',
+    'static',
+    'yield',
+    'await'
+])
+
+
+export function toJsName(name: string) {
+    name = toCamelCase(name)
+    if (jsReservedKeywords.has(name)) {
+        return name + '_'
+    } else {
+        return name
+    }
 }

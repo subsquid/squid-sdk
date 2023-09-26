@@ -56,9 +56,7 @@ export class Sink {
             .filter(t => !!t)
 
         let local = new Set(
-            names.filter(
-                name => this.assignedNames.has(name) || name[0] == 'I' && this.assignedNames.has(name.slice(1))
-            )
+            names.filter(name => this.assignedNames.has(name))
         )
 
         local.forEach(name => {
@@ -287,7 +285,7 @@ export class Sts {
                 return 'sts.bytes()'
             case TypeKind.Sequence:
             case TypeKind.Array:
-                return `sts.array(${this.use(ty.type)})`
+                return `sts.array(() => ${this.use(ty.type)})`
             case TypeKind.Tuple:
                 return this.renderTuple(ty.tuple)
             case TypeKind.Composite:
@@ -369,6 +367,6 @@ export class Sts {
 
     private renderTuple(tuple: Ti[]): Exp {
         let list = tuple.map(ti => this.use(ti)).join(', ')
-        return list ? `sts.tuple(${list})` : 'sts.unit()'
+        return list ? `sts.tuple(() => [${list}])` : 'sts.unit()'
     }
 }

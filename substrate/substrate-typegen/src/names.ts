@@ -44,19 +44,17 @@ export class Names {
     constructor(private types: Type[]) {}
 
     assign(ti: Ti, name: string): void {
-        assert(this.isValidAssignment(ti, name))
+        assert(this.isFree(name))
         this.assigned.set(name, getTypeHash(this.types, ti))
         this.assignment.set(ti, name)
     }
 
-    private isValidAssignment(ti: Ti, name: string): boolean {
-        if (this.reserved.has(name) || this.assigned.has('I'+name)) return false
-        let hash = this.assigned.get(name)
-        return hash == null || getTypeHash(this.types, ti) == hash
+    private isFree(name: string): boolean {
+        return !(this.reserved.has(name) || this.assigned.has(name))
     }
 
     reserve(name: string): void {
-        assert(!this.assigned.has(name) && !this.assigned.has('I'+name))
+        assert(this.isFree(name))
         this.reserved.add(name)
     }
 
@@ -75,13 +73,13 @@ export class Names {
             if (!needsName(this.types, ti)) return
 
             let name = deriveName(type)
-            if (name && this.isValidAssignment(ti, name)) {
+            if (name && this.isFree(name)) {
                 this.assign(ti, name)
                 return
             }
 
             for (let name of this.aliases.get(ti)?.values() || []) {
-                if (this.isValidAssignment(ti, name)) {
+                if (this.isFree(name)) {
                     this.assign(ti, name)
                     return
                 }
@@ -92,10 +90,22 @@ export class Names {
 
         this.types.forEach((type, ti) => {
             if (this.assignment.has(ti)) return
+            if (type.kind == TypeKind.Sequence) return
+
+            let name = deriveName(type)
+            if (name && this.isFree(name)) {
+                this.assign(ti, name)
+            }
+        })
+
+        this.types.forEach((type, ti) => {
+            if (this.assignment.has(ti)) return
+            if (type.kind == TypeKind.Sequence) return
+
             let aliases = this.aliases.get(ti)
             if (aliases?.size !== 1) return
             let name = Array.from(aliases)[0]
-            if (this.isValidAssignment(ti, name)) {
+            if (this.isFree(name)) {
                 this.assign(ti, name)
             }
         })

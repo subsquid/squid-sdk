@@ -15,7 +15,7 @@ import {CallType} from './types'
 
 const U256 = union(
     bigint(),
-    tuple(bigint(), bigint(), bigint(), bigint())
+    tuple([bigint(), bigint(), bigint(), bigint()])
 )
 
 
