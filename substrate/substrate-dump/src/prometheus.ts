@@ -7,6 +7,7 @@ export class PrometheusServer {
     private port?: number | string
     private chainHeightGauge: Gauge;
     private lastWrittenBlockGauge: Gauge;
+    private rpcRequestsGauge: Gauge;
 
     constructor(port: number) {
         this.port = port;
@@ -22,6 +23,13 @@ export class PrometheusServer {
             registers: [this.registry]
         });
 
+        this.rpcRequestsGauge = new Gauge({
+            name: 'sqd_rpc_requests_count',
+            help: 'Number of rpc requests of different kinds',
+            labelNames: ['kind'],
+            registers: [this.registry]
+        });
+
         collectDefaultMetrics({register: this.registry})
     }
 
@@ -33,6 +41,17 @@ export class PrometheusServer {
         this.lastWrittenBlockGauge.set(block);
     }
 
+    setSuccesfulRequestCount(requests: number) {
+        this.rpcRequestsGauge.set({
+            'kind': 'successful'
+        }, requests)
+    }
+
+    setFailedRequestCount(requests: number) {
+        this.rpcRequestsGauge.set({
+            'kind': 'failed'
+        }, requests)
+    }
 
     serve(): Promise<ListeningServer> {
         return createPrometheusServer(this.registry, this.port)

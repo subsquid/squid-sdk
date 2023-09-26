@@ -99,10 +99,11 @@ export class Dumper {
                 : this.options.withTrace ? '' : undefined
         }
 
-        return this.src().getFinalizedBlocks([{
+        const blocks = this.src().getFinalizedBlocks([{
             range,
             request
         }])
+        return blocks;
     }
 
     private async *process(from?: number, prevHash?: string): AsyncIterable<BlockData[]> {
@@ -140,6 +141,9 @@ export class Dumper {
                     )
                 }
             }
+            const metrics = this.rpc().getMetrics();
+            this.prometheus().setSuccesfulRequestCount(metrics.requestsServed);
+            this.prometheus().setFailedRequestCount(metrics.connectionErrors);
 
             yield batch.blocks
 
@@ -205,7 +209,7 @@ export class Dumper {
             const prometheus = this.prometheus();
             if (this.options.metricsPort) {
                 await prometheus.serve();
-                this.log().info(`prometheus metrics are available on port {port}`)
+                this.log().info(`prometheus metrics are available on port ${this.options.metricsPort}`)
             }
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
