@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "feat: implement prometheus metrics",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}

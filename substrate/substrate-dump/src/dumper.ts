@@ -14,6 +14,7 @@ import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {MetadataWriter} from './metadata'
+import { PrometheusServer } from './prometheus'
 
 
 export interface DumperOptions {
@@ -26,6 +27,7 @@ export interface DumperOptions {
     lastBlock?: number
     withTrace?: boolean | string
     chunkSize: number
+    metrics?: number
 }
 
 
@@ -82,6 +84,11 @@ export class Dumper {
         })
     }
 
+    @def
+    prometheus() {
+        return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
+    }
+
     ingest(range: Range): AsyncIterable<BlockBatch> {
         let request: DataRequest = {
             runtimeVersion: true,
@@ -107,6 +114,7 @@ export class Dumper {
 
         let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
         let chainHeight = await height.get()
+        this.prometheus().setChainHeight(chainHeight)
 
         let progress = new Progress({
             initialValue: this.range().from,
@@ -193,11 +201,17 @@ export class Dumper {
                 }
             }
         } else {
-            let archive = new ArchiveLayout(this.fs())
+            const archive = new ArchiveLayout(this.fs())
+            const prometheus = this.prometheus()
+            if (this.options.metrics != null) {
+                const promServer = await prometheus.serve()
+                this.log().info(`prometheus metrics are available on port ${promServer.port}`)
+            }
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
-                chunkSize: this.options.chunkSize * 1024 * 1024
+                chunkSize: this.options.chunkSize * 1024 * 1024,
+                onSuccessWrite: ({ blockRange: { to } }) => { prometheus.setLastWrittenBlock(to.height) }
             })
         }
     }
