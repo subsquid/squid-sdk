@@ -27,7 +27,7 @@ export interface DumperOptions {
     lastBlock?: number
     withTrace?: boolean | string
     chunkSize: number
-    metricsPort?: number
+    metrics?: number
 }
 
 
@@ -86,7 +86,7 @@ export class Dumper {
 
     @def
     prometheus() {
-        return new PrometheusServer(this.options.metricsPort ?? 3000);
+        return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
     }
 
     ingest(range: Range): AsyncIterable<BlockBatch> {
@@ -99,11 +99,10 @@ export class Dumper {
                 : this.options.withTrace ? '' : undefined
         }
 
-        const blocks = this.src().getFinalizedBlocks([{
+        return this.src().getFinalizedBlocks([{
             range,
             request
         }])
-        return blocks;
     }
 
     private async *process(from?: number, prevHash?: string): AsyncIterable<BlockData[]> {
@@ -115,7 +114,7 @@ export class Dumper {
 
         let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
         let chainHeight = await height.get()
-        this.prometheus().setChainHeight(chainHeight);
+        this.prometheus().setChainHeight(chainHeight)
 
         let progress = new Progress({
             initialValue: this.range().from,
@@ -141,9 +140,6 @@ export class Dumper {
                     )
                 }
             }
-            const metrics = this.rpc().getMetrics();
-            this.prometheus().setSuccesfulRequestCount(metrics.requestsServed);
-            this.prometheus().setFailedRequestCount(metrics.connectionErrors);
 
             yield batch.blocks
 
@@ -206,16 +202,16 @@ export class Dumper {
             }
         } else {
             const archive = new ArchiveLayout(this.fs())
-            const prometheus = this.prometheus();
-            if (this.options.metricsPort) {
-                await prometheus.serve();
-                this.log().info(`prometheus metrics are available on port ${this.options.metricsPort}`)
+            const prometheus = this.prometheus()
+            if (this.options.metrics != null) {
+                const promServer = await prometheus.serve()
+                this.log().info(`prometheus metrics are available on port ${promServer.port}`)
             }
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024,
-                onSuccessWrite: ({ blockRange: { to } }) => { prometheus.setLastWrittenBlock(to.height); }
+                onSuccessWrite: ({ blockRange: { to } }) => { prometheus.setLastWrittenBlock(to.height) }
             })
         }
     }

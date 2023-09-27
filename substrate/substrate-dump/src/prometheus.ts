@@ -1,3 +1,4 @@
+import { RpcClient } from '@subsquid/rpc-client';
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import promClient, { collectDefaultMetrics, Gauge, Registry } from 'prom-client';
 
@@ -9,7 +10,7 @@ export class PrometheusServer {
     private lastWrittenBlockGauge: Gauge;
     private rpcRequestsGauge: Gauge;
 
-    constructor(port: number) {
+    constructor(port: number, rpc: RpcClient) {
         this.port = port;
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
@@ -27,7 +28,16 @@ export class PrometheusServer {
             name: 'sqd_rpc_requests_count',
             help: 'Number of rpc requests of different kinds',
             labelNames: ['kind'],
-            registers: [this.registry]
+            registers: [this.registry],
+            collect() {
+                const metrics = rpc.getMetrics();
+                this.set({
+                    kind: 'successful'
+                }, metrics.requestsServed);
+                this.set({
+                    kind: 'failed'
+                }, metrics.connectionErrors);
+            }
         });
 
         collectDefaultMetrics({register: this.registry})
@@ -39,18 +49,6 @@ export class PrometheusServer {
 
     setLastWrittenBlock(block: number) {
         this.lastWrittenBlockGauge.set(block);
-    }
-
-    setSuccesfulRequestCount(requests: number) {
-        this.rpcRequestsGauge.set({
-            'kind': 'successful'
-        }, requests)
-    }
-
-    setFailedRequestCount(requests: number) {
-        this.rpcRequestsGauge.set({
-            'kind': 'failed'
-        }, requests)
     }
 
     serve(): Promise<ListeningServer> {

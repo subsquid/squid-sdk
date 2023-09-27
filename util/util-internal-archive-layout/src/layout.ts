@@ -193,13 +193,12 @@ export class ArchiveLayout {
                     const chunk = getNextChunk(blockRange.from, blockRange.to)
                     chunk.transactDir('.', async fs => {
                         let content = await out.end()
-                        const writeResult = fs.write('blocks.jsonl.gz', content)
-                        writeResult.then(() => args.onSuccessWrite ? args.onSuccessWrite({
-                            chunk: chunk.abs(),
-                            blockRange
-                        }) : null)
-                        return writeResult
-                    })
+                        return fs.write('blocks.jsonl.gz', content)
+                    }).then(() => args.onSuccessWrite?.({
+                        chunk: chunk.abs(),
+                        blockRange
+                    }))
+
                     firstBlock = undefined
                     lastBlock = undefined
                     out = new GzipBuffer()
