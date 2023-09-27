@@ -25,17 +25,19 @@ export class PrometheusServer {
         });
 
         this.rpcRequestsGauge = new Gauge({
-            name: 'sqd_rpc_requests_count',
+            name: 'sqd_dump_rpc_requests_count',
             help: 'Number of rpc requests of different kinds',
-            labelNames: ['kind'],
+            labelNames: ['kind', 'url'],
             registers: [this.registry],
             collect() {
                 const metrics = rpc.getMetrics();
                 this.set({
-                    kind: 'successful'
+                    kind: 'successful',
+                    url: rpc.url
                 }, metrics.requestsServed);
                 this.set({
-                    kind: 'failed'
+                    kind: 'failed',
+                    url: rpc.url
                 }, metrics.connectionErrors);
             }
         });

@@ -191,7 +191,7 @@ export class ArchiveLayout {
                         to: assertNotNull(lastBlock)
                     }
                     const chunk = getNextChunk(blockRange.from, blockRange.to)
-                    chunk.transactDir('.', async fs => {
+                    await chunk.transactDir('.', async fs => {
                         let content = await out.end()
                         return fs.write('blocks.jsonl.gz', content)
                     }).then(() => args.onSuccessWrite?.({
