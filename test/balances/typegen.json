@@ -1,7 +1,9 @@
 {
   "outDir": "src/types",
   "specVersions": "https://v2.archive.subsquid.io/metadata/kusama",
-  "events": [
-    "Balances.Transfer"
-  ]
+  "pallets": {
+    "Balances": {
+      "events": ["Transfer"]
+    }
+  }
 }

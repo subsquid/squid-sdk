@@ -17,48 +17,58 @@
     },
     "events": {
       "description": "List of events to generate",
-      "oneOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "boolean"
-        }
-      ]
+      "$ref": "#/$defs/name-list"
     },
     "calls": {
       "description": "List of calls to generate",
-      "oneOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "boolean"
-        }
-      ]
+      "$ref": "#/$defs/name-list"
     },
     "storage": {
       "description": "List of storage items to generate",
-      "oneOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "boolean"
-        }
-      ]
+      "$ref": "#/$defs/name-list"
     },
     "constants": {
       "description": "List of constants to generate",
+      "$ref": "#/$defs/name-list"
+    },
+    "pallets": {
+      "description": "Select items to generate on a per-pallet basis",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "events": {
+                "description": "List of events to generate",
+                "$ref": "#/$defs/name-list"
+              },
+              "calls": {
+                "description": "List of calls to generate",
+                "$ref": "#/$defs/name-list"
+              },
+              "storage": {
+                "description": "List of storage items to generate",
+                "$ref": "#/$defs/name-list"
+              },
+              "constants": {
+                "description": "List of constants to generate",
+                "$ref": "#/$defs/name-list"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "outDir",
+    "specVersions"
+  ],
+  "$defs": {
+    "name-list": {
       "oneOf": [
         {
           "type": "array",
@@ -71,9 +81,5 @@
         }
       ]
     }
-  },
-  "required": [
-    "outDir",
-    "specVersions"
-  ]
+  }
 }

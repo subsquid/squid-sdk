@@ -142,3 +142,13 @@ export function toJsName(name: string) {
         return name
     }
 }
+
+
+export function splitQualifiedName(qualifiedName: string): [pallet: string, item: string] {
+    let parts = qualifiedName.split('.')
+    if (parts.length != 2) throw new Error(
+        `Invalid qualified name '${qualifiedName}'. ` +
+        `Qualified name should follow {Pallet}.{item} pattern, e.g. 'Balances.Transfer'`
+    )
+    return [parts[0], parts[1]]
+}

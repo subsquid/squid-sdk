@@ -4,11 +4,11 @@ import {Constant, OldSpecsBundle, OldTypesBundle, StorageItem} from '@subsquid/s
 import {EACDefinition} from '@subsquid/substrate-runtime/lib/runtime/events-and-calls'
 import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
 import {assertNotNull, def, last, maybeLast, unexpectedCase} from '@subsquid/util-internal'
-import {FileOutput, OutDir, Output} from '@subsquid/util-internal-code-printer'
+import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
 import {toCamelCase, toSnakeCase} from '@subsquid/util-naming'
 import {Sink, Sts} from './ifs'
 import {assignNames} from './names'
-import {groupBy, isEmptyVariant, toJsName, upperCaseFirst} from './util'
+import {groupBy, isEmptyVariant, splitQualifiedName, toJsName, upperCaseFirst} from './util'
 
 
 type Exp = string
@@ -21,10 +21,17 @@ interface Item<T> {
 }
 
 
-export interface TypegenOptions {
+export interface TypegenOptions extends ItemSelection {
     outDir: string
     specVersions: SpecVersion[]
     typesBundle?: OldTypesBundle | OldSpecsBundle
+    pallets?: {
+        [name: string]: ItemSelection | boolean
+    }
+}
+
+
+export interface ItemSelection {
     events?: string[] | boolean
     calls?: string[] | boolean
     storage?: string[] | boolean
@@ -140,11 +147,11 @@ export class Typegen {
     private generateConsts(): void {
         let items = this.constants()
 
-        for (let [pallet, palletItems] of groupBy(items, it => it.name.split('.')[0])) {
+        for (let [pallet, palletItems] of groupBy(items, it => splitQualifiedName(it.name)[0])) {
             let file = new ItemFile(this, pallet, 'Constant')
             let out = file.out
 
-            for (let [name, versions] of groupBy(palletItems, it => it.name.split('.')[1])) {
+            for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
                 out.line()
                 out.block(`export const ${toJsName(name)} = `, () => {
                     for (let it of versions) {
@@ -168,11 +175,11 @@ export class Typegen {
     private generateStorage(): void {
         let items = this.storageItems()
 
-        for (let [pallet, palletItems] of groupBy(items, it => it.name.split('.')[0])) {
+        for (let [pallet, palletItems] of groupBy(items, it => splitQualifiedName(it.name)[0])) {
             let file = new ItemFile(this, pallet, 'Storage')
             let out = file.out
 
-            for (let [jsName, versions] of groupBy(palletItems, it => toJsName(it.name.split('.')[1]))) {
+            for (let [jsName, versions] of groupBy(palletItems, it => toJsName(splitQualifiedName(it.name)[1]))) {
                 let ifs: (() => void)[] = []
 
                 out.line()
@@ -268,7 +275,7 @@ export class Typegen {
     @def
     private events(): Item<EACDefinition>[] {
         return this.collectItems(
-            this.options.events,
+            toItemRequest(this.options, 'events'),
             runtime => Object.entries(runtime.events.definitions).map(([name, def]) => {
                 return {name, def, runtime}
             }),
@@ -279,7 +286,7 @@ export class Typegen {
     @def
     private calls(): Item<EACDefinition>[] {
         return this.collectItems(
-            this.options.calls,
+            toItemRequest(this.options, 'calls'),
             runtime => Object.entries(runtime.calls.definitions).map(([name, def]) => {
                 return {name, def, runtime}
             }),
@@ -290,7 +297,7 @@ export class Typegen {
     @def
     private storageItems(): Item<StorageItem & {prefix: string}>[] {
         return this.collectItems(
-            this.options.storage,
+            toItemRequest(this.options, 'storage'),
             runtime => {
                 let storage = runtime.description.storage
                 return getStorageItems(runtime).map(({pallet, prefix, name}) => {
@@ -317,7 +324,7 @@ export class Typegen {
     @def
     private constants(): Item<Constant>[] {
         return this.collectItems(
-            this.options.constants,
+            toItemRequest(this.options, 'constants'),
             runtime => {
                 let items: Item<Constant>[] = []
                 let consts = runtime.description.constants
@@ -341,37 +348,36 @@ export class Typegen {
     }
 
     private collectItems<T>(
-        req: string[] | boolean | undefined,
+        req: ItemRequest,
         extract: (runtime: Runtime) => Item<T>[],
         hash: (item: Item<T>) => string
     ): Item<T>[] {
-        if (!req) return []
-        let requested = Array.isArray(req) ? new Set(req) : undefined
-        if (requested?.size === 0) return []
-
         let list = this.runtimes().flatMap(chain => extract(chain))
+
         let byName = groupBy(list, i => i.name)
 
-        requested?.forEach((name) => {
-            if (!byName.has(name)) {
-                throw new Error(`${name} is not defined by the chain metadata`)
+        if (req !== true) {
+            for (let qn of byName.keys()) {
+                let [pallet, name] = splitQualifiedName(qn)
+                let pr = req[pallet]
+                if (!pr || Array.isArray(pr) && !pr.includes(name)) {
+                    byName.delete(qn)
+                }
             }
-        })
+        }
 
         let items: Item<T>[] = []
 
-        byName.forEach((versions, name) => {
-            if (requested == null || requested.has(name)) {
-                let unique: Item<T>[] = []
-                versions.forEach(v => {
-                    let prev = maybeLast(unique)
-                    if (prev && hash(prev) === hash(v)) {
-                    } else {
-                        unique.push(v)
-                    }
-                })
-                items.push(...unique)
-            }
+        byName.forEach(versions => {
+            let unique: Item<T>[] = []
+            versions.forEach(v => {
+                let prev = maybeLast(unique)
+                if (prev && hash(prev) === hash(v)) {
+                } else {
+                    unique.push(v)
+                }
+            })
+            items.push(...unique)
         })
 
         return items
@@ -530,4 +536,50 @@ function isStorageKeyDecodable(item: StorageItem): boolean {
                 return false
         }
     })
+}
+
+
+type ItemRequest = true | {
+    [pallet: string]: true | string[]
+}
+
+
+function toItemRequest(options: TypegenOptions, kind: keyof ItemSelection): ItemRequest {
+    let list = options[kind]
+    if (list === true) return true
+
+    let req: {
+        [pallet: string]: true | string[]
+    } = {}
+
+    if (options.pallets) {
+        for (let pallet in options.pallets) {
+            let pr = options.pallets[pallet]
+            if (pr === true) {
+                req[pallet] = true
+            } else if (pr) {
+                let ir = pr[kind]
+                if (ir === true) {
+                    req[pallet] = true
+                } else if (ir) {
+                    req[pallet] = ir.slice()
+                }
+            }
+        }
+    }
+
+    if (list) {
+        for (let qualifiedName of list) {
+            let [pallet, name] = splitQualifiedName(qualifiedName)
+            let selected = req[pallet]
+            if (selected === true) continue
+            if (Array.isArray(selected)) {
+                selected.push(name)
+            } else {
+                req[pallet] = [name]
+            }
+        }
+    }
+
+    return req
 }

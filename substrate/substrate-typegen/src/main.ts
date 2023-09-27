@@ -57,7 +57,8 @@ Generates TypeScript classes for events, calls and storage items
             events: config.events,
             calls: config.calls,
             storage: config.storage,
-            constants: config.constants
+            constants: config.constants,
+            pallets: config.pallets
         })
     }
 }, err => {
