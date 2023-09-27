@@ -32,11 +32,11 @@ export class PrometheusServer {
             collect() {
                 const metrics = rpc.getMetrics();
                 this.set({
-                    kind: 'successful',
+                    kind: 'success',
                     url: rpc.url
                 }, metrics.requestsServed);
                 this.set({
-                    kind: 'failed',
+                    kind: 'failure',
                     url: rpc.url
                 }, metrics.connectionErrors);
             }
