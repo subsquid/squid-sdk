@@ -1,21 +1,42 @@
-import { RpcClient } from '@subsquid/rpc-client';
+import {createLogger} from '@subsquid/logger'
+import {RpcClient} from '@subsquid/rpc-client'
+import {Rpc} from '@subsquid/substrate-data-raw'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
-import promClient, { collectDefaultMetrics, Gauge, Registry } from 'prom-client';
+import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
+
+
+const LOG = createLogger('sqd:substrate-dump:prometheus')
 
 
 export class PrometheusServer {
     private registry = new Registry()
-    private port?: number | string
-    private chainHeightGauge: Gauge;
-    private lastWrittenBlockGauge: Gauge;
-    private rpcRequestsGauge: Gauge;
+    private chainHeightGauge: Gauge
+    private lastWrittenBlockGauge: Gauge
+    private rpcRequestsGauge: Gauge
 
-    constructor(port: number, rpc: RpcClient) {
-        this.port = port;
+    constructor(private port: number, rpcClient: RpcClient) {
+        let chainHeight = 0
+
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
-            help: 'Last block available in the chain',
-            registers: [this.registry]
+            help: 'Last finalized block',
+            registers: [this.registry],
+            async collect() {
+                let rpc = new Rpc(rpcClient, {
+                    retryAttempts: 0,
+                    timeout: 5000
+                })
+
+                try {
+                    let head = await rpc.getFinalizedHead()
+                    let header = await rpc.getBlock0(head)
+                    chainHeight = header.height
+                } catch(err: any) {
+                    LOG.error(err, 'failed to acquire chain height')
+                }
+
+                this.set(chainHeight)
+            }
         });
 
         this.lastWrittenBlockGauge = new Gauge({
@@ -25,32 +46,30 @@ export class PrometheusServer {
         });
 
         this.rpcRequestsGauge = new Gauge({
-            name: 'sqd_dump_rpc_requests_count',
-            help: 'Number of rpc requests of different kinds',
-            labelNames: ['kind', 'url'],
+            name: 'sqd_rpc_requests_count',
+            help: 'Number of rpc requests made',
+            labelNames: ['url', 'kind'],
             registers: [this.registry],
             collect() {
-                const metrics = rpc.getMetrics();
+                let metrics = rpcClient.getMetrics()
+
                 this.set({
-                    kind: 'success',
-                    url: rpc.url
-                }, metrics.requestsServed);
+                    url: rpcClient.url,
+                    kind: 'success'
+                }, metrics.requestsServed)
+
                 this.set({
-                    kind: 'failure',
-                    url: rpc.url
-                }, metrics.connectionErrors);
+                    url: rpcClient.url,
+                    kind: 'failure'
+                }, metrics.connectionErrors)
             }
         });
 
         collectDefaultMetrics({register: this.registry})
     }
 
-    setChainHeight(height: number) {
-        this.chainHeightGauge.set(height);
-    }
-
     setLastWrittenBlock(block: number) {
-        this.lastWrittenBlockGauge.set(block);
+        this.lastWrittenBlockGauge.set(block)
     }
 
     serve(): Promise<ListeningServer> {

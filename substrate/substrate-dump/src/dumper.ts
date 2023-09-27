@@ -14,7 +14,7 @@ import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {MetadataWriter} from './metadata'
-import { PrometheusServer } from './prometheus'
+import {PrometheusServer} from './prometheus'
 
 
 export interface DumperOptions {
@@ -112,9 +112,8 @@ export class Dumper {
         }
         assertRange(range)
 
-        let height = new Throttler(() => this.src().getFinalizedHeight(), 300_000)
+        let height = new Throttler(() => this.src().getFinalizedHeight(), 60_000)
         let chainHeight = await height.get()
-        this.prometheus().setChainHeight(chainHeight)
 
         let progress = new Progress({
             initialValue: this.range().from,
@@ -145,9 +144,12 @@ export class Dumper {
 
             progress.setCurrentValue(last(batch.blocks).height)
             if (chainHeight < rangeEnd(range)) {
-                chainHeight = await height.get()
-                progress.setTargetValue(Math.min(chainHeight, rangeEnd(range)))
+                chainHeight = Math.min(await height.get(), rangeEnd(range))
+                progress.setTargetValue(chainHeight)
+            } else {
+                progress.setTargetValue(rangeEnd(range))
             }
+
             await status.get()
         }
     }
@@ -194,24 +196,27 @@ export class Dumper {
     }
 
     async dump(): Promise<void> {
+        let prometheus = this.prometheus()
+
+        if (this.options.metrics != null) {
+            let promServer = await prometheus.serve()
+            this.log().info(`prometheus metrics are available on port ${promServer.port}`)
+        }
+
         if (this.options.dest == null) {
             for await (let bb of this.addMetadata(this.process())) {
                 for (let block of bb) {
                     process.stdout.write(JSON.stringify(block) + '\n')
                 }
+                prometheus.setLastWrittenBlock(last(bb).height)
             }
         } else {
-            const archive = new ArchiveLayout(this.fs())
-            const prometheus = this.prometheus()
-            if (this.options.metrics != null) {
-                const promServer = await prometheus.serve()
-                this.log().info(`prometheus metrics are available on port ${promServer.port}`)
-            }
+            let archive = new ArchiveLayout(this.fs())
             await archive.appendRawBlocks({
                 blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024,
-                onSuccessWrite: ({ blockRange: { to } }) => { prometheus.setLastWrittenBlock(to.height) }
+                onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
             })
         }
     }

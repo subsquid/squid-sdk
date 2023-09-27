@@ -1,4 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
+import {CallOptions, RpcClient} from '@subsquid/rpc-client'
 import {
     BlockData,
     BlockHeader,
@@ -15,11 +15,18 @@ import {qty2Int, toQty} from './util'
 export class Rpc {
     constructor(
         private client: RpcClient,
-        private priority = 0
+        private options: CallOptions = {}
     ) {}
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
+        return this.withOptions({
+            ...this.options,
+            priority
+        })
+    }
+
+    withOptions(options: CallOptions): Rpc {
+        return new Rpc(this.client, options)
     }
 
     getFinalizedHead(): Promise<Hash> {
@@ -70,14 +77,10 @@ export class Rpc {
     }
 
     call(method: string, params?: any[]): Promise<any> {
-        return this.client.call(method, params, {
-            priority: this.priority
-        })
+        return this.client.call(method, params, this.options)
     }
 
     batchCall(batch: {method: string, params?: any[]}[]): Promise<any[]> {
-        return this.client.batchCall(batch, {
-            priority: this.priority
-        })
+        return this.client.batchCall(batch, this.options)
     }
 }
