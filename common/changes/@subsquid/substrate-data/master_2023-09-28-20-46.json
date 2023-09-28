@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "compile with TypeScript 5",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

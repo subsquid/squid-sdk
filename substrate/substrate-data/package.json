@@ -34,6 +34,6 @@
     "@subsquid/rpc-client": "^4.4.1",
     "@subsquid/substrate-runtime": "^0.0.1",
     "@types/node": "^18.18.0",
-    "typescript": "~4.9.5"
+    "typescript": "~5.2.2"
   }
 }

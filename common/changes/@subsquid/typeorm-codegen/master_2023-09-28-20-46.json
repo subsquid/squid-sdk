@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "compile with TypeScript 5",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

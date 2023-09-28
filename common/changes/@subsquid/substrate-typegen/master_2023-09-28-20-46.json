@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "compile with TypeScript 5",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

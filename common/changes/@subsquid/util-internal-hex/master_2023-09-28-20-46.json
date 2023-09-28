@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-hex",
+      "comment": "compile with TypeScript 5",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-hex"
+}

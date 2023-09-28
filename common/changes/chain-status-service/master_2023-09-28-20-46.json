@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "compile with TypeScript 5",
+      "type": "patch"
+    }
+  ],
+  "packageName": "chain-status-service"
+}
