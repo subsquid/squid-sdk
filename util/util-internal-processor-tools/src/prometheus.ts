@@ -59,38 +59,18 @@ export class PrometheusServer {
         })
     }
 
-    private addConnectionMetric(
-        name: string,
-        help: string,
-        collect: () => ConnectionMetrics,
-        get: (m: ConnectionMetrics) => number
-    ): void {
+    addChainRpcMetrics(collect: () => ConnectionMetrics): void {
         new Gauge({
-            name,
-            help,
+            name: 'sqd_rpc_requests_count',
+            help: 'Number of rpc requests made',
+            labelNames: ['url', 'kind'],
             registers: [this.registry],
-            labelNames: ['url'],
             collect() {
                 let m = collect()
-                this.set({url: m.url}, get(m))
+                this.set({url: m.url, kind: 'success'}, m.requestsServed)
+                this.set({url: m.url, kind: 'failure'}, m.connectionErrors)
             }
         })
-    }
-
-    addChainRpcMetrics(collect: () => ConnectionMetrics): void {
-        this.addConnectionMetric(
-            'sqd_processor_chain_rpc_requests_served',
-            'Number of chain rpc requests served',
-            collect,
-            con => con.requestsServed
-        )
-
-        this.addConnectionMetric(
-            'sqd_processor_chain_rpc_errors',
-            'Number of chain rpc connection errors',
-            collect,
-            con => con.connectionErrors
-        )
     }
 
     serve(): Promise<ListeningServer> {

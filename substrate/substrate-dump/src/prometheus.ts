@@ -19,7 +19,7 @@ export class PrometheusServer {
 
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
-            help: 'Last finalized block',
+            help: 'Finalized head of a chain',
             registers: [this.registry],
             async collect() {
                 let rpc = new Rpc(rpcClient, {
