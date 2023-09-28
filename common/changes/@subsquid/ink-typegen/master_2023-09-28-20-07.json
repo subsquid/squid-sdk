@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "comment": "update dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-typegen"
+}

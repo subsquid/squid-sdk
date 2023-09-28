@@ -22,7 +22,7 @@
     "@subsquid/scale-codec": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "@subsquid/scale-codec": "^3.0.0",
     "typescript": "~4.9.5"
   }

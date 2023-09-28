@@ -27,10 +27,10 @@
     "commander": "^11.0.0"
   },
   "peerDependencies": {
-    "ethers": "^6.6.5"
+    "ethers": "^6.7.1"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/commands",
+      "comment": "upgrade `glob` from `8.x` to `10.x` ",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/commands"
+}

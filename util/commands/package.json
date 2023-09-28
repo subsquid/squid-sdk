@@ -22,12 +22,11 @@
     "@subsquid/logger": "^1.3.0",
     "@subsquid/util-internal": "^2.5.1",
     "@subsquid/util-internal-config": "^2.2.0",
-    "glob": "^8.1.0",
+    "glob": "^10.3.10",
     "supports-color": "^8.1.1"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "@types/supports-color": "^8.1.1",
     "typescript": "~4.9.5"
   }

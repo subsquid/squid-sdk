@@ -9,7 +9,7 @@
   "dependencies": {
     "@subsquid/substrate-runtime": "^0.0.1",
     "@subsquid/substrate-typegen": "^7.0.0",
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5"
   }
 }

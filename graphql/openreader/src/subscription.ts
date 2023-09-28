@@ -2,7 +2,7 @@ import deepEqual from "deep-equal"
 
 
 export class Subscription<T> implements AsyncIterator<T>, AsyncIterable<T> {
-    private timer?: NodeJS.Timer
+    private timer?: any
     private prev?: T
     private hasNoVal = true
 

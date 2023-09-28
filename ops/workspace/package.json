@@ -11,11 +11,11 @@
     "commander": "^11.0.0",
     "jsonc-parser": "^3.2.0",
     "latest-version": "^5.1.0",
-    "semver": "^7.5.1"
+    "semver": "^7.5.4"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
-    "@types/semver": "^7.5.0",
+    "@types/node": "^18.18.0",
+    "@types/semver": "^7.5.3",
     "type-fest": "^2.19.0",
     "typescript": "~4.9.5"
   }

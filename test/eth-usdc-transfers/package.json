@@ -10,15 +10,15 @@
     "@subsquid/evm-processor": "^1.8.2",
     "@subsquid/typeorm-migration": "^1.2.1",
     "@subsquid/typeorm-store": "^1.2.2",
-    "dotenv": "^16.1.4",
-    "ethers": "^6.6.5",
-    "pg": "^8.11.0",
-    "typeorm": "^0.3.16"
+    "dotenv": "^16.3.1",
+    "ethers": "^6.7.1",
+    "pg": "^8.11.3",
+    "typeorm": "^0.3.17"
   },
   "devDependencies": {
     "@subsquid/evm-typegen": "^3.2.2",
     "@subsquid/typeorm-codegen": "^1.3.1",
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5"
   }
 }

@@ -16,11 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.354.0",
+    "@aws-sdk/client-s3": "^3.421.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5"
   }
 }

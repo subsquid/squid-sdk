@@ -22,15 +22,15 @@
     "@subsquid/util-internal": "^2.5.1"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.16"
+    "typeorm": "^0.3.17"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.1",
-    "@types/node": "^18.16.17",
-    "@types/pg": "^8.10.2",
-    "expect": "^29.5.0",
+    "@types/mocha": "^10.0.2",
+    "@types/node": "^18.18.0",
+    "@types/pg": "^8.10.3",
+    "expect": "^29.7.0",
     "mocha": "^10.2.0",
-    "pg": "^8.11.0",
+    "pg": "^8.11.3",
     "typescript": "~4.9.5"
   }
 }

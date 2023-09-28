@@ -27,13 +27,13 @@
     "@subsquid/util-internal": "^2.5.1",
     "@subsquid/util-internal-code-printer": "^1.2.0",
     "commander": "^11.0.0",
-    "dotenv": "^16.1.4"
+    "dotenv": "^16.3.1"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.16"
+    "typeorm": "^0.3.17"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5"
   }
 }

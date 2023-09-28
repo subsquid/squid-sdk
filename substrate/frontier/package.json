@@ -20,12 +20,12 @@
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^0.0.1",
-    "ethers": "^6.6.5"
+    "ethers": "^6.7.1"
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^0.0.1",
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "typescript": "~4.9.5",
-    "ethers": "^6.6.5"
+    "ethers": "^6.7.1"
   }
 }
