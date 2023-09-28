@@ -46,7 +46,7 @@ export class PrometheusServer {
         });
 
         this.rpcRequestsGauge = new Gauge({
-            name: 'sqd_rpc_requests_count',
+            name: 'sqd_rpc_request_count',
             help: 'Number of rpc requests made',
             labelNames: ['url', 'kind'],
             registers: [this.registry],

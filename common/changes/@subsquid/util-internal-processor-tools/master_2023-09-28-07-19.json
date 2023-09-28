@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-processor-tools",
-      "comment": "replace prometheus rpc connection metrics with `sqd_rpc_requests_count[url, kind]`",
+      "comment": "replace prometheus rpc connection metrics with `sqd_rpc_request_count[url, kind]`",
       "type": "major"
     }
   ],
