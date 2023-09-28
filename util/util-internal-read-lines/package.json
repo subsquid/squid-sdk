@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-read-lines",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Synchronous iterator over text file lines",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

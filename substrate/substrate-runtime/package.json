@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-runtime",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Encoding/decoding/metadata tools for Substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,12 +17,12 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^3.0.0",
-    "@subsquid/scale-type-system": "^0.0.1",
-    "@subsquid/util-internal": "^2.5.1",
-    "@subsquid/util-internal-hex": "^1.2.0",
-    "@subsquid/util-naming": "^1.2.0",
-    "@subsquid/util-xxhash": "^1.2.0",
+    "@subsquid/scale-codec": "^4.0.0",
+    "@subsquid/scale-type-system": "^1.0.0",
+    "@subsquid/util-internal": "^2.5.2",
+    "@subsquid/util-internal-hex": "^1.2.1",
+    "@subsquid/util-naming": "^1.2.1",
+    "@subsquid/util-xxhash": "^1.2.1",
     "blake2b": "^2.1.4"
   },
   "devDependencies": {
