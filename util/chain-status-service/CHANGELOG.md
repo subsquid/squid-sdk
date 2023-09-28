@@ -1,6 +1,14 @@
 # Change Log - chain-status-service
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 1.2.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

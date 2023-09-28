@@ -2,6 +2,26 @@
   "name": "@subsquid/util-internal-range",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-range_v0.0.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-range_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

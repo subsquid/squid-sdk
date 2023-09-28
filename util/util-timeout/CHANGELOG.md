@@ -1,6 +1,14 @@
 # Change Log - @subsquid/util-timeout
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 2.3.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 2.3.0
 Sun, 11 Jun 2023 15:49:45 GMT

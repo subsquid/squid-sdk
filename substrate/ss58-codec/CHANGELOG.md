@@ -1,6 +1,14 @@
 # Change Log - @subsquid/ss58-codec
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 1.2.2
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 1.2.1
 Wed, 19 Jul 2023 16:48:14 GMT

@@ -2,6 +2,38 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "4.0.1",
+      "tag": "@subsquid/frontier_v4.0.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "adapt to latest `sts.tuple()` api"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          },
+          {
+            "comment": "use updated `@subsquid/substrate-runtime` interface"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.0",
       "tag": "@subsquid/frontier_v4.0.0",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

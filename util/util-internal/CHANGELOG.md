@@ -1,6 +1,14 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Thu, 07 Sep 2023 20:03:29 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 2.5.2
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 2.5.1
 Thu, 07 Sep 2023 20:03:29 GMT

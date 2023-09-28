@@ -1,6 +1,25 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Fri, 15 Sep 2023 11:35:40 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 3.0.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Breaking changes
+
+- change bit sequence JS representation in decoded data
+
+### Minor changes
+
+- implement `Multisig.approve_as_multi` call traversal
+
+### Patches
+
+- fix `Sudo.sudo_as` call parsing
+- fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala
+- adapt to `sts.tuple()` signature change
+- update dependencies
+- compile with TypeScript 5
 
 ## 2.0.5
 Fri, 15 Sep 2023 11:35:40 GMT

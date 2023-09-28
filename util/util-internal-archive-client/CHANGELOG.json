@@ -2,6 +2,35 @@
   "name": "@subsquid/util-internal-archive-client",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-archive-client_v0.0.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.3.0` to `^1.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.0` to `^1.3.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/util-internal-archive-client_v0.0.0",
       "date": "Tue, 12 Sep 2023 08:42:04 GMT",

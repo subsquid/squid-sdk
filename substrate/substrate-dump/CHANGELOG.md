@@ -1,6 +1,18 @@
 # Change Log - @subsquid/substrate-dump
 
-This log was last generated on Wed, 13 Sep 2023 22:16:51 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 0.2.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Minor changes
+
+- feat: implement prometheus metrics
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 0.1.3
 Wed, 13 Sep 2023 22:16:51 GMT

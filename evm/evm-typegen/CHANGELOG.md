@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Thu, 27 Jul 2023 13:21:04 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 3.2.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 3.2.2
 Thu, 27 Jul 2023 13:21:04 GMT

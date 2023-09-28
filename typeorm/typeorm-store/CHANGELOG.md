@@ -1,6 +1,14 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 1.2.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 1.2.2
 Tue, 05 Sep 2023 20:32:34 GMT

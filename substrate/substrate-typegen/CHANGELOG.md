@@ -1,6 +1,24 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Tue, 12 Sep 2023 08:42:04 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 8.0.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Breaking changes
+
+- new code generation schema
+- update bit sequence JS representation
+
+### Minor changes
+
+- add optional by pallet selection of objects to generate
+
+### Patches
+
+- improve handling of `Result<T, E>` and `Option<T>` types
+- update dependencies
+- compile with TypeScript 5
 
 ## 7.0.0
 Tue, 12 Sep 2023 08:42:04 GMT
