@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/node'
+import sms from 'source-map-support'
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
@@ -6,6 +8,10 @@ import {assertRange, Range} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {Ingest, IngestOptions} from './ingest'
 
+sms.install()
+Sentry.init({
+    attachStacktrace: true,
+})
 
 const log = createLogger('sqd:substrate-ingest')
 
@@ -55,7 +61,11 @@ runProgram(async () => {
 
         await waitForInterruption(server)
     }
-}, err => log.fatal(err))
+}, async err => {
+    Sentry.captureException(err)
+    await Sentry.flush()
+    log.fatal(err)
+})
 
 
 async function ingestHandler(ingest: Ingest, ctx: HttpContext): Promise<void> {

@@ -19,6 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@sentry/node": "^7.70.0",
     "@subsquid/logger": "^1.3.0",
     "@subsquid/rpc-client": "^4.4.1",
     "@subsquid/substrate-data": "^2.0.5",
@@ -33,9 +34,11 @@
     "@subsquid/util-internal-http-server": "^1.2.0",
     "@subsquid/util-internal-json": "^1.2.0",
     "@subsquid/util-internal-range": "^0.0.0",
-    "commander": "^11.0.0"
+    "commander": "^11.0.0",
+    "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17"
+    "@types/node": "^18.16.17",
+    "@types/source-map-support": "0.5.7"
   }
 }

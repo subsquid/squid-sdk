@@ -1,9 +1,15 @@
+import * as Sentry from '@sentry/node'
+import sms from 'source-map-support';
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Command} from 'commander'
 import {Dumper, DumperOptions, ErrorMessage} from './dumper'
 
+sms.install()
+Sentry.init({
+    attachStacktrace: true,
+})
 
 const log = createLogger('sqd:substrate-dump')
 
@@ -28,7 +34,9 @@ runProgram(() => {
 
     return new Dumper(args).dump()
 
-}, err => {
+}, async err => {
+    Sentry.captureException(err);
+    await Sentry.flush()
     if (err instanceof ErrorMessage) {
         log.fatal(err.message)
     } else {
