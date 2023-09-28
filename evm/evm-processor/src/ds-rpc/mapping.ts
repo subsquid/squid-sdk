@@ -1,5 +1,4 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {AllFields, BlockData, BlockHeader, FieldSelection, Transaction} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
@@ -338,6 +337,10 @@ function mapTraceStateDiff(transactionIndex: number, address: Bytes20, key: stri
 
 
 function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFrameResult): Iterable<EvmTrace> {
+    if (debugFrameResult.result.type == 'STOP') {
+        assert(!debugFrameResult.result.calls?.length)
+        return
+    }
     for (let rec of traverseDebugFrame(debugFrameResult.result, [])) {
         let base: EvmTraceBase = {
             transactionIndex,
@@ -397,10 +400,6 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                         balance: BigInt(assertNotNull(rec.frame.value))
                     }
                 }
-                break
-            case 'STOP':
-                // We ignore `STOP` frame because it doesn't affect indexing
-                assert(debugFrameResult.result.type == 'STOP')
                 break
             default:
                 throw unexpectedCase(rec.frame.type)
