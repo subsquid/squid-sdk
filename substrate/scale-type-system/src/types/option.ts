@@ -1,10 +1,11 @@
 import {TypeKind} from '@subsquid/scale-codec'
 import {def} from '@subsquid/util-internal'
 import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
+import {GetType} from '../type-util'
 
 
-export class OptionType<T> extends BaseType<T | undefined> {
-    constructor(private value: () => Type<T>) {
+export class OptionType<T extends Type> extends BaseType<GetType<T> | undefined> {
+    constructor(private _value: () => T) {
         super()
     }
 
@@ -17,7 +18,7 @@ export class OptionType<T> extends BaseType<T | undefined> {
     }
 
     @def
-    private getValue(): Type<T> {
-        return this.value()
+    private getValue(): T {
+        return this._value()
     }
 }

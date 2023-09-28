@@ -1,4 +1,4 @@
-import {Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
+import {Primitive, Ti, Type, TypeKind, Variant} from '@subsquid/substrate-runtime/lib/metadata'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {toCamelCase} from '@subsquid/util-naming'
 
@@ -8,39 +8,41 @@ export function isEmptyVariant(type: Type): boolean {
 }
 
 
-export function asResultType(type: Type): {ok: Ti, err: Ti} | undefined {
-    if (type.kind != TypeKind.Variant) return undefined
-    if (type.variants.length != 2) return undefined
-    let v0 = type.variants[0]
-    let v1 = type.variants[1]
-    let yes = v0.name == 'Ok' &&
-        v0.index == 0 &&
-        v0.fields.length == 1 &&
-        v0.fields[0].name == null &&
-        v1.name == 'Err' &&
-        v1.index == 1 &&
-        v1.fields.length == 1 &&
-        v1.fields[0].name == null
-    return yes ? {ok: v0.fields[0].type, err: v1.fields[0].type} : undefined
+export function asResultType(type: Type): {ok?: Ti, err?: Ti} | undefined {
+    if (type.kind != TypeKind.Variant) return
+    if (type.variants.length != 2) return
+
+    let ok = type.variants.find(v => v.name == 'Ok')
+    if (ok == null) return
+
+    let err = type.variants.find(v => v.name == 'Err')
+    if (err == null) return
+
+    if (isValueVariant(ok) && isValueVariant(err)) return {
+        ok: ok.fields[0]?.type,
+        err: err.fields[0]?.type
+    }
 }
 
 
-export function asOptionType(type: Type): {some: Ti} | undefined {
+export function asOptionType(type: Type): {some?: Ti} | undefined {
     if (type.kind !== TypeKind.Variant) return
     if (type.variants.length != 2) return
-    let v0 = type.variants[0]
-    let v1 = type.variants[1]
-    let yes = v0.name == 'None' &&
-        v0.fields.length == 0 &&
-        v0.index == 0 &&
-        v1.name == 'Some' &&
-        v1.index == 1 &&
-        v1.fields.length == 1 &&
-        v1.fields[0].name == null
 
-    if (yes) return {
-        some: v1.fields[0].type
+    let some = type.variants.find(v => v.name == 'Some')
+    if (some == null) return
+
+    let none = type.variants.find(v => v.name == 'None')
+    if (none == null) return
+
+    if (isValueVariant(some) && none.fields.length == 0) return {
+        some: some.fields[0]?.type
     }
+}
+
+
+function isValueVariant(v: Variant): boolean {
+    return v.fields.length < 2 && v.fields[0]?.name == null
 }
 
 

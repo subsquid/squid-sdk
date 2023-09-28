@@ -1,6 +1,6 @@
 import {BitSequence, Bytes} from '@subsquid/scale-codec'
 import {Type} from './type-checker'
-import {GetType, ValueCase} from './type-util'
+import {GetType, Simplify, ValueCase} from './type-util'
 import {ArrayType} from './types/array'
 import {EnumDefinition, EnumStruct, EnumType, GetEnumType} from './types/enum'
 import {ExternalEnum, ExternalEnumType} from './types/externalEnum'
@@ -17,16 +17,12 @@ import {
     UnitType,
     UnknownType
 } from './types/primitives'
-import {Result, ResultType} from './types/result'
 import {GetStructType, StructType} from './types/struct'
 import {TupleType} from './types/tuple'
 import {UnionType} from './types/union'
 
 
-export {GetType, ExternalEnum, Result, ValueCase}
-
-
-export type Option<T> = ValueCase<'Some', T> | {__kind: 'None'}
+export {GetType, ExternalEnum, ValueCase}
 
 
 const numberType = new NumberType()
@@ -121,7 +117,7 @@ export function struct<T extends Record<string, Type>>(def: Get<T>): Type<GetStr
 }
 
 
-export function option<T>(type: Get<Type<T>>): Type<T | undefined> {
+export function option<T extends Type>(type: Get<T>): Type<GetType<T> | undefined> {
     return new OptionType(getter(type))
 }
 
@@ -154,8 +150,42 @@ export function externalEnum(variants?: Get<EnumDefinition>): Type<any> {
 }
 
 
-export function result<T extends Type, E extends Type>(ok: T, err: E): Type<Result<GetType<T>, GetType<E>>> {
-    return new ResultType(ok, err)
+export type Option<T> = Simplify<ValueCase<'Some', T> | {__kind: 'None'}>
+
+
+export function enumOption<T extends Type<any>>(some: Get<T>): Type<Option<GetType<T>>> {
+    return makeEnumOption<GetType<T>>(some)
+}
+
+
+function makeEnumOption<T>(some: Get<Type<T>>): Type<Option<T>> {
+    let getType = getter(some)
+    return closedEnum(() => {
+        return {
+            Some: getType(),
+            None: unit()
+        }
+    })
+}
+
+
+export type Result<T, E> = Simplify<ValueCase<'Ok', T> | ValueCase<'Err', E>>
+
+
+export function result<T extends Type<any>, E extends Type<any>>(ok: Get<T>, err: Get<E>): Type<Result<GetType<T>, GetType<E>>> {
+    return makeResult<GetType<T>, GetType<E>>(ok, err)
+}
+
+
+function makeResult<T, E>(ok: Get<Type<T>>, err: Get<Type<E>>): Type<Result<T, E>> {
+    let getOk = getter(ok)
+    let getErr = getter(err)
+    return closedEnum(() => {
+        return {
+            Ok: getOk(),
+            Err: getErr()
+        }
+    })
 }
 
 
