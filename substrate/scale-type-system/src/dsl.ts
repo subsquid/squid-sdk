@@ -26,6 +26,9 @@ import {UnionType} from './types/union'
 export {GetType, ExternalEnum, Result, ValueCase}
 
 
+export type Option<T> = ValueCase<'Some', T> | {__kind: 'None'}
+
+
 const numberType = new NumberType()
 const bigintType = new BigIntType()
 const numericType = new NumericType()

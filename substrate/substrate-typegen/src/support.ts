@@ -1,13 +1,10 @@
 import type {BitSequence, Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
-import {Result} from '@subsquid/substrate-runtime/lib/sts'
+import {Option, Result} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export {sts, Bytes, BitSequence, Result}
-
-
-export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
+export {sts, Bytes, BitSequence, Option, Result}
 
 
 interface RuntimeCtx {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "add `Option<T>` enum type definition",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}
