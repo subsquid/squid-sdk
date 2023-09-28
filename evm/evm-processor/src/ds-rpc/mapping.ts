@@ -398,6 +398,10 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                     }
                 }
                 break
+            case 'STOP':
+                // We ignore `STOP` frame because it doesn't affect indexing
+                assert(debugFrameResult.result.type == 'STOP')
+                break
             default:
                 throw unexpectedCase(rec.frame.type)
         }
@@ -411,8 +415,7 @@ function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Ite
     frame: rpc.DebugFrame
 }> {
     let subcalls = frame.calls || []
-    // We ignore `STOP` frame because it doesn't affect indexing
-    if (frame.type != 'STOP') yield {traceAddress, subtraces: subcalls.length, frame}
+    yield {traceAddress, subtraces: subcalls.length, frame}
     for (let i = 0; i < subcalls.length; i++) {
         yield* traverseDebugFrame(subcalls[i], [...traceAddress, i])
     }
