@@ -1,6 +1,15 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 13 Sep 2023 22:16:51 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 3.4.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- fix `Sudo.sudo_as` call parsing
+- fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala
+- update dependencies
 
 ## 3.4.2
 Wed, 13 Sep 2023 22:16:51 GMT

@@ -1,6 +1,17 @@
 # Change Log - @subsquid/commands
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 2.3.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Minor changes
+
+- upgrade `glob` from `8.x` to `10.x` 
+
+### Patches
+
+- compile with TypeScript 5
 
 ## 2.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

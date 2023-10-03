@@ -1,6 +1,14 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Wed, 05 Jul 2023 14:27:27 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 1.3.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 1.3.0
 Wed, 05 Jul 2023 14:27:27 GMT

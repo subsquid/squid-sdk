@@ -2,6 +2,21 @@
   "name": "@subsquid/util-internal-http-server",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/util-internal-http-server_v1.2.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/util-internal-http-server_v1.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

@@ -135,11 +135,14 @@ export class Interfaces {
             case TypeKind.Variant: {
                 let result = asResultType(ty)
                 if (result) {
-                    return `Result<${this.use(result.ok)}, ${this.use(result.err)}>`
+                    let ok = result.ok == null ? 'null' : this.use(result.ok)
+                    let err = result.err == null ? 'null' : this.use(result.err)
+                    return `Result<${ok}, ${err}>`
                 }
                 let option = asOptionType(ty)
                 if (option) {
-                    return `Option<${this.use(option.some)}>`
+                    let some = option.some == null ? 'null' : this.use(option.some)
+                    return `Option<${some}>`
                 }
                 return this.makeVariant(ty, ti)
             }
@@ -297,11 +300,14 @@ export class Sts {
             case TypeKind.Variant: {
                 let result = asResultType(ty)
                 if (result) {
-                    return `sts.result(${this.use(result.ok)}, ${this.use(result.err)})`
+                    let ok = result.ok == null ? 'sts.unit()' : this.use(result.ok)
+                    let err = result.err == null ? 'sts.unit()' : this.use(result.err)
+                    return `sts.result(() => ${ok}, () => ${err})`
                 }
                 let option = asOptionType(ty)
                 if (option) {
-                    return `sts.closedEnum({Some: ${this.use(option.some)}, None: sts.unit()})`
+                    let some = option.some == null ? 'sts.unit()' : this.use(option.some)
+                    return `sts.enumOption(() => ${some})`
                 }
                 return this.makeVariant(ty, ti)
             }

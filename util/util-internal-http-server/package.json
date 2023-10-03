@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-http-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A tiny convenience layer on top of built-in http server",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,8 +19,8 @@
     "stoppable": "^1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "@types/stoppable": "^1.1.1",
-    "typescript": "~4.9.5"
+    "typescript": "~5.2.2"
   }
 }

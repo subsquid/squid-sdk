@@ -2,6 +2,48 @@
   "name": "@subsquid/scale-type-system",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/scale-type-system_v1.0.0",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "change `tuple()` signature from `tuple(...types: Type[])` to `tuple(types: Type[])`"
+          },
+          {
+            "comment": "update bit sequence presentaion"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `Option<T>` enum type definition"
+          },
+          {
+            "comment": "improve handling of `Result<T, E>` and `Option<T>` types"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^3.0.0` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^3.0.0` to `^4.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/scale-type-system_v0.0.1",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

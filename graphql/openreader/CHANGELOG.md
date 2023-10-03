@@ -1,6 +1,14 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Wed, 23 Aug 2023 14:37:23 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 4.4.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 4.4.0
 Wed, 23 Aug 2023 14:37:23 GMT

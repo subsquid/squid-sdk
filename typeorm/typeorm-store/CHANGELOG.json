@@ -2,6 +2,29 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.2.3",
+      "tag": "@subsquid/typeorm-store_v1.2.3",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^3.3.0` to `^3.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.2",
       "tag": "@subsquid/typeorm-store_v1.2.2",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

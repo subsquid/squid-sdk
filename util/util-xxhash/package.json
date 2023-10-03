@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-xxhash",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "xxhash function",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,8 +20,8 @@
     "xxhashjs": "^0.2.2"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17",
+    "@types/node": "^18.18.0",
     "@types/xxhashjs": "^0.2.2",
-    "typescript": "~4.9.5"
+    "typescript": "~5.2.2"
   }
 }

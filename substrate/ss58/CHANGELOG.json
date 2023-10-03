@@ -2,6 +2,32 @@
   "name": "@subsquid/ss58",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/ss58_v2.0.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix false positive test errors"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ss58-codec\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.0` to `^1.2.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/ss58_v2.0.0",
       "date": "Tue, 05 Sep 2023 20:32:34 GMT",

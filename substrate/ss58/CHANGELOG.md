@@ -1,6 +1,15 @@
 # Change Log - @subsquid/ss58
 
-This log was last generated on Tue, 05 Sep 2023 20:32:34 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 2.0.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- fix false positive test errors
+- update dependencies
+- compile with TypeScript 5
 
 ## 2.0.0
 Tue, 05 Sep 2023 20:32:34 GMT

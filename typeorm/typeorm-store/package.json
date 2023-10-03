@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/typeorm-store",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "TypeORM based storage for squid mappings",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,19 +18,19 @@
     "test": "make up && sleep 1 && make test && make down || (make down && exit 1)"
   },
   "dependencies": {
-    "@subsquid/typeorm-config": "^3.3.0",
-    "@subsquid/util-internal": "^2.5.1"
+    "@subsquid/typeorm-config": "^3.3.1",
+    "@subsquid/util-internal": "^2.5.2"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.16"
+    "typeorm": "^0.3.17"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.1",
-    "@types/node": "^18.16.17",
-    "@types/pg": "^8.10.2",
-    "expect": "^29.5.0",
+    "@types/mocha": "^10.0.2",
+    "@types/node": "^18.18.0",
+    "@types/pg": "^8.10.3",
+    "expect": "^29.7.0",
     "mocha": "^10.2.0",
-    "pg": "^8.11.0",
-    "typescript": "~4.9.5"
+    "pg": "^8.11.3",
+    "typescript": "~5.2.2"
   }
 }

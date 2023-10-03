@@ -1,6 +1,22 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 13 Sep 2023 22:16:51 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+
+## 7.0.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Breaking changes
+
+- change bit sequence JS representation in decoded data
+
+### Minor changes
+
+- add `extrinsic.encode()`, `call.encode()` functions
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
 
 ## 6.0.2
 Wed, 13 Sep 2023 22:16:51 GMT

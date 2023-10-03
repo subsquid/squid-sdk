@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-naming",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Naming conventions for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,8 +20,8 @@
     "inflected": "^2.1.0"
   },
   "devDependencies": {
-    "@types/inflected": "^1.1.29",
-    "@types/node": "^18.16.17",
-    "typescript": "~4.9.5"
+    "@types/inflected": "^2.1.1",
+    "@types/node": "^18.18.0",
+    "typescript": "~5.2.2"
   }
 }

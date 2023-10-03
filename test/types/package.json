@@ -7,9 +7,9 @@
     "test": "./test.sh"
   },
   "dependencies": {
-    "@subsquid/substrate-runtime": "^0.0.1",
-    "@subsquid/substrate-typegen": "^7.0.0",
-    "@types/node": "^18.16.17",
-    "typescript": "~4.9.5"
+    "@subsquid/substrate-runtime": "^1.0.0",
+    "@subsquid/substrate-typegen": "^8.0.0",
+    "@types/node": "^18.18.0",
+    "typescript": "~5.2.2"
   }
 }
