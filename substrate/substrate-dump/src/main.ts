@@ -10,6 +10,7 @@ sms.install()
 Sentry.init({
     attachStacktrace: true,
 })
+Sentry.setTag('kind', 'substrate-dump')
 
 const log = createLogger('sqd:substrate-dump')
 
