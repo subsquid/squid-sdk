@@ -70,6 +70,7 @@ async function ingestHandler(ingest: Ingest, ctx: HttpContext): Promise<void> {
         }
         ctx.response.setHeader('content-type', 'text/plain')
         await ingest.run(range, ctx.response)
+        ctx.response.end()
     } else {
         ctx.send(200, 'POST data range to receive data')
     }
