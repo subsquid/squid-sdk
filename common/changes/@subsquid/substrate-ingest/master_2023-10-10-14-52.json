@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "fix service response completion",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}
