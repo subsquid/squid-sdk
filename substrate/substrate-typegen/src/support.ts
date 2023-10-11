@@ -7,7 +7,7 @@ import assert from 'assert'
 export {sts, Bytes, BitSequence, Option, Result}
 
 
-interface RuntimeCtx {
+export interface RuntimeCtx {
     _runtime: Runtime
 }
 

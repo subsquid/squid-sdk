@@ -209,6 +209,8 @@ export class Typegen {
                             out.line()
                             out.blockComment(it.def.docs)
                             out.block(`export interface ${ifName} `, () => {
+                                out.line(`is(block: RuntimeCtx): boolean`)
+
                                 let value = useIfs(it.def.value)
                                 let keys = it.def.keys.map(ti => useIfs(ti))
 
@@ -218,7 +220,7 @@ export class Typegen {
 
                                 let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
 
-                                let ret = it.def.modifier == 'Required' ? value : `${value} | undefined`
+                                let ret = it.def.modifier == 'Required' ? value : `(${value} | undefined)`
 
                                 let kv = `[k: ${fullKey}, v: ${ret}]`
 
@@ -436,7 +438,7 @@ class ItemFile {
             .child(getPalletDir(pallet))
             .file(type == 'Storage' ? 'storage.ts' : type.toLowerCase() + 's.ts')
 
-        this.out.line(`import {sts, Block, Bytes, Option, Result, ${type}Type} from '../support'`)
+        this.out.line(`import {sts, Block, Bytes, Option, Result, ${type}Type, RuntimeCtx} from '../support'`)
 
         this.out.lazy(() => {
             Array.from(this.imported)
