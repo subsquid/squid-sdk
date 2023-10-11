@@ -11,6 +11,7 @@ import {
     RangeRequest,
     RangeRequestList
 } from '@subsquid/util-internal-processor-tools'
+import {filterBlockBatch} from './filter'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
@@ -49,9 +50,11 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
             requests.map(toBaseRangeRequest),
             stopOnHead
         )) {
+            let blocks = batch.blocks.map(b => this.mapBlock(b))
+            filterBlockBatch(requests, blocks)
             yield {
                 ...batch,
-                blocks: batch.blocks.map(b => this.mapBlock(b))
+                blocks
             }
         }
     }
@@ -75,9 +78,11 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
             if (upd instanceof Error) {
                 throw upd
             } else {
+                let blocks = upd.blocks.map(b => this.mapBlock(b))
+                filterBlockBatch(requests, blocks)
                 yield {
                     ...upd,
-                    blocks: upd.blocks.map(b => this.mapBlock(b))
+                    blocks
                 }
             }
         }
@@ -137,6 +142,8 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
                 if (s.success != null) {
                     call.success = s.success
                 }
+                call._ethereumTransactTo = s._ethereumTransactTo
+                call._ethereumTransactSighash = s._ethereumTransactSighash
                 block.calls.push(call)
             }
         }
@@ -159,6 +166,10 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
                 if (s.callAddress != null) {
                     event.callAddress = s.callAddress
                 }
+                event._evmLogAddress = s._evmLogAddress
+                event._evmLogTopics = s._evmLogTopics
+                event._contractAddress = s._contractAddress
+                event._gearProgramId = s._gearProgramId
                 block.events.push(event)
             }
         }

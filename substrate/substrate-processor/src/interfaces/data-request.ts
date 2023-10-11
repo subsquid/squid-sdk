@@ -15,7 +15,7 @@ export interface DataRequest {
 }
 
 
-interface EventRelations {
+export interface EventRelations {
     extrinsic?: boolean
     call?: boolean
     stack?: boolean
@@ -27,7 +27,7 @@ export interface EventRequest extends EventRelations {
 }
 
 
-interface CallRelations {
+export interface CallRelations {
     extrinsic?: boolean
     stack?: boolean
     events?: boolean

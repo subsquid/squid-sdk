@@ -156,6 +156,8 @@ export class Call {
     #parentCall?: Call
     #subcalls?: Call[]
     #events?: Event[]
+    #ethereumTransactTo?: Bytes
+    #ethereumTransactSighash?: Bytes
 
     constructor(
         block: BlockHeader,
@@ -233,6 +235,22 @@ export class Call {
         let decodedCall = runtime.toDecodedCall({name, args})
         return runtime.encodeCall(decodedCall)
     }
+
+    get _ethereumTransactTo(): Bytes | undefined {
+        return this.#ethereumTransactTo
+    }
+
+    set _ethereumTransactTo(value: Bytes | undefined) {
+        this.#ethereumTransactTo = value
+    }
+
+    get _ethereumTransactSighash(): Bytes | undefined {
+        return this.#ethereumTransactSighash
+    }
+
+    set _ethereumTransactSighash(value: Bytes | undefined) {
+        this.#ethereumTransactSighash = value
+    }
 }
 
 
@@ -247,6 +265,10 @@ export class Event {
     #block: BlockHeader
     #extrinsic?: Extrinsic
     #call?: Call
+    #evmLogAddress?: Bytes
+    #evmLogTopics?: Bytes[]
+    #contractAddress?: Bytes
+    #gearProgramId?: Bytes
 
     constructor(
         block: BlockHeader,
@@ -295,6 +317,54 @@ export class Event {
         } else {
             return this.call
         }
+    }
+
+    get _evmLogAddress(): Bytes | undefined {
+        return this.#evmLogAddress
+    }
+
+    set _evmLogAddress(value: Bytes | undefined) {
+        this.#evmLogAddress = value
+    }
+
+    get _evmLogTopics(): Bytes[] | undefined {
+        return this.#evmLogTopics
+    }
+
+    set _evmLogTopics(value: Bytes[] | undefined) {
+        this.#evmLogTopics = value
+    }
+
+    get _evmLogTopic0(): Bytes | undefined {
+        return this._evmLogTopics?.[0]
+    }
+
+    get _evmLogTopic1(): Bytes | undefined {
+        return this._evmLogTopics?.[1]
+    }
+
+    get _evmLogTopic2(): Bytes | undefined {
+        return this._evmLogTopics?.[2]
+    }
+
+    get _evmLogTopic3(): Bytes | undefined {
+        return this._evmLogTopics?.[3]
+    }
+
+    get _contractAddress(): Bytes | undefined {
+        return this.#contractAddress
+    }
+
+    set _contractAddress(value: Bytes | undefined) {
+        this.#contractAddress = value
+    }
+
+    get _gearProgramId(): Bytes | undefined {
+        return this.#gearProgramId
+    }
+
+    set _gearProgramId(value: Bytes | undefined) {
+        this.#gearProgramId = value
     }
 }
 
