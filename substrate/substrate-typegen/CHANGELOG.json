@@ -2,6 +2,21 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "8.0.1",
+      "tag": "@subsquid/substrate-typegen_v8.0.1",
+      "date": "Wed, 11 Oct 2023 19:13:41 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix incorrect typing of optional storage values"
+          },
+          {
+            "comment": "add missing `.is()` method to storage interface"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.0.0",
       "tag": "@subsquid/substrate-typegen_v8.0.0",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

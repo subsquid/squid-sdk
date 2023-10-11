@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Oct 2023 19:13:41 GMT and should not be manually modified.
+
+## 7.1.0
+Wed, 11 Oct 2023 19:13:41 GMT
+
+### Minor changes
+
+- implement block item filtering for RPC data source
 
 ## 7.0.0
 Thu, 28 Sep 2023 20:58:19 GMT

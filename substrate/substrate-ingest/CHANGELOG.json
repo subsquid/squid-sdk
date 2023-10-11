@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "3.4.4",
+      "tag": "@subsquid/substrate-ingest_v3.4.4",
+      "date": "Wed, 11 Oct 2023 19:13:41 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix service response completion"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.4.3",
       "tag": "@subsquid/substrate-ingest_v3.4.3",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "7.1.0",
+      "tag": "@subsquid/substrate-processor_v7.1.0",
+      "date": "Wed, 11 Oct 2023 19:13:41 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "implement block item filtering for RPC data source"
+          }
+        ]
+      }
+    },
+    {
       "version": "7.0.0",
       "tag": "@subsquid/substrate-processor_v7.0.0",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",
