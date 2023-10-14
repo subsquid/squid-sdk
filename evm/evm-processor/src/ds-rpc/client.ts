@@ -67,17 +67,18 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return qty2Int(height)
     }
 
-    async getBlockHash(height: number): Promise<string> {
-        let block: rpc.Block = await this.rpc.call(
+    async getBlockHash(height: number): Promise<string | undefined> {
+        let block: rpc.Block | null = await this.rpc.call(
             'eth_getBlockByNumber',
             [toQty(height), false]
         )
-        return block.hash
+        return block?.hash
     }
 
     @def
-    getGenesisHash(): Promise<string> {
-        return this.getBlockHash(0)
+    async getGenesisHash(): Promise<string> {
+        let hash = await this.getBlockHash(0)
+        return assertNotNull(hash, `block 0 is not known by ${this.rpc.url}`)
     }
 
     async *getHotBlocks(requests: RangeRequest<DataRequest>[], state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {

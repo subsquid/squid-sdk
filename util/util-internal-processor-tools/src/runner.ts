@@ -92,7 +92,10 @@ export class Runner<R, S> {
             assert(nextRequestedBlock > chainFinalizedHeight)
             let nextState = {
                 height: chainFinalizedHeight,
-                hash: await hot.getBlockHash(chainFinalizedHeight),
+                hash: assertNotNull(
+                    await hot.getBlockHash(chainFinalizedHeight),
+                    `finalized block ${chainFinalizedHeight} is not found in the data source`
+                ),
                 top: []
             }
             await this.config.database.transact({
