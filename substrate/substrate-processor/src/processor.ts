@@ -99,6 +99,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private typesBundle?: OldTypesBundle | OldSpecsBundle
     private prometheus = new PrometheusServer()
     private running = false
+    private _useArchiveOnly = false
 
     private add(request: DataRequest, range?: Range): void {
         this.requests.push({
@@ -209,6 +210,15 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         assert(ms >= 0)
         this.assertNotRunning()
         this.chainPollInterval = ms
+        return this
+    }
+
+    /**
+     * Never use RPC endpoint as a data source
+     */
+    useArchiveOnly(yes?: boolean): this {
+        this.assertNotRunning()
+        this._useArchiveOnly = yes !== false
         return this
     }
 
@@ -410,11 +420,14 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         this.running = true
         let log = this.getLogger()
         runProgram(async () => {
+            if (this._useArchiveOnly && this.src?.archive == null) {
+                throw new Error('Archive URL is required when .useArchiveOnly() flag is set')
+            }
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                archive: this.src?.archive ? this.getArchiveDataSource() : undefined,
-                hotDataSource: this.getRpcDataSource(),
+                archive: this.src?.archive == null ? undefined : this.getArchiveDataSource(),
+                hotDataSource: this._useArchiveOnly ? undefined : this.getRpcDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log
