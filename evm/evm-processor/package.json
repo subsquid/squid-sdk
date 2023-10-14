@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-processor",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Data fetcher and mappings executor for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -23,7 +23,7 @@
     "@subsquid/util-internal": "^2.5.2",
     "@subsquid/util-internal-archive-client": "^0.0.1",
     "@subsquid/util-internal-hex": "^1.2.1",
-    "@subsquid/util-internal-processor-tools": "^3.0.0"
+    "@subsquid/util-internal-processor-tools": "^3.1.0"
   },
   "devDependencies": {
     "@subsquid/typeorm-store": "^1.2.3",

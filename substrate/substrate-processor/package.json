@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -25,7 +25,7 @@
     "@subsquid/util-internal-archive-client": "^0.0.1",
     "@subsquid/util-internal-hex": "^1.2.1",
     "@subsquid/util-internal-json": "^1.2.1",
-    "@subsquid/util-internal-processor-tools": "^3.0.0"
+    "@subsquid/util-internal-processor-tools": "^3.1.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^1.0.0"
