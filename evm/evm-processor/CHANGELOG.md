@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+
+## 1.8.4
+Sat, 14 Oct 2023 22:24:52 GMT
+
+### Patches
+
+- better handle case when hot datasource is behind already indexed finanlized head
 
 ## 1.8.3
 Thu, 28 Sep 2023 20:58:19 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+
+## 3.1.0
+Sat, 14 Oct 2023 22:24:52 GMT
+
+### Minor changes
+
+- allow `DataSource.getBlockHash(height: number)` to return `null` or `undefined`
 
 ## 3.0.0
 Thu, 28 Sep 2023 20:58:19 GMT

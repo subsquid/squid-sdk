@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "3.1.0",
+      "tag": "@subsquid/util-internal-processor-tools_v3.1.0",
+      "date": "Sat, 14 Oct 2023 22:24:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow `DataSource.getBlockHash(height: number)` to return `null` or `undefined`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@subsquid/util-internal-processor-tools_v3.0.0",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

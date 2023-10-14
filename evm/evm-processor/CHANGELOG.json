@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.8.4",
+      "tag": "@subsquid/evm-processor_v1.8.4",
+      "date": "Sat, 14 Oct 2023 22:24:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "better handle case when hot datasource is behind already indexed finanlized head"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^3.0.0` to `^3.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.8.3",
       "tag": "@subsquid/evm-processor_v1.8.3",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

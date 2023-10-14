@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 11 Oct 2023 19:13:41 GMT and should not be manually modified.
+This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+
+## 7.2.0
+Sat, 14 Oct 2023 22:24:52 GMT
+
+### Minor changes
+
+- add `.useArchiveOnly()` option
 
 ## 7.1.0
 Wed, 11 Oct 2023 19:13:41 GMT
