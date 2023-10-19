@@ -2,6 +2,24 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "3.4.5",
+      "tag": "@subsquid/substrate-ingest_v3.4.5",
+      "date": "Thu, 19 Oct 2023 08:58:05 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^3.0.0` to `^3.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.3` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.0` to `^1.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.4.4",
       "tag": "@subsquid/substrate-ingest_v3.4.4",
       "date": "Wed, 11 Oct 2023 19:13:41 GMT",

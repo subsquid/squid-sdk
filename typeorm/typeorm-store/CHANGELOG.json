@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.2.4",
+      "tag": "@subsquid/typeorm-store_v1.2.4",
+      "date": "Thu, 19 Oct 2023 08:58:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of JSON arrays during hot block rollbacks"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.3",
       "tag": "@subsquid/typeorm-store_v1.2.3",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

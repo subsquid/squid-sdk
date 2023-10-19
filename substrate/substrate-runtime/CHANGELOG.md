@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+
+## 1.0.1
+Thu, 19 Oct 2023 08:58:05 GMT
+
+### Patches
+
+- fix `RpcClient.batchCall()` signature
 
 ## 1.0.0
 Thu, 28 Sep 2023 20:58:19 GMT
