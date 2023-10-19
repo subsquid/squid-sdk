@@ -31,10 +31,10 @@
     "commander": "^11.0.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.0"
+    "@subsquid/substrate-runtime": "^1.0.1"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.0",
+    "@subsquid/substrate-runtime": "^1.0.1",
     "@types/node": "^18.18.0",
     "typescript": "~5.2.2"
   }

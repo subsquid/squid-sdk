@@ -19,11 +19,11 @@
     "@subsquid/util-internal": "^2.5.2"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.0",
+    "@subsquid/substrate-runtime": "^1.0.1",
     "ethers": "^6.7.1"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.0",
+    "@subsquid/substrate-runtime": "^1.0.1",
     "@types/node": "^18.18.0",
     "typescript": "~5.2.2",
     "ethers": "^6.7.1"
