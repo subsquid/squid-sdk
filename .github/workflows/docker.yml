@@ -32,4 +32,4 @@ jobs:
           ref: release/arrowsquid
 
       - name: Build and Publish
-        run: ./ops/docker-publish.sh arrowsquid next
+        run: ./ops/docker-publish.sh arrowsquid latest
