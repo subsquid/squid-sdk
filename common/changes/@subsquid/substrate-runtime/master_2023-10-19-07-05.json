@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "fix `RpcClient.batchCall()` signature",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}

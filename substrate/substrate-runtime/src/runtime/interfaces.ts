@@ -45,7 +45,7 @@ export interface RuntimeVersionId {
 
 export interface RpcClient {
     call(method: string, params?: any[]): Promise<any>
-    batchCall(calls: {method: string, params?: any[]}): Promise<any[]>
+    batchCall(calls: {method: string, params?: any[]}[]): Promise<any[]>
 }
 
 

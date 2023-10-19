@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "pass RPC client to `Runtime` instances",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

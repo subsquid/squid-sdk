@@ -70,7 +70,7 @@ export class RuntimeTracker<B extends WithRuntime> {
             this.rpc.getRuntimeVersion(ref.hash),
             this.rpc.getMetadata(ref.hash)
         ])
-        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle)
+        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle, this.rpc.client)
         this.prev.set(ref.height, runtime)
         return {height: ref.height, value: runtime}
     }

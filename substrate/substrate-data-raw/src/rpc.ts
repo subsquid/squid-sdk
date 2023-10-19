@@ -14,7 +14,7 @@ import {qty2Int, toQty} from './util'
 
 export class Rpc {
     constructor(
-        private client: RpcClient,
+        public readonly client: RpcClient,
         private options: CallOptions = {}
     ) {}
 
