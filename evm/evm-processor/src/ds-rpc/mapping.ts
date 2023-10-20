@@ -337,7 +337,7 @@ function mapTraceStateDiff(transactionIndex: number, address: Bytes20, key: stri
 
 
 function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFrameResult): Iterable<EvmTrace> {
-    if (debugFrameResult.result.type == 'STOP') {
+    if (debugFrameResult.result.type == 'STOP' || debugFrameResult.result.type == 'INVALID') {
         assert(!debugFrameResult.result.calls?.length)
         return
     }
@@ -369,9 +369,9 @@ function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFra
                 }
                 break
             case 'CALL':
+            case 'CALLCODE':
             case 'STATICCALL':
             case 'DELEGATECALL':
-            case 'INVALID':
                 yield {
                     ...base,
                     type: 'call',
