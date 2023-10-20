@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Oct 2023 17:49:18 GMT and should not be manually modified.
+
+## 1.8.5
+Fri, 20 Oct 2023 17:49:18 GMT
+
+### Patches
+
+- handle `CALLCODE` debug frames
 
 ## 1.8.4
 Sat, 14 Oct 2023 22:24:52 GMT
