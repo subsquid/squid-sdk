@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "fix `tuple()` constructor",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}

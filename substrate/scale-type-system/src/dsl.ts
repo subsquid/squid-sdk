@@ -104,10 +104,10 @@ export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 exte
 export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type, T7 extends Type, T8 extends Type>(def: Get<[t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8]>): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>, GetType<T7>, GetType<T8>]>
 export function tuple<T1 extends Type, T2 extends Type, T3 extends Type, T4 extends Type, T5 extends Type, T6 extends Type, T7 extends Type, T8 extends Type, T9 extends Type>(def: Get<[t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9]>): Type<[GetType<T1>, GetType<T2>, GetType<T3>, GetType<T4>, GetType<T5>, GetType<T6>, GetType<T7>, GetType<T8>, GetType<T9>]>
 export function tuple(def?: Get<Type[]>): Type<any[] | null> {
-    if (def?.length) {
-        return new TupleType(getter(def))
-    } else {
+    if (def == null) {
         return unit()
+    } else {
+        return new TupleType(getter(def))
     }
 }
 
