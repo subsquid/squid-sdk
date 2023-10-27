@@ -1,6 +1,13 @@
 # Change Log - @subsquid/scale-type-system
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Fri, 27 Oct 2023 08:37:05 GMT and should not be manually modified.
+
+## 1.0.1
+Fri, 27 Oct 2023 08:37:05 GMT
+
+### Patches
+
+- fix `tuple()` constructor
 
 ## 1.0.0
 Thu, 28 Sep 2023 20:58:19 GMT
