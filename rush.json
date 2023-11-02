@@ -580,9 +580,21 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
+    // {
+    //   "packageName": "@subsquid/tron-data",
+    //   "projectFolder": "tron/tron-data",
+    //   "shouldPublish": true,
+    //   "versionPolicyName": "npm"
+    // },
     {
       "packageName": "@subsquid/tron-dump",
       "projectFolder": "tron/tron-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/tron-ingest",
+      "projectFolder": "tron/tron-ingest",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

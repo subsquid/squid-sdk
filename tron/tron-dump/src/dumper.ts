@@ -57,10 +57,7 @@ export class Dumper {
     http(): HttpClient {
         return new HttpClient({
             baseUrl: this.options.endpoint,
-            retryAttempts: 5,
-            headers: {
-                'TRON-PRO-API-KEY': '730ba912-3213-41a8-9535-5c7710d53922'
-            }
+            retryAttempts: Number.MAX_SAFE_INTEGER
         })
     }
 
@@ -96,7 +93,7 @@ export class Dumper {
 
     private async *ingest(range: Range): AsyncIterable<BlockData> {
         let batches = concurrentMap(
-            2,
+            5,
             this.generateStrides(range),
             async s => {
                 let block = await this.api().getBlock(s.from)
@@ -108,7 +105,10 @@ export class Dumper {
                         infoById[info.id] = info;
                     }
                     for (let tx of block.transactions || []) {
-                        tx.info = assertNotNull(infoById[tx.txID])
+                        let info = infoById[tx.txID]
+                        if (info) {
+                            tx.info = info
+                        }
                     }
                 }
 

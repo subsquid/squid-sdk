@@ -1,16 +1,17 @@
 {
-  "name": "@subsquid/tron-dump",
+  "name": "@subsquid/tron-ingest",
+  "description": "Data fetcher for tron based chains",
   "version": "0.0.1",
-  "description": "Raw data archiving tool for tron based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "tron-dump": "bin/run.js"
+    "tron-ingest": "./bin/run.js"
   },
   "files": [
+    "bin",
     "lib",
     "src"
   ],
@@ -19,21 +20,19 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.3.1",
-    "@subsquid/http-client": "^1.3.1",
-    "@subsquid/substrate-data-raw": "^0.1.0",
+    "@subsquid/tron-dump": "^0.0.1",
     "@subsquid/util-internal": "^2.5.2",
     "@subsquid/util-internal-archive-layout": "^0.1.0",
     "@subsquid/util-internal-commander": "^1.3.1",
     "@subsquid/util-internal-counters": "^1.3.1",
     "@subsquid/util-internal-fs": "^0.1.1",
     "@subsquid/util-internal-hex": "^1.2.1",
-    "@subsquid/util-internal-prometheus-server": "^1.2.1",
+    "@subsquid/util-internal-http-server": "^1.2.1",
+    "@subsquid/util-internal-json": "^1.2.1",
     "@subsquid/util-internal-range": "^0.0.1",
-    "commander": "^11.0.0",
-    "prom-client": "^14.2.0"
+    "commander": "^11.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.0",
-    "typescript": "~5.2.2"
+    "@types/node": "^18.18.0"
   }
 }
