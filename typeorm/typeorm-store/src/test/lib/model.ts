@@ -1,5 +1,5 @@
 import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
-
+import * as marshal from './marshal'
 
 @Entity()
 export class Item {
@@ -52,7 +52,7 @@ export class Data {
     @Column('int4', {array: true})
     integerArray?: number[] | null
 
-    @Column('numeric', {transformer: {from: (s?: string) => s == null ? null : BigInt(s), to: (val?: bigint) => val?.toString()}})
+    @Column('numeric', {transformer: marshal.bigintTransformer})
     bigInteger?: bigint | null
 
     @Column('timestamp with time zone')
