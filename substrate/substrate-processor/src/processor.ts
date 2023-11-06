@@ -326,11 +326,11 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            log: log.child('http')
+            log
         })
 
         return new SubstrateArchive({
-            client: new ArchiveClient({http, url, log}),
+            client: new ArchiveClient({http, url}),
             rpc: this.getChainRpcClient(),
             typesBundle: this.typesBundle
         })

@@ -41,46 +41,44 @@ export class AsyncQueue<T> {
     private putFuture?: Future<void>
     private takeFuture?: Future<T | undefined>
 
-    constructor(size: number) {
-        this.buf = new Array(size)
+    constructor(maxsize: number) {
+        assert(maxsize >= 1)
+        this.buf = new Array(maxsize)
     }
 
     async put(val: T): Promise<void> {
         if (this.closed) throw new ClosedQueueError()
+
+        assert(this.size < this.buf.length && this.putFuture == null, 'concurrent puts are not allowed')
+
         if (this.takeFuture) {
             this.takeFuture.resolve(val)
             this.takeFuture = undefined
-        } else if (this.size < this.buf.length) {
-            this.putToBuffer(val)
         } else {
-            assert(this.putFuture == null, 'Concurrent puts are not allowed')
-            this.putFuture = createFuture()
-            await this.putFuture.promise()
-            this.putToBuffer(val)
+            this.buf[(this.pos + this.size) % this.buf.length] = val
+            this.size += 1
+            if (this.size == this.buf.length) {
+                this.putFuture = createFuture()
+                await this.putFuture.promise()
+            }
         }
-    }
-
-    private putToBuffer(val: T): void {
-        assert(this.size < this.buf.length)
-        this.buf[(this.pos + this.size) % this.buf.length] = val
-        this.size += 1
     }
 
     async take(): Promise<T | undefined> {
-        if (this.putFuture) {
-            this.putFuture.resolve()
-            this.putFuture = undefined
-        }
         if (this.size > 0) {
             let val = this.buf[this.pos]!
             this.buf[this.pos] = undefined
             this.pos = (this.pos + 1) % this.buf.length
             this.size -= 1
+            if (this.putFuture) {
+                this.putFuture.resolve()
+                this.putFuture = undefined
+            }
             return val
         } else if (this.closed) {
             return undefined
         } else {
-            assert(this.takeFuture == null, 'Concurrent takes are not allowed')
+            assert(this.takeFuture == null, 'concurrent takes are not allowed')
             this.takeFuture = createFuture()
             return this.takeFuture.promise()
         }
@@ -113,8 +111,7 @@ export async function* concurrentMap<T, R>(
     stream: AsyncIterable<T>,
     f: (val: T) => Promise<R>
 ): AsyncIterable<R> {
-    assert(concurrency > 1)
-    let queue = new AsyncQueue<{promise: Promise<R>}>(concurrency - 1)
+    let queue = new AsyncQueue<{promise: Promise<R>}>(concurrency)
 
     async function map() {
         for await (let val of stream) {

@@ -1,11 +1,5 @@
-import {DataRequest} from '../interfaces/data-request'
-import {EvmBlock, EvmLog, EvmStateDiff, EvmTrace, EvmTransaction, Qty} from '../interfaces/evm'
-
-
-export interface BatchRequest extends DataRequest {
-    fromBlock: number
-    toBlock?: number
-}
+import {Qty} from '../interfaces/base'
+import {EvmBlock, EvmLog, EvmStateDiff, EvmTrace, EvmTransaction} from '../interfaces/evm'
 
 
 type ReplaceBigintToQty<T> = {

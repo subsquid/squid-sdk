@@ -319,13 +319,12 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             agent: new HttpAgent({
                 keepAlive: true
             }),
-            log: log.child('http')
+            log
         })
 
         return new EvmArchive(
             new ArchiveClient({
                 http,
-                log,
                 url: archive.url,
                 queryTimeout: archive.requestTimeout
             })

@@ -162,7 +162,7 @@ export class RpcDataSource {
         })
 
         for await (let head of this.getHeads()) {
-              await processor.goto(head)
+            await processor.goto(head)
         }
     }
 

@@ -1,11 +1,12 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
 
@@ -60,6 +61,7 @@ export class RpcClient {
     private retrySchedule: number[]
     private retryAttempts: number
     private capacity: number
+    private maxCapacity: number
     private log?: Logger
     private rate?: RateMeter
     private rateLimit: number = Number.MAX_SAFE_INTEGER
@@ -67,14 +69,17 @@ export class RpcClient {
     private connectionErrorsInRow = 0
     private connectionErrors = 0
     private requestsServed = 0
+    private notificationsReceived = 0
     private backoffEpoch = 0
+    private notificationListeners: ((msg: RpcNotification) => void)[] = []
+    private resetListeners: ((reason: Error) => void)[] = []
     private closed = false
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
         this.con = this.createConnection(options.url)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
-        this.capacity = options.capacity ?? 10
+        this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
         this.retryAttempts = options.retryAttempts ?? 0
         this.retrySchedule = options.retrySchedule ?? [10, 100, 500, 2000, 10000, 20000]
@@ -97,7 +102,16 @@ export class RpcClient {
         switch(protocol) {
             case 'ws:':
             case 'wss:':
-                return new WsConnection(url)
+                return new WsConnection({
+                    url,
+                    onNotificationMessage: msg => this.onNotification(msg),
+                    onReset: reason => {
+                        if (this.closed) return
+                        for (let cb of this.resetListeners) {
+                            this.safeCallback(cb, reason)
+                        }
+                    }
+                })
             case 'http:':
             case 'https:':
                 return new HttpConnection(url, this.log)
@@ -106,12 +120,63 @@ export class RpcClient {
         }
     }
 
+    getConcurrency(): number {
+        return this.maxCapacity
+    }
+
     getMetrics() {
         return {
             url: this.url,
             requestsServed: this.requestsServed,
-            connectionErrors: this.connectionErrors
+            connectionErrors: this.connectionErrors,
+            notificationsReceived: this.notificationsReceived
         }
+    }
+
+    private onNotification(msg: RpcNotification): void {
+        this.notificationsReceived += 1
+        this.log?.debug({msg}, 'rpc notification')
+        for (let cb of this.notificationListeners) {
+            this.safeCallback(cb, msg)
+        }
+    }
+
+    private safeCallback<T>(cb: (arg: T) => void, arg: T): void {
+        try {
+            cb(arg)
+        } catch(err: any) {
+            this.log?.error(err, 'callback error')
+        }
+    }
+
+    addNotificationListener(cb: (msg: RpcNotification) => void): void {
+        this.notificationListeners.push(cb)
+    }
+
+    removeNotificationListener(cb: (msg: RpcNotification) => void): void {
+        removeItem(this.notificationListeners, cb)
+    }
+
+    addResetListener(cb: (reason: Error) => void): void {
+        this.resetListeners.push(cb)
+    }
+
+    removeResetListener(cb: (reason: Error) => void): void {
+        removeItem(this.resetListeners, cb)
+    }
+
+    subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
+        return this.subscriptions().add(sub)
+    }
+
+    @def
+    private subscriptions(): Subscriptions {
+        assert(this.supportsNotifications(), 'subscriptions are only supported by websocket connections')
+        return new Subscriptions(this)
+    }
+
+    supportsNotifications(): boolean {
+        return this.con instanceof WsConnection
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -359,6 +424,13 @@ export class RpcClient {
         return false
     }
 
+    reset(reason?: RpcConnectionError): void {
+        if (this.closed) return
+        if (this.con instanceof WsConnection) {
+            this.con.close(reason || new RpcConnectionError('client was reset'))
+        }
+    }
+
     close(err?: Error) {
         if (this.closed) return
         this.closed = true
@@ -403,4 +475,11 @@ function trimCredentials(url: string): string {
 
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
+}
+
+
+function removeItem<T>(arr: T[], item: T): void {
+    let index = arr.indexOf(item)
+    if (index < 0) return
+    arr.splice(index, 1)
 }

@@ -1,20 +1,18 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
+import {Bytes, Bytes20, Bytes32} from '../interfaces/base'
 import {AllFields, BlockData, BlockHeader, FieldSelection, Transaction} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {
-    Bytes,
-    Bytes20,
-    Bytes32,
     EvmStateDiff,
     EvmTrace,
     EvmTraceBase,
     EvmTraceCall,
-    EvmTraceCreate,
-    Qty
+    EvmTraceCreate
 } from '../interfaces/evm'
 import {formatId} from '../util'
-import * as rpc from './rpc'
+import * as rpc from './rpc-data'
+import {getBlockHeight, getTxHash, qty2Int} from './util'
 
 
 export function mapBlock(block: rpc.Block, transactionsRequested: boolean): BlockData<AllFields> {
@@ -497,19 +495,13 @@ function makeDiffRecord(transactionIndex: number, key: Bytes32, address: Bytes20
     }
 }
 
-export function qty2Int(qty: Qty): number {
-    let i = parseInt(qty, 16)
-    assert(Number.isSafeInteger(i))
-    return i
+
+export interface MappingRequest extends rpc.DataRequest {
+    transactionList?: boolean
 }
 
 
-export function toQty(i: number): Qty {
-    return '0x'+i.toString(16)
-}
-
-
-export function toRpcDataRequest(req?: DataRequest): rpc.DataRequest {
+export function toMappingRequest(req?: DataRequest): MappingRequest {
     return {
         transactionList: transactionsRequested(req),
         transactions: transactionsRequested(req) && transactionRequired(req),
@@ -587,36 +579,4 @@ function stateDiffsRequested(req?: DataRequest): boolean {
         if (tx.stateDiffs) return true
     }
     return false
-}
-
-
-export function getTxHash(tx: Bytes32 | rpc.Transaction): Bytes32 {
-    if (typeof tx == 'string') {
-        return tx
-    } else {
-        return tx.hash
-    }
-}
-
-
-export function getBlockName(block: rpc.Block | {height: number, hash?: string, number?: undefined}): string {
-    let height: number
-    let hash: string | undefined
-    if (block.number == null) {
-        height = block.height
-        hash = block.hash
-    } else {
-        height = qty2Int(block.number)
-        hash = block.hash
-    }
-    if (hash) {
-        return `${height}#${hash.slice(2, 8)}`
-    } else {
-        return ''+height
-    }
-}
-
-
-export function getBlockHeight(block: rpc.Block): number {
-    return qty2Int(block.number)
 }

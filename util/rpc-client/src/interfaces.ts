@@ -7,6 +7,13 @@ export interface RpcRequest {
 }
 
 
+export interface RpcNotification {
+    jsonrpc: '2.0'
+    method: string
+    params?: any
+}
+
+
 export interface RpcResponse {
     id: number
     jsonrpc: '2.0'

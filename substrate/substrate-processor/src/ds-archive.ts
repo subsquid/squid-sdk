@@ -3,14 +3,8 @@ import {Rpc, RuntimeTracker, WithRuntime} from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateSyncError, assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {
-    archiveIngest,
-    Batch,
-    DataSource,
-    PollingHeightTracker,
-    RangeRequest,
-    RangeRequestList
-} from '@subsquid/util-internal-processor-tools'
+import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
+import {Batch, DataSource, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-processor-tools'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
@@ -19,8 +13,6 @@ import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
 interface ArchiveQuery extends DataRequest {
     type: 'substrate'
-    fromBlock: number
-    toBlock?: number
 }
 
 
@@ -50,7 +42,7 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
         return this.rpc.getBlockHash(height)
     }
 
-    getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
+    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
 
         let runtimeTracker = new RuntimeTracker<ArchiveBlockHeader & WithRuntime>(
             hdr => ({height: hdr.number, hash: hdr.hash, parentHash: hdr.parentHash}),
@@ -59,30 +51,27 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
             this.typesBundle
         )
 
-        return archiveIngest({
-            requests,
-            heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), 30_000),
-            query: async s => {
-                let blocks = await this.query(s)
-                await runtimeTracker.setRuntime(blocks.map(b => b.header))
-                return blocks.map(b => this.mapBlock(b))
-            },
-            stopOnHead
+        let archiveRequests = mapRangeRequestList(requests, req => {
+            let {fields, ...items} = req
+            let q: ArchiveQuery = {
+                type: 'substrate',
+                fields: getFields(fields),
+                ...items
+            }
+            return q
         })
-    }
 
-    private query(req: RangeRequest<DataRequest>): Promise<ArchiveBlock[]> {
-        let {fields, ...items} = req.request
-
-        let q: ArchiveQuery = {
-            type: 'substrate',
-            fromBlock: req.range.from,
-            toBlock: req.range.to,
-            fields: getFields(fields),
-            ...items
+        for await (let {blocks, isHead} of archiveIngest<ArchiveBlock>({
+            client: this.client,
+            requests: archiveRequests,
+            stopOnHead
+        })) {
+            await runtimeTracker.setRuntime(blocks.map(b => b.header))
+            yield {
+                blocks: blocks.map(b => this.mapBlock(b)),
+                isHead
+            }
         }
-
-        return this.client.query(q)
     }
 
     @annotateSyncError((src: ArchiveBlock) => ({blockHeight: src.header.number, blockHash: src.header.hash}))

@@ -63,7 +63,7 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
         requests: RangeRequestList<DataRequest>,
         state: HotDatabaseState
     ): AsyncIterable<HotUpdate<Block>> {
-        let queue = new AsyncQueue<HotUpdate<base.Block> | Error>(1)
+        let queue = new AsyncQueue<HotUpdate<base.Block> | Error>(2)
 
         this.ds.processHotBlocks(
             requests.map(toBaseRangeRequest),

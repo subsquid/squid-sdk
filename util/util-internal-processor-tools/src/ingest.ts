@@ -105,41 +105,6 @@ export async function* generateFetchStrides<R>(
 }
 
 
-export function archiveIngest<R, B extends Block>(
-    args: {
-        requests: RangeRequest<R>[]
-        heightTracker: HeightTracker
-        query: (s: SplitRequest<R>) => Promise<B[]>
-        stopOnHead?: boolean
-    }
-): AsyncIterable<Batch<B>> {
-    let {query, ...params} = args
-
-    async function* ingest(): AsyncIterable<Batch<B>> {
-        for await (let s of generateSplitRequests(params)) {
-            let from = s.range.from
-            let to = s.range.to
-            while (from <= to) {
-                let blocks = await query({
-                    range: {from, to},
-                    request: s.request
-                })
-                assert(blocks.length > 0, 'boundary blocks are expected to be included')
-                let top = last(blocks).header.height
-                yield {blocks, isHead: top >= args.heightTracker.getLastHeight()}
-                from = top + 1
-            }
-        }
-    }
-
-    return concurrentMap(
-        2,
-        ingest(),
-        b => Promise.resolve(b)
-    )
-}
-
-
 export interface ChainHeads {
     best?: HashAndHeight | number | string
     finalized?: HashAndHeight | number | string

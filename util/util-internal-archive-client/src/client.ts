@@ -1,5 +1,4 @@
 import {HttpClient, HttpTimeoutError} from '@subsquid/http-client'
-import {Logger} from '@subsquid/logger'
 import {wait, withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 
@@ -10,10 +9,17 @@ export interface ArchiveQuery {
 }
 
 
+export interface Block {
+    header: {
+        number: number
+        hash: string
+    }
+}
+
+
 export interface ArchiveClientOptions {
     http: HttpClient
     url: string
-    log?: Logger
     queryTimeout?: number
 }
 
@@ -22,13 +28,11 @@ export class ArchiveClient {
     private url: URL
     private http: HttpClient
     private queryTimeout: number
-    private log?: Logger
     private retrySchedule = [5000, 10000, 20000, 30000, 60000]
 
     constructor(options: ArchiveClientOptions) {
         this.url = new URL(options.url)
         this.http = options.http
-        this.log = options.log
         this.queryTimeout = options.queryTimeout ?? 180_000
     }
 
@@ -54,7 +58,7 @@ export class ArchiveClient {
         })
     }
 
-    query<T=any>(query: ArchiveQuery): Promise<T> {
+    query<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<B[]> {
         return this.retry(async () => {
             let worker: string = await this.http.get(this.getRouterUrl(`${query.fromBlock}/worker`), {
                 retryAttempts: 0,
@@ -78,10 +82,10 @@ export class ArchiveClient {
             } catch(err: any) {
                 if (this.http.isRetryableError(err)) {
                     let pause = this.retrySchedule[Math.min(retries, this.retrySchedule.length - 1)]
-                    if (this.log?.isWarn()) {
+                    if (this.http.log?.isWarn()) {
                         let warn = retries > 3 || err instanceof HttpTimeoutError && err.ms > 10_000
                         if (warn) {
-                            this.log.warn({
+                            this.http.log.warn({
                                 reason: err.message,
                                 ...err
                             }, `archive request failed, will retry in ${Math.round(pause / 1000)} secs`)

@@ -56,7 +56,7 @@ export interface FetchRequest extends RequestInit {
 
 
 export class HttpClient {
-    protected log?: Logger
+    public log?: Logger
     protected headers?: Record<string, string | number | bigint>
     private baseUrl?: string
     private agent: AgentProvider
