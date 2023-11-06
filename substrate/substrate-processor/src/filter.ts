@@ -1,4 +1,5 @@
-import {RangeRequest, RequestsTracker} from '@subsquid/util-internal-processor-tools'
+import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
+import {RangeRequest} from '@subsquid/util-internal-processor-tools'
 import {CallRelations, DataRequest, EventRelations} from './interfaces/data-request'
 import {Block, Call, Event, Extrinsic} from './mapping'
 

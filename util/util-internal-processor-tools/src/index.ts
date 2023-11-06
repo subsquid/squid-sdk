@@ -1,7 +1,6 @@
 export * from '@subsquid/util-internal-range'
 export * from './database'
 export * from './datasource'
-export * from './ingest'
 export * from './prometheus'
 export * from './runner'
 export {getOrGenerateSquidId} from './util'
