@@ -1,6 +1,6 @@
 export interface Log {
     address: string
-    data: string
+    data?: string
     topics: string[]
 }
 
@@ -10,7 +10,7 @@ export interface Contract {
         type_url: string
     }
     type: string
-    Permission_id: number
+    Permission_id?: number
 }
 
 export interface TransactionRawData {
@@ -19,11 +19,11 @@ export interface TransactionRawData {
     ref_block_hash: string
     expiration: number
     fee_limit?: number
-    timestamp: number
+    timestamp?: number
 }
 
 export interface TransactionReceipt {
-    result: string
+    result?: string
     energy_fee?: number
     energy_usage?: number
     energy_usage_total?: number
@@ -40,7 +40,7 @@ export interface InternalTransaction {
     callValueInfo: {
         callValue?: number
         tokenId?: string
-    }
+    }[]
     note: string
     rejected?: boolean
     extra?: string
