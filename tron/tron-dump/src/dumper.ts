@@ -1,6 +1,6 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {HttpClient, RetryError} from '@subsquid/http-client'
-import {assertNotNull, def, last, Throttler, concurrentMap} from '@subsquid/util-internal'
+import {assertNotNull, def, Throttler, concurrentMap} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
@@ -93,11 +93,13 @@ export class Dumper {
 
     private async *ingest(range: Range): AsyncIterable<BlockData> {
         let batches = concurrentMap(
-            5,
+            10,
             this.generateStrides(range),
             async s => {
-                let block = await this.api().getBlock(s.from)
-                let transactionsInfo = await this.api().getTransactionInfo(s.from)
+                let [block, transactionsInfo] = await Promise.all([
+                    this.api().getBlock(s.from),
+                    this.api().getTransactionInfo(s.from)
+                ]);
 
                 if (s.from != 0) { // info isn't presented for genesis block
                     let infoById: Record<string, TransactionInfo> = {}
@@ -105,10 +107,7 @@ export class Dumper {
                         infoById[info.id] = info;
                     }
                     for (let tx of block.transactions || []) {
-                        let info = infoById[tx.txID]
-                        if (info) {
-                            tx.info = info
-                        }
+                        tx.info = assertNotNull(infoById[tx.txID])
                     }
                 }
 

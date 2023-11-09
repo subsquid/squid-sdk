@@ -21,6 +21,7 @@
     "@subsquid/substrate-dump",
     "@subsquid/substrate-ingest",
     "@subsquid/substrate-metadata-service",
+    "@subsquid/tron-dump",
     "chain-status-service"
   ],
 

@@ -17,7 +17,6 @@ runProgram(() => {
     program.option('--dest <archive>', 'Either local dir or s3:// url where to store the dumped data', FileOrUrl(['s3:']))
     program.option('--first-block <number>', 'Height of the first block to dump', nat)
     program.option('--last-block <number>', 'Height of the last block to dump', nat)
-    program.option('--with-trace', 'Fetch block trace')
     program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, 32)
     program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
 
