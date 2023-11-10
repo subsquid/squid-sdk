@@ -7,6 +7,7 @@ import {RpcErrorInfo, RpcNotification, RpcRequest} from './interfaces'
 export interface Subscription<T> {
     method: string
     params?: unknown[]
+    notification: string
     unsubscribe: string
     onMessage: (msg: T) => void
     onError: (err: Error) => void
@@ -160,7 +161,7 @@ class Handle implements SubscriptionHandle {
                     }
                 )
         }
-        let id = `${req.method}::${result}`
+        let id = `${this.sub.notification}::${result}`
         if (this.active.has(id)) {
             this.client.reset()
             throw new Error(`got duplicate subscription: ${result}`)

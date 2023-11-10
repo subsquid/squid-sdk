@@ -3,14 +3,8 @@ import * as base from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime'
 import {annotateSyncError, AsyncQueue, ensureError} from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
-import {
-    Batch,
-    HotDatabaseState,
-    HotDataSource,
-    HotUpdate,
-    RangeRequest,
-    RangeRequestList
-} from '@subsquid/util-internal-processor-tools'
+import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
+import {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import {filterBlockBatch} from './filter'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
@@ -71,7 +65,7 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
             upd => queue.put(upd)
         ).then(
             () => queue.close(),
-            err => queue.put(ensureError(err)).catch(err => {})
+            err => queue.tryPut(ensureError(err))
         )
 
         for await (let upd of queue.iterate()) {

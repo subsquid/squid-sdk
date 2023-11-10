@@ -771,8 +771,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "eth-usdc-transfers",
-      "projectFolder": "test/eth-usdc-transfers",
+      "packageName": "erc20-transfers",
+      "projectFolder": "test/erc20-transfers",
       "shouldPublish": false
     },
     {

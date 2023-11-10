@@ -1,7 +1,14 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, concurrentMap, Throttler} from '@subsquid/util-internal'
-import {HotProcessor, HotState, HotUpdate, RequestsTracker} from '@subsquid/util-internal-ingest-tools'
-import {assertRangeList, RangeRequest, RangeRequestList, splitRange} from '@subsquid/util-internal-range'
+import {HotProcessor, HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
+import {
+    assertRangeList,
+    getRequestAt,
+    RangeRequest,
+    RangeRequestList,
+    splitBlocksByRequest,
+    splitRange
+} from '@subsquid/util-internal-range'
 import {Fetcher, matchesRequest0, Stride} from './fetcher'
 import {BlockBatch, BlockData, DataRequest, Hash} from './interfaces'
 import {Rpc} from './rpc'
@@ -116,24 +123,22 @@ export class RpcDataSource {
         state: HotState,
         cb: (upd: HotUpdate<BlockData>) => Promise<void>
     ): Promise<void> {
-        let requestsTracker = new RequestsTracker(requests)
         let fetcher = new Fetcher(this.rpc)
 
-        let processor = new HotProcessor<BlockData>({
-            state,
+        let processor = new HotProcessor<BlockData>(state, {
             getBlock: async ref => {
                 let hash = ref.hash || await this.rpc.getBlockHash(assertNotNull(ref.height))
                 if (ref.height == null) {
-                    let request = requestsTracker.getRequestAt(processor.getHeight() + 1)
+                    let request: DataRequest | undefined = getRequestAt(requests, processor.getHeight() + 1)
                     let block = await this.rpc.getBlock0(hash, request)
-                    request = requestsTracker.getRequestAt(block.height)
+                    request = getRequestAt(requests, block.height)
                     if (matchesRequest0(block, request)) {
                         return block
                     } else {
                         return this.rpc.getBlock0(hash, request)
                     }
                 } else {
-                    let request = requestsTracker.getRequestAt(ref.height)
+                    let request = getRequestAt(requests, ref.height)
                     return this.rpc.getBlock0(hash, request)
                 }
             },
@@ -149,7 +154,7 @@ export class RpcDataSource {
                 return b.height
             },
             process: async upd => {
-                for (let {blocks, request} of requestsTracker.splitBlocksByRequest(upd.blocks, b => b.height)) {
+                for (let {blocks, request} of splitBlocksByRequest(requests, upd.blocks, b => b.height)) {
                     if (request) {
                         await fetcher.fetch1(blocks, request)
                         if (request.runtimeVersion) {

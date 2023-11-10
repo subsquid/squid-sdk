@@ -1,6 +1,7 @@
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
-import {Batch, DataSource, mapRangeRequestList, RangeRequest} from '@subsquid/util-internal-processor-tools'
+import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
+import {mapRangeRequestList, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
 import {AllFields, BlockData} from '../interfaces/data'

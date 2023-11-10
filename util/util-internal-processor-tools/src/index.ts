@@ -1,4 +1,3 @@
-export * from '@subsquid/util-internal-range'
 export * from './database'
 export * from './datasource'
 export * from './prometheus'

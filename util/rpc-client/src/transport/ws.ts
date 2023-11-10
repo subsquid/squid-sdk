@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
-import {Connection, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
+import {Connection, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
 
 
 const MB = 1024 * 1024
@@ -108,7 +108,7 @@ export class WsConnection implements Connection {
         if (typeof data != 'string') {
             throw new RpcProtocolError(1003, 'Received non-text frame')
         }
-        let msg: RpcResponse | RpcResponse[]
+        let msg: RpcIncomingMessage | RpcIncomingMessage[]
         try {
             msg = JSON.parse(data)
         } catch(e: any) {
@@ -123,7 +123,7 @@ export class WsConnection implements Connection {
         }
     }
 
-    private handleResponse(res: RpcResponse | RpcNotification): void {
+    private handleResponse(res: RpcIncomingMessage): void {
         // TODO: more strictness, more validation
         if (isNotification(res)) {
             this.onNotificationMessage?.(res)
@@ -215,5 +215,5 @@ class BatchItemHandle {
 
 
 function isNotification(res: RpcResponse | RpcNotification): res is RpcNotification {
-    return (res as any).method == 'string'
+    return typeof (res as any).method == 'string'
 }

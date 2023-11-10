@@ -13,17 +13,8 @@ import {
 } from '@subsquid/substrate-runtime/lib/metadata/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {
-    applyRangeBound,
-    Batch,
-    Database,
-    getOrGenerateSquidId,
-    mergeRangeRequests,
-    PrometheusServer,
-    Range,
-    RangeRequest,
-    Runner
-} from '@subsquid/util-internal-processor-tools'
+import {Batch, Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Chain} from './chain'
 import {SubstrateArchive} from './ds-archive'

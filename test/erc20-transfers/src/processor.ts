@@ -4,13 +4,13 @@ import * as erc20 from './abi/erc20'
 import {Transfer} from './model'
 
 
-const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
 
 
 const processor = new EvmBatchProcessor()
     .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
-        chain: 'https://rpc.ankr.com/eth'
+        archive: 'https://v2.archive.subsquid.io/network/arbitrum-one',
+        chain: process.env.ARB_NODE_WS
     })
     .addLog({
         address: [CONTRACT],
@@ -19,7 +19,8 @@ const processor = new EvmBatchProcessor()
     .setFields({
         log: {transactionHash: true}
     })
-    .setFinalityConfirmation(50)
+    .setFinalityConfirmation(500)
+    .setBlockRange({from: 149_140_000})
 
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {

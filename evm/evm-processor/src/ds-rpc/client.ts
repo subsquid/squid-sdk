@@ -1,16 +1,24 @@
-import {Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
-import {rpcIngest} from '@subsquid/util-internal-ingest-tools'
-import {Batch, DataSource, HotDataSource, HotDatabaseState, HotUpdate,
+import {Logger, LogLevel} from '@subsquid/logger'
+import {RpcClient, RpcError} from '@subsquid/rpc-client'
+import {assertNotNull, AsyncQueue, ensureError, last, maybeLast, wait} from '@subsquid/util-internal'
+import {BlockHeader as Head, HashAndHeight, HotProcessor, rpcIngest} from '@subsquid/util-internal-ingest-tools'
+import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
+import {
+    getRequestAt,
     RangeRequest,
-    RangeRequestList,
+    RangeRequestList, splitRange,
+    splitRangeByRequest,
     SplitRequest
-} from '@subsquid/util-internal-processor-tools'
+} from '@subsquid/util-internal-range'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
+import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
 import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {mapBlock, MappingRequest, toMappingRequest} from './mapping'
-import {Rpc} from './rpc'
+import {BlockConsistencyError, ConsistencyError, Rpc} from './rpc'
+import * as rpc from './rpc-data'
+import {qty2Int} from './util'
 
 
 type Block = BlockData<AllFields>
@@ -19,6 +27,7 @@ type Block = BlockData<AllFields>
 export interface EvmRpcDataSourceOptions {
     rpc: RpcClient
     finalityConfirmation: number
+    newHeadTimeout?: number
     pollInterval?: number
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
@@ -30,6 +39,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private rpc: Rpc
     private finalityConfirmation: number
     private pollInterval: number
+    private newHeadTimeout: number
     private preferTraceApi?: boolean
     private useDebugApiForStateDiffs?: boolean
     private log?: Logger
@@ -37,7 +47,8 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.finalityConfirmation = options.finalityConfirmation
-        this.pollInterval = options.pollInterval ?? 5_000
+        this.pollInterval = options.pollInterval || 5_000
+        this.newHeadTimeout = options.newHeadTimeout || 0
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
         this.log = options.log
@@ -69,18 +80,156 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     async getSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
         let request = this.toRpcDataRequest(req.request)
         let rpc = this.rpc.withPriority(req.range.from)
-        let blocks = await rpc.getSplit({range: req.range, request})
+        let blocks = await rpc.fetchSplit({range: req.range, request})
         return blocks.map(b => mapBlock(b, request.transactionList || false))
     }
 
-    private toRpcDataRequest(req: DataRequest): MappingRequest {
+    private toRpcDataRequest(req?: DataRequest): MappingRequest {
         let r = toMappingRequest(req)
         r.preferTraceApi = this.preferTraceApi
         r.useDebugApiForStateDiffs = this.useDebugApiForStateDiffs
         return r
     }
 
-    getHotBlocks(requests: RangeRequestList<DataRequest>, state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
-        throw new Error('Method not implemented.')
+    async *getHotBlocks(requests: RangeRequestList<DataRequest>, state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
+        if (requests.length == 0) return
+
+        let lastBlock = last(requests).range.to ?? Infinity
+
+        let queue = new AsyncQueue<HotUpdate<Block> | Error>(2)
+        let self = this
+
+        let proc = new HotProcessor<Block>(state, {
+            process: upd => queue.put(upd),
+            getBlock: async ref => {
+                let req = this.toRpcDataRequest(getRequestAt(requests, ref.height))
+                let block = await this.rpc.fetchBlock(ref.hash, req, proc.getFinalizedHeight())
+                return mapBlock(block, req.transactionList || false)
+            },
+            async *getBlockRange(from: number, to: Partial<HashAndHeight>): AsyncIterable<Block[]> {
+                assert(to.height != null)
+                if (from > to.height) {
+                    from = to.height
+                }
+                for (let split of splitRangeByRequest(requests, {from, to: to.height})) {
+                    let request = self.toRpcDataRequest(split.request)
+                    for (let range of splitRange(10, split.range)) {
+                        let rpcBlocks = await self.rpc.fetchHotSplit({
+                            range,
+                            request,
+                            finalizedHeight: proc.getFinalizedHeight()
+                        })
+                        let blocks = rpcBlocks.map(b => mapBlock(b, request.transactionList || false))
+                        let lastBlock = maybeLast(blocks)?.header.height ?? range.from - 1
+                        yield blocks
+                        if (lastBlock < range.to) {
+                            throw new BlockConsistencyError(lastBlock + 1)
+                        }
+                    }
+                }
+            },
+            getHeader(block) {
+                return block.header
+            }
+        })
+
+        this.subIngest(head => {
+            return proc.goto({
+                best: head,
+                finalized: {
+                    height: Math.max(head.height - this.finalityConfirmation, 0)
+                }
+            })
+        }).then(() => {
+            assert(false, 'unexpected end of data ingestion')
+        }).catch((err: unknown) => {
+            if (!queue.isClosed()) {
+                queue.forcePut(ensureError(err))
+            }
+        })
+
+        for await (let upd of queue.iterate()) {
+            if (upd instanceof Error) {
+                throw upd
+            } else {
+                yield upd
+            }
+            if (upd.finalizedHead.height >= lastBlock) return
+        }
+    }
+
+    private async subIngest(cb: (head: HashAndHeight) => Promise<void>): Promise<void> {
+        let lastHead: HashAndHeight = {height: -1, hash: '0x'}
+        let heads = this.subscribeNewHeads()
+        try {
+            while (true) {
+                let next = await addTimeout(heads.take(), this.newHeadTimeout).catch(ensureError)
+                if (next == null) return
+                if (next instanceof TimeoutError) {
+                    this.log?.warn(`resetting RPC connection, because we haven't seen a new head for ${this.newHeadTimeout} ms`)
+                    this.rpc.client.reset()
+                } else if (next instanceof Error) {
+                    throw next
+                } else if (next.height >= lastHead.height) {
+                    lastHead = next
+                    for (let i = 0; i < 3; i++) {
+                        try {
+                            await cb(next)
+                            break
+                        } catch(err: any) {
+                            if (this.isConsistencyError(err)) {
+                                this.log?.write(
+                                    i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
+                                    err.message
+                                )
+                                await wait(100)
+                                if (heads.peek()) break
+                            } else {
+                                throw err
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            heads.close()
+        }
+    }
+
+    private isConsistencyError(err: unknown): boolean {
+        if (err instanceof ConsistencyError) return true
+        if (err instanceof RpcError) {
+            // eth_gelBlockByNumber on Moonbeam reacts like that when block is not present
+            if (/Expect block number from id/i.test(err.message)) return true
+        }
+        return false
+    }
+
+    private subscribeNewHeads(): AsyncQueue<Head | Error> {
+        let queue = new AsyncQueue<Head | Error>(1)
+
+        let handle = this.rpc.subscribeNewHeads({
+            onNewHead: head => {
+                try {
+                    let height = qty2Int(head.number)
+                    queue.forcePut({
+                        height,
+                        hash: head.hash,
+                        parentHash: head.parentHash
+                    })
+                } catch(err: any) {
+                    queue.forcePut(ensureError(err))
+                    queue.close()
+                }
+            },
+            onError: err => {
+                queue.forcePut(ensureError(err))
+                queue.close()
+            }
+        })
+
+        queue.addCloseListener(() => handle.close())
+
+        return queue
     }
 }

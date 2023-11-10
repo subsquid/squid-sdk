@@ -1,4 +1,5 @@
 import assert from 'assert'
+import * as process from 'process'
 import {assertNotNull} from './misc'
 
 
@@ -40,10 +41,15 @@ export class AsyncQueue<T> {
     private closed = false
     private putFuture?: Future<void>
     private takeFuture?: Future<T | undefined>
+    private closeListeners?: (() => void)[]
 
     constructor(maxsize: number) {
         assert(maxsize >= 1)
         this.buf = new Array(maxsize)
+    }
+
+    isClosed(): boolean {
+        return this.closed
     }
 
     async put(val: T): Promise<void> {
@@ -62,6 +68,23 @@ export class AsyncQueue<T> {
                 await this.putFuture.promise()
             }
         }
+    }
+
+    forcePut(val: T): void {
+        if (this.closed) throw new ClosedQueueError()
+        if (this.takeFuture) {
+            this.takeFuture.resolve(val)
+            this.takeFuture = undefined
+        } else if (this.size < this.buf.length) {
+            this.buf[(this.pos + this.size) % this.buf.length] = val
+            this.size += 1
+        } else {
+            this.buf[(this.pos + this.size - 1) % this.buf.length] = val
+        }
+    }
+
+    tryPut(val: T): void {
+        this.put(val).catch(err => {})
     }
 
     async take(): Promise<T | undefined> {
@@ -84,6 +107,10 @@ export class AsyncQueue<T> {
         }
     }
 
+    peek(): T | undefined {
+        return this.buf[this.pos]
+    }
+
     close(): void {
         this.closed = true
         if (this.putFuture) {
@@ -94,13 +121,32 @@ export class AsyncQueue<T> {
             this.takeFuture.resolve(undefined)
             this.takeFuture = undefined
         }
+        if (this.closeListeners) {
+            for (let cb of this.closeListeners) {
+                safeCall(cb)
+            }
+            this.closeListeners = undefined
+        }
+    }
+
+    addCloseListener(cb: () => void): void {
+        if (this.closed) return process.nextTick(() => safeCall(cb))
+        if (this.closeListeners == null) {
+            this.closeListeners = [cb]
+        } else {
+            this.closeListeners.push(cb)
+        }
     }
 
     async *iterate(): AsyncIterable<T> {
-        while (true) {
-            let val = await this.take()
-            if (val === undefined) return
-            yield val
+        try {
+            while (true) {
+                let val = await this.take()
+                if (val === undefined) return
+                yield val
+            }
+        } finally {
+            this.close()
         }
     }
 }
@@ -123,10 +169,19 @@ export async function* concurrentMap<T, R>(
 
     map().then(
         () => queue.close(),
-        err => queue.put({promise: Promise.reject(err)})
+        err => queue.tryPut({promise: Promise.reject(err)})
     )
 
     for await (let item of queue.iterate()) {
         yield await item.promise
+    }
+}
+
+
+export function safeCall(cb: () => void): void {
+    try {
+        cb()
+    } catch(err: any) {
+        Promise.reject(err)
     }
 }

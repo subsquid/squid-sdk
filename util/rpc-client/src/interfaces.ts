@@ -22,6 +22,9 @@ export interface RpcResponse {
 }
 
 
+export type RpcIncomingMessage = RpcNotification | RpcResponse
+
+
 export interface RpcErrorInfo {
     code: number
     message: string

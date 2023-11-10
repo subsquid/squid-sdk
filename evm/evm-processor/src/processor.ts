@@ -3,16 +3,8 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {
-    applyRangeBound,
-    Database,
-    getOrGenerateSquidId,
-    mergeRangeRequests,
-    PrometheusServer,
-    Range,
-    RangeRequest,
-    Runner
-} from '@subsquid/util-internal-processor-tools'
+import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'

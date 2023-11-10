@@ -135,7 +135,7 @@ export class RpcClient {
 
     private onNotification(msg: RpcNotification): void {
         this.notificationsReceived += 1
-        this.log?.debug({msg}, 'rpc notification')
+        this.log?.debug({rpcMsg: msg}, 'rpc notification')
         for (let cb of this.notificationListeners) {
             this.safeCallback(cb, msg)
         }

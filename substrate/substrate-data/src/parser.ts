@@ -1,8 +1,7 @@
 import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {addErrorContext, annotateAsyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
-import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
-import {RangeRequestList} from '@subsquid/util-internal-range'
+import {RangeRequestList, splitBlocksByRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
@@ -20,17 +19,14 @@ const STORAGE = {
 
 
 export class Parser {
-    private requests: RequestsTracker<DataRequest>
     private prevValidators = new Prev<{session: Bytes, validators: AccountId[]}>()
     private runtimeTracker: RuntimeTracker<RawBlock>
 
     constructor(
         private rpc: Rpc,
-        requests: RangeRequestList<DataRequest>,
+        private requests: RangeRequestList<DataRequest>,
         typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
-        this.requests = new RequestsTracker(requests)
-
         this.runtimeTracker = new RuntimeTracker<RawBlock>(
             block => ({
                 height: block.height,
@@ -50,7 +46,7 @@ export class Parser {
 
         let result = []
 
-        for (let batch of this.requests.splitBlocksByRequest(blocks, b => b.height)) {
+        for (let batch of splitBlocksByRequest(this.requests, blocks, b => b.height)) {
             if (batch.request?.blockValidator) {
                 await this.setValidators(batch.blocks)
             }

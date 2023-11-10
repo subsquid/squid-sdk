@@ -27,6 +27,7 @@ export interface Block {
     _traceReplays?: TraceTransactionReplay[]
     _debugFrames?: DebugFrameResult[]
     _debugStateDiffs?: DebugStateDiffResult[]
+    _isInvalid?: boolean
 }
 
 
@@ -254,4 +255,11 @@ export interface DataRequest {
     stateDiffs?: boolean
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+}
+
+
+export interface NewHeadNotification {
+    number: Qty
+    hash: Bytes32
+    parentHash: Bytes32
 }

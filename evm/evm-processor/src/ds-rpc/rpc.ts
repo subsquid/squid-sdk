@@ -1,7 +1,7 @@
-import {CallOptions, RetryError, RpcClient, RpcError} from '@subsquid/rpc-client'
+import {CallOptions, RetryError, RpcClient, RpcError, SubscriptionHandle} from '@subsquid/rpc-client'
 import {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
 import {groupBy, last} from '@subsquid/util-internal'
-import {FiniteRange, SplitRequest} from '@subsquid/util-internal-processor-tools'
+import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
 import {Bytes, Bytes32, Qty} from '../interfaces/base'
@@ -10,6 +10,7 @@ import {
     DataRequest,
     DebugStateDiffResult,
     Log,
+    NewHeadNotification,
     TraceFrame,
     TraceTracers,
     TraceTransactionReplay,
@@ -63,29 +64,77 @@ export class Rpc {
         return qty2Int(height)
     }
 
-    async getSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+    async fetchBlock(blockHash: Bytes32, req?: DataRequest, finalizedHeight?: number): Promise<Block> {
+        let block = await this.getBlockByHash(blockHash, req?.transactions || false)
+        if (block == null) throw new BlockConsistencyError(blockHash)
+        if (req) {
+            await this.addRequestedData([block], req, finalizedHeight)
+        }
+        if (block._isInvalid) throw new BlockConsistencyError(block)
+        return block
+    }
+
+    async fetchSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+        let call = this.makeGetBlockBatchCall(req)
+
+        let blocks: Block[] = await this.batchCall(call, {
+            validateResult: nonNull
+        })
+
+        for (let i = 1; i < blocks.length; i++) {
+            if (blocks[i - 1].hash !== blocks[i].parentHash)
+                throw new ConsistencyError(
+                    `failed to fetch consistent chain between blocks ${req.range.from} - ${req.range.to}`
+                )
+        }
+
+        await this.addRequestedData(blocks, req.request)
+
+        for (let block of blocks) {
+            if (block._isInvalid) throw new BlockConsistencyError(block)
+        }
+        return blocks
+    }
+
+    async fetchHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
+        let call = this.makeGetBlockBatchCall(req)
+
+        let blocks: (Block | null)[] = await this.batchCall(call)
+        let chain: Block[] = []
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            if (block == null) break
+            if (i > 0 && chain[i - 1].hash !== block.parentHash) break
+            chain.push(block)
+        }
+
+        await this.addRequestedData(chain, req.request, req.finalizedHeight)
+
+        for (let i = 0; i < chain.length; i++) {
+            if (chain[i]._isInvalid) {
+                chain.length = i
+                break
+            }
+        }
+
+        return chain
+    }
+
+    private makeGetBlockBatchCall(req: SplitRequest<DataRequest>) {
         let call = []
         for (let i = req.range.from; i <= req.range.to; i++) {
             call.push({
                 method: 'eth_getBlockByNumber',
-                params: [toQty(i), req.request.transactions]
+                params: [toQty(i), req.request.transactions || false]
             })
         }
-        let blocks: Block[] = await this.batchCall(call, {
-            validateResult: nonNull
-        })
-        for (let i = 1; i < blocks.length; i++) {
-            assert.strictEqual(
-                blocks[i - 1].hash,
-                blocks[i].parentHash,
-                'perhaps finality confirmation was not large enough'
-            )
-        }
-        await this.addRequestedData(blocks, req.request)
-        return blocks
+        return call
     }
 
-    async addRequestedData(blocks: Block[], req: DataRequest, finalizedHeight?: number): Promise<void> {
+    private async addRequestedData(blocks: Block[], req: DataRequest, finalizedHeight?: number): Promise<void> {
+        if (blocks.length == 0) return
+
         let subtasks = []
 
         if (req.logs && !req.receipts) {
@@ -103,7 +152,7 @@ export class Rpc {
         await Promise.all(subtasks)
     }
 
-    async addLogs(blocks: Block[]): Promise<void> {
+    private async addLogs(blocks: Block[]): Promise<void> {
         let logs = await this.getLogs(
             getBlockHeight(blocks[0]),
             getBlockHeight(last(blocks))
@@ -114,7 +163,7 @@ export class Rpc {
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
             if (logs.length == 0 && block.logsBloom !== NO_LOGS_BLOOM) {
-                throw new ConsistencyError(block)
+                block._isInvalid = true
             } else {
                 block._logs = logs
             }
@@ -139,7 +188,7 @@ export class Rpc {
         })
     }
 
-    async addReceipts(blocks: Block[]): Promise<void> {
+    private async addReceipts(blocks: Block[]): Promise<void> {
         let method = await this.props.getReceiptsMethod()
         switch(method) {
             case 'alchemy_getTransactionReceipts':
@@ -175,11 +224,16 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
-            if (block.transactions.length !== receipts.length) throw new ConsistencyError(block)
-            for (let receipt of receipts) {
-                if (receipt.blockHash !== block.hash) throw new ConsistencyError(block)
+            if (block.transactions.length === receipts.length) {
+                for (let receipt of receipts) {
+                    if (receipt.blockHash !== block.hash) {
+                        block._isInvalid = true
+                    }
+                }
+                block._receipts = receipts
+            } else {
+                block._isInvalid = true
             }
-            block._receipts = receipts
         }
     }
 
@@ -203,14 +257,15 @@ export class Rpc {
 
         for (let block of blocks) {
             let rs = receiptsByBlock.get(block.hash) || []
-            if (rs.length !== block.transactions.length) {
-                throw new ConsistencyError(block)
+            if (rs.length === block.transactions.length) {
+                block._receipts = rs
+            } else {
+                block._isInvalid = true
             }
-            block._receipts = rs
         }
     }
 
-    async addTraceTxReplays(
+    private async addTraceTxReplays(
         blocks: Block[],
         tracers: TraceTracers[],
         method: string = 'trace_replayBlockTransactions'
@@ -241,7 +296,7 @@ export class Rpc {
                 }
                 // Sometimes replays might be missing. FIXME: when?
                 if (!txs.has(rep.transactionHash)) {
-                    throw new ConsistencyError(block)
+                    block._isInvalid = true
                 }
             }
 
@@ -249,7 +304,7 @@ export class Rpc {
         }
     }
 
-    async addTraceBlockTraces(blocks: Block[]): Promise<void> {
+    private async addTraceBlockTraces(blocks: Block[]): Promise<void> {
         let call = blocks.map(block => ({
             method: 'trace_block',
             params: [block.number]
@@ -261,26 +316,33 @@ export class Rpc {
             let block = blocks[i]
             let frames = results[i]
             if (frames.length == 0) {
-                if (block.transactions.length > 0) throw new ConsistencyError(block)
+                if (block.transactions.length > 0) {
+                    block._isInvalid = true
+                }
             } else {
                 for (let frame of frames) {
-                    if (frame.blockHash !== block.hash) throw new ConsistencyError(block)
+                    if (frame.blockHash !== block.hash) {
+                        block._isInvalid = true
+                        break
+                    }
                 }
-                block._traceReplays = []
-                let byTx = groupBy(frames, f => f.transactionHash)
-                for (let [transactionHash, txFrames] of byTx.entries()) {
-                    if (transactionHash) {
-                        block._traceReplays.push({
-                            transactionHash,
-                            trace: txFrames
-                        })
+                if (!block._isInvalid) {
+                    block._traceReplays = []
+                    let byTx = groupBy(frames, f => f.transactionHash)
+                    for (let [transactionHash, txFrames] of byTx.entries()) {
+                        if (transactionHash) {
+                            block._traceReplays.push({
+                                transactionHash,
+                                trace: txFrames
+                            })
+                        }
                     }
                 }
             }
         }
     }
 
-    async addDebugFrames(blocks: Block[]): Promise<void> {
+    private async addDebugFrames(blocks: Block[]): Promise<void> {
         let traceConfig = {
             tracer: 'callTracer',
             tracerConfig: {
@@ -313,7 +375,7 @@ export class Rpc {
         }
     }
 
-    async addDebugStateDiffs(blocks: Block[]): Promise<void> {
+    private async addDebugStateDiffs(blocks: Block[]): Promise<void> {
         let traceConfig = {
             tracer: 'prestateTracer',
             tracerConfig: {
@@ -355,7 +417,7 @@ export class Rpc {
         }
     }
 
-    async addTraces(
+    private async addTraces(
         blocks: Block[],
         req: DataRequest,
         finalizedHeight: number = Number.MAX_SAFE_INTEGER
@@ -392,6 +454,24 @@ export class Rpc {
 
         await Promise.all(tasks)
     }
+
+    subscribeNewHeads(sub: NewHeadsSubscription): SubscriptionHandle {
+        return this.client.subscribe({
+            method: 'eth_subscribe',
+            params: ['newHeads'],
+            notification: 'eth_subscription',
+            unsubscribe: 'eth_unsubscribe',
+            onMessage: sub.onNewHead,
+            onError: sub.onError,
+            resubscribeOnConnectionLoss: true
+        })
+    }
+}
+
+
+export interface NewHeadsSubscription {
+    onNewHead: (head: NewHeadNotification) => void
+    onError: (err: Error) => void
 }
 
 
@@ -438,7 +518,10 @@ class RpcProps {
 }
 
 
-export class ConsistencyError extends Error {
+export class ConsistencyError extends Error {}
+
+
+export class BlockConsistencyError extends ConsistencyError {
     constructor(block: Block | {height: number, hash?: string, number?: undefined} | number | string) {
         let name = typeof block == 'object' ? getBlockName(block) : block
         super(`Seems like the chain node navigated to another branch while we were fetching block ${name} or lost it`)
