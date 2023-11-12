@@ -13,6 +13,7 @@ import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layou
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {MetadataWriter} from './metadata'
 import {PrometheusServer} from './prometheus'
 
@@ -79,8 +80,7 @@ export class Dumper {
     src(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.rpc(),
-            pollInterval: 10_000,
-            strides: Math.max(2, this.getEndpointCapacity() - 2)
+            headPollInterval: 10_000
         })
     }
 
@@ -185,8 +185,10 @@ export class Dumper {
                         implVersion: v.implVersion,
                         blockHeight: block.height,
                         blockHash: getShortHash(block.hash)
-                    }, () => {
-                        return this.src().rpc.getMetadata(block.hash)
+                    }, async () => {
+                        let metadata = await this.src().rpc.getMetadata(block.hash)
+                        assert(metadata, 'finalized blocks are supposed to be always available')
+                        return metadata
                     })
                     prevRuntimeVersion = v
                 }

@@ -4,7 +4,7 @@ import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/uti
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
@@ -34,10 +34,12 @@ export interface CallOptions<R=any> {
      * Otherwise, `client.call(...).then(validateResult)` is a better option.
      */
     validateResult?: ResultValidator<R>
+    validateError?: ErrorValidator<R>
 }
 
 
 type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
+type ErrorValidator<R=any> = (info: RpcErrorInfo, req: RpcRequest) => R
 
 
 interface Req {
@@ -48,6 +50,7 @@ interface Req {
     resolve(result: any): void
     reject(error: Error): void
     validateResult?: ResultValidator | undefined
+    validateError?: ErrorValidator | undefined
 }
 
 
@@ -203,7 +206,8 @@ export class RpcClient {
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
                 reject,
-                validateResult: options?.validateResult
+                validateResult: options?.validateResult,
+                validateError: options?.validateError
             })
         })
     }
@@ -247,7 +251,8 @@ export class RpcClient {
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
                 reject,
-                validateResult: options?.validateResult
+                validateResult: options?.validateResult,
+                validateError: options?.validateError
             })
         })
     }
@@ -307,7 +312,7 @@ export class RpcClient {
             promise = this.con.batchCall(call, req.timeout).then(res => {
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
-                    result[i] = this.receiveResult(call[i], res[i], req.validateResult)
+                    result[i] = this.receiveResult(call[i], res[i], req.validateResult, req.validateError)
                 }
                 return result
             })
@@ -315,7 +320,7 @@ export class RpcClient {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
             promise = this.con.call(call, req.timeout).then(res => {
-                return this.receiveResult(call, res, req.validateResult)
+                return this.receiveResult(call, res, req.validateResult, req.validateError)
             })
         }
         promise.then(result => {
@@ -378,7 +383,12 @@ export class RpcClient {
         return this.retrySchedule[idx]
     }
 
-    private receiveResult(call: RpcRequest, res: RpcResponse, validateResult: ResultValidator | undefined): any {
+    private receiveResult(
+        call: RpcRequest,
+        res: RpcResponse,
+        validateResult: ResultValidator | undefined,
+        validateError: ErrorValidator | undefined
+    ): any {
         if (this.log?.isDebug()) {
             this.log.debug({
                 rpcId: call.id,
@@ -389,7 +399,11 @@ export class RpcClient {
         }
         try {
             if (res.error) {
-                throw new RpcError(res.error)
+                if (validateError) {
+                    return validateError(res.error, call)
+                } else {
+                    throw new RpcError(res.error)
+                }
             } else if (validateResult) {
                 return validateResult(res.result, call)
             } else {

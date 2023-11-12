@@ -2,7 +2,12 @@ import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Block, DataRequest, Parser, RpcDataSource} from '@subsquid/substrate-data'
 import * as raw from '@subsquid/substrate-data-raw'
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypesBundle,
+    readOldTypesBundle
+} from '@subsquid/substrate-runtime/lib/metadata'
 import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
 import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {createFs} from '@subsquid/util-internal-fs'
@@ -92,7 +97,7 @@ export class Ingest {
 
         const process = async (rawBlocks: raw.BlockData[]) => {
             if (rawBlocks.length == 0) return
-            let blocks = await parser.parse(rawBlocks)
+            let blocks = await parser.parseFinalized(rawBlocks)
             await cb(blocks)
         }
 

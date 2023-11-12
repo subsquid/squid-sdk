@@ -1,10 +1,10 @@
 import type {RpcClient} from '@subsquid/rpc-client'
 import * as base from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime'
-import {annotateSyncError, AsyncQueue, ensureError} from '@subsquid/util-internal'
+import {annotateSyncError} from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
-import {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {filterBlockBatch} from './filter'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
@@ -23,12 +23,12 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
     constructor(options: RpcDataSourceOptions) {
         this.ds = new base.RpcDataSource({
             rpc: options.rpc,
-            pollInterval: options.pollInterval,
+            headPollInterval: options.pollInterval,
             typesBundle: options.typesBundle
         })
     }
 
-    getBlockHash(height: number): Promise<string> {
+    getBlockHash(height: number): Promise<string | null> {
         return this.ds.getBlockHash(height)
     }
 
@@ -41,7 +41,7 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
         stopOnHead?: boolean
     ): AsyncIterable<Batch<Block>> {
         for await (let batch of this.ds.getFinalizedBlocks(
-            requests.map(toBaseRangeRequest),
+            mapRangeRequestList(requests, toBaseDataRequest),
             stopOnHead
         )) {
             let blocks = batch.blocks.map(b => this.mapBlock(b))
@@ -57,29 +57,7 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
         requests: RangeRequestList<DataRequest>,
         state: HotDatabaseState
     ): AsyncIterable<HotUpdate<Block>> {
-        let queue = new AsyncQueue<HotUpdate<base.Block> | Error>(2)
-
-        this.ds.processHotBlocks(
-            requests.map(toBaseRangeRequest),
-            state,
-            upd => queue.put(upd)
-        ).then(
-            () => queue.close(),
-            err => queue.tryPut(ensureError(err))
-        )
-
-        for await (let upd of queue.iterate()) {
-            if (upd instanceof Error) {
-                throw upd
-            } else {
-                let blocks = upd.blocks.map(b => this.mapBlock(b))
-                filterBlockBatch(requests, blocks)
-                yield {
-                    ...upd,
-                    blocks
-                }
-            }
-        }
+        throw new Error('not implemented')
     }
 
     @annotateSyncError((src: base.Block) => ({blockHeight: src.header.height, blockHash: src.header.hash}))
@@ -170,14 +148,6 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
 
         setUpItems(block)
         return block
-    }
-}
-
-
-function toBaseRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<base.DataRequest> {
-    return {
-        range: req.range,
-        request: toBaseDataRequest(req.request)
     }
 }
 

@@ -16,7 +16,7 @@ export interface RpcIngestOptions<R, B> {
     strideSize: number
     concurrency: number
     stopOnHead?: boolean
-    pollInterval?: number
+    heightPollInterval?: number
 }
 
 
@@ -27,13 +27,13 @@ export function rpcIngest<R, B>(args: RpcIngestOptions<R, B>): AsyncIterable<Bat
         strideSize,
         concurrency,
         stopOnHead,
-        pollInterval = 30_000
+        heightPollInterval = 10_000
     } = args
 
     assert(strideSize >= 1)
     assert(concurrency >= 1)
 
-    let height = new Throttler(() => api.getFinalizedHeight(), pollInterval)
+    let height = new Throttler(() => api.getFinalizedHeight(), heightPollInterval)
 
     async function *strides(): AsyncIterable<{split: SplitRequest<R>, isHead: boolean}> {
         let top = await height.get()

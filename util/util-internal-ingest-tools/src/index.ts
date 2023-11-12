@@ -1,4 +1,7 @@
 export * from './archive'
+export * from './consistency-error'
 export * from './hot'
 export * from './interfaces'
+export * from './invalid'
 export * from './rpc'
+export * from './ref'

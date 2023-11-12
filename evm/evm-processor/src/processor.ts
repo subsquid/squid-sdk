@@ -356,7 +356,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * @param database - database is responsible for providing storage to data handlers
      * and persisting mapping progress and status.
      *
-     * @param handler - The data handler, see {@link BatchContext} for an API available to the handler.
+     * @param handler - The data handler, see {@link DataHandlerContext} for an API available to the handler.
      */
     run<Store>(database: Database<Store>, handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>): void {
         this.assertNotRunning()

@@ -1,12 +1,13 @@
 import {Logger, LogLevel} from '@subsquid/logger'
 import {RpcClient, RpcError} from '@subsquid/rpc-client'
-import {assertNotNull, AsyncQueue, ensureError, last, maybeLast, wait} from '@subsquid/util-internal'
+import {AsyncQueue, ensureError, last, maybeLast, Throttler, wait} from '@subsquid/util-internal'
 import {BlockHeader as Head, HashAndHeight, HotProcessor, rpcIngest} from '@subsquid/util-internal-ingest-tools'
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
 import {
     getRequestAt,
     RangeRequest,
-    RangeRequestList, splitRange,
+    RangeRequestList,
+    splitRange,
     splitRangeByRequest,
     SplitRequest
 } from '@subsquid/util-internal-range'
@@ -17,7 +18,6 @@ import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {mapBlock, MappingRequest, toMappingRequest} from './mapping'
 import {BlockConsistencyError, ConsistencyError, Rpc} from './rpc'
-import * as rpc from './rpc-data'
 import {qty2Int} from './util'
 
 
@@ -73,7 +73,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             strideSize: 10,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
             stopOnHead,
-            pollInterval: this.pollInterval
+            heightPollInterval: this.pollInterval
         })
     }
 
@@ -133,7 +133,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         })
 
-        this.subIngest(head => {
+        this.ingest(head => {
             return proc.goto({
                 best: head,
                 finalized: {
@@ -155,6 +155,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                 yield upd
             }
             if (upd.finalizedHead.height >= lastBlock) return
+        }
+    }
+
+    private ingest(cb: (head: {height: number, hash?: Bytes32}) => Promise<void>): Promise<void> {
+        if (this.rpc.client.supportsNotifications()) {
+            return this.subIngest(cb)
+        } else {
+            return this.pollIngest(cb)
         }
     }
 
@@ -193,6 +201,33 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         } finally {
             heads.close()
+        }
+    }
+
+    private async pollIngest(cb: (head: {height: number}) => Promise<void>): Promise<void> {
+        let prev = -1
+        let height = new Throttler(() => this.rpc.getHeight(), this.pollInterval)
+        while (true) {
+            let next = await height.call()
+            if (next > prev) {
+                prev = next
+                for (let i = 0; i < 100; i++) {
+                    try {
+                        await cb({height: next})
+                        break
+                    } catch(err: any) {
+                        if (this.isConsistencyError(err)) {
+                            this.log?.write(
+                                i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
+                                err.message
+                            )
+                            await wait(100)
+                        } else {
+                            throw err
+                        }
+                    }
+                }
+            }
         }
     }
 

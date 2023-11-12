@@ -3,7 +3,7 @@ import {Rpc, RuntimeTracker, WithRuntime} from '@subsquid/substrate-data'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateSyncError, assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
+import {archiveIngest, assertIsValid, IsInvalid} from '@subsquid/util-internal-ingest-tools'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
@@ -39,16 +39,16 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
         return this.client.getHeight()
     }
 
-    getBlockHash(height: number): Promise<string> {
+    getBlockHash(height: number): Promise<string | null> {
         return this.rpc.getBlockHash(height)
     }
 
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
 
         let runtimeTracker = new RuntimeTracker<ArchiveBlockHeader & WithRuntime>(
+            this.rpc,
             hdr => ({height: hdr.number, hash: hdr.hash, parentHash: hdr.parentHash}),
             hdr => hdr,
-            this.rpc,
             this.typesBundle
         )
 
@@ -67,7 +67,10 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
             requests: archiveRequests,
             stopOnHead
         })) {
-            await runtimeTracker.setRuntime(blocks.map(b => b.header))
+            let headers: (ArchiveBlockHeader & IsInvalid)[] = blocks.map(b => b.header)
+            await runtimeTracker.setRuntime(headers)
+            assertIsValid(headers)
+
             yield {
                 blocks: blocks.map(b => this.mapBlock(b)),
                 isHead

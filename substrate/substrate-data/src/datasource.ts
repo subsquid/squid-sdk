@@ -1,15 +1,17 @@
 import type {RpcClient} from '@subsquid/rpc-client'
 import * as raw from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
-import {Batch, HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
-import {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {assertNotNull} from '@subsquid/util-internal'
+import {assertIsValid, Batch} from '@subsquid/util-internal-ingest-tools'
+import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {Block, DataRequest} from './interfaces/data'
+import {RawBlock} from './interfaces/data-raw'
 import {Parser} from './parser'
 
 
 export interface RpcDataSourceOptions {
     rpc: RpcClient
-    pollInterval?: number
+    headPollInterval?: number
     typesBundle?: OldTypesBundle | OldSpecsBundle
 }
 
@@ -21,7 +23,7 @@ export class RpcDataSource {
     constructor(options: RpcDataSourceOptions) {
         this.rds = new raw.RpcDataSource({
             rpc: options.rpc,
-            pollInterval: options.pollInterval
+            headPollInterval: options.headPollInterval
         })
         this.typesBundle = options.typesBundle
     }
@@ -34,7 +36,7 @@ export class RpcDataSource {
         return this.rds.getFinalizedHeight()
     }
 
-    getBlockHash(height: number): Promise<string> {
+    getBlockHash(height: number): Promise<string | null> {
         return this.rpc.getBlockHash(height)
     }
 
@@ -45,42 +47,15 @@ export class RpcDataSource {
         let parser = new Parser(this.rpc, requests, this.typesBundle)
 
         for await (let batch of this.rds.getFinalizedBlocks(
-            requests.map(toRawRangeRequest),
+            mapRangeRequestList(requests, toRawRequest),
             stopOnHead
         )) {
-            let blocks = await parser.parse(batch.blocks)
+            let blocks = await parser.parseFinalized(batch.blocks)
             yield {
                 ...batch,
                 blocks
             }
         }
-    }
-
-    processHotBlocks(
-        requests: RangeRequest<DataRequest>[],
-        state: HotState,
-        cb: (upd: HotUpdate<Block>) => Promise<void>
-    ): Promise<void> {
-        let parser = new Parser(this.rpc, requests, this.typesBundle)
-        return this.rds.processHotBlocks(
-            requests.map(toRawRangeRequest),
-            state,
-            async upd => {
-                let blocks = await parser.parse(upd.blocks)
-                await cb({
-                    ...upd,
-                    blocks
-                })
-            }
-        )
-    }
-}
-
-
-function toRawRangeRequest(req: RangeRequest<DataRequest>): RangeRequest<raw.DataRequest> {
-    return {
-        range: req.range,
-        request: toRawRequest(req.request)
     }
 }
 

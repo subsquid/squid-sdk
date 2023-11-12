@@ -1,15 +1,7 @@
 import {last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BlockHeader, Hash, HashAndHeight, HotState, HotUpdate} from './interfaces'
-
-
-export type BlockRef = HashAndHeight | {
-    height: number
-    hash?: undefined
-} | {
-    height?: undefined
-    hash: string
-}
+import {BlockRef} from './ref'
 
 
 export interface ChainHeads {
