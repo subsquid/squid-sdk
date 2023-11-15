@@ -833,6 +833,11 @@
       "packageName": "astar-erc20",
       "projectFolder": "test/astar-erc20",
       "shouldPublish": false
+    },
+    {
+      "packageName": "tron-usdt",
+      "projectFolder": "test/tron-usdt",
+      "shouldPublish": false
     }
   ]
 }

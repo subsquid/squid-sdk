@@ -23,7 +23,9 @@ export interface FieldSelection {
 
 
 export const DEFAULT_FIELDS = {
-    block: {},
+    block: {
+        timestamp: true
+    },
     log: {
         address: true,
         topics: true,

@@ -137,6 +137,9 @@ dependencies:
   '@rush-temp/tron-processor':
     specifier: file:./projects/tron-processor.tgz
     version: file:projects/tron-processor.tgz
+  '@rush-temp/tron-usdt':
+    specifier: file:./projects/tron-usdt.tgz
+    version: file:projects/tron-usdt.tgz(supports-color@8.1.1)
   '@rush-temp/typeorm-codegen':
     specifier: file:./projects/typeorm-codegen.tgz
     version: file:projects/typeorm-codegen.tgz
@@ -5507,12 +5510,46 @@ packages:
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-WrJu5JEJHKrqTUdpK2VeUGjbCRo81M3cAs5XYYQ/+XMuT5LFyfhPh8/EngZF+i/eTcfn4o94KZG9Ts4+kXaOcw==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-CV+/EIX4911RY8jvCr+rxNl+q51bErY9vV32loMzqQIZUk/DVKEIa0lPWQUPgp/L8UMiysG2dJaLTGdYTPB26g==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:
       '@types/node': 18.18.0
       typescript: 5.2.2
+    dev: false
+
+  file:projects/tron-usdt.tgz(supports-color@8.1.1):
+    resolution: {integrity: sha512-579Y8tRCKsM/Ur3x/jREguOB8pSIMx/rTpaFrTZ2MuNTzueye99xMXDjVM/LwzPh19u+TK1ouOo8JKWVnaKweQ==, tarball: file:projects/tron-usdt.tgz}
+    id: file:projects/tron-usdt.tgz
+    name: '@rush-temp/tron-usdt'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.0
+      dotenv: 16.3.1
+      ethers: 6.7.1
+      pg: 8.11.3
+      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)
+      typescript: 5.2.2
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - bufferutil
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+      - utf-8-validate
     dev: false
 
   file:projects/typeorm-codegen.tgz:

@@ -2,6 +2,7 @@ export interface BlockHeader_ {
     height: number
     hash: string
     parentHash: string
+    timestamp: number
 }
 
 
@@ -17,6 +18,7 @@ export interface Log_ {
 
 export interface Transaction_ {
     hash: string
+    timestamp: number
 }
 
 

@@ -97,7 +97,7 @@ export class Dumper {
             this.generateStrides(range),
             async s => {
                 let [block, transactionsInfo] = await Promise.all([
-                    this.api().getBlock(s.from),
+                    this.api().getBlock(s.from, true),
                     this.api().getTransactionInfo(s.from)
                 ]);
 

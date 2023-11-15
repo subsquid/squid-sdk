@@ -85,6 +85,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private src?: DataSource
+    private finalityConfirmation?: number
     private chainPollInterval?: number
     private prometheus = new PrometheusServer()
     private running = false
@@ -180,6 +181,12 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         this.src = src
+        return this
+    }
+
+    setFinalityConfirmation(nBlocks: number): this {
+        this.assertNotRunning()
+        this.finalityConfirmation = nBlocks
         return this
     }
 
