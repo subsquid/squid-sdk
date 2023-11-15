@@ -1,4 +1,4 @@
-import {assertNotNull} from '@subsquid/util-internal'
+import {assertNotNull, partitionBy} from '@subsquid/util-internal'
 import assert from 'assert'
 import {FiniteRange, Range, RangeRequest} from './interfaces'
 import {applyRangeBound} from './util'
@@ -30,22 +30,11 @@ export function *splitBlocksByRequest<R, B>(
     blocks: B[]
     request?: R
 }> {
-    let pack: B[] = []
-    let packRequest: R | undefined = undefined
-    for (let b of blocks) {
-        let req = getRequestAt(requests, getBlockHeight(b))
-        if (req === packRequest) {
-            pack.push(b)
-        } else {
-            if (pack.length) {
-                yield {blocks: pack, request: packRequest}
-            }
-            pack = [b]
-            packRequest = req
+    for (let pack of partitionBy(blocks, b => getRequestAt(requests, getBlockHeight(b)))) {
+        yield {
+            blocks: pack.items,
+            request: pack.value
         }
-    }
-    if (pack.length) {
-        yield {blocks: pack, request: packRequest}
     }
 }
 
@@ -60,8 +49,9 @@ export function* splitRangeByRequest<R>(requests: RangeRequest<R>[], range: Fini
         if (i > 0) {
             let from = assertNotNull(requests[i-1].range.to) + 1
             let to = req.range.from - 1
-            assert(from <= to)
-            yield {range: {from, to}}
+            if (from <= to) {
+                yield {range: {from, to}}
+            }
         }
         yield req
     }

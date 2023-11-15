@@ -190,35 +190,39 @@ export class Runner<R, S> {
         let db = this.config.database
         let ds = assertNotNull(this.config.hotDataSource)
         let lastHead = maybeLast(state.top) || state
+        return ds.processHotBlocks(
+            this.getLeftRequests(state),
+            state,
+            async upd => {
+                let newHead = maybeLast(upd.blocks)?.header || upd.baseHead
+                if (upd.baseHead.hash !== lastHead.hash) {
+                    this.log.info(`navigating a fork between ${formatHead(lastHead)} to ${formatHead(newHead)} with a common base ${formatHead(upd.baseHead)}`)
+                }
 
-        for await (let upd of ds.getHotBlocks(this.getLeftRequests(state), state)) {
-            let newHead = maybeLast(upd.blocks)?.header || upd.baseHead
-            if (upd.baseHead.hash !== lastHead.hash) {
-                this.log.info(`navigating a fork between ${formatHead(lastHead)} to ${formatHead(newHead)} with a common base ${formatHead(upd.baseHead)}`)
-            }
+                this.log.debug({hotUpdate: upd})
 
-            this.log.debug({hotUpdate: upd})
+                await this.withProgressMetrics(upd.blocks, () => {
+                    return db.transactHot({
+                        finalizedHead: upd.finalizedHead,
+                        baseHead: upd.baseHead,
+                        newBlocks: upd.blocks.map(b => b.header)
+                    }, (store, ref) => {
+                        let idx = ref.height - upd.baseHead.height - 1
+                        let block = upd.blocks[idx]
 
-            await this.withProgressMetrics(upd.blocks, () => {
-                return db.transactHot({
-                    finalizedHead: upd.finalizedHead,
-                    baseHead: upd.baseHead,
-                    newBlocks: upd.blocks.map(b => b.header)
-                }, (store, ref) => {
-                    let idx = ref.height - upd.baseHead.height - 1
-                    let block = upd.blocks[idx]
+                        assert.strictEqual(block.header.hash, ref.hash)
+                        assert.strictEqual(block.header.height, ref.height)
 
-                    assert.strictEqual(block.header.hash, ref.hash)
-                    assert.strictEqual(block.header.height, ref.height)
-
-                    return this.config.process(store, {
-                        blocks: [block],
-                        isHead: newHead.height === ref.height
+                        return this.config.process(store, {
+                            blocks: [block],
+                            isHead: newHead.height === ref.height
+                        })
                     })
                 })
-            })
-            lastHead = newHead
-        }
+
+                lastHead = newHead
+            }
+        )
     }
 
     private async withProgressMetrics<R>(blocks: Block[], handler: () => R): Promise<R> {

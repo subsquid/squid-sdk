@@ -1,16 +1,8 @@
-import {
-    Hash,
-    HashAndHeight,
-    Prev,
-    PrevItem,
-    Rpc,
-    runtimeVersionEquals,
-    RuntimeVersionId
-} from '@subsquid/substrate-data-raw'
+import {Hash, Prev, PrevItem, Rpc, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {Runtime} from '@subsquid/substrate-runtime'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateAsyncError} from '@subsquid/util-internal'
-import {setInvalid} from '@subsquid/util-internal-ingest-tools'
+import {HashAndHeight, setInvalid} from '@subsquid/util-internal-ingest-tools'
 
 
 interface Header extends HashAndHeight {

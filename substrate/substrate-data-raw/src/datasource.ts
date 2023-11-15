@@ -1,9 +1,30 @@
+import {Logger, LogLevel} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertIsValid, rpcIngest} from '@subsquid/util-internal-ingest-tools'
-import {assertRangeList, getRequestAt, RangeRequestList, SplitRequest} from '@subsquid/util-internal-range'
+import {AsyncQueue, ensureError, maybeLast, partitionBy, Throttler, wait} from '@subsquid/util-internal'
+import {
+    assertIsValid,
+    Batch,
+    BlockConsistencyError,
+    BlockRef,
+    ChainHeads,
+    DataConsistencyError,
+    HashAndHeight,
+    HotProcessor,
+    HotState,
+    HotUpdate, isDataConsistencyError,
+    rpcIngest
+} from '@subsquid/util-internal-ingest-tools'
+import {
+    assertRangeList,
+    getRequestAt,
+    RangeRequestList,
+    splitRange,
+    splitRangeByRequest
+} from '@subsquid/util-internal-range'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
 import assert from 'assert'
 import {Fetch1} from './fetch1'
-import {BlockBatch, BlockData, DataRequest, DataRequest1} from './interfaces'
+import {BlockData, BlockHeader, DataRequest} from './interfaces'
 import {Rpc} from './rpc'
 import {RuntimeVersionTracker} from './runtimeVersionTracker'
 import {qty2Int} from './util'
@@ -12,16 +33,22 @@ import {qty2Int} from './util'
 export interface RpcDataSourceOptions {
     rpc: RpcClient
     headPollInterval?: number
+    newHeadTimeout?: number
+    log?: Logger
 }
 
 
 export class RpcDataSource {
     public readonly rpc: Rpc
     private headPollInterval: number
+    private newHeadTimeout: number
+    private log?: Logger
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.headPollInterval = options.headPollInterval ?? 5000
+        this.newHeadTimeout = options.newHeadTimeout ?? 0
+        this.log = options.log
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -31,18 +58,19 @@ export class RpcDataSource {
         return qty2Int(header.number)
     }
 
-    getSplit(req: SplitRequest<DataRequest1>): Promise<BlockData[]> {
-        let fetch = new Fetch1(this.rpc.withPriority(req.range.from))
-        return fetch.getSplit(req.range.from, req.range.to, req.request)
-    }
-
-    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<BlockBatch> {
+    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<BlockData>> {
         assertRangeList(requests.map(req => req.range))
 
         let runtimeVersionTracker = new RuntimeVersionTracker()
 
         let stream = rpcIngest({
-            api: this,
+            api: {
+                getFinalizedHeight: () => this.getFinalizedHeight(),
+                getSplit: req => {
+                    let fetch = new Fetch1(this.rpc.withPriority(req.range.from))
+                    return fetch.getColdSplit(req.range.from, req.range.to, req.request)
+                }
+            },
             requests,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
             strideSize: 10,
@@ -57,6 +85,186 @@ export class RpcDataSource {
                 assertIsValid(batch.blocks)
             }
             yield batch
+        }
+    }
+
+    async processHotBlocks(
+        requests: RangeRequestList<DataRequest>,
+        state: HotState,
+        cb: (upd: HotUpdate<BlockData>) => Promise<void>
+    ): Promise<void> {
+        let runtimeVersionTracker = new RuntimeVersionTracker()
+        let rpc = this.rpc
+        let fetch = new Fetch1(rpc)
+
+        let proc = new HotProcessor<BlockData>(state, {
+            process: async upd => {
+                for (let pack of partitionBy(upd.blocks, b => !!getRequestAt(requests, b.height)?.runtimeVersion)) {
+                    if (pack.value) {
+                        await runtimeVersionTracker.addRuntimeVersion(rpc, pack.items)
+                    }
+                }
+                assertIsValid(upd.blocks)
+                await cb(upd)
+            },
+            async getBlock(ref: HashAndHeight): Promise<BlockData> {
+                let blocks = await fetch.getColdSplit(ref.height, ref, {
+                    ...getRequestAt(requests, ref.height),
+                    runtimeVersion: false
+                })
+                return blocks[0]
+            },
+            async *getBlockRange(from: number, to: BlockRef): AsyncIterable<BlockData[]> {
+                let top: number
+                let headBlock: BlockData | undefined
+                if (to.height == null) {
+                    headBlock = await fetch.getBlock0(to.hash, getRequestAt(requests, from) || {})
+                    if (headBlock == null) throw new BlockConsistencyError(to)
+                    top = headBlock.height
+                } else {
+                    top = to.height
+                }
+                if (from > top) {
+                    from = top
+                }
+                for (let split of splitRangeByRequest(requests, {from, to: top})) {
+                    for (let range of splitRange(10, split.range)) {
+                        let blocks = await fetch.getHotSplit(
+                            from,
+                            range.to === headBlock?.height ? headBlock : range.to,
+                            split.request || {}
+                        )
+                        let lastBlock = maybeLast(blocks)?.height ?? range.from - 1
+                        yield blocks
+                        if (lastBlock < range.to) {
+                            throw new BlockConsistencyError({height: lastBlock + 1})
+                        }
+                    }
+                }
+            },
+            getHeader(block: BlockData) {
+                return {
+                    height: block.height,
+                    hash: block.hash,
+                    parentHash: block.block.block.header.parentHash
+                }
+            }
+        })
+
+        function isEnd(): boolean {
+            return proc.getFinalizedHeight() >= (maybeLast(requests)?.range.to ?? Infinity)
+        }
+
+        if (this.rpc.client.supportsNotifications()) {
+            await this.subscription(heads => proc.goto(heads), isEnd)
+        } else {
+            await this.polling(heads => proc.goto(heads), isEnd)
+        }
+    }
+
+    private async polling(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let headSrc = new Throttler(() => this.rpc.getHead(), this.headPollInterval)
+        let prev = ''
+        while (!isEnd()) {
+            let head = await headSrc.call()
+            if (head === prev) continue
+            let finalizedHead = await this.rpc.getFinalizedHead()
+            await this.handleNewHeads({
+                best: {hash: head},
+                finalized: {hash: finalizedHead}
+            }, cb)
+        }
+    }
+
+    private async subscription(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let queue = new AsyncQueue<ChainHeads | Error>(1)
+        let finalizedHeight = 0
+        let prevHeight = 0
+
+        let finalizedHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
+            method: 'chain_subscribeFinalizedHeads',
+            unsubscribe: 'chain_unsubscribeFinalizedHeads',
+            notification: 'chain_finalizedHead',
+            onMessage(head: BlockHeader) {
+                try {
+                    let height = qty2Int(head.number)
+                    finalizedHeight = Math.max(finalizedHeight, height)
+                } catch(err: any) {
+                    close(err)
+                }
+            },
+            onError(err: Error) {
+                close(ensureError(err))
+            },
+            resubscribeOnConnectionLoss: true
+        })
+
+        let newHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
+            method: 'chain_subscribeNewHeads',
+            unsubscribe: 'chain_unsubscribeNewHeads',
+            notification: 'chain_newHead',
+            onMessage(head: BlockHeader) {
+                try {
+                    let height = qty2Int(head.number)
+                    if (height >= prevHeight) {
+                        prevHeight = height
+                        queue.forcePut({
+                            best: {height},
+                            finalized: {height: finalizedHeight}
+                        })
+                    }
+                } catch(err: any) {
+                    close(err)
+                }
+            },
+            onError(err: Error) {
+                close(ensureError(err))
+            },
+            resubscribeOnConnectionLoss: true
+        })
+
+        function close(err?: Error) {
+            newHeadsHandle.close()
+            finalizedHeadsHandle.close()
+            if (err) {
+                queue.forcePut(err)
+            }
+            queue.close()
+        }
+
+        try {
+            while (!isEnd()) {
+                let heads = await addTimeout(queue.take(), this.newHeadTimeout).catch(ensureError)
+                if (heads instanceof TimeoutError) {
+                    this.log?.warn(`resetting RPC connection, because we haven't seen a new head for ${this.newHeadTimeout} ms`)
+                    this.rpc.client.reset()
+                } else if (heads instanceof Error) {
+                    throw heads
+                } else {
+                    assert(heads)
+                    await this.handleNewHeads(heads, cb)
+                }
+            }
+        } finally {
+            close()
+        }
+    }
+
+    private async handleNewHeads(heads: ChainHeads, cb: (heads: ChainHeads) => Promise<void>): Promise<void> {
+        for (let i = 0; i < 3; i++) {
+            try {
+                return await cb(heads)
+            } catch(err: any) {
+                if (isDataConsistencyError(err)) {
+                    this.log?.write(
+                        i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
+                        err.message
+                    )
+                    await wait(100)
+                } else {
+                    throw err
+                }
+            }
         }
     }
 }

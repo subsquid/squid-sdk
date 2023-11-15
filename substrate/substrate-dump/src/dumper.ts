@@ -1,7 +1,6 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {
-    BlockBatch,
     BlockData,
     DataRequest,
     RpcDataSource,
@@ -89,7 +88,7 @@ export class Dumper {
         return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
     }
 
-    ingest(range: Range): AsyncIterable<BlockBatch> {
+    ingest(range: Range): AsyncIterable<{blocks: BlockData[], isHead: boolean}> {
         let request: DataRequest = {
             runtimeVersion: true,
             extrinsics: true,

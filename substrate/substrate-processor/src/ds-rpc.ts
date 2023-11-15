@@ -13,34 +13,31 @@ import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 export interface RpcDataSourceOptions {
     rpc: RpcClient
     pollInterval?: number
+    newHeadTimeout?: number
     typesBundle?: OldTypesBundle | OldSpecsBundle
 }
 
 
 export class RpcDataSource implements HotDataSource<Block, DataRequest> {
-    private ds: base.RpcDataSource
+    private baseDataSource: base.RpcDataSource
 
     constructor(options: RpcDataSourceOptions) {
-        this.ds = new base.RpcDataSource({
-            rpc: options.rpc,
-            headPollInterval: options.pollInterval,
-            typesBundle: options.typesBundle
-        })
+        this.baseDataSource = new base.RpcDataSource(options)
     }
 
     getBlockHash(height: number): Promise<string | null> {
-        return this.ds.getBlockHash(height)
+        return this.baseDataSource.getBlockHash(height)
     }
 
     getFinalizedHeight(): Promise<number> {
-        return this.ds.getFinalizedHeight()
+        return this.baseDataSource.getFinalizedHeight()
     }
 
     async *getFinalizedBlocks(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
     ): AsyncIterable<Batch<Block>> {
-        for await (let batch of this.ds.getFinalizedBlocks(
+        for await (let batch of this.baseDataSource.getFinalizedBlocks(
             mapRangeRequestList(requests, toBaseDataRequest),
             stopOnHead
         )) {
@@ -53,11 +50,20 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
         }
     }
 
-    async *getHotBlocks(
+    async processHotBlocks(
         requests: RangeRequestList<DataRequest>,
-        state: HotDatabaseState
-    ): AsyncIterable<HotUpdate<Block>> {
-        throw new Error('not implemented')
+        state: HotDatabaseState,
+        cb: (upd: HotUpdate<Block>) => Promise<void>
+    ): Promise<void> {
+        return this.baseDataSource.processHotBlocks(
+            mapRangeRequestList(requests, toBaseDataRequest),
+            state,
+            upd => {
+                let blocks = upd.blocks.map(b => this.mapBlock(b))
+                filterBlockBatch(requests, blocks)
+                return cb({...upd, blocks})
+            }
+        )
     }
 
     @annotateSyncError((src: base.Block) => ({blockHeight: src.header.height, blockHash: src.header.hash}))

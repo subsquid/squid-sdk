@@ -205,3 +205,24 @@ export async function splitParallelWork<T, R>(maxSize: number, tasks: T[], run: 
     }
     return result
 }
+
+
+export function* partitionBy<T, V>(items: T[], value: (a: T) => V): Iterable<{items: T[], value: V}> {
+    if (items.length == 0) return
+    let pack: T[] = [items[0]]
+    let packValue = value(items[0])
+    for (let i = 1; i < items.length; i++) {
+        let item = items[i]
+        let itemValue = value(item)
+        if (itemValue === packValue) {
+            pack.push(item)
+        } else {
+            yield {items: pack, value: packValue}
+            pack = [item]
+            packValue = itemValue
+        }
+    }
+    if (pack.length > 0) {
+        yield {items: pack, value: packValue}
+    }
+}

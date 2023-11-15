@@ -1,14 +1,22 @@
-import {assertIsValid, BlockConsistencyError} from '@subsquid/util-internal-ingest-tools'
+import {RpcCall} from '@subsquid/rpc-client/lib/interfaces'
+import {last} from '@subsquid/util-internal'
+import {
+    assertIsValid,
+    BlockConsistencyError,
+    HashAndHeight,
+    setInvalid,
+    trimInvalid
+} from '@subsquid/util-internal-ingest-tools'
 import assert from 'assert'
-import {BlockData, DataRequest0, DataRequest1, Hash, HashAndHeight} from './interfaces'
+import {BlockData, DataRequest, DataRequest0, Hash, PartialBlockData} from './interfaces'
 import {captureMissingBlock, Rpc} from './rpc'
-import {qty2Int} from './util'
+import {qty2Int, toQty} from './util'
 
 
 export class Fetch1 {
     constructor(private rpc: Rpc) {}
 
-    async getSplit0(from: number, to: number | HashAndHeight, req: DataRequest0): Promise<BlockData[]> {
+    async getColdSplit0(from: number, to: number | HashAndHeight, req: DataRequest0): Promise<BlockData[]> {
         let top = typeof to == 'number' ? to : to.height
         assert(from <= top)
 
@@ -55,30 +63,158 @@ export class Fetch1 {
         }
     }
 
-    async getSplit(from: number, to: number | HashAndHeight, req: DataRequest1): Promise<BlockData[]> {
-        let blocks = await this.getSplit0(from, to, req)
+    async getColdSplit(from: number, to: number | HashAndHeight, req: DataRequest): Promise<BlockData[]> {
+        let blocks = await this.getColdSplit0(from, to, req)
         await this.addRequestedData(blocks, req)
         assertIsValid(blocks)
         return blocks
     }
 
-    async addRequestedData(blocks: BlockData[], req: DataRequest1): Promise<void> {
+    async getHotSplit(from: number, to: number | PartialBlockData, req: DataRequest): Promise<BlockData[]> {
+        let heads = await this.getHotHeads(from, to)
+
+        await Promise.all([
+            this.addBlock(heads, req),
+            this.addRequestedData(heads, req)
+        ])
+
+        let blocks = trimInvalid(heads) as BlockData[]
+
+        for (let i = 1; i < blocks.length; i++) {
+            if (blocks[i].block.block.header.parentHash !== blocks[i-1].hash) return blocks.slice(0, i)
+        }
+
+        return blocks
+    }
+
+    private async addBlock(blocks: PartialBlockData[], req: DataRequest): Promise<void> {
+        if (blocks.length == 0) return
+        let last = blocks.length - 1
+        let lastBlock = blocks[last]
+        if (lastBlock.block && (lastBlock.block.block.extrinsics || !req.extrinsics)) {
+            last -= 1
+        }
+
+        let call: RpcCall[] = []
+        for (let i = 0; i < last; i++) {
+            let block = blocks[i]
+            if (req.extrinsics) {
+                call.push({
+                    method: 'chain_getBlock',
+                    params: [block]
+                })
+            } else {
+                call.push({
+                    method: 'chain_getHeader',
+                    params: [block]
+                })
+            }
+        }
+
+        let batch = await this.rpc.batchCall(call)
+
+        for (let i = 0; i < batch.length; i++) {
+            let block = batch[i]
+            if (block == null) return setInvalid(blocks, i)
+            if (req.extrinsics) {
+                blocks[i].block = block
+            } else {
+                blocks[i].block = {
+                    block: {header: block}
+                }
+            }
+        }
+    }
+
+    private async getHotHeads(from: number, to: number | PartialBlockData): Promise<PartialBlockData[]> {
+        let top = typeof to == 'number' ? to: to.height
+        if (from > top) {
+            from = top
+        }
+
+        let blocks: PartialBlockData[]
+        if (typeof to == 'object') {
+            if (to.block) {
+                let missingHashHeight = to.height - 2
+                if (missingHashHeight - from >= 0) {
+                    blocks = await this.getHashes(from, missingHashHeight)
+                } else {
+                    blocks = []
+                }
+                if (from < to.height) blocks.push({
+                    height: to.height - 1,
+                    hash: to.block.block.header.parentHash
+                })
+                blocks.push(to)
+            } else {
+                let missingHashHeight = to.height - 1
+                if (missingHashHeight - from >= 0) {
+                    blocks = await this.getHashes(from, missingHashHeight)
+                } else {
+                    blocks = []
+                }
+                blocks.push(to)
+            }
+        } else {
+            blocks = await this.getHashes(from, to)
+        }
+
+        for (let i = 1; i < blocks.length; i++) {
+            if (blocks[i].height - blocks[i-1].height != 1) return blocks.slice(0, i)
+        }
+
+        return blocks
+    }
+
+    private async getHashes(from: number, to: number): Promise<HashAndHeight[]> {
+        let call: RpcCall[] = []
+        for (let height = from; height <= to; height++) {
+            call.push({
+                method: 'chain_getBlockHash',
+                params: [toQty(height)]
+            })
+        }
+        let hashes: (Hash | null)[] = await this.rpc.batchCall(call)
+        let heads: HashAndHeight[] = []
+        for (let i = 0; i < hashes.length; i++) {
+            let height = from + i
+            let hash = hashes[i]
+            if (hash == null) return heads
+            heads.push({hash, height})
+        }
+        return heads
+    }
+
+    async addRequestedData(blocks: PartialBlockData[], req: DataRequest): Promise<void> {
         if (blocks.length == 0) return
 
         let tasks: Promise<void>[] = []
 
-        if (req?.events) {
+        if (req.events) {
             tasks.push(this.addEvents(blocks))
         }
 
-        if (req?.trace != null) {
+        if (req.trace != null) {
             tasks.push(this.addTrace(blocks, req.trace))
+        }
+
+        if (req.runtimeVersion) {
+            let block = last(blocks)
+            tasks.push(
+                this.rpc.getRuntimeVersion(block.hash).then(v => {
+                    if (v == null) {
+                        block.runtimeVersion = v
+                    } else {
+                        block._isInvalid = true
+                    }
+                })
+            )
         }
 
         await Promise.all(tasks)
     }
 
-    private async addEvents(blocks: BlockData[]): Promise<void> {
+    private async addEvents(blocks: PartialBlockData[]): Promise<void> {
         let events = await this.rpc.getStorageMany(blocks.map(b => {
             return [
                 '0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7',
@@ -96,7 +232,7 @@ export class Fetch1 {
         }
     }
 
-    private async addTrace(blocks: BlockData[], targets: string): Promise<void> {
+    private async addTrace(blocks: PartialBlockData[], targets: string): Promise<void> {
         let tasks = []
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]

@@ -1,10 +1,17 @@
 import {Logger, LogLevel} from '@subsquid/logger'
 import {RpcClient, RpcError} from '@subsquid/rpc-client'
 import {AsyncQueue, ensureError, last, maybeLast, Throttler, wait} from '@subsquid/util-internal'
-import {BlockHeader as Head, HashAndHeight, HotProcessor, rpcIngest} from '@subsquid/util-internal-ingest-tools'
+import {
+    BlockHeader as Head,
+    BlockRef,
+    HashAndHeight,
+    HotProcessor, isDataConsistencyError,
+    rpcIngest
+} from '@subsquid/util-internal-ingest-tools'
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
 import {
     getRequestAt,
+    rangeEnd,
     RangeRequest,
     RangeRequestList,
     splitRange,
@@ -91,22 +98,23 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return r
     }
 
-    async *getHotBlocks(requests: RangeRequestList<DataRequest>, state: HotDatabaseState): AsyncIterable<HotUpdate<Block>> {
+    async processHotBlocks(
+        requests: RangeRequestList<DataRequest>,
+        state: HotDatabaseState,
+        cb: (upd: HotUpdate<Block>) => Promise<void>
+    ): Promise<void> {
         if (requests.length == 0) return
 
-        let lastBlock = last(requests).range.to ?? Infinity
-
-        let queue = new AsyncQueue<HotUpdate<Block> | Error>(2)
         let self = this
 
         let proc = new HotProcessor<Block>(state, {
-            process: upd => queue.put(upd),
+            process: cb,
             getBlock: async ref => {
                 let req = this.toRpcDataRequest(getRequestAt(requests, ref.height))
                 let block = await this.rpc.fetchBlock(ref.hash, req, proc.getFinalizedHeight())
                 return mapBlock(block, req.transactionList || false)
             },
-            async *getBlockRange(from: number, to: Partial<HashAndHeight>): AsyncIterable<Block[]> {
+            async *getBlockRange(from: number, to: BlockRef): AsyncIterable<Block[]> {
                 assert(to.height != null)
                 if (from > to.height) {
                     from = to.height
@@ -133,46 +141,57 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             }
         })
 
-        this.ingest(head => {
+        let isEnd = () => proc.getFinalizedHeight() >= rangeEnd(last(requests).range)
+
+        let navigate = (head: {height: number, hash?: Bytes32}): Promise<void> => {
             return proc.goto({
                 best: head,
                 finalized: {
                     height: Math.max(head.height - this.finalityConfirmation, 0)
                 }
             })
-        }).then(() => {
-            assert(false, 'unexpected end of data ingestion')
-        }).catch((err: unknown) => {
-            if (!queue.isClosed()) {
-                queue.forcePut(ensureError(err))
-            }
-        })
-
-        for await (let upd of queue.iterate()) {
-            if (upd instanceof Error) {
-                throw upd
-            } else {
-                yield upd
-            }
-            if (upd.finalizedHead.height >= lastBlock) return
         }
-    }
 
-    private ingest(cb: (head: {height: number, hash?: Bytes32}) => Promise<void>): Promise<void> {
         if (this.rpc.client.supportsNotifications()) {
-            return this.subIngest(cb)
+            return this.subscription(navigate, isEnd)
         } else {
-            return this.pollIngest(cb)
+            return this.polling(navigate, isEnd)
         }
     }
 
-    private async subIngest(cb: (head: HashAndHeight) => Promise<void>): Promise<void> {
+    private async polling(cb: (head: {height: number}) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let prev = -1
+        let height = new Throttler(() => this.rpc.getHeight(), this.pollInterval)
+        while (!isEnd()) {
+            let next = await height.call()
+            if (next <= prev) continue
+            prev = next
+            for (let i = 0; i < 100; i++) {
+                try {
+                    await cb({height: next})
+                    break
+                } catch(err: any) {
+                    if (isDataConsistencyError(err)) {
+                        this.log?.write(
+                            i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
+                            err.message
+                        )
+                        await wait(100)
+                    } else {
+                        throw err
+                    }
+                }
+            }
+        }
+    }
+
+    private async subscription(cb: (head: HashAndHeight) => Promise<void>, isEnd: () => boolean): Promise<void> {
         let lastHead: HashAndHeight = {height: -1, hash: '0x'}
         let heads = this.subscribeNewHeads()
         try {
-            while (true) {
+            while (!isEnd()) {
                 let next = await addTimeout(heads.take(), this.newHeadTimeout).catch(ensureError)
-                if (next == null) return
+                assert(next)
                 if (next instanceof TimeoutError) {
                     this.log?.warn(`resetting RPC connection, because we haven't seen a new head for ${this.newHeadTimeout} ms`)
                     this.rpc.client.reset()
@@ -185,7 +204,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                             await cb(next)
                             break
                         } catch(err: any) {
-                            if (this.isConsistencyError(err)) {
+                            if (isDataConsistencyError(err)) {
                                 this.log?.write(
                                     i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
                                     err.message
@@ -202,42 +221,6 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         } finally {
             heads.close()
         }
-    }
-
-    private async pollIngest(cb: (head: {height: number}) => Promise<void>): Promise<void> {
-        let prev = -1
-        let height = new Throttler(() => this.rpc.getHeight(), this.pollInterval)
-        while (true) {
-            let next = await height.call()
-            if (next > prev) {
-                prev = next
-                for (let i = 0; i < 100; i++) {
-                    try {
-                        await cb({height: next})
-                        break
-                    } catch(err: any) {
-                        if (this.isConsistencyError(err)) {
-                            this.log?.write(
-                                i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
-                                err.message
-                            )
-                            await wait(100)
-                        } else {
-                            throw err
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private isConsistencyError(err: unknown): boolean {
-        if (err instanceof ConsistencyError) return true
-        if (err instanceof RpcError) {
-            // eth_gelBlockByNumber on Moonbeam reacts like that when block is not present
-            if (/Expect block number from id/i.test(err.message)) return true
-        }
-        return false
     }
 
     private subscribeNewHeads(): AsyncQueue<Head | Error> {

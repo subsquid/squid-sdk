@@ -1,7 +1,7 @@
-import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
+import {Prev, Rpc} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {addErrorContext, annotateAsyncError, assertNotNull, groupBy} from '@subsquid/util-internal'
-import {assertIsValid, setInvalid, trimInvalid} from '@subsquid/util-internal-ingest-tools'
+import {assertIsValid, HashAndHeight, setInvalid, trimInvalid} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequestList, splitBlocksByRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
@@ -40,7 +40,7 @@ export class Parser {
         )
     }
 
-    async parseFinalized(blocks: RawBlock[]): Promise<Block[]> {
+    async parseCold(blocks: RawBlock[]): Promise<Block[]> {
         await this.parse(blocks)
         assertIsValid(blocks)
         return blocks.map(b => assertNotNull(b.parsed))

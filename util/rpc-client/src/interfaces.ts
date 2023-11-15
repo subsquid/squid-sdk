@@ -1,9 +1,12 @@
-
-export interface RpcRequest {
-    id: number
-    jsonrpc: '2.0'
+export interface RpcCall {
     method: string
     params?: unknown[]
+}
+
+
+export interface RpcRequest extends RpcCall {
+    id: number
+    jsonrpc: '2.0'
 }
 
 

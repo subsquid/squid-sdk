@@ -97,7 +97,7 @@ export class Ingest {
 
         const process = async (rawBlocks: raw.BlockData[]) => {
             if (rawBlocks.length == 0) return
-            let blocks = await parser.parseFinalized(rawBlocks)
+            let blocks = await parser.parseCold(rawBlocks)
             await cb(blocks)
         }
 

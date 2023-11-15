@@ -4,7 +4,7 @@ import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/uti
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
@@ -212,7 +212,7 @@ export class RpcClient {
         })
     }
 
-    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+    batchCall<T=any>(batch: RpcCall[], options?: CallOptions<T>): Promise<T[]> {
         return splitParallelWork(
             this.maxBatchCallSize,
             batch,
@@ -220,7 +220,7 @@ export class RpcClient {
         )
     }
 
-    private batchCallInternal(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<any[]> {
+    private batchCallInternal(batch: RpcCall[], options?: CallOptions): Promise<any[]> {
         if (batch.length == 0) return Promise.resolve([])
         if (batch.length == 1) return this.call(batch[0].method, batch[0].params, options).then(res => [res])
         return new Promise((resolve, reject) => {

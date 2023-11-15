@@ -15,7 +15,7 @@ export interface HotProcessorOptions<B> {
     getBlock(ref: HashAndHeight): Promise<B>
     getBlockRange(from: number, to: BlockRef): AsyncIterable<B[]>
     getHeader(block: B): BlockHeader
-    getBlockHeight?(hash: Hash): Promise<number>
+    getFinalizedBlockHeight?(hash: Hash): Promise<number>
 }
 
 
@@ -61,7 +61,7 @@ export class HotProcessor<B> {
         if (ref.height == null) {
             return !!this.chain.find(b => b.hash === ref.hash)
         } else {
-            if (ref.height > this.getHeight()) return false
+            if (ref.height >= this.getHeight()) return false
             if (ref.hash == null) return true
             let pos = ref.height - this.chain[0].height
             return this.chain[pos].hash === ref.hash
@@ -122,7 +122,7 @@ export class HotProcessor<B> {
 
         if (this.finalizedHead.height == null) {
             finalizedHeight = chain.find(b => b.hash == this.finalizedHead?.hash)?.height
-                || await this.getBlockHeight(this.finalizedHead.hash)
+                || await this.getFinalizedBlockHeight(this.finalizedHead.hash)
 
             this.finalizedHead = {
                 height: finalizedHeight,
@@ -146,11 +146,11 @@ export class HotProcessor<B> {
         }
     }
 
-    private getBlockHeight(blockHash: Hash): Promise<number> {
-        if (this.o.getBlockHeight == null) throw new Error(
-            `.getBlockHeight() method is not available`
+    private getFinalizedBlockHeight(blockHash: Hash): Promise<number> {
+        if (this.o.getFinalizedBlockHeight == null) throw new Error(
+            `.getFinalizedBlockHeight() method is not available`
         )
-        return this.o.getBlockHeight(blockHash)
+        return this.o.getFinalizedBlockHeight(blockHash)
     }
 }
 

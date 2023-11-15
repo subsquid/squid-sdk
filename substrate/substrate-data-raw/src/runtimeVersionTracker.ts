@@ -13,7 +13,7 @@ export class RuntimeVersionTracker {
         let prev: RuntimeVersion
         let maybePrev = this.prevRuntimeVersion.get(blocks[0].height)
         if (maybePrev == null) {
-            let v = await rpc.getRuntimeVersion(blocks[0].hash)
+            let v = blocks[0].runtimeVersion || await rpc.getRuntimeVersion(blocks[0].hash)
             if (v == null) return setInvalid(blocks)
             prev = blocks[0].runtimeVersion = v
             this.prevRuntimeVersion.set(blocks[0].height, prev)
