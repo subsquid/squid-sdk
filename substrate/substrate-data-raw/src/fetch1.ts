@@ -203,9 +203,9 @@ export class Fetch1 {
             tasks.push(
                 this.rpc.getRuntimeVersion(block.hash).then(v => {
                     if (v == null) {
-                        block.runtimeVersion = v
-                    } else {
                         block._isInvalid = true
+                    } else {
+                        block.runtimeVersion = v
                     }
                 })
             )
