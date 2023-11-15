@@ -1,6 +1,7 @@
 import {CallOptions, RetryError, RpcClient, RpcError, SubscriptionHandle} from '@subsquid/rpc-client'
 import {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
 import {groupBy, last} from '@subsquid/util-internal'
+import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
 import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
@@ -16,7 +17,7 @@ import {
     TraceTransactionReplay,
     TransactionReceipt
 } from './rpc-data'
-import {getBlockHeight, getBlockName, getTxHash, qty2Int, toQty} from './util'
+import {getBlockHeight, getTxHash, qty2Int, toQty} from './util'
 
 
 export class Rpc {
@@ -64,9 +65,9 @@ export class Rpc {
         return qty2Int(height)
     }
 
-    async fetchBlock(blockHash: Bytes32, req?: DataRequest, finalizedHeight?: number): Promise<Block> {
+    async getColdBlock(blockHash: Bytes32, req?: DataRequest, finalizedHeight?: number): Promise<Block> {
         let block = await this.getBlockByHash(blockHash, req?.transactions || false)
-        if (block == null) throw new BlockConsistencyError(blockHash)
+        if (block == null) throw new BlockConsistencyError({hash: blockHash})
         if (req) {
             await this.addRequestedData([block], req, finalizedHeight)
         }
@@ -74,29 +75,25 @@ export class Rpc {
         return block
     }
 
-    async fetchSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+    async getColdSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
         let call = this.makeGetBlockBatchCall(req)
 
-        let blocks: Block[] = await this.batchCall(call, {
-            validateResult: nonNull
-        })
-
-        for (let i = 1; i < blocks.length; i++) {
-            if (blocks[i - 1].hash !== blocks[i].parentHash)
-                throw new ConsistencyError(
-                    `failed to fetch consistent chain between blocks ${req.range.from} - ${req.range.to}`
-                )
+        let result: (Block | null)[] = await this.batchCall(call)
+        for (let i = 0; i < result.length; i++) {
+            if (result[i] == null) throw new BlockConsistencyError({height: req.range.from + i})
+            if (i > 0 && result[i]!.parentHash !== result[i-1]!.hash) throw new BlockConsistencyError(result[i]!)
         }
+
+        let blocks = result as Block[]
 
         await this.addRequestedData(blocks, req.request)
 
-        for (let block of blocks) {
-            if (block._isInvalid) throw new BlockConsistencyError(block)
-        }
+        assertIsValid(blocks)
+
         return blocks
     }
 
-    async fetchHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
+    async getHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
         let call = this.makeGetBlockBatchCall(req)
 
         let blocks: (Block | null)[] = await this.batchCall(call)
@@ -111,14 +108,7 @@ export class Rpc {
 
         await this.addRequestedData(chain, req.request, req.finalizedHeight)
 
-        for (let i = 0; i < chain.length; i++) {
-            if (chain[i]._isInvalid) {
-                chain.length = i
-                break
-            }
-        }
-
-        return chain
+        return trimInvalid(chain)
     }
 
     private makeGetBlockBatchCall(req: SplitRequest<DataRequest>) {
@@ -514,17 +504,6 @@ class RpcProps {
         if (eth) return this.receiptsMethod = 'eth_getBlockReceipts'
 
         return this.receiptsMethod = 'eth_getTransactionReceipt'
-    }
-}
-
-
-export class ConsistencyError extends Error {}
-
-
-export class BlockConsistencyError extends ConsistencyError {
-    constructor(block: Block | {height: number, hash?: string, number?: undefined} | number | string) {
-        let name = typeof block == 'object' ? getBlockName(block) : block
-        super(`Seems like the chain node navigated to another branch while we were fetching block ${name} or lost it`)
     }
 }
 

@@ -4,36 +4,32 @@ import assert from 'assert'
 import {Batch} from './interfaces'
 
 
-interface RpcApi<R, B> {
-    getFinalizedHeight(): Promise<number>
-    getSplit(req: SplitRequest<R>): Promise<B[]>
-}
-
-
-export interface RpcIngestOptions<R, B> {
-    api: RpcApi<R, B>
+export interface ColdIngestOptions<R, B> {
+    getFinalizedHeight: () => Promise<number>
+    getSplit: (req: SplitRequest<R>) => Promise<B[]>
     requests: RangeRequestList<R>
-    strideSize: number
+    splitSize: number
     concurrency: number
     stopOnHead?: boolean
-    heightPollInterval?: number
+    headPollInterval?: number
 }
 
 
-export function rpcIngest<R, B>(args: RpcIngestOptions<R, B>): AsyncIterable<Batch<B>> {
+export function coldIngest<R, B>(args: ColdIngestOptions<R, B>): AsyncIterable<Batch<B>> {
     let {
-        api,
+        getFinalizedHeight,
+        getSplit,
         requests,
-        strideSize,
+        splitSize,
         concurrency,
         stopOnHead,
-        heightPollInterval = 10_000
+        headPollInterval = 10_000
     } = args
 
-    assert(strideSize >= 1)
+    assert(splitSize >= 1)
     assert(concurrency >= 1)
 
-    let height = new Throttler(() => api.getFinalizedHeight(), heightPollInterval)
+    let height = new Throttler(getFinalizedHeight, headPollInterval)
 
     async function *strides(): AsyncIterable<{split: SplitRequest<R>, isHead: boolean}> {
         let top = await height.get()
@@ -48,7 +44,7 @@ export function rpcIngest<R, B>(args: RpcIngestOptions<R, B>): AsyncIterable<Bat
                     if (stopOnHead) return
                     top = await height.call()
                 }
-                for (let range of splitRange(strideSize, {
+                for (let range of splitRange(splitSize, {
                     from: beg,
                     to: Math.min(top, end)
                 })) {
@@ -73,7 +69,7 @@ export function rpcIngest<R, B>(args: RpcIngestOptions<R, B>): AsyncIterable<Bat
         concurrency,
         strides(),
         async ({split, isHead}) => {
-            let blocks = await api.getSplit(split)
+            let blocks = await getSplit(split)
             return {blocks, isHead}
         }
     )

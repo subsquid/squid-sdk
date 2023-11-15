@@ -12,7 +12,7 @@ import {
     HotProcessor,
     HotState,
     HotUpdate, isDataConsistencyError,
-    rpcIngest
+    coldIngest
 } from '@subsquid/util-internal-ingest-tools'
 import {
     assertRangeList,
@@ -63,19 +63,17 @@ export class RpcDataSource {
 
         let runtimeVersionTracker = new RuntimeVersionTracker()
 
-        let stream = rpcIngest({
-            api: {
-                getFinalizedHeight: () => this.getFinalizedHeight(),
-                getSplit: req => {
-                    let fetch = new Fetch1(this.rpc.withPriority(req.range.from))
-                    return fetch.getColdSplit(req.range.from, req.range.to, req.request)
-                }
+        let stream = coldIngest({
+            getFinalizedHeight: () => this.getFinalizedHeight(),
+            getSplit: req => {
+                let fetch = new Fetch1(this.rpc.withPriority(req.range.from))
+                return fetch.getColdSplit(req.range.from, req.range.to, req.request)
             },
             requests,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
-            strideSize: 10,
+            splitSize: 10,
             stopOnHead,
-            heightPollInterval: this.headPollInterval
+            headPollInterval: this.headPollInterval
         })
 
         for await (let batch of stream) {

@@ -15,24 +15,6 @@ export function toQty(i: number): Qty {
 }
 
 
-export function getBlockName(block: rpc.Block | {height: number, hash?: string, number?: undefined}): string {
-    let height: number
-    let hash: string | undefined
-    if (block.number == null) {
-        height = block.height
-        hash = block.hash
-    } else {
-        height = qty2Int(block.number)
-        hash = block.hash
-    }
-    if (hash) {
-        return `${height}#${hash.slice(2, 8)}`
-    } else {
-        return '' + height
-    }
-}
-
-
 export function getBlockHeight(block: rpc.Block): number {
     return qty2Int(block.number)
 }

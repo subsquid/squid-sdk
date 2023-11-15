@@ -290,7 +290,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             finalityConfirmation: this.finalityConfirmation,
             preferTraceApi: this._preferTraceApi,
             useDebugApiForStateDiffs: this._useDebugApiForStateDiffs,
-            pollInterval: this.chainPollInterval,
+            headPollInterval: this.chainPollInterval,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }

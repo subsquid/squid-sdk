@@ -12,7 +12,7 @@ import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
 export interface RpcDataSourceOptions {
     rpc: RpcClient
-    pollInterval?: number
+    headPollInterval?: number
     newHeadTimeout?: number
     typesBundle?: OldTypesBundle | OldSpecsBundle
 }

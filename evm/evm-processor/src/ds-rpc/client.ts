@@ -1,12 +1,14 @@
 import {Logger, LogLevel} from '@subsquid/logger'
-import {RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RpcClient} from '@subsquid/rpc-client'
 import {AsyncQueue, ensureError, last, maybeLast, Throttler, wait} from '@subsquid/util-internal'
 import {
+    BlockConsistencyError,
     BlockHeader as Head,
     BlockRef,
+    coldIngest,
     HashAndHeight,
-    HotProcessor, isDataConsistencyError,
-    rpcIngest
+    HotProcessor,
+    isDataConsistencyError
 } from '@subsquid/util-internal-ingest-tools'
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
 import {
@@ -24,7 +26,7 @@ import {Bytes32} from '../interfaces/base'
 import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {mapBlock, MappingRequest, toMappingRequest} from './mapping'
-import {BlockConsistencyError, ConsistencyError, Rpc} from './rpc'
+import {Rpc} from './rpc'
 import {qty2Int} from './util'
 
 
@@ -35,7 +37,7 @@ export interface EvmRpcDataSourceOptions {
     rpc: RpcClient
     finalityConfirmation: number
     newHeadTimeout?: number
-    pollInterval?: number
+    headPollInterval?: number
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
     log?: Logger
@@ -45,7 +47,7 @@ export interface EvmRpcDataSourceOptions {
 export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private rpc: Rpc
     private finalityConfirmation: number
-    private pollInterval: number
+    private headPollInterval: number
     private newHeadTimeout: number
     private preferTraceApi?: boolean
     private useDebugApiForStateDiffs?: boolean
@@ -54,7 +56,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.finalityConfirmation = options.finalityConfirmation
-        this.pollInterval = options.pollInterval || 5_000
+        this.headPollInterval = options.headPollInterval || 5_000
         this.newHeadTimeout = options.newHeadTimeout || 0
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
@@ -74,20 +76,21 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean
     ): AsyncIterable<Batch<Block>> {
-        return rpcIngest({
-            api: this,
+        return coldIngest({
+            getFinalizedHeight: () => this.getFinalizedHeight(),
+            getSplit: req => this._getSplit(req),
             requests,
-            strideSize: 10,
+            splitSize: 10,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
             stopOnHead,
-            heightPollInterval: this.pollInterval
+            headPollInterval: this.headPollInterval
         })
     }
 
-    async getSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+    private async _getSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
         let request = this.toRpcDataRequest(req.request)
         let rpc = this.rpc.withPriority(req.range.from)
-        let blocks = await rpc.fetchSplit({range: req.range, request})
+        let blocks = await rpc.getColdSplit({range: req.range, request})
         return blocks.map(b => mapBlock(b, request.transactionList || false))
     }
 
@@ -111,7 +114,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             process: cb,
             getBlock: async ref => {
                 let req = this.toRpcDataRequest(getRequestAt(requests, ref.height))
-                let block = await this.rpc.fetchBlock(ref.hash, req, proc.getFinalizedHeight())
+                let block = await this.rpc.getColdBlock(ref.hash, req, proc.getFinalizedHeight())
                 return mapBlock(block, req.transactionList || false)
             },
             async *getBlockRange(from: number, to: BlockRef): AsyncIterable<Block[]> {
@@ -122,7 +125,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                 for (let split of splitRangeByRequest(requests, {from, to: to.height})) {
                     let request = self.toRpcDataRequest(split.request)
                     for (let range of splitRange(10, split.range)) {
-                        let rpcBlocks = await self.rpc.fetchHotSplit({
+                        let rpcBlocks = await self.rpc.getHotSplit({
                             range,
                             request,
                             finalizedHeight: proc.getFinalizedHeight()
@@ -131,7 +134,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
                         let lastBlock = maybeLast(blocks)?.header.height ?? range.from - 1
                         yield blocks
                         if (lastBlock < range.to) {
-                            throw new BlockConsistencyError(lastBlock + 1)
+                            throw new BlockConsistencyError({height: lastBlock + 1})
                         }
                     }
                 }
@@ -161,7 +164,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
 
     private async polling(cb: (head: {height: number}) => Promise<void>, isEnd: () => boolean): Promise<void> {
         let prev = -1
-        let height = new Throttler(() => this.rpc.getHeight(), this.pollInterval)
+        let height = new Throttler(() => this.rpc.getHeight(), this.headPollInterval)
         while (!isEnd()) {
             let next = await height.call()
             if (next <= prev) continue

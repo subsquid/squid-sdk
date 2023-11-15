@@ -299,7 +299,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private getRpcDataSource(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.getChainRpcClient(),
-            pollInterval: this.chainPollInterval,
+            headPollInterval: this.chainPollInterval,
             typesBundle: this.typesBundle
         })
     }
