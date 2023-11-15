@@ -134,6 +134,9 @@ dependencies:
   '@rush-temp/tron-ingest':
     specifier: file:./projects/tron-ingest.tgz
     version: file:projects/tron-ingest.tgz
+  '@rush-temp/tron-processor':
+    specifier: file:./projects/tron-processor.tgz
+    version: file:projects/tron-processor.tgz
   '@rush-temp/typeorm-codegen':
     specifier: file:./projects/typeorm-codegen.tgz
     version: file:projects/typeorm-codegen.tgz
@@ -5495,12 +5498,21 @@ packages:
     dev: false
 
   file:projects/tron-ingest.tgz:
-    resolution: {integrity: sha512-koCvCPa7bf+J4hzb8X/WR0SfrAn84rILFq9oGoO0kOx5q28pkrPhi+US33t+ADZKzlxmUMoJeOraN4WnakL98A==, tarball: file:projects/tron-ingest.tgz}
+    resolution: {integrity: sha512-nNVIb4s2ioL95WKGl68qQCkcKRRQo9OOMf0Cc/6f/BJwN8EACIZylZ8j4/jlijwQN1BywMHC5oSurOitsiO44w==, tarball: file:projects/tron-ingest.tgz}
     name: '@rush-temp/tron-ingest'
     version: 0.0.0
     dependencies:
       '@types/node': 18.18.0
       commander: 11.0.0
+    dev: false
+
+  file:projects/tron-processor.tgz:
+    resolution: {integrity: sha512-WrJu5JEJHKrqTUdpK2VeUGjbCRo81M3cAs5XYYQ/+XMuT5LFyfhPh8/EngZF+i/eTcfn4o94KZG9Ts4+kXaOcw==, tarball: file:projects/tron-processor.tgz}
+    name: '@rush-temp/tron-processor'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.0
+      typescript: 5.2.2
     dev: false
 
   file:projects/typeorm-codegen.tgz:

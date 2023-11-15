@@ -599,6 +599,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/tron-processor",
+      "projectFolder": "tron/tron-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,

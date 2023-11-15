@@ -8,11 +8,11 @@ export class HttpApi {
         private readonly options: RequestOptions = {}
     ) {}
 
-    async getBlock(num: number): Promise<Block> {
+    async getBlock(num: number, detail: boolean): Promise<Block> {
         return this.post('wallet/getblock', {
             json: {
                 id_or_num: String(num),
-                detail: true
+                detail
             }
         })
     }

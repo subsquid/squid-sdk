@@ -4,6 +4,7 @@ export interface Log {
     topics: string[]
 }
 
+
 export interface Contract {
     parameter: {
         value: any
@@ -13,6 +14,7 @@ export interface Contract {
     Permission_id?: number
 }
 
+
 export interface TransactionRawData {
     contract: Contract[]
     ref_block_bytes: string
@@ -21,6 +23,7 @@ export interface TransactionRawData {
     fee_limit?: number
     timestamp?: number
 }
+
 
 export interface TransactionReceipt {
     result?: string
@@ -32,6 +35,7 @@ export interface TransactionReceipt {
     origin_energy_usage?: number
     energy_penalty_total?: number
 }
+
 
 export interface InternalTransaction {
     hash: string
@@ -45,6 +49,7 @@ export interface InternalTransaction {
     rejected?: boolean
     extra?: string
 }
+
 
 export interface TransactionInfo {
     id: string
@@ -64,6 +69,7 @@ export interface TransactionInfo {
     cancel_unfreezeV2_amount?: Record<string, number>
 }
 
+
 export interface Transaction {
     ret: {contractRet: string}[]
     signature: string[]
@@ -72,6 +78,7 @@ export interface Transaction {
     raw_data_hex: string
     info?: TransactionInfo
 }
+
 
 export interface BlockRawData {
     number?: number
@@ -82,16 +89,19 @@ export interface BlockRawData {
     timestamp: number
 }
 
+
 export interface BlockHeader {
     raw_data: BlockRawData
     witness_signature: string
 }
+
 
 export interface Block {
     blockID: string
     block_header: BlockHeader
     transactions?: Transaction[]
 }
+
 
 export interface BlockData {
     height: number
