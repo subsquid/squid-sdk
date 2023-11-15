@@ -175,7 +175,7 @@ export class RpcDataSource {
     }
 
     private async subscription(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
-        let queue = new AsyncQueue<ChainHeads | Error>(1)
+        let queue = new AsyncQueue<number | Error>(1)
         let finalizedHeight = 0
         let prevHeight = 0
 
@@ -206,10 +206,7 @@ export class RpcDataSource {
                     let height = qty2Int(head.number)
                     if (height >= prevHeight) {
                         prevHeight = height
-                        queue.forcePut({
-                            best: {height},
-                            finalized: {height: finalizedHeight}
-                        })
+                        queue.forcePut(height)
                     }
                 } catch(err: any) {
                     close(err)
@@ -232,15 +229,21 @@ export class RpcDataSource {
 
         try {
             while (!isEnd()) {
-                let heads = await addTimeout(queue.take(), this.newHeadTimeout).catch(ensureError)
-                if (heads instanceof TimeoutError) {
+                let height = await addTimeout(queue.take(), this.newHeadTimeout).catch(ensureError)
+                if (height instanceof TimeoutError) {
                     this.log?.warn(`resetting RPC connection, because we haven't seen a new head for ${this.newHeadTimeout} ms`)
                     this.rpc.client.reset()
-                } else if (heads instanceof Error) {
-                    throw heads
+                } else if (height instanceof Error) {
+                    throw height
                 } else {
-                    assert(heads)
-                    await this.handleNewHeads(heads, cb)
+                    assert(height != null)
+                    let hash = await this.rpc.getBlockHash(height)
+                    if (hash) {
+                        await this.handleNewHeads({
+                            best: {height, hash},
+                            finalized: {height: finalizedHeight}
+                        }, cb)
+                    }
                 }
             }
         } finally {

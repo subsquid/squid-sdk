@@ -61,10 +61,9 @@ export class HotProcessor<B> {
         if (ref.height == null) {
             return !!this.chain.find(b => b.hash === ref.hash)
         } else {
-            if (ref.height >= this.getHeight()) return false
-            if (ref.hash == null) return true
+            if (ref.hash == null) return ref.height < this.getHeight()
             let pos = ref.height - this.chain[0].height
-            return this.chain[pos].hash === ref.hash
+            return this.chain[pos]?.hash === ref.hash
         }
     }
 

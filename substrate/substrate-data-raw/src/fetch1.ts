@@ -96,17 +96,17 @@ export class Fetch1 {
         }
 
         let call: RpcCall[] = []
-        for (let i = 0; i < last; i++) {
+        for (let i = 0; i <= last; i++) {
             let block = blocks[i]
             if (req.extrinsics) {
                 call.push({
                     method: 'chain_getBlock',
-                    params: [block]
+                    params: [block.hash]
                 })
             } else {
                 call.push({
                     method: 'chain_getHeader',
-                    params: [block]
+                    params: [block.hash]
                 })
             }
         }

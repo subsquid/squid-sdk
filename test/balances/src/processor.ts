@@ -9,7 +9,7 @@ import {events} from './types'
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: process.env.KUSAMA_NODE_WS || 'https://kusama-rpc.polkadot.io',
+        chain: process.env.KUSAMA_NODE_WS || 'wss://kusama-rpc.polkadot.io',
         archive: 'https://v2.archive.subsquid.io/network/kusama'
     })
     .addEvent({
