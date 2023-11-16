@@ -55,15 +55,41 @@ export function getTupleType(params: ReadonlyArray<ParamType>): string {
 
 // https://github.com/ethers-io/ethers.js/blob/278f84174409b470fa7992e1f8b5693e6e5d2dac/src.ts/abi/coders/tuple.ts#L36
 export function getStructType(params: ReadonlyArray<ParamType>): string {
-    let array: any = []
-    let counts: Record<string, number> = {}
+    let uniqueNames: Record<string, number> = {}
     for (let p of params) {
-        if (p.name && array[p.name] == null) {
-            counts[p.name] = (counts[p.name] || 0) + 1
+        if (p.name) {
+            uniqueNames[p.name] = (uniqueNames[p.name] || 0) + 1
         }
     }
-    let fields = params.filter(p => counts[p.name] == 1)
+
+    let fields = formatNamedProperties(params).filter(p => uniqueNames[p.name] == 1)
     return '{' + fields.map(f => `${f.name}: ${getType(f)}`).join(', ') + '}'
+}
+
+function formatNamedProperties(params: ReadonlyArray<ParamType>): ReadonlyArray<ParamType> {
+    let array: any = [] 
+    return params.reduce((acc, p) => {
+        let name = p.name
+        switch (name) {
+            case "length": {
+                name = "_length"
+                break;
+            }
+            case "values": {
+                name = "_values"
+                break;
+            }
+            case "keys": {
+                name = "_keys"
+                break;
+            }
+        }
+        if (array[name] != null) {
+            return acc;
+        }
+        acc.push({ ...p, name } as ParamType);
+        return acc;
+    }, [] as ParamType[]);
 }
 
 
