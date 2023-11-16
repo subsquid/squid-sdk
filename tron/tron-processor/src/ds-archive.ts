@@ -12,7 +12,7 @@ import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './mapping'
-import {HttpApi} from '@subsquid/tron-dump/src/http'
+import {HttpApi} from '@subsquid/tron-dump/lib/http'
 
 
 interface ArchiveQuery extends DataRequest {
@@ -99,7 +99,24 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         if (src.logs) {
             for (let s of src.logs) {
-                let log = new Log(block.header, 0)
+                let log = new Log(block.header, s.logIndex)
+
+                if (s.transactionHash != null) {
+                    log.transactionHash = s.transactionHash
+                }
+
+                if (s.address != null) {
+                    log.address = s.address
+                }
+
+                if (s.data != null) {
+                    log.data = s.data
+                }
+
+                if (s.topics != null) {
+                    log.topics = s.topics
+                }
+
                 block.logs.push(log)
             }
         }

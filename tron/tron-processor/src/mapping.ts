@@ -186,26 +186,20 @@ export class InternalTransaction {
 
 export class Log {
     id: string
-    index: number
-    name?: QualifiedName
-    args?: any
-    phase?: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
-    extrinsicIndex?: number
-    callAddress?: number[]
+    logIndex: number
+    transactionHash?: string
+    address?: string
+    data?: string
+    topics?: string[]
     #block: BlockHeader
-    #extrinsic?: Transaction
-    #call?: InternalTransaction
-    #evmLogAddress?: Bytes
-    #evmLogTopics?: Bytes[]
-    #contractAddress?: Bytes
-    #gearProgramId?: Bytes
+    #transaction?: Transaction
 
     constructor(
         block: BlockHeader,
-        index: number
+        logIndex: number
     ) {
-        this.id = formatId(block, index)
-        this.index = index
+        this.id = formatId(block, logIndex)
+        this.logIndex = logIndex
         this.#block = block
     }
 
@@ -217,84 +211,20 @@ export class Log {
         this.#block = value
     }
 
-    get extrinsic(): Transaction | undefined {
-        return this.#extrinsic
+    get transaction(): Transaction | undefined {
+        return this.#transaction
     }
 
-    set extrinsic(value: Transaction | undefined) {
-        this.#extrinsic = value
+    set transaction(value: Transaction | undefined) {
+        this.#transaction = value
     }
 
-    getExtrinsic(): Transaction {
-        if (this.extrinsic == null) {
-            throw new Error(`Extrinsic is not set on event ${this.id}`)
+    getTransaction(): Transaction {
+        if (this.#transaction == null) {
+            throw new Error(`Transaction is not set on log ${this.id}`)
         } else {
-            return this.extrinsic
+            return this.#transaction
         }
-    }
-
-    get call(): InternalTransaction | undefined {
-        return this.#call
-    }
-
-    set call(value: InternalTransaction | undefined) {
-        this.#call = value
-    }
-
-    getCall(): InternalTransaction {
-        if (this.call == null) {
-            throw new Error(`Call is not set on event ${this.id}`)
-        } else {
-            return this.call
-        }
-    }
-
-    get _evmLogAddress(): Bytes | undefined {
-        return this.#evmLogAddress
-    }
-
-    set _evmLogAddress(value: Bytes | undefined) {
-        this.#evmLogAddress = value
-    }
-
-    get _evmLogTopics(): Bytes[] | undefined {
-        return this.#evmLogTopics
-    }
-
-    set _evmLogTopics(value: Bytes[] | undefined) {
-        this.#evmLogTopics = value
-    }
-
-    get _evmLogTopic0(): Bytes | undefined {
-        return this._evmLogTopics?.[0]
-    }
-
-    get _evmLogTopic1(): Bytes | undefined {
-        return this._evmLogTopics?.[1]
-    }
-
-    get _evmLogTopic2(): Bytes | undefined {
-        return this._evmLogTopics?.[2]
-    }
-
-    get _evmLogTopic3(): Bytes | undefined {
-        return this._evmLogTopics?.[3]
-    }
-
-    get _contractAddress(): Bytes | undefined {
-        return this.#contractAddress
-    }
-
-    set _contractAddress(value: Bytes | undefined) {
-        this.#contractAddress = value
-    }
-
-    get _gearProgramId(): Bytes | undefined {
-        return this.#gearProgramId
-    }
-
-    set _gearProgramId(value: Bytes | undefined) {
-        this.#gearProgramId = value
     }
 }
 

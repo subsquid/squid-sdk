@@ -42,14 +42,14 @@ export type ArchiveBlockHeader = MakePartial<
     Exclude<BlockRequiredFields, 'height'>, true
 > & {number: number}
 
-export type ArchiveExtrinsic = MakePartial<Transaction_, TransactionRequiredFields, true>
-export type ArchivePartialCall = MakePartial<InternalTransaction_, InternalTransactionRequiredFields, true>
-export type ArchiveEvent = MakePartial<Log_, LogRequiredFields, true>
+export type ArchiveTransaction = MakePartial<Transaction_, TransactionRequiredFields, true>
+export type ArchivePartialInternalTransaction = MakePartial<InternalTransaction_, InternalTransactionRequiredFields, true>
+export type ArchiveLog = MakePartial<Log_, LogRequiredFields, true>
 
 
 export interface ArchiveBlock {
     header: ArchiveBlockHeader
-    transactions?: ArchiveExtrinsic[]
-    internalTransactions?: ArchivePartialCall[]
-    logs?: ArchiveEvent[]
+    transactions?: ArchiveTransaction[]
+    internalTransactions?: ArchivePartialInternalTransaction[]
+    logs?: ArchiveLog[]
 }

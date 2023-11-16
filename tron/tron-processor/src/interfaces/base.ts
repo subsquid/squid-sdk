@@ -8,7 +8,6 @@ export interface BlockHeader_ {
 
 export interface Log_ {
     logIndex: number
-    transactionIndex: number
     transactionHash: string
     address: string
     data: string

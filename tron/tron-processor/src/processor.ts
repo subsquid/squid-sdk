@@ -14,7 +14,7 @@ import {
     RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
-import {HttpApi} from '@subsquid/tron-dump/src/http'
+import {HttpApi} from '@subsquid/tron-dump/lib/http'
 import assert from 'assert'
 import {Chain} from './chain'
 import {TronArchive} from './ds-archive'
