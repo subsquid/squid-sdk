@@ -9,7 +9,11 @@ export class BlockHeader implements PartialBlockHeader {
     height!: number
     hash!: Hash
     parentHash!: Hash
+    txTrieRoot?: string
+    version?: number
     timestamp?: number
+    witnessAddress?: string
+    witnessSignature?: string
 
     constructor(src: PartialBlockHeader) {
         this.id = formatId(src)
@@ -19,168 +23,110 @@ export class BlockHeader implements PartialBlockHeader {
 
 
 export class Transaction {
-    id: string
-    index: number
     hash?: string
+    ret?: string
+    signature?: string[]
+    type?: string
+    parameter?: any
+    permissionId?: number
+    refBlockBytes?: string
+    refBlockHash?: string
+    feeLimit?: number
+    expiration?: number
+    timestamp?: number
+    rawDataHex?: string
+    fee?: number
+    contractResult?: string
+    contractAddress?: string
+    resMessage?: string
+    withdrawAmount?: number
+    unfreezeAmount?: number
+    withdrawExpireAmount?: number
+    cancelUnfreezeV2Amount: any
+    result?: string
+    energyFee?: number
+    energyUsage?: number
+    energyUsageTotal?: number
+    netUsage?: number
+    netFee?: number
+    originEnergyUsage?: number
+    energyPenaltyTotal?: number
     #block: BlockHeader
-    // #call?: InternalTransaction
-    // #events?: Log[]
-    // #subcalls?: InternalTransaction[]
+    #logs?: Log[]
+    #internalTransactions?: InternalTransaction[]
 
-    constructor(
-        block: BlockHeader,
-        index: number
-    ) {
-        this.id = formatId(block, index)
-        this.index = index
+    constructor(block: BlockHeader) {
         this.#block = block
     }
 
-    // get block(): BlockHeader {
-    //     return this.#block
-    // }
+    get block(): BlockHeader {
+        return this.#block
+    }
 
-    // set block(value: BlockHeader) {
-    //     this.#block = value
-    // }
+    set block(value: BlockHeader) {
+        this.#block = value
+    }
 
-    // get events(): Log[] {
-    //     this.#events = this.#events || []
-    //     return this.#events
-    // }
+    get logs(): Log[] {
+        return this.#logs || []
+    }
 
-    // set events(events: Log[]) {
-    //     this.#events = events
-    // }
+    set logs(logs: Log[]) {
+        this.#logs = logs
+    }
 
-    // encode(): Uint8Array {
-    //     let runtime = this.block._runtime
-    //     let version = assertNotNull(this.version, 'missing .version property')
+    get internalTransactions(): InternalTransaction[] {
+        return this.#internalTransactions || []
+    }
 
-    //     let callRecord = this.getCall()
-    //     let name = assertNotNull(callRecord.name, 'missing .name property on a call')
-    //     let args = runtime.decodeJsonCallRecordArguments({name, args: callRecord.args})
-    //     let call = runtime.toDecodedCall({name, args})
-
-    //     let signature = this.signature && runtime.jsonCodec.decode(
-    //         runtime.description.signature,
-    //         this.signature
-    //     )
-
-    //     return runtime.encodeExtrinsic({
-    //         version,
-    //         signature,
-    //         call
-    //     })
-    // }
+    set internalTransactions(internalTransactions: InternalTransaction[]) {
+        this.#internalTransactions = internalTransactions
+    }
 }
 
 
 export class InternalTransaction {
-    id: string
-    name?: QualifiedName
-    args?: any
-    origin?: any
-    error?: any
-    success?: boolean
+    transactionHash?: string
+    hash?: string
+    callerAddress?: string
+    transferToAddress?: string
+    callValueInfo?: {
+        callValue?: number
+        tokenId?: string
+    }[]
+    note?: string
+    rejected?: boolean
+    extra?: string
     #block: BlockHeader
-    #extrinsic?: Transaction
-    #parentCall?: InternalTransaction
-    #subcalls?: InternalTransaction[]
-    #events?: Log[]
-    #ethereumTransactTo?: Bytes
-    #ethereumTransactSighash?: Bytes
+    #transaction?: Transaction
 
-    constructor(
-        block: BlockHeader,
-        transactionIndex: number
-    ) {
-        this.id = formatId(block, transactionIndex)
-        // this.extrinsicIndex = transactionIndex
+    constructor(block: BlockHeader) {
         this.#block = block
     }
 
-    // get block(): BlockHeader {
-    //     return this.#block
-    // }
+    get block(): BlockHeader {
+        return this.#block
+    }
 
-    // set block(value: BlockHeader) {
-    //     this.#block = value
-    // }
+    set block(value: BlockHeader) {
+        this.#block = value
+    }
 
-    // get extrinsic(): Transaction | undefined {
-    //     return this.#extrinsic
-    // }
+    get transaction(): Transaction | undefined {
+        return this.#transaction
+    }
 
-    // set extrinsic(value: Transaction | undefined) {
-    //     this.#extrinsic = value
-    // }
+    set transaction(value: Transaction | undefined) {
+        this.#transaction = value
+    }
 
-    // getExtrinsic(): Transaction {
-    //     if (this.extrinsic == null) {
-    //         throw new Error(`Extrinsic is not set on call ${this.id}`)
-    //     } else {
-    //         return this.extrinsic
-    //     }
-    // }
-
-    // get parentCall(): InternalTransaction | undefined {
-    //     return this.#parentCall
-    // }
-
-    // set parentCall(value: InternalTransaction | undefined) {
-    //     this.#parentCall = value
-    // }
-
-    // getParentCall(): InternalTransaction {
-    //     if (this.parentCall == null) {
-    //         throw new Error(`Parent call is not set on call ${this.id}`)
-    //     } else {
-    //         return this.parentCall
-    //     }
-    // }
-
-    // get subcalls(): InternalTransaction[] {
-    //     this.#subcalls = this.#subcalls || []
-    //     return this.#subcalls
-    // }
-
-    // set subcalls(calls: InternalTransaction[]) {
-    //     this.#subcalls = calls
-    // }
-
-    // get events(): Log[] {
-    //     this.#events = this.#events || []
-    //     return this.#events
-    // }
-
-    // set events(events: Log[]) {
-    //     this.#events = events
-    // }
-
-    // encode(): Uint8Array {
-    //     let runtime = this.block._runtime
-    //     let name = assertNotNull(this.name, 'missing .name property')
-    //     let args = runtime.decodeJsonCallRecordArguments({name, args: this.args})
-    //     let decodedCall = runtime.toDecodedCall({name, args})
-    //     return runtime.encodeCall(decodedCall)
-    // }
-
-    // get _ethereumTransactTo(): Bytes | undefined {
-    //     return this.#ethereumTransactTo
-    // }
-
-    // set _ethereumTransactTo(value: Bytes | undefined) {
-    //     this.#ethereumTransactTo = value
-    // }
-
-    // get _ethereumTransactSighash(): Bytes | undefined {
-    //     return this.#ethereumTransactSighash
-    // }
-
-    // set _ethereumTransactSighash(value: Bytes | undefined) {
-    //     this.#ethereumTransactSighash = value
-    // }
+    getTransaction(): Transaction {
+        if (this.#transaction == null) {
+            throw new Error(`Extrinsic is not set on internal transaction ${this.hash}`)
+        } else {
+            return this.#transaction
+        }
+    }
 }
 
 
@@ -348,9 +294,7 @@ export class Block {
 
 function formatId(block: HashAndHeight, ...address: number[]): string {
     let no = block.height.toString().padStart(10, '0')
-    let hash = block.hash.startsWith('0x')
-        ? block.hash.slice(2, 7)
-        : block.hash.slice(0, 5)
+    let hash = block.hash.slice(16).slice(0, 5)
     let id = `${no}-${hash}`
     for (let index of address) {
         id += '-' + index.toString().padStart(6, '0')

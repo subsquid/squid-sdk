@@ -1,4 +1,4 @@
-import {annotateSyncError, assertNotNull} from '@subsquid/util-internal'
+import {annotateSyncError} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
     archiveIngest,
@@ -9,7 +9,7 @@ import {
     RangeRequestList
 } from '@subsquid/util-internal-processor-tools'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
-import {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
+import {ArchiveBlock} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './mapping'
 import {HttpApi} from '@subsquid/tron-dump/lib/http'
@@ -82,17 +82,160 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         if (src.transactions) {
             for (let s of src.transactions) {
-                let tx = new Transaction(block.header, 0)
+                let tx = new Transaction(block.header)
+
                 if (s.hash != null) {
                     tx.hash = s.hash
                 }
+
+                if (s.ret != null) {
+                    tx.ret = s.ret
+                }
+
+                if (s.signature != null) {
+                    tx.signature = s.signature
+                }
+
+                if (s.type != null) {
+                    tx.type = s.type
+                }
+
+                if (s.parameter != null) {
+                    tx.parameter = s.parameter
+                }
+
+                if (s.permissionId != null) {
+                    tx.permissionId = s.permissionId
+                }
+
+                if (s.refBlockBytes != null) {
+                    tx.refBlockBytes = s.refBlockBytes
+                }
+
+                if (s.refBlockHash != null) {
+                    tx.refBlockHash = s.refBlockHash
+                }
+
+                if (s.feeLimit != null) {
+                    tx.feeLimit = s.feeLimit
+                }
+
+                if (s.expiration != null) {
+                    tx.expiration = s.expiration
+                }
+
+                if (s.timestamp != null) {
+                    tx.timestamp = s.timestamp
+                }
+
+                if (s.rawDataHex != null) {
+                    tx.rawDataHex = s.rawDataHex
+                }
+
+                if (s.fee != null) {
+                    tx.fee = s.fee
+                }
+
+                if (s.contractResult != null) {
+                    tx.contractResult = s.contractResult
+                }
+
+                if (s.contractAddress != null) {
+                    tx.contractAddress = s.contractAddress
+                }
+
+                if (s.resMessage != null) {
+                    tx.resMessage = s.resMessage
+                }
+
+                if (s.withdrawAmount != null) {
+                    tx.withdrawAmount = s.withdrawAmount
+                }
+
+                if (s.unfreezeAmount != null) {
+                    tx.unfreezeAmount = s.unfreezeAmount
+                }
+
+                if (s.withdrawExpireAmount != null) {
+                    tx.withdrawExpireAmount = s.withdrawExpireAmount
+                }
+
+                if (s.cancelUnfreezeV2Amount != null) {
+                    tx.cancelUnfreezeV2Amount = s.cancelUnfreezeV2Amount
+                }
+
+                if (s.result != null) {
+                    tx.result = s.result
+                }
+
+                if (s.energyFee != null) {
+                    tx.energyFee = s.energyFee
+                }
+
+                if (s.energyUsage != null) {
+                    tx.energyUsage = s.energyUsage
+                }
+
+                if (s.energyUsageTotal != null) {
+                    tx.energyUsageTotal = s.energyUsageTotal
+                }
+
+                if (s.netUsage != null) {
+                    tx.netUsage = s.netUsage
+                }
+
+                if (s.netFee != null) {
+                    tx.netFee = s.netFee
+                }
+
+                if (s.originEnergyUsage != null) {
+                    tx.originEnergyUsage = s.originEnergyUsage
+                }
+
+                if (s.energyPenaltyTotal != null) {
+                    tx.energyPenaltyTotal = s.energyPenaltyTotal
+                }
+
                 block.transactions.push(tx)
             }
         }
 
         if (src.internalTransactions) {
             for (let s of src.internalTransactions) {
-                let tx = new InternalTransaction(block.header, 0)
+                let tx = new InternalTransaction(block.header)
+
+                if (s.transactionHash != null) {
+                    tx.transactionHash = s.transactionHash
+                }
+
+                if (s.hash != null) {
+                    tx.hash = s.hash
+                }
+
+                if (s.callerAddress != null) {
+                    tx.callerAddress = s.callerAddress
+                }
+
+                if (s.transferToAddress != null) {
+                    tx.transferToAddress = s.transferToAddress
+                }
+
+                if (s.callValueInfo != null) {
+                    tx.callValueInfo = s.callValueInfo
+                }
+
+                if (s.note != null) {
+                    tx.note = s.note
+                }
+
+                if (s.rejected != null) {
+                    tx.rejected = s.rejected
+                }
+
+                if (s.extra != null) {
+                    tx.extra = s.extra
+                }
+
                 block.internalTransactions.push(tx)
             }
         }

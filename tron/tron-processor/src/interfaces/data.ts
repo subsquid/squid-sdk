@@ -80,7 +80,6 @@ export type Log<F extends FieldSelection = {}> = Simplify<
 
 
 export type Transaction<F extends FieldSelection = {}> = Simplify<
-    {id: string} &
     Pick<Transaction_, TransactionRequiredFields> &
     Select<Transaction_, GetFields<F, 'transaction'>> &
     {block: BlockHeader<F>}
