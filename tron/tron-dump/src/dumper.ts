@@ -5,13 +5,19 @@ import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layou
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd, FiniteRange, splitRange} from '@subsquid/util-internal-range'
-import {BlockData, TransactionInfo} from './interfaces'
-import {HttpApi} from './http'
+import {HttpApi, BlockData, TransactionInfo} from '@subsquid/tron-data-raw'
+import assert from 'assert'
 
 
 function getBlockHash(blockId: string) {
     return '0x' + blockId.slice(16)
 }
+
+
+function isObject(value: unknown): boolean {
+    return value != null && typeof value == 'object'
+}
+
 
 export interface DumperOptions {
     endpoint: string
@@ -54,7 +60,7 @@ export class Dumper {
     }
 
     @def
-    http(): HttpClient {
+    client(): HttpClient {
         return new HttpClient({
             baseUrl: this.options.endpoint,
             retryAttempts: Number.MAX_SAFE_INTEGER
@@ -62,8 +68,8 @@ export class Dumper {
     }
 
     @def
-    api(): HttpApi {
-        return new HttpApi(this.http(), {
+    httpApi(): HttpApi {
+        return new HttpApi(this.client(), {
             validateResult(result, req) {
                 if (result.status == 403) {
                     throw new RetryError()
@@ -74,7 +80,7 @@ export class Dumper {
 
     private async *generateStrides(range: Range): AsyncIterable<FiniteRange> {
         let head = new Throttler(async () => {
-            let block = await this.api().getNowBlock()
+            let block = await this.httpApi().getNowBlock()
             return block.block_header.raw_data.number || 0 - 20
         }, 10_000)
 
@@ -97,8 +103,8 @@ export class Dumper {
             this.generateStrides(range),
             async s => {
                 let [block, transactionsInfo] = await Promise.all([
-                    this.api().getBlock(s.from, true),
-                    this.api().getTransactionInfo(s.from)
+                    this.httpApi().getBlock(s.from, true),
+                    this.httpApi().getTransactionInfo(s.from)
                 ]);
 
                 if (s.from != 0) { // info isn't presented for genesis block
@@ -107,12 +113,16 @@ export class Dumper {
                         infoById[info.id] = info;
                     }
                     for (let tx of block.transactions || []) {
-                        tx.info = assertNotNull(infoById[tx.txID])
+                        assertNotNull(infoById[tx.txID])
                     }
+                } else {
+                    assert(isObject(transactionsInfo))
+                    assert(Object.keys(transactionsInfo).length == 0)
                 }
 
                 return {
                     block,
+                    transactionsInfo,
                     height: block.block_header.raw_data.number || 0,
                     hash: getBlockHash(block.blockID),
                 }
@@ -132,7 +142,7 @@ export class Dumper {
         assertRange(range)
 
         let height = new Throttler(async () => {
-            let block = await this.api().getNowBlock()
+            let block = await this.httpApi().getNowBlock()
             return block.block_header.raw_data.number || 0 - 20
         }, 60_000)
         let chainHeight = await height.get()

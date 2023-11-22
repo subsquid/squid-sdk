@@ -11,6 +11,7 @@
     "lib",
     "src"
   ],
+  "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },

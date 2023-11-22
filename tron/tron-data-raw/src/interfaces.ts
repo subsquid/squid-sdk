@@ -84,7 +84,6 @@ export interface Transaction {
     txID: string
     raw_data: TransactionRawData
     raw_data_hex: string
-    info?: TransactionInfo
 }
 
 
@@ -115,4 +114,5 @@ export interface BlockData {
     height: number
     hash: string
     block: Block
+    transactionsInfo: TransactionInfo[]
 }
