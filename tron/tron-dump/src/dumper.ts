@@ -107,7 +107,10 @@ export class Dumper {
                     this.httpApi().getTransactionInfo(s.from)
                 ]);
 
-                if (s.from != 0) { // info isn't presented for genesis block
+                if (s.from == 0) { // info isn't presented for genesis block
+                    assert(isObject(transactionsInfo))
+                    assert(Object.keys(transactionsInfo).length == 0)
+                } else {
                     let infoById: Record<string, TransactionInfo> = {}
                     for (let info of transactionsInfo) {
                         infoById[info.id] = info;
@@ -115,9 +118,6 @@ export class Dumper {
                     for (let tx of block.transactions || []) {
                         assertNotNull(infoById[tx.txID])
                     }
-                } else {
-                    assert(isObject(transactionsInfo))
-                    assert(Object.keys(transactionsInfo).length == 0)
                 }
 
                 return {

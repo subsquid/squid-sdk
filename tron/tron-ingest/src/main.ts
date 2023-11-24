@@ -15,10 +15,7 @@ runProgram(async () => {
 
     program.description('Data fetcher for tron based chains')
 
-    program.option('-a, --raw-archive <url>', 'Either local dir or s3:// with raw pre-fetched data', FileOrUrl(['s3:']))
-    program.option('-e, --endpoint <url>', 'RPC endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
-    program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
-    program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', nat)
+    program.requiredOption('-a, --raw-archive <url>', 'Either local dir or s3:// with raw pre-fetched data', FileOrUrl(['s3:']))
     program.option('--first-block <number>', 'Height of the first block to dump', nat, 0)
     program.option('--last-block <number>', 'Height of the last block to dump', nat)
     program.option('--service <port>', 'Run as HTTP data service')

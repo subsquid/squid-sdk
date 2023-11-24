@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {BlockData} from '@subsquid/tron-dump/src/interfaces'
+import {BlockData} from '@subsquid/tron-data-raw'
 import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
 import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {createFs} from '@subsquid/util-internal-fs'
@@ -9,13 +9,12 @@ import * as readline from 'readline'
 import {Writable} from 'stream'
 import {pipeline} from 'stream/promises'
 import {createGunzip} from 'zlib'
+import {Block} from './interfaces'
+import {mapBlock} from './mapping'
 
 
 export interface IngestOptions {
-    rawArchive?: string
-    endpoint?: string
-    endpointCapacity: number
-    endpointRateLimit?: number
+    rawArchive: string
 }
 
 
@@ -23,29 +22,6 @@ export class Ingest {
     private log = createLogger('sqd:tron-ingest')
 
     constructor(private options: IngestOptions) {}
-
-    // @def
-    // dataRequest(): DataRequest {
-    //     return {
-    //         blockValidator: true,
-    //         blockTimestamp: true,
-    //         events: true,
-    //         extrinsics: {
-    //             fee: true,
-    //             hash: true
-    //         }
-    //     }
-    // }
-
-    // @def
-    // rpc(): RpcClient {
-    //     return new RpcClient({
-    //         url: assertNotNull(this.options.endpoint, 'chain RPC endpoint is required'),
-    //         capacity: this.options.endpointCapacity,
-    //         rateLimit: this.options.endpointRateLimit,
-    //         retryAttempts: Number.MAX_SAFE_INTEGER
-    //     })
-    // }
 
     @def
     private archive(): ArchiveLayout {
@@ -68,10 +44,11 @@ export class Ingest {
         }
     }
 
-    private async archiveIngest(range: Range, cb: (blocks: BlockData[]) => Promise<void>): Promise<void> {
+    private async archiveIngest(range: Range, cb: (blocks: Block[]) => Promise<void>): Promise<void> {
         const process = async (rawBlocks: BlockData[]) => {
             if (rawBlocks.length == 0) return
-            await cb(rawBlocks)
+            let blocks = rawBlocks.map(mapBlock)
+            await cb(blocks)
         }
 
         for await (let chunk of this.getArchiveChunks(range)) {
@@ -99,18 +76,7 @@ export class Ingest {
         }
     }
 
-    private async rpcIngest(range: Range, cb: (blocks: BlockData[]) => Promise<void>): Promise<void> {
-        // let ds = new RpcDataSource({
-        //     rpc: this.rpc(),
-        //     typesBundle: this.typesBundle()
-        // })
-
-        // for await (let batch of ds.getFinalizedBlocks([{range, request: this.dataRequest()}])) {
-        //     await cb(batch.blocks)
-        // }
-    }
-
-    private async write(out: Writable, blocks: BlockData[]): Promise<void> {
+    private async write(out: Writable, blocks: Block[]): Promise<void> {
         let flushed = true
         for (let block of blocks) {
             flushed = out.write(JSON.stringify(toJSON(block)) + '\n')
@@ -121,11 +87,7 @@ export class Ingest {
     }
 
     async run(range: Range, out: Writable): Promise<void> {
-        if (this.options.rawArchive) {
-            await this.archiveIngest(range, blocks => this.write(out, blocks))
-        } else {
-            await this.rpcIngest(range, blocks => this.write(out, blocks))
-        }
+        await this.archiveIngest(range, blocks => this.write(out, blocks))
     }
 }
 

@@ -1,6 +1,6 @@
 export interface Log {
     address: string
-    data?: string
+    data: string
     topics: string[]
 }
 
