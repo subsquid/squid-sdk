@@ -1,23 +1,41 @@
-import {CallOptions, RetryError, RpcClient, RpcError, SubscriptionHandle} from '@subsquid/rpc-client'
-import {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
+import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
 import {groupBy, last} from '@subsquid/util-internal'
 import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
 import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {NO_LOGS_BLOOM} from '../ds-archive/mapping'
 import {Bytes, Bytes32, Qty} from '../interfaces/base'
+import {isEmpty} from '../mapping/schema'
+import {array, GetSrcType, nullable, ValidationError, Validator} from '../validation'
 import {
     Block,
     DataRequest,
+    DebugFrameResult,
     DebugStateDiffResult,
+    GetBlock,
+    GetBlockNoTransactions,
+    GetBlockWithTransactions,
+    getTraceTransactionReplayValidator,
     Log,
-    NewHeadNotification,
     TraceFrame,
-    TraceTracers,
-    TraceTransactionReplay,
+    TraceReplayTraces,
     TransactionReceipt
 } from './rpc-data'
-import {getBlockHeight, getTxHash, qty2Int, toQty} from './util'
+import {getTxHash, qty2Int, toQty} from './util'
+
+
+const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
+
+
+function getResultValidator<V extends Validator<any>>(validator: V): (result: unknown) => GetSrcType<V> {
+    return function(result: unknown) {
+        let err = validator.validate(result)
+        if (err) {
+            throw new ValidationError(`server returned unexpected result: ${err.toString()}`)
+        } else {
+            return result as any
+        }
+    }
+}
 
 
 export class Rpc {
@@ -44,15 +62,23 @@ export class Rpc {
         return this.client.batchCall(batch, {priority: this.priority, ...options})
     }
 
-    getBlockByNumber(height: number, withTransactions: boolean): Promise<Block | null> {
+    getBlockByNumber(height: number, withTransactions: boolean): Promise<GetBlock | null> {
         return this.call('eth_getBlockByNumber', [
             toQty(height),
             withTransactions
-        ])
+        ], {
+            validateResult: getResultValidator(
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            )
+        })
     }
 
-    getBlockByHash(hash: Bytes, withTransactions: boolean): Promise<Block | null> {
-        return this.call('eth_getBlockByHash', [hash, withTransactions])
+    getBlockByHash(hash: Bytes, withTransactions: boolean): Promise<GetBlock | null> {
+        return this.call('eth_getBlockByHash', [hash, withTransactions], {
+            validateResult: getResultValidator(
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            )
+        })
     }
 
     async getBlockHash(height: number): Promise<Bytes | undefined> {
@@ -66,7 +92,7 @@ export class Rpc {
     }
 
     async getColdBlock(blockHash: Bytes32, req?: DataRequest, finalizedHeight?: number): Promise<Block> {
-        let block = await this.getBlockByHash(blockHash, req?.transactions || false)
+        let block = await this.getBlockByHash(blockHash, req?.transactions || false).then(toBlock)
         if (block == null) throw new BlockConsistencyError({hash: blockHash})
         if (req) {
             await this.addRequestedData([block], req, finalizedHeight)
@@ -76,12 +102,12 @@ export class Rpc {
     }
 
     async getColdSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
-        let call = this.makeGetBlockBatchCall(req)
+        let result = await this.getBlockSplit(req)
 
-        let result: (Block | null)[] = await this.batchCall(call)
         for (let i = 0; i < result.length; i++) {
             if (result[i] == null) throw new BlockConsistencyError({height: req.range.from + i})
-            if (i > 0 && result[i]!.parentHash !== result[i-1]!.hash) throw new BlockConsistencyError(result[i]!)
+            if (i > 0 && result[i - 1]!.hash !== result[i]!.block.parentHash)
+                throw new BlockConsistencyError(result[i]!)
         }
 
         let blocks = result as Block[]
@@ -94,15 +120,14 @@ export class Rpc {
     }
 
     async getHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
-        let call = this.makeGetBlockBatchCall(req)
+        let blocks = await this.getBlockSplit(req)
 
-        let blocks: (Block | null)[] = await this.batchCall(call)
         let chain: Block[] = []
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             if (block == null) break
-            if (i > 0 && chain[i - 1].hash !== block.parentHash) break
+            if (i > 0 && chain[i - 1].hash !== block.block.parentHash) break
             chain.push(block)
         }
 
@@ -111,7 +136,7 @@ export class Rpc {
         return trimInvalid(chain)
     }
 
-    private makeGetBlockBatchCall(req: SplitRequest<DataRequest>) {
+    private async getBlockSplit(req: SplitRequest<DataRequest>): Promise<(Block | undefined)[]> {
         let call = []
         for (let i = req.range.from; i <= req.range.to; i++) {
             call.push({
@@ -119,7 +144,12 @@ export class Rpc {
                 params: [toQty(i), req.request.transactions || false]
             })
         }
-        return call
+        let blocks = await this.batchCall(call, {
+            validateResult: getResultValidator(
+                req.request.transactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            )
+        })
+        return blocks.map(toBlock)
     }
 
     private async addRequestedData(blocks: Block[], req: DataRequest, finalizedHeight?: number): Promise<void> {
@@ -127,7 +157,7 @@ export class Rpc {
 
         let subtasks = []
 
-        if (req.logs && !req.receipts) {
+        if (req.logs) {
             subtasks.push(this.addLogs(blocks))
         }
 
@@ -143,19 +173,21 @@ export class Rpc {
     }
 
     private async addLogs(blocks: Block[]): Promise<void> {
+        if (blocks.length == 0) return
+
         let logs = await this.getLogs(
-            getBlockHeight(blocks[0]),
-            getBlockHeight(last(blocks))
+            blocks[0].height,
+            last(blocks).height
         )
 
         let logsByBlock = groupBy(logs, log => log.blockHash)
 
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
-            if (logs.length == 0 && block.logsBloom !== NO_LOGS_BLOOM) {
+            if (logs.length == 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
                 block._isInvalid = true
             } else {
-                block._logs = logs
+                block.logs = logs
             }
         }
     }
@@ -164,7 +196,9 @@ export class Rpc {
         return this.call('eth_getLogs', [{
             fromBlock: toQty(from),
             toBlock: toQty(to)
-        }]).catch(async err => {
+        }], {
+            validateResult: getResultValidator(array(Log))
+        }).catch(async err => {
             let range = asTryAnotherRangeError(err)
             if (range && range.from == from && from <= range.to && range.to < to) {
                 let result = await Promise.all([
@@ -197,7 +231,7 @@ export class Rpc {
             if (method == 'eth_getBlockReceipts') {
                 return {
                     method,
-                    params: [block.number]
+                    params: [block.block.number]
                 }
             } else {
                 return {
@@ -207,20 +241,20 @@ export class Rpc {
             }
         })
 
-        let results: TransactionReceipt[][] = await this.batchCall(call, {
-            validateResult: nonNull
+        let results: (TransactionReceipt[] | null)[] = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(array(TransactionReceipt)))
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
-            if (block.transactions.length === receipts.length) {
+            if (receipts != null && block.block.transactions.length === receipts.length) {
                 for (let receipt of receipts) {
                     if (receipt.blockHash !== block.hash) {
                         block._isInvalid = true
                     }
                 }
-                block._receipts = receipts
+                block.receipts = receipts
             } else {
                 block._isInvalid = true
             }
@@ -230,7 +264,7 @@ export class Rpc {
     private async addReceiptsByTx(blocks: Block[]): Promise<void> {
         let call = []
         for (let block of blocks) {
-            for (let tx of block.transactions) {
+            for (let tx of block.block.transactions) {
                 call.push({
                     method: 'eth_getTransactionReceipt',
                     params: [getTxHash(tx)]
@@ -238,7 +272,9 @@ export class Rpc {
             }
         }
 
-        let receipts: (TransactionReceipt | null)[] = await this.batchCall(call)
+        let receipts = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(TransactionReceipt))
+        })
 
         let receiptsByBlock = groupBy(
             receipts.filter(r => r != null) as TransactionReceipt[],
@@ -247,8 +283,8 @@ export class Rpc {
 
         for (let block of blocks) {
             let rs = receiptsByBlock.get(block.hash) || []
-            if (rs.length === block.transactions.length) {
-                block._receipts = rs
+            if (rs.length === block.block.transactions.length) {
+                block.receipts = rs
             } else {
                 block._isInvalid = true
             }
@@ -257,26 +293,40 @@ export class Rpc {
 
     private async addTraceTxReplays(
         blocks: Block[],
-        tracers: TraceTracers[],
+        traces: TraceReplayTraces,
         method: string = 'trace_replayBlockTransactions'
     ): Promise<void> {
+        let tracers: string[] = []
+
+        if (traces.trace) {
+            tracers.push('trace')
+        }
+
+        if (traces.stateDiff) {
+            tracers.push('stateDiff')
+        }
+
         if (tracers.length == 0) return
 
         let call = blocks.map(block => ({
             method,
-            params: [block.number, tracers]
+            params: [block.block.number, tracers]
         }))
 
-        let replaysByBlock: TraceTransactionReplay[][] = await this.batchCall(call)
+        let replaysByBlock = await this.batchCall(call, {
+            validateResult: getResultValidator(
+                array(getTraceTransactionReplayValidator(traces))
+            )
+        })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let replays = replaysByBlock[i]
-            let txs = new Set(block.transactions.map(getTxHash))
+            let txs = new Set(block.block.transactions.map(getTxHash))
 
             for (let rep of replays) {
                 if (!rep.transactionHash) { // FIXME: Who behaves like that? Arbitrum?
-                    let txHash: Bytes32 | undefined = undefined
+                    let txHash: Bytes32 | null | undefined = undefined
                     for (let frame of rep.trace || []) {
                         assert(txHash == null || txHash === frame.transactionHash)
                         txHash = txHash || frame.transactionHash
@@ -290,23 +340,25 @@ export class Rpc {
                 }
             }
 
-            block._traceReplays = replays
+            block.traceReplays = replays
         }
     }
 
     private async addTraceBlockTraces(blocks: Block[]): Promise<void> {
         let call = blocks.map(block => ({
             method: 'trace_block',
-            params: [block.number]
+            params: [block.block.number]
         }))
 
-        let results: TraceFrame[][] = await this.batchCall(call)
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(array(TraceFrame))
+        })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
             if (frames.length == 0) {
-                if (block.transactions.length > 0) {
+                if (block.block.transactions.length > 0) {
                     block._isInvalid = true
                 }
             } else {
@@ -317,11 +369,11 @@ export class Rpc {
                     }
                 }
                 if (!block._isInvalid) {
-                    block._traceReplays = []
+                    block.traceReplays = []
                     let byTx = groupBy(frames, f => f.transactionHash)
                     for (let [transactionHash, txFrames] of byTx.entries()) {
                         if (transactionHash) {
-                            block._traceReplays.push({
+                            block.traceReplays.push({
                                 transactionHash,
                                 trace: txFrames
                             })
@@ -346,22 +398,27 @@ export class Rpc {
             params: [block.hash, traceConfig]
         }))
 
-        let results: any[][] = await this.batchCall(call)
+        let validateFrameResult = getResultValidator(array(DebugFrameResult))
+
+        let results = await this.batchCall(call, {
+            validateResult: result => {
+                if (Array.isArray(result)) {
+                    // Moonbeam quirk
+                    for (let i = 0; i < result.length; i++) {
+                        if (!('result' in result[i])) {
+                            result[i] = {result: result[i]}
+                        }
+                    }
+                }
+                return validateFrameResult(result)
+            }
+        })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
-
-            assert(block.transactions.length === frames.length)
-
-            // Moonbeam quirk
-            for (let j = 0; j < frames.length; j++) {
-                if (!frames[j].result) {
-                    frames[j] = {result: frames[j]}
-                }
-            }
-
-            block._debugFrames = frames
+            assert(block.block.transactions.length === frames.length)
+            block.debugFrames = frames
         }
     }
 
@@ -379,13 +436,15 @@ export class Rpc {
             params: [block.hash, traceConfig]
         }))
 
-        let results: DebugStateDiffResult[][] = await this.batchCall(call)
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(array(DebugStateDiffResult))
+        })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
-            assert(block.transactions.length === diffs.length)
-            block._debugStateDiffs = diffs
+            assert(block.block.transactions.length === diffs.length)
+            block.debugStateDiffs = diffs
         }
     }
 
@@ -395,11 +454,11 @@ export class Rpc {
         }
         if (!req.traces) return
 
-        let arbBlocks = blocks.filter(b => getBlockHeight(b) <= 22207815)
-        let debugBlocks = blocks.filter(b => getBlockHeight(b) >= 22207818)
+        let arbBlocks = blocks.filter(b => b.height <= 22207815)
+        let debugBlocks = blocks.filter(b => b.height >= 22207818)
 
         if (arbBlocks.length) {
-            await this.addTraceTxReplays(arbBlocks, ['trace'], 'arbtrace_replayBlockTransactions')
+            await this.addTraceTxReplays(arbBlocks, {trace: true}, 'arbtrace_replayBlockTransactions')
         }
 
         if (debugBlocks.length) {
@@ -416,52 +475,34 @@ export class Rpc {
         if (isArbitrumOne) return this.addArbitrumOneTraces(blocks, req)
 
         let tasks: Promise<void>[] = []
-        let replayTracers: TraceTracers[] = []
+        let replayTraces: TraceReplayTraces = {}
 
         if (req.stateDiffs) {
-            if (finalizedHeight < getBlockHeight(last(blocks)) || req.useDebugApiForStateDiffs) {
+            if (finalizedHeight < last(blocks).height || req.useDebugApiForStateDiffs) {
                 tasks.push(this.addDebugStateDiffs(blocks))
             } else {
-                replayTracers.push('stateDiff')
+                replayTraces.stateDiff = true
             }
         }
 
         if (req.traces) {
             if (req.preferTraceApi) {
-                if (finalizedHeight < getBlockHeight(last(blocks)) || replayTracers.length == 0) {
+                if (finalizedHeight < last(blocks).height || isEmpty(replayTraces)) {
                     tasks.push(this.addTraceBlockTraces(blocks))
                 } else {
-                    replayTracers.push('trace')
+                    replayTraces.trace = true
                 }
             } else {
                 tasks.push(this.addDebugFrames(blocks))
             }
         }
 
-        if (replayTracers.length) {
-            tasks.push(this.addTraceTxReplays(blocks, replayTracers))
+        if (!isEmpty(replayTraces)) {
+            tasks.push(this.addTraceTxReplays(blocks, replayTraces))
         }
 
         await Promise.all(tasks)
     }
-
-    subscribeNewHeads(sub: NewHeadsSubscription): SubscriptionHandle {
-        return this.client.subscribe({
-            method: 'eth_subscribe',
-            params: ['newHeads'],
-            notification: 'eth_subscription',
-            unsubscribe: 'eth_unsubscribe',
-            onMessage: sub.onNewHead,
-            onError: sub.onError,
-            resubscribeOnConnectionLoss: true
-        })
-    }
-}
-
-
-export interface NewHeadsSubscription {
-    onNewHead: (head: NewHeadNotification) => void
-    onError: (err: Error) => void
 }
 
 
@@ -491,7 +532,7 @@ class RpcProps {
     async getReceiptsMethod(): Promise<GetReceiptsMethod> {
         if (this.receiptsMethod) return this.receiptsMethod
 
-        let alchemy = await this.client.call('alchemy_getTransactionReceipts', [{blockNumber: '0x0'}]).then(
+        let alchemy = await this.client.call('alchemy_getTransactionReceipts', [{blockNumber: '0x1'}]).then(
             res => Array.isArray(res),
             () => false
         )
@@ -518,16 +559,14 @@ function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
 }
 
 
-class UnexpectedResponse extends RetryError {
-    get name(): string {
-        return 'UnexpectedResponse'
+function toBlock(getBlock: GetBlock): Block
+function toBlock(getBlock?: null): undefined
+function toBlock(getBlock?: GetBlock | null): Block | undefined
+function toBlock(getBlock?: GetBlock | null): Block | undefined {
+    if (getBlock == null) return
+    return {
+        height: qty2Int(getBlock.number),
+        hash: getBlock.hash,
+        block: getBlock
     }
-}
-
-
-function nonNull(result: any, req: RpcRequest): any {
-    if (result == null) throw new UnexpectedResponse(
-        `Result of call ${JSON.stringify(req)} was null. Perhaps, you should find a better endpoint.`
-    )
-    return result
 }

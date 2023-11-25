@@ -20,7 +20,7 @@ const processor = new EvmBatchProcessor()
         log: {transactionHash: true}
     })
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 149_140_000})
+    .setBlockRange({from: 150_000_000})
 
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
@@ -33,7 +33,7 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
                 transfers.push(new Transfer({
                     id: log.id,
                     blockNumber: block.header.height,
-                    timestamp: new Date(block.header.timestamp),
+                    timestamp: new Date(block.header.timestamp * 1000),
                     tx: log.transactionHash,
                     from,
                     to,

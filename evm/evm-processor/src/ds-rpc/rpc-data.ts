@@ -1,166 +1,172 @@
-import {Bytes, Bytes20, Bytes32, Bytes8, Qty} from '../interfaces/base'
+import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
+import {project} from '../mapping/schema'
+import {
+    array,
+    BYTES,
+    constant,
+    GetSrcType,
+    NAT,
+    object,
+    option,
+    print,
+    QTY,
+    record,
+    ref,
+    SMALL_QTY,
+    STRING,
+    ValidationFailure,
+    Validator
+} from '../validation'
+
+
+export interface DataRequest {
+    logs?: boolean
+    transactions?: boolean
+    receipts?: boolean
+    traces?: boolean
+    stateDiffs?: boolean
+    preferTraceApi?: boolean
+    useDebugApiForStateDiffs?: boolean
+}
 
 
 export interface Block {
-    number: Qty
+    height: number
     hash: Bytes32
-    parentHash: Bytes32
-    nonce?: Bytes8
-    sha3Uncles: Bytes32
-    logsBloom: Bytes
-    transactionsRoot: Bytes32
-    stateRoot: Bytes32
-    receiptsRoot: Bytes32
-    mixHash?: Bytes
-    miner: Bytes20
-    difficulty?: Qty
-    totalDifficulty?: Qty
-    extraData: Bytes
-    size: Qty
-    gasLimit: Qty
-    gasUsed: Qty
-    timestamp: Qty
-    baseFeePerGas?: Qty
-    transactions: Bytes32[] | Transaction[]
-    _receipts?: TransactionReceipt[]
-    _logs?: Log[]
-    _traceReplays?: TraceTransactionReplay[]
-    _debugFrames?: DebugFrameResult[]
-    _debugStateDiffs?: DebugStateDiffResult[]
+    block: GetBlock
+    receipts?: TransactionReceipt[]
+    logs?: Log[]
+    traceReplays?: TraceTransactionReplay[]
+    debugFrames?: DebugFrameResult[]
+    debugStateDiffs?: DebugStateDiffResult[]
     _isInvalid?: boolean
 }
 
 
-export interface Transaction {
-    blockNumber: Qty
-    blockHash: Bytes32
-    from: Bytes20
-    gas: Qty
-    gasPrice: Qty
-    maxFeePerGas?: Qty
-    maxPriorityFeePerGas?: Qty
+const Transaction = object({
+    blockNumber: SMALL_QTY,
+    blockHash: BYTES,
+    transactionIndex: SMALL_QTY,
+    hash: BYTES,
+    input: BYTES
+})
+
+
+export type Transaction = GetSrcType<typeof Transaction>
+
+
+export const GetBlockWithTransactions = object({
+    number: SMALL_QTY,
+    hash: BYTES,
+    parentHash: BYTES,
+    logsBloom: BYTES,
+    transactions: array(Transaction)
+})
+
+
+export const GetBlockNoTransactions = object({
+    number: SMALL_QTY,
+    hash: BYTES,
+    parentHash: BYTES,
+    logsBloom: BYTES,
+    transactions: array(BYTES)
+})
+
+
+export interface GetBlock {
+    number: Qty
     hash: Bytes32
-    input: Bytes
-    nonce: Qty
-    to?: Bytes20
-    transactionIndex: Qty
-    value: Qty
-    v?: Qty
-    r?: Bytes32
-    s?: Bytes32
-    yParity?: Qty
-    chainId?: Qty
+    parentHash: Bytes32
+    logsBloom: Bytes
+    transactions: Bytes32[] | Transaction[]
 }
 
 
-export interface TransactionReceipt {
-    transactionHash: Bytes32
-    transactionIndex: Qty
-    blockHash: Bytes32
-    blockNumber: Qty
-    cumulativeGasUsed: Qty
-    effectiveGasPrice: Qty
-    gasUsed: Qty
-    contractAddress: Bytes20 | null
-    logs: Log[]
-    type: Qty
-    status: Qty
-}
+export const Log = object({
+    blockNumber: SMALL_QTY,
+    blockHash: BYTES,
+    logIndex: SMALL_QTY,
+    transactionIndex: SMALL_QTY
+})
 
 
-export interface Log {
-    blockNumber: Qty
-    blockHash: Bytes32
-    logIndex: Qty
-    transactionIndex: Qty
-    transactionHash: Bytes32
-    address: Bytes20
-    data: Bytes
-    topics: Bytes32[]
-}
+export type Log = GetSrcType<typeof Log>
 
 
-export interface TraceFrameBase {
-    traceAddress: number[]
-    subtraces: number
-    error: string | null
-    transactionHash?: Bytes32
-    blockHash?: Bytes32
-}
+export const TransactionReceipt = object({
+    blockNumber: SMALL_QTY,
+    blockHash: BYTES,
+    transactionIndex: SMALL_QTY,
+    logs: array(Log)
+})
 
 
-export interface TraceCreateFrame extends TraceFrameBase {
-    type: 'create'
-    action: TraceCreateAction
-    result?: TraceCreateResult
-}
+export type TransactionReceipt = GetSrcType<typeof TransactionReceipt>
 
 
-export interface TraceCreateAction {
-    from: Bytes20
-    value: Qty
-    gas: Qty
-    init: Bytes
-}
+export const DebugFrame: Validator<DebugFrame> = object({
+    type: STRING,
+    input: BYTES,
+    calls: option(array(ref(() => DebugFrame)))
+})
 
 
-export interface TraceCreateResult {
-    gasUsed: Qty
-    code: Bytes
-    address: Bytes20
-}
-
-
-export interface TraceCallFrame extends TraceFrameBase {
-    type: 'call'
-    action: TraceCallAction
-    result?: TraceCallResult
-}
-
-
-export interface TraceCallAction {
-    callType: string
-    from: Bytes20
-    to: Bytes20
-    value: Qty
-    gas: Qty
-    input: Bytes
-}
-
-
-export interface TraceCallResult {
-    gasUsed: bigint
-    output: Bytes
-}
-
-
-export interface TraceSuicideFrame extends TraceFrameBase {
-    type: 'suicide'
-    action: TraceSuicideAction
-}
-
-
-export interface TraceSuicideAction {
-    address: Bytes20
-    refundAddress: Bytes20
-    balance: Qty
-}
-
-
-export interface TraceRewardFrame extends TraceFrameBase {
-    type: 'reward'
-    action: TraceRewardAction
-}
-
-
-export interface TraceRewardAction {
-    author: Bytes20
-    value: Qty
+export interface DebugFrame {
     type: string
+    input: Bytes
+    calls?: DebugFrame[] | null
 }
 
 
-export type TraceFrame = TraceCreateFrame | TraceCallFrame | TraceSuicideFrame | TraceRewardFrame
+export const DebugFrameResult = object({
+    result: DebugFrame
+})
+
+
+export type DebugFrameResult = GetSrcType<typeof DebugFrameResult>
+
+
+export const DebugStateMap = object({
+    balance: option(QTY),
+    code: option(BYTES),
+    nonce: option(SMALL_QTY),
+    storage: option(record(BYTES, BYTES))
+})
+
+
+export type DebugStateMap = GetSrcType<typeof DebugStateMap>
+
+
+export const DebugStateDiff = object({
+    pre: record(BYTES, DebugStateMap),
+    post: record(BYTES, DebugStateMap)
+})
+
+
+export type DebugStateDiff = GetSrcType<typeof DebugStateDiff>
+
+
+export const DebugStateDiffResult = object({
+    result: DebugStateDiff
+})
+
+
+export type DebugStateDiffResult = GetSrcType<typeof DebugStateDiffResult>
+
+
+export const TraceFrame = object({
+    blockHash: option(BYTES),
+    transactionHash: option(BYTES),
+    traceAddress: array(NAT),
+    type: STRING,
+    action: object({})
+})
+
+
+export type TraceFrame = GetSrcType<typeof TraceFrame>
+
+
+export type TraceDiff = '=' | TraceAddDiff | TraceChangeDiff | TraceDeleteDiff
 
 
 interface TraceAddDiff {
@@ -187,79 +193,80 @@ interface TraceDeleteDiff {
 }
 
 
-export type TraceDiff = '=' | TraceAddDiff | TraceChangeDiff | TraceDeleteDiff
-
-
-export interface TraceStateDiff {
-    balance: TraceDiff
-    code: TraceDiff
-    nonce: TraceDiff
-    storage: Record<Bytes20, TraceDiff>
+const TraceDiff: Validator<TraceDiff> = {
+    cast(value: unknown): ValidationFailure | TraceDiff {
+        return this.validate(value) || (value as any)
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (value === '=') return
+        if (typeof value != 'object' || !value) return new ValidationFailure(`${print(value)} is not a diff object`)
+        if ('+' in value) {
+            return TraceAddDiff.validate(value)
+        } else if ('*' in value) {
+            return TraceChangeDiff.validate(value)
+        } else if ('-' in value) {
+            return TraceDeleteDiff.validate(value)
+        } else {
+            return new ValidationFailure(`${print(value)} is not a diff object`)
+        }
+    },
+    phantom(): TraceDiff {
+        throw new Error()
+    }
 }
 
 
+const TraceAddDiff = object({
+    '+': BYTES,
+    '*': constant(undefined),
+    '-': constant(undefined)
+})
+
+
+const TraceChangeDiff = object({
+    '+': constant(undefined),
+    '*': object({from: BYTES, to: BYTES}),
+    '-': constant(undefined)
+})
+
+
+const TraceDeleteDiff = object({
+    '+': constant(undefined),
+    '*': constant(undefined),
+    '-': BYTES
+})
+
+
+export const TraceStateDiff = object({
+    balance: TraceDiff,
+    code: TraceDiff,
+    nonce: TraceDiff,
+    storage: record(BYTES, TraceDiff)
+})
+
+
+export type TraceStateDiff = GetSrcType<typeof TraceStateDiff>
+
+
 export interface TraceTransactionReplay {
-    transactionHash: Bytes32
+    transactionHash?: Bytes32 | null
     trace?: TraceFrame[]
     stateDiff?: Record<Bytes20, TraceStateDiff>
 }
 
 
-export type TraceTracers = 'trace' | 'stateDiff'
-
-
-export interface DebugFrame {
-    type: 'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT' | 'INVALID' | 'STOP'
-    from: Bytes20
-    to: Bytes20
-    value?: Qty
-    gas: Qty
-    gasUsed: Qty
-    input: Bytes
-    output: Bytes
-    error?: string
-    revertReason?: string
-    calls?: DebugFrame[]
+export interface TraceReplayTraces {
+    trace?: boolean
+    stateDiff?: boolean
 }
 
 
-export interface DebugFrameResult {
-    result: DebugFrame
-}
-
-
-export interface DebugStateMap {
-    balance?: Qty
-    code?: Bytes
-    nonce?: number
-    storage?: Record<Bytes32, Bytes>
-}
-
-
-export interface DebugStateDiff {
-    pre: Record<Bytes20, DebugStateMap>
-    post: Record<Bytes20, DebugStateMap>
-}
-
-
-export interface DebugStateDiffResult {
-    result: DebugStateDiff
-}
-
-
-export interface DataRequest {
-    logs?: boolean
-    transactions?: boolean
-    receipts?: boolean
-    traces?: boolean
-    stateDiffs?: boolean
-    preferTraceApi?: boolean
-    useDebugApiForStateDiffs?: boolean
-}
-
-
-export interface NewHeadNotification {
-    number: Qty
-    hash: Bytes32
-    parentHash: Bytes32
+export function getTraceTransactionReplayValidator(tracers: TraceReplayTraces): Validator<TraceTransactionReplay> {
+    return object({
+        transactionHash: option(BYTES),
+        ...project(tracers, {
+            trace: array(TraceFrame),
+            stateDiff: record(BYTES, TraceStateDiff)
+        })
+    })
 }

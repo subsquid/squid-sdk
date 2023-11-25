@@ -9,7 +9,7 @@ import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
-import {BlockData, FieldSelection} from './interfaces/data'
+import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
 
 
@@ -337,10 +337,9 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             return res
         })
 
-        if (this.fields) {
-            requests.forEach(req => {
-                req.request.fields = this.fields
-            })
+        let fields = addDefaultFields(this.fields)
+        for (let req of requests) {
+            req.request.fields = fields
         }
 
         return applyRangeBound(requests, this.blockRange)
@@ -416,4 +415,38 @@ function concatRequestLists<T extends object>(a?: T[], b?: T[]): T[] | undefined
         result.push(...b)
     }
     return result.length == 0 ? undefined : result
+}
+
+
+function addDefaultFields(fields?: FieldSelection): FieldSelection {
+    return {
+        block: mergeDefaultFields(DEFAULT_FIELDS.block, fields?.block),
+        transaction: mergeDefaultFields(DEFAULT_FIELDS.transaction, fields?.transaction),
+        log: mergeDefaultFields(DEFAULT_FIELDS.log, fields?.log),
+        trace: mergeDefaultFields(DEFAULT_FIELDS.trace, fields?.trace),
+        stateDiff: {...mergeDefaultFields(DEFAULT_FIELDS.stateDiff, fields?.stateDiff), kind: true}
+    }
+}
+
+
+type Selector<Props extends string> = {
+    [P in Props]?: boolean
+}
+
+
+function mergeDefaultFields<Props extends string>(
+    defaults: Selector<Props>,
+    selection?: Selector<Props>
+): Selector<Props> {
+    let result: Selector<Props> = {...defaults}
+    for (let key in selection) {
+        if (selection[key] != null) {
+            if (selection[key]) {
+                result[key] = true
+            } else {
+                delete result[key]
+            }
+        }
+    }
+    return result
 }

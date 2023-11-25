@@ -1,7 +1,8 @@
 import {
-    EvmBlock,
+    EvmBlockHeader,
     EvmLog,
-    EvmStateDiff, EvmStateDiffBase,
+    EvmStateDiff,
+    EvmStateDiffBase,
     EvmTraceBase,
     EvmTraceCallAction,
     EvmTraceCallResult,
@@ -18,7 +19,7 @@ type Simplify<T> = {
 } & {}
 
 
-type Selector<Props extends string, Exclusion extends string = 'id'> = {
+type Selector<Props extends string, Exclusion> = {
     [P in Exclude<Props, Exclusion>]?: boolean
 }
 
@@ -26,15 +27,15 @@ type Selector<Props extends string, Exclusion extends string = 'id'> = {
 type AddPrefix<Prefix extends string, S extends string> = `${Prefix}${Capitalize<S>}`
 
 
-type BlockRequiredFields = 'height' | 'hash' | 'parentHash'
-type TransactionRequiredFields = 'transactionIndex'
-type LogRequiredFields = 'logIndex' | 'transactionIndex'
-type TraceRequiredFields = 'transactionIndex' | 'traceAddress' | 'type'
-type StateDiffRequiredFields = 'transactionIndex' | 'address' | 'key'
+export type BlockRequiredFields = 'height' | 'hash' | 'parentHash'
+export type TransactionRequiredFields = 'transactionIndex'
+export type LogRequiredFields = 'logIndex' | 'transactionIndex'
+export type TraceRequiredFields = 'transactionIndex' | 'traceAddress' | 'type'
+export type StateDiffRequiredFields = 'transactionIndex' | 'address' | 'key'
 
 
 export interface FieldSelection {
-    block?: Selector<keyof EvmBlock, BlockRequiredFields>
+    block?: Selector<keyof EvmBlockHeader, BlockRequiredFields>
     transaction?: Selector<keyof EvmTransaction, TransactionRequiredFields>
     log?: Selector<keyof EvmLog, LogRequiredFields>
     trace?: Selector<
@@ -103,8 +104,8 @@ type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : nev
 
 export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     {id: string} &
-    Pick<EvmBlock, BlockRequiredFields> &
-    Select<EvmBlock, GetFields<F, 'block'>>
+    Pick<EvmBlockHeader, BlockRequiredFields> &
+    Select<EvmBlockHeader, GetFields<F, 'block'>>
 >
 
 
@@ -112,7 +113,12 @@ export type Transaction<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<EvmTransaction, TransactionRequiredFields> &
     Select<EvmTransaction, GetFields<F, 'transaction'>> &
-    {block: BlockHeader<F>}
+    {
+        block: BlockHeader<F>
+        logs: Log<F>[]
+        traces: Trace<F>[]
+        stateDiffs: StateDiff<F>[]
+    }
 >
 
 
@@ -120,7 +126,11 @@ export type Log<F extends FieldSelection = {}> = Simplify<
     {id: string} &
     Pick<EvmLog, LogRequiredFields> &
     Select<EvmLog, GetFields<F, 'log'>> &
-    {block: BlockHeader<F>, transaction?: Transaction<F>}
+    {
+        block: BlockHeader<F>,
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
 >
 
 
@@ -169,7 +179,14 @@ export type TraceRewardAction<F extends FieldSelection = {}> = Select<
 type TraceBase<F extends FieldSelection = {}> =
     Pick<EvmTraceBase, Exclude<TraceRequiredFields, 'type'>> &
     Select<EvmTraceBase, GetFields<F, 'trace'>> &
-    {block: BlockHeader<F>, transaction?: Transaction<F>}
+    {
+        block: BlockHeader<F>,
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+        parent?: Trace<F>
+        getParent(): Trace<F>
+        children: Trace<F>[]
+    }
 
 
 type RemoveEmptyObjects<T> = {
@@ -215,7 +232,11 @@ export type Trace<F extends FieldSelection = {}> =
 export type StateDiff<F extends FieldSelection = {}> = Simplify<
     EvmStateDiffBase &
     Select<EvmStateDiff, GetFields<F, 'stateDiff'>> &
-    {block: BlockHeader<F>, transaction?: Transaction<F>}
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
 >
 
 

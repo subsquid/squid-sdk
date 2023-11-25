@@ -1,53 +1,61 @@
 import {Bytes, Bytes20, Bytes32, Bytes8} from './base'
 
 
-export interface EvmBlock {
+export interface EvmBlockHeader {
     height: number
     hash: Bytes32
     parentHash: Bytes32
-    nonce?: Bytes8
+    nonce: Bytes8
     sha3Uncles: Bytes32
     logsBloom: Bytes
     transactionsRoot: Bytes32
     stateRoot: Bytes32
     receiptsRoot: Bytes32
-    mixHash?: Bytes
+    mixHash: Bytes
     miner: Bytes20
-    difficulty?: bigint
-    totalDifficulty?: bigint
+    difficulty: bigint
+    totalDifficulty: bigint
     extraData: Bytes
     size: bigint
     gasLimit: bigint
     gasUsed: bigint
     timestamp: number
-    baseFeePerGas?: bigint
+    baseFeePerGas: bigint
 }
 
 
-export interface EvmTransaction {
+export interface EvmTransaction extends _EvmTx, _EvmTxReceipt {
+    transactionIndex: number
+    sighash: Bytes
+}
+
+
+export interface _EvmTx {
+    hash: Bytes32
     from: Bytes20
+    to?: Bytes20
     gas: bigint
     gasPrice: bigint
     maxFeePerGas?: bigint
     maxPriorityFeePerGas?: bigint
-    hash: Bytes32
     input: Bytes
     nonce: number
-    to?: Bytes20
-    transactionIndex: number
     value: bigint
-    v?: bigint
-    r?: Bytes32
-    s?: Bytes32
+    v: bigint
+    r: Bytes32
+    s: Bytes32
     yParity?: number
     chainId?: number
-    gasUsed?: bigint
-    cumulativeGasUsed?: bigint
-    effectiveGasPrice?: bigint
+}
+
+
+export interface _EvmTxReceipt {
+    gasUsed: bigint
+    cumulativeGasUsed: bigint
+    effectiveGasPrice: bigint
     contractAddress?: Bytes32
-    type?: number
-    status?: number
-    sighash: Bytes
+    type: number
+    status: number
 }
 
 

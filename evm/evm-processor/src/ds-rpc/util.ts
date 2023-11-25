@@ -1,6 +1,6 @@
 import assert from 'assert'
 import {Bytes32, Qty} from '../interfaces/base'
-import * as rpc from './rpc-data'
+import {Validator} from '../validation'
 
 
 export function qty2Int(qty: Qty): number {
@@ -15,15 +15,15 @@ export function toQty(i: number): Qty {
 }
 
 
-export function getBlockHeight(block: rpc.Block): number {
-    return qty2Int(block.number)
-}
-
-
-export function getTxHash(tx: Bytes32 | rpc.Transaction): Bytes32 {
+export function getTxHash(tx: Bytes32 | {hash: Bytes32}): Bytes32 {
     if (typeof tx == 'string') {
         return tx
     } else {
         return tx.hash
     }
 }
+
+
+export type GetValidatorFactoryCast<V> = V extends (...args: any) => Validator<infer T, infer S>
+    ? T
+    : never

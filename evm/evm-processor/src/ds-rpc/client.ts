@@ -13,6 +13,7 @@ import {
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
 import {
     getRequestAt,
+    mapRangeRequestList,
     rangeEnd,
     RangeRequest,
     RangeRequestList,
@@ -23,14 +24,15 @@ import {
 import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
-import {AllFields, BlockData} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
-import {mapBlock, MappingRequest, toMappingRequest} from './mapping'
+import {Block} from '../mapping/entities'
+import {BYTES, cast, object, SMALL_QTY} from '../validation'
+import {mapBlock} from './mapping'
+import {MappingRequest, toMappingRequest} from './request'
 import {Rpc} from './rpc'
-import {qty2Int} from './util'
 
 
-type Block = BlockData<AllFields>
+const NO_REQUEST = toMappingRequest()
 
 
 export interface EvmRpcDataSourceOptions {
@@ -79,7 +81,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
             getSplit: req => this._getSplit(req),
-            requests,
+            requests: mapRangeRequestList(requests, req => this.toMappingRequest(req)),
             splitSize: 10,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
             stopOnHead,
@@ -87,14 +89,13 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         })
     }
 
-    private async _getSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
-        let request = this.toRpcDataRequest(req.request)
+    private async _getSplit(req: SplitRequest<MappingRequest>): Promise<Block[]> {
         let rpc = this.rpc.withPriority(req.range.from)
-        let blocks = await rpc.getColdSplit({range: req.range, request})
-        return blocks.map(b => mapBlock(b, request.transactionList || false))
+        let blocks = await rpc.getColdSplit(req)
+        return blocks.map(b => mapBlock(b, req.request))
     }
 
-    private toRpcDataRequest(req?: DataRequest): MappingRequest {
+    private toMappingRequest(req?: DataRequest): MappingRequest {
         let r = toMappingRequest(req)
         r.preferTraceApi = this.preferTraceApi
         r.useDebugApiForStateDiffs = this.useDebugApiForStateDiffs
@@ -108,29 +109,31 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     ): Promise<void> {
         if (requests.length == 0) return
 
+        let mappingRequests = mapRangeRequestList(requests, req => this.toMappingRequest(req))
+
         let self = this
 
         let proc = new HotProcessor<Block>(state, {
             process: cb,
             getBlock: async ref => {
-                let req = this.toRpcDataRequest(getRequestAt(requests, ref.height))
+                let req = getRequestAt(mappingRequests, ref.height) || NO_REQUEST
                 let block = await this.rpc.getColdBlock(ref.hash, req, proc.getFinalizedHeight())
-                return mapBlock(block, req.transactionList || false)
+                return mapBlock(block, req)
             },
             async *getBlockRange(from: number, to: BlockRef): AsyncIterable<Block[]> {
                 assert(to.height != null)
                 if (from > to.height) {
                     from = to.height
                 }
-                for (let split of splitRangeByRequest(requests, {from, to: to.height})) {
-                    let request = self.toRpcDataRequest(split.request)
+                for (let split of splitRangeByRequest(mappingRequests, {from, to: to.height})) {
+                    let request = split.request || NO_REQUEST
                     for (let range of splitRange(10, split.range)) {
                         let rpcBlocks = await self.rpc.getHotSplit({
                             range,
                             request,
                             finalizedHeight: proc.getFinalizedHeight()
                         })
-                        let blocks = rpcBlocks.map(b => mapBlock(b, request.transactionList || false))
+                        let blocks = rpcBlocks.map(b => mapBlock(b, request))
                         let lastBlock = maybeLast(blocks)?.header.height ?? range.from - 1
                         yield blocks
                         if (lastBlock < range.to) {
@@ -229,14 +232,18 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private subscribeNewHeads(): AsyncQueue<Head | Error> {
         let queue = new AsyncQueue<Head | Error>(1)
 
-        let handle = this.rpc.subscribeNewHeads({
-            onNewHead: head => {
+        let handle = this.rpc.client.subscribe({
+            method: 'eth_subscribe',
+            params: ['newHeads'],
+            notification: 'eth_subscription',
+            unsubscribe: 'eth_unsubscribe',
+            onMessage: msg => {
                 try {
-                    let height = qty2Int(head.number)
+                    let {number, hash, parentHash} = cast(NewHeadMessage, msg)
                     queue.forcePut({
-                        height,
-                        hash: head.hash,
-                        parentHash: head.parentHash
+                        height: number,
+                        hash,
+                        parentHash
                     })
                 } catch(err: any) {
                     queue.forcePut(ensureError(err))
@@ -246,7 +253,8 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             onError: err => {
                 queue.forcePut(ensureError(err))
                 queue.close()
-            }
+            },
+            resubscribeOnConnectionLoss: true
         })
 
         queue.addCloseListener(() => handle.close())
@@ -254,3 +262,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         return queue
     }
 }
+
+
+const NewHeadMessage = object({
+    number: SMALL_QTY,
+    hash: BYTES,
+    parentHash: BYTES
+})

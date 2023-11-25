@@ -1,7 +1,7 @@
 import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
 import {Runtime} from '@subsquid/substrate-runtime'
-import {assertNotNull} from '@subsquid/util-internal'
-import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
+import {assertNotNull, maybeLast} from '@subsquid/util-internal'
+import {formatId} from '@subsquid/util-internal-processor-tools'
 import {ParentBlockHeader} from './interfaces/data'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
@@ -382,28 +382,40 @@ export function setUpItems(block: Block): void {
     block.extrinsics.sort((a, b) => a.index - b.index)
     block.calls.sort(callCompare)
 
-    let extrinsicsByIndex = new Map(block.extrinsics.map(ex => [ex.index, ex]))
+    let extrinsics: (Extrinsic | undefined)[] = new Array((maybeLast(block.extrinsics)?.index ?? -1) + 1)
+    for (let rec of block.extrinsics) {
+        extrinsics[rec.index] = rec
+    }
 
-    for (let i = 0; i < block.calls.length; i++) {
-        let call = block.calls[i]
-        let extrinsic = extrinsicsByIndex.get(call.extrinsicIndex)
+    for (let i = block.calls.length - 1; i >= 0; i--) {
+        let rec = block.calls[i]
+        let extrinsic = extrinsics[rec.extrinsicIndex]
         if (extrinsic) {
-            if (call.address.length == 0) {
-                extrinsic.call = call
+            if (rec.address.length == 0) {
+                extrinsic.call = rec
             }
-            call.extrinsic = extrinsic
-            extrinsic.subcalls.push(call)
+            rec.extrinsic = extrinsic
+            extrinsic.subcalls.push(rec)
         }
-        setUpCallTree(block.calls, i)
+
+        if (i < block.calls.length - 1) {
+            let prev = block.calls[i + 1]
+            if (isSubcall(prev, rec)) {
+                rec.parentCall = prev
+                populateSubcalls(prev, rec)
+            }
+        }
     }
 
     for (let event of block.events) {
         if (event.extrinsicIndex == null) continue
-        let extrinsic = extrinsicsByIndex.get(event.extrinsicIndex)
+
+        let extrinsic = extrinsics[event.extrinsicIndex]
         if (extrinsic) {
             extrinsic.events.push(event)
             event.extrinsic = extrinsic
         }
+
         if (event.callAddress && block.calls.length) {
             let pos = bisectCalls(block.calls, event.extrinsicIndex, event.callAddress)
             for (let i = pos; i < block.calls.length; i++) {
@@ -441,21 +453,11 @@ function bisectCalls(calls: Call[], extrinsicIndex: number, callAddress: number[
 }
 
 
-function setUpCallTree(calls: Call[], pos: number): void {
-    let offset = -1
-    let parent = calls[pos]
-    for (let i = pos - 1; i >= 0; i--) {
-        if (isSubcall(parent, calls[i])) {
-            if (calls[i].address.length == parent.address.length + 1) {
-                calls[i].parentCall = parent
-            }
-            offset = i
-        } else {
-            break
-        }
+function populateSubcalls(parent: Call | undefined, child: Call): void {
+    while (parent) {
+        parent.subcalls.push(child)
+        parent = parent.parentCall
     }
-    if (offset < 0) return
-    parent.subcalls = calls.slice(offset, pos)
 }
 
 
@@ -469,7 +471,7 @@ function addressCompare(a: number[], b: number[]): number {
         let order = a[i] - b[i]
         if (order) return order
     }
-    return b.length - a.length
+    return b.length - a.length // this differs from EVM call ordering
 }
 
 
@@ -483,17 +485,4 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
         if (parent.address[i] != call.address[i]) return false
     }
     return true
-}
-
-
-function formatId(block: HashAndHeight, ...address: number[]): string {
-    let no = block.height.toString().padStart(10, '0')
-    let hash = block.hash.startsWith('0x')
-        ? block.hash.slice(2, 7)
-        : block.hash.slice(0, 5)
-    let id = `${no}-${hash}`
-    for (let index of address) {
-        id += '-' + index.toString().padStart(6, '0')
-    }
-    return id
 }

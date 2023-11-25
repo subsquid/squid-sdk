@@ -29,7 +29,6 @@
     "@subsquid/util-timeout": "^2.3.1"
   },
   "devDependencies": {
-    "@subsquid/typeorm-store": "^1.2.4",
     "@types/node": "^18.18.0",
     "typescript": "~5.2.2"
   }

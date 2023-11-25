@@ -226,3 +226,16 @@ export function* partitionBy<T, V>(items: T[], value: (a: T) => V): Iterable<{it
         yield {items: pack, value: packValue}
     }
 }
+
+
+export function weakMemo<T extends object, R>(f: (obj: T) => R): (obj: T) => R {
+    let cache = new WeakMap<T, R>()
+    return function(obj: T): R {
+        let val = cache.get(obj)
+        if (val === undefined) {
+            val = f(obj)
+            cache.set(obj, val)
+        }
+        return val
+    }
+}
