@@ -128,6 +128,9 @@ dependencies:
   '@rush-temp/substrate-typegen':
     specifier: file:./projects/substrate-typegen.tgz
     version: file:projects/substrate-typegen.tgz
+  '@rush-temp/tron-data':
+    specifier: file:./projects/tron-data.tgz
+    version: file:projects/tron-data.tgz
   '@rush-temp/tron-data-raw':
     specifier: file:./projects/tron-data-raw.tgz
     version: file:projects/tron-data-raw.tgz
@@ -5493,7 +5496,7 @@ packages:
     dev: false
 
   file:projects/tron-data-raw.tgz:
-    resolution: {integrity: sha512-whM9w+fOSICQI33yhYQONQ+SF5GRxOdjE/Vm2qiQWKerQUXYrmTsj7PvMAPMbA05niHBqIQV0C+/RSkdLjzmlw==, tarball: file:projects/tron-data-raw.tgz}
+    resolution: {integrity: sha512-cyuMfmzHKOxSfEAZhh5QtSLzrzX0fVwJ0E9CtbDPYlM8pog2fadMCBlT0JGHHJfSYlt+41lxtzhCDJ7+MxhnOA==, tarball: file:projects/tron-data-raw.tgz}
     name: '@rush-temp/tron-data-raw'
     version: 0.0.0
     dependencies:
@@ -5503,8 +5506,17 @@ packages:
       typescript: 5.2.2
     dev: false
 
+  file:projects/tron-data.tgz:
+    resolution: {integrity: sha512-mY1yGtQTRk/+EXfuOSOuJlXt4xdVOPjS7031aUNoQSGTdufSrn08Hee0Qb1zg8c+DO/D6r6hJ6cGskt2wMAy9w==, tarball: file:projects/tron-data.tgz}
+    name: '@rush-temp/tron-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.0
+      typescript: 5.2.2
+    dev: false
+
   file:projects/tron-dump.tgz:
-    resolution: {integrity: sha512-7Cjx6MUNIN/Xh8u/kKxwJ6C4ma4QWRPHSP3GeSLqeZF7z992lFBp7nCXob9tizP4aBQgG5MjewolbXe0DXrhmg==, tarball: file:projects/tron-dump.tgz}
+    resolution: {integrity: sha512-2jIQmDDjZcNGffvBoJs6gvrAI8YxQdS8xI3rFlv8R8BjGqCW1Igr/O9XNIzrIYI7lLBTWwqmzOsMJS2EtQqTFw==, tarball: file:projects/tron-dump.tgz}
     name: '@rush-temp/tron-dump'
     version: 0.0.0
     dependencies:
@@ -5515,7 +5527,7 @@ packages:
     dev: false
 
   file:projects/tron-ingest.tgz:
-    resolution: {integrity: sha512-nNVIb4s2ioL95WKGl68qQCkcKRRQo9OOMf0Cc/6f/BJwN8EACIZylZ8j4/jlijwQN1BywMHC5oSurOitsiO44w==, tarball: file:projects/tron-ingest.tgz}
+    resolution: {integrity: sha512-fJnr0ucdnOo0mRkKiqC8ErH55+uOXVKmIsSr3DpgtXVMtZoax2Jv737i/6n9MZyjfDKQDcXAzVhFBO5Y8zeC6g==, tarball: file:projects/tron-ingest.tgz}
     name: '@rush-temp/tron-ingest'
     version: 0.0.0
     dependencies:
@@ -5524,7 +5536,7 @@ packages:
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-CV+/EIX4911RY8jvCr+rxNl+q51bErY9vV32loMzqQIZUk/DVKEIa0lPWQUPgp/L8UMiysG2dJaLTGdYTPB26g==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-dUTY6L/NUK1MhDYH9wxKcvEuquwvrCzjtCK8o585KquFNhQf62axZyRGo/QvztknmoYTelbhV3rxw5rhdrGPgQ==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:

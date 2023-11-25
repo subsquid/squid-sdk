@@ -581,6 +581,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/tron-data",
+      "projectFolder": "tron/tron-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/tron-data-raw",
       "projectFolder": "tron/tron-data-raw",
       "shouldPublish": true,

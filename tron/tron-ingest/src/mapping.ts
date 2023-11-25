@@ -1,6 +1,6 @@
 import * as raw from '@subsquid/tron-data-raw'
+import {Block, BlockHeader, InternalTransaction, Log, Transaction} from '@subsquid/tron-data'
 import assert from 'assert'
-import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './interfaces'
 
 
 function mapBlockHeader(src: raw.Block): BlockHeader {

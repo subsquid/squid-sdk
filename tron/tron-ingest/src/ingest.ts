@@ -1,5 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {BlockData} from '@subsquid/tron-data-raw'
+import {Block} from '@subsquid/tron-data'
 import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
 import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {createFs} from '@subsquid/util-internal-fs'
@@ -9,7 +10,6 @@ import * as readline from 'readline'
 import {Writable} from 'stream'
 import {pipeline} from 'stream/promises'
 import {createGunzip} from 'zlib'
-import {Block} from './interfaces'
 import {mapBlock} from './mapping'
 
 
