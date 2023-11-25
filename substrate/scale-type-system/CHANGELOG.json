@@ -2,6 +2,18 @@
   "name": "@subsquid/scale-type-system",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/scale-type-system_v1.0.1",
+      "date": "Fri, 27 Oct 2023 08:37:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `tuple()` constructor"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/scale-type-system_v1.0.0",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

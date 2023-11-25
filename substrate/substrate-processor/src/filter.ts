@@ -158,10 +158,10 @@ function buildEventRequests(dataRequest: DataRequest): Requests<Event, EventRela
         requests.add(filter, relations)
     })
 
-    dataRequest.gearMessagesEnqueued?.forEach(req => {
+    dataRequest.gearMessagesQueued?.forEach(req => {
         let {programId, ...relations} = req
         let filter = new FilterBuilder<Event>()
-        filter.propIn('name', ['Gear.MessageEnqueued'])
+        filter.propIn('name', ['Gear.MessageQueued'])
         filter.propIn('_gearProgramId', programId)
         requests.add(filter, relations)
     })

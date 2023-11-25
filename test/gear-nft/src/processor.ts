@@ -12,7 +12,7 @@ const processor = new SubstrateBatchProcessor()
     .setDataSource({
         archive: 'https://gear-testnet.archive.subsquid.io/graphql'
     })
-    .addGearMessageEnqueued(NFT_PROGRAM_ID, {
+    .addGearMessageQueued(NFT_PROGRAM_ID, {
         data: {
             event: {
                 args: true,
@@ -96,7 +96,7 @@ async function extractMintsAndReplies(ctx: Ctx): Promise<{records: MintRecord[],
     for (let block of ctx.blocks) {
         for (let item of block.items) {
             if (item.kind != 'event') continue
-            if (item.event.name == 'Gear.MessageEnqueued') {
+            if (item.event.name == 'Gear.MessageQueued') {
                 if (item.event.call.name != 'Gear.send_message') continue
                 let input = await decodeNFTInput(item.event.call.args.payload)
                 if ('mint' in input) {

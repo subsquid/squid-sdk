@@ -36,7 +36,7 @@ import {
     EthereumTransactRequest,
     EventRequest,
     EvmLogRequest,
-    GearMessageEnqueuedRequest,
+    GearMessageQueuedRequest,
     GearUserMessageSentRequest
 } from './interfaces/data-request'
 
@@ -153,9 +153,9 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
-    addGearMessageEnqueued(options: GearMessageEnqueuedRequest & BlockRange): this {
+    addGearMessageQueued(options: GearMessageQueuedRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({gearMessagesEnqueued: [options]}, options.range)
+        this.add({gearMessagesQueued: [options]}, options.range)
         return this
     }
 
@@ -362,7 +362,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 evmLogs: concat(a.evmLogs, b.evmLogs),
                 ethereumTransactions: concat(a.ethereumTransactions, b.ethereumTransactions),
                 contractsEvents: concat(a.contractsEvents, b.contractsEvents),
-                gearMessagesEnqueued: concat(a.gearMessagesEnqueued, b.gearMessagesEnqueued),
+                gearMessagesQueued: concat(a.gearMessagesQueued, b.gearMessagesQueued),
                 gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent)
             }
         })
