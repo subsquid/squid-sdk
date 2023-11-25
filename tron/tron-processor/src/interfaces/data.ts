@@ -1,4 +1,4 @@
-import type * as base from '@subsquid/substrate-data'
+import * as base from '@subsquid/tron-data'
 import {
     BlockRequiredFields,
     InternalTransactionRequiredFields,
@@ -6,7 +6,6 @@ import {
     TransactionRequiredFields,
     Simplify
 } from './data-partial'
-import {BlockHeader_, InternalTransaction_, Transaction_, Log_} from './base'
 
 
 type Selector<Props extends string, Exclusion extends string = ''> = {
@@ -15,10 +14,10 @@ type Selector<Props extends string, Exclusion extends string = ''> = {
 
 
 export interface FieldSelection {
-    block?: Selector<keyof BlockHeader_, BlockRequiredFields>
-    transaction?: Selector<keyof Transaction_, TransactionRequiredFields>
-    internalTransaction?: Selector<keyof InternalTransaction_, InternalTransactionRequiredFields>
-    log?: Selector<keyof Log_, LogRequiredFields>
+    block?: Selector<keyof base.BlockHeader, BlockRequiredFields>
+    transaction?: Selector<keyof base.Transaction, TransactionRequiredFields>
+    internalTransaction?: Selector<keyof base.InternalTransaction, InternalTransactionRequiredFields>
+    log?: Selector<keyof base.Log, LogRequiredFields>
 }
 
 
@@ -66,29 +65,29 @@ type Select<T, F> = T extends any ? Simplify<Pick<T, Extract<keyof T, F>>> : nev
 
 export type BlockHeader<F extends FieldSelection = {}> = Simplify<
     {id: string} &
-    Pick<BlockHeader_, BlockRequiredFields> &
-    Select<BlockHeader_, GetFields<F, 'block'>>
+    Pick<base.BlockHeader, BlockRequiredFields> &
+    Select<base.BlockHeader, GetFields<F, 'block'>>
 >
 
 
 export type Log<F extends FieldSelection = {}> = Simplify<
     {id: string} &
-    Pick<Log_, LogRequiredFields> &
-    Select<Log_, GetFields<F, 'log'>> &
+    Pick<base.Log, LogRequiredFields> &
+    Select<base.Log, GetFields<F, 'log'>> &
     {block: BlockHeader<F>, transaction?: Transaction<F>}
 >
 
 
 export type Transaction<F extends FieldSelection = {}> = Simplify<
-    Pick<Transaction_, TransactionRequiredFields> &
-    Select<Transaction_, GetFields<F, 'transaction'>> &
+    Pick<base.Transaction, TransactionRequiredFields> &
+    Select<base.Transaction, GetFields<F, 'transaction'>> &
     {block: BlockHeader<F>}
 >
 
 
 export type InternalTransaction<F extends FieldSelection = {}> = Simplify<
-    Pick<InternalTransaction_, InternalTransactionRequiredFields> &
-    Select<InternalTransaction_, GetFields<F, 'internalTransaction'>> &
+    Pick<base.InternalTransaction, InternalTransactionRequiredFields> &
+    Select<base.InternalTransaction, GetFields<F, 'internalTransaction'>> &
     {block: BlockHeader<F>, transaction?: Transaction<F>}
 >
 

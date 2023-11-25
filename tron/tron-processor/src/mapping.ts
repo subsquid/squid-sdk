@@ -1,5 +1,3 @@
-import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
-import {assertNotNull} from '@subsquid/util-internal'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
@@ -7,8 +5,8 @@ import {PartialBlockHeader} from './interfaces/data-partial'
 export class BlockHeader implements PartialBlockHeader {
     id: string
     height!: number
-    hash!: Hash
-    parentHash!: Hash
+    hash!: string
+    parentHash!: string
     txTrieRoot?: string
     version?: number
     timestamp?: number
@@ -23,7 +21,7 @@ export class BlockHeader implements PartialBlockHeader {
 
 
 export class Transaction {
-    hash?: string
+    hash: string
     ret?: string
     signature?: string[]
     type?: string
@@ -55,7 +53,11 @@ export class Transaction {
     #logs?: Log[]
     #internalTransactions?: InternalTransaction[]
 
-    constructor(block: BlockHeader) {
+    constructor(
+        block: BlockHeader,
+        hash: string
+    ) {
+        this.hash = hash
         this.#block = block
     }
 
@@ -86,7 +88,7 @@ export class Transaction {
 
 
 export class InternalTransaction {
-    transactionHash?: string
+    transactionHash: string
     hash?: string
     callerAddress?: string
     transferToAddress?: string
@@ -100,7 +102,11 @@ export class InternalTransaction {
     #block: BlockHeader
     #transaction?: Transaction
 
-    constructor(block: BlockHeader) {
+    constructor(
+        block: BlockHeader,
+        transactionHash: string
+    ) {
+        this.transactionHash = transactionHash
         this.#block = block
     }
 
@@ -133,7 +139,7 @@ export class InternalTransaction {
 export class Log {
     id: string
     logIndex: number
-    transactionHash?: string
+    transactionHash: string
     address?: string
     data?: string
     topics?: string[]
@@ -142,10 +148,12 @@ export class Log {
 
     constructor(
         block: BlockHeader,
-        logIndex: number
+        logIndex: number,
+        transactionHash: string
     ) {
         this.id = formatId(block, logIndex)
         this.logIndex = logIndex
+        this.transactionHash = transactionHash
         this.#block = block
     }
 
@@ -183,113 +191,25 @@ export class Block {
 }
 
 
-// export function setUpItems(block: Block): void {
-//     block.logs.sort((a, b) => a.index - b.index)
-//     block.transactions.sort((a, b) => a.index - b.index)
-//     block.internalTransactions.sort(callCompare)
+export function setUpItems(block: Block): void {
+    let txByHash = new Map(block.transactions.map(tx => [tx.hash, tx]))
 
-//     let extrinsicsByIndex = new Map(block.transactions.map(ex => [ex.index, ex]))
+    for (let i = 0; i < block.internalTransactions.length; i++) {
+        let internalTx = block.internalTransactions[i]
+        let tx = txByHash.get(internalTx.transactionHash)
+        if (tx) {
+            internalTx.transaction = tx
+        }
+    }
 
-//     for (let i = 0; i < block.internalTransactions.length; i++) {
-//         let call = block.internalTransactions[i]
-//         let extrinsic = extrinsicsByIndex.get(call.extrinsicIndex)
-//         if (extrinsic) {
-//             if (call.address.length == 0) {
-//                 extrinsic.call = call
-//             }
-//             call.extrinsic = extrinsic
-//             extrinsic.subcalls.push(call)
-//         }
-//         setUpCallTree(block.internalTransactions, i)
-//     }
-
-//     for (let event of block.logs) {
-//         if (event.extrinsicIndex == null) continue
-//         let extrinsic = extrinsicsByIndex.get(event.extrinsicIndex)
-//         if (extrinsic) {
-//             extrinsic.events.push(event)
-//             event.extrinsic = extrinsic
-//         }
-//         if (event.callAddress && block.internalTransactions.length) {
-//             let pos = bisectCalls(block.internalTransactions, event.extrinsicIndex, event.callAddress)
-//             for (let i = pos; i < block.internalTransactions.length; i++) {
-//                 let call = block.internalTransactions[i]
-//                 if (isSubcall(call, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
-//                     call.events.push(event)
-//                     if (addressCompare(call.address, event.callAddress) == 0) {
-//                         event.call = call
-//                     }
-//                 } else {
-//                     break
-//                 }
-//             }
-//         }
-//     }
-// }
-
-
-// function bisectCalls(calls: InternalTransaction[], extrinsicIndex: number, callAddress: number[]): number {
-//     let beg = 0
-//     let end = calls.length
-//     while (beg + 1 < end) {
-//         let dist = end - beg
-//         let pos = beg + (dist - (dist % 2)) / 2
-//         let call = calls[pos]
-//         let order = call.extrinsicIndex - extrinsicIndex || addressCompare(call.address, callAddress)
-//         if (order == 0) return pos
-//         if (order > 0) {
-//             end = pos
-//         } else {
-//             beg = pos
-//         }
-//     }
-//     return beg
-// }
-
-
-// function setUpCallTree(calls: InternalTransaction[], pos: number): void {
-//     let offset = -1
-//     let parent = calls[pos]
-//     for (let i = pos - 1; i >= 0; i--) {
-//         if (isSubcall(parent, calls[i])) {
-//             if (calls[i].address.length == parent.address.length + 1) {
-//                 calls[i].parentCall = parent
-//             }
-//             offset = i
-//         } else {
-//             break
-//         }
-//     }
-//     if (offset < 0) return
-//     parent.subcalls = calls.slice(offset, pos)
-// }
-
-
-// function callCompare(a: InternalTransaction, b: InternalTransaction) {
-//     return a.extrinsicIndex - b.extrinsicIndex || addressCompare(a.address, b.address)
-// }
-
-
-// function addressCompare(a: number[], b: number[]): number {
-//     for (let i = 0; i < Math.min(a.length, b.length); i++) {
-//         let order = a[i] - b[i]
-//         if (order) return order
-//     }
-//     return b.length - a.length
-// }
-
-
-// type CallKey = Pick<InternalTransaction, 'extrinsicIndex' | 'address'>
-
-
-// function isSubcall(parent: CallKey, call: CallKey): boolean {
-//     if (parent.extrinsicIndex != call.extrinsicIndex) return false
-//     if (parent.address.length > call.address.length) return false
-//     for (let i = 0; i < parent.address.length; i++) {
-//         if (parent.address[i] != call.address[i]) return false
-//     }
-//     return true
-// }
+    for (let log of block.logs) {
+        let tx = txByHash.get(log.transactionHash)
+        if (tx) {
+            tx.logs.push(log)
+            log.transaction = tx
+        }
+    }
+}
 
 
 function formatId(block: HashAndHeight, ...address: number[]): string {

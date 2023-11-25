@@ -1,12 +1,12 @@
-import type {RpcClient} from '@subsquid/rpc-client'
+import type {HttpClient} from '@subsquid/http-client'
 
 
 export class Chain {
     constructor(
-        private getRpc: () => RpcClient
+        private getHttp: () => HttpClient
     ) {}
 
-    get rpc(): RpcClient {
-        return this.getRpc()
+    get http(): HttpClient {
+        return this.getHttp()
     }
 }

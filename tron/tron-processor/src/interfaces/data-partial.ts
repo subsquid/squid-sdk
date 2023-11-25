@@ -1,4 +1,4 @@
-import {BlockHeader_, Transaction_, InternalTransaction_, Log_} from './base'
+import {BlockHeader, Transaction, InternalTransaction, Log} from '@subsquid/tron-data'
 
 
 export type Simplify<T> = {
@@ -23,10 +23,10 @@ type MakePartial<T, Required extends keyof T, IsArchive extends boolean = false>
 >
 
 
-export type PartialBlockHeader = MakePartial<BlockHeader_, BlockRequiredFields>
-export type PartialTransaction = MakePartial<Transaction_, TransactionRequiredFields>
-export type PartialInternalTransaction = MakePartial<InternalTransaction_, InternalTransactionRequiredFields>
-export type PartialLog = MakePartial<Log_, LogRequiredFields>
+export type PartialBlockHeader = MakePartial<BlockHeader, BlockRequiredFields>
+export type PartialTransaction = MakePartial<Transaction, TransactionRequiredFields>
+export type PartialInternalTransaction = MakePartial<InternalTransaction, InternalTransactionRequiredFields>
+export type PartialLog = MakePartial<Log, LogRequiredFields>
 
 
 export interface PartialBlock {
@@ -38,13 +38,13 @@ export interface PartialBlock {
 
 
 export type ArchiveBlockHeader = MakePartial<
-    Omit<BlockHeader_, 'height'>,
+    Omit<BlockHeader, 'height'>,
     Exclude<BlockRequiredFields, 'height'>, true
 > & {number: number}
 
-export type ArchiveTransaction = MakePartial<Transaction_, TransactionRequiredFields, true>
-export type ArchivePartialInternalTransaction = MakePartial<InternalTransaction_, InternalTransactionRequiredFields, true>
-export type ArchiveLog = MakePartial<Log_, LogRequiredFields, true>
+export type ArchiveTransaction = MakePartial<Transaction, TransactionRequiredFields, true>
+export type ArchivePartialInternalTransaction = MakePartial<InternalTransaction, InternalTransactionRequiredFields, true>
+export type ArchiveLog = MakePartial<Log, LogRequiredFields, true>
 
 
 export interface ArchiveBlock {

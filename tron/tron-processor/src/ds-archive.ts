@@ -8,11 +8,11 @@ import {
     RangeRequest,
     RangeRequestList
 } from '@subsquid/util-internal-processor-tools'
+import {HttpApi} from '@subsquid/tron-data-raw'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {ArchiveBlock} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
-import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './mapping'
-import {HttpApi} from '@subsquid/tron-dump/lib/http'
+import {Block, BlockHeader, InternalTransaction, Log, Transaction, setUpItems} from './mapping'
 
 
 interface ArchiveQuery extends DataRequest {
@@ -22,7 +22,7 @@ interface ArchiveQuery extends DataRequest {
 }
 
 
-export interface SubstrateArchiveOptions {
+export interface TronArchiveOptions {
     client: ArchiveClient
     httpApi: HttpApi
 }
@@ -32,7 +32,7 @@ export class TronArchive implements DataSource<Block, DataRequest> {
     private client: ArchiveClient
     private httpApi: HttpApi
 
-    constructor(options: SubstrateArchiveOptions) {
+    constructor(options: TronArchiveOptions) {
         this.client = options.client
         this.httpApi = options.httpApi
     }
@@ -82,11 +82,7 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         if (src.transactions) {
             for (let s of src.transactions) {
-                let tx = new Transaction(block.header)
-
-                if (s.hash != null) {
-                    tx.hash = s.hash
-                }
+                let tx = new Transaction(block.header, s.hash)
 
                 if (s.ret != null) {
                     tx.ret = s.ret
@@ -202,11 +198,7 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         if (src.internalTransactions) {
             for (let s of src.internalTransactions) {
-                let tx = new InternalTransaction(block.header)
-
-                if (s.transactionHash != null) {
-                    tx.transactionHash = s.transactionHash
-                }
+                let tx = new InternalTransaction(block.header, s.transactionHash)
 
                 if (s.hash != null) {
                     tx.hash = s.hash
@@ -242,11 +234,7 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         if (src.logs) {
             for (let s of src.logs) {
-                let log = new Log(block.header, s.logIndex)
-
-                if (s.transactionHash != null) {
-                    log.transactionHash = s.transactionHash
-                }
+                let log = new Log(block.header, s.logIndex, s.transactionHash)
 
                 if (s.address != null) {
                     log.address = s.address
@@ -264,7 +252,7 @@ export class TronArchive implements DataSource<Block, DataRequest> {
             }
         }
 
-        // setUpItems(block)
+        setUpItems(block)
         return block
     }
 }

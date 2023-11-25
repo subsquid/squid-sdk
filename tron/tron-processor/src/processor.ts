@@ -1,6 +1,5 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
@@ -14,11 +13,10 @@ import {
     RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
-import {HttpApi} from '@subsquid/tron-dump/lib/http'
+import {HttpApi} from '@subsquid/tron-data-raw'
 import assert from 'assert'
 import {Chain} from './chain'
 import {TronArchive} from './ds-archive'
-// import {RpcDataSource} from './ds-rpc'
 import {Block, FieldSelection} from './interfaces/data'
 import {
     TransactionRequest,
@@ -37,18 +35,15 @@ export interface DataSource {
      */
     archive?: string
     /**
-     * Chain node RPC endpoint URL
+     * Chain node HTTP endpoint URL
      */
-    chain: ChainRpc
+    chain: ChainHttp
 }
 
 
-type ChainRpc = string | {
+type ChainHttp = string | {
     url: string
-    capacity?: number
-    rateLimit?: number
     requestTimeout?: number
-    maxBatchCallSize?: number
 }
 
 
@@ -231,7 +226,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getChainRpcClient(): RpcClient {
+    private getChainHttpClient(): HttpClient {
         let options = this.src?.chain
         if (options == null) {
             throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
@@ -239,36 +234,11 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
         if (typeof options == 'string') {
             options = {url: options}
         }
-        let client = new RpcClient({
-            url: options.url,
-            maxBatchCallSize: options.maxBatchCallSize ?? 100,
-            requestTimeout:  options.requestTimeout ?? 30_000,
-            capacity: options.capacity ?? 10,
-            rateLimit: options.rateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: options.url})
+        return new HttpClient({
+            baseUrl: options.url,
+            retryAttempts: Number.MAX_SAFE_INTEGER
         })
-        this.prometheus.addChainRpcMetrics(() => client.getMetrics())
-        return client
     }
-
-    // @def
-    // private getRpcDataSource(): RpcDataSource {
-    //     return new RpcDataSource({
-    //         rpc: this.getChainRpcClient(),
-    //         pollInterval: this.chainPollInterval,
-    //     })
-    // }
-
-    // @def
-    // private getChainHttpClient() {
-    //     return new HttpClient({})
-    // }
-
-    // @def
-    // private getHttpDataSource() {
-    //     return new HttpDataSource({})
-    // }
 
     @def
     private getArchiveDataSource(): TronArchive {
@@ -286,20 +256,9 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
             log: log.child('http')
         })
 
-        let options = this.src?.chain
-        if (options == null) {
-            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
-        }
-        if (typeof options == 'string') {
-            options = {url: options}
-        }
-
         return new TronArchive({
             client: new ArchiveClient({http, url, log}),
-            httpApi: new HttpApi(new HttpClient({
-                baseUrl: options.url,
-                retryAttempts: Number.MAX_SAFE_INTEGER
-            })),
+            httpApi: new HttpApi(this.getChainHttpClient()),
         })
     }
 
@@ -351,7 +310,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     @def
     private getChain(): Chain {
         return new Chain(
-            () => this.getChainRpcClient(),
+            () => this.getChainHttpClient(),
         )
     }
 
