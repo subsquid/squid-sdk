@@ -3,7 +3,7 @@ import {Bytes, Bytes20} from '../interfaces/base'
 import {FieldSelection} from '../interfaces/data'
 import {
     getBlockHeaderProps,
-    getLogValidator,
+    getLogProps,
     getTraceFrameValidator,
     getTxProps,
     getTxReceiptProps,
@@ -26,31 +26,43 @@ import {
 import {MappingRequest} from './request'
 import {DebugStateDiffResult, TraceStateDiff} from './rpc-data'
 
-
+// Here we must be careful to include all fields,
+// that can potentially be used in item filters
+// (no matter what field selection is telling us to omit)
 export const getBlockValidator = weakMemo((req: MappingRequest) => {
     let Transaction = req.transactions
         ? object({
+            ...getTxProps(req.fields.transaction, false),
             hash: BYTES,
-            ...getTxProps(req.fields, false)
+            input: BYTES,
+            from: BYTES,
+            to: option(BYTES),
         })
         : BYTES
 
     let GetBlock = object({
-        ...getBlockHeaderProps(req.fields, false),
+        ...getBlockHeaderProps(req.fields.block, false),
         transactions: array(Transaction)
     })
 
-    let Log = getLogValidator(req.fields, false)
+    let Log = object({
+        ...getLogProps(
+            {...req.fields.log, address: true, topics: true},
+            false
+        ),
+        address: BYTES,
+        topics: array(BYTES)
+    })
 
     let Receipt = object({
         transactionIndex: SMALL_QTY,
-        ...getTxReceiptProps(req.fields, false),
+        ...getTxReceiptProps(req.fields.transaction, false),
         logs: req.logList ? array(Log) : undefined
     })
 
-    let TraceFrame = getTraceFrameValidator(req.fields, false)
+    let TraceFrame = getTraceFrameValidator(req.fields.trace, false)
 
-    let DebugFrame = getDebugFrameValidator(req.fields)
+    let DebugFrame = getDebugFrameValidator(req.fields.trace)
 
     return object({
         height: NAT,
@@ -76,10 +88,10 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
 })
 
 
-function getDebugFrameValidator(fields: FieldSelection | undefined) {
+function getDebugFrameValidator(fields: FieldSelection['trace']) {
     let Frame: Validator<DebugFrame, unknown>
 
-    let base = project(fields?.trace, {
+    let base = project(fields, {
         error: option(STRING),
         revertReason: option(STRING),
         calls: option(array(ref(() => Frame)))
@@ -87,16 +99,15 @@ function getDebugFrameValidator(fields: FieldSelection | undefined) {
 
     let Create = object({
         ...base,
+        from: BYTES,
         ...project({
-            from: fields?.trace?.createFrom,
-            value: fields?.trace?.createValue,
-            gas: fields?.trace?.createGas,
-            input: fields?.trace?.createInit,
-            gasUsed: fields?.trace?.createResultGasUsed,
-            output: fields?.trace?.createResultCode,
-            to: fields?.trace?.createResultAddress
+            value: fields?.createValue,
+            gas: fields?.createGas,
+            input: fields?.createInit,
+            gasUsed: fields?.createResultGasUsed,
+            output: fields?.createResultCode,
+            to: fields?.createResultAddress
         }, {
-            from: BYTES,
             value: QTY,
             gas: QTY,
             input: BYTES,
@@ -108,30 +119,27 @@ function getDebugFrameValidator(fields: FieldSelection | undefined) {
 
     let Call = object({
         ...base,
+        to: BYTES,
+        input: BYTES,
         ...project({
-            from: fields?.trace?.callFrom,
-            to: fields?.trace?.callTo,
-            value: fields?.trace?.callValue,
-            gas: fields?.trace?.callGas,
-            input: fields?.trace?.callInput
+            from: fields?.callFrom,
+            value: fields?.callValue,
+            gas: fields?.callGas,
         }, {
             from: BYTES,
-            to: BYTES,
             value: option(QTY),
             gas: QTY,
-            input: BYTES
         })
     })
 
     let Suicide = object({
         ...base,
+        to: BYTES,
         ...project({
-            from: fields?.trace?.suicideAddress,
-            to: fields?.trace?.suicideRefundAddress,
-            value: fields?.trace?.suicideBalance
+            from: fields?.suicideAddress,
+            value: fields?.suicideBalance
         }, {
             from: BYTES,
-            to: BYTES,
             value: QTY
         })
     })
@@ -152,8 +160,34 @@ function getDebugFrameValidator(fields: FieldSelection | undefined) {
 }
 
 
-export interface DebugFrame {
-    type: 'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT' | 'INVALID' | 'STOP'
+export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugInvalidFrame
+
+
+interface DebugCreateFrame extends DebugFrameBase {
+    type: 'CREATE' | 'CREATE2'
+    from: Bytes20
+}
+
+
+interface DebugCallFrame extends DebugFrameBase {
+    type:  'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL'
+    to: Bytes20
+    input: Bytes
+}
+
+
+interface DebugSuicideFrame extends DebugFrameBase {
+    type: 'SELFDESTRUCT'
+    to: Bytes20
+}
+
+
+interface DebugInvalidFrame extends DebugFrameBase {
+    type: 'INVALID' | 'STOP'
+}
+
+
+interface DebugFrameBase {
     error?: string
     revertReason?: string
     from?: Bytes20

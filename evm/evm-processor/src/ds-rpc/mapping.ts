@@ -26,12 +26,13 @@ import {
     Transaction
 } from '../mapping/entities'
 import {setUpRelations} from '../mapping/relations'
-import {getLogValidator, getTraceFrameValidator, isEmpty} from '../mapping/schema'
-import {cast, GetCastType} from '../validation'
+import {getLogProps, getTraceFrameValidator, isEmpty} from '../mapping/schema'
+import {cast, GetCastType, GetObjectType} from '../validation'
+import {filterBlock} from './filter'
 import {MappingRequest} from './request'
 import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from './rpc-data'
 import {DebugFrame, getBlockValidator} from './schema'
-import {getTxHash, GetValidatorFactoryCast} from './util'
+import {getTxHash} from './util'
 
 
 export function mapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
@@ -133,12 +134,13 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     }
 
     setUpRelations(block)
+    filterBlock(block, req.dataRequest)
 
     return block
 }
 
 
-function makeLog(blockHeader: BlockHeader, src: GetValidatorFactoryCast<typeof getLogValidator>): Log {
+function makeLog(blockHeader: BlockHeader, src: GetObjectType<ReturnType<typeof getLogProps>>): Log {
     let {logIndex, transactionIndex, ...props} = src
     let log = new Log(blockHeader, logIndex, transactionIndex)
     Object.assign(log, props)
@@ -149,7 +151,7 @@ function makeLog(blockHeader: BlockHeader, src: GetValidatorFactoryCast<typeof g
 function makeTraceRecordFromReplayFrame(
     header: BlockHeader,
     transactionIndex: number,
-    frame: GetValidatorFactoryCast<typeof getTraceFrameValidator>
+    frame: GetCastType<ReturnType<typeof getTraceFrameValidator>>
 ): Trace {
     let {traceAddress, type, ...props} = frame
     let trace: Trace
@@ -239,9 +241,9 @@ function* mapDebugFrame(
             case 'CREATE2': {
                 trace = new TraceCreate(header, transactionIndex, traceAddress)
                 let action: Partial<EvmTraceCreateAction> = {}
-                if (projection.createFrom) {
-                    action.from = frame.from
-                }
+
+                action.from = frame.from
+
                 if (projection.createValue) {
                     action.value = frame.value
                 }
@@ -282,9 +284,9 @@ function* mapDebugFrame(
                 if (projection.callFrom) {
                     action.from = frame.from
                 }
-                if (projection.callTo) {
-                    action.to = frame.to
-                }
+
+                action.to = frame.to
+
                 if (projection.callValue) {
                     hasAction = true
                     if (frame.value != null) {
@@ -297,9 +299,9 @@ function* mapDebugFrame(
                 if (projection.callInput) {
                     action.input = frame.input
                 }
-                if (projection.callSighash) {
-                    action.sighash = frame.input!.slice(0, 10)
-                }
+
+                action.sighash = frame.input.slice(0, 10)
+
                 if (hasAction || !isEmpty(action)) {
                     trace.action = action
                 }
@@ -324,9 +326,9 @@ function* mapDebugFrame(
                 if (projection.suicideBalance) {
                     action.balance = frame.value
                 }
-                if (projection.suicideRefundAddress) {
-                    action.refundAddress = frame.to
-                }
+
+                action.refundAddress = frame.to
+
                 if (!isEmpty(action)) {
                     trace.action = action
                 }

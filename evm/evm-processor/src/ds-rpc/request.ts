@@ -8,6 +8,7 @@ export interface MappingRequest extends RpcDataRequest {
     fields: FieldSelection
     transactionList: boolean
     logList: boolean
+    dataRequest: DataRequest
 }
 
 
@@ -19,11 +20,13 @@ export function toMappingRequest(req?: DataRequest): MappingRequest {
         fields: req?.fields || {},
         transactionList: txs,
         logList: logs,
-        transactions: txs && isRequested(TX_FIELDS, req?.fields?.transaction),
+        // include transactions if we potentially have item filters or when tx fields are requested
+        transactions: !!req?.transactions?.length || txs && isRequested(TX_FIELDS, req?.fields?.transaction),
         logs: logs && !receipts,
         receipts,
         traces: tracesRequested(req),
-        stateDiffs: stateDiffsRequested(req)
+        stateDiffs: stateDiffsRequested(req),
+        dataRequest: req || {}
     }
 }
 

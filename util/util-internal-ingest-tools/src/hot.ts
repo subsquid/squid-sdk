@@ -13,6 +13,10 @@ export interface ChainHeads {
 export interface HotProcessorOptions<B> {
     process(update: HotUpdate<B>): Promise<void>
     getBlock(ref: HashAndHeight): Promise<B>
+    /**
+     * This method must handle situations where `from > to`,
+     * in such cases `from` must be coerced to `to`.
+     */
     getBlockRange(from: number, to: BlockRef): AsyncIterable<B[]>
     getHeader(block: B): BlockHeader
     getFinalizedBlockHeight?(hash: Hash): Promise<number>

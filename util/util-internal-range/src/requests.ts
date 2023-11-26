@@ -1,6 +1,5 @@
 import {assertNotNull, partitionBy} from '@subsquid/util-internal'
-import assert from 'assert'
-import {FiniteRange, Range, RangeRequest} from './interfaces'
+import {FiniteRange, RangeRequest} from './interfaces'
 import {applyRangeBound} from './util'
 
 

@@ -5,7 +5,7 @@ import {annotateSyncError} from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
 import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-internal-processor-tools'
 import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
-import {filterBlockBatch} from './filter'
+import {filterBlockBatch} from './ds-rpc-filter'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 

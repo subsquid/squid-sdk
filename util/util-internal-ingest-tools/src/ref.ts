@@ -21,10 +21,10 @@ export function getBlockName(ref: BlockRef): string {
 }
 
 
-export function shortHash(hash: string): string {
+function shortHash(hash: string): string {
     if (hash.startsWith('0x')) {
-        return hash.slice(2, 8)
+        return hash.slice(2, 7)
     } else {
-        return hash.slice(0, 6)
+        return hash.slice(0, 5)
     }
 }

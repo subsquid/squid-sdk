@@ -2,7 +2,7 @@ import {weakMemo} from '@subsquid/util-internal'
 import {FieldSelection} from '../interfaces/data'
 import {
     getBlockHeaderProps,
-    getLogValidator,
+    getLogProps,
     getTraceFrameValidator,
     getTxProps,
     getTxReceiptProps,
@@ -11,22 +11,21 @@ import {
 import {array, BYTES, NAT, object, option, STRING, taggedUnion} from '../validation'
 
 
-export type BlockValidator = typeof getBlockValidator extends ((...args: any[]) => infer T) ? T : never
-
-
 export const getBlockValidator = weakMemo((fields: FieldSelection) => {
-    let BlockHeader = object(getBlockHeaderProps(fields, true))
+    let BlockHeader = object(getBlockHeaderProps(fields.block, true))
 
     let Transaction = object({
         hash: fields.transaction?.hash ? BYTES : undefined,
-        ...getTxProps(fields, true),
+        ...getTxProps(fields.transaction, true),
         sighash: fields.transaction?.sighash ? BYTES : undefined,
-        ...getTxReceiptProps(fields, true)
+        ...getTxReceiptProps(fields.transaction, true)
     })
 
-    let Log = getLogValidator(fields, true)
+    let Log = object(
+        getLogProps(fields.log, true)
+    )
 
-    let Trace = getTraceFrameValidator(fields, true)
+    let Trace = getTraceFrameValidator(fields.trace, true)
 
     let stateDiffBase = {
         transactionIndex: NAT,

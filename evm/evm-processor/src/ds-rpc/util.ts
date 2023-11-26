@@ -1,6 +1,6 @@
 import assert from 'assert'
 import {Bytes32, Qty} from '../interfaces/base'
-import {Validator} from '../validation'
+import {object, Validator} from '../validation'
 
 
 export function qty2Int(qty: Qty): number {
@@ -22,8 +22,3 @@ export function getTxHash(tx: Bytes32 | {hash: Bytes32}): Bytes32 {
         return tx.hash
     }
 }
-
-
-export type GetValidatorFactoryCast<V> = V extends (...args: any) => Validator<infer T, infer S>
-    ? T
-    : never

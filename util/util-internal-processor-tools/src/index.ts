@@ -1,5 +1,6 @@
 export * from './database'
 export * from './datasource'
+export * from './filter'
 export * from './prometheus'
 export * from './runner'
 export {getOrGenerateSquidId, shortHash, formatId} from './util'

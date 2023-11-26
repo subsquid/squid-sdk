@@ -2,13 +2,13 @@ import {FieldSelection} from '../interfaces/data'
 import {array, BYTES, NAT, object, option, QTY, SMALL_QTY, STRING, taggedUnion, withSentinel} from '../validation'
 
 
-export function getBlockHeaderProps(fields: FieldSelection | undefined, forArchive: boolean) {
+export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
     return {
         number: natural,
         hash: BYTES,
         parentHash: BYTES,
-        ...project(fields?.block, {
+        ...project(fields, {
             nonce: withSentinel('0x', BYTES),
             sha3Uncles: withSentinel('0x', BYTES),
             logsBloom: withSentinel('0x', BYTES),
@@ -30,15 +30,12 @@ export function getBlockHeaderProps(fields: FieldSelection | undefined, forArchi
 }
 
 
-export function getTxProps(fields: FieldSelection | undefined, forArchive: boolean) {
+export function getTxProps(fields: FieldSelection['transaction'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
-    let projection = {...fields?.transaction}
-    if (projection.sighash && !forArchive) {
-        projection.input = true
-    }
     return {
         transactionIndex: natural,
-        ...project(projection, {
+        ...project(fields, {
+            hash: BYTES,
             from: BYTES,
             to: option(BYTES),
             gas: withSentinel(-1n, QTY),
@@ -58,9 +55,9 @@ export function getTxProps(fields: FieldSelection | undefined, forArchive: boole
 }
 
 
-export function getTxReceiptProps(fields: FieldSelection | undefined, forArchive: boolean) {
+export function getTxReceiptProps(fields: FieldSelection['transaction'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
-    return project(fields?.transaction, {
+    return project(fields, {
         gasUsed: withSentinel(-1n, QTY),
         cumulativeGasUsed: withSentinel(-1n, QTY),
         effectiveGasPrice: withSentinel(-1n, QTY),
@@ -71,26 +68,26 @@ export function getTxReceiptProps(fields: FieldSelection | undefined, forArchive
 }
 
 
-export function getLogValidator(fields: FieldSelection | undefined, forArchive: boolean) {
+export function getLogProps(fields: FieldSelection['log'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
-    return object({
+    return {
         logIndex: natural,
         transactionIndex: natural,
-        ...project(fields?.log, {
+        ...project(fields, {
             transactionHash: BYTES,
             address: BYTES,
             data: BYTES,
             topics: array(BYTES)
         })
-    })
+    }
 }
 
 
-export function getTraceFrameValidator(fields: FieldSelection | undefined, forArchive: boolean) {
+export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchive: boolean) {
     let traceBase = {
         transactionIndex: forArchive ? NAT : undefined,
         traceAddress: array(NAT),
-        ...project(fields?.trace, {
+        ...project(fields, {
             subtraces: NAT,
             error: option(STRING),
             revertReason: option(STRING)
@@ -98,10 +95,10 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
     }
 
     let traceCreateAction = project({
-        from: fields?.trace?.createFrom,
-        value: fields?.trace?.createValue,
-        gas: fields?.trace?.createGas,
-        init: fields?.trace?.createInit
+        from: fields?.createFrom || !forArchive,
+        value: fields?.createValue,
+        gas: fields?.createGas,
+        init: fields?.createInit
     }, {
         from: BYTES,
         value: QTY,
@@ -110,9 +107,9 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
     })
 
     let traceCreateResult = project({
-        gasUsed: fields?.trace?.createResultGasUsed,
-        code: fields?.trace?.createResultCode,
-        address: fields?.trace?.createResultAddress
+        gasUsed: fields?.createResultGasUsed,
+        code: fields?.createResultCode,
+        address: fields?.createResultAddress
     }, {
         gasUsed: QTY,
         code: BYTES,
@@ -126,13 +123,13 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
     })
 
     let traceCallAction = project({
-        callType: fields?.trace?.callCallType,
-        from: fields?.trace?.callFrom,
-        to: fields?.trace?.callTo,
-        value: fields?.trace?.callValue,
-        gas: fields?.trace?.callGas,
-        input: fields?.trace?.callInput,
-        sighash: fields?.trace?.callSighash
+        callType: fields?.callCallType,
+        from: fields?.callFrom,
+        to: forArchive ? fields?.callTo : true,
+        value: fields?.callValue,
+        gas: fields?.callGas,
+        input: forArchive ? fields?.callInput : true,
+        sighash: forArchive ? fields?.callSighash : false
     }, {
         callType: STRING,
         from: BYTES,
@@ -140,12 +137,12 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
         value: option(QTY),
         gas: QTY,
         input: BYTES,
-        sighash: forArchive ? BYTES : undefined
+        sighash: BYTES
     })
 
     let traceCallResult = project({
-        gasUsed: fields?.trace?.callResultGasUsed,
-        output: fields?.trace?.callResultOutput
+        gasUsed: fields?.callResultGasUsed,
+        output: fields?.callResultOutput
     }, {
         gasUsed: QTY,
         output: BYTES
@@ -158,9 +155,9 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
     })
 
     let traceSuicideAction = project({
-        address: fields?.trace?.suicideAddress,
-        refundAddress: fields?.trace?.suicideRefundAddress,
-        balance: fields?.trace?.suicideBalance
+        address: fields?.suicideAddress,
+        refundAddress: forArchive ? fields?.suicideRefundAddress : true,
+        balance: fields?.suicideBalance
     }, {
         address: BYTES,
         refundAddress: BYTES,
@@ -173,9 +170,9 @@ export function getTraceFrameValidator(fields: FieldSelection | undefined, forAr
     })
 
     let traceRewardAction = project({
-        author: fields?.trace?.rewardAuthor,
-        value: fields?.trace?.rewardValue,
-        type: fields?.trace?.rewardType
+        author: forArchive ? fields?.rewardAuthor : true,
+        value: fields?.rewardValue,
+        type: fields?.rewardType
     }, {
         author: BYTES,
         value: QTY,

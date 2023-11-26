@@ -63,12 +63,12 @@ type Simplify<T> = {
 } & {}
 
 
-type GetObjectType<Props> = Simplify<AddOptionToUndefined<{
+export type GetObjectType<Props> = Simplify<AddOptionToUndefined<{
     [K in keyof Props]: GetCastType<Props[K]>
 }>>
 
 
-type GetSrcObjectType<Props> = Simplify<AddOptionToUndefined<{
+export type GetSrcObjectType<Props> = Simplify<AddOptionToUndefined<{
     [K in keyof Props]: GetSrcType<Props[K]>
 }>>
 

@@ -5,6 +5,7 @@ import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
+import {FieldSelection} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 import {
     Block,
@@ -24,7 +25,7 @@ import {
 } from '../mapping/entities'
 import {setUpRelations} from '../mapping/relations'
 import {cast} from '../validation'
-import {BlockValidator, getBlockValidator} from './schema'
+import {getBlockValidator} from './schema'
 
 
 const NO_FIELDS = {}
@@ -53,13 +54,11 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
             client: this.client,
             stopOnHead
         })) {
-            let validator = getBlockValidator(
-                getRequestAt(requests, batch.blocks[0].header.number)?.fields || NO_FIELDS
-            )
+            let fields = getRequestAt(requests, batch.blocks[0].header.number)?.fields || NO_FIELDS
 
             let blocks = batch.blocks.map(b => {
                 try {
-                    return this.mapBlock(b, validator)
+                    return this.mapBlock(b, fields)
                 } catch(err: any) {
                     throw addErrorContext(err, {
                         blockHeight: b.header.number,
@@ -72,7 +71,9 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
         }
     }
 
-    private mapBlock(rawBlock: unknown, validator: BlockValidator): Block {
+    private mapBlock(rawBlock: unknown, fields: FieldSelection): Block {
+        let validator = getBlockValidator(fields)
+
         let src = cast(validator, rawBlock)
 
         let {number, hash, parentHash, ...hdr} = src.header
