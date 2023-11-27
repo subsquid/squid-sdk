@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "make log async in runProgram",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

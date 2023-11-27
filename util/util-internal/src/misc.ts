@@ -24,11 +24,11 @@ export function maybeLast<T>(array: T[]): T | undefined {
 }
 
 
-export function runProgram(main: () => Promise<void>, log?: (err: Error) => void): void {
+export function runProgram(main: () => Promise<void>, log?: (err: Error) => (void | Promise<void>)): void {
 
-    function onerror(err: unknown) {
+    async function onerror(err: unknown) {
         if (log) {
-            log(ensureError(err))
+            await log(ensureError(err))
         } else {
             console.error(err)
         }
