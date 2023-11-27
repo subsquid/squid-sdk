@@ -162,7 +162,7 @@ function toBaseDataRequest(req: DataRequest): base.DataRequest {
     let events = !!req.events?.length
         || !!req.evmLogs?.length
         || !!req.contractsEvents?.length
-        || !!req.gearMessagesEnqueued?.length
+        || !!req.gearMessagesQueued?.length
         || !!req.gearUserMessagesSent?.length
         || req.calls?.some(c => c.events)
         || req.ethereumTransactions?.some(c => c.events)
@@ -173,7 +173,7 @@ function toBaseDataRequest(req: DataRequest): base.DataRequest {
         || req.events?.some(e => e.extrinsic || e.call || e.stack)
         || req.evmLogs?.some(e => e.extrinsic || e.call || e.stack)
         || req.contractsEvents?.some(e => e.extrinsic || e.call || e.stack)
-        || req.gearMessagesEnqueued?.some(e => e.extrinsic || e.call || e.stack)
+        || req.gearMessagesQueued?.some(e => e.extrinsic || e.call || e.stack)
         || req.gearUserMessagesSent?.some(e => e.extrinsic || e.call || e.stack)
         || false
 

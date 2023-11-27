@@ -10,7 +10,7 @@ export interface DataRequest {
     evmLogs?: EvmLogRequest[]
     ethereumTransactions?: EthereumTransactRequest[]
     contractsEvents?: ContractsContractEmittedRequest[]
-    gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
+    gearMessagesQueued?: GearMessageQueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
 }
 
@@ -59,7 +59,7 @@ export interface ContractsContractEmittedRequest extends EventRelations {
 }
 
 
-export interface GearMessageEnqueuedRequest extends EventRelations {
+export interface GearMessageQueuedRequest extends EventRelations {
     programId?: Bytes[]
 }
 

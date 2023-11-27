@@ -4,7 +4,7 @@ import {Event} from '../interfaces/data'
 import {assertEvent} from '../types/util'
 
 
-const GearMessageEnqueued = struct({
+const GearMessageQueued = struct({
     destination: bytes()
 })
 
@@ -18,8 +18,8 @@ const GearUserMessageSent = struct({
 
 export function setGearProgramId(runtime: Runtime, event: Event): void {
     switch(event.name) {
-        case 'Gear.MessageEnqueued':
-            assertEvent(runtime, GearMessageEnqueued, event)
+        case 'Gear.MessageQueued':
+            assertEvent(runtime, GearMessageQueued, event)
             event._gearProgramId = event.args.destination
             break
         case 'Gear.UserMessageSent':

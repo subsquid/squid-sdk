@@ -55,10 +55,10 @@ function buildEventFilter(dataRequest: DataRequest): EntityFilter<Event, EventRe
         events.add(filter, relations)
     })
 
-    dataRequest.gearMessagesEnqueued?.forEach(req => {
+    dataRequest.gearMessagesQueued?.forEach(req => {
         let {programId, ...relations} = req
         let filter = new FilterBuilder<Event>()
-        filter.propIn('name', ['Gear.MessageEnqueued'])
+        filter.propIn('name', ['Gear.MessageQueued'])
         filter.propIn('_gearProgramId', programId)
         events.add(filter, relations)
     })
