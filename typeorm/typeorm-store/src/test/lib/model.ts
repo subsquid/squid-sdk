@@ -1,5 +1,6 @@
 import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
-
+import {BigDecimal} from '@subsquid/big-decimal'
+import * as marshal from './marshal'
 
 @Entity()
 export class Item {
@@ -52,8 +53,17 @@ export class Data {
     @Column('int4', {array: true})
     integerArray?: number[] | null
 
-    @Column('numeric', {transformer: {from: (s?: string) => s == null ? null : BigInt(s), to: (val?: bigint) => val?.toString()}})
+    @Column('numeric', {transformer: marshal.bigintTransformer})
     bigInteger?: bigint | null
+
+    @Column_("numeric", {transformer: {to: obj => obj == null ? undefined : obj.map((val: any) => val == null ? undefined : marshal.bigint.toJSON(val)), from: obj => obj == null ? undefined : marshal.fromList(obj, val => val == null ? undefined : marshal.bigint.fromJSON(val))}, array: true, nullable: true})
+    bigIntegerArray?: bigint[] | null
+
+    @Column('numeric', {transformer: marshal.bigdecimalTransformer})
+    bigDecimal?: BigDecimal | null
+
+    @Column_("numeric", {transformer: {to: obj => obj == null ? undefined : obj.map((val: any) => val == null ? undefined : marshal.bigdecimal.toJSON(val)), from: obj => obj == null ? undefined : marshal.fromList(obj, val => val == null ? undefined : marshal.bigdecimal.fromJSON(val))}, array: true, nullable: true})
+    bigDecimalArray?: BigDecimal[] | null
 
     @Column('timestamp with time zone')
     dateTime?: Date | null
