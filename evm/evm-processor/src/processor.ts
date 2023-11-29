@@ -286,6 +286,20 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         })
     }
 
+    /**
+     * By default, the processor will fetch only blocks
+     * which contain requested items. This method
+     * modifies such behaviour to fetch all chain blocks.
+     *
+     * Optionally a range of blocks can be specified
+     * for which the setting should be effective.
+     */
+    includeAllBlocks(range?: Range): this {
+        this.assertNotRunning()
+        this.add({includeAllBlocks: true}, range)
+        return this
+    }
+
     addLog(options: LogRequest & BlockRange): this {
         this.assertNotRunning()
         this.add({
@@ -315,20 +329,6 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         this.add({
             stateDiffs: [mapRequest(options)]
         }, options.range)
-        return this
-    }
-
-    /**
-     * By default, the processor will fetch only blocks
-     * which contain requested items. This method
-     * modifies such behaviour to fetch all chain blocks.
-     *
-     * Optionally a range of blocks can be specified
-     * for which the setting should be effective.
-     */
-    includeAllBlocks(range?: Range): this {
-        this.assertNotRunning()
-        this.add({includeAllBlocks: true}, range)
         return this
     }
 
