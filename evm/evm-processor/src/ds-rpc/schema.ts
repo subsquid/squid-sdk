@@ -1,14 +1,4 @@
 import {weakMemo} from '@subsquid/util-internal'
-import {Bytes, Bytes20} from '../interfaces/base'
-import {FieldSelection} from '../interfaces/data'
-import {
-    getBlockHeaderProps,
-    getLogProps,
-    getTraceFrameValidator,
-    getTxProps,
-    getTxReceiptProps,
-    project
-} from '../mapping/schema'
 import {
     array,
     BYTES,
@@ -22,7 +12,17 @@ import {
     STRING,
     taggedUnion,
     Validator
-} from '../validation'
+} from '@subsquid/util-internal-validation'
+import {Bytes, Bytes20} from '../interfaces/base'
+import {FieldSelection} from '../interfaces/data'
+import {
+    getBlockHeaderProps,
+    getLogProps,
+    getTraceFrameValidator,
+    getTxProps,
+    getTxReceiptProps,
+    project
+} from '../mapping/schema'
 import {MappingRequest} from './request'
 import {DebugStateDiffResult, TraceStateDiff} from './rpc-data'
 

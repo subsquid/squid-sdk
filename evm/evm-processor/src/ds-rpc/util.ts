@@ -1,6 +1,5 @@
 import assert from 'assert'
 import {Bytes32, Qty} from '../interfaces/base'
-import {object, Validator} from '../validation'
 
 
 export function qty2Int(qty: Qty): number {

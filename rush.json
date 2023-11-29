@@ -743,6 +743,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-validation",
+      "projectFolder": "util/util-internal-validation",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,

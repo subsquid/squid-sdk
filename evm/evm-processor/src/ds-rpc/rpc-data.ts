@@ -1,22 +1,22 @@
-import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
-import {project} from '../mapping/schema'
 import {
     array,
     BYTES,
     constant,
     GetSrcType,
+    keyTaggedUnion,
     NAT,
     object,
+    oneOf,
     option,
-    print,
     QTY,
     record,
     ref,
     SMALL_QTY,
     STRING,
-    ValidationFailure,
     Validator
-} from '../validation'
+} from '@subsquid/util-internal-validation'
+import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
+import {project} from '../mapping/schema'
 
 
 export interface DataRequest {
@@ -166,75 +166,20 @@ export const TraceFrame = object({
 export type TraceFrame = GetSrcType<typeof TraceFrame>
 
 
-export type TraceDiff = '=' | TraceAddDiff | TraceChangeDiff | TraceDeleteDiff
-
-
-interface TraceAddDiff {
-    '+': Bytes
-    '*'?: undefined
-    '-'?: undefined
-}
-
-
-interface TraceChangeDiff {
-    '+'?: undefined
-    '*': {
-        from: Bytes
-        to: Bytes
-    }
-    '-'?: undefined
-}
-
-
-interface TraceDeleteDiff {
-    '+'?: undefined
-    '*'?: undefined
-    '-': Bytes
-}
-
-
-const TraceDiff: Validator<TraceDiff> = {
-    cast(value: unknown): ValidationFailure | TraceDiff {
-        return this.validate(value) || (value as any)
-    },
-    validate(value: unknown): ValidationFailure | undefined {
-        if (value === '=') return
-        if (typeof value != 'object' || !value) return new ValidationFailure(`${print(value)} is not a diff object`)
-        if ('+' in value) {
-            return TraceAddDiff.validate(value)
-        } else if ('*' in value) {
-            return TraceChangeDiff.validate(value)
-        } else if ('-' in value) {
-            return TraceDeleteDiff.validate(value)
-        } else {
-            return new ValidationFailure(`${print(value)} is not a diff object`)
-        }
-    },
-    phantom(): TraceDiff {
-        throw new Error()
-    }
-}
-
-
-const TraceAddDiff = object({
+const TraceDiffObj = keyTaggedUnion({
     '+': BYTES,
-    '*': constant(undefined),
-    '-': constant(undefined)
-})
-
-
-const TraceChangeDiff = object({
-    '+': constant(undefined),
     '*': object({from: BYTES, to: BYTES}),
-    '-': constant(undefined)
-})
-
-
-const TraceDeleteDiff = object({
-    '+': constant(undefined),
-    '*': constant(undefined),
     '-': BYTES
 })
+
+
+const TraceDiff = oneOf({
+    '= sign': constant('='),
+    'diff object': TraceDiffObj
+})
+
+
+export type TraceDiff = GetSrcType<typeof TraceDiff>
 
 
 export const TraceStateDiff = object({

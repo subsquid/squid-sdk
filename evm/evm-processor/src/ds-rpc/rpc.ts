@@ -2,10 +2,10 @@ import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
 import {groupBy, last} from '@subsquid/util-internal'
 import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
 import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
+import {array, DataValidationError, GetSrcType, nullable, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Bytes, Bytes32, Qty} from '../interfaces/base'
 import {isEmpty} from '../mapping/schema'
-import {array, GetSrcType, nullable, ValidationError, Validator} from '../validation'
 import {
     Block,
     DataRequest,
@@ -26,11 +26,11 @@ import {getTxHash, qty2Int, toQty} from './util'
 const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
 
 
-function getResultValidator<V extends Validator<any>>(validator: V): (result: unknown) => GetSrcType<V> {
+function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
         let err = validator.validate(result)
         if (err) {
-            throw new ValidationError(`server returned unexpected result: ${err.toString()}`)
+            throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
         } else {
             return result as any
         }

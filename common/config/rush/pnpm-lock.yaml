@@ -194,6 +194,9 @@ dependencies:
   '@rush-temp/util-internal-read-lines':
     specifier: file:./projects/util-internal-read-lines.tgz
     version: file:projects/util-internal-read-lines.tgz
+  '@rush-temp/util-internal-validation':
+    specifier: file:./projects/util-internal-validation.tgz
+    version: file:projects/util-internal-validation.tgz
   '@rush-temp/util-naming':
     specifier: file:./projects/util-naming.tgz
     version: file:projects/util-naming.tgz
@@ -5101,7 +5104,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-qUcllaW4SocGXx/WrkSFQ9fuywHPelBV7wM6HXzRWwuievvj/pRas4yOV7caq3JfIG4xVJiz7B2Crwix09iDsA==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-atJiIrADd3qTV+aJ4v8+SqyYE9KZEUqgRHd5cQ+sptjt9t7HmtPYUu+VFGppWRWljt9XnbbkqpMyQS4vwwT4Tg==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -5741,6 +5744,15 @@ packages:
   file:projects/util-internal-read-lines.tgz:
     resolution: {integrity: sha512-q7eTDu5zN7cfQRPRAkzRvHpZp2kOgaCBLyxl/GJBGhq1Lq6iz6JBK8UDX9JfzOCEwgRJsVGQUwERiFOELN5uRA==, tarball: file:projects/util-internal-read-lines.tgz}
     name: '@rush-temp/util-internal-read-lines'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.0
+      typescript: 5.2.2
+    dev: false
+
+  file:projects/util-internal-validation.tgz:
+    resolution: {integrity: sha512-NsNA1wlqYaVBIvkOp4qf1SKCZp1150/k1UVCTMzXrhW9+kA9TmoRIal+cEhJeeZHsUVNptOqFAzeaAlnQWKh2Q==, tarball: file:projects/util-internal-validation.tgz}
+    name: '@rush-temp/util-internal-validation'
     version: 0.0.0
     dependencies:
       '@types/node': 18.18.0

@@ -29,6 +29,7 @@
     }
   },
   "devDependencies": {
+    "@subsquid/util-internal-archive-client": "^0.0.1",
     "@types/node": "^18.18.0",
     "typescript": "~5.2.2"
   }

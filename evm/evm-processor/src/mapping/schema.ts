@@ -1,5 +1,5 @@
 import {FieldSelection} from '../interfaces/data'
-import {array, BYTES, NAT, object, option, QTY, SMALL_QTY, STRING, taggedUnion, withSentinel} from '../validation'
+import {array, BYTES, NAT, object, option, QTY, SMALL_QTY, STRING, taggedUnion, withSentinel} from '@subsquid/util-internal-validation'
 
 
 export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
@@ -9,22 +9,22 @@ export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive:
         hash: BYTES,
         parentHash: BYTES,
         ...project(fields, {
-            nonce: withSentinel('0x', BYTES),
-            sha3Uncles: withSentinel('0x', BYTES),
-            logsBloom: withSentinel('0x', BYTES),
-            transactionsRoot: withSentinel('0x', BYTES),
-            stateRoot: withSentinel('0x', BYTES),
-            receiptsRoot: withSentinel('0x', BYTES),
-            mixHash: withSentinel('0x', BYTES),
-            miner: withSentinel('0x', BYTES),
-            difficulty: withSentinel(-1n, QTY),
-            totalDifficulty: withSentinel(-1n, QTY),
-            extraData: withSentinel('0x', BYTES),
-            size: withSentinel(-1, SMALL_QTY),
-            gasLimit: withSentinel(-1n, QTY),
-            gasUsed: withSentinel(-1n, QTY),
-            baseFeePerGas: withSentinel(-1n, QTY),
-            timestamp: withSentinel(0, natural)
+            nonce: withSentinel('BlockHeader.nonce', '0x', BYTES),
+            sha3Uncles: withSentinel('BlockHeader.sha3Uncles', '0x', BYTES),
+            logsBloom: withSentinel('BlockHeader.logsBloom', '0x', BYTES),
+            transactionsRoot: withSentinel('BlockHeader.transactionsRoot', '0x', BYTES),
+            stateRoot: withSentinel('BlockHeader.stateRoot', '0x', BYTES),
+            receiptsRoot: withSentinel('BlockHeader.receiptsRoot', '0x', BYTES),
+            mixHash: withSentinel('BlockHeader.mixHash', '0x', BYTES),
+            miner: withSentinel('BlockHeader.miner', '0x', BYTES),
+            difficulty: withSentinel('BlockHeader.difficulty', -1n, QTY),
+            totalDifficulty: withSentinel('BlockHeader.totalDifficulty', -1n, QTY),
+            extraData: withSentinel('BlockHeader.extraData', '0x', BYTES),
+            size: withSentinel('BlockHeader.size', -1, SMALL_QTY),
+            gasLimit: withSentinel('BlockHeader.gasLimit', -1n, QTY),
+            gasUsed: withSentinel('BlockHeader.gasUsed', -1n, QTY),
+            baseFeePerGas: withSentinel('BlockHeader.baseFeePerGas', -1n, QTY),
+            timestamp: withSentinel('BlockHeader.timestamp', 0, natural)
         })
     }
 }
@@ -38,16 +38,16 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
             hash: BYTES,
             from: BYTES,
             to: option(BYTES),
-            gas: withSentinel(-1n, QTY),
-            gasPrice: withSentinel(-1n, QTY),
+            gas: withSentinel('Transaction.gas', -1n, QTY),
+            gasPrice: withSentinel('Transaction.gasPrice', -1n, QTY),
             maxFeePerGas: option(QTY),
             maxPriorityFeePerGas: option(QTY),
             input: BYTES,
-            nonce: withSentinel(-1, NAT),
-            value: withSentinel(-1n, QTY),
-            v: withSentinel(-1n, QTY),
-            r: withSentinel('0x', BYTES),
-            s: withSentinel('0x', BYTES),
+            nonce: withSentinel('Transaction.nonce', -1, NAT),
+            value: withSentinel('Transaction.value', -1n, QTY),
+            v: withSentinel('Transaction.v', -1n, QTY),
+            r: withSentinel('Transaction.r', '0x', BYTES),
+            s: withSentinel('Transaction.s', '0x', BYTES),
             yParity: option(natural),
             chainId: option(natural),
         })
@@ -58,12 +58,12 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
 export function getTxReceiptProps(fields: FieldSelection['transaction'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
     return project(fields, {
-        gasUsed: withSentinel(-1n, QTY),
-        cumulativeGasUsed: withSentinel(-1n, QTY),
-        effectiveGasPrice: withSentinel(-1n, QTY),
+        gasUsed: withSentinel('Receipt.gasUsed', -1n, QTY),
+        cumulativeGasUsed: withSentinel('Receipt.cumulativeGasUsed', -1n, QTY),
+        effectiveGasPrice: withSentinel('Receipt.effectiveGasPrice', -1n, QTY),
         contractAddress: option(BYTES),
-        type: withSentinel(-1, natural),
-        status: withSentinel(-1, natural),
+        type: withSentinel('Receipt.type', -1, natural),
+        status: withSentinel('Receipt.status', -1, natural),
     })
 }
 

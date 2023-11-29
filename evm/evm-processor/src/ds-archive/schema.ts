@@ -1,4 +1,5 @@
 import {weakMemo} from '@subsquid/util-internal'
+import {array, BYTES, NAT, object, option, STRING, taggedUnion} from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../interfaces/data'
 import {
     getBlockHeaderProps,
@@ -8,7 +9,6 @@ import {
     getTxReceiptProps,
     project
 } from '../mapping/schema'
-import {array, BYTES, NAT, object, option, STRING, taggedUnion} from '../validation'
 
 
 export const getBlockValidator = weakMemo((fields: FieldSelection) => {

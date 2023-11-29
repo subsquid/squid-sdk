@@ -1,4 +1,6 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {cast, GetCastType} from '@subsquid/util-internal-validation'
+import {GetPropsCast} from '@subsquid/util-internal-validation/lib/composite/object'
 import assert from 'assert'
 import {Bytes, Bytes20, Bytes32} from '../interfaces/base'
 import {FieldSelection} from '../interfaces/data'
@@ -27,7 +29,6 @@ import {
 } from '../mapping/entities'
 import {setUpRelations} from '../mapping/relations'
 import {getLogProps, getTraceFrameValidator, isEmpty} from '../mapping/schema'
-import {cast, GetCastType, GetObjectType} from '../validation'
 import {filterBlock} from './filter'
 import {MappingRequest} from './request'
 import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from './rpc-data'
@@ -140,7 +141,7 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
 }
 
 
-function makeLog(blockHeader: BlockHeader, src: GetObjectType<ReturnType<typeof getLogProps>>): Log {
+function makeLog(blockHeader: BlockHeader, src: GetPropsCast<ReturnType<typeof getLogProps>>): Log {
     let {logIndex, transactionIndex, ...props} = src
     let log = new Log(blockHeader, logIndex, transactionIndex)
     Object.assign(log, props)

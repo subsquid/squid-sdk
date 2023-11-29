@@ -3,6 +3,7 @@ import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
 import {FieldSelection} from '../interfaces/data'
@@ -24,7 +25,6 @@ import {
     Transaction
 } from '../mapping/entities'
 import {setUpRelations} from '../mapping/relations'
-import {cast} from '../validation'
 import {getBlockValidator} from './schema'
 
 
