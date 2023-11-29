@@ -13,33 +13,92 @@ import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
 
 
-export type DataSource = ArchiveDataSource | ChainDataSource
-
-
-type ChainRpc = string | {
+export interface RpcEndpointSettings {
+    /**
+     * RPC endpoint URL (either http(s) or ws(s))
+     */
     url: string
+    /**
+     * Maximum number of ongoing concurrent requests
+     */
     capacity?: number
+    /**
+     * Maximum number of requests per second
+     */
     rateLimit?: number
+    /**
+     * Request timeout in `ms`
+     */
     requestTimeout?: number
+    /**
+     * Maximum number of requests in a single batch call
+     */
     maxBatchCallSize?: number
 }
 
 
-type ArchiveConnection = string | {
+export interface RpcDataIngestionSettings {
+    /**
+     * By default, `debug_traceBlockByHash` is used to obtain call traces,
+     * this flag instructs the processor to utilize `trace_` methods instead.
+     *
+     * This setting is only effective for finalized blocks.
+     */
+    preferTraceApi?: boolean
+    /**
+     * By default, `trace_replayBlockTransactions` is used to obtain state diffs for finalized blocks,
+     * this flag instructs the processor to utilize `debug_traceBlockByHash` instead.
+     *
+     * This setting is only effective for finalized blocks.
+     */
+    useDebugApiForStateDiffs?: boolean
+    /**
+     * Poll interval for new blocks in `ms`
+     *
+     * Poll mechanism is used to get new blocks via HTTP connection.
+     */
+    headPollInterval?: number
+    /**
+     * When websocket subscription is used to get new blocks,
+     * this setting specifies timeout in `ms` after which connection
+     * will be reset and subscription re-initiated if no new block where received.
+     */
+    newHeadTimeout?: number
+    /**
+     * Disable RPC data ingestion entirely
+     */
+    disabled?: boolean
+}
+
+
+export interface ArchiveSettings {
+    /**
+     * Subsquid archive URL
+     */
     url: string
+    /**
+     * Request timeout in ms
+     */
     requestTimeout?: number
 }
+
+
+/**
+ * @deprecated
+ */
+export type DataSource = ArchiveDataSource | ChainDataSource
+
 
 
 interface ArchiveDataSource {
     /**
      * Subsquid evm archive endpoint URL
      */
-    archive: ArchiveConnection
+    archive: string | ArchiveSettings
     /**
      * Chain node RPC endpoint URL
      */
-    chain?: ChainRpc
+    chain?: string | RpcEndpointSettings
 }
 
 
@@ -48,7 +107,7 @@ interface ChainDataSource {
     /**
      * Chain node RPC endpoint URL
      */
-    chain: ChainRpc
+    chain: string | RpcEndpointSettings
 }
 
 
@@ -77,21 +136,138 @@ export type EvmBatchProcessorFields<T> = T extends EvmBatchProcessor<infer F> ? 
  */
 export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
-    private src?: DataSource
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private _preferTraceApi?: boolean
-    private _useDebugApiForStateDiffs?: boolean
-    private _useArchiveOnly?: boolean
-    private chainPollInterval?: number
+    private archive?: ArchiveSettings
+    private rpcIngestSettings?: RpcDataIngestionSettings
+    private rpcEndpoint?: RpcEndpointSettings
     private running = false
 
-    private add(request: DataRequest, range?: Range): void {
-        this.requests.push({
-            range: range || {from: 0},
-            request
-        })
+    /**
+     * Set Subsquid Archive endpoint.
+     *
+     * Subsquid Archive allows to get data from finalized blocks up to
+     * infinite times faster and more efficient than via regular RPC.
+     *
+     * @example
+     * processor.setArchive('https://v2.archive.subsquid.io/ethereum-mainnet')
+     */
+    setArchive(url: string | ArchiveSettings): this {
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {url}
+        } else {
+            this.archive = url
+        }
+        return this
+    }
+
+    /**
+     * Set chain RPC endpoint
+     *
+     * @example
+     * // just pass a URL
+     * processor.setRpcEndpoint('https://eth-mainnet.public.blastapi.io')
+     *
+     * // adjust some connection options
+     * processor.setRpcEndpoint({
+     *     url: 'https://eth-mainnet.public.blastapi.io',
+     *     rateLimit: 10
+     * })
+     */
+    setRpcEndpoint(url: string | RpcEndpointSettings | undefined): this {
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.rpcEndpoint = {url}
+        } else {
+            this.rpcEndpoint = url
+        }
+        return this
+    }
+
+    /**
+     * Sets blockchain data source.
+     *
+     * @example
+     * processor.setDataSource({
+     *     archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
+     *     chain: 'https://eth-mainnet.public.blastapi.io'
+     * })
+     *
+     * @deprecated Use separate {@link .setArchive()} and {@link .setRpcEndpoint()} methods
+     * to specify data sources.
+     */
+    setDataSource(src: DataSource): this {
+        this.assertNotRunning()
+        if (src.archive) {
+            this.setArchive(src.archive)
+        } else {
+            this.archive = undefined
+        }
+        if (src.chain) {
+            this.setRpcEndpoint(src.chain)
+        } else {
+            this.rpcEndpoint = undefined
+        }
+        return this
+    }
+
+    /**
+     * Set up RPC data ingestion settings
+     */
+    setRpcDataIngestionSettings(settings: RpcDataIngestionSettings): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = settings
+        return this
+    }
+
+    /**
+     * @deprecated Use {@link .setRpcDataIngestionSettings()} instead
+     */
+    setChainPollInterval(ms: number): this {
+        assert(ms >= 0)
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, headPollInterval: ms}
+        return this
+    }
+
+    /**
+     * @deprecated Use {@link .setRpcDataIngestionSettings()} instead
+     */
+    preferTraceApi(yes?: boolean): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, preferTraceApi: yes !== false}
+        return this
+    }
+
+    /**
+     * @deprecated Use {@link .setRpcDataIngestionSettings()} instead
+     */
+    useDebugApiForStateDiffs(yes?: boolean): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, useDebugApiForStateDiffs: yes !== false}
+        return this
+    }
+
+    /**
+     * Never use RPC endpoint for data ingestion.
+     *
+     * @deprecated This is the same as `.setRpcDataIngestionSettings({disabled: true})`
+     */
+    useArchiveOnly(yes?: boolean): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, disabled: yes !== false}
+        return this
+    }
+
+    /**
+     * Distance from the head block behind which all blocks are considered to be finalized.
+     */
+    setFinalityConfirmation(nBlocks: number): this {
+        this.assertNotRunning()
+        this.finalityConfirmation = nBlocks
+        return this
     }
 
     /**
@@ -101,6 +277,13 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         this.assertNotRunning()
         this.fields = fields
         return this as any
+    }
+
+    private add(request: DataRequest, range?: Range): void {
+        this.requests.push({
+            range: range || {from: 0},
+            request
+        })
     }
 
     addLog(options: LogRequest & BlockRange): this {
@@ -136,19 +319,6 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
-     * Sets the port for a built-in prometheus metrics server.
-     *
-     * By default, the value of `PROMETHEUS_PORT` environment
-     * variable is used. When it is not set,
-     * the processor will pick up an ephemeral port.
-     */
-    setPrometheusPort(port: number | string): this {
-        this.assertNotRunning()
-        this.getPrometheusServer().setPort(port)
-        return this
-    }
-
-    /**
      * By default, the processor will fetch only blocks
      * which contain requested items. This method
      * modifies such behaviour to fetch all chain blocks.
@@ -175,48 +345,15 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
-     * Sets blockchain data source.
+     * Sets the port for a built-in prometheus metrics server.
      *
-     * @example
-     * processor.setDataSource({
-     *     archive: 'https://v2.archive.subsquid.io/network/ethereum-mainnet',
-     *     chain: 'https://eth-mainnet.public.blastapi.io'
-     * })
+     * By default, the value of `PROMETHEUS_PORT` environment
+     * variable is used. When it is not set,
+     * the processor will pick up an ephemeral port.
      */
-    setDataSource(src: DataSource): this {
+    setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
-        this.src = src
-        return this
-    }
-
-    setFinalityConfirmation(nBlocks: number): this {
-        this.assertNotRunning()
-        this.finalityConfirmation = nBlocks
-        return this
-    }
-
-    setChainPollInterval(ms: number): this {
-        assert(ms >= 0)
-        this.assertNotRunning()
-        this.chainPollInterval = ms
-        return this
-    }
-
-    preferTraceApi(yes?: boolean): this {
-        this.assertNotRunning()
-        this._preferTraceApi = yes !== false
-        return this
-    }
-
-    useDebugApiForStateDiffs(yes?: boolean): this {
-        this.assertNotRunning()
-        this._useDebugApiForStateDiffs = yes !== false
-        return this
-    }
-
-    useArchiveOnly(yes?: boolean): this {
-        this.assertNotRunning()
-        this._useArchiveOnly = yes !== false
+        this.getPrometheusServer().setPort(port)
         return this
     }
 
@@ -241,30 +378,19 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return new PrometheusServer()
     }
 
-    private getDataSource(): DataSource {
-        if (this.src == null) {
-            throw new Error('use .setDataSource() to specify archive and/or chain RPC endpoint')
-        }
-        return this.src
-    }
-
     @def
     private getChainRpcClient(): RpcClient {
-        let options = this.src?.chain
-        if (options == null) {
-            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
-        }
-        if (typeof options == 'string') {
-            options = {url: options}
+        if (this.rpcEndpoint == null) {
+            throw new Error(`use .setRpcEndpoint() to specify chain RPC endpoint`)
         }
         let client = new RpcClient({
-            url: options.url,
-            maxBatchCallSize: options.maxBatchCallSize ?? 100,
-            requestTimeout:  options.requestTimeout ?? 30_000,
-            capacity: options.capacity ?? 10,
-            rateLimit: options.rateLimit,
+            url: this.rpcEndpoint.url,
+            maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
+            requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
+            capacity: this.rpcEndpoint.capacity ?? 10,
+            rateLimit: this.rpcEndpoint.rateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: options.url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
@@ -288,19 +414,17 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return new EvmRpcDataSource({
             rpc: this.getChainRpcClient(),
             finalityConfirmation: this.finalityConfirmation,
-            preferTraceApi: this._preferTraceApi,
-            useDebugApiForStateDiffs: this._useDebugApiForStateDiffs,
-            headPollInterval: this.chainPollInterval,
+            preferTraceApi: this.rpcIngestSettings?.preferTraceApi,
+            useDebugApiForStateDiffs: this.rpcIngestSettings?.useDebugApiForStateDiffs,
+            headPollInterval: this.rpcIngestSettings?.headPollInterval,
+            newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }
 
     @def
     private getArchiveDataSource(): EvmArchive {
-        let archive = assertNotNull(this.getDataSource().archive)
-        if (typeof archive == 'string') {
-            archive = {url: archive}
-        }
+        let archive = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
 
@@ -363,19 +487,27 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         let log = this.getLogger()
 
         runProgram(async () => {
-            let src = this.getDataSource()
             let chain = this.getChain()
             let mappingLog = log.child('mapping')
 
-            if (src.archive == null && this._useArchiveOnly) {
-                throw new Error('Archive URL is required when .useArchiveOnly() flag is set')
+            if (this.archive == null && this.rpcEndpoint == null) {
+                throw new Error(
+                    'No data source where specified. ' +
+                    'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
+                )
+            }
+
+            if (this.archive == null && this.rpcIngestSettings?.disabled) {
+                throw new Error('Subsquid Archive is required when RPC data ingestion is disabled')
             }
 
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                archive: src.archive ? this.getArchiveDataSource() : undefined,
-                hotDataSource: src.chain && !this._useArchiveOnly ? this.getHotDataSource() : undefined,
+                archive: this.archive ? this.getArchiveDataSource() : undefined,
+                hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
+                    ? this.getHotDataSource()
+                    : undefined,
                 allBlocksAreFinal: this.finalityConfirmation === 0,
                 prometheus: this.getPrometheusServer(),
                 log,

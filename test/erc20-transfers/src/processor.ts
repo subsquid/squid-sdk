@@ -8,10 +8,8 @@ const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
 
 
 const processor = new EvmBatchProcessor()
-    .setDataSource({
-        archive: 'https://v2.archive.subsquid.io/network/arbitrum-one',
-        chain: process.env.ARB_NODE_WS
-    })
+    .setArchive('https://v2.archive.subsquid.io/network/arbitrum-one')
+    .setRpcEndpoint(process.env.ARB_NODE_WS)
     .addLog({
         address: [CONTRACT],
         topic0: [erc20.events.Transfer.topic]
