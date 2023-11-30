@@ -119,11 +119,31 @@ interface BlockRange {
 }
 
 
+/**
+ * API and data that is passed to the data handler
+ */
 export interface DataHandlerContext<Store, F extends FieldSelection = {}> {
+    /**
+     * @internal
+     */
     _chain: Chain
+    /**
+     * An instance of a structured logger.
+     */
     log: Logger
+    /**
+     * Storage interface provided by the database
+     */
     store: Store
+    /**
+     * List of blocks to map and process
+     */
     blocks: BlockData<F>[]
+    /**
+     * Signals, that the processor reached the head of a chain.
+     *
+     * The head block is always included in `.blocks`.
+     */
     isHead: boolean
 }
 
@@ -151,7 +171,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * processor.setArchive('https://v2.archive.subsquid.io/ethereum-mainnet')
+     * processor.setArchive('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
     setArchive(url: string | ArchiveSettings): this {
         this.assertNotRunning()

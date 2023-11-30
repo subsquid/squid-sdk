@@ -10,15 +10,15 @@ const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
 const processor = new EvmBatchProcessor()
     .setArchive('https://v2.archive.subsquid.io/network/arbitrum-one')
     .setRpcEndpoint(process.env.ARB_NODE_WS)
+    .setFinalityConfirmation(500)
+    .setBlockRange({from: 150_000_000})
+    .setFields({
+        log: {transactionHash: true}
+    })
     .addLog({
         address: [CONTRACT],
         topic0: [erc20.events.Transfer.topic]
     })
-    .setFields({
-        log: {transactionHash: true}
-    })
-    .setFinalityConfirmation(500)
-    .setBlockRange({from: 150_000_000})
 
 
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
