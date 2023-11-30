@@ -4,6 +4,11 @@
       "packageName": "@subsquid/rpc-client",
       "comment": "introduce subscriptions and notifications",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "introduce `.validateError` call option",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/rpc-client"
