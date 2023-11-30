@@ -65,10 +65,15 @@ export interface RuntimeVersion extends RuntimeVersionId {
 }
 
 
-export interface BlockData {
-    hash: Hash
-    height: number
+export interface BlockData extends PartialBlockData {
     block: PartialGetBlockResult
+}
+
+
+export interface PartialBlockData {
+    height: number
+    hash: Hash
+    block?: PartialGetBlockResult
     runtimeVersion?: RuntimeVersion
     metadata?: Bytes
     /**
@@ -76,19 +81,17 @@ export interface BlockData {
      */
     events?: Bytes
     trace?: any
+    _isInvalid?: boolean
 }
 
 
-export interface BlockBatch {
-    blocks: BlockData[]
-    isHead: boolean
-}
-
-
-export interface DataRequest {
-    events?: boolean
+export interface DataRequest0 {
     extrinsics?: boolean
-    runtimeVersion?: boolean
+}
+
+
+export interface DataRequest1 extends DataRequest0 {
+    events?: boolean
     /**
      * List of trace targets or an empty string to fetch all
      */
@@ -96,7 +99,6 @@ export interface DataRequest {
 }
 
 
-export interface HashAndHeight {
-    hash: Hash
-    height: number
+export interface DataRequest extends DataRequest1 {
+    runtimeVersion?: boolean
 }

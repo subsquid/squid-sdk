@@ -23,7 +23,7 @@ export function runtimeVersionEquals(a: RuntimeVersionId, b: RuntimeVersionId): 
 }
 
 
-interface PrevItem<T> {
+export interface PrevItem<T> {
     height: number
     value: T
 }
@@ -41,7 +41,7 @@ export class Prev<T> {
     }
 
     getItem(height: number): PrevItem<T> | undefined {
-        this.rollbackTo(height)
+        this.rollbackTo(height - 1)
         return maybeLast(this.items)
     }
 

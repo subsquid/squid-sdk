@@ -1,417 +1,361 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {cast, GetCastType} from '@subsquid/util-internal-validation'
+import {GetPropsCast} from '@subsquid/util-internal-validation/lib/composite/object'
 import assert from 'assert'
-import {AllFields, BlockData, BlockHeader, FieldSelection, Transaction} from '../interfaces/data'
-import {DataRequest} from '../interfaces/data-request'
+import {Bytes, Bytes20, Bytes32} from '../interfaces/base'
+import {FieldSelection} from '../interfaces/data'
 import {
-    Bytes,
-    Bytes20,
-    Bytes32,
-    EvmStateDiff,
-    EvmTrace,
-    EvmTraceBase,
-    EvmTraceCall,
-    EvmTraceCreate,
-    Qty
+    EvmTraceCallAction,
+    EvmTraceCallResult,
+    EvmTraceCreateAction,
+    EvmTraceCreateResult,
+    EvmTraceSuicideAction
 } from '../interfaces/evm'
-import {formatId} from '../util'
-import * as rpc from './rpc'
+import {
+    Block,
+    BlockHeader,
+    Log,
+    StateDiff,
+    StateDiffAdd,
+    StateDiffChange,
+    StateDiffDelete,
+    StateDiffNoChange,
+    Trace,
+    TraceCall,
+    TraceCreate,
+    TraceReward,
+    TraceSuicide,
+    Transaction
+} from '../mapping/entities'
+import {setUpRelations} from '../mapping/relations'
+import {getLogProps, getTraceFrameValidator, isEmpty} from '../mapping/schema'
+import {filterBlock} from './filter'
+import {MappingRequest} from './request'
+import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from './rpc-data'
+import {DebugFrame, getBlockValidator} from './schema'
+import {getTxHash} from './util'
 
 
-export function mapBlock(block: rpc.Block, transactionsRequested: boolean): BlockData<AllFields> {
+export function mapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     try {
-        return tryMapBlock(block, transactionsRequested)
+        return tryMapBlock(rpcBlock, req)
     } catch(err: any) {
         throw addErrorContext(err, {
-            blockHeight: getBlockHeight(block),
-            blockHash: block.hash
+            blockHash: rpcBlock.hash,
+            blockHeight: rpcBlock.height
         })
     }
 }
 
 
-function tryMapBlock(src: rpc.Block, transactionsRequested: boolean): BlockData<AllFields> {
-    let block: BlockData<AllFields> = {
-        header: mapBlockHeader(src),
-        transactions: [],
-        logs: [],
-        traces: [],
-        stateDiffs: []
-    }
+function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
+    let src = cast(getBlockValidator(req), rpcBlock)
 
-    if (transactionsRequested) {
-        for (let i = 0; i < src.transactions.length; i++) {
-            let stx = src.transactions[i]
-            let tx: Transaction<AllFields>
-            let id = formatId(block.header.height, block.header.hash, i)
+    let {number, hash, parentHash, transactions, ...headerProps} = src.block
+    let header = new BlockHeader(number, hash, parentHash)
+    Object.assign(header, headerProps)
+
+    let block = new Block(header)
+
+    if (req.transactionList) {
+        for (let i = 0; i < transactions.length; i++) {
+            let stx = transactions[i]
+            let tx = new Transaction(header, i)
             if (typeof stx == 'string') {
-                tx = {
-                    id,
-                    transactionIndex: i,
-                    hash: stx,
-                    block: block.header
-                } as Transaction<AllFields>
-            } else {
-                tx = {
-                    id,
-                    transactionIndex: i,
-                    hash: stx.hash,
-                    from: stx.from,
-                    to: stx.to || undefined,
-                    input: stx.input,
-                    nonce: qty2Int(stx.nonce),
-                    v: stx.v == null ? undefined : BigInt(stx.v),
-                    r: stx.r,
-                    s: stx.s,
-                    value: BigInt(stx.value),
-                    gas: BigInt(stx.gas),
-                    gasPrice: BigInt(stx.gasPrice),
-                    chainId: stx.chainId == null ? undefined : qty2Int(stx.chainId),
-                    sighash: stx.input.slice(0, 10),
-                    block: block.header
+                if (req.fields.transaction?.hash) {
+                    tx.hash = stx
                 }
+            } else {
+                let {transactionIndex, ...props} = stx
+                Object.assign(tx, props)
+                assert(transactionIndex === i)
             }
-
-            if (src._receipts) {
-                let receipt = src._receipts[i]
-                assert(receipt.transactionHash === tx.hash)
-                tx.gasUsed = BigInt(receipt.gasUsed)
-                tx.cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                tx.effectiveGasPrice = BigInt(receipt.effectiveGasPrice)
-                tx.contractAddress = receipt.contractAddress || undefined
-                tx.type = qty2Int(receipt.type)
-                tx.status = qty2Int(receipt.status)
-            }
-
             block.transactions.push(tx)
         }
     }
 
-    for (let log of iterateLogs(src)) {
-        let logIndex = qty2Int(log.logIndex)
-        let transactionIndex = qty2Int(log.transactionIndex)
-        block.logs.push({
-            id: formatId(block.header.height, block.header.hash, logIndex),
-            logIndex,
-            transactionIndex,
-            transactionHash: log.transactionHash,
-            address: log.address,
-            topics: log.topics,
-            data: log.data,
-            block: block.header,
-            transaction: block.transactions[transactionIndex]
-        })
+    if (req.receipts) {
+        let receipts = assertNotNull(src.receipts)
+        for (let i = 0; i < receipts.length; i++) {
+            let {transactionIndex, logs, ...props} = receipts[i]
+            assert(transactionIndex === i)
+            Object.assign(block.transactions[i], props)
+            if (req.logList) {
+                for (let log of assertNotNull(logs)) {
+                    block.logs.push(makeLog(header, log))
+                }
+            }
+        }
     }
 
-    if (src._traceReplays) {
-        let hash2idx = new Map(src.transactions.map((tx, idx) => [getTxHash(tx), idx]))
-        for (let rep of src._traceReplays) {
-            let transactionIndex = assertNotNull(hash2idx.get(rep.transactionHash))
+    if (src.logs) {
+        assert(block.logs.length == 0)
+        for (let log of src.logs) {
+            block.logs.push(makeLog(header, log))
+        }
+    }
+
+    if (src.traceReplays) {
+        let txIndex = new Map(src.block.transactions.map((tx, idx) => {
+            return [getTxHash(tx), idx]
+        }))
+        for (let rep of src.traceReplays) {
+            let transactionIndex = assertNotNull(txIndex.get(rep.transactionHash))
             if (rep.trace) {
                 for (let frame of rep.trace) {
-                    block.traces.push({
-                        ...mapTraceFrame(transactionIndex, frame),
-                        block: block.header,
-                        transaction: block.transactions[transactionIndex]
-                    })
+                    block.traces.push(
+                        makeTraceRecordFromReplayFrame(header, transactionIndex, frame)
+                    )
                 }
             }
             if (rep.stateDiff) {
-                for (let diff of iterateTraceStateDiffs(transactionIndex, rep.stateDiff)) {
-                    block.stateDiffs.push({
-                        ...diff,
-                        block: block.header,
-                        transaction: block.transactions[transactionIndex]
-                    })
+                for (let diff of mapReplayStateDiff(header, transactionIndex, rep.stateDiff)) {
+                    block.stateDiffs.push(diff)
                 }
             }
         }
     }
 
-    if (src._debugFrames) {
+    if (src.debugFrames) {
         assert(block.traces.length == 0)
-        assert(src._debugFrames.length === src.transactions.length)
-        for (let i = 0; i < src._debugFrames.length; i++) {
-            for (let frame of mapDebugFrame(i, src._debugFrames[i])) {
-                block.traces.push({
-                    ...frame,
-                    block: block.header,
-                    transaction: block.transactions[i]
-                })
+        for (let i = 0; i < src.debugFrames.length; i++) {
+            for (let trace of mapDebugFrame(header, i, src.debugFrames[i], req.fields)) {
+                block.traces.push(trace)
             }
         }
     }
 
-    if (src._debugStateDiffs) {
+    if (src.debugStateDiffs) {
         assert(block.stateDiffs.length == 0)
-        assert(src._debugStateDiffs.length === src.transactions.length)
-        for (let i = 0; i < src._debugStateDiffs.length; i++) {
-            for (let diff of mapDebugStateDiff(i, src._debugStateDiffs[i])) {
-                block.stateDiffs.push({
-                    ...diff,
-                    block: block.header,
-                    transaction: block.transactions[i]
-                })
+        for (let i = 0; i < src.debugStateDiffs.length; i++) {
+            for (let diff of mapDebugStateDiff(header, i, src.debugStateDiffs[i])) {
+                block.stateDiffs.push(diff)
             }
         }
     }
+
+    setUpRelations(block)
+    filterBlock(block, req.dataRequest)
 
     return block
 }
 
 
-function mapBlockHeader(block: rpc.Block): BlockHeader<AllFields> {
-    let height = qty2Int(block.number)
-    return {
-        id: formatId(height, block.hash),
-        height,
-        hash: block.hash,
-        parentHash: block.parentHash,
-        timestamp: qty2Int(block.timestamp) * 1000,
-        stateRoot: block.stateRoot,
-        transactionsRoot: block.transactionsRoot,
-        receiptsRoot: block.receiptsRoot,
-        logsBloom: block.logsBloom,
-        extraData: block.extraData,
-        sha3Uncles: block.sha3Uncles,
-        miner: block.miner,
-        nonce: block.nonce,
-        size: BigInt(block.size),
-        gasLimit: BigInt(block.gasLimit),
-        gasUsed: BigInt(block.gasUsed),
-        difficulty: block.difficulty == null ? undefined : BigInt(block.difficulty)
-    }
+function makeLog(blockHeader: BlockHeader, src: GetPropsCast<ReturnType<typeof getLogProps>>): Log {
+    let {logIndex, transactionIndex, ...props} = src
+    let log = new Log(blockHeader, logIndex, transactionIndex)
+    Object.assign(log, props)
+    return log
 }
 
 
-function* iterateLogs(block: rpc.Block): Iterable<rpc.Log> {
-    if (block._receipts) {
-        for (let receipt of block._receipts) {
-            yield* receipt.logs
-        }
-    } else if (block._logs) {
-        yield* block._logs
-    }
-}
-
-
-function mapTraceFrame(transactionIndex: number, src: rpc.TraceFrame): EvmTrace {
-    switch(src.type) {
-        case 'create': {
-            let rec: EvmTraceCreate = {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    from: src.action.from,
-                    value: BigInt(src.action.value),
-                    gas: BigInt(src.action.gas),
-                    init: src.action.init
-                }
-            }
-            if (src.result) {
-                rec.result = {
-                    address: src.result.address,
-                    code: src.result.code,
-                    gasUsed: BigInt(src.result.gasUsed)
-                }
-            }
-            return rec
-        }
-        case 'call': {
-            let rec: EvmTraceCall = {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    callType: src.action.callType,
-                    from: src.action.from,
-                    to: src.action.to,
-                    value: BigInt(src.action.value),
-                    gas: BigInt(src.action.gas),
-                    input: src.action.input,
-                    sighash: src.action.input.slice(0, 10)
-                }
-            }
-            if (src.result) {
-                rec.result = {
-                    gasUsed: BigInt(src.result.gasUsed),
-                    output: src.result.output
-                }
-            }
-            return rec
-        }
-        case 'suicide': {
-            return {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    address: src.action.address,
-                    refundAddress: src.action.refundAddress,
-                    balance: BigInt(src.action.balance)
-                }
-            }
-        }
-        case 'reward': {
-            return {
-                transactionIndex,
-                traceAddress: src.traceAddress,
-                subtraces: src.subtraces,
-                error: src.error,
-                type: src.type,
-                action: {
-                    author: src.action.author,
-                    value: BigInt(src.action.value),
-                    type: src.action.type
-                }
-            }
-        }
-        default:
-            throw unexpectedCase((src as any).type)
-    }
-}
-
-
-function* iterateTraceStateDiffs(
+function makeTraceRecordFromReplayFrame(
+    header: BlockHeader,
     transactionIndex: number,
-    stateDiff?: Record<Bytes20, rpc.TraceStateDiff>
-): Iterable<EvmStateDiff> {
-    if (stateDiff == null) return
+    frame: GetCastType<ReturnType<typeof getTraceFrameValidator>>
+): Trace {
+    let {traceAddress, type, ...props} = frame
+    let trace: Trace
+    switch(type) {
+        case 'create':
+            trace = new TraceCreate(header, transactionIndex, traceAddress)
+            break
+        case 'call':
+            trace = new TraceCall(header, transactionIndex, traceAddress)
+            break
+        case 'suicide':
+            trace = new TraceSuicide(header, transactionIndex, traceAddress)
+            break
+        case 'reward':
+            trace = new TraceReward(header, transactionIndex, traceAddress)
+            break
+        default:
+            throw unexpectedCase(type)
+    }
+    Object.assign(trace, props)
+    return trace
+}
+
+
+function* mapReplayStateDiff(
+    header: BlockHeader,
+    transactionIndex: number,
+    stateDiff: Record<Bytes20, TraceStateDiff>
+): Iterable<StateDiff> {
     for (let address in stateDiff) {
         let diffs = stateDiff[address]
-        yield mapTraceStateDiff(transactionIndex, address, 'code', diffs.code)
-        yield mapTraceStateDiff(transactionIndex, address, 'balance', diffs.balance)
-        yield mapTraceStateDiff(transactionIndex, address, 'nonce', diffs.nonce)
+        yield makeStateDiffFromReplay(header, transactionIndex, address, 'code', diffs.code)
+        yield makeStateDiffFromReplay(header, transactionIndex, address, 'balance', diffs.balance)
+        yield makeStateDiffFromReplay(header, transactionIndex, address, 'nonce', diffs.nonce)
         for (let key in diffs.storage) {
-            yield mapTraceStateDiff(transactionIndex, address, key, diffs.storage[key])
+            yield makeStateDiffFromReplay(header, transactionIndex, address, key, diffs.storage[key])
         }
     }
 }
 
 
-function mapTraceStateDiff(transactionIndex: number, address: Bytes20, key: string, diff: rpc.TraceDiff): EvmStateDiff {
+function makeStateDiffFromReplay(
+    header: BlockHeader,
+    transactionIndex: number,
+    address: Bytes20,
+    key: string,
+    diff: TraceDiff
+): StateDiff {
     if (diff === '=') {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '='
-        }
+        return new StateDiffNoChange(header, transactionIndex, address, key)
     }
     if (diff['+']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '+',
-            next: diff['+']
-        }
+        let rec = new StateDiffAdd(header, transactionIndex, address, key)
+        rec.next = diff['+']
+        return rec
     }
     if (diff['*']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '*',
-            prev: diff['*'].from,
-            next: diff['*'].to
-        }
+        let rec = new StateDiffChange(header, transactionIndex, address, key)
+        rec.prev = diff['*'].from
+        rec.next = diff['*'].to
+        return rec
     }
     if (diff['-']) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '-',
-            prev: diff['-']
-        }
+        let rec = new StateDiffDelete(header, transactionIndex, address, key)
+        rec.prev = diff['-']
+        return rec
     }
     throw unexpectedCase()
 }
 
 
-function* mapDebugFrame(transactionIndex: number, debugFrameResult: rpc.DebugFrameResult): Iterable<EvmTrace> {
+function* mapDebugFrame(
+    header: BlockHeader,
+    transactionIndex: number,
+    debugFrameResult: {result: DebugFrame},
+    fields: FieldSelection | undefined
+): Iterable<Trace> {
     if (debugFrameResult.result.type == 'STOP' || debugFrameResult.result.type == 'INVALID') {
         assert(!debugFrameResult.result.calls?.length)
         return
     }
-    for (let rec of traverseDebugFrame(debugFrameResult.result, [])) {
-        let base: EvmTraceBase = {
-            transactionIndex,
-            traceAddress: rec.traceAddress,
-            subtraces: rec.subtraces,
-            error: rec.frame.error ?? null,
-            revertReason: rec.frame.revertReason
-        }
-        switch(rec.frame.type) {
+    let projection = fields?.trace || {}
+    for (let {traceAddress, subtraces, frame} of traverseDebugFrame(debugFrameResult.result, [])) {
+        let trace: Trace
+        switch(frame.type) {
             case 'CREATE':
-            case 'CREATE2':
-                yield {
-                    ...base,
-                    type: 'create',
-                    action: {
-                        from: rec.frame.from,
-                        value: BigInt(assertNotNull(rec.frame.value)),
-                        gas: BigInt(rec.frame.gas),
-                        init: rec.frame.input
-                    },
-                    result: {
-                        gasUsed: BigInt(rec.frame.gasUsed),
-                        code: rec.frame.output,
-                        address: rec.frame.to
-                    }
+            case 'CREATE2': {
+                trace = new TraceCreate(header, transactionIndex, traceAddress)
+                let action: Partial<EvmTraceCreateAction> = {}
+
+                action.from = frame.from
+
+                if (projection.createValue) {
+                    action.value = frame.value
+                }
+                if (projection.createGas) {
+                    action.gas = frame.gas
+                }
+                if (projection.createInit) {
+                    action.init = frame.input
+                }
+                if (!isEmpty(action)) {
+                    trace.action = action
+                }
+                let result: Partial<EvmTraceCreateResult> = {}
+                if (projection.createResultGasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (projection.createResultCode) {
+                    result.code = frame.output
+                }
+                if (projection.createResultAddress) {
+                    result.address = frame.to
+                }
+                if (!isEmpty(result)) {
+                    trace.result = result
                 }
                 break
+            }
             case 'CALL':
             case 'CALLCODE':
-            case 'STATICCALL':
             case 'DELEGATECALL':
-                yield {
-                    ...base,
-                    type: 'call',
-                    action: {
-                        callType: rec.frame.type.toLowerCase(),
-                        from: rec.frame.from,
-                        to: rec.frame.to,
-                        value: rec.frame.value == null ? undefined : BigInt(rec.frame.value),
-                        gas: BigInt(rec.frame.gas),
-                        input: rec.frame.input,
-                        sighash: rec.frame.input.slice(0, 10)
-                    },
-                    result: {
-                        gasUsed: BigInt(rec.frame.gasUsed),
-                        output: rec.frame.output
+            case 'STATICCALL': {
+                trace = new TraceCall(header, transactionIndex, traceAddress)
+                let action: Partial<EvmTraceCallAction> = {}
+                let hasAction = false
+                if (projection.callCallType) {
+                    action.callType = frame.type.toLowerCase()
+                }
+                if (projection.callFrom) {
+                    action.from = frame.from
+                }
+
+                action.to = frame.to
+
+                if (projection.callValue) {
+                    hasAction = true
+                    if (frame.value != null) {
+                        action.value = frame.value
                     }
                 }
-                break
-            case 'SELFDESTRUCT':
-                yield {
-                    ...base,
-                    type: 'suicide',
-                    action: {
-                        address: rec.frame.from,
-                        refundAddress: rec.frame.to,
-                        balance: BigInt(assertNotNull(rec.frame.value))
-                    }
+                if (projection.callGas) {
+                    action.gas = frame.gas
+                }
+                if (projection.callInput) {
+                    action.input = frame.input
+                }
+
+                action.sighash = frame.input.slice(0, 10)
+
+                if (hasAction || !isEmpty(action)) {
+                    trace.action = action
+                }
+                let result: Partial<EvmTraceCallResult> = {}
+                if (projection.callResultGasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (projection.callResultOutput) {
+                    result.output = frame.output
+                }
+                if (!isEmpty(result)) {
+                    trace.result = result
                 }
                 break
+            }
+            case 'SELFDESTRUCT': {
+                trace = new TraceSuicide(header, transactionIndex, traceAddress)
+                let action: Partial<EvmTraceSuicideAction> = {}
+                if (projection.suicideAddress) {
+                    action.address = frame.from
+                }
+                if (projection.suicideBalance) {
+                    action.balance = frame.value
+                }
+
+                action.refundAddress = frame.to
+
+                if (!isEmpty(action)) {
+                    trace.action = action
+                }
+                break
+            }
             default:
-                throw unexpectedCase(rec.frame.type)
+                throw unexpectedCase()
         }
+        if (projection.subtraces) {
+            trace.subtraces = subtraces
+        }
+        if (frame.error != null) {
+            trace.error = frame.error
+        }
+        if (frame.revertReason != null) {
+            trace.revertReason = frame.revertReason
+        }
+        yield trace
     }
 }
 
 
-function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
+function* traverseDebugFrame(frame: DebugFrame, traceAddress: number[]): Iterable<{
     traceAddress: number[]
     subtraces: number
-    frame: rpc.DebugFrame
+    frame: DebugFrame
 }> {
     let subcalls = frame.calls || []
     yield {traceAddress, subtraces: subcalls.length, frame}
@@ -421,202 +365,88 @@ function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Ite
 }
 
 
-function* mapDebugStateDiff(transactionIndex: number, debugDiffResult: rpc.DebugStateDiffResult): Iterable<EvmStateDiff> {
+function* mapDebugStateDiff(
+    header: BlockHeader,
+    transactionIndex: number,
+    debugDiffResult: GetCastType<typeof DebugStateDiffResult>
+): Iterable<StateDiff> {
     let {pre, post} = debugDiffResult.result
     for (let address in pre) {
         let prev = pre[address]
         let next = post[address] || {}
-        yield* mapDebugDiff(transactionIndex, address, prev, next)
+        yield* mapDebugStateMap(header, transactionIndex, address, prev, next)
     }
     for (let address in post) {
         if (pre[address] == null) {
-            yield* mapDebugDiff(transactionIndex, address, {}, post[address])
+            yield* mapDebugStateMap(header, transactionIndex, address, {}, post[address])
         }
     }
 }
 
 
-function* mapDebugDiff(
+function* mapDebugStateMap(
+    header: BlockHeader,
     transactionIndex: number,
     address: Bytes20,
-    prev: rpc.DebugStateMap,
-    next: rpc.DebugStateMap
-): Iterable<EvmStateDiff> {
+    prev: GetCastType<typeof DebugStateMap>,
+    next: GetCastType<typeof DebugStateMap>
+): Iterable<StateDiff> {
     if (next.code) {
-        yield makeDiffRecord(transactionIndex, address, 'code', prev.code, next.code)
+        yield makeDebugStateDiffRecord(header, transactionIndex, address, 'code', prev.code, next.code)
     }
     if (next.balance) {
-        yield makeDiffRecord(transactionIndex, address, 'balance', prev.balance, next.balance)
+        yield makeDebugStateDiffRecord(
+            header,
+            transactionIndex,
+            address,
+            'balance',
+            '0x'+(prev.balance || 0).toString(16),
+            '0x'+next.balance.toString(16)
+        )
     }
     if (next.nonce) {
-        yield makeDiffRecord(
+        yield makeDebugStateDiffRecord(
+            header,
             transactionIndex,
             address,
             'nonce',
-            '0x'+prev.nonce?.toString(16),
-            '0x'+next.nonce?.toString(16)
+            '0x'+(prev.nonce ?? 0).toString(16),
+            '0x'+next.nonce.toString(16)
         )
     }
     for (let key in prev.storage) {
-        yield makeDiffRecord(transactionIndex, address, key, prev.storage[key], next.storage?.[key])
+        yield makeDebugStateDiffRecord(header, transactionIndex, address, key, prev.storage[key], next.storage?.[key])
     }
     for (let key in next.storage) {
         if (prev.storage?.[key] == null) {
-            yield makeDiffRecord(transactionIndex, address, key, undefined, next.storage[key])
+            yield makeDebugStateDiffRecord(header, transactionIndex, address, key, undefined, next.storage[key])
         }
     }
 }
 
 
-function makeDiffRecord(transactionIndex: number, key: Bytes32, address: Bytes20, prev?: Bytes, next?: Bytes20): EvmStateDiff {
+function makeDebugStateDiffRecord(
+    header: BlockHeader,
+    transactionIndex: number,
+    address: Bytes20,
+    key: Bytes32,
+    prev?: Bytes,
+    next?: Bytes
+): StateDiff {
     if (prev == null) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '+',
-            next: assertNotNull(next)
-        }
+        let diff = new StateDiffAdd(header, transactionIndex, address, key)
+        diff.next = assertNotNull(next)
+        return diff
     }
     if (next == null) {
-        return {
-            transactionIndex,
-            address,
-            key,
-            kind: '-',
-            prev
-        }
+        let diff = new StateDiffDelete(header, transactionIndex, address, key)
+        diff.prev = assertNotNull(prev)
+        return diff
     }
-    return {
-        transactionIndex,
-        address,
-        key,
-        kind: '*',
-        prev,
-        next
+    {
+        let diff = new StateDiffChange(header, transactionIndex, address, key)
+        diff.prev = prev
+        diff.next = next
+        return diff
     }
-}
-
-export function qty2Int(qty: Qty): number {
-    let i = parseInt(qty, 16)
-    assert(Number.isSafeInteger(i))
-    return i
-}
-
-
-export function toQty(i: number): Qty {
-    return '0x'+i.toString(16)
-}
-
-
-export function toRpcDataRequest(req?: DataRequest): rpc.DataRequest {
-    return {
-        transactionList: transactionsRequested(req),
-        transactions: transactionsRequested(req) && transactionRequired(req),
-        logs: !!req?.logs?.length,
-        receipts: receiptsRequested(req),
-        traces: tracesRequested(req),
-        stateDiffs: stateDiffsRequested(req)
-    }
-}
-
-
-function transactionsRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.transactions?.length) return true
-    for (let items of [req.logs, req.traces, req.stateDiffs]) {
-        if (items) {
-            for (let it of items) {
-                if (it.transaction) return true
-            }
-        }
-    }
-    return false
-}
-
-
-function transactionRequired(req?: DataRequest): boolean {
-    let f: keyof Exclude<FieldSelection['transaction'], undefined>
-    for (f in req?.fields?.transaction) {
-        switch(f) {
-            case 'hash':
-            case 'status':
-            case 'type':
-            case 'gasUsed':
-            case 'cumulativeGasUsed':
-            case 'effectiveGasPrice':
-            case 'contractAddress':
-                break
-            default:
-                return true
-        }
-    }
-    return false
-}
-
-
-function receiptsRequested(req?: DataRequest): boolean {
-    if (!transactionsRequested(req)) return false
-    let fields = req?.fields?.transaction
-    if (fields == null) return false
-    return !!(
-        fields.status ||
-        fields.type ||
-        fields.gasUsed ||
-        fields.cumulativeGasUsed ||
-        fields.effectiveGasPrice ||
-        fields.contractAddress
-    )
-}
-
-
-function tracesRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.traces?.length) return true
-    for (let tx of req.transactions || []) {
-        if (tx.traces) return true
-    }
-    return false
-}
-
-
-function stateDiffsRequested(req?: DataRequest): boolean {
-    if (req == null) return false
-    if (req.stateDiffs?.length) return true
-    for (let tx of req.transactions || []) {
-        if (tx.stateDiffs) return true
-    }
-    return false
-}
-
-
-export function getTxHash(tx: Bytes32 | rpc.Transaction): Bytes32 {
-    if (typeof tx == 'string') {
-        return tx
-    } else {
-        return tx.hash
-    }
-}
-
-
-export function getBlockName(block: rpc.Block | {height: number, hash?: string, number?: undefined}): string {
-    let height: number
-    let hash: string | undefined
-    if (block.number == null) {
-        height = block.height
-        hash = block.hash
-    } else {
-        height = qty2Int(block.number)
-        hash = block.hash
-    }
-    if (hash) {
-        return `${height}#${hash.slice(2, 8)}`
-    } else {
-        return ''+height
-    }
-}
-
-
-export function getBlockHeight(block: rpc.Block): number {
-    return qty2Int(block.number)
 }

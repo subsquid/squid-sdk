@@ -1,5 +1,5 @@
 import {HttpClient, HttpTimeoutError} from '@subsquid/http-client'
-import {Logger} from '@subsquid/logger'
+import type {Logger} from '@subsquid/logger'
 import {wait, withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 
@@ -10,11 +10,19 @@ export interface ArchiveQuery {
 }
 
 
+export interface Block {
+    header: {
+        number: number
+        hash: string
+    }
+}
+
+
 export interface ArchiveClientOptions {
     http: HttpClient
     url: string
-    log?: Logger
     queryTimeout?: number
+    log?: Logger
 }
 
 
@@ -22,14 +30,14 @@ export class ArchiveClient {
     private url: URL
     private http: HttpClient
     private queryTimeout: number
-    private log?: Logger
     private retrySchedule = [5000, 10000, 20000, 30000, 60000]
+    private log?: Logger
 
     constructor(options: ArchiveClientOptions) {
         this.url = new URL(options.url)
         this.http = options.http
-        this.log = options.log
         this.queryTimeout = options.queryTimeout ?? 180_000
+        this.log = options.log
     }
 
     private getRouterUrl(path: string): string {
@@ -54,7 +62,7 @@ export class ArchiveClient {
         })
     }
 
-    query<T=any>(query: ArchiveQuery): Promise<T> {
+    query<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<B[]> {
         return this.retry(async () => {
             let worker: string = await this.http.get(this.getRouterUrl(`${query.fromBlock}/worker`), {
                 retryAttempts: 0,

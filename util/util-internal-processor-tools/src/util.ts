@@ -45,5 +45,25 @@ export function getItemsCount(blocks: any[]): number {
 
 
 export function formatHead(head: HashAndHeight): string {
-    return `${head.height}#${head.hash.slice(2, 10)}`
+    return `${head.height}#${shortHash(head.hash)}`
+}
+
+
+export function shortHash(hash: string): string {
+    if (hash.startsWith('0x')) {
+        return hash.slice(2, 7)
+    } else {
+        return hash.slice(0, 5)
+    }
+}
+
+
+export function formatId(block: HashAndHeight, ...address: number[]): string {
+    let no = block.height.toString().padStart(10, '0')
+    let hash = shortHash(block.hash)
+    let id = `${no}-${hash}`
+    for (let index of address) {
+        id += '-' + index.toString().padStart(6, '0')
+    }
+    return id
 }

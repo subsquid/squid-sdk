@@ -1,6 +1,7 @@
 import type {BlockData, Bytes} from '@subsquid/substrate-data-raw'
 import type {Runtime} from '@subsquid/substrate-runtime'
 import type {AccountId} from '../parsing/validator'
+import type {Block as ParsedBlock} from './data'
 
 
 export interface RawBlock extends BlockData {
@@ -15,4 +16,5 @@ export interface RawBlock extends BlockData {
     storage?: {
         [key: Bytes]: Bytes | null
     }
+    parsed?: ParsedBlock
 }

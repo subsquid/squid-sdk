@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
-import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {Connection, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
 
 
 const MB = 1024 * 1024
@@ -13,12 +13,26 @@ interface RequestHandle {
 }
 
 
+export interface WsConnectionOptions {
+    url: string
+    onNotificationMessage?: (msg: RpcNotification) => void
+    onReset?: (err: Error) => void
+}
+
+
 export class WsConnection implements Connection {
+    private url: string
+    private onNotificationMessage?: (msg: RpcNotification) => void
+    private onReset?: (err: Error) => void
     private _ws?: WebSocket
     private connected = false
     private requests = new Map<number, RequestHandle>()
 
-    constructor(private url: string) {}
+    constructor(options: WsConnectionOptions) {
+        this.url = options.url
+        this.onNotificationMessage = options.onNotificationMessage
+        this.onReset = options.onReset
+    }
 
     connect(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
@@ -74,6 +88,7 @@ export class WsConnection implements Connection {
         this.requests.clear()
         this._ws = undefined
         this.connected = false
+        this.onReset?.(err)
     }
 
     close(err?: Error): void {
@@ -93,7 +108,7 @@ export class WsConnection implements Connection {
         if (typeof data != 'string') {
             throw new RpcProtocolError(1003, 'Received non-text frame')
         }
-        let msg: RpcResponse | RpcResponse[]
+        let msg: RpcIncomingMessage | RpcIncomingMessage[]
         try {
             msg = JSON.parse(data)
         } catch(e: any) {
@@ -108,14 +123,18 @@ export class WsConnection implements Connection {
         }
     }
 
-    private handleResponse(res: RpcResponse): void {
+    private handleResponse(res: RpcIncomingMessage): void {
         // TODO: more strictness, more validation
-        let h = this.requests.get(res.id)
-        if (h == null) {
-            throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
+        if (isNotification(res)) {
+            this.onNotificationMessage?.(res)
+        } else {
+            let h = this.requests.get(res.id)
+            if (h == null) {
+                throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
+            }
+            this.requests.delete(res.id)
+            h.resolve(res)
         }
-        this.requests.delete(res.id)
-        h.resolve(res)
     }
 
     private ws(): WebSocket {
@@ -192,4 +211,9 @@ class BatchItemHandle {
     reject(err: Error): void {
         this.handle.reject(err)
     }
+}
+
+
+function isNotification(res: RpcResponse | RpcNotification): res is RpcNotification {
+    return typeof (res as any).method == 'string'
 }

@@ -35,5 +35,9 @@ export interface DataSource<B, R> {
 
 
 export interface HotDataSource<B, R> extends DataSource<B, R> {
-    getHotBlocks(requests: RangeRequestList<R>, state: HotDatabaseState): AsyncIterable<HotUpdate<B>>
+    processHotBlocks(
+        requests: RangeRequestList<R>,
+        state: HotDatabaseState,
+        cb: (upd: HotUpdate<B>) => Promise<void>
+    ): Promise<void>
 }

@@ -1,5 +1,5 @@
 {
-  "name": "eth-usdc-transfers",
+  "name": "erc20-transfers",
   "version": "0.0.0",
   "private": true,
   "scripts": {
