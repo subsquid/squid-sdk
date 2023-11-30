@@ -1,4 +1,5 @@
 import {HttpClient, HttpTimeoutError} from '@subsquid/http-client'
+import type {Logger} from '@subsquid/logger'
 import {wait, withErrorContext} from '@subsquid/util-internal'
 import assert from 'assert'
 
@@ -21,6 +22,7 @@ export interface ArchiveClientOptions {
     http: HttpClient
     url: string
     queryTimeout?: number
+    log?: Logger
 }
 
 
@@ -29,11 +31,13 @@ export class ArchiveClient {
     private http: HttpClient
     private queryTimeout: number
     private retrySchedule = [5000, 10000, 20000, 30000, 60000]
+    private log?: Logger
 
     constructor(options: ArchiveClientOptions) {
         this.url = new URL(options.url)
         this.http = options.http
         this.queryTimeout = options.queryTimeout ?? 180_000
+        this.log = options.log
     }
 
     private getRouterUrl(path: string): string {
@@ -82,10 +86,10 @@ export class ArchiveClient {
             } catch(err: any) {
                 if (this.http.isRetryableError(err)) {
                     let pause = this.retrySchedule[Math.min(retries, this.retrySchedule.length - 1)]
-                    if (this.http.log?.isWarn()) {
+                    if (this.log?.isWarn()) {
                         let warn = retries > 3 || err instanceof HttpTimeoutError && err.ms > 10_000
                         if (warn) {
-                            this.http.log.warn({
+                            this.log.warn({
                                 reason: err.message,
                                 ...err
                             }, `archive request failed, will retry in ${Math.round(pause / 1000)} secs`)

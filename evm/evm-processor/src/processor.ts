@@ -462,7 +462,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             new ArchiveClient({
                 http,
                 url: archive.url,
-                queryTimeout: archive.requestTimeout
+                queryTimeout: archive.requestTimeout,
+                log
             })
         )
     }

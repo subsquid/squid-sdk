@@ -452,7 +452,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             client: new ArchiveClient({
                 http,
                 url: options.url,
-                queryTimeout: options.requestTimeout
+                queryTimeout: options.requestTimeout,
+                log
             }),
             rpc: this.getChainRpcClient(),
             typesBundle: this.typesBundle
