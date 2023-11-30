@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-xxhash",
+      "comment": "update dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-xxhash"
+}
