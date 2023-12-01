@@ -2,6 +2,38 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "3.0.3",
+      "tag": "@subsquid/ink-typegen_v3.0.3",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^3.0.1` to `^3.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-typegen\" from `^8.0.1` to `^8.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.2",
       "tag": "@subsquid/ink-typegen_v3.0.2",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

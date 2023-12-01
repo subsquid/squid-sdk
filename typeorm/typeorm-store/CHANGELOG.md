@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 1.2.5
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.2.4
 Thu, 19 Oct 2023 08:58:05 GMT

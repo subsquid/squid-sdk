@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-fs",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/util-internal-fs_v0.1.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/util-internal-fs_v0.1.1",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

@@ -1,6 +1,22 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 4.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- migrate to callback based hot data ingestion
+- remove ingest tools
+
+### Minor changes
+
+- add item filtering tools
+
+### Patches
+
+- update dependencies
 
 ## 3.1.0
 Sat, 14 Oct 2023 22:24:52 GMT

@@ -2,6 +2,46 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-data-raw_v1.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "major": [
+          {
+            "comment": "overhaul hot block ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-timeout\" from `^2.3.1` to `^2.3.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/substrate-data-raw_v0.1.0",
       "date": "Thu, 19 Oct 2023 08:58:05 GMT",

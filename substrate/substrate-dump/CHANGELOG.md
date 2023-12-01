@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-dump
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 0.3.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- upgrade `@subsquid/*` dependencies
+
+### Patches
+
+- update dependencies
 
 ## 0.2.1
 Thu, 19 Oct 2023 08:58:05 GMT

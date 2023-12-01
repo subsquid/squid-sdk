@@ -2,6 +2,48 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@subsquid/util-internal-processor-tools_v4.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "major": [
+          {
+            "comment": "migrate to callback based hot data ingestion"
+          },
+          {
+            "comment": "remove ingest tools"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add item filtering tools"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-counters\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-prometheus-server\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.0",
       "tag": "@subsquid/util-internal-processor-tools_v3.1.0",
       "date": "Sat, 14 Oct 2023 22:24:52 GMT",

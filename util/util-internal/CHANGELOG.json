@@ -2,6 +2,28 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "3.0.0",
+      "tag": "@subsquid/util-internal_v3.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "major": [
+          {
+            "comment": "rework `AsyncQueue`"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `weakMemo()`, `partitionBy()`, `safeCall()` functions"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.5.2",
       "tag": "@subsquid/util-internal_v2.5.2",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

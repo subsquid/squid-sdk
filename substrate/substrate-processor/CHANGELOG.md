@@ -1,6 +1,24 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 8.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`
+
+### Minor changes
+
+- support chain head tracking via RPC subscription
+- deprecate `.setDataSource()` in favour of separate `.setArchive()` and `.setRpcEndpoint()` methods
+- introduce `.setRpcDataIngestionSettings()` and deprecate `.setChainPollInterval()`, `.useArchiveOnly()`
+
+### Patches
+
+- update dependencies
+- add `Chain.client` alias for compatibility with `evm-typegen` (closes #212)
 
 ## 7.2.1
 Thu, 19 Oct 2023 08:58:05 GMT
