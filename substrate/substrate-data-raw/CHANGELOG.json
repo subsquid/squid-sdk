@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.0.1",
+      "tag": "@subsquid/substrate-data-raw_v1.0.1",
+      "date": "Fri, 01 Dec 2023 17:09:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "`util-timeout` is a main dependency not a peer dependency"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/substrate-data-raw_v1.0.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
