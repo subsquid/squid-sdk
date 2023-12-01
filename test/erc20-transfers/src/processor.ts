@@ -8,27 +8,16 @@ const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
 
 
 const processor = new EvmBatchProcessor()
-    // .setArchive('https://v2.archive.subsquid.io/network/arbitrum-one')
+    .setArchive('https://v2.archive.subsquid.io/network/arbitrum-one')
     .setRpcEndpoint(process.env.ARB_NODE_WS)
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 153004199, to: 153004199})
+    .setBlockRange({from: 153000000})
     .setFields({
-        log: {transactionHash: true},
-        trace: {
-            error: true,
-            revertReason: true,
-            callFrom: true,
-            callInput: true,
-            callSighash: true,
-            callResultOutput: true
-        }
+        log: {transactionHash: true}
     })
     .addLog({
         address: [CONTRACT],
         topic0: [erc20.events.Transfer.topic]
-    })
-    .addTrace({
-        callTo: [CONTRACT]
     })
 
 
