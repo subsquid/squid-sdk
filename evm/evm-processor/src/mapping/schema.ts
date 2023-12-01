@@ -43,7 +43,7 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
             maxFeePerGas: option(QTY),
             maxPriorityFeePerGas: option(QTY),
             input: BYTES,
-            nonce: withSentinel('Transaction.nonce', -1, NAT),
+            nonce: withSentinel('Transaction.nonce', -1, natural),
             value: withSentinel('Transaction.value', -1n, QTY),
             v: withSentinel('Transaction.v', -1n, QTY),
             r: withSentinel('Transaction.r', '0x', BYTES),

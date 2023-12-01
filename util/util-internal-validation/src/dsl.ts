@@ -1,5 +1,6 @@
 import {ArrayValidator} from './composite/array'
 import {ConstantValidator} from './composite/constant'
+import {Default} from './composite/default'
 import {GetKeyTaggedUnionCast, GetKeyTaggedUnionSrc, KeyTaggedUnionValidator} from './composite/key-tagged-union'
 import {NullableValidator} from './composite/nullable'
 import {GetPropsCast, GetPropsSrc, ObjectValidator} from './composite/object'
@@ -80,6 +81,14 @@ export function withSentinel<V extends Validator<any>>(
     validator: V
 ): Validator<GetCastType<V>, GetSrcType<V> | undefined | null> {
     return new Sentinel(label, value, validator)
+}
+
+
+export function withDefault<V extends Validator<any>>(
+    value: GetCastType<V>,
+    validator: V
+): Validator<GetCastType<V>, GetSrcType<V> | undefined | null> {
+    return new Default(value, validator)
 }
 
 

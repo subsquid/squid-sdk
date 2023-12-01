@@ -11,7 +11,8 @@ import {
     SMALL_QTY,
     STRING,
     taggedUnion,
-    Validator
+    Validator,
+    withDefault
 } from '@subsquid/util-internal-validation'
 import {Bytes, Bytes20} from '../interfaces/base'
 import {FieldSelection} from '../interfaces/data'
@@ -114,7 +115,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
             gas: QTY,
             input: BYTES,
             gasUsed: QTY,
-            output: BYTES,
+            output: withDefault('0x', BYTES),
             to: BYTES
         })
     })
@@ -133,7 +134,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
             from: BYTES,
             value: option(QTY),
             gas: QTY,
-            output: BYTES,
+            output: withDefault('0x', BYTES),
             gasUsed: QTY
         })
     })

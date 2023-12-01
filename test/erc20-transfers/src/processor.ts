@@ -25,7 +25,6 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
 
     for (let block of ctx.blocks) {
-        ctx.log.info(block)
         for (let log of block.logs) {
             if (log.address == CONTRACT && log.topics[0] === erc20.events.Transfer.topic) {
                 let {from, to, value} = erc20.events.Transfer.decode(log)
