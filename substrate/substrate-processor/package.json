@@ -24,15 +24,17 @@
     "@subsquid/util-internal": "^2.5.2",
     "@subsquid/util-internal-archive-client": "^0.0.1",
     "@subsquid/util-internal-hex": "^1.2.1",
+    "@subsquid/util-internal-ingest-tools": "^0.0.2",
     "@subsquid/util-internal-json": "^1.2.1",
-    "@subsquid/util-internal-processor-tools": "^3.1.0"
+    "@subsquid/util-internal-processor-tools": "^3.1.0",
+    "@subsquid/util-internal-range": "^0.0.1"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^1.0.1"
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^1.0.1",
-    "@types/node": "^18.18.0",
-    "typescript": "~5.2.2"
+    "@types/node": "^18.18.14",
+    "typescript": "~5.3.2"
   }
 }

@@ -141,3 +141,13 @@ export function printRange(range?: Range): string {
         return `[${range?.from ?? 0})`
     }
 }
+
+
+export function mapRangeRequestList<T, R>(requests: RangeRequestList<T>, f: (req: T) => R): RangeRequestList<R> {
+    return requests.map(req => {
+        return {
+            range: req.range,
+            request: f(req.request)
+        }
+    })
+}

@@ -1,25 +1,12 @@
 import {annotateSyncError} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {
-    archiveIngest,
-    Batch,
-    DataSource,
-    PollingHeightTracker,
-    RangeRequest,
-    RangeRequestList
-} from '@subsquid/util-internal-processor-tools'
+import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
+import {RangeRequestList} from '@subsquid/util-internal-range'
+import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {HttpApi} from '@subsquid/tron-data-raw'
-import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {ArchiveBlock} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, InternalTransaction, Log, Transaction, setUpItems} from './mapping'
-
-
-interface ArchiveQuery extends DataRequest {
-    type: 'tron'
-    fromBlock: number
-    toBlock?: number
-}
 
 
 export interface TronArchiveOptions {
@@ -45,30 +32,17 @@ export class TronArchive implements DataSource<Block, DataRequest> {
         return this.httpApi.getBlock(height, false).then(block => block.blockID)
     }
 
-    getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
-        return archiveIngest({
+    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
+        for await (let {blocks, isHead} of archiveIngest<ArchiveBlock>({
             requests,
-            heightTracker: new PollingHeightTracker(() => this.getFinalizedHeight(), 30_000),
-            query: async s => {
-                let blocks = await this.query(s)
-                return blocks.map(b => this.mapBlock(b))
-            },
+            client: this.client,
             stopOnHead
-        })
-    }
-
-    private query(req: RangeRequest<DataRequest>): Promise<ArchiveBlock[]> {
-        let {fields, ...items} = req.request
-
-        let q: ArchiveQuery = {
-            type: 'tron',
-            fromBlock: req.range.from,
-            toBlock: req.range.to,
-            fields: getFields(fields),
-            ...items
+        })) {
+            yield {
+                blocks: blocks.map(b => this.mapBlock(b)),
+                isHead
+            }
         }
-
-        return this.client.query(q)
     }
 
     @annotateSyncError((src: ArchiveBlock) => ({blockHeight: src.header.number, blockHash: src.header.hash}))
@@ -254,30 +228,5 @@ export class TronArchive implements DataSource<Block, DataRequest> {
 
         setUpItems(block)
         return block
-    }
-}
-
-
-type Selector<Keys extends string> = {
-    [K in Keys]?: boolean
-}
-
-
-function mergeFields<Keys extends string>(def: Selector<Keys>, requested?: Selector<Keys>, required?: Selector<Keys>): Selector<Keys> {
-    let fields: Selector<Keys> = {...def}
-    for (let key in requested) {
-        fields[key] = requested[key]
-    }
-    Object.assign(fields, required)
-    return fields
-}
-
-
-function getFields(fields: FieldSelection | undefined): FieldSelection {
-    return {
-        block: mergeFields(DEFAULT_FIELDS.block, fields?.block),
-        transaction: mergeFields(DEFAULT_FIELDS.transaction, fields?.transaction),
-        internalTransaction: mergeFields(DEFAULT_FIELDS.internalTransaction, fields?.internalTransaction),
-        log: mergeFields(DEFAULT_FIELDS.log, fields?.log),
     }
 }

@@ -33,9 +33,9 @@
     "@subsquid/util-internal-http-server": "^1.2.1",
     "@subsquid/util-internal-json": "^1.2.1",
     "@subsquid/util-internal-range": "^0.0.1",
-    "commander": "^11.0.0"
+    "commander": "^11.1.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.0"
+    "@types/node": "^18.18.14"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "upgrade `@subsquid/*` dependencies",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}

@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "rework `AsyncQueue`",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add `weakMemo()`, `partitionBy()`, `safeCall()` functions",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

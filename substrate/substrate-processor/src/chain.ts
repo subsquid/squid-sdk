@@ -9,4 +9,13 @@ export class Chain {
     get rpc(): RpcClient {
         return this.getRpc()
     }
+
+    /**
+     * Same as {@link .rpc}
+     *
+     * @deprecated Use {@link .rpc} instead
+     */
+    get client(): RpcClient {
+        return this.getRpc()
+    }
 }

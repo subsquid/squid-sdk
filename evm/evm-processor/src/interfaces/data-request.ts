@@ -1,5 +1,6 @@
+import {Bytes, Bytes20, Bytes32} from './base'
 import {FieldSelection} from './data'
-import {Bytes, Bytes20, Bytes32, EvmStateDiff} from './evm'
+import {EvmStateDiff} from './evm'
 
 
 export interface DataRequest {

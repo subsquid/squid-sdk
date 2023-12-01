@@ -1,140 +1,143 @@
+import {Logger, LogLevel} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertNotNull, concurrentMap, Throttler} from '@subsquid/util-internal'
-import {HotProcessor, HotState, HotUpdate, RequestsTracker} from '@subsquid/util-internal-ingest-tools'
-import {assertRangeList, RangeRequest, RangeRequestList, splitRange} from '@subsquid/util-internal-range'
-import {Fetcher, matchesRequest0, Stride} from './fetcher'
-import {BlockBatch, BlockData, DataRequest, Hash} from './interfaces'
+import {AsyncQueue, ensureError, maybeLast, partitionBy, Throttler, wait} from '@subsquid/util-internal'
+import {
+    assertIsValid,
+    Batch,
+    BlockConsistencyError,
+    BlockRef,
+    ChainHeads,
+    DataConsistencyError,
+    HashAndHeight,
+    HotProcessor,
+    HotState,
+    HotUpdate, isDataConsistencyError,
+    coldIngest
+} from '@subsquid/util-internal-ingest-tools'
+import {
+    assertRangeList,
+    getRequestAt,
+    RangeRequestList,
+    splitRange,
+    splitRangeByRequest
+} from '@subsquid/util-internal-range'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
+import assert from 'assert'
+import {Fetch1} from './fetch1'
+import {BlockData, BlockHeader, DataRequest} from './interfaces'
 import {Rpc} from './rpc'
+import {RuntimeVersionTracker} from './runtimeVersionTracker'
+import {qty2Int} from './util'
 
 
 export interface RpcDataSourceOptions {
     rpc: RpcClient
-    pollInterval?: number
-    strides?: number
+    headPollInterval?: number
+    newHeadTimeout?: number
+    log?: Logger
 }
 
 
 export class RpcDataSource {
     public readonly rpc: Rpc
-    private pollInterval: number
-    private strides: number
+    private headPollInterval: number
+    private newHeadTimeout: number
+    private log?: Logger
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
-        this.pollInterval = options.pollInterval ?? 1000
-        this.strides = options.strides || 5
+        this.headPollInterval = options.headPollInterval ?? 5000
+        this.newHeadTimeout = options.newHeadTimeout ?? 0
+        this.log = options.log
     }
 
     async getFinalizedHeight(): Promise<number> {
         let head = await this.rpc.getFinalizedHead()
-        let block = await this.rpc.getBlock0(head)
-        return block.height
+        let header = await this.rpc.getBlockHeader(head)
+        assert(header, 'finalized blocks must be always available')
+        return qty2Int(header.number)
     }
 
-    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<BlockBatch> {
+    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<BlockData>> {
         assertRangeList(requests.map(req => req.range))
 
-        let batches1 = concurrentMap(
-            this.strides,
-            this.generateStrides(requests, stopOnHead),
-            async s => {
-                let blocks = await new Fetcher(this.rpc.withPriority(s.range.from)).getStride1(s)
-                return {blocks, stride: s}
-            }
-        )
+        let runtimeVersionTracker = new RuntimeVersionTracker()
 
-        let fetcher = new Fetcher(this.rpc)
+        let stream = coldIngest({
+            getFinalizedHeight: () => this.getFinalizedHeight(),
+            getSplit: req => {
+                let fetch = new Fetch1(this.rpc.withPriority(req.range.from))
+                return fetch.getColdSplit(req.range.from, req.range.to, req.request)
+            },
+            requests,
+            concurrency: Math.min(5, this.rpc.client.getConcurrency()),
+            splitSize: 10,
+            stopOnHead,
+            headPollInterval: this.headPollInterval
+        })
 
-        for await (let {blocks, stride} of batches1) {
-            if (stride.request.runtimeVersion) {
-                await fetcher.fetchRuntimeVersion(blocks)
+        for await (let batch of stream) {
+            let request = getRequestAt(requests, batch.blocks[0].height)
+            if (request?.runtimeVersion) {
+                await runtimeVersionTracker.addRuntimeVersion(this.rpc, batch.blocks)
+                assertIsValid(batch.blocks)
             }
-            yield {
-                blocks,
-                isHead: !!stride.lastBlock
-            }
+            yield batch
         }
-    }
-
-    private async *generateStrides(
-        requests: RangeRequestList<DataRequest>,
-        stopOnHead?: boolean
-    ): AsyncIterable<Stride> {
-        let head = new Throttler(() => this.rpc.getFinalizedHead(), this.pollInterval)
-        let top = await this.rpc.getBlock0(await head.get())
-        for (let req of requests) {
-            let beg = req.range.from
-            let end = req.range.to ?? Infinity
-            while (beg <= end) {
-                if (top.height < beg) {
-                    top = await this.getHeadBlock(
-                        await head.get(),
-                        top,
-                        beg,
-                        req.request
-                    )
-                }
-                if (top.height < beg) {
-                    if (stopOnHead) return
-                    await head.call()
-                } else {
-                    let to = Math.min(top.height, end)
-                    for (let range of splitRange(10, {
-                        from: beg,
-                        to
-                    })) {
-                        let stride: Stride = {
-                            range,
-                            request: req.request
-                        }
-                        if (range.to == top.height) {
-                            stride.lastBlock = top
-                        }
-                        yield stride
-                    }
-                    beg = to + 1
-                }
-            }
-        }
-    }
-
-    private async getHeadBlock(
-        head: Hash,
-        current: BlockData,
-        desiredHeight: number,
-        req: DataRequest
-    ): Promise<BlockData> {
-        if (head === current.hash) return current
-        return this.rpc.getBlock0(
-            head,
-            desiredHeight == current.height + 1 ? req : undefined
-        )
     }
 
     async processHotBlocks(
-        requests: RangeRequest<DataRequest>[],
+        requests: RangeRequestList<DataRequest>,
         state: HotState,
         cb: (upd: HotUpdate<BlockData>) => Promise<void>
     ): Promise<void> {
-        let requestsTracker = new RequestsTracker(requests)
-        let fetcher = new Fetcher(this.rpc)
+        let runtimeVersionTracker = new RuntimeVersionTracker()
+        let rpc = this.rpc
+        let fetch = new Fetch1(rpc)
 
-        let processor = new HotProcessor<BlockData>({
-            state,
-            getBlock: async ref => {
-                let hash = ref.hash || await this.rpc.getBlockHash(assertNotNull(ref.height))
-                if (ref.height == null) {
-                    let request = requestsTracker.getRequestAt(processor.getHeight() + 1)
-                    let block = await this.rpc.getBlock0(hash, request)
-                    request = requestsTracker.getRequestAt(block.height)
-                    if (matchesRequest0(block, request)) {
-                        return block
-                    } else {
-                        return this.rpc.getBlock0(hash, request)
+        let proc = new HotProcessor<BlockData>(state, {
+            process: async upd => {
+                for (let pack of partitionBy(upd.blocks, b => !!getRequestAt(requests, b.height)?.runtimeVersion)) {
+                    if (pack.value) {
+                        await runtimeVersionTracker.addRuntimeVersion(rpc, pack.items)
                     }
+                }
+                assertIsValid(upd.blocks)
+                await cb(upd)
+            },
+            async getBlock(ref: HashAndHeight): Promise<BlockData> {
+                let blocks = await fetch.getColdSplit(ref.height, ref, {
+                    ...getRequestAt(requests, ref.height),
+                    runtimeVersion: false
+                })
+                return blocks[0]
+            },
+            async *getBlockRange(from: number, to: BlockRef): AsyncIterable<BlockData[]> {
+                let top: number
+                let headBlock: BlockData | undefined
+                if (to.height == null) {
+                    headBlock = await fetch.getBlock0(to.hash, getRequestAt(requests, from) || {})
+                    if (headBlock == null) throw new BlockConsistencyError(to)
+                    top = headBlock.height
                 } else {
-                    let request = requestsTracker.getRequestAt(ref.height)
-                    return this.rpc.getBlock0(hash, request)
+                    top = to.height
+                }
+                if (from > top) {
+                    from = top
+                }
+                for (let split of splitRangeByRequest(requests, {from, to: top})) {
+                    for (let range of splitRange(10, split.range)) {
+                        let blocks = await fetch.getHotSplit(
+                            from,
+                            range.to === headBlock?.height ? headBlock : range.to,
+                            split.request || {}
+                        )
+                        let lastBlock = maybeLast(blocks)?.height ?? range.from - 1
+                        yield blocks
+                        if (lastBlock < range.to) {
+                            throw new BlockConsistencyError({height: lastBlock + 1})
+                        }
+                    }
                 }
             },
             getHeader(block: BlockData) {
@@ -143,38 +146,125 @@ export class RpcDataSource {
                     hash: block.hash,
                     parentHash: block.block.block.header.parentHash
                 }
-            },
-            getBlockHeight: async hash => {
-                let b = await this.rpc.getBlock0(hash)
-                return b.height
-            },
-            process: async upd => {
-                for (let {blocks, request} of requestsTracker.splitBlocksByRequest(upd.blocks, b => b.height)) {
-                    if (request) {
-                        await fetcher.fetch1(blocks, request)
-                        if (request.runtimeVersion) {
-                            await fetcher.fetchRuntimeVersion(blocks)
-                        }
-                    }
-                }
-                await cb(upd)
             }
         })
 
-        for await (let head of this.getHeads()) {
-              await processor.goto(head)
+        function isEnd(): boolean {
+            return proc.getFinalizedHeight() >= (maybeLast(requests)?.range.to ?? Infinity)
+        }
+
+        if (this.rpc.client.supportsNotifications()) {
+            await this.subscription(heads => proc.goto(heads), isEnd)
+        } else {
+            await this.polling(heads => proc.goto(heads), isEnd)
         }
     }
 
-    private async *getHeads(): AsyncIterable<{best: Hash, finalized: Hash}> {
-        let heads = new Throttler(() => this.rpc.getHead(), this.pollInterval)
-        let prevBest: Hash | undefined
-        while (true) {
-            let best = await heads.call()
-            if (best !== prevBest) {
-                let finalized = await this.rpc.getFinalizedHead()
-                yield {best, finalized}
-                prevBest = best
+    private async polling(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let headSrc = new Throttler(() => this.rpc.getHead(), this.headPollInterval)
+        let prev = ''
+        while (!isEnd()) {
+            let head = await headSrc.call()
+            if (head === prev) continue
+            let finalizedHead = await this.rpc.getFinalizedHead()
+            await this.handleNewHeads({
+                best: {hash: head},
+                finalized: {hash: finalizedHead}
+            }, cb)
+        }
+    }
+
+    private async subscription(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let queue = new AsyncQueue<number | Error>(1)
+        let finalizedHeight = 0
+        let prevHeight = 0
+
+        let finalizedHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
+            method: 'chain_subscribeFinalizedHeads',
+            unsubscribe: 'chain_unsubscribeFinalizedHeads',
+            notification: 'chain_finalizedHead',
+            onMessage(head: BlockHeader) {
+                try {
+                    let height = qty2Int(head.number)
+                    finalizedHeight = Math.max(finalizedHeight, height)
+                } catch(err: any) {
+                    close(err)
+                }
+            },
+            onError(err: Error) {
+                close(ensureError(err))
+            },
+            resubscribeOnConnectionLoss: true
+        })
+
+        let newHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
+            method: 'chain_subscribeNewHeads',
+            unsubscribe: 'chain_unsubscribeNewHeads',
+            notification: 'chain_newHead',
+            onMessage(head: BlockHeader) {
+                try {
+                    let height = qty2Int(head.number)
+                    if (height >= prevHeight) {
+                        prevHeight = height
+                        queue.forcePut(height)
+                    }
+                } catch(err: any) {
+                    close(err)
+                }
+            },
+            onError(err: Error) {
+                close(ensureError(err))
+            },
+            resubscribeOnConnectionLoss: true
+        })
+
+        function close(err?: Error) {
+            newHeadsHandle.close()
+            finalizedHeadsHandle.close()
+            if (err) {
+                queue.forcePut(err)
+            }
+            queue.close()
+        }
+
+        try {
+            while (!isEnd()) {
+                let height = await addTimeout(queue.take(), this.newHeadTimeout).catch(ensureError)
+                if (height instanceof TimeoutError) {
+                    this.log?.warn(`resetting RPC connection, because we haven't seen a new head for ${this.newHeadTimeout} ms`)
+                    this.rpc.client.reset()
+                } else if (height instanceof Error) {
+                    throw height
+                } else {
+                    assert(height != null)
+                    let hash = await this.rpc.getBlockHash(height)
+                    if (hash) {
+                        await this.handleNewHeads({
+                            best: {height, hash},
+                            finalized: {height: finalizedHeight}
+                        }, cb)
+                    }
+                }
+            }
+        } finally {
+            close()
+        }
+    }
+
+    private async handleNewHeads(heads: ChainHeads, cb: (heads: ChainHeads) => Promise<void>): Promise<void> {
+        for (let i = 0; i < 3; i++) {
+            try {
+                return await cb(heads)
+            } catch(err: any) {
+                if (isDataConsistencyError(err)) {
+                    this.log?.write(
+                        i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
+                        err.message
+                    )
+                    await wait(100)
+                } else {
+                    throw err
+                }
             }
         }
     }

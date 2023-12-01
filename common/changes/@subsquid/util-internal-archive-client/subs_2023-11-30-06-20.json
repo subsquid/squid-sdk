@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-client",
+      "comment": "better type archive query result",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-client"
+}

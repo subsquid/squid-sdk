@@ -1,8 +1,8 @@
-import {HashAndHeight, Prev, Rpc} from '@subsquid/substrate-data-raw'
+import {Prev, Rpc} from '@subsquid/substrate-data-raw'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
-import {addErrorContext, annotateAsyncError, assertNotNull, groupBy, last} from '@subsquid/util-internal'
-import {RequestsTracker} from '@subsquid/util-internal-ingest-tools'
-import {RangeRequestList} from '@subsquid/util-internal-range'
+import {addErrorContext, annotateAsyncError, assertNotNull, groupBy} from '@subsquid/util-internal'
+import {assertIsValid, HashAndHeight, setInvalid, trimInvalid} from '@subsquid/util-internal-ingest-tools'
+import {RangeRequestList, splitBlocksByRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, Bytes, DataRequest} from './interfaces/data'
 import {RawBlock} from './interfaces/data-raw'
@@ -20,65 +20,74 @@ const STORAGE = {
 
 
 export class Parser {
-    private requests: RequestsTracker<DataRequest>
     private prevValidators = new Prev<{session: Bytes, validators: AccountId[]}>()
     private runtimeTracker: RuntimeTracker<RawBlock>
 
     constructor(
         private rpc: Rpc,
-        requests: RangeRequestList<DataRequest>,
+        private requests: RangeRequestList<DataRequest>,
         typesBundle?: OldTypesBundle | OldSpecsBundle
     ) {
-        this.requests = new RequestsTracker(requests)
-
         this.runtimeTracker = new RuntimeTracker<RawBlock>(
+            this.rpc,
             block => ({
                 height: block.height,
                 hash: block.hash,
                 parentHash: block.block.block.header.parentHash
             }),
             block => assertNotNull(block.runtimeVersion),
-            this.rpc,
             typesBundle
         )
     }
 
-    async parse(blocks: RawBlock[]): Promise<Block[]> {
-        if (blocks.length == 0) return []
+    async parseCold(blocks: RawBlock[]): Promise<Block[]> {
+        await this.parse(blocks)
+        assertIsValid(blocks)
+        return blocks.map(b => assertNotNull(b.parsed))
+    }
+
+    async parse(blocks: RawBlock[]): Promise<void> {
+        if (blocks.length == 0) return
 
         await this.runtimeTracker.setRuntime(blocks)
+        blocks = trimInvalid(blocks)
 
-        let result = []
+        for (let batch of splitBlocksByRequest(this.requests, blocks, b => b.height)) {
+            let batchBlocks = batch.blocks
 
-        for (let batch of this.requests.splitBlocksByRequest(blocks, b => b.height)) {
             if (batch.request?.blockValidator) {
-                await this.setValidators(batch.blocks)
+                await this.setValidators(batchBlocks)
+                batchBlocks = trimInvalid(batchBlocks)
             }
 
             if (batch.request?.extrinsics?.fee) {
-                for (let [runtime, blocks] of groupBy(batch.blocks, b => b.runtime!).entries()) {
+                for (let [runtime, blocks] of groupBy(batchBlocks, b => b.runtime!).entries()) {
                     if (!runtime.hasEvent('TransactionPayment.TransactionFeePaid') && supportsFeeCalc(runtime)) {
                         await this.setFeeMultiplier(blocks)
                     }
                 }
+                batchBlocks = trimInvalid(batchBlocks)
             }
 
-            for (let block of batch.blocks) {
-                let parsed = await this.parseBlock(block, batch.request)
-                result.push(parsed)
+            for (let block of batchBlocks) {
+                await this.parseBlock(block, batch.request)
+                if (block._isInvalid) return
             }
         }
-
-        return result
     }
 
-    private async parseBlock(rawBlock: RawBlock, options?: DataRequest): Promise<Block> {
+    private async parseBlock(rawBlock: RawBlock, options?: DataRequest): Promise<void> {
         while (true) {
             try {
-                return parseBlock(rawBlock, options ?? {})
+                rawBlock.parsed = parseBlock(rawBlock, options ?? {})
+                return
             } catch(err: any) {
                 if (err instanceof MissingStorageValue) {
-                    let val = await this.rpc.getStorage(rawBlock.block.block.header.parentHash, err.key)
+                    let val = await this.rpc.getStorage(err.key, rawBlock.block.block.header.parentHash)
+                    if (val === undefined) {
+                        rawBlock._isInvalid = true
+                        return
+                    }
                     let storage = rawBlock.storage || (rawBlock.storage = {})
                     storage[err.key] = val
                 } else {
@@ -91,38 +100,64 @@ export class Parser {
     private async setValidators(blocks: RawBlock[]): Promise<void> {
         blocks = blocks.filter(b => b.runtime!.hasStorageItem('Session.Validators'))
 
-        if (blocks.length == 0) return
+        if (blocks.length == 0 || blocks[0]._isInvalid) return
 
-        let prev = this.prevValidators.get(blocks[0].height)
-        if (prev == null) {
-            prev = await this.fetchValidators(blocks[0])
+        let prev: {session: Bytes, validators: AccountId[]}
+        let maybePrev = this.prevValidators.get(blocks[0].height)
+        if (maybePrev == null) {
+            maybePrev = await this.fetchValidators(blocks[0])
+            if (maybePrev == null) return setInvalid(blocks)
+            prev = maybePrev
+        } else {
+            prev = maybePrev
         }
 
-        let lastBlock = last(blocks)
-        if (lastBlock.session == null) {
-            lastBlock.session = await this.rpc.getStorage(lastBlock.hash, STORAGE.session)
+        let last = blocks.length - 1
+        let lastBlock: RawBlock | undefined
+        while (last >= 0) {
+            lastBlock = blocks[last]
+            if (lastBlock.session == null) {
+                let session = await this.rpc.getStorage(STORAGE.session, lastBlock.hash)
+                if (session == null) {
+                    last -= 1
+                } else {
+                    lastBlock.session = session
+                    break
+                }
+            } else {
+                break
+            }
         }
 
-        for (let block of blocks) {
-            block.session = prev.session == lastBlock.session
-                ? prev.session
-                : await this.rpc.getStorage(block.hash, STORAGE.session)
+        if (lastBlock == null) return setInvalid(blocks)
 
+        for (let i = 0; i < last; i++) {
+            let block = blocks[i]
+            if (prev.session == lastBlock.session) {
+                block.session = prev.session
+            } else {
+                let session = await this.rpc.getStorage(STORAGE.session, block.hash)
+                if (session == null) return setInvalid(blocks, i)
+                block.session = session
+            }
             if (prev.session == block.session) {
                 block.session = prev.session
                 block.validators = prev.validators
             } else {
-                prev = await this.fetchValidators(block)
+                let maybePrev = await this.fetchValidators(block)
+                if (maybePrev == null) return setInvalid(blocks, i)
+                prev = maybePrev
             }
         }
     }
 
     @annotateAsyncError(getRefCtx)
-    private async fetchValidators(block: RawBlock): Promise<{session: Bytes, validators: AccountId[]}> {
+    private async fetchValidators(block: RawBlock): Promise<{session: Bytes, validators: AccountId[]} | undefined> {
         let [session, data] = await Promise.all([
-            block.session ? Promise.resolve(block.session) : this.rpc.getStorage(block.hash, STORAGE.session),
-            this.rpc.getStorage(block.hash, STORAGE.validators)
+            block.session ? Promise.resolve(block.session) : this.rpc.getStorage(STORAGE.session, block.hash),
+            this.rpc.getStorage(STORAGE.validators, block.hash)
         ])
+        if (session == null || data === undefined) return
         let runtime = assertNotNull(block.runtime)
         let validators = runtime.decodeStorageValue('Session.Validators', data)
         assert(Array.isArray(validators))
@@ -134,16 +169,18 @@ export class Parser {
     }
 
     private async setFeeMultiplier(blocks: RawBlock[]): Promise<void> {
-        let call = blocks.map(b => {
+        let values = await this.rpc.getStorageMany(blocks.map(b => {
             let parentHash = b.height == 0 ? b.hash : b.block.block.header.parentHash
-            return {
-                method: 'state_getStorageAt',
-                params: [STORAGE.nextFeeMultiplier, parentHash]
-            }
-        })
-        let values: Bytes[] = await this.rpc.batchCall(call)
+            return [STORAGE.nextFeeMultiplier, parentHash]
+        }))
         for (let i = 0; i < blocks.length; i++) {
-            blocks[i].feeMultiplier = values[i]
+            let value = values[i]
+            let block = blocks[i]
+            if (value === undefined) {
+                block._isInvalid = true
+            } else if (value) {
+                block.feeMultiplier = value
+            }
         }
     }
 }

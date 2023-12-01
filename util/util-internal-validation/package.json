@@ -1,0 +1,32 @@
+{
+  "name": "@subsquid/util-internal-validation",
+  "version": "0.0.0",
+  "description": "JSON data validation framework",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@subsquid/logger": "^1.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@subsquid/logger": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@subsquid/logger": "^1.3.1",
+    "@types/node": "^18.18.14",
+    "typescript": "~5.3.2"
+  }
+}

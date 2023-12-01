@@ -3,16 +3,13 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {
-    applyRangeBound,
     Batch,
     Database,
     getOrGenerateSquidId,
-    mergeRangeRequests,
     PrometheusServer,
-    Range,
-    RangeRequest,
     Runner
 } from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {HttpApi} from '@subsquid/tron-data-raw'
 import assert from 'assert'
 import {Chain} from './chain'

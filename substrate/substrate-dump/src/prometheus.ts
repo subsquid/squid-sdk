@@ -2,6 +2,7 @@ import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Rpc} from '@subsquid/substrate-data-raw'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
+import assert from 'assert'
 import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
 
 
@@ -29,8 +30,9 @@ export class PrometheusServer {
 
                 try {
                     let head = await rpc.getFinalizedHead()
-                    let header = await rpc.getBlock0(head)
-                    chainHeight = header.height
+                    let header = await rpc.getBlockHeader(head)
+                    assert(header?.number, 'finalized blocks supposed to be always available')
+                    chainHeight = parseInt(header.number)
                 } catch(err: any) {
                     LOG.error(err, 'failed to acquire chain height')
                 }

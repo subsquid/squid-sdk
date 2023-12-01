@@ -773,6 +773,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-validation",
+      "projectFolder": "util/util-internal-validation",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
@@ -801,8 +807,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "eth-usdc-transfers",
-      "projectFolder": "test/eth-usdc-transfers",
+      "packageName": "erc20-transfers",
+      "projectFolder": "test/erc20-transfers",
       "shouldPublish": false
     },
     {

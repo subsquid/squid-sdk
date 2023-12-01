@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "update dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

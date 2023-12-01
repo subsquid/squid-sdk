@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "chain-status-service",
+      "comment": "update dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "chain-status-service"
+}

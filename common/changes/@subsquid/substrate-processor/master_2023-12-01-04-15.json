@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "add `Chain.client` alias for compatibility with `evm-typegen` (closes #212)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data-raw",
+      "comment": "overhaul hot block ingestion",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data-raw"
+}

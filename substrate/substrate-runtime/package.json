@@ -26,10 +26,10 @@
     "blake2b": "^2.1.4"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.2",
-    "@types/node": "^18.18.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^18.18.14",
     "expect": "^29.7.0",
     "mocha": "^10.2.0",
-    "typescript": "~5.2.2"
+    "typescript": "~5.3.2"
   }
 }

@@ -1,9 +1,19 @@
-
-export interface RpcRequest {
-    id: number
-    jsonrpc: '2.0'
+export interface RpcCall {
     method: string
     params?: unknown[]
+}
+
+
+export interface RpcRequest extends RpcCall {
+    id: number
+    jsonrpc: '2.0'
+}
+
+
+export interface RpcNotification {
+    jsonrpc: '2.0'
+    method: string
+    params?: any
 }
 
 
@@ -13,6 +23,9 @@ export interface RpcResponse {
     result?: unknown
     error?: RpcErrorInfo
 }
+
+
+export type RpcIncomingMessage = RpcNotification | RpcResponse
 
 
 export interface RpcErrorInfo {

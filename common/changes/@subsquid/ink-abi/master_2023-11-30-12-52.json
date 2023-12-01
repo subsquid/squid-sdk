@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-abi",
+      "comment": "update dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-abi"
+}
