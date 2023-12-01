@@ -91,11 +91,13 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
 function getDebugFrameValidator(fields: FieldSelection['trace']) {
     let Frame: Validator<DebugFrame, unknown>
 
-    let base = project(fields, {
-        error: option(STRING),
-        revertReason: option(STRING),
-        calls: option(array(ref(() => Frame)))
-    })
+    let base = {
+        calls: option(array(ref(() => Frame))),
+        ...project(fields, {
+            error: option(STRING),
+            revertReason: option(STRING),
+        })
+    }
 
     let Create = object({
         ...base,
@@ -125,10 +127,14 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
             from: fields?.callFrom,
             value: fields?.callValue,
             gas: fields?.callGas,
+            output: fields?.callResultOutput,
+            gasUsed: fields?.callResultGasUsed
         }, {
             from: BYTES,
             value: option(QTY),
             gas: QTY,
+            output: BYTES,
+            gasUsed: QTY
         })
     })
 
