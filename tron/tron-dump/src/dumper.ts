@@ -1,12 +1,13 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {HttpClient, RetryError} from '@subsquid/http-client'
-import {assertNotNull, def, Throttler, concurrentMap} from '@subsquid/util-internal'
+import {assertNotNull, def, last, Throttler, concurrentMap} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd, FiniteRange, splitRange} from '@subsquid/util-internal-range'
 import {HttpApi, BlockData, TransactionInfo} from '@subsquid/tron-data-raw'
 import assert from 'assert'
+import {PrometheusServer} from './prometheus'
 
 
 function getBlockHash(blockId: string) {
@@ -76,6 +77,11 @@ export class Dumper {
                 }
             },
         })
+    }
+
+    @def
+    prometheus() {
+        return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
     }
 
     private async *generateStrides(range: Range): AsyncIterable<FiniteRange> {
@@ -187,11 +193,19 @@ export class Dumper {
     }
 
     async dump(): Promise<void> {
+        let prometheus = this.prometheus()
+
+        if (this.options.metrics != null) {
+            let promServer = await prometheus.serve()
+            this.log().info(`prometheus metrics are available on port ${promServer.port}`)
+        }
+
         if (this.options.dest == null) {
             for await (let bb of this.process()) {
                 for (let block of bb) {
                     process.stdout.write(JSON.stringify(block) + '\n')
                 }
+                prometheus.setLastWrittenBlock(last(bb).height)
             }
         } else {
             let archive = new ArchiveLayout(this.fs())
@@ -199,6 +213,7 @@ export class Dumper {
                 blocks: (nextBlock, prevHash) => this.process(nextBlock, prevHash),
                 range: this.range(),
                 chunkSize: this.options.chunkSize * 1024 * 1024,
+                onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
             })
         }
     }
