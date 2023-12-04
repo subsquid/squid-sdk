@@ -1,5 +1,6 @@
-import {assertNotNull} from "@subsquid/util-internal"
-import {Client as PgClient, ClientBase} from "pg"
+import {createConnectionOptions} from '@subsquid/typeorm-config/lib/connectionOptions'
+import {toPgClientConfig} from '@subsquid/typeorm-config/lib/pg'
+import {Client as PgClient, ClientBase} from 'pg'
 
 
 export function isCockroach(): boolean {
@@ -7,21 +8,15 @@ export function isCockroach(): boolean {
 }
 
 
-const PORT = parseInt(assertNotNull(
-    isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
-))
-
-
-process.env.DB_PORT = ''+PORT
-
-
-export const db_config = {
-    host: 'localhost',
-    port: PORT,
-    user: 'root',
-    password: 'root',
-    database: 'defaultdb'
+if (!process.env.DB_PORT) {
+    let port = isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
+    if (port) {
+        process.env.DB_PORT = port
+    }
 }
+
+
+const db_config =  toPgClientConfig(createConnectionOptions())
 
 
 async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {

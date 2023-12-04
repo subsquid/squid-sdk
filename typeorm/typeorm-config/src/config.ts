@@ -1,8 +1,8 @@
-import * as path from "path"
-import * as process from "process"
-import type {DataSourceOptions as OrmConfig} from "typeorm"
-import {createConnectionOptions} from "./connectionOptions"
-import {SnakeNamingStrategy} from "./namingStrategy"
+import * as path from 'path'
+import * as process from 'process'
+import type {DataSourceOptions as OrmConfig} from 'typeorm'
+import {createConnectionOptions} from './connectionOptions'
+import {SnakeNamingStrategy} from './namingStrategy'
 
 
 export interface OrmOptions {
@@ -17,7 +17,7 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
     let dir = path.resolve(options?.projectDir || process.cwd())
     let model = resolveModel(path.join(dir, 'lib/model'))
     let migrationsDir = path.join(dir, MIGRATIONS_DIR)
-    return {
+    return  {
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
         entities: [model],

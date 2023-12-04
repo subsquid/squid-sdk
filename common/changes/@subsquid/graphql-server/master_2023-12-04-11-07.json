@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

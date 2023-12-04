@@ -232,17 +232,13 @@ export class Server {
 
     private async createPgPool(options?: ConnectionOptions): Promise<Pool> {
         let {createConnectionOptions} = await import('@subsquid/typeorm-config/lib/connectionOptions')
+        let {toPgClientConfig} = await import('@subsquid/typeorm-config/lib/pg')
         let params = createConnectionOptions()
         return new Pool({
-            host: params.host,
-            port: params.port,
-            database: params.database,
-            user: params.username,
-            password: params.password,
+            ...toPgClientConfig(params),
             statement_timeout: options?.sqlStatementTimeout || undefined,
             max: this.connectionPoolSize(),
             min: this.connectionPoolSize(),
-            ssl: params.ssl
         })
     }
 
