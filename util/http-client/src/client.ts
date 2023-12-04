@@ -27,7 +27,7 @@ export interface HttpClientOptions {
 }
 
 
-export interface RequestOptions {
+export interface RequestOptions<R=any> {
     query?: Record<string, string | number | bigint>
     headers?: HeadersInit
     retryAttempts?: number
@@ -35,7 +35,17 @@ export interface RequestOptions {
     httpTimeout?: number
     abort?: AbortSignal
     stream?: boolean
+    /**
+     * Result validator/transformer
+     *
+     * This option is mainly a way to utilize built-in retry machinery by throwing {@link RetryError}.
+     * Otherwise, `client.request(...).then(validateResult)` is a better option.
+     */
+    validateResult?: ResultValidator<R>
 }
+
+
+type ResultValidator<R=any> = (result: HttpResponse, req: FetchRequest) => R
 
 
 export interface GraphqlRequestOptions extends RequestOptions {
@@ -45,13 +55,14 @@ export interface GraphqlRequestOptions extends RequestOptions {
 }
 
 
-export interface FetchRequest extends RequestInit {
+export interface FetchRequest<R=any> extends RequestInit {
     id: number
     url: string
     headers: Headers
     timeout?: number
     signal?: AbortSignal
     stream?: boolean
+    validateResult?: ResultValidator<R>
 }
 
 
@@ -173,6 +184,10 @@ export class HttpClient {
                 httpResponseBody
             }, 'http body')
         }
+
+        if (req.validateResult) {
+            req.validateResult(res, req)
+        }
     }
 
     protected async prepareRequest(
@@ -190,7 +205,8 @@ export class HttpClient {
             signal: options.abort,
             compress: true,
             timeout: options.httpTimeout ?? this.httpTimeout,
-            stream: options.stream
+            stream: options.stream,
+            validateResult: options.validateResult,
         }
 
         this.handleBasicAuth(req)
@@ -307,6 +323,7 @@ export class HttpClient {
     }
 
     isRetryableError(error: HttpResponse | Error, req?: FetchRequest): boolean {
+        if (error instanceof RetryError) return true
         if (isHttpConnectionError(error)) return true
         if (error instanceof HttpTimeoutError) return true
         if (error instanceof HttpError) {
@@ -464,3 +481,10 @@ export function isHttpConnectionError(err: unknown): boolean {
         && err.type == 'system'
         && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
 }
+
+
+/**
+ * This error can be thrown from `RequestOptions.validateResult()` to invoke built-in
+ * retry machinery
+ */
+export class RetryError extends Error {}
