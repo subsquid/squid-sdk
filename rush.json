@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.107.4",
+  "rushVersion": "5.109.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=16.13.1 <19.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <21.0.0",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -495,6 +495,12 @@
       "packageName": "ops-xcm-typegen",
       "projectFolder": "ops/xcm-typegen",
       "shouldPublish": false
+    },
+    {
+      "packageName": "@subsquid/solana-data",
+      "projectFolder": "solana/solana-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/frontier",

@@ -140,3 +140,30 @@ export const BYTES: Validator<Bytes> = {
         return '0x'
     }
 }
+
+
+type Base58Bytes = string
+
+
+/**
+ * Base58 encoded binary string
+ */
+export const B58: Validator<Base58Bytes> = {
+    cast: function(value: unknown): Base58Bytes | ValidationFailure {
+        if (isBase58(value)) return value
+        return new ValidationFailure(value, `{value} is not a base58 string`)
+    },
+    validate: function(value: unknown): ValidationFailure | undefined {
+        if (isBase58(value)) return
+        return new ValidationFailure(value, `{value} is not a base58 string`)
+    },
+    phantom: function(): string {
+        throw new Error('Function not implemented.')
+    }
+}
+
+
+function isBase58(value: unknown): value is Base58Bytes {
+    return typeof value == 'string' &&
+        /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]*$/.test(value)
+}
