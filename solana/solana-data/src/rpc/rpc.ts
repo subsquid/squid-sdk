@@ -1,5 +1,6 @@
 import type {RpcClient} from '@subsquid/rpc-client'
-import {CallOptions} from '@subsquid/rpc-client'
+import {CallOptions, RpcError} from '@subsquid/rpc-client'
+import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
     array,
     B58,
@@ -21,6 +22,10 @@ export class Rpc {
     ) {
     }
 
+    withPriority(priority: number): Rpc {
+        return new Rpc(this.client, priority)
+    }
+
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return this.client.call(method, params, {priority: this.priority, ...options})
     }
@@ -37,19 +42,6 @@ export class Rpc {
             blockHash: res.value.blockhash,
             slot: res.context.slot
         }
-    }
-
-    getBlockInfo(commitment: Commitment, slot: number): Promise<null | Omit<GetBlock, 'transactions' | 'rewards'>> {
-        return this.call('getBlock', [
-            slot,
-            {
-                commitment,
-                rewards: false,
-                transactionDetails: 'none'
-            }
-        ], {
-            validateResult: getResultValidator(nullable(GetBlock))
-        })
     }
 
     getBlocks(commitment: Commitment, startSlot: number, endSlot: number): Promise<number[]> {
@@ -71,6 +63,33 @@ export class Rpc {
             validateResult: getResultValidator(array(NAT))
         })
     }
+
+    getBlockInfo(commitment: Commitment, slot: number): Promise<undefined | null | Omit<GetBlock, 'transactions' | 'rewards'>> {
+        return this.call('getBlock', [
+            slot,
+            {
+                commitment,
+                rewards: false,
+                transactionDetails: 'none'
+            }
+        ], {
+            validateResult: getResultValidator(nullable(GetBlock)),
+            validateError: captureNoBlockAtSlot
+        })
+    }
+
+    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
+        let call: RpcCall[] = new Array(slots.length)
+        for (let i = 0; i < slots.length; i++) {
+            let slot = slots[i]
+            let params = options ? [slot, options] : [slot]
+            call[i] = {method: 'getBlock', params}
+        }
+        return this.batchCall(call, {
+            validateResult: getResultValidator(nullable(GetBlock)),
+            validateError: captureNoBlockAtSlot
+        })
+    }
 }
 
 
@@ -80,7 +99,21 @@ const GetRecentBlockhash = object({
 })
 
 
-function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
+export interface GetBlockOptions {
+    commitment?: Commitment
+    transactionDetails?: 'full' | 'accounts' | 'signatures' | 'none'
+    maxSupportedTransactionVersion?: number
+    rewards?: boolean
+}
+
+
+function captureNoBlockAtSlot(info: RpcErrorInfo): undefined {
+    if (/slot \d+/i.test(info.message)) return undefined
+    throw new RpcError(info)
+}
+
+
+export function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
         let err = validator.validate(result)
         if (err) {

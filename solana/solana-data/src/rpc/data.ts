@@ -10,7 +10,7 @@ import {
     option,
     STRING
 } from '@subsquid/util-internal-validation'
-import {Base58Bytes, SolanaHash} from '../base'
+import {Base58Bytes} from '../base'
 
 
 export const Instruction = object({
@@ -100,13 +100,14 @@ export type GetBlock = GetSrcType<typeof GetBlock>
 
 export interface Block {
     /**
-     * `{block.blockHash}__{slot}`
+     * `block.blockhash`
      */
-    hash: SolanaHash
+    hash: Base58Bytes
     /**
      * `block.blockHeight`
      */
     height: number
+    slot: number
     block: GetBlock
 }
 

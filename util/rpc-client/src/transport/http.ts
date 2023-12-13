@@ -33,7 +33,7 @@ export class HttpConnection implements Connection {
             json: req,
             httpTimeout: timeout,
             retryAttempts: 0
-        })
+        }).then(decodeBody)
         if (req.id !== res.id) {
             throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
         }
@@ -45,7 +45,7 @@ export class HttpConnection implements Connection {
             json: batch,
             httpTimeout: timeout,
             retryAttempts: 0
-        })
+        }).then(decodeBody)
         if (!Array.isArray(res)) {
             throw new RpcProtocolError(1008, `Response for a batch request should be an array`)
         }
@@ -74,5 +74,14 @@ export class HttpConnection implements Connection {
             }
         }
         return res
+    }
+}
+
+
+function decodeBody(body: string | any): any {
+    if (typeof body == 'string') {
+        return JSON.parse(body)
+    } else {
+        return body
     }
 }

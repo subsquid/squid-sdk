@@ -1,9 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {runProgram} from '@subsquid/util-internal'
-import assert from 'assert'
-import {findSlot} from './rpc/fetch'
-import {Rpc} from './rpc/rpc'
+import {assertNotNull, runProgram} from '@subsquid/util-internal'
+import {RpcDataSource} from './rpc'
 
 
 const log = createLogger('solana')
@@ -11,21 +9,21 @@ const log = createLogger('solana')
 
 runProgram(async () => {
     let client = new RpcClient({
-        url: 'https://api.mainnet-beta.solana.com',
-        // url: assertNotNull(process.env.SOLANA_NODE),
-        retryAttempts: 5,
-        rateLimit: 2,
-        retrySchedule: [5000],
+        url: assertNotNull(process.env.SOLANA_NODE),
+        retryAttempts: 100,
         log
     })
 
-    let rpc = new Rpc(client)
+    let src = new RpcDataSource({
+        rpc: client
+    })
 
-    for (let height of [100_000_000, 150_000_000, 200_000_000, 210_000_000]) {
-        let result = await findSlot(rpc, height)
-        log.info(result)
-        let block = await rpc.getBlockInfo('finalized', result.slot)
-        assert(result.height == block?.blockHeight)
-        log.info('ok')
+    for await (let batch of src.getFinalizedBlocks([{
+        range: {from: 200_010_000, to: 200_010_001},
+        request: {transactions: true, rewards: true}
+    }])) {
+        for (let block of batch.blocks) {
+            console.log(JSON.stringify(block))
+        }
     }
 }, err => log.fatal(err))

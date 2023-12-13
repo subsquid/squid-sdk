@@ -169,7 +169,11 @@ export async function* concurrentMap<T, R>(
 
     map().then(
         () => queue.close(),
-        err => queue.tryPut({promise: Promise.reject(err)})
+        err => {
+            let promise = Promise.reject(err)
+            promise.catch(() => {}) // prevent unhandled rejection crashes
+            queue.tryPut({promise})
+        }
     )
 
     for await (let item of queue.iterate()) {

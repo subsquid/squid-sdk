@@ -1,16 +1,17 @@
 {
-  "name": "@subsquid/substrate-dump",
-  "version": "0.3.0",
-  "description": "Raw data archiving tool for substrate based chains",
+  "name": "@subsquid/solana-dump",
+  "version": "0.0.0",
+  "description": "Data archiving tool for Solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "substrate-dump": "bin/run.js"
+    "solana-dump": "./bin/run.js"
   },
   "files": [
+    "bin",
     "lib",
     "src"
   ],
@@ -18,9 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-data-raw": "^1.0.1",
+    "@subsquid/solana-data": "^0.0.0",
     "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-hex": "^1.2.2",
     "@subsquid/util-internal-rpc-dump": "^0.0.0"
   },
   "devDependencies": {

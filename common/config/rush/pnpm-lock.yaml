@@ -98,6 +98,9 @@ dependencies:
   '@rush-temp/solana-data':
     specifier: file:./projects/solana-data.tgz
     version: file:projects/solana-data.tgz
+  '@rush-temp/solana-dump':
+    specifier: file:./projects/solana-dump.tgz
+    version: file:projects/solana-dump.tgz
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -197,6 +200,9 @@ dependencies:
   '@rush-temp/util-internal-read-lines':
     specifier: file:./projects/util-internal-read-lines.tgz
     version: file:projects/util-internal-read-lines.tgz
+  '@rush-temp/util-internal-rpc-dump':
+    specifier: file:./projects/util-internal-rpc-dump.tgz
+    version: file:projects/util-internal-rpc-dump.tgz
   '@rush-temp/util-internal-validation':
     specifier: file:./projects/util-internal-validation.tgz
     version: file:projects/util-internal-validation.tgz
@@ -5515,11 +5521,22 @@ packages:
     dev: false
 
   file:projects/solana-data.tgz:
-    resolution: {integrity: sha512-Fh83/FvTg+og2DinAxNUNqJTgtqkX44uE7/4GWaWa8RLxV5Wfu5GbF6vagIsk1Qc671HtlBR0+U15vCqwXRywQ==, tarball: file:projects/solana-data.tgz}
+    resolution: {integrity: sha512-sgKSwHpwWALEA7RbKnUU47G7nkExwawMHukqBy6F/nCBPoHrTQroFttV8Xs/E68IcKSm/oMmZ9mmXRzWdjsUkA==, tarball: file:projects/solana-data.tgz}
     name: '@rush-temp/solana-data'
     version: 0.0.0
     dependencies:
       '@types/node': 18.18.14
+      typescript: 5.3.2
+    dev: false
+
+  file:projects/solana-dump.tgz:
+    resolution: {integrity: sha512-OT7hnRMfMG7xsr1a9uCvRh/sUVeiU7IGfguWbPtGPAhqv1jeenxM0uct+MXurtfC95lN+QNCUXEKeSDpqQVlbw==, tarball: file:projects/solana-dump.tgz}
+    name: '@rush-temp/solana-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.14
+      commander: 11.1.0
+      prom-client: 14.2.0
       typescript: 5.3.2
     dev: false
 
@@ -5902,6 +5919,17 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 18.18.14
+      typescript: 5.3.2
+    dev: false
+
+  file:projects/util-internal-rpc-dump.tgz:
+    resolution: {integrity: sha512-yjwBMFw1Q+2MdxQ4vOKDU+vXwxRtBbgS5WVDdQfZipdqjpY2pt42KpSjLDfJNGEkMi9DuaRJAzsnDRa+YEljYA==, tarball: file:projects/util-internal-rpc-dump.tgz}
+    name: '@rush-temp/util-internal-rpc-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.18.14
+      commander: 11.1.0
+      prom-client: 14.2.0
       typescript: 5.3.2
     dev: false
 

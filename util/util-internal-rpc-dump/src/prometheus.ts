@@ -1,12 +1,7 @@
-import {createLogger} from '@subsquid/logger'
+import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {Rpc} from '@subsquid/substrate-data-raw'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
-import assert from 'assert'
 import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
-
-
-const LOG = createLogger('sqd:substrate-dump:prometheus')
 
 
 export class PrometheusServer {
@@ -15,7 +10,12 @@ export class PrometheusServer {
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
 
-    constructor(private port: number, rpcClient: RpcClient) {
+    constructor(
+        private port: number,
+        getFinalizedHeight: () => Promise<number>,
+        rpc: RpcClient,
+        log: Logger
+    ) {
         let chainHeight = 0
 
         this.chainHeightGauge = new Gauge({
@@ -23,20 +23,11 @@ export class PrometheusServer {
             help: 'Finalized head of a chain',
             registers: [this.registry],
             async collect() {
-                let rpc = new Rpc(rpcClient, {
-                    retryAttempts: 0,
-                    timeout: 5000
-                })
-
                 try {
-                    let head = await rpc.getFinalizedHead()
-                    let header = await rpc.getBlockHeader(head)
-                    assert(header?.number, 'finalized blocks supposed to be always available')
-                    chainHeight = parseInt(header.number)
+                    chainHeight = await getFinalizedHeight()
                 } catch(err: any) {
-                    LOG.error(err, 'failed to acquire chain height')
+                    log.error(err, 'failed to acquire chain height')
                 }
-
                 this.set(chainHeight)
             }
         });
@@ -53,15 +44,15 @@ export class PrometheusServer {
             labelNames: ['url', 'kind'],
             registers: [this.registry],
             collect() {
-                let metrics = rpcClient.getMetrics()
+                let metrics = rpc.getMetrics()
 
                 this.set({
-                    url: rpcClient.url,
+                    url: metrics.url,
                     kind: 'success'
                 }, metrics.requestsServed)
 
                 this.set({
-                    url: rpcClient.url,
+                    url: metrics.url,
                     kind: 'failure'
                 }, metrics.connectionErrors)
             }

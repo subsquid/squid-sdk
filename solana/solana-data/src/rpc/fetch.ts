@@ -1,6 +1,9 @@
 import {createLogger} from '@subsquid/logger'
 import {last} from '@subsquid/util-internal'
+import {FiniteRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import {Commitment} from '../base'
+import {Block, DataRequest} from './data'
 import {Rpc} from './rpc'
 
 
@@ -26,16 +29,18 @@ export async function getFinalizedTop(rpc: Rpc): Promise<HeightAndSlot> {
 }
 
 
-export async function findSlot(rpc: Rpc, height: number): Promise<HeightAndSlot> {
-    if (height == 0) return {slot: 0, height: 0}
+export async function getSlot(rpc: Rpc, height: number): Promise<number> {
+    if (height == 0) return 0
     let top = await getFinalizedTop(rpc)
-    if (top.height <= height) return top
-    let slot = await searchSlot(rpc, height, {height: 0, slot: 0}, top)
-    return {slot, height}
+    if (top.height == height) return top.slot
+    if (top.height < height) throw new Error(`block height ${height} haven't been reached`)
+    return findSlot(rpc, height, {height: 0, slot: 0}, top)
 }
 
 
-async function searchSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: HeightAndSlot): Promise<number> {
+export async function findSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: HeightAndSlot): Promise<number> {
+    if (bottom.height == height) return bottom.slot
+    if (top.height == height) return top.slot
     if (top.slot - bottom.slot == top.height - bottom.height) return bottom.slot + height - bottom.height
 
     log.debug({
@@ -65,7 +70,7 @@ async function searchSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: 
             let end = Math.min(bottom.slot + 100, top.slot)
             let blocks = await rpc.getBlocks('finalized', bottom.slot + 1, end)
             if (blocks.length >= height - bottom.height) return blocks[height - bottom.height - 1]
-            return searchSlot(
+            return findSlot(
                 rpc,
                 height,
                 {
@@ -83,7 +88,7 @@ async function searchSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: 
             let beg = Math.max(bottom.slot + 1, top.slot - 100)
             let blocks = await rpc.getBlocks('finalized', beg, top.slot - 1)
             if (blocks.length >= top.height - height) return blocks[height - (top.height - blocks.length)]
-            return searchSlot(
+            return findSlot(
                 rpc,
                 height,
                 bottom,
@@ -105,8 +110,57 @@ async function searchSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: 
 
     if (info.blockHeight == height) return slot
     if (info.blockHeight > height) {
-        return searchSlot(rpc, height, bottom, {height: info.blockHeight, slot: middle})
+        return findSlot(rpc, height, bottom, {height: info.blockHeight, slot: middle})
     } else {
-        return searchSlot(rpc, height, {height: info.blockHeight, slot}, top)
+        return findSlot(rpc, height, {height: info.blockHeight, slot}, top)
     }
+}
+
+
+export async function getData(
+    rpc: Rpc,
+    commitment: Commitment,
+    slotRange: FiniteRange,
+    req: DataRequest
+): Promise<(Block | null)[]> {
+    let slots: number[] = []
+
+    for (let slot = slotRange.from; slot <= slotRange.to ; slot++) {
+        slots.push(slot)
+    }
+
+    let result = await rpc.getBlockBatch(slots, {
+        commitment,
+        maxSupportedTransactionVersion: 0,
+        rewards: !!req.rewards,
+        transactionDetails: req.transactions ? 'full' : 'none'
+    })
+
+    let blocks: (Block | null)[] = []
+
+    for (let i = 0; i < result.length; i++) {
+        let block = result[i]
+        if (block === undefined) continue
+        if (block == null) {
+            blocks.push(null)
+        } else {
+            assert(block.blockHeight != null)
+            let slot = slotRange.from + i
+            blocks.push({
+                hash: block.blockhash,
+                height: block.blockHeight,
+                slot,
+                block
+            })
+        }
+    }
+
+    return blocks
+}
+
+
+export function isConsistentChain(prev: Block, next: Block) {
+    return prev.height + 1 == next.height &&
+        prev.hash == next.block.previousBlockhash &&
+        prev.slot == next.block.parentSlot
 }
