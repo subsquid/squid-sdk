@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Thu, 14 Dec 2023 11:16:15 GMT and should not be manually modified.
+
+## 4.4.0
+Thu, 14 Dec 2023 11:16:15 GMT
+
+### Minor changes
+
+- introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables
 
 ## 4.3.2
 Fri, 01 Dec 2023 16:55:51 GMT

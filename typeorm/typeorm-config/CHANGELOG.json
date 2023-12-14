@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "4.0.0",
+      "tag": "@subsquid/typeorm-config_v4.0.0",
+      "date": "Thu, 14 Dec 2023 11:16:15 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.3.2",
       "tag": "@subsquid/typeorm-config_v3.3.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
