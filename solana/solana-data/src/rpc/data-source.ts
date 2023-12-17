@@ -12,16 +12,20 @@ export interface RpcDataSourceOptions {
     rpc: RpcClient
     headPollInterval?: number
     newHeadTimeout?: number
+    strideSize?: number
 }
 
 
 export class RpcDataSource {
     private rpc: Rpc
     private headPollInterval: number
+    private strideSize: number
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.headPollInterval = options.headPollInterval ?? 500
+        this.strideSize = options.strideSize || 10
+        assert(this.strideSize >= 1)
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -35,6 +39,7 @@ export class RpcDataSource {
     ): AsyncIterable<Batch<Block>> {
         let head = new Throttler(() => getFinalizedTop(this.rpc), this.headPollInterval)
         let rpc = this.rpc
+        let strideSize = this.strideSize
 
         async function* splits(): AsyncIterable<{
             slots: FiniteRange
@@ -67,7 +72,7 @@ export class RpcDataSource {
                         bottom = top
                         beg = top.height + 1
                     }
-                    for (let range of splitRange(20, {from: startSlot, to: endSlot})) {
+                    for (let range of splitRange(strideSize, {from: startSlot, to: endSlot})) {
                         if (range.to == endSlot) {
                             top = await head.get()
                         }

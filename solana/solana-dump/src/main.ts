@@ -1,11 +1,17 @@
 import {Block, DataRequest, RpcDataSource} from '@subsquid/solana-data/lib/rpc'
 import {def} from '@subsquid/util-internal'
-import {Command, DataSource, Dumper} from '@subsquid/util-internal-rpc-dump'
+import {Command, DataSource, Dumper, DumperOptions, positiveInt} from '@subsquid/util-internal-rpc-dump'
 
 
-class SolanaDumper extends Dumper<Block, DataRequest> {
+interface Options extends DumperOptions {
+    strideSize: number
+}
+
+
+class SolanaDumper extends Dumper<Block, DataRequest, Options> {
     setUpProgram(program: Command): void {
         program.description('RPC data archiving tool for Solana')
+        program.option('--stride-size', 'Maximum size of getBlock batch call', positiveInt, 10)
     }
 
     getDefaultChunkSize(): number {
@@ -27,7 +33,8 @@ class SolanaDumper extends Dumper<Block, DataRequest> {
     getDataSource(): DataSource<Block, DataRequest> {
         return new RpcDataSource({
             rpc: this.rpc(),
-            headPollInterval: 10_000
+            headPollInterval: 10_000,
+            strideSize: this.options().strideSize
         })
     }
 
