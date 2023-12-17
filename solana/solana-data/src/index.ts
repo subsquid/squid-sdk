@@ -1,1 +1,1 @@
-export {Base58Bytes} from './base'
+export * from './base'

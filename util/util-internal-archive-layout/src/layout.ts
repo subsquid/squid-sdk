@@ -8,8 +8,20 @@ import {ArchiveLayoutError, TopDirError} from './errors'
 import {formatBlockNumber, getShortHash} from './util'
 
 
+export interface ArchiveLayoutOptions {
+    topDirSize?: number
+}
+
+
 export class ArchiveLayout {
-    constructor(public readonly fs: Fs) {}
+    private topDirSize: number
+
+    constructor(
+        public readonly fs: Fs,
+        options?: ArchiveLayoutOptions
+    ) {
+        this.topDirSize = options?.topDirSize || 500
+    }
 
     getChunkFs(chunk: DataChunk): Fs {
         return this.fs.cd(getChunkPath(chunk))
@@ -119,7 +131,7 @@ export class ArchiveLayout {
         const getNextChunk = (first: HashAndHeight, last: HashAndHeight): Fs => {
             assert(nextBlock == first.height)
             assert(first.height <= last.height)
-            if (chunks.length >= 500) {
+            if (chunks.length >= this.topDirSize) {
                 top = nextBlock
                 chunks = []
             }

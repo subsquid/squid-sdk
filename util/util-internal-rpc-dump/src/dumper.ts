@@ -25,6 +25,7 @@ export interface DumperOptions {
     firstBlock?: number
     lastBlock?: number
     chunkSize: number
+    topDirSize: number
     metrics?: number
 }
 
@@ -38,7 +39,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
 
     setUpProgram(program: Command): void {}
 
-    process(batches: AsyncIterable<B[]>): AsyncIterable<B[]> {
+    process(batches: AsyncIterable<B[]>): AsyncIterable<{hash: string, height: number}[]> {
         return batches
     }
 
@@ -53,9 +54,18 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
         program.option('--first-block <number>', 'Height of the first block to dump', nat)
         program.option('--last-block <number>', 'Height of the last block to dump', nat)
         this.setUpProgram(program)
-        program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, 64)
+        program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
+        program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
+    }
+
+    getDefaultChunkSize(): number {
+        return 64
+    }
+
+    getDefaultTopDirSize(): number {
+        return 1024
     }
 
     @def
@@ -185,7 +195,9 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
                     prometheus.setLastWrittenBlock(last(bb).height)
                 }
             } else {
-                let archive = new ArchiveLayout(this.destination())
+                let archive = new ArchiveLayout(this.destination(), {
+                    topDirSize: this.options().topDirSize
+                })
                 await archive.appendRawBlocks({
                     blocks: (nextBlock, prevHash) => this.process(this.ingest(nextBlock, prevHash)),
                     range: this.range(),

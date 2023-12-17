@@ -1,7 +1,8 @@
 import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertNotNull, runProgram} from '@subsquid/util-internal'
-import {RpcDataSource} from './rpc'
+import {addErrorContext, assertNotNull, runProgram} from '@subsquid/util-internal'
+import {mapRpcBlock} from './normalization'
+import {getBlockCtx, RpcDataSource} from './rpc'
 
 
 const log = createLogger('solana')
@@ -19,11 +20,15 @@ runProgram(async () => {
     })
 
     for await (let batch of src.getFinalizedBlocks([{
-        range: {from: 200_010_000, to: 200_010_001},
-        request: {transactions: true, rewards: true}
+        range: {from: 200_000_000, to: 200_010_000},
+        request: {transactions: true, rewards: false}
     }])) {
         for (let block of batch.blocks) {
-            console.log(JSON.stringify(block))
+            try {
+                console.log(JSON.stringify(mapRpcBlock(block)))
+            } catch(err: any) {
+                throw addErrorContext(err, getBlockCtx(block))
+            }
         }
     }
 }, err => log.fatal(err))

@@ -10,8 +10,8 @@ import {Rpc} from './rpc'
 
 export interface RpcDataSourceOptions {
     rpc: RpcClient
-    newHeadTimeout?: number
     headPollInterval?: number
+    newHeadTimeout?: number
 }
 
 
@@ -67,7 +67,7 @@ export class RpcDataSource {
                         bottom = top
                         beg = top.height + 1
                     }
-                    for (let range of splitRange(5, {from: startSlot, to: endSlot})) {
+                    for (let range of splitRange(20, {from: startSlot, to: endSlot})) {
                         if (range.to == endSlot) {
                             top = await head.get()
                         }
@@ -78,7 +78,6 @@ export class RpcDataSource {
                             isHead
                         }
                     }
-
                 }
             }
         }
@@ -86,7 +85,7 @@ export class RpcDataSource {
         let prev: Block | undefined
 
         for await (let batch of concurrentMap(
-            2,
+            5,
             splits(),
             async s => {
                 let blocks = await getData(

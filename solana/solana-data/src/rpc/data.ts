@@ -116,3 +116,12 @@ export interface DataRequest {
     rewards?: boolean
     transactions?: boolean
 }
+
+
+export function getBlockCtx(block: Block) {
+    return {
+        blockSlot: block.slot,
+        blockHeight: block.height,
+        blockHash: block.hash
+    }
+}

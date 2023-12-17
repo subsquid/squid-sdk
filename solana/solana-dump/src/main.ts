@@ -8,6 +8,14 @@ class SolanaDumper extends Dumper<Block, DataRequest> {
         program.description('RPC data archiving tool for Solana')
     }
 
+    getDefaultChunkSize(): number {
+        return 128
+    }
+
+    getDefaultTopDirSize(): number {
+        return 8192
+    }
+
     getDataRequest(): DataRequest {
         return {
             rewards: true,
