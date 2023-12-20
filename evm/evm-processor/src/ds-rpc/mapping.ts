@@ -52,6 +52,10 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     let src = cast(getBlockValidator(req), rpcBlock)
 
     let {number, hash, parentHash, transactions, ...headerProps} = src.block
+    if (headerProps.timestamp) {
+        headerProps.timestamp = headerProps.timestamp * 1000 // convert to ms
+    }
+
     let header = new BlockHeader(number, hash, parentHash)
     Object.assign(header, headerProps)
 

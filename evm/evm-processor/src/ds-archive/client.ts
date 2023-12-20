@@ -77,6 +77,10 @@ export class EvmArchive implements DataSource<Block, DataRequest> {
         let src = cast(validator, rawBlock)
 
         let {number, hash, parentHash, ...hdr} = src.header
+        if (hdr.timestamp) {
+            hdr.timestamp = hdr.timestamp * 1000 // convert to ms
+        }
+
         let header = new BlockHeader(number, hash, parentHash)
         Object.assign(header, hdr)
 
