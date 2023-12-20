@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "fix `BlockHeader.size` validation",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}

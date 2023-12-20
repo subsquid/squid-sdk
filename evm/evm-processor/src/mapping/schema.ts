@@ -20,7 +20,7 @@ export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive:
             difficulty: withSentinel('BlockHeader.difficulty', -1n, QTY),
             totalDifficulty: withSentinel('BlockHeader.totalDifficulty', -1n, QTY),
             extraData: withSentinel('BlockHeader.extraData', '0x', BYTES),
-            size: withSentinel('BlockHeader.size', -1, SMALL_QTY),
+            size: withSentinel('BlockHeader.size', -1, natural),
             gasLimit: withSentinel('BlockHeader.gasLimit', -1n, QTY),
             gasUsed: withSentinel('BlockHeader.gasUsed', -1n, QTY),
             baseFeePerGas: withSentinel('BlockHeader.baseFeePerGas', -1n, QTY),
