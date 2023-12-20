@@ -12,6 +12,7 @@ import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
 import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
+import {isTsNode} from '@subsquid/util-internal-ts-node'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
@@ -155,7 +156,7 @@ export class Server {
 
     @def
     private async customResolvers(): Promise<GraphQLSchema | undefined> {
-        let loc = this.module('lib/server-extension/resolvers')
+        let loc = this.module('server-extension/resolvers')
         if (loc == null) return undefined
         let {loadCustomResolvers} = await import('./resolvers')
         return loadCustomResolvers(loc)
@@ -163,7 +164,7 @@ export class Server {
 
     @def
     private customCheck(): RequestCheckFunction | undefined {
-        let loc = this.module('lib/server-extension/check')
+        let loc = this.module('server-extension/check')
         if (loc == null) return undefined
         let mod = require(loc)
         if (typeof mod.requestCheck != 'function') {
@@ -173,7 +174,8 @@ export class Server {
     }
 
     private module(name: string): string | undefined {
-        let loc = this.path(name)
+        let dir = isTsNode() ? 'src' : 'lib'
+        let loc = this.path(`${dir}/${name}`)
         try {
             return require.resolve(loc)
         } catch(e: any) {

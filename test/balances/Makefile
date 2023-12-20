@@ -1,5 +1,5 @@
 process: migrate
-	@node -r dotenv/config lib/processor.js
+	@npx ts-node -r dotenv/config src/processor.ts
 
 
 serve:
