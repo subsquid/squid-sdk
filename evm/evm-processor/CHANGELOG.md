@@ -1,6 +1,18 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Dec 2023 07:15:52 GMT and should not be manually modified.
+
+## 1.10.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+- rename `.setArchive()` to `.setGateway()`
+
+### Patches
+
+- block timestamp should be in `ms`
+- fix `BlockHeader.size` validation
 
 ## 1.9.0
 Fri, 01 Dec 2023 16:55:51 GMT

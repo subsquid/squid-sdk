@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "4.0.1",
+      "tag": "@subsquid/typeorm-config_v4.0.1",
+      "date": "Wed, 20 Dec 2023 07:15:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix default `username`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.0",
       "tag": "@subsquid/typeorm-config_v4.0.0",
       "date": "Thu, 14 Dec 2023 11:16:15 GMT",

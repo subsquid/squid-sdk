@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Thu, 14 Dec 2023 11:16:15 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Dec 2023 07:15:52 GMT and should not be manually modified.
+
+## 4.0.1
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Patches
+
+- fix default `username`
 
 ## 4.0.0
 Thu, 14 Dec 2023 11:16:15 GMT

@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.10.0",
+      "tag": "@subsquid/evm-processor_v1.10.0",
+      "date": "Wed, 20 Dec 2023 07:15:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "block timestamp should be in `ms`"
+          },
+          {
+            "comment": "fix `BlockHeader.size` validation"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "rename `.setArchive()` to `.setGateway()`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.9.0",
       "tag": "@subsquid/evm-processor_v1.9.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
