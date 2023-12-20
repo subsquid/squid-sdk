@@ -71,9 +71,9 @@ export interface RpcDataIngestionSettings {
 }
 
 
-export interface ArchiveSettings {
+export interface GatewaySettings {
     /**
-     * Subsquid archive URL
+     * Subsquid Network Gateway url
      */
     url: string
     /**
@@ -81,6 +81,12 @@ export interface ArchiveSettings {
      */
     requestTimeout?: number
 }
+
+
+/**
+ * @deprecated
+ */
+export type ArchiveSettings = GatewaySettings
 
 
 /**
@@ -94,7 +100,7 @@ interface ArchiveDataSource {
     /**
      * Subsquid evm archive endpoint URL
      */
-    archive: string | ArchiveSettings
+    archive: string | GatewaySettings
     /**
      * Chain node RPC endpoint URL
      */
@@ -159,21 +165,28 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private archive?: ArchiveSettings
+    private archive?: GatewaySettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
 
     /**
-     * Set Subsquid Archive endpoint.
+     * @deprecated Use {@link .setGateway()}
+     */
+    setArchive(url: string | GatewaySettings): this {
+        return this.setGateway(url)
+    }
+
+    /**
+     * Set Subsquid Network Gateway endpoint (ex Archive).
      *
-     * Subsquid Archive allows to get data from finalized blocks up to
+     * Subsquid Network allows to get data from finalized blocks up to
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * processor.setArchive('https://v2.archive.subsquid.io/network/ethereum-mainnet')
+     * processor.setGateway('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
-    setArchive(url: string | ArchiveSettings): this {
+    setGateway(url: string | GatewaySettings): this {
         this.assertNotRunning()
         if (typeof url == 'string') {
             this.archive = {url}
@@ -215,13 +228,13 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      *     chain: 'https://eth-mainnet.public.blastapi.io'
      * })
      *
-     * @deprecated Use separate {@link .setArchive()} and {@link .setRpcEndpoint()} methods
+     * @deprecated Use separate {@link .setGateway()} and {@link .setRpcEndpoint()} methods
      * to specify data sources.
      */
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         if (src.archive) {
-            this.setArchive(src.archive)
+            this.setGateway(src.archive)
         } else {
             this.archive = undefined
         }
