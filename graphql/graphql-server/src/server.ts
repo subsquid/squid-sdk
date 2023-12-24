@@ -191,13 +191,25 @@ export class Server {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
             createOpenreader = () => {
-                return new TypeormOpenreaderContext(dialect, con, con, this.options.subscriptionPollInterval)
+                return new TypeormOpenreaderContext(
+                    dialect,
+                    con,
+                    con,
+                    this.options.subscriptionPollInterval,
+                    this.options.log
+                )
             }
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => pool.end())
             createOpenreader = () => {
-                return new PoolOpenreaderContext(dialect, pool, pool, this.options.subscriptionPollInterval)
+                return new PoolOpenreaderContext(
+                    dialect,
+                    pool,
+                    pool,
+                    this.options.subscriptionPollInterval,
+                    this.options.log
+                )
             }
         }
         return () => {

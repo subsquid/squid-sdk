@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "implement query log",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "enhance graphql error log",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

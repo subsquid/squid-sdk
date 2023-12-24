@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "implement query log",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "enhance graphql error log",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
