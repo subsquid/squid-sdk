@@ -411,9 +411,11 @@ export class RpcClient {
             }
         } catch(err: any) {
             throw addErrorContext(err, {
+                rpcUrl: this.url,
                 rpcId: call.id,
                 rpcMethod: call.method,
-                rpcParams: call.params
+                rpcParams: call.params,
+                rpcResponse: res
             })
         }
     }
