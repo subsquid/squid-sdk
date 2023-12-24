@@ -2,6 +2,21 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@subsquid/openreader_v4.5.0",
+      "date": "Sun, 24 Dec 2023 20:05:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "implement query log"
+          },
+          {
+            "comment": "enhance graphql error log"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.2",
       "tag": "@subsquid/openreader_v4.4.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

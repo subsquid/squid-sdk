@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.10.1",
+      "tag": "@subsquid/evm-processor_v1.10.1",
+      "date": "Sun, 24 Dec 2023 20:05:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow missing `.gas`, `.gasUsed` fields in debug call trace"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.5.0` to `^4.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.0.1` to `^0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.10.0",
       "tag": "@subsquid/evm-processor_v1.10.0",
       "date": "Wed, 20 Dec 2023 07:15:52 GMT",

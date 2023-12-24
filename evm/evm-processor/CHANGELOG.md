@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 20 Dec 2023 07:15:52 GMT and should not be manually modified.
+This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+
+## 1.10.1
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Patches
+
+- allow missing `.gas`, `.gasUsed` fields in debug call trace
 
 ## 1.10.0
 Wed, 20 Dec 2023 07:15:52 GMT
