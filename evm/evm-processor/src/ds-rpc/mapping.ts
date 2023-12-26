@@ -73,6 +73,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
                 let {transactionIndex, ...props} = stx
                 Object.assign(tx, props)
                 assert(transactionIndex === i)
+                if (tx.input != null) {
+                    tx.sighash = tx.input.slice(0, 10)
+                }
             }
             block.transactions.push(tx)
         }
@@ -177,6 +180,9 @@ function makeTraceRecordFromReplayFrame(
             throw unexpectedCase(type)
     }
     Object.assign(trace, props)
+    if (trace.type == 'call' && trace.action?.input != null) {
+        trace.action.sighash = trace.action.input.slice(0, 10)
+    }
     return trace
 }
 
