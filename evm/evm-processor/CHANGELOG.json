@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.10.2",
+      "tag": "@subsquid/evm-processor_v1.10.2",
+      "date": "Tue, 26 Dec 2023 16:11:36 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix: `sighash` is not set when ingesting data from RPC"
+          },
+          {
+            "comment": "don't forget to filter state diffs when ingesting from RPC"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.10.1",
       "tag": "@subsquid/evm-processor_v1.10.1",
       "date": "Sun, 24 Dec 2023 20:05:50 GMT",

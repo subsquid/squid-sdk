@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+This log was last generated on Tue, 26 Dec 2023 16:11:36 GMT and should not be manually modified.
+
+## 1.10.2
+Tue, 26 Dec 2023 16:11:36 GMT
+
+### Patches
+
+- fix: `sighash` is not set when ingesting data from RPC
+- don't forget to filter state diffs when ingesting from RPC
 
 ## 1.10.1
 Sun, 24 Dec 2023 20:05:50 GMT
