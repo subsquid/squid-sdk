@@ -42,6 +42,7 @@ export interface EvmRpcDataSourceOptions {
     headPollInterval?: number
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    debugTraceTimeout?: string
     log?: Logger
 }
 
@@ -53,6 +54,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private newHeadTimeout: number
     private preferTraceApi?: boolean
     private useDebugApiForStateDiffs?: boolean
+    private debugTraceTimeout?: string
     private log?: Logger
 
     constructor(options: EvmRpcDataSourceOptions) {
@@ -62,6 +64,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         this.newHeadTimeout = options.newHeadTimeout || 0
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
+        this.debugTraceTimeout = options.debugTraceTimeout
         this.log = options.log
     }
 
@@ -104,6 +107,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         let r = toMappingRequest(req)
         r.preferTraceApi = this.preferTraceApi
         r.useDebugApiForStateDiffs = this.useDebugApiForStateDiffs
+        r.debugTraceTimeout = this.debugTraceTimeout
         return r
     }
 

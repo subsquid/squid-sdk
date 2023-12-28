@@ -27,6 +27,7 @@ export interface DataRequest {
     stateDiffs?: boolean
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    debugTraceTimeout?: string
 }
 
 

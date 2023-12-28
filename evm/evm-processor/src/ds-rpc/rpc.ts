@@ -398,12 +398,13 @@ export class Rpc {
         }
     }
 
-    private async addDebugFrames(blocks: Block[]): Promise<void> {
+    private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
         let traceConfig = {
             tracer: 'callTracer',
             tracerConfig: {
                 onlyTopCall: false,
-                withLog: false // will study log <-> frame matching problem later
+                withLog: false, // will study log <-> frame matching problem later
+                timeout: req.debugTraceTimeout
             }
         }
 
@@ -442,12 +443,13 @@ export class Rpc {
         }
     }
 
-    private async addDebugStateDiffs(blocks: Block[]): Promise<void> {
+    private async addDebugStateDiffs(blocks: Block[], req: DataRequest): Promise<void> {
         let traceConfig = {
             tracer: 'prestateTracer',
             tracerConfig: {
                 onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
-                diffMode: true
+                diffMode: true,
+                timeout: req.debugTraceTimeout
             }
         }
 
@@ -488,7 +490,7 @@ export class Rpc {
         }
 
         if (debugBlocks.length) {
-            await this.addDebugFrames(debugBlocks)
+            await this.addDebugFrames(debugBlocks, req)
         }
     }
 
@@ -505,7 +507,7 @@ export class Rpc {
 
         if (req.stateDiffs) {
             if (finalizedHeight < last(blocks).height || req.useDebugApiForStateDiffs) {
-                tasks.push(this.addDebugStateDiffs(blocks))
+                tasks.push(this.addDebugStateDiffs(blocks, req))
             } else {
                 replayTraces.stateDiff = true
             }
@@ -519,7 +521,7 @@ export class Rpc {
                     replayTraces.trace = true
                 }
             } else {
-                tasks.push(this.addDebugFrames(blocks))
+                tasks.push(this.addDebugFrames(blocks, req))
             }
         }
 

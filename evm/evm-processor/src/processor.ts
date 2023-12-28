@@ -53,6 +53,12 @@ export interface RpcDataIngestionSettings {
      */
     useDebugApiForStateDiffs?: boolean
     /**
+     * Pass `timeout` parameter to [debug trace config](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-debug#traceconfig)
+     *
+     * E.g. `debugTraceTimeout: "20s"`
+     */
+    debugTraceTimeout?: string
+    /**
      * Poll interval for new blocks in `ms`
      *
      * Poll mechanism is used to get new blocks via HTTP connection.
@@ -449,6 +455,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             finalityConfirmation: this.finalityConfirmation,
             preferTraceApi: this.rpcIngestSettings?.preferTraceApi,
             useDebugApiForStateDiffs: this.rpcIngestSettings?.useDebugApiForStateDiffs,
+            debugTraceTimeout: this.rpcIngestSettings?.debugTraceTimeout,
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
