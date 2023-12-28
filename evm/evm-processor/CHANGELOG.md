@@ -1,6 +1,18 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 26 Dec 2023 16:11:36 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Dec 2023 19:59:01 GMT and should not be manually modified.
+
+## 1.11.0
+Thu, 28 Dec 2023 19:59:01 GMT
+
+### Minor changes
+
+- support `debugTraceTimeout` RPC data ingestion option
+
+### Patches
+
+- allow empty `sighash` from archive
+- report block fetch consistency errors in a mode detailed manner
 
 ## 1.10.2
 Tue, 26 Dec 2023 16:11:36 GMT
