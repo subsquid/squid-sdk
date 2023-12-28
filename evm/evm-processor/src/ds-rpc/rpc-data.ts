@@ -40,6 +40,7 @@ export interface Block {
     debugFrames?: DebugFrameResult[]
     debugStateDiffs?: DebugStateDiffResult[]
     _isInvalid?: boolean
+    _errorMessage?: string
 }
 
 

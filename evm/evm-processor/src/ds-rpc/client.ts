@@ -80,7 +80,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     ): AsyncIterable<Batch<Block>> {
         return coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
-            getSplit: req => this._getSplit(req),
+            getSplit: req => this._getColdSplit(req),
             requests: mapRangeRequestList(requests, req => this.toMappingRequest(req)),
             splitSize: 10,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
@@ -89,9 +89,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         })
     }
 
-    private async _getSplit(req: SplitRequest<MappingRequest>): Promise<Block[]> {
+    private async _getColdSplit(req: SplitRequest<MappingRequest>): Promise<Block[]> {
         let rpc = this.rpc.withPriority(req.range.from)
-        let blocks = await rpc.getColdSplit(req)
+        let blocks = await rpc.getColdSplit(req).catch(err => {
+            if (isDataConsistencyError(err)) {
+                err.message += '. Perhaps finality confirmation was not large enough'
+            }
+            throw err
+        })
         return blocks.map(b => mapBlock(b, req.request))
     }
 
