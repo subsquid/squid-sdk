@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "allow empty `sighash` from archive",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
