@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-ingest-tools": "^1.0.0",
+    "@subsquid/util-internal-ingest-tools": "^1.1.0",
     "@subsquid/util-internal-range": "^0.1.0",
     "@subsquid/util-timeout": "^2.3.2"
   },

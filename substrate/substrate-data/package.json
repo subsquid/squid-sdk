@@ -20,7 +20,7 @@
     "@subsquid/substrate-data-raw": "^1.0.1",
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-ingest-tools": "^1.0.0",
+    "@subsquid/util-internal-ingest-tools": "^1.1.0",
     "@subsquid/util-internal-range": "^0.1.0",
     "@subsquid/util-xxhash": "^1.2.2",
     "@substrate/calc": "^0.2.8",
