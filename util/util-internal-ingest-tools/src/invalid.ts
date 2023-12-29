@@ -4,6 +4,7 @@ import {BlockRef} from './ref'
 
 export interface IsInvalid {
     _isInvalid?: boolean
+    _errorMessage?: string
 }
 
 
@@ -14,7 +15,7 @@ export function setInvalid(blocks: IsInvalid[], index?: number): void {
 
 export function assertIsValid(blocks: (IsInvalid & BlockRef)[]): void {
     for (let block of blocks) {
-        if (block._isInvalid) throw new BlockConsistencyError(block)
+        if (block._isInvalid) throw new BlockConsistencyError(block, block._errorMessage)
     }
 }
 

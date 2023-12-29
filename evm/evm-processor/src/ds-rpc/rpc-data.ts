@@ -27,6 +27,7 @@ export interface DataRequest {
     stateDiffs?: boolean
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    debugTraceTimeout?: string
 }
 
 
@@ -40,6 +41,7 @@ export interface Block {
     debugFrames?: DebugFrameResult[]
     debugStateDiffs?: DebugStateDiffResult[]
     _isInvalid?: boolean
+    _errorMessage?: string
 }
 
 

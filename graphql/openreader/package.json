@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "4.4.2",
+  "version": "4.5.0",
   "description": "GraphQL server for postgres-compatible databases",
   "keywords": [
     "graphql",

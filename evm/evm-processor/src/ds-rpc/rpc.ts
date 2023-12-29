@@ -1,6 +1,7 @@
 import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {groupBy, last} from '@subsquid/util-internal'
-import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
+import {assertIsValid, BlockConsistencyError, getBlockName, trimInvalid} from '@subsquid/util-internal-ingest-tools'
 import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
 import {array, DataValidationError, GetSrcType, nullable, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
@@ -97,7 +98,7 @@ export class Rpc {
         if (req) {
             await this.addRequestedData([block], req, finalizedHeight)
         }
-        if (block._isInvalid) throw new BlockConsistencyError(block)
+        if (block._isInvalid) throw new BlockConsistencyError(block, block._errorMessage)
         return block
     }
 
@@ -107,7 +108,10 @@ export class Rpc {
         for (let i = 0; i < result.length; i++) {
             if (result[i] == null) throw new BlockConsistencyError({height: req.range.from + i})
             if (i > 0 && result[i - 1]!.hash !== result[i]!.block.parentHash)
-                throw new BlockConsistencyError(result[i]!)
+                throw new BlockConsistencyError(
+                    result[i]!,
+                    `given block is not a parent of ${getBlockName(result[i-1]!)}`
+                )
         }
 
         let blocks = result as Block[]
@@ -186,6 +190,7 @@ export class Rpc {
             let logs = logsByBlock.get(block.hash) || []
             if (logs.length == 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
                 block._isInvalid = true
+                block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
             } else {
                 block.logs = logs
             }
@@ -248,15 +253,20 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
-            if (receipts != null && block.block.transactions.length === receipts.length) {
+            if (receipts == null) {
+                block._isInvalid = true
+                block._errorMessage = `${method} returned null`
+            } else if (block.block.transactions.length === receipts.length) {
                 for (let receipt of receipts) {
                     if (receipt.blockHash !== block.hash) {
                         block._isInvalid = true
+                        block._errorMessage = `${method} returned receipts for a different block`
                     }
                 }
                 block.receipts = receipts
             } else {
                 block._isInvalid = true
+                block._errorMessage = `got invalid number of receipts from ${method}`
             }
         }
     }
@@ -287,6 +297,7 @@ export class Rpc {
                 block.receipts = rs
             } else {
                 block._isInvalid = true
+                block._errorMessage = 'failed to get receipts for all transactions'
             }
         }
     }
@@ -337,6 +348,7 @@ export class Rpc {
                 // Sometimes replays might be missing. FIXME: when?
                 if (!txs.has(rep.transactionHash)) {
                     block._isInvalid = true
+                    block._errorMessage = `${method} returned a trace of a different block`
                 }
             }
 
@@ -360,11 +372,13 @@ export class Rpc {
             if (frames.length == 0) {
                 if (block.block.transactions.length > 0) {
                     block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
                 }
             } else {
                 for (let frame of frames) {
                     if (frame.blockHash !== block.hash) {
                         block._isInvalid = true
+                        block._errorMessage = 'trace_block returned a trace of a different block'
                         break
                     }
                 }
@@ -384,12 +398,13 @@ export class Rpc {
         }
     }
 
-    private async addDebugFrames(blocks: Block[]): Promise<void> {
+    private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
         let traceConfig = {
             tracer: 'callTracer',
             tracerConfig: {
                 onlyTopCall: false,
-                withLog: false // will study log <-> frame matching problem later
+                withLog: false, // will study log <-> frame matching problem later
+                timeout: req.debugTraceTimeout
             }
         }
 
@@ -411,23 +426,30 @@ export class Rpc {
                     }
                 }
                 return validateFrameResult(result)
-            }
+            },
+            validateError: captureNotFound
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
-            assert(block.block.transactions.length === frames.length)
-            block.debugFrames = frames
+            if (frames == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else {
+                assert(block.block.transactions.length === frames.length)
+                block.debugFrames = frames
+            }
         }
     }
 
-    private async addDebugStateDiffs(blocks: Block[]): Promise<void> {
+    private async addDebugStateDiffs(blocks: Block[], req: DataRequest): Promise<void> {
         let traceConfig = {
             tracer: 'prestateTracer',
             tracerConfig: {
                 onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
-                diffMode: true
+                diffMode: true,
+                timeout: req.debugTraceTimeout
             }
         }
 
@@ -437,14 +459,20 @@ export class Rpc {
         }))
 
         let results = await this.batchCall(call, {
-            validateResult: getResultValidator(array(DebugStateDiffResult))
+            validateResult: getResultValidator(array(DebugStateDiffResult)),
+            validateError: captureNotFound
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
-            assert(block.block.transactions.length === diffs.length)
-            block.debugStateDiffs = diffs
+            if (diffs == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else {
+                assert(block.block.transactions.length === diffs.length)
+                block.debugStateDiffs = diffs
+            }
         }
     }
 
@@ -462,7 +490,7 @@ export class Rpc {
         }
 
         if (debugBlocks.length) {
-            await this.addDebugFrames(debugBlocks)
+            await this.addDebugFrames(debugBlocks, req)
         }
     }
 
@@ -479,7 +507,7 @@ export class Rpc {
 
         if (req.stateDiffs) {
             if (finalizedHeight < last(blocks).height || req.useDebugApiForStateDiffs) {
-                tasks.push(this.addDebugStateDiffs(blocks))
+                tasks.push(this.addDebugStateDiffs(blocks, req))
             } else {
                 replayTraces.stateDiff = true
             }
@@ -493,7 +521,7 @@ export class Rpc {
                     replayTraces.trace = true
                 }
             } else {
-                tasks.push(this.addDebugFrames(blocks))
+                tasks.push(this.addDebugFrames(blocks, req))
             }
         }
 
@@ -569,4 +597,10 @@ function toBlock(getBlock?: GetBlock | null): Block | undefined {
         hash: getBlock.hash,
         block: getBlock
     }
+}
+
+
+function captureNotFound(info: RpcErrorInfo): null {
+    if (info.message.includes('not found')) return null
+    throw new RpcError(info)
 }

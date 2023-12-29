@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Wed, 20 Dec 2023 07:15:52 GMT and should not be manually modified.
+
+## 8.1.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+-  rename `.setArchive()` to `.setGateway()`
 
 ## 8.0.0
 Fri, 01 Dec 2023 16:55:51 GMT

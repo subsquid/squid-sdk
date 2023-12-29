@@ -94,7 +94,7 @@ export function createConnectionOptions(): ConnectionOptions {
         let host = 'localhost'
         let port = 5432
         let database = 'postgres'
-        let username = 'username'
+        let username = 'postgres'
         let password = 'postgres'
 
         if (process.env.DB_HOST) {

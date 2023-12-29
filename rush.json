@@ -725,6 +725,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-ts-node",
+      "projectFolder": "util/util-internal-ts-node",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-json",
       "projectFolder": "util/util-internal-json",
       "shouldPublish": true,

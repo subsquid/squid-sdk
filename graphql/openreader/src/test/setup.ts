@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {assertNotNull} from "@subsquid/util-internal"
 import {ListeningServer} from "@subsquid/util-internal-http-server"
 import {Client} from "gql-test-client"
@@ -72,6 +73,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
             subscriptions: true,
             subscriptionPollInterval: 500,
             maxRootFields: 10,
+            // log: createLogger('sqd:openreader'),
             ...options
         })
         client.endpoint = `http://localhost:${info.port}/graphql`

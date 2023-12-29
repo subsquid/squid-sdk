@@ -1,6 +1,27 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+
+## 4.1.0
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Minor changes
+
+- support `ts-node`
+
+## 4.0.1
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Patches
+
+- fix default `username`
+
+## 4.0.0
+Thu, 14 Dec 2023 11:16:15 GMT
+
+### Breaking changes
+
+- introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables
 
 ## 3.3.2
 Fri, 01 Dec 2023 16:55:51 GMT

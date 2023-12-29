@@ -223,4 +223,12 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
         trace.children = trace.children.filter(it => include.traces.has(it))
         return true
     })
+
+    block.stateDiffs = block.stateDiffs.filter(diff => {
+        if (!include.stateDiffs.has(diff)) return false
+        if (diff.transaction && !include.transactions.has(diff.transaction)) {
+            diff.transaction = undefined
+        }
+        return true
+    })
 }

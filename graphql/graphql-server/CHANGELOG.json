@@ -2,6 +2,54 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@subsquid/graphql-server_v4.5.0",
+      "date": "Sun, 24 Dec 2023 20:05:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support loading sever extensions via `ts-node`"
+          },
+          {
+            "comment": "implement query log"
+          },
+          {
+            "comment": "enhance graphql error log"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix class-validator@14 regression: an unknown value was passed to the validate function"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^4.0.1` to `^4.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.0",
+      "tag": "@subsquid/graphql-server_v4.4.0",
+      "date": "Thu, 14 Dec 2023 11:16:15 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^3.3.2` to `^4.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.2",
       "tag": "@subsquid/graphql-server_v4.3.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

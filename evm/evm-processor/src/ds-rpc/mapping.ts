@@ -52,6 +52,10 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     let src = cast(getBlockValidator(req), rpcBlock)
 
     let {number, hash, parentHash, transactions, ...headerProps} = src.block
+    if (headerProps.timestamp) {
+        headerProps.timestamp = headerProps.timestamp * 1000 // convert to ms
+    }
+
     let header = new BlockHeader(number, hash, parentHash)
     Object.assign(header, headerProps)
 
@@ -69,6 +73,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
                 let {transactionIndex, ...props} = stx
                 Object.assign(tx, props)
                 assert(transactionIndex === i)
+                if (tx.input != null) {
+                    tx.sighash = tx.input.slice(0, 10)
+                }
             }
             block.transactions.push(tx)
         }
@@ -173,6 +180,9 @@ function makeTraceRecordFromReplayFrame(
             throw unexpectedCase(type)
     }
     Object.assign(trace, props)
+    if (trace.type == 'call' && trace.action?.input != null) {
+        trace.action.sighash = trace.action.input.slice(0, 10)
+    }
     return trace
 }
 

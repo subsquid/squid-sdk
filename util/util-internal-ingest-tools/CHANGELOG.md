@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-ingest-tools
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Dec 2023 19:59:01 GMT and should not be manually modified.
+
+## 1.1.0
+Thu, 28 Dec 2023 19:59:01 GMT
+
+### Minor changes
+
+- add error message to invalid blocks
 
 ## 1.0.0
 Fri, 01 Dec 2023 16:55:51 GMT

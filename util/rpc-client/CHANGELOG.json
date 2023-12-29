@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.6.0",
+      "tag": "@subsquid/rpc-client_v4.6.0",
+      "date": "Sun, 24 Dec 2023 20:05:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "annotate rpc errors with endpoint url and response body"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.5.0",
       "tag": "@subsquid/rpc-client_v4.5.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

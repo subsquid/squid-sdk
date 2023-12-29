@@ -1,6 +1,45 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Thu, 28 Dec 2023 19:59:01 GMT and should not be manually modified.
+
+## 1.11.0
+Thu, 28 Dec 2023 19:59:01 GMT
+
+### Minor changes
+
+- support `debugTraceTimeout` RPC data ingestion option
+
+### Patches
+
+- allow empty `sighash` from archive
+- report block fetch consistency errors in a mode detailed manner
+
+## 1.10.2
+Tue, 26 Dec 2023 16:11:36 GMT
+
+### Patches
+
+- fix: `sighash` is not set when ingesting data from RPC
+- don't forget to filter state diffs when ingesting from RPC
+
+## 1.10.1
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Patches
+
+- allow missing `.gas`, `.gasUsed` fields in debug call trace
+
+## 1.10.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+- rename `.setArchive()` to `.setGateway()`
+
+### Patches
+
+- block timestamp should be in `ms`
+- fix `BlockHeader.size` validation
 
 ## 1.9.0
 Fri, 01 Dec 2023 16:55:51 GMT
