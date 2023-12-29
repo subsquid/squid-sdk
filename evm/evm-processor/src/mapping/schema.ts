@@ -1,5 +1,17 @@
 import {FieldSelection} from '../interfaces/data'
-import {array, BYTES, NAT, object, option, QTY, SMALL_QTY, STRING, taggedUnion, withSentinel} from '@subsquid/util-internal-validation'
+import {
+    array,
+    BYTES,
+    NAT,
+    object,
+    option,
+    QTY,
+    SMALL_QTY,
+    STRING,
+    taggedUnion,
+    withDefault,
+    withSentinel
+} from '@subsquid/util-internal-validation'
 
 
 export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
@@ -137,7 +149,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         value: option(QTY),
         gas: QTY,
         input: BYTES,
-        sighash: BYTES
+        sighash: withDefault('0x', BYTES)
     })
 
     let traceCallResult = project({
