@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 28 Dec 2023 19:59:01 GMT and should not be manually modified.
+This log was last generated on Fri, 29 Dec 2023 18:36:04 GMT and should not be manually modified.
+
+## 1.11.1
+Fri, 29 Dec 2023 18:36:04 GMT
+
+### Patches
+
+- allow `null` sighash in archive call trace
 
 ## 1.11.0
 Thu, 28 Dec 2023 19:59:01 GMT

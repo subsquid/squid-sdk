@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.11.1",
+      "tag": "@subsquid/evm-processor_v1.11.1",
+      "date": "Fri, 29 Dec 2023 18:36:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow `null` sighash in archive call trace"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.11.0",
       "tag": "@subsquid/evm-processor_v1.11.0",
       "date": "Thu, 28 Dec 2023 19:59:01 GMT",
