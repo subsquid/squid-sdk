@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {last} from '@subsquid/util-internal'
+import {last, wait} from '@subsquid/util-internal'
 import {FiniteRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Commitment} from '../base'
@@ -18,14 +18,22 @@ interface HeightAndSlot {
 
 export async function getFinalizedTop(rpc: Rpc): Promise<HeightAndSlot> {
     let head = await rpc.getRecentHead('finalized')
-    let block = await rpc.getBlockInfo('finalized', head.slot)
-    assert(block, 'finalized block is not supposed to disappear')
-    assert(block.blockhash === head.blockHash)
-    assert(block.blockHeight != null)
-    return {
-        slot: head.slot,
-        height: block.blockHeight
+    let attempts = 10
+    while (attempts) {
+        let block = await rpc.getBlockInfo('finalized', head.slot)
+        if (block) {
+            assert(block.blockhash === head.blockHash)
+            assert(block.blockHeight != null)
+            return {
+                slot: head.slot,
+                height: block.blockHeight
+            }
+        } else {
+            await wait(100)
+            attempts -= 1
+        }
     }
+    throw new Error(`Failed to getBlock at finalized slot ${head.slot} 10 times in a row`)
 }
 
 
