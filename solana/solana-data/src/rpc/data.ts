@@ -51,7 +51,7 @@ export type TransactionMessage = GetSrcType<typeof TransactionMessage>
 
 
 export const TransactionMeta = object({
-    computeUnitsConsumed: NAT,
+    computeUnitsConsumed: option(NAT),
     err: nullable(object({})),
     fee: NAT,
     innerInstructions: option(array(object({
