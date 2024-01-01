@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.1.1",
+      "tag": "@subsquid/substrate-processor_v8.1.1",
+      "date": "Mon, 01 Jan 2024 14:37:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix archive error when limiting item request by block range"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.1.0",
       "tag": "@subsquid/substrate-processor_v8.1.0",
       "date": "Wed, 20 Dec 2023 07:15:52 GMT",

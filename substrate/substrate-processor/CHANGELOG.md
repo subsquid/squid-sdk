@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 20 Dec 2023 07:15:52 GMT and should not be manually modified.
+This log was last generated on Mon, 01 Jan 2024 14:37:34 GMT and should not be manually modified.
+
+## 8.1.1
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Patches
+
+- fix archive error when limiting item request by block range
 
 ## 8.1.0
 Wed, 20 Dec 2023 07:15:52 GMT
