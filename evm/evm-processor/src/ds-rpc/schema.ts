@@ -81,10 +81,10 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
             trace: option(array(TraceFrame)),
             stateDiff: option(record(BYTES, TraceStateDiff))
         }))),
-        debugFrames: option(array(object({
+        debugFrames: option(array(option(object({
             result: DebugFrame
-        }))),
-        debugStateDiffs: option(array(DebugStateDiffResult))
+        })))),
+        debugStateDiffs: option(array(option(DebugStateDiffResult)))
     })
 })
 
@@ -156,10 +156,10 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
         CALLCODE: Call,
         STATICCALL: Call,
         DELEGATECALL: Call,
+        INVALID: Call,
         CREATE: Create,
         CREATE2: Create,
         SELFDESTRUCT: Suicide,
-        INVALID: object({}),
         STOP: object({})
     })
 
@@ -167,7 +167,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
 }
 
 
-export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugInvalidFrame
+export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugStopFrame
 
 
 interface DebugCreateFrame extends DebugFrameBase {
@@ -177,7 +177,7 @@ interface DebugCreateFrame extends DebugFrameBase {
 
 
 interface DebugCallFrame extends DebugFrameBase {
-    type:  'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL'
+    type:  'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL' | 'INVALID'
     to: Bytes20
     input: Bytes
 }
@@ -189,8 +189,8 @@ interface DebugSuicideFrame extends DebugFrameBase {
 }
 
 
-interface DebugInvalidFrame extends DebugFrameBase {
-    type: 'INVALID' | 'STOP'
+interface DebugStopFrame extends DebugFrameBase {
+    type: 'STOP'
 }
 
 

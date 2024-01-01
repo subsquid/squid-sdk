@@ -58,14 +58,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private log?: Logger
 
     constructor(options: EvmRpcDataSourceOptions) {
-        this.rpc = new Rpc(options.rpc)
+        this.log = options.log
+        this.rpc = new Rpc(options.rpc, this.log)
         this.finalityConfirmation = options.finalityConfirmation
         this.headPollInterval = options.headPollInterval || 5_000
         this.newHeadTimeout = options.newHeadTimeout || 0
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
         this.debugTraceTimeout = options.debugTraceTimeout
-        this.log = options.log
     }
 
     async getFinalizedHeight(): Promise<number> {

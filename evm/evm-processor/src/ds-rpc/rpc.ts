@@ -1,3 +1,4 @@
+import {Logger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
 import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {groupBy, last} from '@subsquid/util-internal'
@@ -44,6 +45,7 @@ export class Rpc {
 
     constructor(
         public readonly client: RpcClient,
+        private log?: Logger,
         private genesisHeight: number = 0,
         private priority: number = 0,
         props?: RpcProps
@@ -52,7 +54,7 @@ export class Rpc {
     }
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, this.genesisHeight, priority, this.props)
+        return new Rpc(this.client, this.log, this.genesisHeight, priority, this.props)
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -436,9 +438,14 @@ export class Rpc {
             if (frames == null) {
                 block._isInvalid = true
                 block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
-            } else {
-                assert(block.block.transactions.length === frames.length)
+            } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
+            } else {
+                block.debugFrames = this.matchDebugTrace(
+                    'debug call frame',
+                    block,
+                    frames
+                )
             }
         }
     }
@@ -469,11 +476,36 @@ export class Rpc {
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
-            } else {
-                assert(block.block.transactions.length === diffs.length)
+            } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
+            } else {
+                block.debugStateDiffs = this.matchDebugTrace(
+                    'debug state diff',
+                    block,
+                    diffs
+                )
             }
         }
+    }
+
+    private matchDebugTrace<T extends {txHash?: Bytes | null}>(type: string, block: Block, trace: T[]): (T | undefined)[] {
+        let mapping = new Map(trace.map(t => [t.txHash, t]))
+        let out = new Array(block.block.transactions.length)
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let txHash = getTxHash(block.block.transactions[i])
+            let rec = mapping.get(txHash)
+            if (rec) {
+                out[i] = rec
+            } else {
+                this.log?.warn({
+                    blockHeight: block.height,
+                    blockHash: block.hash,
+                    transactionIndex: i,
+                    transactionHash: txHash
+                }, `no ${type} for transaction`)
+            }
+        }
+        return out
     }
 
     private async addArbitrumOneTraces(blocks: Block[], req: DataRequest): Promise<void> {

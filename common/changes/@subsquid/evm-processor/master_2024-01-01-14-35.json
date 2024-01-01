@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "warn when debug trace is missing from transaction instead of hard error",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "handle `INVALID` debug frame like a regular call",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
