@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "fix archive error when limiting item request by block range",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}
