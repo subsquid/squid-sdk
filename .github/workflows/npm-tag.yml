@@ -23,6 +23,6 @@ jobs:
       - name: Add tag
         run: |
           echo "Tagging as $TAG"
-          ./ops/npm-tag.sh "$TAG"
+          ops/npm-tag.sh "$TAG"
         env:
           TAG: ${{ inputs.tag }}
