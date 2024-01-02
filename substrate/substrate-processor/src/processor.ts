@@ -311,49 +311,56 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
 
     addEvent(options: EventRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({events: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({events: [req]}, range)
         return this
     }
 
     addCall(options: CallRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({calls: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({calls: [req]}, range)
         return this
     }
 
     addEvmLog(options: EvmLogRequest & BlockRange): this {
         this.assertNotRunning()
+        let {range, address, ...req} = options
         this.add({evmLogs: [{
-            ...options,
-            address: options.address?.map(s => s.toLowerCase())
-        }]}, options.range)
+            ...req,
+            address: address?.map(s => s.toLowerCase())
+        }]}, range)
         return this
     }
 
     addEthereumTransaction(options: EthereumTransactRequest & BlockRange): this {
         this.assertNotRunning()
+        let {range, to, ...req} = options
         this.add({ethereumTransactions: [{
-            ...options,
-            to: options.to?.map(s => s.toLowerCase())
-        }]}, options.range)
+            ...req,
+            to: to?.map(s => s.toLowerCase())
+        }]}, range)
         return this
     }
 
     addContractsContractEmitted(options: ContractsContractEmittedRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({contractsEvents: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({contractsEvents: [req]}, range)
         return this
     }
 
     addGearMessageQueued(options: GearMessageQueuedRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({gearMessagesQueued: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({gearMessagesQueued: [req]}, range)
         return this
     }
 
     addGearUserMessageSent(options: GearUserMessageSentRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({gearUserMessagesSent: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({gearUserMessagesSent: [req]}, range)
         return this
     }
 

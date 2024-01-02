@@ -126,7 +126,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     if (src.debugFrames) {
         assert(block.traces.length == 0)
         for (let i = 0; i < src.debugFrames.length; i++) {
-            for (let trace of mapDebugFrame(header, i, src.debugFrames[i], req.fields)) {
+            let frame = src.debugFrames[i]
+            if (frame == null) continue
+            for (let trace of mapDebugFrame(header, i, frame, req.fields)) {
                 block.traces.push(trace)
             }
         }
@@ -240,7 +242,7 @@ function* mapDebugFrame(
     debugFrameResult: {result: DebugFrame},
     fields: FieldSelection | undefined
 ): Iterable<Trace> {
-    if (debugFrameResult.result.type == 'STOP' || debugFrameResult.result.type == 'INVALID') {
+    if (debugFrameResult.result.type == 'STOP') {
         assert(!debugFrameResult.result.calls?.length)
         return
     }
@@ -285,7 +287,8 @@ function* mapDebugFrame(
             case 'CALL':
             case 'CALLCODE':
             case 'DELEGATECALL':
-            case 'STATICCALL': {
+            case 'STATICCALL':
+            case 'INVALID': {
                 trace = new TraceCall(header, transactionIndex, traceAddress)
                 let action: Partial<EvmTraceCallAction> = {}
                 let hasAction = false
@@ -346,7 +349,7 @@ function* mapDebugFrame(
                 break
             }
             default:
-                throw unexpectedCase()
+                throw unexpectedCase(frame.type)
         }
         if (projection.subtraces) {
             trace.subtraces = subtraces
@@ -378,8 +381,9 @@ function* traverseDebugFrame(frame: DebugFrame, traceAddress: number[]): Iterabl
 function* mapDebugStateDiff(
     header: BlockHeader,
     transactionIndex: number,
-    debugDiffResult: GetCastType<typeof DebugStateDiffResult>
+    debugDiffResult: GetCastType<typeof DebugStateDiffResult> | undefined | null
 ): Iterable<StateDiff> {
+    if (debugDiffResult == null) return
     let {pre, post} = debugDiffResult.result
     for (let address in pre) {
         let prev = pre[address]

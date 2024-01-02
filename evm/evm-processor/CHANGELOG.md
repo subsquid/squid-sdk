@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 29 Dec 2023 18:36:04 GMT and should not be manually modified.
+This log was last generated on Mon, 01 Jan 2024 14:37:34 GMT and should not be manually modified.
+
+## 1.12.0
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Minor changes
+
+- warn when debug trace is missing from transaction instead of hard error
+- handle `INVALID` debug frame like a regular call
 
 ## 1.11.1
 Fri, 29 Dec 2023 18:36:04 GMT

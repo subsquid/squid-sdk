@@ -38,8 +38,8 @@ export interface Block {
     receipts?: TransactionReceipt[]
     logs?: Log[]
     traceReplays?: TraceTransactionReplay[]
-    debugFrames?: DebugFrameResult[]
-    debugStateDiffs?: DebugStateDiffResult[]
+    debugFrames?: (DebugFrameResult | undefined | null)[]
+    debugStateDiffs?: (DebugStateDiffResult | undefined | null)[]
     _isInvalid?: boolean
     _errorMessage?: string
 }
@@ -121,7 +121,8 @@ export interface DebugFrame {
 
 
 export const DebugFrameResult = object({
-    result: DebugFrame
+    result: DebugFrame,
+    txHash: option(BYTES)
 })
 
 
@@ -149,7 +150,8 @@ export type DebugStateDiff = GetSrcType<typeof DebugStateDiff>
 
 
 export const DebugStateDiffResult = object({
-    result: DebugStateDiff
+    result: DebugStateDiff,
+    txHash: option(BYTES)
 })
 
 
