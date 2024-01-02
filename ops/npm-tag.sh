@@ -7,7 +7,7 @@ node common/scripts/install-run-rush.js -q list || exit 1
 
 # Then run real package discovery
 packages=$(node common/scripts/install-run-rush.js -q list --json \
-    | jq '.projects[] | select(.versionPolicyName == "npm") | (.name + "@" + .version)' -r)
+    | jq '.projects[] | select(.versionPolicyName == "npm") | (.name + "@" + .version)' -r) || exit 1
 
 for pkg in $packages; do
     npm dist-tag add "$pkg" "$tag" || exit 1
