@@ -21,6 +21,8 @@ jobs:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Add tag
-        run: ./ops/npm-tag.sh "$TAG"
+        run: |
+          echo "Tagging as $TAG"
+          ./ops/npm-tag.sh "$TAG"
         env:
           TAG: ${{ inputs.tag }}
