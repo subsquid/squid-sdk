@@ -1,6 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
-import {createNodeHttpServer, waitForInterruption} from '@subsquid/util-internal-http-server'
+import {createHttpServer, waitForInterruption} from '@subsquid/util-internal-http-server'
 import express from 'express'
 import * as fs from 'fs'
 import * as process from 'process'
@@ -65,7 +65,7 @@ class App {
 
     run(): void {
         runProgram(async () => {
-            let server = await createNodeHttpServer(this.app(), 3000)
+            let server = await createHttpServer(this.app(), 3000)
             this.log.info(`listening on port ${server.port}`)
             return waitForInterruption(server)
         }, err => this.log.fatal(err))

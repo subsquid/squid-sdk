@@ -1,8 +1,12 @@
-import {assertNotNull, last} from '@subsquid/util-internal'
+import {assertNotNull, concurrentWriter, last} from '@subsquid/util-internal'
 import {Fs} from '@subsquid/util-internal-fs'
-import {assertRange, printRange, Range} from '@subsquid/util-internal-range'
+import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import {StringDecoder} from 'node:string_decoder'
+import * as readline from 'readline'
+import {pipeline} from 'stream/promises'
 import * as zlib from 'zlib'
+import {createGunzip} from 'zlib'
 import {DataChunk, getChunkPath, getDataChunkErrorMessage, tryParseChunkDir, tryParseTop} from './chunk'
 import {ArchiveLayoutError, TopDirError} from './errors'
 import {formatBlockNumber, getShortHash} from './util'
@@ -240,6 +244,78 @@ export class ArchiveLayout {
                 }
             }
         )
+    }
+
+    getRawBlocks<B extends HashAndHeight>(range?: Range): AsyncIterable<B[]> {
+        return concurrentWriter(1, async write => {
+            let r = range || {from: 0}
+            assertRange(r)
+            let blocks: B[] = []
+            for await (let chunk of this.getDataChunks(r)) {
+                let fs = this.getChunkFs(chunk)
+                await pipeline(
+                    await fs.readStream('blocks.jsonl.gz'),
+                    createGunzip(),
+                    async dataChunks => {
+                        for await (let lines of splitLines(dataChunks)) {
+                            for (let line of lines) {
+                                let block: B = JSON.parse(line)
+                                if (r.from <= block.height && block.height <= rangeEnd(r)) {
+                                    blocks.push(block)
+                                    if (blocks.length > 10) {
+                                        await write(blocks)
+                                        blocks = []
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            if (blocks.length) {
+                await write(blocks)
+            }
+        })
+    }
+}
+
+async function* splitLines(chunks: AsyncIterable<Buffer>) {
+    let splitter = new LineSplitter()
+    for await (let chunk of chunks) {
+        let lines = splitter.push(chunk)
+        if (lines) yield lines
+    }
+    let lastLine = splitter.end()
+    if (lastLine) yield [lastLine]
+}
+
+
+class LineSplitter {
+    private decoder = new StringDecoder('utf-8')
+    private line = ''
+
+    push(data: Buffer): string[] | undefined {
+        let s = this.decoder.write(data)
+        if (!s) return
+        let lines = s.split('\n')
+        if (lines.length == 1) {
+            this.line += lines[0]
+        } else {
+            let result: string[] = []
+            lines[0] = this.line + lines[0]
+            this.line = last(lines)
+            for (let i = 0; i < lines.length - 1; i++) {
+                let line = lines[i]
+                if (line) {
+                    result.push(line)
+                }
+            }
+            if (result.length > 0) return result
+        }
+    }
+
+    end(): string | undefined {
+        if (this.line) return this.line
     }
 }
 

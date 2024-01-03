@@ -1,5 +1,5 @@
 import {createFs, Fs} from '@subsquid/util-internal-fs'
-import {createNodeHttpServer, ListeningServer} from '@subsquid/util-internal-http-server'
+import {createHttpServer, ListeningServer} from '@subsquid/util-internal-http-server'
 import express from 'express'
 import {promisify} from 'util'
 import {gunzip} from 'zlib'
@@ -18,7 +18,7 @@ export class App {
 
         app.get('/:network', (req, res, next) => this.getJsonLines(req, res).catch(next))
 
-        return createNodeHttpServer(app, port)
+        return createHttpServer(app, port)
     }
 
     private async getJsonLines(

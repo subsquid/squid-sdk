@@ -1,8 +1,8 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
-import {createHttpServer, HttpContext, waitForInterruption} from '@subsquid/util-internal-http-server'
-import {assertRange, Range} from '@subsquid/util-internal-range'
+import {HttpApp, HttpContext, waitForInterruption} from '@subsquid/util-internal-http-server'
+import {assertRange, isRange} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {Ingest, IngestOptions} from './ingest'
 
@@ -41,48 +41,35 @@ runProgram(async () => {
         assertRange(range)
         await ingest.run(range, process.stdout)
     } else {
-        let server = await createHttpServer(ctx => {
-            return ingestHandler(ingest, ctx).catch(err => {
-                log.error(err)
-                throw err
-            })
-        }, options.service)
-
-        log.info(
-            `Data service is listening in port ${server.port}. ` +
-            `Note, that the service is dumb and not supposed to be public.`
-        )
-
-        await waitForInterruption(server)
+        await runService(ingest, options.service)
     }
 }, err => log.fatal(err))
 
 
-async function ingestHandler(ingest: Ingest, ctx: HttpContext): Promise<void> {
-    if (ctx.request.method == 'POST') {
-        let body = await getTextBody(ctx)
-        let range: Range
-        try {
-            range = JSON.parse(body)
-            assertRange(range)
-        } catch(err: any) {
-            return ctx.send(400, `Invalid requested range:\n\n${err.stack}`)
+async function runService(ingest: Ingest, port: number): Promise<void> {
+    let app = new HttpApp()
+    app.setMaxRequestBody(1024)
+    app.setLogger(log.child('service'))
+
+    app.add('/', {
+        async GET(ctx: HttpContext) {
+            ctx.send(200, 'POST block range to receive data')
+        },
+        async POST(ctx: HttpContext) {
+            let body = await ctx.getJson()
+            if (!isRange(body)) return ctx.send(400, `invalid block range - ${JSON.stringify(body)}`)
+            ctx.response.setHeader('content-type', 'text/plain')
+            await ingest.run(body, ctx.response)
+            ctx.response.end()
         }
-        ctx.response.setHeader('content-type', 'text/plain')
-        await ingest.run(range, ctx.response)
-        ctx.response.end()
-    } else {
-        ctx.send(200, 'POST data range to receive data')
-    }
-}
-
-
-function getTextBody(ctx: HttpContext): Promise<any> {
-    return new Promise((resolve, reject) => {
-        let body = ''
-        ctx.request.setEncoding('utf-8')
-        ctx.request.on('data', chunk => body += chunk)
-        ctx.request.on('end', () => resolve(body))
-        ctx.request.on('error', reject)
     })
+
+    let server = await app.listen(port)
+
+    log.child('service').info(
+        `Data service is listening in port ${server.port}. ` +
+        `Note, that the service is dumb and not supposed to be public.`
+    )
+
+    return waitForInterruption(server)
 }

@@ -1,6 +1,6 @@
 import {Block, DataRequest, RpcDataSource} from '@subsquid/solana-data/lib/rpc'
 import {def} from '@subsquid/util-internal'
-import {Command, DataSource, Dumper, DumperOptions, positiveInt} from '@subsquid/util-internal-rpc-dump'
+import {Command, DataSource, Dumper, DumperOptions, positiveInt} from '@subsquid/util-internal-dump-cli'
 
 
 interface Options extends DumperOptions {

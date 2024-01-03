@@ -20,8 +20,8 @@
   "dependencies": {
     "@subsquid/substrate-data-raw": "^1.0.1",
     "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-rpc-dump": "^0.0.0"
+    "@subsquid/util-internal-dump-cli": "^0.0.0",
+    "@subsquid/util-internal-hex": "^1.2.2"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

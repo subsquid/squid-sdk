@@ -701,6 +701,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "projectFolder": "util/util-internal-dump-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
       "shouldPublish": true,
@@ -715,6 +721,12 @@
     {
       "packageName": "@subsquid/util-internal-http-server",
       "projectFolder": "util/util-internal-http-server",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-ingest-cli",
+      "projectFolder": "util/util-internal-ingest-cli",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -757,12 +769,6 @@
     {
       "packageName": "@subsquid/util-internal-read-lines",
       "projectFolder": "util/util-internal-read-lines",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-rpc-dump",
-      "projectFolder": "util/util-internal-rpc-dump",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

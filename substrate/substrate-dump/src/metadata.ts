@@ -1,7 +1,7 @@
 import {Bytes, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {def} from '@subsquid/util-internal'
 import {decodeHex} from '@subsquid/util-internal-hex'
-import {formatBlockNumber, Fs} from '@subsquid/util-internal-rpc-dump'
+import {formatBlockNumber, Fs} from '@subsquid/util-internal-dump-cli'
 import {basename} from 'path'
 import * as zlib from 'zlib'
 

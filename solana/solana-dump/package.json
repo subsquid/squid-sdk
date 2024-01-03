@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/solana-data": "^0.0.0",
     "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-rpc-dump": "^0.0.0"
+    "@subsquid/util-internal-dump-cli": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

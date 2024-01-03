@@ -6,7 +6,7 @@ import {
     RuntimeVersionId
 } from '@subsquid/substrate-data-raw'
 import {assertNotNull, def} from '@subsquid/util-internal'
-import {Command, Dumper, DumperOptions, getShortHash} from '@subsquid/util-internal-rpc-dump'
+import {Command, Dumper, DumperOptions, getShortHash} from '@subsquid/util-internal-dump-cli'
 import assert from 'assert'
 import {MetadataWriter} from './metadata'
 
