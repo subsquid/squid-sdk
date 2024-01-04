@@ -99,6 +99,8 @@ export function mapBlock(src: raw.BlockData): Block {
         let tx = mapTransaction(rawTx, info)
         block.transactions?.push(tx)
 
+        if (!info) continue
+
         for (let rawLog of info.log || []) {
             let log = mapLog(rawLog, logIndex++, rawTx.txID)
             block.logs?.push(log)
