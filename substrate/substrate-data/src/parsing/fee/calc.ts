@@ -2,6 +2,7 @@ import {Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import {def} from '@subsquid/util-internal'
 import {CalcFee as SubstrateFeeCalc} from '@substrate/calc'
+import {STORAGE} from '../../storage'
 import {
     BlockWeightsConst,
     ExtrinsicBaseWeightConst,
@@ -25,7 +26,7 @@ export function supportsFeeCalc(runtime: Runtime): boolean {
 
 export function getFeeCalc(
     runtime: Runtime,
-    feeMultiplier: Bytes | undefined,
+    feeMultiplier: number | bigint,
     specName: string,
     specVersion: number
 ): Calc | undefined {
@@ -73,16 +74,11 @@ class CalcFactory {
 
     @def
     private hasNextFeeMultiplier(): boolean {
-        return this.runtime.checkStorageType(
-            'TransactionPayment.NextFeeMultiplier',
-            'Default',
-            [],
-            NextFeeMultiplier
-        )
+        return STORAGE.nextFeeMultiplier.check(this.runtime)
     }
 
     get(
-        feeMultiplier: Bytes | undefined,
+        feeMultiplier: number | bigint,
         specName: string,
         specVersion: number
     ): Calc | undefined {
@@ -91,12 +87,7 @@ class CalcFactory {
         const baseWeights = this.baseWeights()
         if (baseWeights == null) return
 
-        const multiplier: bigint | number = this.runtime.decodeStorageValue(
-            'TransactionPayment.NextFeeMultiplier',
-            feeMultiplier
-        )
-
-        const calc = this.createCalc(multiplier, specName, specVersion)
+        const calc = this.createCalc(feeMultiplier, specName, specVersion)
         if (calc == null) return
 
         return (dispatchInfo, len) => {

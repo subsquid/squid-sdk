@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "fix genesis block fetch error by allowing `null` event storage values",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "fix: sometimes block validator is not set",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

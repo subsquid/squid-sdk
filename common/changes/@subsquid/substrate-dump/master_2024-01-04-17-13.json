@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "fix genesis block fetch error by allowing `null` event storage values",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}

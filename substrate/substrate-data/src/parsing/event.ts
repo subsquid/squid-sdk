@@ -17,7 +17,7 @@ const EventItem = struct({
 const EventItemList = array(EventItem)
 
 
-export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undefined): Event[] {
+export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undefined | null): Event[] {
     assertStorage(runtime, 'System.Events', ['Required', 'Default'], [], EventItemList)
 
     let items: GetType<typeof EventItem>[] = runtime.decodeStorageValue(

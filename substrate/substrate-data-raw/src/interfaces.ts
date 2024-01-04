@@ -79,7 +79,7 @@ export interface PartialBlockData {
     /**
      * Contents of `System.Events` storage
      */
-    events?: Bytes
+    events?: Bytes | null
     trace?: any
     _isInvalid?: boolean
 }
