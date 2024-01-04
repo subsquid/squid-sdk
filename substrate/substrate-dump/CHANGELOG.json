@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/substrate-dump_v0.3.1",
+      "date": "Thu, 04 Jan 2024 17:31:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix genesis block fetch error by allowing `null` event storage values"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.0.1` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/substrate-dump_v0.3.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

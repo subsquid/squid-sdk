@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-data-raw_v1.1.0",
+      "date": "Thu, 04 Jan 2024 17:31:35 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow `block.events` to be null"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.1",
       "tag": "@subsquid/substrate-data-raw_v1.0.1",
       "date": "Fri, 01 Dec 2023 17:09:03 GMT",

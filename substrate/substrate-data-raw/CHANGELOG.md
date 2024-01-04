@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data-raw
 
-This log was last generated on Fri, 01 Dec 2023 17:09:03 GMT and should not be manually modified.
+This log was last generated on Thu, 04 Jan 2024 17:31:35 GMT and should not be manually modified.
+
+## 1.1.0
+Thu, 04 Jan 2024 17:31:35 GMT
+
+### Minor changes
+
+- allow `block.events` to be null
 
 ## 1.0.1
 Fri, 01 Dec 2023 17:09:03 GMT
