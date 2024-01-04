@@ -81,7 +81,7 @@ export class Dumper {
 
     @def
     prometheus() {
-        return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
+        return new PrometheusServer(this.options.metrics ?? 0, this.client())
     }
 
     private async *generateStrides(range: Range): AsyncIterable<FiniteRange> {

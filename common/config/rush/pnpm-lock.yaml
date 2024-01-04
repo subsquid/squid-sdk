@@ -5609,12 +5609,13 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-hbWiC4VOTRxv/qA8vzKyzEaBR4GCEL1YigRPqy8OwZeC5FyMNjV28xV5shlqqlWc1KmVyeP0S2xWiRVN9qnQHA==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-PnjrMnfHxH9MXx2rub0NGM3jxszwudsjONj0SjtABPxZqt9cJQo2/eJyV4HeN+5r6DoB84aQct+JRIRZ3SUSZg==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
       commander: 11.1.0
+      typescript: 5.2.2
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
@@ -5692,7 +5693,7 @@ packages:
     dev: false
 
   file:projects/tron-dump.tgz:
-    resolution: {integrity: sha512-rCOymneQEGpa2uLmebRSMs8nium3oEYAdd+0lEu6qSVQAYLhb1SkEFZNprgiqAjHNkfHsVkajGssiUhRdYoj0Q==, tarball: file:projects/tron-dump.tgz}
+    resolution: {integrity: sha512-zlg8YSoISlMA2ReF5Hqhnpa/zvspF2ZeDsuas4pA39c7c+IjPo1Fks0ObWaN0iZiiZmQbgvOJ4rHWy44L+MSlQ==, tarball: file:projects/tron-dump.tgz}
     name: '@rush-temp/tron-dump'
     version: 0.0.0
     dependencies:
@@ -5703,16 +5704,17 @@ packages:
     dev: false
 
   file:projects/tron-ingest.tgz:
-    resolution: {integrity: sha512-3Fbe47wnR89PqmaCL+QcKWJLtCB7byadNkDPzUdUxNVzDtuxiV5BfOXNNe3sP08FjvNATzpMFPAzRPoyJteR8g==, tarball: file:projects/tron-ingest.tgz}
+    resolution: {integrity: sha512-SCR6kQmaff0gAQONdKfPTccsUEwU2+REqlKtF8wcfIc94ZNt3wWLnN6sWQcLdrPCESpqG3WxSZ88+OChDhx4aA==, tarball: file:projects/tron-ingest.tgz}
     name: '@rush-temp/tron-ingest'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
       commander: 11.0.0
+      typescript: 5.2.2
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-zn/Ju9Jgm9w/OTHkA9f3z1E4kAtRbBJAn5d1dkoxKFsTrAFrwxSo0ZzOhFJY9o1xmvg2R1GE1UWGlgEMYDIw/A==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-P+PeBwAOEobRrOkUwbNJCCCWH0X+dr7n3tszBZAL4kojxQ1EzkgiZ+xzghPbmKTkqH4FJfCwt/YEpyUCpXF/JA==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:
