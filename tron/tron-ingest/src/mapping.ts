@@ -18,13 +18,13 @@ function mapBlockHeader(src: raw.Block): BlockHeader {
 
 
 function mapTransaction(src: raw.Transaction, info?: raw.TransactionInfo): Transaction {
-    assert(src.ret.length == 1)
     assert(src.raw_data.contract.length == 1)
+    if (src.ret) assert(src.ret.length == 1)
     if (info) assert(info.contractResult.length == 1)
     let contract = src.raw_data.contract[0]
     return {
         hash: src.txID,
-        ret: src.ret[0].contractRet,
+        ret: src.ret?.[0].contractRet,
         signature: src.signature,
         type: contract.type,
         parameter: contract.parameter,

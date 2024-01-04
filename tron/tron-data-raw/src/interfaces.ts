@@ -79,7 +79,7 @@ export interface TransactionResult {
 
 
 export interface Transaction {
-    ret: TransactionResult[]
+    ret?: TransactionResult[]
     signature: string[]
     txID: string
     raw_data: TransactionRawData

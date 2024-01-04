@@ -21,7 +21,7 @@ export interface Log {
 
 export interface Transaction {
     hash: string
-    ret: string
+    ret?: string
     signature: string[]
     type: string
     parameter: any
