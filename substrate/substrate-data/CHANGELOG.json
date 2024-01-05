@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.0.1",
+      "tag": "@subsquid/substrate-data_v4.0.1",
+      "date": "Thu, 04 Jan 2024 17:31:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix genesis block fetch error by allowing `null` event storage values"
+          },
+          {
+            "comment": "fix: sometimes block validator is not set"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.0.1` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.0",
       "tag": "@subsquid/substrate-data_v4.0.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

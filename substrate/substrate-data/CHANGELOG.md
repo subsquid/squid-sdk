@@ -1,6 +1,14 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Thu, 04 Jan 2024 17:31:35 GMT and should not be manually modified.
+
+## 4.0.1
+Thu, 04 Jan 2024 17:31:35 GMT
+
+### Patches
+
+- fix genesis block fetch error by allowing `null` event storage values
+- fix: sometimes block validator is not set
 
 ## 4.0.0
 Fri, 01 Dec 2023 16:55:51 GMT

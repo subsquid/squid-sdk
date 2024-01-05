@@ -224,7 +224,7 @@ export class Fetch1 {
 
         for (let i = 0; i < blocks.length; i++) {
             let bytes = events[i]
-            if (bytes == null) {
+            if (bytes === undefined) {
                 blocks[i]._isInvalid = true
             } else {
                 blocks[i].events = bytes

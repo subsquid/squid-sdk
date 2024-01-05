@@ -46,7 +46,7 @@ export function setExtrinsicFeesFromCalc(
     events: Event[],
     prevBlockSpecName: string,
     prevBlockSpecVersion: number,
-    feeMultiplier: Bytes | undefined
+    feeMultiplier: number | bigint
 ): void {
     let calc = getFeeCalc(
         runtime,

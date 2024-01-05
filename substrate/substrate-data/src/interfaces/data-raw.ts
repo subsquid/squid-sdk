@@ -4,12 +4,21 @@ import type {AccountId} from '../parsing/validator'
 import type {Block as ParsedBlock} from './data'
 
 
+/**
+ * Decoded value of Session.CurrentIndex storage
+ */
+export type SessionIndex = number | bigint
+
+
 export interface RawBlock extends BlockData {
     validators?: AccountId[]
-    session?: Bytes
+    session?: SessionIndex
     runtime?: Runtime
     runtimeOfPrevBlock?: Runtime
-    feeMultiplier?: Bytes
+    /**
+     * Decoded value of TransactionPayment.NextFeeMultiplier storage
+     */
+    feeMultiplier?: number | bigint
     /**
      * Storage values of previous block
      */
