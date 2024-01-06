@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Sat, 06 Jan 2024 13:28:46 GMT and should not be manually modified.
+
+## 1.0.3
+Sat, 06 Jan 2024 13:28:46 GMT
+
+### Patches
+
+- support Avail Goldberg metadata
 
 ## 1.0.2
 Fri, 01 Dec 2023 16:55:51 GMT

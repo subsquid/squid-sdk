@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-runtime",
   "entries": [
     {
+      "version": "1.0.3",
+      "tag": "@subsquid/substrate-runtime_v1.0.3",
+      "date": "Sat, 06 Jan 2024 13:28:46 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support Avail Goldberg metadata"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.2",
       "tag": "@subsquid/substrate-runtime_v1.0.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
