@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "support Avail Goldberg metadata",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
