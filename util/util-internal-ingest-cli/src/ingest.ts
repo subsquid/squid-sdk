@@ -16,7 +16,7 @@ export interface IngestOptions {
 
 
 export class Ingest<B, O extends IngestOptions = IngestOptions> {
-    setUpProgram(program: Command): void {}
+    protected setUpProgram(program: Command): void {}
 
     @def
     private program(): Command {
@@ -30,29 +30,25 @@ export class Ingest<B, O extends IngestOptions = IngestOptions> {
     }
 
     @def
-    options(): O {
+    protected options(): O {
         return this.program().parse().opts()
     }
 
-    isService(): boolean {
+    protected isService(): boolean {
         return this.options().service != null
     }
 
     @def
-    log(): Logger {
+    protected log(): Logger {
         return createLogger(this.getLoggingNamespace())
     }
 
-    getLoggingNamespace(): string {
+    protected getLoggingNamespace(): string {
         return 'sqd:ingest'
     }
 
-    getBlocks(range: Range): AsyncIterable<B[]> {
+    protected getBlocks(range: Range): AsyncIterable<object[]> {
         throw new Error('data ingestion is not implemented')
-    }
-
-    process(blocks: AsyncIterable<B[]>): AsyncIterable<any[]> {
-        return blocks
     }
 
     @def
