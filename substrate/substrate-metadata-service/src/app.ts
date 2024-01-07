@@ -1,6 +1,6 @@
+import {waitDrain} from '@subsquid/util-internal'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
-import {createHttpServer, ListeningServer} from '@subsquid/util-internal-http-server'
-import express from 'express'
+import {HttpApp, ListeningServer} from '@subsquid/util-internal-http-server'
 import {promisify} from 'util'
 import {gunzip} from 'zlib'
 
@@ -14,41 +14,35 @@ export class App {
     }
 
     async listen(port: number): Promise<ListeningServer> {
-        let app = express()
+        let http = new HttpApp()
 
-        app.get('/:network', (req, res, next) => this.getJsonLines(req, res).catch(next))
+        http.setSocketTimeout(60_000)
 
-        return createHttpServer(app, port)
-    }
+        http.add('/{network}', {
+            GET: async ctx => {
+                let network = ctx.params.network
+                let archive = this.networks.get(network)
+                if (archive == null) return ctx.send(404, `unknown network - ${network}`)
 
-    private async getJsonLines(
-        req: express.Request<{network: string}>,
-        res: express.Response
-    ): Promise<void> {
-        res.type('text')
+                let files = await listMetadataFiles(archive)
+                if (files.length == 0) {
+                    return ctx.send(404, `no metadata records found for network - ${network}`)
+                }
 
-        let network = req.params.network
-        let archive = this.networks.get(network)
-        if (archive == null) {
-            res.status(404).end(`unknown network - ${network}`)
-            return
-        }
+                for (let {fileName, ...rec} of files) {
+                    let gzippedMetadata = await archive.cd('metadata').readFile(fileName)
+                    let metadata = await promisify(gunzip)(gzippedMetadata)
+                    await waitDrain(ctx.response)
+                    ctx.response.write(JSON.stringify({
+                        ...rec,
+                        metadata: '0x'+metadata.toString('hex')
+                    }) + '\n')
+                }
+                ctx.response.end()
+            }
+        })
 
-        let files = await listMetadataFiles(archive)
-        if (files.length == 0) {
-            res.status(404).end(`no metadata records found for network - ${network}`)
-            return
-        }
-
-        for (let {fileName, ...rec} of files) {
-            let gzippedMetadata = await archive.cd('metadata').readFile(fileName)
-            let metadata = await promisify(gunzip)(gzippedMetadata)
-            res.write(JSON.stringify({
-                ...rec,
-                metadata: '0x'+metadata.toString('hex')
-            }) + '\n')
-        }
-        res.end()
+        return http.listen(port)
     }
 }
 

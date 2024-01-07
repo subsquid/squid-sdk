@@ -245,6 +245,9 @@ class FromV14 {
             if (def.path[0] == 'sp_runtime' && last(def.path) == 'UncheckedExtrinsic') {
                 candidates.push(i)
             }
+            if (def.path[0] == 'avail_core' && last(def.path) == 'AppUncheckedExtrinsic') {
+                return i
+            }
         }
         switch(candidates.length) {
             case 0: throw new Error(`Failed to find UncheckedExtrinsic type in metadata`)

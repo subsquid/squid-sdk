@@ -623,12 +623,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "chain-status-service",
-      "projectFolder": "util/chain-status-service",
-      "shouldPublish": true,
-      "versionPolicyName": "docker"
-    },
-    {
       "packageName": "@subsquid/commands",
       "projectFolder": "util/commands",
       "shouldPublish": true,

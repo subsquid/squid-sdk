@@ -5,7 +5,7 @@ import {HttpContext, HttpContextOptions, HttpRequest, HttpResponse} from './ctx'
 import {isHttpError} from './http-error'
 import {GetPatternParams, PathPattern} from './path-pattern'
 import {HttpResource} from './resource'
-import {createHttpServer, ListeningServer} from './server'
+import {createHttpServer, HttpServerOptions, ListeningServer} from './server'
 
 
 interface RoutePath {
@@ -26,6 +26,7 @@ export class HttpApp {
     private ctx: HttpContextOptions = {
         maxRequestBody: 1024 * 1024
     }
+    private serverOptions: HttpServerOptions = {}
 
     add<P extends string>(path: P, resource: HttpResource<GetPatternParams<P>>): this {
         this.routes.push({
@@ -51,6 +52,11 @@ export class HttpApp {
         return this
     }
 
+    setSocketTimeout(ms: number): this {
+        this.serverOptions.socketTimeout = ms
+        return this
+    }
+
     private get log(): Logger {
         if (this._log) return this._log
         return this._log = createLogger(this.loggingNamespace)
@@ -61,7 +67,10 @@ export class HttpApp {
             this.handle(req as HttpRequest, res).catch(
                 err => this.handleSystemError(err, req as HttpRequest, res)
             )
-        }, port)
+        }, {
+            ...this.serverOptions,
+            port
+        })
     }
 
     private async handle(req: HttpRequest, res: HttpResponse): Promise<void> {
@@ -98,7 +107,7 @@ export class HttpApp {
     private handleError(err: Error, ctx: HttpContext): void {
         if (ctx.response.headersSent) {
             this.handleSystemError(err, ctx.request, ctx.response)
-        } if (isHttpError(err)) {
+        } else if (isHttpError(err)) {
             if (err.headers) {
                 for (let name in err.headers) {
                     ctx.response.setHeader(name, err.headers[name])

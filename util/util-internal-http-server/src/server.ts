@@ -10,9 +10,18 @@ export interface ListeningServer {
 }
 
 
-export function createHttpServer(handler: RequestListener, port?: number | string): Promise<ListeningServer> {
+export interface HttpServerOptions {
+    port?: number | string
+    socketTimeout?: number
+}
+
+
+export function createHttpServer(handler: RequestListener, options?: HttpServerOptions): Promise<ListeningServer> {
     let server = http.createServer(handler)
-    return listen(server, port)
+    if (options?.socketTimeout) {
+        server.timeout = options.socketTimeout
+    }
+    return listen(server, options?.port)
 }
 
 

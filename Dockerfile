@@ -36,14 +36,3 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate
 FROM node AS substrate-metadata-service
 COPY --from=substrate-metadata-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/substrate/substrate-metadata-service/bin/run.js"]
-
-
-FROM builder AS chain-status-service-builder
-RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
-
-
-FROM node AS chain-status-service
-COPY --from=chain-status-service-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/util/chain-status-service/lib/main.js"]
-CMD ["/squid/util/chain-status-service/config.json"]
-EXPOSE 3000
