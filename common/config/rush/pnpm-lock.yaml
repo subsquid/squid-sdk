@@ -98,6 +98,9 @@ dependencies:
   '@rush-temp/solana-dump':
     specifier: file:./projects/solana-dump.tgz
     version: file:projects/solana-dump.tgz
+  '@rush-temp/solana-ingest':
+    specifier: file:./projects/solana-ingest.tgz
+    version: file:projects/solana-ingest.tgz
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -5531,6 +5534,15 @@ packages:
   file:projects/solana-dump.tgz:
     resolution: {integrity: sha512-4FTAD1fmVzKDZ3MX1nnQKxwXSfws7qd0mh6GrbKqzMNb5FvZ/HNa64904KHYf++FZg4yro/JcKGWfgqZqTWuFA==, tarball: file:projects/solana-dump.tgz}
     name: '@rush-temp/solana-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-ingest.tgz:
+    resolution: {integrity: sha512-CpQDL6RfBQOe+x7RRgEoVDnRjJMiscnv2wyPxuodyqmjU/zLCJHkMcxqqzPbvWQ6t37+03FGmxL33DAF7WSx7w==, tarball: file:projects/solana-ingest.tgz}
+    name: '@rush-temp/solana-ingest'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4

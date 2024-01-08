@@ -10,7 +10,7 @@ interface Options extends DumperOptions {
 
 export class SolanaDumper extends Dumper<Block, Options> {
     protected setUpProgram(program: Command): void {
-        program.description('RPC data archiving tool for Solana')
+        program.description('Data archiving tool for Solana')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 10)
     }
 
