@@ -23,9 +23,27 @@ export interface IngestOptions {
 
 
 export class Ingest<O extends IngestOptions = IngestOptions> {
+    protected hasRpc(): 'required' | boolean {
+        return true
+    }
+
+    protected setUpProgram(program: Command): void {}
+
+    protected getBlocks(range: Range): AsyncIterable<object[]> {
+        return this.archive().getRawBlocks(range)
+    }
+
+    protected getLoggingNamespace(): string {
+        return 'sqd:ingest'
+    }
+
+    protected isRetryableError(err: Error): boolean {
+        return !!this.options().endpoint && this.rpc().isConnectionError(err)
+    }
+
     @def
-    protected options(): O {
-        return this.program().parse().opts()
+    protected log(): Logger {
+        return createLogger(this.getLoggingNamespace())
     }
 
     @def
@@ -40,8 +58,6 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         return program
     }
 
-    protected setUpProgram(program: Command): void {}
-
     private setUpRpc(program: Command): void {
         if (!this.hasRpc()) return
         let required = this.hasRpc() === 'required'
@@ -51,8 +67,9 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         program.option('-b, --endpoint-max-batch-call-size <number>', 'Maximum size of RPC batch call', positiveInt)
     }
 
-    protected hasRpc(): 'required' | boolean {
-        return true
+    @def
+    protected options(): O {
+        return this.program().parse().opts()
     }
 
     @def
@@ -75,10 +92,6 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         return this.options().rawArchive != null
     }
 
-    protected getBlocks(range: Range): AsyncIterable<object[]> {
-        return this.archive().getRawBlocks(range)
-    }
-
     @def
     protected archive(): ArchiveLayout {
         let url = assertNotNull(this.options().rawArchive, 'archive is not specified')
@@ -88,12 +101,9 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
 
     private async ingest(range: Range, writable: Writable): Promise<void> {
         for await (let blocks of this.getBlocks(range)) {
-            let drained = true
+            await waitDrain(writable)
             for (let block of blocks) {
-                drained = writable.write(JSON.stringify(block) + '\n')
-            }
-            if (!drained) {
-                await waitDrain(writable)
+                writable.write(JSON.stringify(block) + '\n')
             }
         }
     }
@@ -136,11 +146,6 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         return waitForInterruption(server)
     }
 
-
-    protected isRetryableError(err: Error): boolean {
-        return !!this.options().endpoint && this.rpc().isConnectionError(err)
-    }
-
     run(): void {
         runProgram(async () => {
             if (this.isService()) {
@@ -156,14 +161,5 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         }, err => {
             this.log().fatal(err)
         })
-    }
-
-    @def
-    protected log(): Logger {
-        return createLogger(this.getLoggingNamespace())
-    }
-
-    protected getLoggingNamespace(): string {
-        return 'sqd:ingest'
     }
 }

@@ -2,4 +2,5 @@ export {getShortHash, formatBlockNumber} from '@subsquid/util-internal-archive-l
 export {Fs} from '@subsquid/util-internal-fs'
 export {Command} from 'commander'
 export * from '@subsquid/util-internal-commander'
+export * from '@subsquid/util-internal-range'
 export * from './dumper'

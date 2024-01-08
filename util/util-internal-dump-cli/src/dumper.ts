@@ -1,19 +1,13 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertNotNull, def, last, runProgram, Throttler} from '@subsquid/util-internal'
+import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
-import {assertRange, printRange, Range, rangeEnd, RangeRequestList} from '@subsquid/util-internal-range'
+import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {PrometheusServer} from './prometheus'
-
-
-export interface DataSource<B, R> {
-    getFinalizedBlocks(requests: RangeRequestList<R>, stopOnHead?: boolean): AsyncIterable<{blocks: B[]}>
-    getFinalizedHeight(): Promise<number>
-}
 
 
 export interface DumperOptions {
@@ -30,21 +24,29 @@ export interface DumperOptions {
 }
 
 
-export abstract class Dumper<B extends {hash: string, height: number}, R, O extends DumperOptions = DumperOptions> {
-    abstract getDataSource(): DataSource<B, R>
+export abstract class Dumper<B extends {hash: string, height: number}, O extends DumperOptions = DumperOptions> {
+    protected abstract getBlocks(range: Range): AsyncIterable<B[]>
 
-    abstract getDataRequest(): R
+    protected abstract getFinalizedHeight(): Promise<number>
 
-    abstract getPrevBlockHash(block: B): string
+    protected abstract getPrevBlockHash(block: B): string
 
-    setUpProgram(program: Command): void {}
+    protected setUpProgram(program: Command): void {}
 
-    process(batches: AsyncIterable<B[]>): AsyncIterable<{hash: string, height: number}[]> {
-        return batches
+    protected getDefaultChunkSize(): number {
+        return 64
+    }
+
+    protected getDefaultTopDirSize(): number {
+        return 1024
+    }
+
+    protected getLoggingNamespace(): string {
+        return 'sqd:dump'
     }
 
     @def
-    program(): Command {
+    private program(): Command {
         let program = new Command()
         program.requiredOption('-e, --endpoint <url>', 'RPC endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
         program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
@@ -60,26 +62,18 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
         return program
     }
 
-    getDefaultChunkSize(): number {
-        return 64
-    }
-
-    getDefaultTopDirSize(): number {
-        return 1024
-    }
-
     @def
-    options(): O {
+    protected options(): O {
         return this.program().parse().opts()
     }
 
     @def
-    log(): Logger {
-        return createLogger('sqd:dump')
+    protected log(): Logger {
+        return createLogger(this.getLoggingNamespace())
     }
 
     @def
-    range(): Range {
+    private range(): Range {
         let options = this.options()
         let range: Range = {from: 0}
         if (options.firstBlock) {
@@ -95,13 +89,13 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
     }
 
     @def
-    destination(): Fs {
+    protected destination(): Fs {
         let dest = assertNotNull(this.options().dest)
         return createFs(dest)
     }
 
     @def
-    rpc(): RpcClient {
+    protected rpc(): RpcClient {
         let options = this.options()
         return new RpcClient({
             url: options.endpoint,
@@ -113,11 +107,10 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
     }
 
     @def
-    prometheus() {
-        let src = this.getDataSource()
+    protected prometheus() {
         return new PrometheusServer(
             this.options().metrics ?? 0,
-            () => src.getFinalizedHeight(),
+            () => this.getFinalizedHeight(),
             this.rpc(),
             this.log().child('prometheus')
         )
@@ -130,7 +123,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
         }
         assertRange(range)
 
-        let height = new Throttler(() => this.getDataSource().getFinalizedHeight(), 60_000)
+        let height = new Throttler(() => this.getFinalizedHeight(), 60_000)
         let chainHeight = await height.get()
 
         let progress = new Progress({
@@ -147,25 +140,20 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
             )
         }, 5000)
 
-        let batchStream = this.getDataSource().getFinalizedBlocks([{
-            range,
-            request: this.getDataRequest()
-        }])
-
-        for await (let batch of batchStream) {
-            if (batch.blocks[0].height === from && prevHash) {
-                let parentHash = getShortHash(this.getPrevBlockHash(batch.blocks[0]))
+        for await (let blocks of this.getBlocks(range)) {
+            if (blocks[0].height === from && prevHash) {
+                let parentHash = getShortHash(this.getPrevBlockHash(blocks[0]))
                 if (parentHash !== prevHash) {
                     throw new ErrorMessage(
-                        `Block ${batch.blocks[0].height}#${getShortHash(batch.blocks[0].hash)} `  +
+                        `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
                         `is not a child of already archived block ${parentHash}`
                     )
                 }
             }
 
-            yield batch.blocks
+            yield blocks
 
-            progress.setCurrentValue(last(batch.blocks).height)
+            progress.setCurrentValue(last(blocks).height)
             if (chainHeight < rangeEnd(range)) {
                 chainHeight = Math.min(await height.get(), rangeEnd(range))
                 progress.setTargetValue(chainHeight)
@@ -188,7 +176,8 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
             }
 
             if (dest == null) {
-                for await (let bb of this.process(this.ingest())) {
+                for await (let bb of this.ingest()) {
+                    await waitDrain(process.stdout)
                     for (let block of bb) {
                         process.stdout.write(JSON.stringify(block) + '\n')
                     }
@@ -199,7 +188,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, R, O exte
                     topDirSize: this.options().topDirSize
                 })
                 await archive.appendRawBlocks({
-                    blocks: (nextBlock, prevHash) => this.process(this.ingest(nextBlock, prevHash)),
+                    blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
                     onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
