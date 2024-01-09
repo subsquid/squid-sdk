@@ -117,7 +117,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
             }
             if (rep.stateDiff) {
                 for (let diff of mapReplayStateDiff(header, transactionIndex, rep.stateDiff)) {
-                    block.stateDiffs.push(diff)
+                    if (diff.kind != '=') {
+                        block.stateDiffs.push(diff)
+                    }
                 }
             }
         }
