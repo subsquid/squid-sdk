@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 09 Jan 2024 15:50:08 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Jan 2024 20:23:26 GMT and should not be manually modified.
+
+## 1.12.2
+Tue, 09 Jan 2024 20:23:26 GMT
+
+### Patches
+
+- do not output '=' state diffs when ingesting data from RPC
 
 ## 1.12.1
 Tue, 09 Jan 2024 15:50:08 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.12.2",
+      "tag": "@subsquid/evm-processor_v1.12.2",
+      "date": "Tue, 09 Jan 2024 20:23:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "do not output '=' state diffs when ingesting data from RPC"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.12.1",
       "tag": "@subsquid/evm-processor_v1.12.1",
       "date": "Tue, 09 Jan 2024 15:50:08 GMT",
