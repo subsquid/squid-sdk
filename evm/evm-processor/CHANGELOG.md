@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Mon, 01 Jan 2024 14:37:34 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Jan 2024 15:50:08 GMT and should not be manually modified.
+
+## 1.12.1
+Tue, 09 Jan 2024 15:50:08 GMT
+
+### Patches
+
+- fix call trace parent-child relation setup
 
 ## 1.12.0
 Mon, 01 Jan 2024 14:37:34 GMT
