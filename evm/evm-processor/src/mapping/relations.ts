@@ -27,12 +27,15 @@ export function setUpRelations(block: Block): void {
             rec.transaction = tx
             tx.traces.push(rec)
         }
-
-        if (i > 0) {
-            let prev = block.traces[i - 1]
-            if (isChild(prev, rec)) {
-                rec.parent = prev
-                populateSubtraces(prev, rec)
+        for (let j = i + 1; j < block.traces.length; j++) {
+            let next = block.traces[j]
+            if (isDescendent(rec, next)) {
+                rec.children.push(next)
+                if (next.traceAddress.length == rec.traceAddress.length + 1) {
+                    next.parent = rec
+                }
+            } else {
+                break
             }
         }
     }
@@ -61,19 +64,11 @@ function addressCompare(a: number[], b: number[]): number {
 }
 
 
-function isChild(parent: Trace, child: Trace): boolean {
+function isDescendent(parent: Trace, child: Trace): boolean {
     if (parent.transactionIndex != child.transactionIndex) return false
-    if (parent.traceAddress.length > child.traceAddress.length) return false
+    if (parent.traceAddress.length >= child.traceAddress.length) return false
     for (let i = 0; i < parent.traceAddress.length; i++) {
         if (parent.traceAddress[i] != child.traceAddress[i]) return false
     }
     return true
-}
-
-
-function populateSubtraces(parent: Trace | undefined, child: Trace): void {
-    while (parent) {
-        parent.children.push(child)
-        parent = parent.parent
-    }
 }
