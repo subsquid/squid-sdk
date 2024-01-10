@@ -1,4 +1,4 @@
-ARG node=node:16-alpine
+ARG node=node:20-alpine
 FROM ${node} AS node
 
 
@@ -9,6 +9,15 @@ ADD . .
 RUN node common/scripts/install-run-rush.js install
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
+
+
+FROM builder AS solana-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-dump
+
+
+FROM node AS solana-dump
+COPY --from=solana-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-dump/bin/run.js"]
 
 
 FROM builder AS substrate-dump-builder
