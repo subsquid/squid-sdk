@@ -10,6 +10,7 @@ import {RecordValidator} from './composite/record'
 import {RefValidator} from './composite/ref'
 import {Sentinel} from './composite/sentinel'
 import {GetTaggedUnionCast, GetTaggedUnionSrc, TaggedUnion} from './composite/tagged-union'
+import {TupleValidator} from './composite/tuple'
 import {DataValidationError, ValidationFailure} from './error'
 import {GetCastType, GetSrcType, Validator} from './interface'
 
@@ -51,6 +52,14 @@ export function keyTaggedUnion<U extends Record<string, Validator<any>>>(
     variants: U
 ): Validator<GetKeyTaggedUnionCast<U>, GetKeyTaggedUnionSrc<U>> {
     return new KeyTaggedUnionValidator(variants)
+}
+
+
+export function tuple<T extends Validator<any>>(t: T): Validator<[GetCastType<T>], [GetSrcType<T>]>
+export function tuple<T1 extends Validator<any>, T2 extends Validator<any>>(t1: T1, t2: T2): Validator<[GetCastType<T1>, GetCastType<T2>], [GetSrcType<T1>, GetSrcType<T2>]>
+export function tuple<T1 extends Validator<any>, T2 extends Validator<any>, T3 extends Validator<any>>(t1: T1, t2: T2, t3: T3): Validator<[GetCastType<T1>, GetCastType<T2>, GetCastType<T3>], [GetSrcType<T1>, GetSrcType<T2>, GetSrcType<T3>]>
+export function tuple(...tuple: Validator<any>[]): Validator<any[]> {
+    return new TupleValidator(tuple)
 }
 
 

@@ -67,6 +67,24 @@ export const NAT: Validator<number> = {
 }
 
 
+export const BIG_NAT: Validator<bigint, string> = {
+    cast(value: unknown): bigint | ValidationFailure {
+        if (typeof value == 'string' && /^\d+$/.test(value)) {
+            return BigInt(value)
+        } else {
+            return new ValidationFailure(value, '{value} is not a string representing natural number')
+        }
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (typeof value == 'string' && /^\d+$/.test(value)) return
+        return new ValidationFailure(value, '{value} is not a string representing natural number')
+    },
+    phantom(): string {
+        return '0'
+    }
+}
+
+
 /**
  * Hex encoded binary string or natural number
  */
@@ -143,21 +161,22 @@ export const BYTES: Validator<Bytes> = {
 
 
 type Base58Bytes = string
+type Base64Bytes = string
 
 
 /**
  * Base58 encoded binary string
  */
 export const B58: Validator<Base58Bytes> = {
-    cast: function(value: unknown): Base58Bytes | ValidationFailure {
+    cast(value: unknown): Base58Bytes | ValidationFailure {
         if (isBase58(value)) return value
         return new ValidationFailure(value, `{value} is not a base58 string`)
     },
-    validate: function(value: unknown): ValidationFailure | undefined {
+    validate(value: unknown): ValidationFailure | undefined {
         if (isBase58(value)) return
         return new ValidationFailure(value, `{value} is not a base58 string`)
     },
-    phantom: function(): string {
+    phantom(): string {
         throw new Error('Function not implemented.')
     }
 }
@@ -166,4 +185,28 @@ export const B58: Validator<Base58Bytes> = {
 function isBase58(value: unknown): value is Base58Bytes {
     return typeof value == 'string' &&
         /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]*$/.test(value)
+}
+
+
+/**
+ * Base64 encoded binary string
+ */
+export const B64: Validator<Base64Bytes> = {
+    cast(value: unknown): Base58Bytes | ValidationFailure {
+        if (isBase64(value)) return value
+        return new ValidationFailure(value, `{value} is not a base64 string`)
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (isBase64(value)) return
+        return new ValidationFailure(value, `{value} is not a base64 string`)
+    },
+    phantom(): string {
+        throw new Error('Function not implemented.')
+    }
+}
+
+
+function isBase64(value: unknown): value is Base64Bytes {
+    return typeof value == 'string' &&
+        /^[0-9a-zA-Z+\/]*={0,2}$/.test(value)
 }

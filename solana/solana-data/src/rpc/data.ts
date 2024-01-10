@@ -1,14 +1,18 @@
 import {
     array,
     B58,
+    B64,
+    BIG_NAT,
     constant,
     GetSrcType,
+    INT,
     NAT,
     nullable,
     object,
     oneOf,
     option,
-    STRING
+    STRING,
+    tuple
 } from '@subsquid/util-internal-validation'
 import {Base58Bytes} from '../base'
 
@@ -50,10 +54,41 @@ export const TransactionMessage = object({
 export type TransactionMessage = GetSrcType<typeof TransactionMessage>
 
 
+export const TokenBalance = object({
+    accountIndex: NAT,
+    mint: B58,
+    owner: option(B58),
+    programId: option(B58),
+    uiTokenAmount: object({
+        amount: BIG_NAT,
+        decimals: NAT
+    })
+})
+
+
+export type TokenBalance = GetSrcType<typeof TokenBalance>
+
+
+export const Reward = object({
+    pubkey: B58,
+    lamports: INT,
+    postBalance: NAT,
+    rewardType: option(STRING),
+    commission: option(NAT)
+})
+
+
+export type Reward = GetSrcType<typeof Reward>
+
+
 export const TransactionMeta = object({
     computeUnitsConsumed: option(NAT),
     err: nullable(object({})),
     fee: NAT,
+    preBalances: array(NAT),
+    postBalances: array(NAT),
+    preTokenBalances: option(array(TokenBalance)),
+    postTokenBalances: option(array(TokenBalance)),
     innerInstructions: option(array(object({
         index: NAT,
         instructions: array(Instruction)
@@ -63,6 +98,11 @@ export const TransactionMeta = object({
         writable: array(B58)
     })),
     logMessages: array(STRING),
+    rewards: option(array(Reward)),
+    returnData: option(object({
+        programId: B58,
+        data: tuple(B64, constant('base64'))
+    }))
 })
 
 
@@ -91,7 +131,8 @@ export const GetBlock = object({
     blockhash: B58,
     parentSlot: NAT,
     previousBlockhash: B58,
-    transactions: option(array(Transaction))
+    transactions: option(array(Transaction)),
+    rewards: option(array(Reward))
 })
 
 
