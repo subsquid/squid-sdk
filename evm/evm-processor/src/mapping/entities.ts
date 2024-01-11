@@ -45,7 +45,7 @@ export class BlockHeader {
     gasUsed?: bigint
     timestamp?: number
     baseFeePerGas?: bigint
-    l1BlockNumber?: bigint
+    l1BlockNumber?: number
 
     constructor(
         height: number,

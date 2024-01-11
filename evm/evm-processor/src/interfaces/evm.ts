@@ -21,7 +21,11 @@ export interface EvmBlockHeader {
     gasUsed: bigint
     timestamp: number
     baseFeePerGas: bigint
-    l1BlockNumber?: number
+    /**
+     * This field is not supported by all currently deployed archives.
+     * Requesting it may cause internal error.
+     */
+    l1BlockNumber: number
 }
 
 

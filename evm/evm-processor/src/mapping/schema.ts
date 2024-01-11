@@ -37,7 +37,7 @@ export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive:
             gasUsed: withSentinel('BlockHeader.gasUsed', -1n, QTY),
             baseFeePerGas: withSentinel('BlockHeader.baseFeePerGas', -1n, QTY),
             timestamp: withSentinel('BlockHeader.timestamp', 0, natural),
-            l1BlockNumber: option(natural),
+            l1BlockNumber: withDefault(0, natural),
     })
     }
 }

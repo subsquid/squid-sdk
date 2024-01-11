@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "add l1BlockNumber to block fields",
+      "comment": "add `l1BlockNumber` to block fields",
       "type": "minor"
     }
   ],
