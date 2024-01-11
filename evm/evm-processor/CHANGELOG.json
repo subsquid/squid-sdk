@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.13.0",
+      "tag": "@subsquid/evm-processor_v1.13.0",
+      "date": "Thu, 11 Jan 2024 18:08:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `l1BlockNumber` to block fields"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.12.2",
       "tag": "@subsquid/evm-processor_v1.12.2",
       "date": "Tue, 09 Jan 2024 20:23:26 GMT",
