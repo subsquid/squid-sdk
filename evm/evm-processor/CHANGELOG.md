@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 09 Jan 2024 20:23:26 GMT and should not be manually modified.
+This log was last generated on Thu, 11 Jan 2024 18:08:14 GMT and should not be manually modified.
+
+## 1.13.0
+Thu, 11 Jan 2024 18:08:14 GMT
+
+### Minor changes
+
+- add `l1BlockNumber` to block fields
 
 ## 1.12.2
 Tue, 09 Jan 2024 20:23:26 GMT
