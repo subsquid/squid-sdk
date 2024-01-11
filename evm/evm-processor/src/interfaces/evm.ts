@@ -21,6 +21,7 @@ export interface EvmBlockHeader {
     gasUsed: bigint
     timestamp: number
     baseFeePerGas: bigint
+    l1BlockNumber?: number
 }
 
 
