@@ -13,6 +13,7 @@ export interface RpcDataSourceOptions {
     headPollInterval?: number
     newHeadTimeout?: number
     strideSize?: number
+    strideConcurrency?: number
 }
 
 
@@ -20,11 +21,13 @@ export class RpcDataSource {
     private rpc: Rpc
     private headPollInterval: number
     private strideSize: number
+    private strideConcurrency: number
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.headPollInterval = options.headPollInterval ?? 500
         this.strideSize = options.strideSize || 10
+        this.strideConcurrency = options.strideConcurrency || 5
         assert(this.strideSize >= 1)
     }
 
@@ -90,7 +93,7 @@ export class RpcDataSource {
         let prev: Block | undefined
 
         for await (let batch of concurrentMap(
-            5,
+            this.strideConcurrency,
             splits(),
             async s => {
                 let blocks = await getData(

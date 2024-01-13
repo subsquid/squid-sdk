@@ -46,7 +46,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
     }
 
     @def
-    private program(): Command {
+    protected program(): Command {
         let program = new Command()
         program.requiredOption('-e, --endpoint <url>', 'RPC endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
         program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
