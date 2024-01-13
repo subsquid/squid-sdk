@@ -21,7 +21,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
     @def
     protected options(): Options {
         let options = this.program().parse().opts<Options>()
-        options.endpointCapacity = options.strideConcurrency
+        options.endpointCapacity = options.strideConcurrency + 5
         return options
     }
 
