@@ -1,20 +1,50 @@
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import {FetchRequest, FetchResponse, HttpAgent, HttpClient} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
 
 
-export class HttpConnection implements Connection {
-    private agent: HttpAgent
-    private http: HttpClient
+class RpcHttpClient extends HttpClient {
+    fixUnsafeIntegers = false
 
-    constructor(private url: string, private log?: Logger) {
+    protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
+        let json = await res.text()
+        try {
+            if (this.fixUnsafeIntegers) {
+                json = fixUnsafeIntegers(json)
+            }
+            return JSON.parse(json)
+        } catch(err: any) {
+            throw new RpcProtocolError(1008, 'Server returned invalid JSON')
+        }
+    }
+}
+
+
+export interface HttpConnectionOptions {
+    url: string
+    fixUnsafeIntegers?: boolean
+    log?: Logger
+}
+
+
+export class HttpConnection implements Connection {
+    private url: string
+    private log?: Logger
+    private agent: HttpAgent
+    private http: RpcHttpClient
+
+    constructor(options: HttpConnectionOptions) {
+        this.url = options.url
+        this.log = options.log
         this.agent = new HttpAgent({
             keepAlive: true
         })
-        this.http = new HttpClient({
+        this.http = new RpcHttpClient({
             agent: this.agent
         })
+        this.http.fixUnsafeIntegers = options.fixUnsafeIntegers || false
     }
 
     close(err?: Error): void {
@@ -33,7 +63,7 @@ export class HttpConnection implements Connection {
             json: req,
             httpTimeout: timeout,
             retryAttempts: 0
-        }).then(decodeBody)
+        })
         if (req.id !== res.id) {
             throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
         }
@@ -45,7 +75,7 @@ export class HttpConnection implements Connection {
             json: batch,
             httpTimeout: timeout,
             retryAttempts: 0
-        }).then(decodeBody)
+        })
         if (!Array.isArray(res)) {
             throw new RpcProtocolError(1008, `Response for a batch request should be an array`)
         }
@@ -74,14 +104,5 @@ export class HttpConnection implements Connection {
             }
         }
         return res
-    }
-}
-
-
-function decodeBody(body: string | any): any {
-    if (typeof body == 'string') {
-        return JSON.parse(body)
-    } else {
-        return body
     }
 }

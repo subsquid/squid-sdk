@@ -102,8 +102,13 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
             capacity: options.endpointCapacity || 10,
             maxBatchCallSize: options.endpointMaxBatchCallSize,
             rateLimit: options.endpointRateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            fixUnsafeIntegers: this.fixUnsafeIntegers()
         })
+    }
+
+    protected fixUnsafeIntegers(): boolean {
+        return false
     }
 
     @def

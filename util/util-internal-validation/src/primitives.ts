@@ -25,14 +25,14 @@ export const STRING: Validator<string> = {
  */
 export const INT: Validator<number> = {
     cast(value: unknown): number | ValidationFailure {
-        if (isInteger(value)) {
+        if (isSafeInteger(value)) {
             return value
         } else {
             return new ValidationFailure(value, '{value} is not an integer')
         }
     },
     validate(value: unknown): ValidationFailure | undefined {
-        if (isInteger(value)) return
+        if (isSafeInteger(value)) return
         return new ValidationFailure(value, '{value} is not an integer')
     },
     phantom(): number {
@@ -41,8 +41,13 @@ export const INT: Validator<number> = {
 }
 
 
-function isInteger(value: unknown): value is number {
+function isSafeInteger(value: unknown): value is number {
     return typeof value == 'number' && Number.isSafeInteger(value)
+}
+
+
+function isBigNat(value: unknown): value is string {
+    return typeof value == 'string' && /^\d+$/.test(value)
 }
 
 
@@ -51,14 +56,14 @@ function isInteger(value: unknown): value is number {
  */
 export const NAT: Validator<number> = {
     cast(value: unknown): number | ValidationFailure {
-        if (isInteger(value) && value >= 0) {
+        if (isSafeInteger(value) && value >= 0) {
             return value
         } else {
             return new ValidationFailure(value, '{value} is not a safe natural number')
         }
     },
     validate(value: unknown): ValidationFailure | undefined {
-        if (isInteger(value) && value >= 0) return
+        if (isSafeInteger(value) && value >= 0) return
         return new ValidationFailure(value, '{value} is not a safe natural number')
     },
     phantom(): number {
@@ -69,18 +74,36 @@ export const NAT: Validator<number> = {
 
 export const BIG_NAT: Validator<bigint, string> = {
     cast(value: unknown): bigint | ValidationFailure {
-        if (typeof value == 'string' && /^\d+$/.test(value)) {
+        if (isBigNat(value)) {
             return BigInt(value)
         } else {
             return new ValidationFailure(value, '{value} is not a string representing natural number')
         }
     },
     validate(value: unknown): ValidationFailure | undefined {
-        if (typeof value == 'string' && /^\d+$/.test(value)) return
+        if (isBigNat(value)) return
         return new ValidationFailure(value, '{value} is not a string representing natural number')
     },
     phantom(): string {
         return '0'
+    }
+}
+
+
+export const ANY_NAT: Validator<bigint, number | string> = {
+    cast(value: unknown): bigint | ValidationFailure {
+        if (isSafeInteger(value) && value >= 0 || isBigNat(value)) {
+            return BigInt(value)
+        } else {
+            return new ValidationFailure(value, '{value} is not a natural number')
+        }
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (isSafeInteger(value) && value >= 0 || isBigNat(value)) return
+        return new ValidationFailure(value, '{value} is not a natural number')
+    },
+    phantom(): number | string {
+        return 0
     }
 }
 

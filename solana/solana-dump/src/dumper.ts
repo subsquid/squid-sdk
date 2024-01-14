@@ -25,6 +25,10 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return options
     }
 
+    protected fixUnsafeIntegers(): boolean {
+        return true
+    }
+
     protected getLoggingNamespace(): string {
         return 'sqd:solana-dump'
     }

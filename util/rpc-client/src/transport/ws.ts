@@ -1,3 +1,4 @@
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
@@ -17,11 +18,13 @@ export interface WsConnectionOptions {
     url: string
     onNotificationMessage?: (msg: RpcNotification) => void
     onReset?: (err: Error) => void
+    fixUnsafeIntegers?: boolean
 }
 
 
 export class WsConnection implements Connection {
     private url: string
+    private fixUnsafeIntegers: boolean
     private onNotificationMessage?: (msg: RpcNotification) => void
     private onReset?: (err: Error) => void
     private _ws?: WebSocket
@@ -30,6 +33,7 @@ export class WsConnection implements Connection {
 
     constructor(options: WsConnectionOptions) {
         this.url = options.url
+        this.fixUnsafeIntegers = options.fixUnsafeIntegers || false
         this.onNotificationMessage = options.onNotificationMessage
         this.onReset = options.onReset
     }
@@ -110,6 +114,9 @@ export class WsConnection implements Connection {
         }
         let msg: RpcIncomingMessage | RpcIncomingMessage[]
         try {
+            if (this.fixUnsafeIntegers) {
+                data = fixUnsafeIntegers(data)
+            }
             msg = JSON.parse(data)
         } catch(e: any) {
             throw new RpcProtocolError(1007, 'Received invalid JSON message')

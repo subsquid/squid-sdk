@@ -56,6 +56,9 @@ export interface FetchRequest extends RequestInit {
 }
 
 
+export type FetchResponse = Response
+
+
 export class HttpClient {
     protected log?: Logger
     protected headers?: Record<string, string | number | bigint>
@@ -300,7 +303,7 @@ export class HttpClient {
         return httpResponse
     }
 
-    protected async handleResponseBody(req: FetchRequest, res: Response): Promise<any> {
+    protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
         let contentType = (res.headers.get('content-type') || '').split(';')[0]
 
         if (contentType == 'application/json') {
