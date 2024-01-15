@@ -9,6 +9,7 @@ class RpcHttpClient extends HttpClient {
     fixUnsafeIntegers = false
 
     protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
+        if (!res.ok) return super.handleResponseBody(req, res)
         let json = await res.text()
         try {
             if (this.fixUnsafeIntegers) {
@@ -16,7 +17,7 @@ class RpcHttpClient extends HttpClient {
             }
             return JSON.parse(json)
         } catch(err: any) {
-            throw new RpcProtocolError(1008, 'Server returned invalid JSON')
+            throw new RpcProtocolError(1008, `server returned invalid JSON: ${err.message}`)
         }
     }
 }
