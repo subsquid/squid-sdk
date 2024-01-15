@@ -4,7 +4,11 @@ import {Block, Log, StateDiff, Trace, Transaction} from '../mapping/entities'
 import {DataRequest} from '../interfaces/data-request'
 
 
-function buildLogFilter(dataRequest: DataRequest): EntityFilter<Log, {transaction?: boolean}> {
+function buildLogFilter(dataRequest: DataRequest): EntityFilter<Log, {
+    transaction?: boolean,
+    transactionLogs?: boolean,
+    transactionTraces?: boolean
+}> {
     let items = new EntityFilter()
     for (let req of dataRequest.logs || []) {
         let {address, topic0, topic1, topic2, topic3, ...relations} = req
@@ -40,6 +44,7 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
 
 function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
     transaction?: boolean
+    transactionLogs?: boolean
     subtraces?: boolean
     parents?: boolean
 }> {
@@ -140,6 +145,16 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel.transaction) {
                 include.addTransaction(log.transaction)
             }
+            if (rel.transactionLogs && log.transaction) {
+                for (let sibling of log.transaction.logs) {
+                    include.addLog(sibling)
+                }
+            }
+            if (rel.transactionTraces && log.transaction) {
+                for (let trace of log.transaction.traces) {
+                    include.addTrace(trace)
+                }
+            }
         }
     }
 
@@ -181,6 +196,11 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             }
             if (rel.transaction) {
                 include.addTransaction(trace.transaction)
+            }
+            if (rel.transactionLogs && trace.transaction) {
+                for (let log of trace.transaction.logs) {
+                    include.addLog(log)
+                }
             }
         }
     }

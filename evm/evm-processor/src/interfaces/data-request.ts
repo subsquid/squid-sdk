@@ -20,6 +20,8 @@ export interface LogRequest {
     topic2?: Bytes32[]
     topic3?: Bytes32[]
     transaction?: boolean
+    transactionTraces?: boolean
+    transactionLogs?: boolean
 }
 
 
@@ -41,6 +43,7 @@ export interface TraceRequest {
     suicideRefundAddress?: Bytes[]
     rewardAuthor?: Bytes20[]
     transaction?: boolean
+    transactionLogs?: boolean
     subtraces?: boolean
     parents?: boolean
 }
