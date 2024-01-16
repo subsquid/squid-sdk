@@ -345,7 +345,7 @@ export class RpcClient {
                     req.reject(err)
                 }
                 if (this.backoffEpoch == backoffEpoch) {
-                    this.backoff(err)
+                    this.backoff(err, req)
                 }
             } else {
                 req.reject(err)
