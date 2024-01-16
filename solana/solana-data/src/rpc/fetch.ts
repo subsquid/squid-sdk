@@ -17,15 +17,14 @@ interface HeightAndSlot {
 
 
 export async function getFinalizedTop(rpc: Rpc): Promise<HeightAndSlot> {
-    let head = await rpc.getRecentHead('finalized')
+    let {context: {slot}} = await rpc.getLatestBlockhash('finalized')
     let attempts = 10
     while (attempts) {
-        let block = await rpc.getBlockInfo('finalized', head.slot)
+        let block = await rpc.getBlockInfo('finalized', slot)
         if (block) {
-            assert(block.blockhash === head.blockHash)
             assert(block.blockHeight != null)
             return {
-                slot: head.slot,
+                slot,
                 height: block.blockHeight
             }
         } else {
@@ -33,7 +32,7 @@ export async function getFinalizedTop(rpc: Rpc): Promise<HeightAndSlot> {
             attempts -= 1
         }
     }
-    throw new Error(`Failed to getBlock at finalized slot ${head.slot} 10 times in a row`)
+    throw new Error(`Failed to getBlock at finalized slot ${slot} 10 times in a row`)
 }
 
 

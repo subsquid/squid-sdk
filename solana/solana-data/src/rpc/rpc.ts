@@ -34,14 +34,10 @@ export class Rpc {
         return this.client.batchCall(batch, {priority: this.priority, ...options})
     }
 
-    async getRecentHead(commitment: Commitment): Promise<BlockId> {
-        let res = await this.call('getRecentBlockhash', [{commitment}], {
-            validateResult: getResultValidator(GetRecentBlockhash)
+    getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash> {
+        return this.call('getLatestBlockhash', [{commitment, minContextSlot}], {
+            validateResult: getResultValidator(LatestBlockhash)
         })
-        return {
-            blockHash: res.value.blockhash,
-            slot: res.context.slot
-        }
     }
 
     getBlocks(commitment: Commitment, startSlot: number, endSlot: number): Promise<number[]> {
@@ -93,10 +89,18 @@ export class Rpc {
 }
 
 
-const GetRecentBlockhash = object({
-    context: object({slot: NAT}),
-    value: object({blockhash: B58})
+const LatestBlockhash = object({
+    context: object({
+        slot: NAT
+    }),
+    value: object({
+        blockhash: B58,
+        lastValidBlockHeight: NAT
+    })
 })
+
+
+export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
 
 
 export interface GetBlockOptions {
