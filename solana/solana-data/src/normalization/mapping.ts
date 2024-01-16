@@ -84,8 +84,8 @@ function mapRpcTransaction(
         instructions.push({
             transactionIndex,
             instructionAddress: [instructionIndex],
-            accounts: si.accounts.map(getAccount),
             programId: getAccount(si.programIdIndex),
+            accounts: si.accounts.map(getAccount),
             data: si.data
         })
         if (src.meta?.innerInstructions) {

@@ -375,8 +375,11 @@ export class RpcClient {
         }
     }
 
-    private backoff(reason: Error): void {
-        this.log?.warn({reason: reason.toString()}, 'connection failure')
+    private backoff(reason: Error, req?: Req): void {
+        this.log?.warn({
+            reason: reason.toString(),
+            rpcCall: req?.call
+        }, 'connection failure')
         this.backoffEpoch += 1
         this.connectionErrorsInRow += 1
         this.connectionErrors += 1
