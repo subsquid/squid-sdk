@@ -13,15 +13,42 @@ interface InvokeResultToken {
     kind: 'invoke-result'
     programId: Base58Bytes
     success: boolean
+    error?: string
 }
 
 
-interface MessageToken {
-    kind: 'message'
+export interface ProgramLogMessage {
+    kind: 'log'
+    message: string
 }
 
 
-export type Token = InvokeToken | InvokeResultToken | MessageToken
+export interface ComputeUnitsMessage {
+    kind: 'cu'
+    programId: Base58Bytes
+    consumed: bigint
+    available: bigint
+}
+
+
+export interface ProgramDataMessage {
+    kind: 'data'
+    message: string
+}
+
+
+export interface UnclassifiedMessage {
+    kind: 'other'
+    message: string
+}
+
+
+export type Token = InvokeToken
+    | InvokeResultToken
+    | ProgramLogMessage
+    | ComputeUnitsMessage
+    | ProgramDataMessage
+    | UnclassifiedMessage
 
 
 export function toToken(msg: string): Token {
@@ -39,24 +66,48 @@ export function toToken(msg: string): Token {
         success: true
     }
 
-    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed/.exec(msg)
+    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
     if (m) return {
         kind: 'invoke-result',
         programId: m[1],
-        success: false
+        success: false,
+        error: m[2]
+    }
+
+    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) consumed (\d+) of (\d+) compute units$/.exec(msg)
+    if (m) return {
+        kind: 'cu',
+        programId: m[1],
+        available: BigInt(m[3]),
+        consumed: BigInt(m[2])
+    }
+
+    m = /^Program log: (.*)$/.exec(msg)
+    if (m) return {
+        kind: 'log',
+        message: m[1]
+    }
+
+    m = /^Program data: (.*)$/.exec(msg)
+    if (m) return {
+        kind: 'data',
+        message: m[1]
     }
 
     return {
-        kind: 'message'
+        kind: 'other',
+        message: msg
     }
 }
 
 
 export interface InstructionRecord {
-    success: boolean
-    stackHeight: number
+    kind: 'instruction'
     programId: Base58Bytes
-    log: (string | InstructionRecord)[]
+    stackHeight: number
+    log: (InstructionRecord | ComputeUnitsMessage | ProgramLogMessage | ProgramDataMessage | UnclassifiedMessage)[]
+    success: boolean
+    error?: string
 }
 
 
@@ -107,17 +158,13 @@ export class LogParser {
     }
 
     private invoke(invoke: InvokeToken): InstructionRecord {
-        let log: (string | InstructionRecord)[] = []
+        let log: InstructionRecord['log'] = []
         let result: InvokeResultToken
 
         LOOP: while (true) {
             let msg = this.message()
             let token = toToken(msg)
             switch(token.kind) {
-                case 'message':
-                    this.pos += 1
-                    log.push(msg)
-                    break
                 case 'invoke':
                     this.assert(
                         token.stackHeight > invoke.stackHeight,
@@ -134,17 +181,37 @@ export class LogParser {
                     this.pos += 1
                     result = token
                     break LOOP
+                case 'cu':
+                    this.assert(
+                        token.programId === invoke.programId,
+                        'programId of compute units message does not match the programId of the invocation'
+                    )
+                    log.push(token)
+                    this.pos += 1
+                    break
+                case 'log':
+                case 'other':
+                    log.push(token)
+                    this.pos += 1
+                    break
                 default:
                     throw unexpectedCase()
             }
         }
 
-        return {
-            success: result.success,
-            stackHeight: invoke.stackHeight,
+        let rec: InstructionRecord = {
+            kind: 'instruction',
             programId: invoke.programId,
+            stackHeight: invoke.stackHeight,
+            success: result.success,
             log
         }
+
+        if (result.error) {
+            rec.error = result.error
+        }
+
+        return rec
     }
 
     private message(): string {
