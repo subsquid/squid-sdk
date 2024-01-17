@@ -13,7 +13,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node lib/test.js"
   },
   "dependencies": {
     "@subsquid/logger": "^1.3.2",
