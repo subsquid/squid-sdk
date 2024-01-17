@@ -1,4 +1,4 @@
-import {assertNotNull, weakMemo} from '@subsquid/util-internal'
+import {assertNotNull, groupBy, weakMemo} from '@subsquid/util-internal'
 import {EntityFilter, FilterBuilder} from '@subsquid/util-internal-processor-tools'
 import {Block, Log, StateDiff, Trace, Transaction} from '../mapping/entities'
 import {DataRequest} from '../interfaces/data-request'
@@ -135,8 +135,11 @@ class IncludeSet {
 export function filterBlock(block: Block, dataRequest: DataRequest): void {
     let items = getItemFilter(dataRequest)
 
-    let include = new IncludeSet()
+    let logsByTransaction = groupBy(block.logs, log => log.transactionIndex)
+    let tracesByTransaction = groupBy(block.traces, trace => trace.transactionIndex)
 
+    let include = new IncludeSet()
+    
     if (items.logs.present()) {
         for (let log of block.logs) {
             let rel = items.logs.match(log)
@@ -145,13 +148,15 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel.transaction) {
                 include.addTransaction(log.transaction)
             }
-            if (rel.transactionLogs && log.transaction) {
-                for (let sibling of log.transaction.logs) {
+            if (rel.transactionLogs) {
+                let logs = logsByTransaction.get(log.transactionIndex) ?? []
+                for (let sibling of logs) {
                     include.addLog(sibling)
                 }
             }
-            if (rel.transactionTraces && log.transaction) {
-                for (let trace of log.transaction.traces) {
+            if (rel.transactionTraces) {
+                let traces = tracesByTransaction.get(log.transactionIndex) ?? []
+                for (let trace of traces) {
                     include.addTrace(trace)
                 }
             }
@@ -197,8 +202,9 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel.transaction) {
                 include.addTransaction(trace.transaction)
             }
-            if (rel.transactionLogs && trace.transaction) {
-                for (let log of trace.transaction.logs) {
+            if (rel.transactionLogs) {
+                let logs = logsByTransaction.get(trace.transactionIndex) ?? []
+                for (let log of logs) {
                     include.addLog(log)
                 }
             }
