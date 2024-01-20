@@ -60,7 +60,7 @@ export class Runner<R, S> {
                 state = await this.processFinalizedBlocks({
                     state,
                     src: archive,
-                    shouldStopOnHead: !!hot && this.config.database.supportsHotBlocks
+                    shouldStopOnHead: !!hot
                 })
                 if (this.getLeftRequests(state).length == 0) return
             }
