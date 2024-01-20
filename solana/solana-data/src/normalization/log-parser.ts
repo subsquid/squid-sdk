@@ -105,9 +105,9 @@ export interface InstructionRecord {
     kind: 'instruction'
     programId: Base58Bytes
     stackHeight: number
-    log: (InstructionRecord | ComputeUnitsMessage | ProgramLogMessage | ProgramDataMessage | UnclassifiedMessage)[]
     success: boolean
     error?: string
+    log: (InstructionRecord | ComputeUnitsMessage | ProgramLogMessage | ProgramDataMessage | UnclassifiedMessage)[]
 }
 
 
@@ -116,7 +116,7 @@ const ParseFailure = new Error('parsing failure')
 
 export class LogParser {
     private pos = 0
-    private records: InstructionRecord[] = []
+    private instructions: InstructionRecord[] = []
     private success = true
     private failure?: string
 
@@ -141,7 +141,7 @@ export class LogParser {
     }
 
     getResult(): InstructionRecord[] {
-        return this.records
+        return this.instructions
     }
 
     getPos(): number {
@@ -153,7 +153,7 @@ export class LogParser {
             let token = toToken(this.message())
             this.assert(token.kind === 'invoke', 'invoke message expected')
             this.pos += 1
-            this.records.push(this.invoke(token))
+            this.instructions.push(this.invoke(token))
         }
     }
 
