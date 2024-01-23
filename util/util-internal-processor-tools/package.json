@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-processor-tools",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Common tools for data fetching and mapping execution",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
