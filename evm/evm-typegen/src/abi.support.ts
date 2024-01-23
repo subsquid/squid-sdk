@@ -40,7 +40,7 @@ export class Func<Args extends any[], FieldArgs, Result> {
     }
 
     is(rec: FuncRecord): boolean {
-        let sighash = rec.sighash ? rec.sighash : rec.input.slice(0, 6)
+        let sighash = rec.sighash ? rec.sighash : rec.input.slice(0, 10)
         return sighash === this.sighash
     }
 
