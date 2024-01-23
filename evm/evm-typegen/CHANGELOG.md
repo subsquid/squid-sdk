@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jan 2024 16:47:41 GMT and should not be manually modified.
+
+## 3.3.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add `.is()` methods to support classes
 
 ## 3.2.4
 Fri, 01 Dec 2023 16:55:51 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 11 Jan 2024 18:08:14 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jan 2024 16:47:41 GMT and should not be manually modified.
+
+## 1.14.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add transaction items to log and trace requests
 
 ## 1.13.0
 Thu, 11 Jan 2024 18:08:14 GMT
