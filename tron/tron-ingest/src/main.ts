@@ -1,6 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
-import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
+import {FileOrUrl, nat} from '@subsquid/util-internal-commander'
 import {createHttpServer, HttpContext, waitForInterruption} from '@subsquid/util-internal-http-server'
 import {assertRange, Range} from '@subsquid/util-internal-range'
 import {Command} from 'commander'

@@ -1,10 +1,9 @@
 
-kusama:
+tron:
 	@node lib/main.js \
-		-e https://kusama-rpc.polkadot.io \
-		--first-block 2672251 \
-		--last-block 2672251 \
-		> blocks.temp.jsonl
+		--raw-archive s3://tron-mainnet-raw \
+		--first-block 0 \
+		--last-block 0
 
 
-.PHONY: kusama
+.PHONY: mainnet

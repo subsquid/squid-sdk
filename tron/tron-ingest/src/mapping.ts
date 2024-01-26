@@ -8,7 +8,7 @@ function mapBlockHeader(src: raw.Block): BlockHeader {
         hash: src.blockID,
         height: src.block_header.raw_data.number || 0,
         parentHash: src.block_header.raw_data.parentHash,
-        timestamp: src.block_header.raw_data.timestamp,
+        timestamp: src.block_header.raw_data.timestamp || 0,
         txTrieRoot: src.block_header.raw_data.txTrieRoot,
         version: src.block_header.raw_data.version,
         witnessAddress: src.block_header.raw_data.witness_address,
@@ -19,12 +19,11 @@ function mapBlockHeader(src: raw.Block): BlockHeader {
 
 function mapTransaction(src: raw.Transaction, info?: raw.TransactionInfo): Transaction {
     assert(src.raw_data.contract.length == 1)
-    if (src.ret) assert(src.ret.length == 1)
     if (info) assert(info.contractResult.length == 1)
     let contract = src.raw_data.contract[0]
     return {
         hash: src.txID,
-        ret: src.ret?.[0].contractRet,
+        ret: src.ret,
         signature: src.signature,
         type: contract.type,
         parameter: contract.parameter,

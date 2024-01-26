@@ -17,9 +17,9 @@ export interface Contract {
 
 export interface TransactionRawData {
     contract: Contract[]
-    ref_block_bytes: string
-    ref_block_hash: string
-    expiration: number
+    ref_block_bytes?: string
+    ref_block_hash?: string
+    expiration?: number
     fee_limit?: number
     timestamp?: number
 }
@@ -46,7 +46,7 @@ export interface CallValueInfo {
 export interface InternalTransaction {
     hash: string
     caller_address: string
-    transferTo_address: string
+    transferTo_address?: string
     callValueInfo: CallValueInfo[]
     note: string
     rejected?: boolean
@@ -74,13 +74,13 @@ export interface TransactionInfo {
 
 
 export interface TransactionResult {
-    contractRet: string
+    contractRet?: string
 }
 
 
 export interface Transaction {
     ret?: TransactionResult[]
-    signature: string[]
+    signature?: string[]
     txID: string
     raw_data: TransactionRawData
     raw_data_hex: string
@@ -92,14 +92,14 @@ export interface BlockRawData {
     txTrieRoot: string
     witness_address: string
     parentHash: string
-    version: number
-    timestamp: number
+    version?: number
+    timestamp?: number
 }
 
 
 export interface BlockHeader {
     raw_data: BlockRawData
-    witness_signature: string
+    witness_signature?: string
 }
 
 

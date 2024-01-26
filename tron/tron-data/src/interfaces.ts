@@ -3,10 +3,10 @@ export interface BlockHeader {
     hash: string
     parentHash: string
     txTrieRoot: string
-    version: number
+    version?: number
     timestamp: number
     witnessAddress: string
-    witnessSignature: string
+    witnessSignature?: string
 }
 
 
@@ -19,17 +19,22 @@ export interface Log {
 }
 
 
+export interface TransactionResult {
+    contractRet?: string
+}
+
+
 export interface Transaction {
     hash: string
-    ret?: string
-    signature: string[]
+    ret?: TransactionResult[]
+    signature?: string[]
     type: string
     parameter: any
     permissionId?: number
-    refBlockBytes: string
-    refBlockHash: string
+    refBlockBytes?: string
+    refBlockHash?: string
     feeLimit?: number
-    expiration: number
+    expiration?: number
     timestamp?: number
     rawDataHex: string
     fee?: number
@@ -61,7 +66,7 @@ export interface InternalTransaction {
     transactionHash: string
     hash: string
     callerAddress: string
-    transferToAddress: string
+    transferToAddress?: string
     callValueInfo: CallValueInfo[]
     note: string
     rejected?: boolean

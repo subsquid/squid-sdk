@@ -1,3 +1,4 @@
+import {TransactionResult} from '@subsquid/tron-data'
 import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
 import {PartialBlockHeader} from './interfaces/data-partial'
 
@@ -22,7 +23,7 @@ export class BlockHeader implements PartialBlockHeader {
 
 export class Transaction {
     hash: string
-    ret?: string
+    ret?: TransactionResult[]
     signature?: string[]
     type?: string
     parameter?: any
