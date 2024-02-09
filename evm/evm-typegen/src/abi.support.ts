@@ -1,12 +1,11 @@
 import assert from 'assert'
 import * as ethers from 'ethers'
 
-
-export interface LogRecord {
+export interface EventRecord {
     topics: string[]
     data: string
 }
-
+export type LogRecord = EventRecord
 
 export class LogEvent<Args> {
     private fragment: ethers.EventFragment
@@ -17,11 +16,19 @@ export class LogEvent<Args> {
         this.fragment = fragment
     }
 
-    decode(rec: LogRecord): Args {
+    is(rec: EventRecord): boolean {
+        return rec.topics[0] === this.topic
+    }
+
+    decode(rec: EventRecord): Args {
         return this.abi.decodeEventLog(this.fragment, rec.data, rec.topics) as any as Args
     }
 }
 
+export interface FuncRecord {
+    sighash?: string
+    input: string
+}
 
 export class Func<Args extends any[], FieldArgs, Result> {
     private fragment: ethers.FunctionFragment
@@ -32,7 +39,15 @@ export class Func<Args extends any[], FieldArgs, Result> {
         this.fragment = fragment
     }
 
-    decode(input: ethers.BytesLike): Args & FieldArgs {
+    is(rec: FuncRecord): boolean {
+        let sighash = rec.sighash ? rec.sighash : rec.input.slice(0, 10)
+        return sighash === this.sighash
+    }
+
+    decode(input: ethers.BytesLike): Args & FieldArgs
+    decode(rec: FuncRecord): Args & FieldArgs
+    decode(inputOrRec: ethers.BytesLike | FuncRecord): Args & FieldArgs {
+        const input = ethers.isBytesLike(inputOrRec) ? inputOrRec : inputOrRec.input
         return this.abi.decodeFunctionData(this.fragment, input) as any as Args & FieldArgs
     }
 

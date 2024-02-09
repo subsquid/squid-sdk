@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "4.0.1",
+      "tag": "@subsquid/util-internal-processor-tools_v4.0.1",
+      "date": "Tue, 23 Jan 2024 16:47:41 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "always switch to RPC after reaching the archive head (even for databases that don't support hot blocks)"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.0",
       "tag": "@subsquid/util-internal-processor-tools_v4.0.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "3.3.0",
+      "tag": "@subsquid/evm-typegen_v3.3.0",
+      "date": "Tue, 23 Jan 2024 16:47:41 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `.is()` methods to support classes"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.4",
       "tag": "@subsquid/evm-typegen_v3.2.4",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
