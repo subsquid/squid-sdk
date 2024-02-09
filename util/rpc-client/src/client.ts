@@ -376,14 +376,24 @@ export class RpcClient {
     }
 
     private backoff(reason: Error, req?: Req): void {
-        this.log?.warn({
-            reason: reason.toString(),
-            rpcCall: req?.call
-        }, 'connection failure')
         this.backoffEpoch += 1
         this.connectionErrorsInRow += 1
         this.connectionErrors += 1
-        this.log?.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        if (this.log?.isWarn()) {
+            let httpResponseBody = undefined
+            if (reason instanceof HttpError &&
+                reason.response.body &&
+                !reason.response.headers.get('content-type')?.includes('text/html')
+            ) {
+                httpResponseBody = reason.response.body
+            }
+            this.log.warn({
+                reason: reason.toString(),
+                httpResponseBody,
+                rpcCall: req?.call
+            }, 'connection failure')
+            this.log.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        }
     }
 
     private getBackoffPause(): number {
