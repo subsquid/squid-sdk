@@ -132,6 +132,8 @@ export class ArchiveLayout {
             nextBlock = top
         }
 
+        if (nextBlock > rangeEnd(range)) return
+
         const getNextChunk = (first: HashAndHeight, last: HashAndHeight): Fs => {
             assert(nextBlock == first.height)
             assert(first.height <= last.height)

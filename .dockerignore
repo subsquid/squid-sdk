@@ -16,11 +16,14 @@
 /common/autoinstallers/*/.npmrc
 **/.rush/temp/
 
+# Our temprorary files (e.g. ad-hoc scripts)
+*.temp.*
+*.temp
+
 # IDE and tools
 .git
 .idea
 *.log
-
 
 # READMEs and docs
 *.md
