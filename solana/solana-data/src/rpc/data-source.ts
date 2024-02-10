@@ -102,9 +102,6 @@ export class RpcDataSource {
                     s.slots,
                     s.request
                 )
-                for (let b of blocks) {
-                    assert(b, 'all blocks are supposed to be confirmed')
-                }
                 return {
                     blocks: blocks as Block[],
                     isHead: s.isHead

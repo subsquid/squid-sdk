@@ -129,7 +129,7 @@ export async function getData(
     commitment: Commitment,
     slotRange: FiniteRange,
     req: DataRequest
-): Promise<(Block | null)[]> {
+): Promise<Block[]> {
     let slots: number[] = []
 
     for (let slot = slotRange.from; slot <= slotRange.to ; slot++) {
@@ -143,13 +143,13 @@ export async function getData(
         transactionDetails: req.transactions ? 'full' : 'none'
     })
 
-    let blocks: (Block | null)[] = []
+    let blocks: Block[] = []
 
     for (let i = 0; i < result.length; i++) {
         let block = result[i]
         if (block === undefined) continue
         if (block == null) {
-            blocks.push(null)
+            throw new Error(`Block at slot ${slots[i]} is not conformed with ${commitment} commitment`)
         } else {
             assert(block.blockHeight != null)
             let slot = slotRange.from + i
