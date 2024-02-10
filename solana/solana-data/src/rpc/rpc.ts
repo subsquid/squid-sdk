@@ -1,4 +1,4 @@
-import type {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, RpcProtocolError} from '@subsquid/rpc-client'
 import {CallOptions, RpcError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
@@ -81,10 +81,28 @@ export class Rpc {
             let params = options ? [slot, options] : [slot]
             call[i] = {method: 'getBlock', params}
         }
-        return this.batchCall(call, {
+        return this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
+    }
+
+    private async reduceBatchOnRetry<T=any>(batch: {method: string, params?: any[]}[], options: CallOptions<T>): Promise<T[]>  {
+        if (batch.length <= 1) return this.batchCall(batch, options)
+
+        let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
+            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) return
+            throw err
+        })
+
+        if (result) return result
+
+        let pack = await Promise.all([
+            this.reduceBatchOnRetry(batch.slice(0, Math.ceil(batch.length / 2)), options),
+            this.reduceBatchOnRetry(batch.slice(Math.ceil(batch.length / 2)), options),
+        ])
+
+        return pack.flat()
     }
 }
 
