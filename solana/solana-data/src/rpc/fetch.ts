@@ -3,8 +3,8 @@ import {last, wait} from '@subsquid/util-internal'
 import {FiniteRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Commitment} from '../base'
-import {Block, DataRequest} from './data'
-import {Rpc} from './rpc'
+import {Block, DataRequest, GetBlock} from './data'
+import {GetBlockOptions, Rpc} from './rpc'
 
 
 const log = createLogger('sqd:solana-data')
@@ -136,21 +136,18 @@ export async function getData(
         slots.push(slot)
     }
 
-    let result = await rpc.getBlockBatch(slots, {
+    let result = await getSlots(rpc, slots, {
         commitment,
         maxSupportedTransactionVersion: 0,
         rewards: !!req.rewards,
         transactionDetails: req.transactions ? 'full' : 'none'
-    })
+    }, 1)
 
     let blocks: Block[] = []
 
     for (let i = 0; i < result.length; i++) {
         let block = result[i]
-        if (block === undefined) continue
-        if (block == null) {
-            throw new Error(`Block at slot ${slots[i]} is not conformed with ${commitment} commitment`)
-        } else {
+        if (block) {
             assert(block.blockHeight != null)
             let slot = slotRange.from + i
             blocks.push({
@@ -163,6 +160,32 @@ export async function getData(
     }
 
     return blocks
+}
+
+
+async function getSlots(rpc: Rpc, slots: number[], options: GetBlockOptions, depth: number): Promise<(GetBlock | undefined)[]> {
+    let result = await rpc.getBlockBatch(slots, options)
+    let missing: number[] = []
+
+    for (let i = 0; i < result.length; i++) {
+        if (result[i] === null) {
+            missing.push(i)
+        }
+    }
+
+    if (missing.length == 0) return result as (GetBlock | undefined)[]
+
+    if (depth > 10) {
+        throw new Error(`Block at slot ${slots[missing[0]]} is not conformed with ${options.commitment || 'finalized'} commitment`)
+    }
+
+    let filled = await getSlots(rpc, missing.map(i => slots[i]), options, depth + 1)
+
+    for (let i = 0; i < missing.length; i++) {
+        result[missing[i]] = filled[i]
+    }
+
+    return result as (GetBlock | undefined)[]
 }
 
 
