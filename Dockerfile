@@ -1,4 +1,4 @@
-ARG node=node:16-alpine
+ARG node=node:18-alpine
 FROM ${node} AS node
 
 
