@@ -130,15 +130,11 @@ export const SMALL_QTY: Validator<number, Bytes> = {
  */
 export const BYTES: Validator<Bytes> = {
     cast(value: unknown): Bytes | ValidationFailure {
-        if (isBytes(value)) {
-            return value.toLowerCase() as Bytes
-        } else {
-            return new ValidationFailure(value, `{value} is not a hex encoded binary string`)
-        }
+        return this.validate(value) || (value as Bytes).toLowerCase()
     },
     validate(value: unknown): ValidationFailure | undefined {
-        let i = this.cast(value)
-        if (i instanceof ValidationFailure) return i
+        if (isBytes(value)) return
+        return new ValidationFailure(value, `{value} is not a hex encoded binary string`)
     },
     phantom(): Bytes {
         return '0x'
