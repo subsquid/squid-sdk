@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-validation_v0.2.0",
+      "date": "Wed, 14 Feb 2024 20:01:22 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "transform Bytes values to lowercase"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/util-internal-validation_v0.1.0",
       "date": "Sun, 24 Dec 2023 20:05:50 GMT",
