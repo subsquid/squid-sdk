@@ -29,11 +29,11 @@ export interface Transaction {
     err: null | object
     computeUnitsConsumed: number
     fee: number
-    logMessages: string[]
     loadedAddresses: {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
     }
+    logMessagesTruncated: boolean
 }
 
 
@@ -50,6 +50,18 @@ export interface Instruction {
     programId: Base58Bytes
     accounts: Base58Bytes[]
     data: Base58Bytes
+    // execution result extracted from logs
+    computeUnitsConsumed?: number
+    error?: string
+}
+
+
+export interface LogMessage {
+    transactionIndex: number
+    instructionAddress: number[]
+    programId: Base58Bytes
+    kind: 'log' | 'data' | 'other'
+    message: string
 }
 
 
@@ -57,4 +69,5 @@ export interface Block {
     header: BlockHeader
     transactions: Transaction[]
     instructions: Instruction[]
+    log: LogMessage[]
 }

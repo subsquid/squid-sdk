@@ -2,102 +2,147 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import {Base58Bytes} from '../base'
 
 
-interface InvokeToken {
-    kind: 'invoke'
-    programId: Base58Bytes
-    stackHeight: number
+export class InvokeMessage {
+    public kind = 'invoke' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public stackHeight: number
+    ) {}
+
+    static parse(msg: string): InvokeMessage | undefined {
+        let m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) invoke \[(\d+)]$/.exec(msg)
+        if (m) return new InvokeMessage(m[1], parseInt(m[2]))
+    }
+
+    toString(): string {
+        return `Program ${this.programId} invoke [${this.stackHeight}]`
+    }
 }
 
 
-interface InvokeResultToken {
-    kind: 'invoke-result'
-    programId: Base58Bytes
-    success: boolean
-    error?: string
+export class InvokeResultMessage {
+    public kind = 'invoke-result' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public success: boolean,
+        public error?: string
+    ) {}
+
+    static parse(msg: string): InvokeResultMessage | undefined {
+        let m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) success$/.exec(msg)
+        if (m) return new InvokeResultMessage(m[1], true)
+
+        m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
+        if (m) return new InvokeResultMessage(m[1], false, m[2])
+    }
+
+    toString(): string {
+        if (this.success) {
+            return `Program ${this.programId} success`
+        } else {
+            return `Program ${this.programId} failed: ${this.error}`
+        }
+    }
 }
 
 
-export interface ProgramLogMessage {
-    kind: 'log'
-    message: string
+export class ProgramLogMessage {
+    public kind = 'log' as const
+
+    constructor(public message: string) {}
+
+    static parse(msg: string): ProgramLogMessage | undefined {
+        let m = /^Program log: (.*)$/.exec(msg)
+        if (m) return new ProgramLogMessage(m[1])
+    }
+
+    toString(): string {
+        return `Program log: ${this.message}`
+    }
 }
 
 
-export interface ComputeUnitsMessage {
-    kind: 'cu'
-    programId: Base58Bytes
-    consumed: bigint
-    available: bigint
+export class ComputeUnitsMessage {
+    public kind = 'cu' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public consumed: bigint,
+        public available: bigint
+    ) {}
+
+    static parse(msg: string): ComputeUnitsMessage | undefined {
+        let m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) consumed (\d+) of (\d+) compute units$/.exec(msg)
+        if (m) return new ComputeUnitsMessage(m[1], BigInt(m[2]), BigInt(m[3]))
+    }
+
+    toString(): string {
+        return `Program ${this.programId} consumed ${this.consumed} of ${this.available} compute units`
+    }
 }
 
 
-export interface ProgramDataMessage {
-    kind: 'data'
-    message: string
+export class ProgramDataMessage {
+    public kind = 'data' as const
+
+    constructor(
+        public message: string
+    ) {}
+
+    static parse(msg: string): ProgramDataMessage | undefined {
+        let m = /^Program data: (.*)$/.exec(msg)
+        if (m) return new ProgramDataMessage(m[1])
+    }
+
+    toString(): string {
+        return `Program data: ${this.message}`
+    }
 }
 
 
-export interface UnclassifiedMessage {
-    kind: 'other'
-    message: string
+export class LogTruncatedMessage {
+    public kind = 'truncate' as const
+
+    static parse(msg: string): LogTruncatedMessage | undefined {
+        if (msg == 'Log truncated') return new LogTruncatedMessage()
+    }
+
+    toString(): string {
+        return 'Log truncated'
+    }
 }
 
 
-export type Token = InvokeToken
-    | InvokeResultToken
+export class OtherMessage {
+    public kind = 'other' as const
+
+    constructor(public message: string) {}
+
+    toString(): string {
+        return this.message
+    }
+}
+
+
+export type LogMessage = InvokeMessage
+    | InvokeResultMessage
     | ProgramLogMessage
-    | ComputeUnitsMessage
     | ProgramDataMessage
-    | UnclassifiedMessage
+    | ComputeUnitsMessage
+    | LogTruncatedMessage
+    | OtherMessage
 
 
-export function toToken(msg: string): Token {
-    let m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) invoke \[(\d+)]$/.exec(msg)
-    if (m) return {
-        kind: 'invoke',
-        programId: m[1],
-        stackHeight: parseInt(m[2])
-    }
-
-    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) success$/.exec(msg)
-    if (m) return {
-        kind: 'invoke-result',
-        programId: m[1],
-        success: true
-    }
-
-    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
-    if (m) return {
-        kind: 'invoke-result',
-        programId: m[1],
-        success: false,
-        error: m[2]
-    }
-
-    m = /^Program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) consumed (\d+) of (\d+) compute units$/.exec(msg)
-    if (m) return {
-        kind: 'cu',
-        programId: m[1],
-        available: BigInt(m[3]),
-        consumed: BigInt(m[2])
-    }
-
-    m = /^Program log: (.*)$/.exec(msg)
-    if (m) return {
-        kind: 'log',
-        message: m[1]
-    }
-
-    m = /^Program data: (.*)$/.exec(msg)
-    if (m) return {
-        kind: 'data',
-        message: m[1]
-    }
-
-    return {
-        kind: 'other',
-        message: msg
-    }
+export function parseLogMessage(msg: string): LogMessage {
+    return InvokeMessage.parse(msg)
+        || InvokeResultMessage.parse(msg)
+        || ProgramLogMessage.parse(msg)
+        || ProgramDataMessage.parse(msg)
+        || ComputeUnitsMessage.parse(msg)
+        || LogTruncatedMessage.parse(msg)
+        || new OtherMessage(msg)
 }
 
 
@@ -105,9 +150,12 @@ export interface InstructionRecord {
     kind: 'instruction'
     programId: Base58Bytes
     stackHeight: number
-    success: boolean
+    logMessagePos: number
+    log: (InstructionRecord | ProgramLogMessage | ProgramDataMessage | OtherMessage)[]
+    computeUnitsConsumed?: bigint
+    availableComputeUnits?: bigint
+    success?: boolean
     error?: string
-    log: (InstructionRecord | ComputeUnitsMessage | ProgramLogMessage | ProgramDataMessage | UnclassifiedMessage)[]
 }
 
 
@@ -119,6 +167,7 @@ export class LogParser {
     private instructions: InstructionRecord[] = []
     private success = true
     private failure?: string
+    private truncated = false
 
     constructor(private messages: string[]) {
         try {
@@ -140,6 +189,10 @@ export class LogParser {
         return this.failure
     }
 
+    isTruncated(): boolean {
+        return this.truncated
+    }
+
     getResult(): InstructionRecord[] {
         return this.instructions
     }
@@ -149,21 +202,23 @@ export class LogParser {
     }
 
     private parse(): void {
-        while (this.pos < this.messages.length) {
-            let token = toToken(this.message())
+        while (this.pos < this.messages.length && !this.truncated) {
+            let token = parseLogMessage(this.message())
             this.assert(token.kind === 'invoke', 'invoke message expected')
             this.pos += 1
             this.instructions.push(this.invoke(token))
         }
     }
 
-    private invoke(invoke: InvokeToken): InstructionRecord {
+    private invoke(invoke: InvokeMessage): InstructionRecord {
         let log: InstructionRecord['log'] = []
-        let result: InvokeResultToken
+        let result: InvokeResultMessage | undefined
+        let cu: ComputeUnitsMessage | undefined
+        let logMessagePos = this.pos - 1
 
         LOOP: while (true) {
             let msg = this.message()
-            let token = toToken(msg)
+            let token = parseLogMessage(msg)
             switch(token.kind) {
                 case 'invoke':
                     this.assert(
@@ -186,14 +241,19 @@ export class LogParser {
                         token.programId === invoke.programId,
                         'programId of compute units message does not match the programId of the invocation'
                     )
-                    log.push(token)
+                    cu = token
                     this.pos += 1
                     break
                 case 'log':
+                case 'data':
                 case 'other':
                     log.push(token)
                     this.pos += 1
                     break
+                case 'truncate':
+                    this.truncated = true
+                    this.pos += 1
+                    break LOOP
                 default:
                     throw unexpectedCase()
             }
@@ -203,11 +263,17 @@ export class LogParser {
             kind: 'instruction',
             programId: invoke.programId,
             stackHeight: invoke.stackHeight,
-            success: result.success,
-            log
+            computeUnitsConsumed: cu?.consumed,
+            availableComputeUnits: cu?.available,
+            log,
+            logMessagePos
         }
 
-        if (result.error) {
+        if (result) {
+            rec.success = result.success
+        }
+
+        if (result?.error) {
             rec.error = result.error
         }
 
