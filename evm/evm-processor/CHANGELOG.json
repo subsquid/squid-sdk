@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.14.1",
+      "tag": "@subsquid/evm-processor_v1.14.1",
+      "date": "Wed, 14 Feb 2024 20:01:22 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.14.0",
       "tag": "@subsquid/evm-processor_v1.14.0",
       "date": "Tue, 23 Jan 2024 16:47:41 GMT",

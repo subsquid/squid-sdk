@@ -74,7 +74,7 @@ type Bytes = string
 
 
 function isBytes(value: unknown): value is Bytes {
-    return typeof value == 'string' && /^0x[0-9a-f]*$/.test(value)
+    return typeof value == 'string' && /^0x[0-9a-fA-F]*$/.test(value)
 }
 
 
@@ -129,8 +129,8 @@ export const SMALL_QTY: Validator<number, Bytes> = {
  * Hex encoded binary string
  */
 export const BYTES: Validator<Bytes> = {
-    cast(value: unknown): string | ValidationFailure {
-        return this.validate(value) || value as Bytes
+    cast(value: unknown): Bytes | ValidationFailure {
+        return this.validate(value) || (value as Bytes).toLowerCase()
     },
     validate(value: unknown): ValidationFailure | undefined {
         if (isBytes(value)) return
