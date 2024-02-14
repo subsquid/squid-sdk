@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-validation",
+      "comment": "transform Bytes values to lowercase",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-validation"
+}
