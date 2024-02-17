@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-metadata-service",
-      "comment": "Update Regex to support dots in metadata version name in file name",
+      "comment": "Support dots in metadata version name",
       "type": "patch"
     }
   ],
