@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "extend addTrace with callFrom",
+      "comment": "extend `.addTrace()` with `callFrom` filter",
       "type": "minor"
     }
   ],
