@@ -67,7 +67,7 @@ async function listMetadataFiles(archive: Fs): Promise<MetadataFile[]> {
 
     let files: MetadataFile[] = []
     for (let name of await archive.ls('metadata')) {
-        let m = /^(\d+)-([\da-f]+)--([\w\-]+)@(\d+)--([\w-]+)@(\d+)\.gz$/.exec(name)
+        let m = /^(\d+)-([\da-f]+)--([\w\-]+)@(\d+)--([\w\.-]+)@(\d+)\.gz$/.exec(name)
         if (!m) continue
         let blockNumber = parseInt(m[1])
         let blockHash = '0x'+m[2]

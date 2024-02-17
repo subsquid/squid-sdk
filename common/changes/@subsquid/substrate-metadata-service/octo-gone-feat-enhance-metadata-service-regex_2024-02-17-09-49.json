@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-service",
+      "comment": "Support dots in metadata version name",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-service"
+}
