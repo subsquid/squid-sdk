@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-metadata-service",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/substrate-metadata-service_v0.0.4",
+      "date": "Sat, 17 Feb 2024 17:47:08 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Support dots in metadata version name"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/substrate-metadata-service_v0.0.3",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

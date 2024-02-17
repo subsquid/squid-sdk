@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-metadata-service",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "HTTP service to expose chain metadata from substrate-dump(1) archive",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
