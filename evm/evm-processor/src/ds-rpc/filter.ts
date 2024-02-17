@@ -54,6 +54,7 @@ function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
             type,
             createFrom,
             callTo,
+            callFrom,
             callSighash,
             suicideRefundAddress,
             rewardAuthor,
@@ -63,6 +64,7 @@ function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
         filter.propIn('type', type as Trace['type'][])
         filter.getIn(trace => trace.type === 'create' && assertNotNull(trace.action?.from), createFrom)
         filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.to), callTo)
+        filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.from), callFrom)
         filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.sighash), callSighash)
         filter.getIn(trace => trace.type === 'suicide' && assertNotNull(trace.action?.refundAddress), suicideRefundAddress)
         filter.getIn(trace => trace.type === 'reward' && assertNotNull(trace.action?.author), rewardAuthor)

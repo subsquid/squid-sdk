@@ -39,6 +39,7 @@ export interface TraceRequest {
     type?: string[]
     createFrom?: Bytes20[]
     callTo?: Bytes20[]
+    callFrom?: Bytes20[]
     callSighash?: Bytes[]
     suicideRefundAddress?: Bytes[]
     rewardAuthor?: Bytes20[]

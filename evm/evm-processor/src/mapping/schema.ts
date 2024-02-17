@@ -137,7 +137,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
 
     let traceCallAction = project({
         callType: fields?.callCallType,
-        from: fields?.callFrom,
+        from: forArchive ? fields?.callFrom : true,
         to: forArchive ? fields?.callTo : true,
         value: fields?.callValue,
         gas: fields?.callGas,
