@@ -125,8 +125,8 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         address: fields?.createResultAddress
     }, {
         gasUsed: QTY,
-        code: BYTES,
-        address: BYTES
+        code: withDefault('0x', BYTES),
+        address: option(BYTES)
     })
 
     let TraceCreate = object({
@@ -158,7 +158,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         output: fields?.callResultOutput
     }, {
         gasUsed: QTY,
-        output: BYTES
+        output: withDefault('0x', BYTES)
     })
 
     let TraceCall = object({
