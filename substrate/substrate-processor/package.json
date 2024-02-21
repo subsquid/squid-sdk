@@ -27,7 +27,8 @@
     "@subsquid/util-internal-ingest-tools": "^1.1.0",
     "@subsquid/util-internal-json": "^1.2.2",
     "@subsquid/util-internal-processor-tools": "^4.0.1",
-    "@subsquid/util-internal-range": "^0.1.0"
+    "@subsquid/util-internal-range": "^0.1.0",
+    "@subsquid/util-internal-validation": "~0.2.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^1.0.3"

@@ -5,6 +5,7 @@ import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
@@ -12,7 +13,6 @@ import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
 import {getFieldSelectionValidator} from './mapping/selection'
-import {cast} from '@subsquid/util-internal-validation'
 
 
 export interface RpcEndpointSettings {

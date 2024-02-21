@@ -1,5 +1,5 @@
 import {FieldSelection} from '../interfaces/data'
-import {object, option, BOOLEAN, Validator} from '@subsquid/util-internal-validation'
+import {object, option, BOOLEAN} from '@subsquid/util-internal-validation'
 
 
 type GetFieldSelectionSchema<T> = {[K in keyof T]-?: typeof FIELD}
