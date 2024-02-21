@@ -57,6 +57,7 @@ export interface Instruction {
 
 export interface LogMessage {
     transactionIndex: number
+    logIndex: number
     instructionAddress: number[]
     programId: Base58Bytes
     kind: 'log' | 'data' | 'other'
@@ -68,5 +69,5 @@ export interface Block {
     header: BlockHeader
     transactions: Transaction[]
     instructions: Instruction[]
-    log: LogMessage[]
+    logs: LogMessage[]
 }

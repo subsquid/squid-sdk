@@ -17,17 +17,17 @@ export function mapRpcBlock(src: rpc.Block): Block {
     }
 
     let instructions: Instruction[] = []
-    let log: LogMessage[] = []
+    let logs: LogMessage[] = []
 
     let transactions = src.block.transactions
-        ?.map((tx, i) => mapRpcTransaction(i, tx, instructions, log))
+        ?.map((tx, i) => mapRpcTransaction(i, tx, instructions, logs))
         ?? []
 
     return {
         header,
         transactions,
         instructions,
-        log
+        logs
     }
 }
 
@@ -36,7 +36,7 @@ function mapRpcTransaction(
     transactionIndex: number,
     src: rpc.Transaction,
     instructions: Instruction[],
-    log: LogMessage[]
+    logs: LogMessage[]
 ): Transaction {
     let tx: Transaction = {
         index: transactionIndex,
@@ -76,7 +76,7 @@ function mapRpcTransaction(
         src,
         src.meta.logMessages.map(parseLogMessage),
         instructions,
-        log
+        logs
     ).parse()
 
     return tx
@@ -106,7 +106,7 @@ class InstructionParser {
         private src: rpc.Transaction,
         private messages: Message[],
         private instructions: Instruction[],
-        private log: LogMessage[]
+        private logs: LogMessage[]
     ) {
         let err: any = this.src.meta.err
         if (err) {
@@ -254,8 +254,9 @@ class InstructionParser {
                 case 'log':
                 case 'data':
                 case 'other':
-                    this.log.push({
+                    this.logs.push({
                         transactionIndex: ins.transactionIndex,
+                        logIndex: this.messagePos,
                         instructionAddress: ins.instructionAddress,
                         programId: ins.programId,
                         kind: msg.kind,

@@ -56,5 +56,5 @@ function removeVotes(block: Block): void {
     }
     block.transactions = block.transactions.filter(tx => !removed.has(tx.index))
     block.instructions = block.instructions.filter(i => !removed.has(i.transactionIndex))
-    block.log = block.log.filter(i => !removed.has(i.transactionIndex))
+    block.logs = block.logs.filter(i => !removed.has(i.transactionIndex))
 }
