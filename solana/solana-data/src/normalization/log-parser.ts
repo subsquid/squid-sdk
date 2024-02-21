@@ -1,4 +1,3 @@
-import {unexpectedCase} from '@subsquid/util-internal'
 import {Base58Bytes} from '../base'
 
 
@@ -126,16 +125,17 @@ export class OtherMessage {
 }
 
 
-export type LogMessage = InvokeMessage
-    | InvokeResultMessage
-    | ProgramLogMessage
-    | ProgramDataMessage
-    | ComputeUnitsMessage
-    | LogTruncatedMessage
-    | OtherMessage
+export type Message =
+    InvokeMessage |
+    InvokeResultMessage |
+    ProgramLogMessage |
+    ProgramDataMessage |
+    ComputeUnitsMessage |
+    LogTruncatedMessage |
+    OtherMessage
 
 
-export function parseLogMessage(msg: string): LogMessage {
+export function parseLogMessage(msg: string): Message {
     return InvokeMessage.parse(msg)
         || InvokeResultMessage.parse(msg)
         || ProgramLogMessage.parse(msg)
@@ -146,148 +146,164 @@ export function parseLogMessage(msg: string): LogMessage {
 }
 
 
-export interface InstructionRecord {
-    kind: 'instruction'
-    programId: Base58Bytes
-    stackHeight: number
-    logMessagePos: number
-    log: (InstructionRecord | ProgramLogMessage | ProgramDataMessage | OtherMessage)[]
-    computeUnitsConsumed?: bigint
-    availableComputeUnits?: bigint
-    success?: boolean
-    error?: string
-}
-
-
-const ParseFailure = new Error('parsing failure')
-
-
-export class LogParser {
-    private pos = 0
-    private instructions: InstructionRecord[] = []
-    private success = true
-    private failure?: string
-    private truncated = false
-
-    constructor(private messages: string[]) {
-        try {
-            this.parse()
-        } catch(err: any) {
-            if (err === ParseFailure) {
-                this.success = false
-            } else {
-                throw err
-            }
-        }
-    }
-
-    ok(): boolean {
-        return this.success
-    }
-
-    getError(): string | undefined {
-        return this.failure
-    }
-
-    isTruncated(): boolean {
-        return this.truncated
-    }
-
-    getResult(): InstructionRecord[] {
-        return this.instructions
-    }
-
-    getPos(): number {
-        return this.pos
-    }
-
-    private parse(): void {
-        while (this.pos < this.messages.length && !this.truncated) {
-            let token = parseLogMessage(this.message())
-            this.assert(token.kind === 'invoke', 'invoke message expected')
-            this.pos += 1
-            this.instructions.push(this.invoke(token))
-        }
-    }
-
-    private invoke(invoke: InvokeMessage): InstructionRecord {
-        let log: InstructionRecord['log'] = []
-        let result: InvokeResultMessage | undefined
-        let cu: ComputeUnitsMessage | undefined
-        let logMessagePos = this.pos - 1
-
-        LOOP: while (true) {
-            let msg = this.message()
-            let token = parseLogMessage(msg)
-            switch(token.kind) {
-                case 'invoke':
-                    this.assert(
-                        token.stackHeight > invoke.stackHeight,
-                        'child invoke should have greater stack height '
-                    )
-                    this.pos += 1
-                    log.push(this.invoke(token))
-                    break
-                case 'invoke-result':
-                    this.assert(
-                        invoke.programId === token.programId,
-                        'invoke result program does not match invoked program'
-                    )
-                    this.pos += 1
-                    result = token
-                    break LOOP
-                case 'cu':
-                    this.assert(
-                        token.programId === invoke.programId,
-                        'programId of compute units message does not match the programId of the invocation'
-                    )
-                    cu = token
-                    this.pos += 1
-                    break
-                case 'log':
-                case 'data':
-                case 'other':
-                    log.push(token)
-                    this.pos += 1
-                    break
-                case 'truncate':
-                    this.truncated = true
-                    this.pos += 1
-                    break LOOP
-                default:
-                    throw unexpectedCase()
-            }
-        }
-
-        let rec: InstructionRecord = {
-            kind: 'instruction',
-            programId: invoke.programId,
-            stackHeight: invoke.stackHeight,
-            computeUnitsConsumed: cu?.consumed,
-            availableComputeUnits: cu?.available,
-            log,
-            logMessagePos
-        }
-
-        if (result) {
-            rec.success = result.success
-        }
-
-        if (result?.error) {
-            rec.error = result.error
-        }
-
-        return rec
-    }
-
-    private message(): string {
-        this.assert(this.pos < this.messages.length, 'unexpected end of messages')
-        return this.messages[this.pos]
-    }
-
-    private assert(value: unknown, msg: string): asserts value {
-        if (value) return
-        this.failure = msg
-        throw ParseFailure
-    }
-}
+// export interface InstructionRecord {
+//     kind: 'instruction'
+//     programId: Base58Bytes
+//     stackHeight: number
+//     invokeMessagePos: number
+//     resultMessagePos: number
+//     log: LogRecord[]
+//     truncated: boolean
+//     computeUnitsConsumed?: bigint
+//     computeUnitsAvailable?: bigint
+//     success?: boolean
+//     error?: string
+// }
+//
+//
+// export type LogRecord = InstructionRecord | ProgramLogMessage | ProgramDataMessage | OtherMessage
+//
+//
+// const ParseFailure = new Error('parsing failure')
+//
+//
+// export class LogParser {
+//     private pos = 0
+//     private records: LogRecord[] = []
+//     private success = true
+//     private failure?: string
+//     private truncated = false
+//
+//     constructor(private messages: string[]) {
+//         try {
+//             this.parse()
+//         } catch(err: any) {
+//             if (err === ParseFailure) {
+//                 this.success = false
+//             } else {
+//                 throw err
+//             }
+//         }
+//     }
+//
+//     ok(): boolean {
+//         return this.success
+//     }
+//
+//     getError(): string | undefined {
+//         return this.failure
+//     }
+//
+//     isTruncated(): boolean {
+//         return this.truncated
+//     }
+//
+//     getResult(): LogRecord[] {
+//         return this.records
+//     }
+//
+//     getPos(): number {
+//         return this.pos
+//     }
+//
+//     private parse(): void {
+//         while (this.pos < this.messages.length && !this.truncated) {
+//             let token = this.token()
+//             this.pos += 1
+//             switch(token.kind) {
+//                 case 'invoke':
+//                     this.records.push(this.invoke(token))
+//                     break
+//                 case 'log':
+//                 case 'data':
+//                 case 'other':
+//                     this.records.push(token)
+//                     break
+//                 case 'truncate':
+//                     this.truncated = true
+//                     return
+//                 case 'cu':
+//                     break
+//                 case 'invoke-result':
+//                     this.fail('unexpected invoke result message')
+//                 default:
+//                     throw unexpectedCase()
+//             }
+//         }
+//     }
+//
+//     private invoke(invoke: InvokeMessage): InstructionRecord {
+//         let rec: InstructionRecord = {
+//             kind: 'instruction',
+//             programId: invoke.programId,
+//             stackHeight: invoke.stackHeight,
+//             log: [],
+//             invokeMessagePos: this.pos - 1,
+//             resultMessagePos: -1,
+//             truncated: false
+//         }
+//
+//         while (true) {
+//             let token = this.token()
+//             switch(token.kind) {
+//                 case 'invoke':
+//                     this.assert(
+//                         token.stackHeight > invoke.stackHeight,
+//                         'child invoke should have greater stack height '
+//                     )
+//                     this.pos += 1
+//                     rec.log.push(this.invoke(token))
+//                     break
+//                 case 'invoke-result':
+//                     this.assert(
+//                         invoke.programId === token.programId,
+//                         'invoke result program does not match invoked program'
+//                     )
+//                     rec.resultMessagePos = this.pos
+//                     rec.success = token.success
+//                     if (token.error) {
+//                         rec.error = token.error
+//                     }
+//                     this.pos += 1
+//                     return rec
+//                 case 'cu':
+//                     this.assert(
+//                         token.programId === invoke.programId,
+//                         'programId of compute units message does not match the programId of the invocation'
+//                     )
+//                     rec.computeUnitsConsumed = token.consumed
+//                     rec.computeUnitsAvailable = token.available
+//                     this.pos += 1
+//                     break
+//                 case 'log':
+//                 case 'data':
+//                 case 'other':
+//                     rec.log.push(token)
+//                     this.pos += 1
+//                     break
+//                 case 'truncate':
+//                     this.truncated = true
+//                     rec.truncated = true
+//                     this.pos += 1
+//                     return rec
+//                 default:
+//                     throw unexpectedCase()
+//             }
+//         }
+//     }
+//
+//     private token(): LogMessage {
+//         this.assert(this.pos < this.messages.length, 'unexpected end of messages')
+//         return parseLogMessage(this.messages[this.pos])
+//     }
+//
+//     private assert(value: unknown, msg: string): asserts value {
+//         if (value) return
+//         this.fail(msg)
+//     }
+//
+//     private fail(msg: string): never {
+//         this.failure = msg
+//         throw ParseFailure
+//     }
+// }
