@@ -51,8 +51,7 @@ function mapRpcTransaction(
         err: src.meta.err,
         computeUnitsConsumed: src.meta.computeUnitsConsumed ?? 0,
         fee: src.meta.fee,
-        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
-        logMessagesTruncated: false
+        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []}
     }
 
     let accounts: Base58Bytes[]

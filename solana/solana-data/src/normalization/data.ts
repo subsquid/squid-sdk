@@ -33,7 +33,6 @@ export interface Transaction {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
     }
-    logMessagesTruncated: boolean
 }
 
 
