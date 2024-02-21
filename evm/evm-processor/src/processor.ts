@@ -11,6 +11,8 @@ import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
+import {getFieldSelectionValidator} from './mapping/selection'
+import {cast} from '@subsquid/util-internal-validation'
 
 
 export interface RpcEndpointSettings {
@@ -314,7 +316,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      */
     setFields<T extends FieldSelection>(fields: T): EvmBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 

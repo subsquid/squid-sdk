@@ -14,7 +14,7 @@ const processor = new EvmBatchProcessor()
     .setBlockRange({from: 153000000})
     .setFields({
         block: {size: true},
-        log: {transactionHash: true}
+        log: {transactionHash: true, foo: true}
     })
     .addLog({
         address: [CONTRACT],

@@ -140,3 +140,16 @@ export const BYTES: Validator<Bytes> = {
         return '0x'
     }
 }
+
+export const BOOLEAN: Validator<boolean> = {
+    cast(value: unknown): boolean | ValidationFailure {
+        return this.validate(value) || value as boolean
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (typeof value === 'boolean') return
+        return new ValidationFailure(value, `{value} is not a boolean`)
+    },
+    phantom(): boolean {
+        return false
+    }
+}
