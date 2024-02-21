@@ -5,12 +5,14 @@ import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
+import {getFieldSelectionValidator} from './mapping/selection'
 
 
 export interface RpcEndpointSettings {
@@ -314,7 +316,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      */
     setFields<T extends FieldSelection>(fields: T): EvmBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 

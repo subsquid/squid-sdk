@@ -15,6 +15,7 @@ import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Batch, Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Chain} from './chain'
 import {SubstrateArchive} from './ds-archive'
@@ -30,6 +31,7 @@ import {
     GearMessageQueuedRequest,
     GearUserMessageSentRequest
 } from './interfaces/data-request'
+import {getFieldSelectionValidator} from './selection'
 
 
 export interface RpcEndpointSettings {
@@ -284,7 +286,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      */
     setFields<T extends FieldSelection>(fields: T): SubstrateBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 
