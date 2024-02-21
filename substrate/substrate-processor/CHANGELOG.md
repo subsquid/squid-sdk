@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 01 Jan 2024 14:37:34 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+
+## 8.2.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
 
 ## 8.1.1
 Mon, 01 Jan 2024 14:37:34 GMT
