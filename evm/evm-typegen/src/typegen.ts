@@ -1,40 +1,35 @@
-import * as ethers from 'ethers'
+import {Abi, AbiEvent, AbiFunction} from 'abitype'
 import {Logger} from '@subsquid/logger'
 import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
-import {getFullTupleType, getReturnType, getStructType, getTupleType, getType} from './util/types'
+import {
+    getEventParamTypes,
+    getFullTupleType,
+    getReturnType,
+    getType,
+    stringifyParams
+} from './util/types'
+import {toEventHash, toFunctionHash, toFunctionSignature} from "viem";
 
+type AbiItem = AbiEvent | AbiFunction
 
 export class Typegen {
     private out: FileOutput
 
-    constructor(private dest: OutDir, private abi: ethers.Interface, private basename: string, private log: Logger) {
+    constructor(private dest: OutDir, private abi: Abi, private basename: string, private log: Logger) {
         this.out = dest.file(basename + '.ts')
     }
 
     generate(): void {
-        this.out.line("import * as ethers from 'ethers'")
         this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
-        this.out.line(`import {ABI_JSON} from './${this.basename}.abi'`)
         this.out.line()
-        this.out.line("export const abi = new ethers.Interface(ABI_JSON);")
 
         this.generateEvents()
         this.generateFunctions()
         this.generateContract()
 
-        this.writeAbi()
         this.out.write()
         this.log.info(`saved ${this.out.file}`)
-    }
-
-    private writeAbi() {
-        let out = this.dest.file(this.basename + '.abi.ts')
-        let json = this.abi.formatJson()
-        json = JSON.stringify(JSON.parse(json), null, 4)
-        out.line(`export const ABI_JSON = ${json}`)
-        out.write()
-        this.log.info(`saved ${out.file}`)
     }
 
     private generateEvents() {
@@ -45,8 +40,8 @@ export class Typegen {
         this.out.line()
         this.out.block(`export const events =`, () => {
             for (let e of events) {
-                this.out.line(`${this.getPropName(e)}: new LogEvent<${getFullTupleType(e.inputs)}>(`)
-                this.out.indentation(() => this.out.line(`abi, '${e.topicHash}'`))
+                this.out.line(`${this.getPropName(e)}: new LogEvent<${getEventParamTypes(e.inputs)}>(`)
+                this.out.indentation(() => this.out.line(`'${toEventHash(e)}', ${stringifyParams(e.inputs)}`))
                 this.out.line('),')
             }
         })
@@ -60,12 +55,13 @@ export class Typegen {
         this.out.line()
         this.out.block(`export const functions =`, () => {
             for (let f of functions) {
-                let sighash = f.selector
-                let pArgs = getTupleType(f.inputs)
-                let pArgStruct = getStructType(f.inputs)
+                let sighash = toFunctionHash(f).slice(0, 10)
+                let pArgs = getFullTupleType(f.inputs)
                 let pResult = getReturnType(f.outputs)
-                this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pArgStruct}, ${pResult}>(`)
-                this.out.indentation(() => this.out.line(`abi, '${sighash}'`))
+                this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pResult}>(`)
+                this.out.indentation(() => this.out.line(`'${sighash}',`))
+                this.out.indentation(() => this.out.line(`${stringifyParams(f.inputs)},`))
+                this.out.indentation(() => this.out.line(`${stringifyParams(f.outputs)}`))
                 this.out.line('),')
             }
         })
@@ -76,7 +72,7 @@ export class Typegen {
         this.out.block(`export class Contract extends ContractBase`, () => {
             let functions = this.getFunctions()
             for (let f of functions) {
-                if (f.constant && f.outputs?.length) {
+                if ((f.stateMutability === 'pure' || f.stateMutability === 'view') && f.outputs?.length) {
                     this.out.line()
                     let argNames = f.inputs.map((a, idx) => a.name || `arg${idx}`)
                     let args  = f.inputs.map((a, idx) => `${argNames[idx]}: ${getType(a)}`).join(', ')
@@ -88,7 +84,7 @@ export class Typegen {
         })
     }
 
-    private getRef(item: ethers.EventFragment | ethers.FunctionFragment): string {
+    private getRef(item: AbiItem): string {
         let key = this.getPropName(item)
         if (key[0] == "'") {
             return `[${key}]`
@@ -97,19 +93,19 @@ export class Typegen {
         }
     }
 
-    private getPropName(item: ethers.EventFragment | ethers.FunctionFragment): string {
+    private getPropName(item: AbiItem): string {
         if (this.getOverloads(item) == 1) {
             return item.name
         } else {
-            return `'${item.format('sighash')}'`
+            return `'${toFunctionSignature(item)}'`
         }
     }
 
-    private getOverloads(item: ethers.EventFragment | ethers.FunctionFragment): number {
-        if (item instanceof ethers.EventFragment) {
-            return this.eventOverloads()[item.name]
-        } else {
+    private getOverloads(item: AbiItem): number {
+        if (item.type === 'function') {
             return this.functionOverloads()[item.name]
+        } else {
+            return this.eventOverloads()[item.name]
         }
     }
 
@@ -132,12 +128,12 @@ export class Typegen {
     }
 
     @def
-    private getFunctions(): ethers.FunctionFragment[] {
-        return this.abi.fragments.filter(f => f.type === 'function') as ethers.FunctionFragment[]
+    private getFunctions() {
+        return this.abi.filter(f => f.type === 'function') as AbiFunction[]
     }
 
     @def
-    private getEvents(): ethers.EventFragment[] {
-        return this.abi.fragments.filter(f => f.type === 'event') as ethers.EventFragment[]
+    private getEvents() {
+        return this.abi.filter(f => f.type === 'event') as AbiEvent[]
     }
 }

@@ -1,5 +1,4 @@
 import * as fs from 'fs'
-import * as ethers from 'ethers'
 import path from 'path'
 import {InvalidArgumentError, program} from 'commander'
 import {createLogger} from '@subsquid/logger'
@@ -8,6 +7,7 @@ import {OutDir} from '@subsquid/util-internal-code-printer'
 import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
+import {isAddress} from "viem";
 
 
 const LOG = createLogger('sqd:evm-typegen')
@@ -15,26 +15,26 @@ const LOG = createLogger('sqd:evm-typegen')
 
 runProgram(async function() {
     program
-        .description(`
+      .description(`
 Generates TypeScript facades for EVM transactions, logs and eth_call queries.
 
 The generated facades are assumed to be used by "squids" indexing EVM data.
     `.trim())
-        .name('squid-evm-typegen')
-        .argument('<output-dir>', 'output directory for generated definitions')
-        .argument('[abi...]', 'ABI file', specArgument)
-        .option('--multicall', 'generate facade for MakerDAO multicall contract')
-        .option(
-            '--etherscan-api <url>',
-            'etherscan API to fetch contract ABI by a known address',
-            validator.Url(['http:', 'https:'])
-        )
-        .option(
-            '--etherscan-api-key <key>',
-            'etherscan API key'
-        )
-        .option('--clean', 'delete output directory before run')
-        .addHelpText('afterAll', `
+      .name('squid-evm-typegen')
+      .argument('<output-dir>', 'output directory for generated definitions')
+      .argument('[abi...]', 'ABI file', specArgument)
+      .option('--multicall', 'generate facade for MakerDAO multicall contract')
+      .option(
+        '--etherscan-api <url>',
+        'etherscan API to fetch contract ABI by a known address',
+        validator.Url(['http:', 'https:'])
+      )
+      .option(
+        '--etherscan-api-key <key>',
+        'etherscan API key'
+      )
+      .option('--clean', 'delete output directory before run')
+      .addHelpText('afterAll', `
 ABI file can be specified in three ways:
 
 1. as a plain JSON file:
@@ -78,6 +78,10 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
     dest.add('abi.support.ts', [__dirname, '../src/abi.support.ts'])
     LOG.info(`saved ${dest.path('abi.support.ts')}`)
+    dest.add('decodeAbiParameters.ts', [__dirname, '../src/decodeAbiParameters.ts'])
+    LOG.info(`saved ${dest.path('decodeAbiParameters.ts')}`)
+    dest.add('encodeAbiParameters.ts', [__dirname, '../src/encodeAbiParameters.ts'])
+    LOG.info(`saved ${dest.path('encodeAbiParameters.ts')}`)
 
     if (opts.multicall) {
         dest.add('multicall.ts', [__dirname, '../src/multicall.ts'])
@@ -86,9 +90,8 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
     for (let spec of specs) {
         LOG.info(`processing ${spec.src}`)
-        let abi_json = await read(spec, opts)
-        let abi = new ethers.Interface(abi_json)
-        new Typegen(dest, abi, spec.name, LOG).generate()
+        const abi_json = await read(spec, opts)
+        new Typegen(dest, abi_json, spec.name, LOG).generate()
     }
 }, err => LOG.fatal(err))
 
@@ -159,7 +162,7 @@ function specArgument(value: string, prev?: Spec[]): Spec[] {
 function parseSpec(spec: string): Spec {
     let [src, fragment] = splitFragment(spec)
     if (src.startsWith('0x')) {
-        if (!ethers.isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
+        if (!isAddress(src)) throw new InvalidArgumentError('Invalid contract address')
         return {
             kind: 'address',
             src,
@@ -167,7 +170,7 @@ function parseSpec(spec: string): Spec {
         }
     } else if (src.includes('://')) {
         let u = new URL(
-            validator.Url(['http:', 'https:'])(src)
+          validator.Url(['http:', 'https:'])(src)
         )
         return {
             kind: 'url',
@@ -199,6 +202,6 @@ function basename(file: string): string {
     let name = path.parse(file).name
     if (name) return name
     throw new InvalidArgumentError(
-        `Can't derive target basename for output files. Use url fragment to specify it, e.g. #erc20`
+      `Can't derive target basename for output files. Use url fragment to specify it, e.g. #erc20`
     )
 }
