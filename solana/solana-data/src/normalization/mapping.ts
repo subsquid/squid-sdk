@@ -37,7 +37,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
         }
 
         if (s.commission != null) {
-            reward.commission = BigInt(s.commission)
+            reward.commission = s.commission
         }
 
         return reward

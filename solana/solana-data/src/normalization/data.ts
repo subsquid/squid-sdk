@@ -90,7 +90,7 @@ export interface Reward {
     lamports: bigint
     postBalance: bigint
     rewardType?: string
-    commission?: bigint
+    commission?: number
 }
 
 
