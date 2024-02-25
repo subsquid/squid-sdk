@@ -456,6 +456,7 @@ function mapTokenBalances(
             account: getAccount(pre.accountIndex),
             mint: pre.mint,
             owner: pre.owner ?? undefined,
+            programId: pre.programId ?? undefined,
             decimals: pre.uiTokenAmount.decimals,
             pre: BigInt(pre.uiTokenAmount.amount),
             post: BigInt(post.uiTokenAmount.amount)
