@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.16.0",
+      "tag": "@subsquid/evm-processor_v1.16.0",
+      "date": "Wed, 21 Feb 2024 19:22:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add field selection schema validation"
+          },
+          {
+            "comment": "update evm trace schema definition"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.2.0` to `^0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.15.0",
       "tag": "@subsquid/evm-processor_v1.15.0",
       "date": "Sat, 17 Feb 2024 17:47:08 GMT",

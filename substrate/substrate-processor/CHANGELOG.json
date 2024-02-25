@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.2.0",
+      "tag": "@subsquid/substrate-processor_v8.2.0",
+      "date": "Wed, 21 Feb 2024 19:22:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add field selection schema validation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `~0.2.0` to `~0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.1.1",
       "tag": "@subsquid/substrate-processor_v8.1.1",
       "date": "Mon, 01 Jan 2024 14:37:34 GMT",

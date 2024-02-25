@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-validation
 
-This log was last generated on Wed, 14 Feb 2024 20:01:22 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+
+## 0.3.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add `BOOLEAN` primitive
 
 ## 0.2.0
 Wed, 14 Feb 2024 20:01:22 GMT

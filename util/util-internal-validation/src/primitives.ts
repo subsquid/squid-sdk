@@ -233,3 +233,17 @@ function isBase64(value: unknown): value is Base64Bytes {
     return typeof value == 'string' &&
         /^[0-9a-zA-Z+\/]*={0,2}$/.test(value)
 }
+
+
+export const BOOLEAN: Validator<boolean> = {
+    cast(value: unknown): boolean | ValidationFailure {
+        return this.validate(value) || value as boolean
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (typeof value === 'boolean') return
+        return new ValidationFailure(value, `{value} is not a boolean`)
+    },
+    phantom(): boolean {
+        return false
+    }
+}

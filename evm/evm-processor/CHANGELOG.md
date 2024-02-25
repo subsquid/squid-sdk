@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sat, 17 Feb 2024 17:47:08 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+
+## 1.16.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
+- update evm trace schema definition
 
 ## 1.15.0
 Sat, 17 Feb 2024 17:47:08 GMT

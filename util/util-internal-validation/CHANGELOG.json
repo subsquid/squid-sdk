@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/util-internal-validation_v0.3.0",
+      "date": "Wed, 21 Feb 2024 19:22:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `BOOLEAN` primitive"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/util-internal-validation_v0.2.0",
       "date": "Wed, 14 Feb 2024 20:01:22 GMT",
