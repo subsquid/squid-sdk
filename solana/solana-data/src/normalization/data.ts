@@ -13,9 +13,9 @@ export interface BlockHeader {
 
 export interface Transaction {
     /**
-     * Transaction index in block
+     * Transaction position in block
      */
-    index: number
+    transactionIndex: number
     version: 'legacy' | number
     // transaction message
     accountKeys: Base58Bytes[]
@@ -28,7 +28,7 @@ export interface Transaction {
     // meta fields
     err: null | object
     computeUnitsConsumed: number
-    fee: number
+    fee: bigint
     loadedAddresses: {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
@@ -65,9 +65,41 @@ export interface LogMessage {
 }
 
 
+export interface TokenBalance {
+    transactionIndex: number
+    account: Base58Bytes
+    mint: Base58Bytes
+    owner?: Base58Bytes
+    programId?: Base58Bytes
+    decimals: number
+    pre: bigint
+    post: bigint
+}
+
+
+export interface Balance {
+    transactionIndex: number
+    account: Base58Bytes
+    pre: bigint
+    post: bigint
+}
+
+
+export interface Reward {
+    pubkey: Base58Bytes
+    lamports: bigint
+    postBalance: bigint
+    rewardType?: string
+    commission?: bigint
+}
+
+
 export interface Block {
     header: BlockHeader
     transactions: Transaction[]
     instructions: Instruction[]
     logs: LogMessage[]
+    balances: Balance[]
+    tokenBalances: TokenBalance[]
+    rewards?: Reward[]
 }

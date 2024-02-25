@@ -2,7 +2,7 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Base58Bytes} from '../base'
 import * as rpc from '../rpc'
-import {Block, BlockHeader, Instruction, LogMessage, Transaction} from './data'
+import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './data'
 import {InvokeMessage, InvokeResultMessage, LogTruncatedMessage, Message, parseLogMessage} from './log-parser'
 
 
@@ -18,16 +18,39 @@ export function mapRpcBlock(src: rpc.Block): Block {
 
     let instructions: Instruction[] = []
     let logs: LogMessage[] = []
+    let balances: Balance[] = []
+    let tokenBalances: TokenBalance[] = []
 
     let transactions = src.block.transactions
-        ?.map((tx, i) => mapRpcTransaction(i, tx, instructions, logs))
+        ?.map((tx, i) => mapRpcTransaction(i, tx, instructions, logs, balances, tokenBalances))
         ?? []
+
+    let rewards = src.block.rewards?.map(s => {
+        let reward: Reward = {
+            pubkey: s.pubkey,
+            lamports: BigInt(s.lamports),
+            postBalance: BigInt(s.postBalance)
+        }
+
+        if (s.rewardType) {
+            reward.rewardType = s.rewardType
+        }
+
+        if (s.commission != null) {
+            reward.commission = BigInt(s.commission)
+        }
+
+        return reward
+    })
 
     return {
         header,
         transactions,
         instructions,
-        logs
+        logs,
+        balances,
+        tokenBalances,
+        rewards
     }
 }
 
@@ -36,10 +59,12 @@ function mapRpcTransaction(
     transactionIndex: number,
     src: rpc.Transaction,
     instructions: Instruction[],
-    logs: LogMessage[]
+    logs: LogMessage[],
+    balances: Balance[],
+    tokenBalances: TokenBalance[]
 ): Transaction {
     let tx: Transaction = {
-        index: transactionIndex,
+        transactionIndex,
         version: src.version,
         accountKeys: src.transaction.message.accountKeys,
         addressTableLookups: src.transaction.message.addressTableLookups ?? [],
@@ -50,7 +75,7 @@ function mapRpcTransaction(
         signatures: src.transaction.signatures,
         err: src.meta.err,
         computeUnitsConsumed: src.meta.computeUnitsConsumed ?? 0,
-        fee: src.meta.fee,
+        fee: BigInt(src.meta.fee),
         loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []}
     }
 
@@ -78,6 +103,9 @@ function mapRpcTransaction(
         instructions,
         logs
     ).parse()
+
+    mapBalances(getAccount, transactionIndex, src, balances)
+    mapTokenBalances(getAccount, transactionIndex, src, tokenBalances)
 
     return tx
 }
@@ -339,7 +367,7 @@ class InstructionParser {
         }
 
         let i: Instruction = {
-            transactionIndex: this.tx.index,
+            transactionIndex: this.tx.transactionIndex,
             instructionAddress: address,
             programId: this.getAccount(src.programIdIndex),
             accounts: src.accounts.map(a => this.getAccount(a)),
@@ -366,6 +394,72 @@ class InstructionParser {
         return new Error(
             `Failed to process transaction ${this.tx.signatures[0]}: ${loc}: ${msg}`
         )
+    }
+}
+
+
+function mapBalances(
+    getAccount: (idx: number) => Base58Bytes,
+    transactionIndex: number,
+    tx: rpc.Transaction,
+    balances: Balance[]
+): void {
+    let pre = tx.meta.preBalances
+    let post = tx.meta.postBalances
+
+    assert(pre.length == post.length)
+
+    for (let i = 0; i < pre.length; i++) {
+        if (pre[i] === post[i]) {
+            // nothing changed, don't create an entry
+        } else {
+            balances.push({
+                transactionIndex,
+                account: getAccount(i),
+                pre: BigInt(pre[i]),
+                post: BigInt(post[i])
+            })
+        }
+    }
+}
+
+
+function mapTokenBalances(
+    getAccount: (idx: number) => Base58Bytes,
+    transactionIndex: number,
+    tx: rpc.Transaction,
+    balances: TokenBalance[]
+): void {
+    let preBalances = tx.meta.preTokenBalances
+    let postBalances = tx.meta.postTokenBalances
+
+    if (preBalances == null || preBalances.length == 0) {
+        assert(postBalances == null || postBalances.length == 0)
+        return
+    } else {
+        assert(preBalances.length == postBalances?.length)
+    }
+
+    for (let i = 0; i < preBalances.length; i++) {
+        let pre = preBalances[i]
+        let post = postBalances[i]
+
+        assert(
+            pre.accountIndex == post.accountIndex &&
+            pre.mint == post.mint &&
+            pre.programId == post.programId &&
+            pre.uiTokenAmount.decimals == post.uiTokenAmount.decimals
+        )
+
+        balances.push({
+            transactionIndex,
+            account: getAccount(pre.accountIndex),
+            mint: pre.mint,
+            owner: pre.owner ?? undefined,
+            decimals: pre.uiTokenAmount.decimals,
+            pre: BigInt(pre.uiTokenAmount.amount),
+            post: BigInt(post.uiTokenAmount.amount)
+        })
     }
 }
 

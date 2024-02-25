@@ -21,7 +21,8 @@
   "dependencies": {
     "@subsquid/solana-data": "^0.0.0",
     "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-ingest-cli": "^0.0.0"
+    "@subsquid/util-internal-ingest-cli": "^0.0.0",
+    "@subsquid/util-internal-json": "^1.2.2"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
