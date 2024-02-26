@@ -1,4 +1,4 @@
-import {unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, groupBy, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Base58Bytes} from '../base'
 import * as rpc from '../rpc'
@@ -22,8 +22,15 @@ export function mapRpcBlock(src: rpc.Block): Block {
     let tokenBalances: TokenBalance[] = []
 
     let transactions = src.block.transactions
-        ?.map((tx, i) => mapRpcTransaction(i, tx, instructions, logs, balances, tokenBalances))
-        ?? []
+        ?.map((tx, i) => {
+            try {
+                return mapRpcTransaction(i, tx, instructions, logs, balances, tokenBalances)
+            } catch(err: any) {
+                throw addErrorContext(err, {
+                    blockTransaction: tx.transaction.signatures[0]
+                })
+            }
+        }) ?? []
 
     let rewards = src.block.rewards?.map(s => {
         let reward: Reward = {
@@ -430,41 +437,30 @@ function mapTokenBalances(
     tx: rpc.Transaction,
     balances: TokenBalance[]
 ): void {
-    let preBalances = tx.meta.preTokenBalances
-    let postBalances = tx.meta.postTokenBalances
+    let preBalances = new Map(
+        tx.meta.preTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+    )
 
-    if (preBalances == null || preBalances.length == 0) {
-        assert(postBalances == null || postBalances.length == 0)
-        return
-    } else {
-        assert(preBalances.length == postBalances?.length)
-    }
+    let postBalances = new Map(
+        tx.meta.postTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+    )
 
-    for (let i = 0; i < preBalances.length; i++) {
-        let pre = preBalances[i]
-        let post = postBalances[i]
+    assert(preBalances.size == (tx.meta.preTokenBalances?.length ?? 0))
+    assert(postBalances.size == (tx.meta.postTokenBalances?.length ?? 0))
 
-        assert(
-            pre.accountIndex == post.accountIndex &&
-            pre.mint == post.mint &&
-            pre.programId == post.programId &&
-            pre.uiTokenAmount.decimals == post.uiTokenAmount.decimals
-        )
-
-        let b: TokenBalance = {
+    for (let [k, post] of postBalances.entries()) {
+        let pre = preBalances.get(k)
+        assert(pre == null || post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
+        balances.push({
             transactionIndex,
-            account: getAccount(pre.accountIndex),
-            mint: pre.mint,
-            owner: pre.owner ?? undefined,
-            programId: pre.programId ?? undefined,
-            decimals: pre.uiTokenAmount.decimals,
-            pre: BigInt(pre.uiTokenAmount.amount),
+            account: getAccount(post.accountIndex),
+            mint: post.mint,
+            owner: post.owner ?? undefined,
+            programId: post.programId ?? undefined,
+            decimals: post.uiTokenAmount.decimals,
+            pre: BigInt(pre?.uiTokenAmount.amount ?? 0),
             post: BigInt(post.uiTokenAmount.amount)
-        }
-
-        if (b.pre != b.post) {
-            balances.push(b)
-        }
+        })
     }
 }
 
