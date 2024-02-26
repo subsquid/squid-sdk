@@ -451,7 +451,7 @@ function mapTokenBalances(
     for (let [k, post] of postBalances.entries()) {
         let pre = preBalances.get(k)
         assert(pre == null || post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
-        balances.push({
+        let b: TokenBalance = {
             transactionIndex,
             account: getAccount(post.accountIndex),
             mint: post.mint,
@@ -460,7 +460,10 @@ function mapTokenBalances(
             decimals: post.uiTokenAmount.decimals,
             pre: BigInt(pre?.uiTokenAmount.amount ?? 0),
             post: BigInt(post.uiTokenAmount.amount)
-        })
+        }
+        if (b.pre != b.post) {
+            balances.push(b)
+        }
     }
 }
 
