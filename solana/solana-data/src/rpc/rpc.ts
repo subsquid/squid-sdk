@@ -11,7 +11,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {BlockId, Commitment} from '../base'
+import {Commitment} from '../base'
 import {GetBlock} from './data'
 
 

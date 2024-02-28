@@ -101,6 +101,9 @@ dependencies:
   '@rush-temp/solana-ingest':
     specifier: file:./projects/solana-ingest.tgz
     version: file:projects/solana-ingest.tgz
+  '@rush-temp/solana-processor':
+    specifier: file:./projects/solana-processor.tgz
+    version: file:projects/solana-processor.tgz
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -5128,7 +5131,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-krW6uBLZ1Mo8k5MvKql56UdxsbRC8XzQW4N04r3WpysTSnHdF6+bzomS3vjy46AQBJqL3izx8yb3QLinmQzlmA==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-+BklzijzHfPzw0ovdnrHplLzKzNJSEl7Ii4yPWT2IgNmhPJv9ufP3Mw01d7P10pCP8NcR7XImQqjk5GJ6tsGOA==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -5162,7 +5165,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-DcTtQ+Rr7DntTrhD7UNDn1x0Q5HeeuHR46FYA44pwovZvYPSGPgesnc0wDN5wz3Px3KmCSMNvByaTKsOH4rwig==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-5kNHXx5uwzyEHRzeDlofZJp1ixAzZJv7yWUYB9z1VTE+Z5DT4k8SIOllIaAtGN+HzpvlD8N1pxjfQGcLHFQ3ug==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -5229,7 +5232,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-ehNUrlieZbL92RMC+xFnTn4nqPSS/9B7j0ajFF7gNctq0GOfA84hGP8+qrN3dCdjHivxO/Hc/y/B/GaGb2nDmA==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-PI9BCvf8ExVespYhEkueOVNZtkf8bgzfTGJr3iEnubsmvl7rm+kPYzbuobP3NNREigkQEKxn+6cBDm4nB2OxJw==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -5263,7 +5266,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-9VKtkl3jxIurI13cKvs3iuFmdCUuarULuHNh3ze5p5bg/O+OeiFdXxWTQOBDQpo20L4RLmoBOTHRM7BAceiuiw==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-ztjkeoi9q5Y2StMMHYIbMU4BW7Jx6uCj1X/Mscus8E4VKYCXsAinmbO6ohbyaPUkLEeWxSGDsyao+ENudK+t7w==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -5466,7 +5469,7 @@ packages:
     dev: false
 
   file:projects/rpc-client.tgz:
-    resolution: {integrity: sha512-//+8cWVR5xU9DG7CoUVzlZIPZgKLYqRSzUDT0cUNJ3ZHDvMBB2Y6+vadeSF+9NORee5SZrnvwjgvTpSqkmofCw==, tarball: file:projects/rpc-client.tgz}
+    resolution: {integrity: sha512-jl0TueIUXs6EmqZoeLHTjKEEOHHL2xZom9DT30ejzER+0e2usIiVIQS/6yz/CNI2HwZQwVfpcnKETjOtkFNp1w==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
     version: 0.0.0
     dependencies:
@@ -5495,7 +5498,7 @@ packages:
     dev: false
 
   file:projects/shibuya-psp22.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-nf/Uvbjrb1cFglqAyAZUHC7KwGMJI1Ys6lDrX42VK6fBwWEIvq+z8bzY2wRQRGixvW6gcJyuM7KtWp29HQPmZg==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-jQrKyUzH22b26d2CxKebhyt3gQx20Q95cHKsUE17av45Zk36epgv0MDTPEH6K1yeSjnsZI0ASGq1HZRm/asIVg==, tarball: file:projects/shibuya-psp22.tgz}
     id: file:projects/shibuya-psp22.tgz
     name: '@rush-temp/shibuya-psp22'
     version: 0.0.0
@@ -5526,7 +5529,7 @@ packages:
     dev: false
 
   file:projects/solana-data.tgz:
-    resolution: {integrity: sha512-7e09FulIzO8iiTJvyY1zflY/XxpWDLsd9/z7iDp0+CVpsHyS++FN9iICFyYB8q44eL5Nx1Se24lJRZ0KLIFWXQ==, tarball: file:projects/solana-data.tgz}
+    resolution: {integrity: sha512-3sqOImj3vnK40FHvr4KV/f8qf16d1HbTTOi4/GYehOME0OpnInTQVgyJSIc4N0P2gqwkcYb6bUsxtXsIoXJZ7w==, tarball: file:projects/solana-data.tgz}
     name: '@rush-temp/solana-data'
     version: 0.0.0
     dependencies:
@@ -5544,8 +5547,17 @@ packages:
     dev: false
 
   file:projects/solana-ingest.tgz:
-    resolution: {integrity: sha512-CpQDL6RfBQOe+x7RRgEoVDnRjJMiscnv2wyPxuodyqmjU/zLCJHkMcxqqzPbvWQ6t37+03FGmxL33DAF7WSx7w==, tarball: file:projects/solana-ingest.tgz}
+    resolution: {integrity: sha512-GeVzndXhsPGPMI1nOd4YQ6cZ1aDLYdh8tQGTlM8r3sjciZifR4vzw0CFZPCaPZQxWAfCLGUht4A/aB17QNrMyA==, tarball: file:projects/solana-ingest.tgz}
     name: '@rush-temp/solana-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-processor.tgz:
+    resolution: {integrity: sha512-bDvCuhgd/qeOLS2S+/86utkMuK5pieZMMTGNPVPrNNVG4rr09De0aj1l9zv76miD8ATyYYJm4kcpsSmFVOBzPQ==, tarball: file:projects/solana-processor.tgz}
+    name: '@rush-temp/solana-processor'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4
@@ -5633,7 +5645,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-/u4M0NegE3ehcLm3Dcv0t7aX05dIwVNr1pANX3G56P1lABzKpo8PGA36KC2ynTj8qqJp+s8s+IysdBOCiTXElg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-2WQIou0tHEdvk5ragn8t7mJdngBUy3udpCm146E7X44QZF9sWW9ZCW2c1VpDkBblkSLfWqn0wS+n1FzW6y6hYA==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:

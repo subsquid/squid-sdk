@@ -515,6 +515,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-processor",
+      "projectFolder": "solana/solana-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",
       "shouldPublish": true,

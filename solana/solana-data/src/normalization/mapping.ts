@@ -81,7 +81,7 @@ function mapRpcTransaction(
         recentBlockhash: src.transaction.message.recentBlockhash,
         signatures: src.transaction.signatures,
         err: src.meta.err,
-        computeUnitsConsumed: src.meta.computeUnitsConsumed ?? 0,
+        computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
         fee: BigInt(src.meta.fee),
         loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []}
     }
@@ -303,7 +303,7 @@ class InstructionParser {
                     if (ins.programId != msg.programId) {
                         throw this.error(true, pos, 'unexpected programId in compute unit message')
                     }
-                    ins.computeUnitsConsumed = toInteger(msg.consumed)
+                    ins.computeUnitsConsumed = msg.consumed
                     break
                 case 'invoke':
                 case 'invoke-result':
@@ -465,12 +465,4 @@ function mapTokenBalances(
             balances.push(b)
         }
     }
-}
-
-
-function toInteger(num: bigint | number | undefined): number | undefined {
-    if (num == null) return
-    let i = Number(num)
-    assert(Number.isSafeInteger(i))
-    return i
 }

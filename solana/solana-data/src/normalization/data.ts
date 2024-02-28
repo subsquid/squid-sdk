@@ -27,7 +27,7 @@ export interface Transaction {
     signatures: Base58Bytes[]
     // meta fields
     err: null | object
-    computeUnitsConsumed: number
+    computeUnitsConsumed: bigint
     fee: bigint
     loadedAddresses: {
         readonly: Base58Bytes[]
@@ -50,7 +50,7 @@ export interface Instruction {
     accounts: Base58Bytes[]
     data: Base58Bytes
     // execution result extracted from logs
-    computeUnitsConsumed?: number
+    computeUnitsConsumed?: bigint
     error?: string
 }
 
