@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "fix debug trace validation",
+      "comment": "fix debug trace validation for failed `CREATE` case",
       "type": "minor"
     }
   ],
