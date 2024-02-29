@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-archive-layout",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Utilities for Subsquid Archive filesystem layout",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,7 +18,7 @@
   "dependencies": {
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-range": "^0.1.0"
+    "@subsquid/util-internal-range": "^0.2.0"
   },
   "peerDependencies": {
     "@subsquid/util-internal-fs": "^0.1.2"

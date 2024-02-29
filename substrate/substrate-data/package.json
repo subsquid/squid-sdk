@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-data",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Data fetcher and parser for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^4.0.1",
-    "@subsquid/substrate-data-raw": "^1.1.0",
+    "@subsquid/substrate-data-raw": "^1.1.1",
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-ingest-tools": "^1.1.0",
-    "@subsquid/util-internal-range": "^0.1.0",
+    "@subsquid/util-internal-ingest-tools": "^1.1.1",
+    "@subsquid/util-internal-range": "^0.2.0",
     "@subsquid/util-xxhash": "^1.2.2",
     "@substrate/calc": "^0.2.8",
     "blake2b": "^2.1.4"
