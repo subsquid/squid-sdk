@@ -28,7 +28,6 @@ export function getType(param: AbiParameter): string {
             return 'Array<' + getType(array.arrayChildren) + '>'
         }
     } catch (e) {
-        console.log(param)
         throw e;
     }
 

@@ -67,7 +67,6 @@ export async function devdoc(
   const output: any = await new Promise((resolve) =>
     solc.loadRemoteVersion(compilerVersion, (err: any, solcSnapshot: any) => {
       if (err) {
-        console.log(err);
         resolve(undefined);
       }
       const output = JSON.parse(solcSnapshot.compile(JSON.stringify(input)));
