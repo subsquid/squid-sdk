@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-range",
+      "comment": "add `rangeToArray()` function",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-range"
+}
