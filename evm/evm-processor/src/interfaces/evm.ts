@@ -101,7 +101,7 @@ export interface EvmTraceCreateAction {
 export interface EvmTraceCreateResult {
     gasUsed: bigint
     code: Bytes
-    address?: Bytes20
+    address: Bytes20
 }
 
 

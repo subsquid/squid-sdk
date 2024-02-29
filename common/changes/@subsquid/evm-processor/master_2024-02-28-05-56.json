@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "fix debug trace validation for failed `CREATE` case and make `EvmTraceCreateResult.address` non-optional again",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
