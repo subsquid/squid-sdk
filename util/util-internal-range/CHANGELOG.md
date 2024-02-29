@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-range
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+
+## 0.2.0
+Thu, 29 Feb 2024 15:27:11 GMT
+
+### Minor changes
+
+- add `rangeToArray()` function
 
 ## 0.1.0
 Fri, 01 Dec 2023 16:55:51 GMT

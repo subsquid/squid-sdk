@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/util-internal-archive-layout_v0.1.2",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/util-internal-archive-layout_v0.1.1",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
