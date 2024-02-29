@@ -116,7 +116,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
             input: BYTES,
             gasUsed: QTY,
             output: withDefault('0x', BYTES),
-            to: option(BYTES)
+            to: withDefault('0x0000000000000000000000000000000000000000', BYTES)
         })
     })
 
