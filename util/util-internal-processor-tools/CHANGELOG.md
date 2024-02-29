@@ -1,6 +1,11 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Tue, 23 Jan 2024 16:47:41 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+
+## 4.0.2
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
 
 ## 4.0.1
 Tue, 23 Jan 2024 16:47:41 GMT

@@ -2,8 +2,8 @@ import {Logger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
 import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {groupBy, last} from '@subsquid/util-internal'
-import {assertIsValid, BlockConsistencyError, getBlockName, trimInvalid} from '@subsquid/util-internal-ingest-tools'
-import {FiniteRange, SplitRequest} from '@subsquid/util-internal-range'
+import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
+import {FiniteRange, rangeToArray, SplitRequest} from '@subsquid/util-internal-range'
 import {array, DataValidationError, GetSrcType, nullable, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Bytes, Bytes32, Qty} from '../interfaces/base'
@@ -105,28 +105,76 @@ export class Rpc {
     }
 
     async getColdSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
-        let result = await this.getBlockSplit(req)
+        let blocks = await this.getColdBlockBatch(
+            rangeToArray(req.range),
+            req.request.transactions ?? false,
+            1
+        )
+        return this.addColdRequestedData(blocks, req.request, 1)
+    }
 
-        for (let i = 0; i < result.length; i++) {
-            if (result[i] == null) throw new BlockConsistencyError({height: req.range.from + i})
-            if (i > 0 && result[i - 1]!.hash !== result[i]!.block.parentHash)
-                throw new BlockConsistencyError(
-                    result[i]!,
-                    `given block is not a parent of ${getBlockName(result[i-1]!)}`
-                )
+    private async addColdRequestedData(blocks: Block[], req: DataRequest, depth: number): Promise<Block[]> {
+        let result = blocks.map(b => ({...b}))
+
+        await this.addRequestedData(result, req)
+
+        if (depth > 9) {
+            assertIsValid(result)
+            return result
         }
 
-        let blocks = result as Block[]
+        let missing: number[] = []
+        for (let i = 0; i < result.length; i++) {
+            if (result[i]._isInvalid) {
+                missing.push(i)
+            }
+        }
 
-        await this.addRequestedData(blocks, req.request)
+        if (missing.length == 0) return result
 
-        assertIsValid(blocks)
+        let missed = await this.addColdRequestedData(
+            missing.map(i => blocks[i]),
+            req,
+            depth + 1
+        )
 
-        return blocks
+        for (let i = 0; i < missing.length; i++) {
+            result[missing[i]] = missed[i]
+        }
+
+        return result
+    }
+
+    private async getColdBlockBatch(numbers: number[], withTransactions: boolean, depth: number): Promise<Block[]> {
+        let result = await this.getBlockBatch(numbers, withTransactions)
+        let missing: number[] = []
+        for (let i = 0; i < result.length; i++) {
+            if (result[i] == null) {
+                missing.push(i)
+            }
+        }
+
+        if (missing.length == 0) return result as Block[]
+
+        if (depth > 9) throw new BlockConsistencyError({
+            height: numbers[missing[0]]
+        }, `failed to get finalized block after ${depth} attempts`)
+
+        let missed = await this.getColdBlockBatch(
+            missing.map(i => numbers[i]),
+            withTransactions,
+            depth + 1
+        )
+
+        for (let i = 0; i < missing.length; i++) {
+            result[missing[i]] = missed[i]
+        }
+
+        return result as Block[]
     }
 
     async getHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
-        let blocks = await this.getBlockSplit(req)
+        let blocks = await this.getBlockBatch(rangeToArray(req.range), req.request.transactions ?? false)
 
         let chain: Block[] = []
 
@@ -142,18 +190,22 @@ export class Rpc {
         return trimInvalid(chain)
     }
 
-    private async getBlockSplit(req: SplitRequest<DataRequest>): Promise<(Block | undefined)[]> {
-        let call = []
-        for (let i = req.range.from; i <= req.range.to; i++) {
-            call.push({
+    private async getBlockBatch(numbers: number[], withTransactions: boolean): Promise<(Block | undefined)[]> {
+        let call = numbers.map(height => {
+            return {
                 method: 'eth_getBlockByNumber',
-                params: [toQty(i), req.request.transactions || false]
-            })
-        }
+                params: [toQty(height), withTransactions]
+            }
+        })
         let blocks = await this.batchCall(call, {
             validateResult: getResultValidator(
-                req.request.transactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
-            )
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            ),
+            validateError: info => {
+                // Avalanche
+                if (info.message.includes('cannot query unfinalized data')) return null
+                throw new RpcError(info)
+            }
         })
         return blocks.map(toBlock)
     }
@@ -204,7 +256,15 @@ export class Rpc {
             fromBlock: toQty(from),
             toBlock: toQty(to)
         }], {
-            validateResult: getResultValidator(array(Log))
+            validateResult: getResultValidator(array(Log)),
+            validateError: info => {
+                if (info.message.includes('after last accepted block')) {
+                    // Regular RVM networks simply return an empty array in case
+                    // of out of range request, but Avalanche returns an error.
+                    return []
+                }
+                throw new RpcError(info)
+            }
         }).catch(async err => {
             let range = asTryAnotherRangeError(err)
             if (range && range.from == from && from <= range.to && range.to < to) {

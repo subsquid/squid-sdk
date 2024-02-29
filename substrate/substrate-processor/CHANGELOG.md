@@ -1,6 +1,11 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+
+## 8.2.1
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
 
 ## 8.2.0
 Wed, 21 Feb 2024 19:22:05 GMT
