@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "fix README typos",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
