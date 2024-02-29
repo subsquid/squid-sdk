@@ -24,7 +24,8 @@
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",
     "@subsquid/util-internal-commander": "^1.3.2",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "solc": "^0.8.24"
   },
   "peerDependencies": {
     "abitype": "^1.0.0",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
+    "types-solc": "^1.0.1",
     "typescript": "~5.3.2",
     "vitest": "^1.3.1"
   }

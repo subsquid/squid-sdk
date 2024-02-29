@@ -8,6 +8,7 @@ import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
 import {GET} from './util/fetch'
 import {isAddress} from "viem";
+import {devdoc} from "./devdoc";
 
 
 const LOG = createLogger('sqd:evm-typegen')
@@ -90,15 +91,26 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
     for (let spec of specs) {
         LOG.info(`processing ${spec.src}`)
-        const abi_json = await read(spec, opts)
-        new Typegen(dest, abi_json, spec.name, LOG).generate()
+        const { abi, source } = await read(spec, opts);
+        let docs = {methods: {}, events: {}}
+        if (source) {
+            try {
+                docs = await devdoc(source.sources, source.settings, source.compiler)
+            } catch {}
+        }
+        new Typegen(dest, abi, spec.name, docs, LOG).generate()
     }
 }, err => LOG.fatal(err))
 
 
-async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKey?: string}): Promise<any> {
+async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKey?: string}): Promise<{
+    abi: any,
+    source?: any
+}> {
     if (spec.kind == 'address') {
-        return fetchFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
+        const abi = await fetchAbiFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
+        const source = await fetchSourceFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
+        return {abi, source}
     }
     let abi: any
     if (spec.kind == 'url') {
@@ -107,23 +119,24 @@ async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKe
         abi = JSON.parse(fs.readFileSync(spec.src, 'utf-8'))
     }
     if (Array.isArray(abi)) {
-        return abi
+        return {abi}
     } else if (Array.isArray(abi?.abi)) {
-        return abi.abi
+        return {
+            abi: abi.abi
+        }
     } else {
         throw new Error('Unrecognized ABI format')
     }
 }
 
 
-async function fetchFromEtherscan(address: string, api?: string, apiKey?: string): Promise<any> {
-    api = api || 'https://api.etherscan.io/'
-    let url = new URL('api?module=contract&action=getabi', api)
+async function fetchFromEtherscan(action: 'getabi' | 'getsourcecode', address: string, api = 'https://api.etherscan.io/', apiKey?: string) {
+    let url = new URL(`api?module=contract&action=${action}`, api)
     url.searchParams.set('address', address)
     if (apiKey) {
         url.searchParams.set('apiKey', apiKey)
     }
-    let response: {status: string, result: string}
+    let response: {status: string, result: any}
     let attempts = 0
     while (true) {
         response = await GET(url.toString())
@@ -136,10 +149,34 @@ async function fetchFromEtherscan(address: string, api?: string, apiKey?: string
             break
         }
     }
+
+    return response
+}
+
+async function fetchAbiFromEtherscan(address: string, api?: string, apiKey?: string): Promise<any> {
+    const response  = await fetchFromEtherscan('getabi', address, api, apiKey)
+
     if (response.status == '1') {
         return JSON.parse(response.result)
     } else {
         throw new Error(`Failed to fetch contract ABI from ${api}: ${response.result}`)
+    }
+}
+
+async function fetchSourceFromEtherscan(address: string, api?: string, apiKey?: string): Promise<{
+    sources: any
+    compiler: string
+} | undefined> {
+    const response = await fetchFromEtherscan('getsourcecode', address, api, apiKey)
+    const compiler = response.result[0].CompilerVersion
+    if (response.status == '1') {
+        return {
+            ...JSON.parse(((response as any).result[0].SourceCode.replace('{{', '{').replace('}}', '}'))),
+            compiler
+        }
+    } else {
+        LOG.warn(`Failed to fetch contract source from ${api}: ${response.result}`)
+        return undefined
     }
 }
 

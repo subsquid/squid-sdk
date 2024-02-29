@@ -13,10 +13,15 @@ import {toEventHash, toFunctionHash, toFunctionSignature} from "viem";
 
 type AbiItem = AbiEvent | AbiFunction
 
+type Docs = {
+    methods: Record<string, string>
+    events: Record<string, string>
+}
+
 export class Typegen {
     private out: FileOutput
 
-    constructor(private dest: OutDir, private abi: Abi, private basename: string, private log: Logger) {
+    constructor(private dest: OutDir, private abi: Abi, private basename: string, private docs: Docs, private log: Logger) {
         this.out = dest.file(basename + '.ts')
     }
 
@@ -40,6 +45,10 @@ export class Typegen {
         this.out.line()
         this.out.block(`export const events =`, () => {
             for (let e of events) {
+                if (this.docs.events[toFunctionSignature(e)]) {
+                    this.docs.events[toFunctionSignature(e)]
+                      .split('\n').forEach(l => this.out.line(l))
+                }
                 this.out.line(`${this.getPropName(e)}: new LogEvent<${getEventParamTypes(e.inputs)}>(`)
                 this.out.indentation(() => this.out.line(`'${toEventHash(e)}', ${stringifyParams(e.inputs)}`))
                 this.out.line('),')
@@ -58,6 +67,10 @@ export class Typegen {
                 let sighash = toFunctionHash(f).slice(0, 10)
                 let pArgs = getFullTupleType(f.inputs)
                 let pResult = getReturnType(f.outputs)
+                if (this.docs.methods[toFunctionSignature(f)]) {
+                    this.docs.methods[toFunctionSignature(f)]
+                      .split('\n').forEach(l => this.out.line(l))
+                }
                 this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pResult}>(`)
                 this.out.indentation(() => this.out.line(`'${sighash}',`))
                 this.out.indentation(() => this.out.line(`${stringifyParams(f.inputs)},`))
