@@ -4,7 +4,7 @@ import {def} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
 import {
     getEventParamTypes,
-    getFullTupleType,
+    getNamedType,
     getReturnType,
     getType,
     stringifyParams
@@ -29,6 +29,7 @@ export class Typegen {
         this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
         this.out.line()
 
+        this.generateTypes()
         this.generateEvents()
         this.generateFunctions()
         this.generateContract()
@@ -36,6 +37,28 @@ export class Typegen {
         this.out.write()
         this.log.info(`saved ${this.out.file}`)
     }
+
+    private generateTypes() {
+        const events = this.getEvents()
+        const functions = this.getFunctions()
+        if (events.length > 0) {
+            this.out.line()
+            this.out.block(`export type EventTypes =`, () => {
+                for (let e of events) {
+                    this.out.line(`${this.getPropName(e)}: ${getEventParamTypes(e.inputs)},`)
+                }
+            })
+        }
+        if (functions.length > 0) {
+            this.out.line()
+            this.out.block(`export type FunctionTypes =`, () => {
+                for (let f of functions) {
+                    this.out.line(`${this.getPropName(f)}: {args: ${getNamedType(f.inputs)}, return: ${getReturnType(f.outputs)}},`)
+                }
+            })
+        }
+    }
+
 
     private generateEvents() {
         let events = this.getEvents()
@@ -49,7 +72,7 @@ export class Typegen {
                     this.docs.events[toFunctionSignature(e)]
                       .split('\n').forEach(l => this.out.line(l))
                 }
-                this.out.line(`${this.getPropName(e)}: new LogEvent<${getEventParamTypes(e.inputs)}>(`)
+                this.out.line(`${this.getPropName(e)}: new LogEvent<EventTypes["${e.name}"]>(`)
                 this.out.indentation(() => this.out.line(`'${toEventHash(e)}', ${stringifyParams(e.inputs)}`))
                 this.out.line('),')
             }
@@ -65,13 +88,12 @@ export class Typegen {
         this.out.block(`export const functions =`, () => {
             for (let f of functions) {
                 let sighash = toFunctionHash(f).slice(0, 10)
-                let pArgs = getFullTupleType(f.inputs)
-                let pResult = getReturnType(f.outputs)
+                const propName = this.getPropName(f)
                 if (this.docs.methods[toFunctionSignature(f)]) {
                     this.docs.methods[toFunctionSignature(f)]
                       .split('\n').forEach(l => this.out.line(l))
                 }
-                this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pResult}>(`)
+                this.out.line(`${propName}: new Func<FunctionTypes["${this.trimPropName(propName)}"]["args"], FunctionTypes["${this.trimPropName(propName)}"]["return"]>(`)
                 this.out.indentation(() => this.out.line(`'${sighash}',`))
                 this.out.indentation(() => this.out.line(`${stringifyParams(f.inputs)},`))
                 this.out.indentation(() => this.out.line(`${stringifyParams(f.outputs)}`))
@@ -112,6 +134,10 @@ export class Typegen {
         } else {
             return `'${toFunctionSignature(item)}'`
         }
+    }
+
+    private trimPropName(name: string): string {
+        return name.replace(/^'/g, '').replace(/'$/g, '')
     }
 
     private getOverloads(item: AbiItem): number {

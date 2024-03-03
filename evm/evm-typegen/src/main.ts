@@ -96,7 +96,9 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         if (source) {
             try {
                 docs = await devdoc(source.sources, source.settings, source.compiler)
-            } catch {}
+            } catch (e: any) {
+                LOG.warn(e.message)
+            }
         }
         new Typegen(dest, abi, spec.name, docs, LOG).generate()
     }
@@ -109,8 +111,13 @@ async function read(spec: Spec, options?: {etherscanApi?: string, etherscanApiKe
 }> {
     if (spec.kind == 'address') {
         const abi = await fetchAbiFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
-        const source = await fetchSourceFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
-        return {abi, source}
+        try {
+            const source = await fetchSourceFromEtherscan(spec.src, options?.etherscanApi, options?.etherscanApiKey)
+            return {abi, source}
+        } catch (e: any) {
+            LOG.warn(`Failed to fetch contract source from etherscan: ${e.message}`)
+            return {abi}
+        }
     }
     let abi: any
     if (spec.kind == 'url') {
@@ -170,8 +177,15 @@ async function fetchSourceFromEtherscan(address: string, api?: string, apiKey?: 
     const response = await fetchFromEtherscan('getsourcecode', address, api, apiKey)
     const compiler = response.result[0].CompilerVersion
     if (response.status == '1') {
+        const SourceCode = response.result[0].SourceCode
+        if (SourceCode.startsWith('{')) {
+            return {
+                ...JSON.parse(SourceCode.replace('{{', '{').replace('}}', '}')),
+                compiler
+            }
+        }
         return {
-            ...JSON.parse(((response as any).result[0].SourceCode.replace('{{', '{').replace('}}', '}'))),
+            sources: { [(response as any)?.[0]?.result?.ContractName || 'Contract.sol']: { content: SourceCode } },
             compiler
         }
     } else {

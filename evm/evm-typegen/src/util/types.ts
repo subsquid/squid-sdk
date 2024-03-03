@@ -33,7 +33,7 @@ export function getType(param: AbiParameter): string {
 
     if (param.type === 'tuple' && 'components' in param) {
         assert(param.components != null, 'Missing components for tuple type')
-        return getFullTupleType(param.components)
+        return getNamedType(param.components)
     }
 
     if (param.type === 'address' || param.type === 'string') {
@@ -56,13 +56,20 @@ export function getType(param: AbiParameter): string {
     throw new Error('unknown type')
 }
 
+function getName(param: AbiParameter, index: number): string {
+    return param.name || `_${index}`
+}
 
-export function getFullTupleType(params: readonly AbiParameter[]): string {
-    return `[${params.map(p => `['${p.name}',${getType(p)}]`).join(',')}]`
+export function getNamedType(params: readonly AbiParameter[]): string {
+    return `{ ${params.map((p, index) => `${getName(p, index)}: ${getType(p)}`).join(', ')} }`
+}
+
+export function geTupleType(params: readonly AbiParameter[]): string {
+    return `[${params.map((p, index) => `${getName(p, index)}: ${getType(p)}`).join(', ')}]`
 }
 
 export function getEventParamTypes(param: readonly AbiEventParameter[]): string {
-    return getFullTupleType(param.map(p => p.indexed ? hasDynamicChild(p) ? {
+    return getNamedType(param.map(p => p.indexed ? hasDynamicChild(p) ? {
         ...p,
         type: 'bytes32'
     } : p : p))
@@ -72,27 +79,6 @@ export function stringifyParams(inputs: readonly AbiParameter[]): string {
     return JSON.stringify(inputs.map(({internalType, ...rest}) => rest))
 }
 
-export function getTupleType(params: readonly AbiParameter[]): string {
-    return '[' + params.map(p => {
-        return p.name ? `${p.name}: ${getType(p)}` : `_: ${getType(p)}`
-    }).join(', ') + ']'
-}
-
-
-// https://github.com/ethers-io/ethers.js/blob/278f84174409b470fa7992e1f8b5693e6e5d2dac/src.ts/abi/coders/tuple.ts#L36
-export function getStructType(params: readonly AbiParameter[]): string {
-    let array: any = []
-    let counts: Record<string, number> = {}
-    for (let p of params) {
-        if (p.name && array[p.name] == null) {
-            counts[p.name] = (counts[p.name] || 0) + 1
-        }
-    }
-    let fields = params.filter(p => counts[p.name ?? ''] == 1)
-    return '{' + fields.map(f => `${f.name}: ${getType(f)}`).join(', ') + '}'
-}
-
-
 export function getReturnType(outputs: readonly AbiParameter[]) {
-    return outputs.length == 1 ? getType(outputs[0]) : getFullTupleType(outputs)
+    return outputs.length == 1 ? getType(outputs[0]) : geTupleType(outputs)
 }

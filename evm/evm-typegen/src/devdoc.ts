@@ -35,7 +35,7 @@ ${details}${params}${returns} */`;
 export async function devdoc(
   source: string | object,
   settings: any,
-  compilerVersion = 'latest'
+  compilerVersion = "latest"
 ) {
   let sources: {
     [name: string]: {
@@ -85,24 +85,27 @@ export async function devdoc(
     Object.values(output.contracts)
       .map((x: any) => Object.values(x))
       .flatMap((x: any) => x?.[0]?.devdoc?.[get] ?? [])
-      .reduce((acc: any, x: any) => ({
-        ...acc,
-        ...x,
-      }));
-  const events = getDocs('events')
-  const methods = getDocs('methods')
+      .reduce(
+        (acc: any, x: any) => ({
+          ...acc,
+          ...x,
+        }),
+        {}
+      );
+  const events = getDocs("events");
+  const methods = getDocs("methods");
   const formattedMethods = Object.fromEntries(
     Object.entries(methods)
       .map(([name, doc]) => [name, formatDevdoc(doc as any)])
       .filter(([_, doc]) => !!doc)
-  )
+  );
   const formattedEvents = Object.fromEntries(
     Object.entries(events)
       .map(([name, doc]) => [name, formatDevdoc(doc as any)])
       .filter(([_, doc]) => !!doc)
-  )
+  );
   return {
     methods: formattedMethods,
     events: formattedEvents,
-  }
+  };
 }

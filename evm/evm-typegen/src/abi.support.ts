@@ -1,7 +1,14 @@
-import {type AbiParameter, decodeAbiParameters, hasDynamicChild} from './decodeAbiParameters'
+import {decodeAbiParameters, hasDynamicChild} from './decodeAbiParameters'
 import {encodeFunctionData} from "./encodeAbiParameters";
 
 type Hex = `0x${string}`
+
+export interface AbiParameter {
+    name?: string
+    type: string,
+    components?: AbiParameter[]
+    internalType?: string
+}
 
 export interface EventRecord {
     topics: string[]
@@ -22,18 +29,13 @@ type EventType = {
     name: string
 }
 
-type SecondElements<T extends [any, any][]> = T extends [] ? [] : T extends [[any, infer U], ...infer Tail extends [any, any][]] ? [U, ...SecondElements<Tail>] : never
-type Args<T extends [string, any][]> = {
-    [K in T[number] as K[0]]: K[1]
-} & SecondElements<T>
-
 function assertIsHex(val: unknown): asserts val is Hex {
     if (typeof val !== 'string' || !val.startsWith('0x')) {
         throw new Error('Not a hex string')
     }
 }
 
-export class LogEvent<TEventArgs extends [string, any][]> {
+export class LogEvent<TEventArgs extends {[key: string]: any}> {
     private indexedArgs: ((AbiParameter & {index: number}) | null)[] = [];
     private nonIndexedArgs: (AbiParameter & {index: number})[] = [];
 
@@ -68,7 +70,7 @@ export class LogEvent<TEventArgs extends [string, any][]> {
         return rec.topics[0] === this.topic
     }
 
-    decode(rec: EventRecord) {
+    decode(rec: EventRecord): TEventArgs {
         if (!this.is(rec)) {
             throw new Error('Invalid event record')
         }
@@ -78,8 +80,9 @@ export class LogEvent<TEventArgs extends [string, any][]> {
         for (let i = 0; i < parsedData.length; i++) {
             if (this.nonIndexedArgs[i].name) {
                 result[this.nonIndexedArgs[i].name!] = parsedData[i]
+            } else {
+                result[`_${this.nonIndexedArgs[i].index}`] = parsedData[i]
             }
-            result[this.nonIndexedArgs[i].index] = parsedData[i]
         }
         rec.topics.slice(1).forEach((topic, i) => {
             const type = this.indexedArgs[i]
@@ -88,11 +91,12 @@ export class LogEvent<TEventArgs extends [string, any][]> {
                 const [parsedData] = decodeAbiParameters([type], topic)
                 if (type.name) {
                     result[type.name] = parsedData
+                } else {
+                    result[`_${type.index}`] = parsedData
                 }
-                result[type.index] = parsedData
             }
         })
-        return result as Args<TEventArgs>
+        return result
     }
 }
 
@@ -101,7 +105,7 @@ export interface FuncRecord {
     input: string
 }
 
-export class Func<TFunctionArgs extends [string, any][], Result> {
+export class Func<TFunctionArgs extends {[key: string]: any}, TResult> {
     public readonly sighash: Hex
     constructor(sighash: string, private readonly args: AbiParameter[], private readonly result: AbiParameter[]) {
         assertIsHex(sighash)
@@ -113,29 +117,37 @@ export class Func<TFunctionArgs extends [string, any][], Result> {
         return sighash === this.sighash
     }
 
-    decode(input: string): Args<TFunctionArgs>
-    decode(rec: FuncRecord): Args<TFunctionArgs>
-    decode(inputOrRec: string | FuncRecord): Args<TFunctionArgs> {
+    decode(input: string): TFunctionArgs
+    decode(rec: FuncRecord): TFunctionArgs
+    decode(inputOrRec: string | FuncRecord): TFunctionArgs {
         const input = typeof inputOrRec === 'string' ? inputOrRec : inputOrRec.input
         assertIsHex(input)
         if (!this.is({input})) {
             throw new Error('Invalid event record')
         }
 
-        return decodeAbiParameters(this.args, `0x${input.slice(10)}`) as Args<TFunctionArgs>
+        const decodedResult = decodeAbiParameters(this.args, `0x${input.slice(10)}`)
+        return this.toNamedArgs(decodedResult) as TFunctionArgs
     }
 
-    encode(...args: SecondElements<TFunctionArgs>) {
+    encode(...args: TFunctionArgs[keyof TFunctionArgs][]) {
         return encodeFunctionData(this.sighash, this.args, args)
     }
 
-    decodeResult(output: string): Result {
+    decodeResult(output: string): TResult {
         assertIsHex(output)
         const decoded = decodeAbiParameters(this.result, output)
         return decoded.length > 1 ? decoded : decoded[0]
     }
 
-    tryDecodeResult(output: string): Result | undefined {
+    private toNamedArgs(values: any[]) {
+        return Object.fromEntries(this.args.map((arg, i) => {
+            const name = arg.name || `_${i}`
+            return [name, values[i]] as const
+        }))
+    }
+
+    tryDecodeResult(output: string): TResult | undefined {
         try {
             return this.decodeResult(output)
         } catch(err: any) {
@@ -200,7 +212,7 @@ export class ContractBase {
         assertIsHex(this.address)
     }
 
-    async eth_call<TFunctionArgs extends [string, any][], Result>(func: Func<TFunctionArgs, Result>, args: SecondElements<TFunctionArgs>): Promise<Result> {
+    async eth_call<TFunctionArgs extends {[key: string]: any}, Result>(func: Func<TFunctionArgs, Result>, args: TFunctionArgs[keyof TFunctionArgs][]): Promise<Result> {
         let data = func.encode(...args)
         let result = await this._chain.client.call('eth_call', [
             {to: this.address, data},
