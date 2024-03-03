@@ -1,7 +1,7 @@
 import {Base58Bytes} from '@subsquid/solana-data'
 import {HashAndHeight, shortHash} from '@subsquid/util-internal-processor-tools'
 import {
-    PartialBalance,
+    PartialBalance, PartialBlock,
     PartialBlockHeader,
     PartialInstruction,
     PartialLogMessage,
@@ -20,6 +20,24 @@ export class Block {
     balances: Balance[] = []
     // tokenBalances: PartialTokenBalance[] = []
     // rewards: PartialReward[] = []
+
+    static fromPartial(src: PartialBlock): Block {
+        let block = new Block(new BlockHeader(src.header))
+
+        if (src.transactions) {
+            block.transactions = src.transactions.map(i => new Transaction(block.header, i))
+        }
+
+        if (src.instructions) {
+            block.instructions = src.instructions.map(i => new Instruction(block.header, i))
+        }
+
+        if (src.logs) {
+            block.logs = src.logs.map(i => new LogMessage(block.header, i))
+        }
+
+        return block
+    }
 }
 
 
@@ -43,6 +61,8 @@ export class Transaction implements PartialTransaction {
     id: string
     transactionIndex: number
     #block: BlockHeader
+    #instructions?: Instruction[]
+
 
     constructor(block: BlockHeader, tx: PartialTransaction) {
         this.id = formatId(block, tx.transactionIndex)
@@ -58,6 +78,17 @@ export class Transaction implements PartialTransaction {
     set block(value: BlockHeader) {
         this.#block = value
     }
+
+    get instructions(): Instruction[] {
+        if (this.#instructions == null) {
+            this.#instructions = []
+        }
+        return this.#instructions
+    }
+
+    set instructions(value: Instruction[]) {
+        this.#instructions = value
+    }
 }
 
 
@@ -68,6 +99,8 @@ export class Instruction implements PartialInstruction {
     #block: BlockHeader
     #transaction?: Transaction
     #inner?: Instruction[]
+    #parent?: Instruction
+    #logs?: LogMessage[]
 
     constructor(block: BlockHeader, i: PartialInstruction) {
         this.#block = block
@@ -110,6 +143,25 @@ export class Instruction implements PartialInstruction {
 
     set inner(instructions: Instruction[]) {
         this.#inner = instructions
+    }
+
+    get parent(): Instruction | undefined {
+        return this.#parent
+    }
+
+    set parent(value: Instruction | undefined) {
+        this.#parent = value
+    }
+
+    get logs(): LogMessage[] {
+        if (this.#logs == null) {
+            this.#logs = []
+        }
+        return this.#logs
+    }
+
+    set logs(value: LogMessage[]) {
+        this.#logs = value
     }
 }
 

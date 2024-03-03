@@ -5,7 +5,8 @@ import {assertNotNull, def} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {getOrGenerateSquidId, PrometheusServer} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
-import {SolanaArchive} from './ds-archive'
+import {SolanaArchive} from './archive/source'
+import {getFields} from './fields'
 import {FieldSelection} from './interfaces/data'
 import {
     BalanceRequest,
@@ -267,17 +268,17 @@ export class SolanaBatchProcessor<F extends FieldSelection = {}> {
             }
         })
 
-        if (this.fields) {
-            requests = requests.map(({range, request}) => {
-                return {
-                    range,
-                    request: {
-                        fields: this.fields,
-                        ...request
-                    }
+        let fields = getFields(this.fields)
+
+        requests = requests.map(({range, request}) => {
+            return {
+                range,
+                request: {
+                    fields,
+                    ...request
                 }
-            })
-        }
+            }
+        })
 
         return applyRangeBound(requests, this.blockRange)
     }

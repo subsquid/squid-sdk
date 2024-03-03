@@ -29,8 +29,8 @@ type TrueFields<F> = keyof {
 export type Select<T, Fields> = T extends any ? Simplify<Pick<T, Extract<keyof T, Fields>>> : never
 
 
-export type Selector<Fields extends string, Exclusion extends string> = {
-    [P in Exclude<Fields, Exclusion>]?: boolean
+export type Selector<Fields extends string | number | symbol> = {
+    [P in Fields]?: boolean
 }
 
 

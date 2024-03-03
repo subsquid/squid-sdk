@@ -8,17 +8,17 @@ import type {
     TokenBalanceRequiredFields,
     TransactionRequiredFields
 } from './data-partial'
-import type {GetFields, Select, Selector, Simplify} from './util'
+import type {GetFields, Selector, Select, Simplify} from './util'
 
 
 export interface FieldSelection {
-    block?: Selector<keyof data.BlockHeader, BlockRequiredFields>
-    transaction?: Selector<keyof data.Transaction, TransactionRequiredFields>
-    instruction?: Selector<keyof data.Instruction, InstructionRequiredFields>
-    log?: Selector<keyof data.LogMessage, LogRequiredFields>
-    balance?: Selector<keyof data.Balance, BalanceRequiredFields>
-    tokenBalance?: Selector<keyof data.TokenBalance, TokenBalanceRequiredFields>
-    reward?: Selector<keyof data.Reward, RewardRequiredFields>
+    block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
+    transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
+    instruction?: Selector<Exclude<keyof data.Instruction, InstructionRequiredFields>>
+    log?: Selector<Exclude<keyof data.LogMessage, LogRequiredFields>>
+    balance?: Selector<Exclude<keyof data.Balance, BalanceRequiredFields>>
+    tokenBalance?: Selector<Exclude<keyof data.TokenBalance, TokenBalanceRequiredFields>>
+    reward?: Selector<Exclude<keyof data.Reward, RewardRequiredFields>>
 }
 
 

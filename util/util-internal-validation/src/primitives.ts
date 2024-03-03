@@ -2,6 +2,20 @@ import {ValidationFailure} from './error'
 import {Validator} from './interface'
 
 
+export const ANY_OBJECT: Validator<object> = {
+    cast(value: unknown): object | ValidationFailure {
+        return this.validate(value) || (value as object)
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        if (value && typeof value == 'object') return
+        return new ValidationFailure(value, '{value} is not an object')
+    },
+    phantom(): object {
+        return {}
+    }
+}
+
+
 export const STRING: Validator<string> = {
     cast(value: unknown): ValidationFailure | string {
         if (typeof value == 'string') {

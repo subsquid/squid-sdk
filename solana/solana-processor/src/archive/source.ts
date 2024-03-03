@@ -4,9 +4,9 @@ import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {getFields} from './fields'
-import {DataRequest} from './interfaces/data-request'
-import {Block} from './mapping/items'
+import {getFields} from '../fields'
+import {DataRequest} from '../interfaces/data-request'
+import {Block} from '../mapping/items'
 
 
 export class SolanaArchive implements DataSource<Block, DataRequest> {
@@ -31,7 +31,13 @@ export class SolanaArchive implements DataSource<Block, DataRequest> {
             let {fields, ...items} = req
             return {
                 type: 'solana',
-                fields: getFields(fields),
+                fields: {
+                    block: {parentHash: true, ...fields?.block},
+                    transaction: fields?.transaction,
+                    instruction: fields?.instruction,
+                    log: {instructionAddress: true, ...fields?.instruction},
+                    balance: fields?.balance
+                },
                 ...items
             }
         })
