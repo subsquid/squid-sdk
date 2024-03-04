@@ -1,0 +1,15 @@
+
+type Exchange
+@entity
+@index(fields: ["from", "to"])
+@index(fields: ["timestamp", "from", "to"])
+{
+    id: ID!
+    tx: String!
+    timestamp: BigInt!
+    account: String!
+    from: String!
+    fromAmount: BigInt!
+    to: String!
+    toAmount: BigInt!
+}

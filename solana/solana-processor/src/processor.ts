@@ -1,13 +1,13 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertNotNull, def} from '@subsquid/util-internal'
+import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {getOrGenerateSquidId, PrometheusServer} from '@subsquid/util-internal-processor-tools'
+import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {SolanaArchive} from './archive/source'
 import {getFields} from './fields'
-import {FieldSelection} from './interfaces/data'
+import {Block, FieldSelection} from './interfaces/data'
 import {
     BalanceRequest,
     DataRequest,
@@ -71,6 +71,32 @@ export interface GatewaySettings {
 
 interface BlockRange {
     range?: Range
+}
+
+
+
+/**
+ * API and data that is passed to the data handler
+ */
+export interface DataHandlerContext<Store, F extends FieldSelection = {}> {
+    /**
+     * An instance of a structured logger.
+     */
+    log: Logger
+    /**
+     * Storage interface provided by the database
+     */
+    store: Store
+    /**
+     * List of blocks to map and process
+     */
+    blocks: Block<F>[]
+    /**
+     * Signals, that the processor reached the head of a chain.
+     *
+     * The head block is always included in `.blocks`.
+     */
+    isHead: boolean
 }
 
 
@@ -348,5 +374,57 @@ export class SolanaBatchProcessor<F extends FieldSelection = {}> {
         })
         this.prometheus.addChainRpcMetrics(() => client.getMetrics())
         return client
+    }
+
+    /**
+     * Run data processing.
+     *
+     * This method assumes full control over the current OS process as
+     * it terminates the entire program in case of error or
+     * at the end of data processing.
+     *
+     * @param database - database is responsible for providing storage to data handlers
+     * and persisting mapping progress and status.
+     *
+     * @param handler - The data handler, see {@link DataHandlerContext} for an API available to the handler.
+     */
+    run<Store>(database: Database<Store>, handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>): void {
+        this.assertNotRunning()
+        this.running = true
+        let log = this.getLogger()
+
+        runProgram(async () => {
+            let mappingLog = log.child('mapping')
+
+            if (this.archive == null && this.rpcEndpoint == null) {
+                throw new Error(
+                    'No data source where provided. ' +
+                    'Use .setGateway() to provide Subsquid Network Gateway and/or .setRpcEndpoint() to provide RPC endpoint.'
+                )
+            }
+
+            if (this.archive == null && this.rpcIngestSettings?.disabled) {
+                throw new Error('Subsquid Network Gateway is required when RPC data ingestion is disabled')
+            }
+
+            return new Runner({
+                database,
+                requests: this.getBatchRequests(),
+                archive: this.archive ? this.getArchiveDataSource() : undefined,
+                // hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
+                //     ? this.getHotDataSource()
+                //     : undefined,
+                prometheus: this.prometheus,
+                log,
+                process(store, batch) {
+                    return handler({
+                        log: mappingLog,
+                        store,
+                        blocks: batch.blocks as any,
+                        isHead: batch.isHead
+                    })
+                }
+            }).run()
+        }, err => log.fatal(err))
     }
 }

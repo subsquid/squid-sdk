@@ -19,7 +19,7 @@ import {Selector} from '../interfaces/util'
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {
     let BlockHeader = object({
-        height: NAT,
+        number: NAT,
         hash: B58,
         parentHash: B58,
         ...project(fields.block, {

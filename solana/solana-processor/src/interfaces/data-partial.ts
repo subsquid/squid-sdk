@@ -22,9 +22,9 @@ export type PartialReward = MakePartial<data.Reward, RewardRequiredFields>
 
 export interface PartialBlock {
     header: PartialBlockHeader
-    transactions: PartialTransaction[]
-    instructions: PartialInstruction[]
-    logs: PartialLogMessage[]
-    balances: PartialBalance[]
+    transactions?: PartialTransaction[]
+    instructions?: PartialInstruction[]
+    logs?: PartialLogMessage[]
+    balances?: PartialBalance[]
     // tokenBalances: PartialTokenBalance[]
 }

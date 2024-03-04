@@ -843,6 +843,11 @@
       "projectFolder": "test/shibuya-psp22",
       "shouldPublish": false
     },
+    {
+      "packageName": "solana-example",
+      "projectFolder": "test/solana-example",
+      "shouldPublish": false
+    },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",
