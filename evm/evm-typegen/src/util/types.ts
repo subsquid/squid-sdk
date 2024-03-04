@@ -64,7 +64,7 @@ export function getNamedType(params: readonly AbiParameter[]): string {
     return `{ ${params.map((p, index) => `${getName(p, index)}: ${getType(p)}`).join(', ')} }`
 }
 
-export function geTupleType(params: readonly AbiParameter[]): string {
+export function getTupleType(params: readonly AbiParameter[]): string {
     return `[${params.map((p, index) => `${getName(p, index)}: ${getType(p)}`).join(', ')}]`
 }
 
@@ -80,5 +80,5 @@ export function stringifyParams(inputs: readonly AbiParameter[]): string {
 }
 
 export function getReturnType(outputs: readonly AbiParameter[]) {
-    return outputs.length == 1 ? getType(outputs[0]) : geTupleType(outputs)
+    return outputs.length == 1 ? getType(outputs[0]) : getTupleType(outputs)
 }

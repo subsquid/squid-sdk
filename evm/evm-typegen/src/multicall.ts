@@ -1,4 +1,4 @@
-import { ContractBase, Func } from "./abi.support";
+import { ContractBase, Func } from "@subsquid/evm-utils";
 
 type Call = { target: string; callData: string };
 

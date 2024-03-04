@@ -26,7 +26,7 @@ export class Typegen {
     }
 
     generate(): void {
-        this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
+        this.out.line("import {LogEvent, Func, ContractBase} from '@subsquid/evm-utils'")
         this.out.line()
 
         this.generateTypes()

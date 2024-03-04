@@ -77,9 +77,6 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
         return
     }
 
-    dest.add('abi.support.ts', [__dirname, '../src/abi.support.ts'])
-    LOG.info(`saved ${dest.path('abi.support.ts')}`)
-
     if (opts.multicall) {
         dest.add('multicall.ts', [__dirname, '../src/multicall.ts'])
         LOG.info(`saved ${dest.path('multicall.ts')}`)
