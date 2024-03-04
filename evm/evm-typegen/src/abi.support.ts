@@ -75,7 +75,7 @@ export class LogEvent<TEventArgs extends {[key: string]: any}> {
             throw new Error('Invalid event record')
         }
         assertIsHex(rec.data)
-        const result: any = []
+        const result: any = {}
         const parsedData = decodeAbiParameters(this.nonIndexedArgs, rec.data)
         for (let i = 0; i < parsedData.length; i++) {
             if (this.nonIndexedArgs[i].name) {
