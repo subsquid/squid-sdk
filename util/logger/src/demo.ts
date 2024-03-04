@@ -11,7 +11,7 @@ log.info({foo: 1, bar: 2}, 'message and some additional attributes')
 log.info({a: 1, b: 2, c: 3, array: [4, 5, 6], obj: {foo: 'foo', bar: "bar"}})
 
 // pass an Error object inplace of attributes
-log.warn(new Error('Some error occured'))
+log.warn(new Error('Some error occurred'))
 
 // Error together with some other attributes and message
 log.error({err: new Error('Another error'), a: 1, b: 2}, 'weird')

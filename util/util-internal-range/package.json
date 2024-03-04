@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-range",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Interval arithmetic for block ranges",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

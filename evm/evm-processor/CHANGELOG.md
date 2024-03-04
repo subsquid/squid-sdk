@@ -1,6 +1,17 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+
+## 1.17.0
+Thu, 29 Feb 2024 15:27:11 GMT
+
+### Minor changes
+
+- fix debug trace validation for failed `CREATE` case and make `EvmTraceCreateResult.address` non-optional again
+
+### Patches
+
+- Handle Avalanche RPC inconsistency issues
 
 ## 1.16.0
 Wed, 21 Feb 2024 19:22:05 GMT

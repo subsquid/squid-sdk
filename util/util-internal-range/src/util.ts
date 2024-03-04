@@ -151,3 +151,12 @@ export function mapRangeRequestList<T, R>(requests: RangeRequestList<T>, f: (req
         }
     })
 }
+
+
+export function rangeToArray(range: FiniteRange): number[] {
+    let result: number[] = new Array(range.to - range.from + 1)
+    for (let i = 0; i < result.length; i++) {
+        result[i] = range.from + i
+    }
+    return result
+}

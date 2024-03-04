@@ -2,6 +2,18 @@
   "name": "@subsquid/logger",
   "entries": [
     {
+      "version": "1.3.3",
+      "tag": "@subsquid/logger_v1.3.3",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix README typos"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.3.2",
       "tag": "@subsquid/logger_v1.3.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

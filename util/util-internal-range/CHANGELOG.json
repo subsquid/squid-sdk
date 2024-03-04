@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-range",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-range_v0.2.0",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `rangeToArray()` function"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/util-internal-range_v0.1.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
