@@ -79,10 +79,6 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
     dest.add('abi.support.ts', [__dirname, '../src/abi.support.ts'])
     LOG.info(`saved ${dest.path('abi.support.ts')}`)
-    dest.add('decodeAbiParameters.ts', [__dirname, '../src/decodeAbiParameters.ts'])
-    LOG.info(`saved ${dest.path('decodeAbiParameters.ts')}`)
-    dest.add('encodeAbiParameters.ts', [__dirname, '../src/encodeAbiParameters.ts'])
-    LOG.info(`saved ${dest.path('encodeAbiParameters.ts')}`)
 
     if (opts.multicall) {
         dest.add('multicall.ts', [__dirname, '../src/multicall.ts'])

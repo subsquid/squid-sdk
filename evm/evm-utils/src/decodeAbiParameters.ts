@@ -1,19 +1,12 @@
-export interface AbiParameter {
-  name?: string;
-  type: string;
-}
+import {AbiParameter} from "./types";
 
 class Cursor {
   bytes: Uint8Array;
   position: number;
-  positionReadCount: Map<number, number>;
-  recursiveReadLimit: number;
 
   constructor(bytes: Uint8Array) {
     this.bytes = bytes;
     this.position = 0;
-    this.positionReadCount = new Map();
-    this.recursiveReadLimit = 8_192;
   }
 
   inspectBytes(length: number) {
@@ -346,10 +339,10 @@ export function hexToBigInt(
   if (!signed) return value;
 
   const size = (hex.length - 2) / 2;
-  const max = (1n << (BigInt(size) * 8n - 1n));
-  if (value < max) return value;
-
-  return value - max - 1n;
+  const max = (1n << (BigInt(size) * 8n - 1n)) - 1n;
+  if (value <= max) return value;
+  const mask = (1n << (BigInt(size) * 8n));
+  return value - mask;
 }
 
 function bytesToNumber(bytes: Uint8Array, opts: { signed?: boolean } = {}) {

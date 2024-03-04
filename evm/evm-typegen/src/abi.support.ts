@@ -1,5 +1,4 @@
-import {decodeAbiParameters, hasDynamicChild} from './decodeAbiParameters'
-import {encodeFunctionData} from "./encodeAbiParameters";
+import {decodeAbiParameters, hasDynamicChild, encodeFunctionData} from '@subsquid/evm-utils'
 
 type Hex = `0x${string}`
 

@@ -1,6 +1,6 @@
 import assert from 'assert'
 import {AbiEventParameter, AbiParameter, parseAbiParameter} from "abitype";
-import {hasDynamicChild} from "../decodeAbiParameters";
+import {hasDynamicChild} from "@subsquid/evm-utils";
 
 function parseArray(param: AbiParameter): { baseType: string, arrayChildren: AbiParameter } | undefined {
     let match = param.type.match(/^(.*)\[(\d*)]$/)
