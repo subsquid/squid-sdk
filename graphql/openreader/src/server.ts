@@ -180,7 +180,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     disposals.push(() => apollo.stop())
 
     apollo.applyMiddleware({
-        app,
+        app: app as any,
         bodyParserConfig: {
             limit: maxRequestSizeBytes
         }
