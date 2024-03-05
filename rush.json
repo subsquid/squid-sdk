@@ -499,26 +499,30 @@
     {
       "packageName": "@subsquid/solana-data",
       "projectFolder": "solana/solana-data",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/solana-ingest",
       "projectFolder": "solana/solana-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/solana-processor",
       "projectFolder": "solana/solana-processor",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/frontier",
