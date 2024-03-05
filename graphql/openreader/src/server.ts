@@ -112,7 +112,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     const {disposals, context, schema, log, maxRootFields} = options
 
     let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
-    let app = express()
+    let app: express.Application = express()
     let server = http.createServer(app)
 
     let execute = (args: ExecutionArgs) => openreaderExecute(args, {
@@ -180,7 +180,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     disposals.push(() => apollo.stop())
 
     apollo.applyMiddleware({
-        app,
+        app: app as any, // @types/express version mismatch. We don't want to pin it just because of this line.
         bodyParserConfig: {
             limit: maxRequestSizeBytes
         }

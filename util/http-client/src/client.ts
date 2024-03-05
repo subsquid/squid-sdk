@@ -42,6 +42,7 @@ export interface GraphqlRequestOptions extends RequestOptions {
     variables?: Record<string, any>
     url?: string
     method?: 'GET' | 'POST'
+    stream?: false
 }
 
 
@@ -53,6 +54,9 @@ export interface FetchRequest extends RequestInit {
     signal?: AbortSignal
     stream?: boolean
 }
+
+
+export type FetchResponse = Response
 
 
 export class HttpClient {
@@ -261,8 +265,9 @@ export class HttpClient {
             abort()
         }, req.timeout)
 
+        let res: HttpResponse | undefined
         try {
-            return await this.performRequest({...req, signal: ac.signal})
+            return res = await this.performRequest({...req, signal: ac.signal})
         } catch(err: any) {
             if (timer == null) {
                 throw new HttpTimeoutError(req.timeout)
@@ -272,6 +277,14 @@ export class HttpClient {
         } finally {
             if (timer != null) {
                 clearTimeout(timer)
+            }
+            if (req.signal && res?.stream) {
+                // FIXME: is `close` always emitted?
+                (res.body as NodeJS.ReadableStream).on('close', () => {
+                    req.signal!.removeEventListener('abort', abort)
+                })
+            } else {
+                req.signal?.removeEventListener('abort', abort)
             }
         }
     }
@@ -290,7 +303,7 @@ export class HttpClient {
         return httpResponse
     }
 
-    protected async handleResponseBody(req: FetchRequest, res: Response): Promise<any> {
+    protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
         let contentType = (res.headers.get('content-type') || '').split(';')[0]
 
         if (contentType == 'application/json') {

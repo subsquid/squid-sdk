@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add `concurrentWriter()` function",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "fix unhandled promise rejection crash in `concurrentMap()`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

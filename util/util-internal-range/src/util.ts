@@ -4,6 +4,15 @@ import assert from 'assert'
 import {FiniteRange, Range, RangeList, RangeRequest, RangeRequestList} from './interfaces'
 
 
+export function isRange(obj: any): obj is Range {
+    return typeof obj == 'object'
+        && obj
+        && Number.isSafeInteger(obj.from)
+        && obj.from >= 0
+        && (obj.to == null || Number.isSafeInteger(obj.to) && obj.from <= obj.to)
+}
+
+
 export function assertRange(range: Range): void {
     assert(Number.isSafeInteger(range.from))
     assert(range.to == null || Number.isSafeInteger(range.to))

@@ -1,6 +1,6 @@
 import assert from 'assert'
 import * as process from 'process'
-import {assertNotNull} from './misc'
+import {assertNotNull, ensureError} from './misc'
 
 
 export interface Future<T> {
@@ -169,11 +169,35 @@ export async function* concurrentMap<T, R>(
 
     map().then(
         () => queue.close(),
-        err => queue.tryPut({promise: Promise.reject(err)})
+        err => {
+            let promise = Promise.reject(err)
+            promise.catch(() => {}) // prevent unhandled rejection crashes
+            queue.tryPut({promise})
+        }
     )
 
     for await (let item of queue.iterate()) {
         yield await item.promise
+    }
+}
+
+
+export async function* concurrentWriter<T>(
+    watermark: number,
+    cb: (write: (val: T) => Promise<void>) => Promise<void>
+): AsyncIterable<T> {
+    assert(watermark >= 1)
+
+    let queue = new AsyncQueue<T | Error>(watermark)
+
+    cb(value => queue.put(value)).then(
+        () => queue.close(),
+        err => queue.tryPut(ensureError(err))
+    )
+
+    for await (let valueOrError of queue.iterate()) {
+        if (valueOrError instanceof Error) throw valueOrError
+        yield valueOrError
     }
 }
 

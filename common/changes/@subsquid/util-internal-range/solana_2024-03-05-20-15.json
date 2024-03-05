@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-range",
+      "comment": "add `isRange()`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-range"
+}

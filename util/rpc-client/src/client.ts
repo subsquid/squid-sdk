@@ -20,6 +20,7 @@ export interface RpcClientOptions {
     retryAttempts?: number
     retrySchedule?: number[]
     log?: Logger | null
+    fixUnsafeIntegers?: boolean
 }
 
 
@@ -80,7 +81,7 @@ export class RpcClient {
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
@@ -100,7 +101,7 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':
@@ -113,11 +114,16 @@ export class RpcClient {
                         for (let cb of this.resetListeners) {
                             this.safeCallback(cb, reason)
                         }
-                    }
+                    },
+                    fixUnsafeIntegers
                 })
             case 'http:':
             case 'https:':
-                return new HttpConnection(url, this.log)
+                return new HttpConnection({
+                    url,
+                    log: this.log,
+                    fixUnsafeIntegers
+                })
             default:
                 throw new TypeError(`unsupported protocol: ${protocol}`)
         }
@@ -207,7 +213,7 @@ export class RpcClient {
                 resolve,
                 reject,
                 validateResult: options?.validateResult,
-                validateError: options?.validateError
+                validateError: options?.validateError,
             })
         })
     }
@@ -339,7 +345,7 @@ export class RpcClient {
                     req.reject(err)
                 }
                 if (this.backoffEpoch == backoffEpoch) {
-                    this.backoff(err)
+                    this.backoff(err, req)
                 }
             } else {
                 req.reject(err)
@@ -369,12 +375,25 @@ export class RpcClient {
         }
     }
 
-    private backoff(reason: Error): void {
-        this.log?.warn({reason: reason.toString()}, 'connection failure')
+    private backoff(reason: Error, req?: Req): void {
         this.backoffEpoch += 1
         this.connectionErrorsInRow += 1
         this.connectionErrors += 1
-        this.log?.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        if (this.log?.isWarn()) {
+            let httpResponseBody = undefined
+            if (reason instanceof HttpError &&
+                reason.response.body &&
+                !reason.response.headers.get('content-type')?.includes('text/html')
+            ) {
+                httpResponseBody = reason.response.body
+            }
+            this.log.warn({
+                reason: reason.toString(),
+                httpResponseBody,
+                rpcCall: req?.call
+            }, 'connection failure')
+            this.log.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        }
     }
 
     private getBackoffPause(): number {

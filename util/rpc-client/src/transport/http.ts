@@ -1,20 +1,51 @@
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import {FetchRequest, FetchResponse, HttpAgent, HttpClient} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
 
 
-export class HttpConnection implements Connection {
-    private agent: HttpAgent
-    private http: HttpClient
+class RpcHttpClient extends HttpClient {
+    fixUnsafeIntegers = false
 
-    constructor(private url: string, private log?: Logger) {
+    protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
+        if (!res.ok) return super.handleResponseBody(req, res)
+        let json = await res.text()
+        try {
+            if (this.fixUnsafeIntegers) {
+                json = fixUnsafeIntegers(json)
+            }
+            return JSON.parse(json)
+        } catch(err: any) {
+            throw new RpcProtocolError(1008, `server returned invalid JSON: ${err.message}`)
+        }
+    }
+}
+
+
+export interface HttpConnectionOptions {
+    url: string
+    fixUnsafeIntegers?: boolean
+    log?: Logger
+}
+
+
+export class HttpConnection implements Connection {
+    private url: string
+    private log?: Logger
+    private agent: HttpAgent
+    private http: RpcHttpClient
+
+    constructor(options: HttpConnectionOptions) {
+        this.url = options.url
+        this.log = options.log
         this.agent = new HttpAgent({
             keepAlive: true
         })
-        this.http = new HttpClient({
+        this.http = new RpcHttpClient({
             agent: this.agent
         })
+        this.http.fixUnsafeIntegers = options.fixUnsafeIntegers || false
     }
 
     close(err?: Error): void {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-http-server",
+      "comment": "new app framework",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-http-server"
+}
