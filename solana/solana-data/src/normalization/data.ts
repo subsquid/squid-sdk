@@ -52,6 +52,10 @@ export interface Instruction {
     // execution result extracted from logs
     computeUnitsConsumed?: bigint
     error?: string
+    /**
+     * `true` when transaction completed successfully, `false` otherwise
+     */
+    isCommitted: boolean
 }
 
 

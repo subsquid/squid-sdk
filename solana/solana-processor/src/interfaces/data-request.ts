@@ -45,6 +45,7 @@ export interface InstructionRequest {
     a7?: Base58Bytes[]
     a8?: Base58Bytes[]
     a9?: Base58Bytes[]
+    isCommitted?: boolean
     transaction?: boolean
     logs?: boolean
     innerInstructions?: boolean

@@ -4,7 +4,7 @@ import {
     ANY_OBJECT,
     array,
     B58,
-    BIG_NAT,
+    BIG_NAT, BOOLEAN, BYTES,
     constant,
     NAT,
     nullable,
@@ -61,7 +61,12 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             accounts: array(B58),
             data: B58,
             computeUnitsConsumed: option(BIG_NAT),
-            error: option(STRING)
+            d1: BYTES,
+            d2: BYTES,
+            d4: BYTES,
+            d8: BYTES,
+            error: option(STRING),
+            isCommitted: BOOLEAN
         })
     })
 

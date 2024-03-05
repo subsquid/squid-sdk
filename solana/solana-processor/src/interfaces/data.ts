@@ -35,7 +35,8 @@ export const DEFAULT_FIELDS = {
     instruction: {
         programId: true,
         accounts: true,
-        data: true
+        data: true,
+        isCommitted: true
     },
     log: {
         programId: true,

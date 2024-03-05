@@ -378,7 +378,8 @@ class InstructionParser {
             instructionAddress: address,
             programId: this.getAccount(src.programIdIndex),
             accounts: src.accounts.map(a => this.getAccount(a)),
-            data: src.data
+            data: src.data,
+            isCommitted: !this.tx.err
         }
 
         this.instructions.push(i)
