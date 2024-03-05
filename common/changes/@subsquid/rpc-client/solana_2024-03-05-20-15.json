@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "add `.fixUnsafeIntegers` request option",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "refine retry warning message",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

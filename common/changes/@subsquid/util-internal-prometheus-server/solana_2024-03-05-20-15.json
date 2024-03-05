@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-prometheus-server",
+      "comment": "adapt to a new version of `util-internal-http-server`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-prometheus-server"
+}

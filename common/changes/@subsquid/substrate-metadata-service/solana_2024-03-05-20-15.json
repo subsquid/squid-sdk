@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-service",
+      "comment": "migrate to a new version of `util-internal-http-server`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-service"
+}

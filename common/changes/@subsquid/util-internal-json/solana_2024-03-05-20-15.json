@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-json",
+      "comment": "make `.stack` the first property of JSON serialized Error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-json"
+}

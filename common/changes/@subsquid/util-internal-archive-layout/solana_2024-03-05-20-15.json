@@ -1,0 +1,25 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "add `ArchiveLayout.getRawBlocks()`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "add `.topDirSize` option",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "relax short block hash regex",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "fix: `ArchiveLayout.append()` should not try to extend passed block range when it is already completed",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}

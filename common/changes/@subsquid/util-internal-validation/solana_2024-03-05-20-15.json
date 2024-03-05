@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-validation",
+      "comment": "add `tuple()` validator",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal-validation",
+      "comment": "add `B58`, `BIG_NAT` primitives",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-validation"
+}
