@@ -7,7 +7,7 @@ export type TransactionRequiredFields = 'transactionIndex'
 export type InstructionRequiredFields = 'transactionIndex' | 'instructionAddress'
 export type LogRequiredFields = 'transactionIndex' | 'logIndex' | 'instructionAddress'
 export type BalanceRequiredFields = 'transactionIndex' | 'account'
-export type TokenBalanceRequiredFields = 'transactionIndex' | 'account' | 'mint'
+export type TokenBalanceRequiredFields = 'transactionIndex' | 'account'
 export type RewardRequiredFields = 'pubkey'
 
 
@@ -26,5 +26,6 @@ export interface PartialBlock {
     instructions?: PartialInstruction[]
     logs?: PartialLogMessage[]
     balances?: PartialBalance[]
-    // tokenBalances: PartialTokenBalance[]
+    tokenBalances?: PartialTokenBalance[]
+    rewards?: PartialReward[]
 }

@@ -69,6 +69,14 @@ export interface LogMessage {
 }
 
 
+export interface Balance {
+    transactionIndex: number
+    account: Base58Bytes
+    pre: bigint
+    post: bigint
+}
+
+
 export interface TokenBalance {
     transactionIndex: number
     account: Base58Bytes
@@ -76,14 +84,6 @@ export interface TokenBalance {
     owner?: Base58Bytes
     programId?: Base58Bytes
     decimals: number
-    pre: bigint
-    post: bigint
-}
-
-
-export interface Balance {
-    transactionIndex: number
-    account: Base58Bytes
     pre: bigint
     post: bigint
 }

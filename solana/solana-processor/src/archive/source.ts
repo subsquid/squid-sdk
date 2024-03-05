@@ -38,8 +38,9 @@ export class SolanaArchive implements DataSource<Block, DataRequest> {
                     transaction: fields?.transaction,
                     instruction: fields?.instruction,
                     log: {instructionAddress: true, ...fields?.log},
-                    // FIXME
-                    // balance: fields?.balance
+                    balance: fields?.balance,
+                    tokenBalance: fields?.tokenBalance,
+                    reward: fields?.reward
                 },
                 ...items
             }
