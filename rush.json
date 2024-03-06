@@ -451,6 +451,12 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/evm-dump",
+      "projectFolder": "evm/evm-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
