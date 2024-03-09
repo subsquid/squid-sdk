@@ -20,6 +20,15 @@ COPY --from=solana-dump-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-dump/bin/run.js"]
 
 
+FROM builder AS solana-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-ingest
+
+
+FROM node AS solana-ingest
+COPY --from=solana-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-ingest/bin/run.js"]
+
+
 FROM builder AS substrate-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate-dump
 

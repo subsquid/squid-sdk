@@ -19,6 +19,7 @@
    */
   "deploymentProjectNames": [
     "@subsquid/solana-dump",
+    "@subsquid/solana-ingest",
     "@subsquid/substrate-dump",
     "@subsquid/substrate-ingest",
     "@subsquid/substrate-metadata-service"
