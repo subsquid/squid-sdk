@@ -14,7 +14,7 @@ import {
     Validator,
     withDefault
 } from '@subsquid/util-internal-validation'
-import {DebugStateDiffResult, TraceStateDiff} from '@subsquid/evm-data/lib/rpc'
+import {DebugStateDiffResult, TraceStateDiff, TransactionSchema} from '@subsquid/evm-data/lib/rpc'
 import {Bytes, Bytes20} from '@subsquid/evm-data'
 import {FieldSelection} from '../interfaces/data'
 import {
@@ -32,13 +32,7 @@ import {MappingRequest} from './request'
 // (no matter what field selection is telling us to omit)
 export const getBlockValidator = weakMemo((req: MappingRequest) => {
     let Transaction = req.transactions
-        ? object({
-            ...getTxProps(req.fields.transaction, false),
-            hash: BYTES,
-            input: BYTES,
-            from: BYTES,
-            to: option(BYTES),
-        })
+        ? object(project(req.fields.transaction, TransactionSchema.props))
         : BYTES
 
     let GetBlock = object({

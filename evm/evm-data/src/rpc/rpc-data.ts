@@ -60,7 +60,7 @@ export interface Block {
 }
 
 
-const Transaction = object({
+export const TransactionSchema = object({
     blockNumber: SMALL_QTY,
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
@@ -83,7 +83,7 @@ const Transaction = object({
 })
 
 
-export type Transaction = GetSrcType<typeof Transaction>
+export type Transaction = GetSrcType<typeof TransactionSchema>
 
 
 const GetBlockBase = {
@@ -112,7 +112,7 @@ const GetBlockBase = {
 
 export const GetBlockWithTransactions = object({
     ...GetBlockBase,
-    transactions: array(Transaction)
+    transactions: array(TransactionSchema)
 })
 
 
