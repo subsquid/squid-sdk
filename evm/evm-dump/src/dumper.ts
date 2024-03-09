@@ -1,5 +1,5 @@
-import {Block, DataRequest} from '@subsquid/evm-processor/lib/ds-rpc/rpc-data'
-import {Rpc} from '@subsquid/evm-processor/lib/ds-rpc/rpc'
+import {Block, DataRequest} from '@subsquid/evm-data/lib/rpc/rpc-data'
+import {Rpc} from '@subsquid/evm-data/lib/rpc/rpc'
 import {def} from '@subsquid/util-internal'
 import {coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {Command, Dumper, DumperOptions, positiveInt, Range} from '@subsquid/util-internal-dump-cli'

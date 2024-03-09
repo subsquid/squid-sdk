@@ -23,13 +23,13 @@ import {
 } from '@subsquid/util-internal-range'
 import {BYTES, cast, object, SMALL_QTY} from '@subsquid/util-internal-validation'
 import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
+import {Bytes32} from '@subsquid/evm-data'
+import {Rpc} from '@subsquid/evm-data/lib/rpc'
 import assert from 'assert'
-import {Bytes32} from '../interfaces/base'
 import {DataRequest} from '../interfaces/data-request'
 import {Block} from '../mapping/entities'
 import {mapBlock} from './mapping'
 import {MappingRequest, toMappingRequest} from './request'
-import {Rpc} from './rpc'
 
 
 const NO_REQUEST = toMappingRequest()

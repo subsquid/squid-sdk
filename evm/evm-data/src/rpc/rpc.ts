@@ -6,8 +6,7 @@ import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-
 import {FiniteRange, rangeToArray, SplitRequest} from '@subsquid/util-internal-range'
 import {array, DataValidationError, GetSrcType, nullable, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {Bytes, Bytes32, Qty} from '../interfaces/base'
-import {isEmpty} from '../mapping/schema'
+import {Bytes, Bytes32, Qty} from '../base'
 import {
     Block,
     DataRequest,
@@ -26,6 +25,14 @@ import {getTxHash, qty2Int, toQty} from './util'
 
 
 const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
+
+
+export function isEmpty(obj: object): boolean {
+    for (let _ in obj) {
+        return false
+    }
+    return true
+}
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {

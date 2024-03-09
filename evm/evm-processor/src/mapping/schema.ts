@@ -71,12 +71,12 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
 export function getTxReceiptProps(fields: FieldSelection['transaction'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
     return project(fields, {
-        gasUsed: withSentinel('Receipt.gasUsed', -1n, QTY),
-        cumulativeGasUsed: withSentinel('Receipt.cumulativeGasUsed', -1n, QTY),
-        effectiveGasPrice: withSentinel('Receipt.effectiveGasPrice', -1n, QTY),
-        contractAddress: option(BYTES),
-        type: withSentinel('Receipt.type', -1, natural),
-        status: withSentinel('Receipt.status', -1, natural),
+        // gasUsed: withSentinel('Receipt.gasUsed', -1n, QTY),
+        // cumulativeGasUsed: withSentinel('Receipt.cumulativeGasUsed', -1n, QTY),
+        // effectiveGasPrice: withSentinel('Receipt.effectiveGasPrice', -1n, QTY),
+        // contractAddress: option(BYTES),
+        // type: withSentinel('Receipt.type', -1, natural),
+        // status: withSentinel('Receipt.status', -1, natural),
     })
 }
 

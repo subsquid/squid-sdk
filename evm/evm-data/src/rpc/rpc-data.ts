@@ -15,8 +15,23 @@ import {
     STRING,
     Validator
 } from '@subsquid/util-internal-validation'
-import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
-import {project} from '../mapping/schema'
+import {Bytes, Bytes8, Bytes20, Bytes32, Qty} from '../base'
+
+
+export function project<T extends object, F extends {[K in keyof T]?: boolean}>(
+    fields: F | undefined,
+    obj: T
+): Partial<T> {
+    if (fields == null) return {}
+    let result: Partial<T> = {}
+    let key: keyof T
+    for (key in obj) {
+        if (fields[key]) {
+            result[key] = obj[key]
+        }
+    }
+    return result
+}
 
 
 export interface DataRequest {
@@ -50,27 +65,59 @@ const Transaction = object({
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
     hash: BYTES,
-    input: BYTES
+    input: BYTES,
+    nonce: SMALL_QTY,
+    from: BYTES,
+    to: option(BYTES),
+    value: QTY,
+    type: option(SMALL_QTY),
+    gas: QTY,
+    gasPrice: QTY,
+    maxFeePerGas: option(QTY),
+    maxPriorityFeePerGas: option(QTY),
+    v: option(QTY),
+    r: option(BYTES),
+    s: option(BYTES),
+    yParity: option(SMALL_QTY),
+    chainId: option(SMALL_QTY)
 })
 
 
 export type Transaction = GetSrcType<typeof Transaction>
 
 
-export const GetBlockWithTransactions = object({
+const GetBlockBase = {
     number: SMALL_QTY,
     hash: BYTES,
     parentHash: BYTES,
     logsBloom: BYTES,
+    timestamp: SMALL_QTY,
+    transactionsRoot: BYTES,
+    receiptsRoot: BYTES,
+    stateRoot: BYTES,
+    sha3Uncles: BYTES,
+    extraData: BYTES,
+    miner: BYTES,
+    nonce: option(BYTES),
+    mixHash: option(BYTES),
+    size: SMALL_QTY,
+    gasLimit: QTY,
+    gasUsed: QTY,
+    difficulty: option(QTY),
+    totalDifficulty: option(QTY),
+    baseFeePerGas: option(QTY),
+    l1BlockNumber: option(SMALL_QTY)
+}
+
+
+export const GetBlockWithTransactions = object({
+    ...GetBlockBase,
     transactions: array(Transaction)
 })
 
 
 export const GetBlockNoTransactions = object({
-    number: SMALL_QTY,
-    hash: BYTES,
-    parentHash: BYTES,
-    logsBloom: BYTES,
+    ...GetBlockBase,
     transactions: array(BYTES)
 })
 
@@ -80,6 +127,22 @@ export interface GetBlock {
     hash: Bytes32
     parentHash: Bytes32
     logsBloom: Bytes
+    timestamp: Qty
+    transactionsRoot: Bytes32
+    receiptsRoot: Bytes32
+    stateRoot: Bytes32
+    sha3Uncles: Bytes32
+    extraData: Bytes
+    miner: Bytes20
+    nonce?: Bytes8 | null
+    mixHash?: Bytes | null
+    size: Qty
+    gasLimit: Qty
+    gasUsed: Qty
+    difficulty?: Qty | null
+    totalDifficulty?: Qty | null
+    baseFeePerGas?: Qty | null
+    l1BlockNumber?: Qty | null
     transactions: Bytes32[] | Transaction[]
 }
 

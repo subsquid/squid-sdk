@@ -47,9 +47,15 @@ dependencies:
   '@rush-temp/erc20-transfers':
     specifier: file:./projects/erc20-transfers.tgz
     version: file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2)
+  '@rush-temp/evm-data':
+    specifier: file:./projects/evm-data.tgz
+    version: file:projects/evm-data.tgz
   '@rush-temp/evm-dump':
     specifier: file:./projects/evm-dump.tgz
     version: file:projects/evm-dump.tgz
+  '@rush-temp/evm-ingest':
+    specifier: file:./projects/evm-ingest.tgz
+    version: file:projects/evm-ingest.tgz
   '@rush-temp/evm-processor':
     specifier: file:./projects/evm-processor.tgz
     version: file:projects/evm-processor.tgz
@@ -5271,8 +5277,17 @@ packages:
       - utf-8-validate
     dev: false
 
+  file:projects/evm-data.tgz:
+    resolution: {integrity: sha512-TIl6xxW97ji3e9TtkSxuwkMLeJmaTJMyI42oEcdEkqb45yfAY8MH4HdmOvo19xGk2tL7yFXFKTwV+n9+DniTWw==, tarball: file:projects/evm-data.tgz}
+    name: '@rush-temp/evm-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
   file:projects/evm-dump.tgz:
-    resolution: {integrity: sha512-DKBph5BNVGkG2JASJLUQXh4WBWlzQINGgYR91CwAJQREV3B99eDUY+ywr0O5FVJxxWCOkvWj41hExKqLQWtmSQ==, tarball: file:projects/evm-dump.tgz}
+    resolution: {integrity: sha512-+Qck/LHUTEWDScuoLgYXWD55XINSFXqonGKhsNprG0ASZu6r1H3qJbHWa0uLlaxLErKNXCLKqK+gCmEqU9htQg==, tarball: file:projects/evm-dump.tgz}
     name: '@rush-temp/evm-dump'
     version: 0.0.0
     dependencies:
@@ -5280,8 +5295,17 @@ packages:
       typescript: 5.3.3
     dev: false
 
+  file:projects/evm-ingest.tgz:
+    resolution: {integrity: sha512-/YUduCwLPjD4XmVuoaLTv0gkhKvyz1h2Oqen0m/S8GrtMdxiJE5KPUHTDe/D6F2RBPn34c743rM7QTh9GU9fdg==, tarball: file:projects/evm-ingest.tgz}
+    name: '@rush-temp/evm-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-ZeY6rzzfGzR19tgMLcmmUZ+P3FMJ09o8V3hn/p2ESBJJef3LKfXzO3weomLwG5VE6IHeRUxh2VBqIe8sShLi0g==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-PiWYYUNdXL4iOe+/JQPa88LkRD5ebn8aq07ZHLdt9QOF8QKvOnkMNzIIBPCIiHoVKKUtJ5WWmgAZnjX4WxhmMA==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:

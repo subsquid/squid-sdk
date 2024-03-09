@@ -1,16 +1,17 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {cast, GetCastType} from '@subsquid/util-internal-validation'
 import {GetPropsCast} from '@subsquid/util-internal-validation/lib/composite/object'
-import assert from 'assert'
-import {Bytes, Bytes20, Bytes32} from '../interfaces/base'
-import {FieldSelection} from '../interfaces/data'
+import {Bytes, Bytes20, Bytes32} from '@subsquid/evm-data'
+import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from '@subsquid/evm-data/lib/rpc'
 import {
     EvmTraceCallAction,
     EvmTraceCallResult,
     EvmTraceCreateAction,
     EvmTraceCreateResult,
     EvmTraceSuicideAction
-} from '../interfaces/evm'
+} from '@subsquid/evm-data/lib/normalization'
+import assert from 'assert'
+import {FieldSelection} from '../interfaces/data'
 import {
     Block,
     BlockHeader,
@@ -31,7 +32,6 @@ import {setUpRelations} from '../mapping/relations'
 import {getLogProps, getTraceFrameValidator, isEmpty} from '../mapping/schema'
 import {filterBlock} from './filter'
 import {MappingRequest} from './request'
-import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from './rpc-data'
 import {DebugFrame, getBlockValidator} from './schema'
 import {getTxHash} from './util'
 

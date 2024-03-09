@@ -50,12 +50,12 @@ export function getTxSelectionValidator() {
         s: FIELD,
         yParity: FIELD,
         chainId: FIELD,
-        gasUsed: FIELD,
-        cumulativeGasUsed: FIELD,
-        effectiveGasPrice: FIELD,
-        contractAddress: FIELD,
-        type: FIELD,
-        status: FIELD,
+        // gasUsed: FIELD,
+        // cumulativeGasUsed: FIELD,
+        // effectiveGasPrice: FIELD,
+        // contractAddress: FIELD,
+        // type: FIELD,
+        // status: FIELD,
     }
     return object(fields)
 }

@@ -451,8 +451,20 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/evm-data",
+      "projectFolder": "evm/evm-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-dump",
       "projectFolder": "evm/evm-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "projectFolder": "evm/evm-ingest",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

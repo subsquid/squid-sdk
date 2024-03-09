@@ -14,7 +14,8 @@ import {
     Validator,
     withDefault
 } from '@subsquid/util-internal-validation'
-import {Bytes, Bytes20} from '../interfaces/base'
+import {DebugStateDiffResult, TraceStateDiff} from '@subsquid/evm-data/lib/rpc'
+import {Bytes, Bytes20} from '@subsquid/evm-data'
 import {FieldSelection} from '../interfaces/data'
 import {
     getBlockHeaderProps,
@@ -25,7 +26,6 @@ import {
     project
 } from '../mapping/schema'
 import {MappingRequest} from './request'
-import {DebugStateDiffResult, TraceStateDiff} from './rpc-data'
 
 // Here we must be careful to include all fields,
 // that can potentially be used in item filters
