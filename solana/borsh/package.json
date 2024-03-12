@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/ss58-codec",
-  "version": "1.2.3",
-  "description": "SS58 address format encoder/decoder",
+  "name": "@subsquid/borsh",
+  "version": "0.0.0",
+  "description": "Borsh encoder/decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -17,7 +17,6 @@
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "blake2b": "^2.1.4",
     "bs58": "^5.0.0"
   },
   "devDependencies": {

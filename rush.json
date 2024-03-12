@@ -497,6 +497,13 @@
       "shouldPublish": false
     },
     {
+      "packageName": "@subsquid/borsh",
+      "projectFolder": "solana/borsh",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/solana-data",
       "projectFolder": "solana/solana-data",
       "shouldPublish": false
@@ -815,6 +822,11 @@
     {
       "packageName": "balances",
       "projectFolder": "test/balances",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "borsh-bench",
+      "projectFolder": "test/borsh-bench",
       "shouldPublish": false
     },
     {

@@ -1,0 +1,16 @@
+{
+  "name": "borsh-bench",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@subsquid/borsh": "^0.0.0",
+    "@subsquid/util-internal": "^3.0.0",
+    "@subsquid/util-internal-json": "^1.2.2",
+    "@subsquid/util-internal-read-lines": "^1.2.2",
+    "bs58": "^5.0.0",
+    "typescript": "~5.3.2"
+  }
+}
