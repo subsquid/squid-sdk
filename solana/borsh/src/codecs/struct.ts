@@ -2,6 +2,7 @@ import {Codec, GetCodecType} from '../codec'
 import {Sink} from '../sink'
 import {Src} from '../src'
 import {AddOptionToUndefined, Simplify} from '../type-util'
+import {propAccess, propName} from '../util'
 
 
 export type GetStructType<Props> = Simplify<AddOptionToUndefined<{
@@ -40,29 +41,6 @@ export class StructCodec<S> implements Codec<S> {
         }
         return new Function('sink', 'val', body)
     }
-}
-
-
-function propName(prop: string): string {
-    if (isValidProperty(prop)) {
-        return prop
-    } else {
-        return '[' + JSON.stringify(prop) + ']'
-    }
-}
-
-
-function propAccess(prop: string): string {
-    if (isValidProperty(prop)) {
-        return '.' + prop
-    } else {
-        return '[' + JSON.stringify(prop) + ']'
-    }
-}
-
-
-function isValidProperty(s: string): boolean {
-    return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(s)
 }
 
 

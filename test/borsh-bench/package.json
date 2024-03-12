@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@coral-xyz/borsh": "^0.29.0",
     "@subsquid/borsh": "^0.0.0",
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-json": "^1.2.2",

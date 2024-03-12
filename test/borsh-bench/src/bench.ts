@@ -1,8 +1,8 @@
 import {BorshCoder} from '@coral-xyz/anchor'
+import * as ab from '@coral-xyz/borsh'
 import {array, bool, struct, u128, u64} from '@subsquid/borsh'
 import {def} from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
-import base58 from 'bs58'
 import WHIRLPOOL from '../idls/whirlpool.json'
 import {buildCallArray, CallData, decode, kb, measure, readCallData} from './util'
 
@@ -42,13 +42,13 @@ class Bench {
 
         {
             let anchor = new BorshCoder(WHIRLPOOL as any)
-            let calls = this.whirlpoolData().map(call => Buffer.from(base58.decode(call.data)))
-
-            measure('Whirlpool swap Anchor', () => {
-                for (let call of calls) {
-                    anchor.instruction.decode(call)
-                }
+            let callLayout = (anchor.instruction as any).ixLayout.get('swap')
+            let vecLayout = ab.vec(callLayout)
+            let buf = Buffer.from(bytes)
+            let decoded = measure('Whirlpool swap Anchor', () => {
+                return vecLayout.decode(buf)
             })
+            // console.log(decoded[0])
         }
     }
 }

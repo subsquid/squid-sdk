@@ -6,6 +6,24 @@ import {Base58Bytes} from '../type-util'
 import assert from 'assert'
 
 
+export const unit: Codec<undefined> = {
+    decode(src: Src): undefined {
+        return undefined
+    },
+    encode(sink: Sink, val: undefined): void {}
+}
+
+
+export const bool: Codec<boolean> = {
+    encode(sink: Sink, val: boolean): void {
+        sink.bool(val)
+    },
+    decode(src: Src): boolean {
+        return src.bool()
+    }
+}
+
+
 export const u8: Codec<number> = {
     encode(sink: Sink, val: number): void {
         sink.u8(val)
@@ -124,16 +142,6 @@ export const string: Codec<string> = {
     },
     decode(src: Src): string {
         return src.string()
-    }
-}
-
-
-export const bool: Codec<boolean> = {
-    encode(sink: Sink, val: boolean): void {
-        sink.bool(val)
-    },
-    decode(src: Src): boolean {
-        return src.bool()
     }
 }
 

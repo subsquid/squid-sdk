@@ -17,6 +17,9 @@ dependencies:
   '@coral-xyz/anchor':
     specifier: ^0.29.0
     version: 0.29.0
+  '@coral-xyz/borsh':
+    specifier: ^0.29.0
+    version: 0.29.0(@solana/web3.js@1.91.0)
   '@exodus/schemasafe':
     specifier: ^1.3.0
     version: 1.3.0
@@ -5532,14 +5535,16 @@ packages:
     dev: false
 
   file:projects/borsh-bench.tgz:
-    resolution: {integrity: sha512-9nTn5z/YB43fYNYLDE4kVre7e0KcK2IIrBv89FJ26zJot4bW4n++BDmrMNxQECmiAYKF2lPuOzSkPm1l57vjUA==, tarball: file:projects/borsh-bench.tgz}
+    resolution: {integrity: sha512-iv53bNgw4iydiVtBARnaBre7M/KSXFzSUOZcpbFogbPpmHZVIxvhSnwwB56mXIWA8Oon726DKgECgo4/9kAXyQ==, tarball: file:projects/borsh-bench.tgz}
     name: '@rush-temp/borsh-bench'
     version: 0.0.0
     dependencies:
       '@coral-xyz/anchor': 0.29.0
+      '@coral-xyz/borsh': 0.29.0(@solana/web3.js@1.91.0)
       bs58: 5.0.0
       typescript: 5.3.3
     transitivePeerDependencies:
+      - '@solana/web3.js'
       - bufferutil
       - encoding
       - utf-8-validate
