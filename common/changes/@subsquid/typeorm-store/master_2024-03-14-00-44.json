@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "support `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

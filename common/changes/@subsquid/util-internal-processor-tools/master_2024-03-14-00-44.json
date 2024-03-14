@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "introduce `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}
