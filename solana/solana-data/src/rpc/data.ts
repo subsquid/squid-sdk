@@ -1,4 +1,5 @@
 import {
+    ANY,
     ANY_NAT,
     array,
     B58,
@@ -84,7 +85,7 @@ export type Reward = GetSrcType<typeof Reward>
 
 export const TransactionMeta = object({
     computeUnitsConsumed: option(ANY_NAT),
-    err: nullable(object({})),
+    err: ANY,
     fee: ANY_NAT,
     preBalances: array(ANY_NAT),
     postBalances: array(ANY_NAT),

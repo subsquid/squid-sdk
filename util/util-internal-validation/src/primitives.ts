@@ -2,6 +2,19 @@ import {ValidationFailure} from './error'
 import {Validator} from './interface'
 
 
+export const ANY: Validator<any> = {
+    cast(value: unknown): any {
+        return value
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        return
+    },
+    phantom(): any {
+        throw new Error('Function not implemented.')
+    }
+}
+
+
 export const ANY_OBJECT: Validator<object> = {
     cast(value: unknown): object | ValidationFailure {
         return this.validate(value) || (value as object)
