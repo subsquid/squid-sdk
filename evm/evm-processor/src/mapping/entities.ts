@@ -1,5 +1,6 @@
 import {formatId} from '@subsquid/util-internal-processor-tools'
 import {Bytes, Bytes20, Bytes32, Bytes8} from '@subsquid/evm-data'
+import assert from 'assert'
 import {
     EvmTraceCallAction,
     EvmTraceCallResult,
@@ -7,8 +8,7 @@ import {
     EvmTraceCreateResult,
     EvmTraceRewardAction,
     EvmTraceSuicideAction
-} from '@subsquid/evm-data/lib/normalization'
-import assert from 'assert'
+} from '../interfaces/evm'
 
 
 export class Block {

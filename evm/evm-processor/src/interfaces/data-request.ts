@@ -1,5 +1,5 @@
 import {Bytes, Bytes20, Bytes32} from '@subsquid/evm-data'
-import {EvmStateDiff} from '@subsquid/evm-data/lib/normalization'
+import {EvmStateDiff} from '../interfaces/evm'
 import {FieldSelection} from './data'
 
 

@@ -22,6 +22,7 @@
     "@subsquid/evm-data": "^0.0.0",
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-ingest-tools": "^1.1.1",
+    "@subsquid/util-internal-validation": "^0.3.0",
     "@subsquid/util-internal-dump-cli": "^0.0.0"
   },
   "devDependencies": {

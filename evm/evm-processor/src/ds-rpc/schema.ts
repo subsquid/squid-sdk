@@ -14,44 +14,45 @@ import {
     Validator,
     withDefault
 } from '@subsquid/util-internal-validation'
-import {DebugStateDiffResult, TraceStateDiff, TransactionSchema} from '@subsquid/evm-data/lib/rpc'
+import {DebugStateDiffResult, TraceStateDiff} from '@subsquid/evm-data/lib/rpc'
 import {Bytes, Bytes20} from '@subsquid/evm-data'
 import {FieldSelection} from '../interfaces/data'
 import {
-    getBlockHeaderProps,
-    getLogProps,
+    getLogValidator,
     getTraceFrameValidator,
-    getTxProps,
-    getTxReceiptProps,
     project
 } from '../mapping/schema'
 import {MappingRequest} from './request'
+import * as schema from '@subsquid/evm-data/lib/schema'
 
 // Here we must be careful to include all fields,
 // that can potentially be used in item filters
 // (no matter what field selection is telling us to omit)
 export const getBlockValidator = weakMemo((req: MappingRequest) => {
     let Transaction = req.transactions
-        ? object(project(req.fields.transaction, TransactionSchema.props))
+        ? object({
+            ...project(req.fields.transaction, schema.Transaction.props),
+            hash: BYTES,
+            input: BYTES,
+            from: BYTES,
+            to: option(BYTES),
+            transactionIndex: SMALL_QTY,
+        })
         : BYTES
 
     let GetBlock = object({
-        ...getBlockHeaderProps(req.fields.block, false),
+        ...project(req.fields.block, schema.GetBlock.props),
+        number: SMALL_QTY,
+        hash: BYTES,
+        parentHash: BYTES,
         transactions: array(Transaction)
     })
 
-    let Log = object({
-        ...getLogProps(
-            {...req.fields.log, address: true, topics: true},
-            false
-        ),
-        address: BYTES,
-        topics: array(BYTES)
-    })
+    let Log = getLogValidator(req.fields.log, false)
 
     let Receipt = object({
+        ...project(req.fields.transaction, schema.TransactionReceipt.props),
         transactionIndex: SMALL_QTY,
-        ...getTxReceiptProps(req.fields.transaction, false),
         logs: req.logList ? array(Log) : undefined
     })
 

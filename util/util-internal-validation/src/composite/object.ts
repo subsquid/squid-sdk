@@ -13,7 +13,7 @@ export type GetPropsSrc<Props> = Simplify<AddOptionToUndefined<{
 }>>
 
 
-export class ObjectValidator<Props extends Record<string, Validator>>
+export class ObjectValidator<Props extends Record<string, Validator | undefined>>
     implements Validator<GetPropsCast<Props>, GetPropsSrc<Props>>
 {
     constructor(public readonly props: Props) {}
@@ -22,7 +22,7 @@ export class ObjectValidator<Props extends Record<string, Validator>>
         if (typeof object != 'object' || !object) return new ValidationFailure(object, `{value} is not an object`)
         let result: any = {}
         for (let key in this.props) {
-            let val = this.props[key].cast(object[key])
+            let val = this.props[key]?.cast(object[key])
             if (val === undefined) continue
             if (val instanceof ValidationFailure) {
                 val.path.push(key)
@@ -36,7 +36,7 @@ export class ObjectValidator<Props extends Record<string, Validator>>
     validate(object: any): ValidationFailure | undefined {
         if (typeof object != 'object' || !object) return new ValidationFailure(object, `{value} is not an object`)
         for (let key in this.props) {
-            let err = this.props[key].validate(object[key])
+            let err = this.props[key]?.validate(object[key])
             if (err) {
                 err.path.push(key)
                 return err

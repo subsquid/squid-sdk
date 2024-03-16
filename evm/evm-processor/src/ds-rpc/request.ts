@@ -1,5 +1,5 @@
 import {DataRequest as RpcDataRequest} from '@subsquid/evm-data/lib/rpc'
-import {_EvmTx, _EvmTxReceipt} from '@subsquid/evm-data/lib/normalization'
+import {_EvmTx, _EvmTxReceipt} from '../interfaces/evm'
 import {FieldSelection} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
 

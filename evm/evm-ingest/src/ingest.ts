@@ -1,5 +1,5 @@
 import {mapRpcBlock} from '@subsquid/evm-data/lib/normalization'
-import {Block as RawBlock} from '@subsquid/evm-data/lib/rpc'
+import {Block as RawBlock} from '@subsquid/evm-data/lib/schema'
 import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'

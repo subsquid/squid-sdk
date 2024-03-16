@@ -1,29 +1,47 @@
 import {weakMemo} from '@subsquid/util-internal'
-import {array, BYTES, NAT, object, option, STRING, taggedUnion, withDefault} from '@subsquid/util-internal-validation'
-import {FieldSelection} from '../interfaces/data'
 import {
-    getBlockHeaderProps,
-    getLogProps,
-    getTraceFrameValidator,
-    getTxProps,
-    getTxReceiptProps,
-    project
-} from '../mapping/schema'
+    array,
+    BYTES,
+    NAT,
+    object,
+    option,
+    STRING,
+    taggedUnion,
+    withDefault,
+    withSentinel
+} from '@subsquid/util-internal-validation'
+import * as schema from '@subsquid/evm-data/lib/schema'
+import {FieldSelection} from '../interfaces/data'
+import {getTraceFrameValidator, project, getLogValidator} from '../mapping/schema'
 
 
 export const getBlockValidator = weakMemo((fields: FieldSelection) => {
-    let BlockHeader = object(getBlockHeaderProps(fields.block, true))
-
-    let Transaction = object({
-        hash: fields.transaction?.hash ? BYTES : undefined,
-        ...getTxProps(fields.transaction, true),
-        sighash: fields.transaction?.sighash ? withDefault('0x', BYTES) : undefined,
-        ...getTxReceiptProps(fields.transaction, true)
+    let BlockHeader = object({
+        ...project(fields.block, {
+            ...schema.GetBlock.props,
+            timestamp: withSentinel('BlockHeader.timestamp', 0, NAT),
+            size: withSentinel('BlockHeader.size', -1, NAT),
+            l1BlockNumber: withDefault(0, NAT),
+        }),
+        number: NAT,
+        hash: BYTES,
+        parentHash: BYTES,
     })
 
-    let Log = object(
-        getLogProps(fields.log, true)
-    )
+    let Transaction = object({
+        ...project(fields.transaction, {
+            ...schema.Transaction.props,
+            ...schema.TransactionReceipt.props,
+            nonce: withSentinel('Transaction.nonce', -1, NAT),
+            yParity: option(NAT),
+            chainId: option(NAT),
+            type: withSentinel('Receipt.type', -1, NAT),
+            status: withSentinel('Receipt.status', -1, NAT),
+        }),
+        transactionIndex: NAT,
+    })
+
+    let Log = getLogValidator(fields.log, true)
 
     let Trace = getTraceFrameValidator(fields.trace, true)
 

@@ -15,17 +15,10 @@ import {DataValidationError, ValidationFailure} from './error'
 import {GetCastType, GetSrcType, Validator} from './interface'
 
 
-export function object<Props extends Record<string, Validator<any>>>(
+export function object<Props extends Record<string, Validator<any> | undefined>>(
     props: Props
 ): ObjectValidator<Props> {
-    let presentProps: Record<string, Validator<any>> = {}
-    for (let key in props) {
-        let v = props[key]
-        if (v) {
-            presentProps[key] = v
-        }
-    }
-    return new ObjectValidator(presentProps) as ObjectValidator<Props>
+    return new ObjectValidator(props)
 }
 
 

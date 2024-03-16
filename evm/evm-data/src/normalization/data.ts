@@ -1,25 +1,25 @@
 import {Bytes, Bytes20, Bytes32, Bytes8} from '../base'
 
 
-export interface EvmBlockHeader {
+export interface BlockHeader {
     height: number
     hash: Bytes32
     parentHash: Bytes32
     nonce?: Bytes8
-    sha3Uncles: Bytes32
-    logsBloom: Bytes
-    transactionsRoot: Bytes32
-    stateRoot: Bytes32
-    receiptsRoot: Bytes32
+    sha3Uncles?: Bytes32
+    logsBloom?: Bytes
+    transactionsRoot?: Bytes32
+    stateRoot?: Bytes32
+    receiptsRoot?: Bytes32
     mixHash?: Bytes
-    miner: Bytes20
+    miner?: Bytes20
     difficulty?: bigint
     totalDifficulty?: bigint
-    extraData: Bytes
-    size: bigint
-    gasLimit: bigint
-    gasUsed: bigint
-    timestamp: number
+    extraData?: Bytes
+    size?: bigint
+    gasLimit?: bigint
+    gasUsed?: bigint
+    timestamp?: number
     baseFeePerGas?: bigint
     /**
      * This field is not supported by all currently deployed archives.
@@ -29,23 +29,23 @@ export interface EvmBlockHeader {
 }
 
 
-export interface EvmTransaction extends _EvmTx, _EvmTxReceipt {
+export interface Transaction extends _Tx, _TxReceipt {
     transactionIndex: number
     sighash: Bytes
 }
 
 
-export interface _EvmTx {
+export interface _Tx {
     hash: Bytes32
     from: Bytes20
     to?: Bytes20
-    gas: bigint
-    gasPrice: bigint
+    gas?: bigint
+    gasPrice?: bigint
     maxFeePerGas?: bigint
     maxPriorityFeePerGas?: bigint
     input: Bytes
-    nonce: number
-    value: bigint
+    nonce?: number
+    value?: bigint
     v?: bigint
     r?: Bytes32
     s?: Bytes32
@@ -54,17 +54,17 @@ export interface _EvmTx {
 }
 
 
-export interface _EvmTxReceipt {
-    // gasUsed: bigint
-    // cumulativeGasUsed: bigint
-    // effectiveGasPrice: bigint
-    // contractAddress?: Bytes32
-    // type: number
-    // status: number
+export interface _TxReceipt {
+    gasUsed?: bigint
+    cumulativeGasUsed?: bigint
+    effectiveGasPrice?: bigint
+    contractAddress?: Bytes32
+    type?: number
+    status?: number
 }
 
 
-export interface EvmLog {
+export interface Log {
     logIndex: number
     transactionIndex: number
     transactionHash: Bytes32
@@ -74,7 +74,7 @@ export interface EvmLog {
 }
 
 
-export interface EvmTraceBase {
+export interface TraceBase {
     transactionIndex: number
     traceAddress: number[]
     subtraces: number
@@ -83,14 +83,14 @@ export interface EvmTraceBase {
 }
 
 
-export interface EvmTraceCreate extends EvmTraceBase {
+export interface TraceCreate extends TraceBase {
     type: 'create'
-    action: EvmTraceCreateAction
-    result?: EvmTraceCreateResult
+    action: TraceCreateAction
+    result?: TraceCreateResult
 }
 
 
-export interface EvmTraceCreateAction {
+export interface TraceCreateAction {
     from: Bytes20
     value: bigint
     gas: bigint
@@ -98,21 +98,21 @@ export interface EvmTraceCreateAction {
 }
 
 
-export interface EvmTraceCreateResult {
+export interface TraceCreateResult {
     gasUsed: bigint
     code: Bytes
     address: Bytes20
 }
 
 
-export interface EvmTraceCall extends EvmTraceBase {
+export interface TraceCall extends TraceBase {
     type: 'call'
-    action: EvmTraceCallAction
-    result?: EvmTraceCallResult
+    action: TraceCallAction
+    result?: TraceCallResult
 }
 
 
-export interface EvmTraceCallAction {
+export interface TraceCallAction {
     callType: string
     from: Bytes20
     to: Bytes20
@@ -123,83 +123,83 @@ export interface EvmTraceCallAction {
 }
 
 
-export interface EvmTraceCallResult {
+export interface TraceCallResult {
     gasUsed: bigint
     output: Bytes
 }
 
 
-export interface EvmTraceSuicide extends EvmTraceBase {
+export interface TraceSuicide extends TraceBase {
     type: 'suicide'
-    action: EvmTraceSuicideAction
+    action: TraceSuicideAction
 }
 
 
-export interface EvmTraceSuicideAction {
+export interface TraceSuicideAction {
     address: Bytes20
     refundAddress: Bytes20
     balance: bigint
 }
 
 
-export interface EvmTraceReward extends EvmTraceBase {
+export interface TraceReward extends TraceBase {
     type: 'reward'
-    action: EvmTraceRewardAction
+    action: TraceRewardAction
 }
 
 
-export interface EvmTraceRewardAction {
+export interface TraceRewardAction {
     author: Bytes20
     value: bigint
     type: string
 }
 
 
-export type EvmTrace = EvmTraceCreate | EvmTraceCall | EvmTraceSuicide | EvmTraceReward
+export type Trace = TraceCreate | TraceCall | TraceSuicide | TraceReward
 
 
-export interface EvmStateDiffBase {
+export interface StateDiffBase {
     transactionIndex: number
     address: Bytes20
     key: 'balance' | 'code' | 'nonce' | Bytes32
 }
 
 
-export interface EvmStateDiffNoChange extends EvmStateDiffBase {
+export interface StateDiffNoChange extends StateDiffBase {
     kind: '='
     prev?: null
     next?: null
 }
 
 
-export interface EvmStateDiffAdd extends EvmStateDiffBase {
+export interface StateDiffAdd extends StateDiffBase {
     kind: '+'
     prev?: null
     next: Bytes
 }
 
 
-export interface EvmStateDiffChange extends EvmStateDiffBase {
+export interface StateDiffChange extends StateDiffBase {
     kind: '*'
     prev: Bytes
     next: Bytes
 }
 
 
-export interface EvmStateDiffDelete extends EvmStateDiffBase {
+export interface EvmStateDiffDelete extends StateDiffBase {
     kind: '-'
     prev: Bytes
     next?: null
 }
 
 
-export type EvmStateDiff = EvmStateDiffNoChange | EvmStateDiffAdd | EvmStateDiffChange | EvmStateDiffDelete
+export type StateDiff = StateDiffNoChange | StateDiffAdd | StateDiffChange | EvmStateDiffDelete
 
 
 export interface Block {
-    header: EvmBlockHeader
-    transactions: EvmTransaction[]
-    logs: EvmLog[]
-    traces: EvmTrace[]
-    stateDiffs: EvmStateDiff[]
+    header: BlockHeader
+    transactions: Transaction[]
+    logs: Log[]
+    traces: Trace[]
+    stateDiffs: StateDiff[]
 }

@@ -1,4 +1,3 @@
-import {FieldSelection} from '../interfaces/data'
 import {
     array,
     BYTES,
@@ -9,90 +8,21 @@ import {
     SMALL_QTY,
     STRING,
     taggedUnion,
-    withDefault,
-    withSentinel
+    withDefault
 } from '@subsquid/util-internal-validation'
+import * as schema from '@subsquid/evm-data/lib/schema'
+import {FieldSelection} from '../interfaces/data'
 
 
-export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
+export function getLogValidator(fields: FieldSelection['log'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
-    return {
-        number: natural,
-        hash: BYTES,
-        parentHash: BYTES,
-        ...project(fields, {
-            nonce: withSentinel('BlockHeader.nonce', '0x', BYTES),
-            sha3Uncles: withSentinel('BlockHeader.sha3Uncles', '0x', BYTES),
-            logsBloom: withSentinel('BlockHeader.logsBloom', '0x', BYTES),
-            transactionsRoot: withSentinel('BlockHeader.transactionsRoot', '0x', BYTES),
-            stateRoot: withSentinel('BlockHeader.stateRoot', '0x', BYTES),
-            receiptsRoot: withSentinel('BlockHeader.receiptsRoot', '0x', BYTES),
-            mixHash: withSentinel('BlockHeader.mixHash', '0x', BYTES),
-            miner: withSentinel('BlockHeader.miner', '0x', BYTES),
-            difficulty: withSentinel('BlockHeader.difficulty', -1n, QTY),
-            totalDifficulty: withSentinel('BlockHeader.totalDifficulty', -1n, QTY),
-            extraData: withSentinel('BlockHeader.extraData', '0x', BYTES),
-            size: withSentinel('BlockHeader.size', -1, natural),
-            gasLimit: withSentinel('BlockHeader.gasLimit', -1n, QTY),
-            gasUsed: withSentinel('BlockHeader.gasUsed', -1n, QTY),
-            baseFeePerGas: withSentinel('BlockHeader.baseFeePerGas', -1n, QTY),
-            timestamp: withSentinel('BlockHeader.timestamp', 0, natural),
-            l1BlockNumber: withDefault(0, natural),
-    })
-    }
-}
-
-
-export function getTxProps(fields: FieldSelection['transaction'], forArchive: boolean) {
-    let natural = forArchive ? NAT : SMALL_QTY
-    return {
-        transactionIndex: natural,
-        ...project(fields, {
-            hash: BYTES,
-            from: BYTES,
-            to: option(BYTES),
-            gas: withSentinel('Transaction.gas', -1n, QTY),
-            gasPrice: withSentinel('Transaction.gasPrice', -1n, QTY),
-            maxFeePerGas: option(QTY),
-            maxPriorityFeePerGas: option(QTY),
-            input: BYTES,
-            nonce: withSentinel('Transaction.nonce', -1, natural),
-            value: withSentinel('Transaction.value', -1n, QTY),
-            v: withSentinel('Transaction.v', -1n, QTY),
-            r: withSentinel('Transaction.r', '0x', BYTES),
-            s: withSentinel('Transaction.s', '0x', BYTES),
-            yParity: option(natural),
-            chainId: option(natural),
-        })
-    }
-}
-
-
-export function getTxReceiptProps(fields: FieldSelection['transaction'], forArchive: boolean) {
-    let natural = forArchive ? NAT : SMALL_QTY
-    return project(fields, {
-        // gasUsed: withSentinel('Receipt.gasUsed', -1n, QTY),
-        // cumulativeGasUsed: withSentinel('Receipt.cumulativeGasUsed', -1n, QTY),
-        // effectiveGasPrice: withSentinel('Receipt.effectiveGasPrice', -1n, QTY),
-        // contractAddress: option(BYTES),
-        // type: withSentinel('Receipt.type', -1, natural),
-        // status: withSentinel('Receipt.status', -1, natural),
-    })
-}
-
-
-export function getLogProps(fields: FieldSelection['log'], forArchive: boolean) {
-    let natural = forArchive ? NAT : SMALL_QTY
-    return {
+    return object({
+        address: forArchive ? undefined : BYTES,
+        topics: forArchive ? undefined : array(BYTES),
+        ...project(fields, schema.Log.props),
         logIndex: natural,
         transactionIndex: natural,
-        ...project(fields, {
-            transactionHash: BYTES,
-            address: BYTES,
-            data: BYTES,
-            topics: array(BYTES)
-        })
-    }
+    })
 }
 
 
@@ -228,6 +158,3 @@ export function isEmpty(obj: object): boolean {
     }
     return true
 }
-
-
-export function assertAssignable<A, B extends A>(): void {}

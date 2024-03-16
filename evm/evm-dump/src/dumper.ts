@@ -1,8 +1,9 @@
-import {Block, DataRequest} from '@subsquid/evm-data/lib/rpc/rpc-data'
-import {Rpc} from '@subsquid/evm-data/lib/rpc/rpc'
+import {Block} from '@subsquid/evm-data/lib/schema'
+import {Rpc, DataRequest} from '@subsquid/evm-data/lib/rpc'
 import {def} from '@subsquid/util-internal'
 import {coldIngest} from '@subsquid/util-internal-ingest-tools'
-import {Command, Dumper, DumperOptions, positiveInt, Range} from '@subsquid/util-internal-dump-cli'
+import {Command, Dumper, DumperOptions, positiveInt, Range, SplitRequest} from '@subsquid/util-internal-dump-cli'
+import {DataValidationError} from '@subsquid/util-internal-validation'
 
 
 interface Options extends DumperOptions {
@@ -45,7 +46,7 @@ export class EvmDumper extends Dumper<Block, Options> {
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
         let request: DataRequest = {
-            logs: true,
+            logs: !this.options().withReceipts,
             transactions: true,
             receipts: this.options().withReceipts,
             traces: this.options().withTraces,
@@ -55,7 +56,7 @@ export class EvmDumper extends Dumper<Block, Options> {
         }
         let batches = coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
-            getSplit: req => this.getDataSource().getColdSplit(req),
+            getSplit: req => this.getColdSplit(req),
             requests: [{range, request}],
             concurrency: Math.min(5, this.getDataSource().client.getConcurrency()),
             splitSize: 10,
@@ -70,5 +71,16 @@ export class EvmDumper extends Dumper<Block, Options> {
     protected async getFinalizedHeight(): Promise<number> {
         let height = await this.getDataSource().getHeight()
         return Math.max(0, height - this.options().bestBlockOffset)
+    }
+
+    private async getColdSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+        let blocks = await this.getDataSource().getColdSplit(req)
+        for (let block of blocks) {
+            let err = Block.validate(block)
+            if (err) {
+                throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
+            }
+        }
+        return blocks as any
     }
 }

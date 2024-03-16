@@ -11,7 +11,7 @@ import {
     EvmTraceRewardAction,
     EvmTraceSuicideAction,
     EvmTransaction
-} from '@subsquid/evm-data/lib/normalization'
+} from './evm'
 
 
 type Simplify<T> = {
