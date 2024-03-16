@@ -65,7 +65,7 @@ export const Transaction = object({
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
     hash: BYTES,
-    input: BYTES,
+    input: BYTES
 })
 
 

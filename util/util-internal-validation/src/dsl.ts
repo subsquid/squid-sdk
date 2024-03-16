@@ -3,7 +3,7 @@ import {ConstantValidator} from './composite/constant'
 import {Default} from './composite/default'
 import {GetKeyTaggedUnionCast, GetKeyTaggedUnionSrc, KeyTaggedUnionValidator} from './composite/key-tagged-union'
 import {NullableValidator} from './composite/nullable'
-import {GetPropsCast, GetPropsSrc, ObjectValidator} from './composite/object'
+import {ObjectValidator} from './composite/object'
 import {GetOneOfCast, GetOneOfSrc, OneOfValidator} from './composite/one-of'
 import {OptionValidator} from './composite/option'
 import {RecordValidator} from './composite/record'
@@ -17,8 +17,15 @@ import {GetCastType, GetSrcType, Validator} from './interface'
 
 export function object<Props extends Record<string, Validator<any> | undefined>>(
     props: Props
-): ObjectValidator<Props> {
-    return new ObjectValidator(props)
+): ObjectValidator<{[K in keyof Props]: NonNullable<Props[K]>}> {
+    let presentProps: Record<string, Validator<any>> = {}
+    for (let key in props) {
+        let v = props[key]
+        if (v) {
+            presentProps[key] = v
+        }
+    }
+    return new ObjectValidator(presentProps) as any
 }
 
 
