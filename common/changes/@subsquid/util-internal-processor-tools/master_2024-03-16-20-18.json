@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "refresh chain height metric once in 20 seconds",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

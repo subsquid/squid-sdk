@@ -1,5 +1,5 @@
 import type {Logger} from '@subsquid/logger'
-import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
+import {assertNotNull, def, last, maybeLast, wait} from '@subsquid/util-internal'
 import {applyRangeBound, rangeEnd, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Database, HashAndHeight, HotDatabaseState} from './database'
@@ -61,7 +61,9 @@ export class Runner<R, S> {
                     state,
                     src: archive,
                     shouldStopOnHead: !!hot
-                })
+                }).finally(
+                    this.chainHeightUpdateLoop(archive)
+                )
                 if (this.getLeftRequests(state).length == 0) return
             }
         }
@@ -77,7 +79,9 @@ export class Runner<R, S> {
                 state,
                 src: hot,
                 shouldStopOnHead: this.config.database.supportsHotBlocks && !this.config.allBlocksAreFinal
-            })
+            }).finally(
+                this.chainHeightUpdateLoop(hot)
+            )
             if (this.getLeftRequests(state).length == 0) return
         }
 
@@ -106,7 +110,9 @@ export class Runner<R, S> {
             state = nextState
         }
 
-        return this.processHotBlocks(state)
+        return this.processHotBlocks(state).finally(
+            this.chainHeightUpdateLoop(hot)
+        )
     }
 
     private async assertWeAreOnTheSameChain(src: DataSource<unknown, unknown>, state: HashAndHeight): Promise<void> {
@@ -235,6 +241,31 @@ export class Runner<R, S> {
                 lastHead = newHead
             }
         )
+    }
+
+    private chainHeightUpdateLoop(src: DataSource<unknown, unknown>): () => void {
+        let abort = new AbortController()
+
+        let loop = async () => {
+            while (!abort.signal.aborted) {
+                await wait(20_000, abort.signal)
+                let newHeight = await src.getFinalizedHeight().catch(err => {
+                    if (!abort.signal.aborted) {
+                        this.log.error(err, 'failed to check chain height')
+                    }
+                    return this.metrics.getChainHeight()
+                })
+                this.metrics.setChainHeight(newHeight)
+            }
+        }
+
+        loop().catch(err => {
+            if (!abort.signal.aborted) {
+                this.log.error(err, 'chain height metric update loop failed')
+            }
+        })
+
+        return () => abort.abort()
     }
 
     private async withProgressMetrics<R>(blocks: Block[], handler: () => R): Promise<R> {

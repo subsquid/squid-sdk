@@ -11,10 +11,10 @@ const processor = new EvmBatchProcessor()
     .setGateway('https://v2.archive.subsquid.io/network/arbitrum-one')
     .setRpcEndpoint(process.env.ARB_NODE_WS)
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 153000000})
+    .setBlockRange({from: 190000000})
     .setFields({
         block: {size: true},
-        log: {transactionHash: true, foo: true}
+        log: {transactionHash: true}
     })
     .addLog({
         address: [CONTRACT],
