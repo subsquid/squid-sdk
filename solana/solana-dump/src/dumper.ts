@@ -64,11 +64,24 @@ export class SolanaDumper extends Dumper<Block, Options> {
             }
         }])
         for await (let batch of batches) {
+            for (let b of batch.blocks) {
+                checkLogMessages(b)
+            }
             yield batch.blocks
         }
     }
 
     protected getFinalizedHeight(): Promise<number> {
         return this.getDataSource().getFinalizedHeight()
+    }
+}
+
+
+function checkLogMessages(block: Block): void {
+    if (block.height > 114_000_000 && block.height < 115_000_000) return
+    for (let tx of block.block.transactions!) {
+        if (tx.meta.logMessages == null) {
+            throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
+        }
     }
 }

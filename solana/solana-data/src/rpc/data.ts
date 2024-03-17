@@ -99,7 +99,7 @@ export const TransactionMeta = object({
         readonly: array(B58),
         writable: array(B58)
     })),
-    logMessages: array(STRING),
+    logMessages: nullable(array(STRING)),
     rewards: option(array(Reward)),
     returnData: option(object({
         programId: B58,
