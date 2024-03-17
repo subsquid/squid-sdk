@@ -1,5 +1,4 @@
-import {RpcClient, RpcProtocolError} from '@subsquid/rpc-client'
-import {CallOptions, RpcError} from '@subsquid/rpc-client'
+import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
     array,
@@ -11,6 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
+import assert from 'assert'
 import {Commitment} from '../base'
 import {GetBlock} from './data'
 
@@ -75,6 +75,10 @@ export class Rpc {
     }
 
     getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
+        assert(
+            options?.maxSupportedTransactionVersion == null || options.maxSupportedTransactionVersion === 0,
+            'maximum supported transaction version is 0'
+        )
         let call: RpcCall[] = new Array(slots.length)
         for (let i = 0; i < slots.length; i++) {
             let slot = slots[i]
@@ -123,7 +127,7 @@ export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
 
 export interface GetBlockOptions {
     commitment?: Commitment
-    transactionDetails?: 'full' | 'accounts' | 'signatures' | 'none'
+    transactionDetails?: 'full' | 'none'
     maxSupportedTransactionVersion?: number
     rewards?: boolean
 }
