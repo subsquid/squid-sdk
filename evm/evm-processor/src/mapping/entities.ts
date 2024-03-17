@@ -1,6 +1,6 @@
 import {formatId} from '@subsquid/util-internal-processor-tools'
+import {Bytes, Bytes20, Bytes32, Bytes8} from '@subsquid/evm-data'
 import assert from 'assert'
-import {Bytes, Bytes20, Bytes32, Bytes8} from '../interfaces/base'
 import {
     EvmTraceCallAction,
     EvmTraceCallResult,

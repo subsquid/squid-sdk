@@ -1,6 +1,6 @@
-import {Bytes, Bytes20, Bytes32} from './base'
+import {Bytes, Bytes20, Bytes32} from '@subsquid/evm-data'
+import {EvmStateDiff} from '../interfaces/evm'
 import {FieldSelection} from './data'
-import {EvmStateDiff} from './evm'
 
 
 export interface DataRequest {

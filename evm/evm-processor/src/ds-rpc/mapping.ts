@@ -1,9 +1,8 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {cast, GetCastType} from '@subsquid/util-internal-validation'
-import {GetPropsCast} from '@subsquid/util-internal-validation/lib/composite/object'
+import {Bytes, Bytes20, Bytes32} from '@subsquid/evm-data'
+import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from '@subsquid/evm-data/lib/rpc'
 import assert from 'assert'
-import {Bytes, Bytes20, Bytes32} from '../interfaces/base'
-import {FieldSelection} from '../interfaces/data'
 import {
     EvmTraceCallAction,
     EvmTraceCallResult,
@@ -11,6 +10,7 @@ import {
     EvmTraceCreateResult,
     EvmTraceSuicideAction
 } from '../interfaces/evm'
+import {FieldSelection} from '../interfaces/data'
 import {
     Block,
     BlockHeader,
@@ -28,10 +28,9 @@ import {
     Transaction
 } from '../mapping/entities'
 import {setUpRelations} from '../mapping/relations'
-import {getLogProps, getTraceFrameValidator, isEmpty} from '../mapping/schema'
+import {getLogValidator, getTraceFrameValidator, isEmpty} from '../mapping/schema'
 import {filterBlock} from './filter'
 import {MappingRequest} from './request'
-import {Block as RpcBlock, DebugStateDiffResult, DebugStateMap, TraceDiff, TraceStateDiff} from './rpc-data'
 import {DebugFrame, getBlockValidator} from './schema'
 import {getTxHash} from './util'
 
@@ -152,7 +151,7 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
 }
 
 
-function makeLog(blockHeader: BlockHeader, src: GetPropsCast<ReturnType<typeof getLogProps>>): Log {
+function makeLog(blockHeader: BlockHeader, src: GetCastType<ReturnType<typeof getLogValidator>>): Log {
     let {logIndex, transactionIndex, ...props} = src
     let log = new Log(blockHeader, logIndex, transactionIndex)
     Object.assign(log, props)

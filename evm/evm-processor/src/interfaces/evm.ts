@@ -1,4 +1,4 @@
-import {Bytes, Bytes20, Bytes32, Bytes8} from './base'
+import {Bytes, Bytes20, Bytes32, Bytes8} from '@subsquid/evm-data'
 
 
 export interface EvmBlockHeader {

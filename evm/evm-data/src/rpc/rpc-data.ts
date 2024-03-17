@@ -15,8 +15,23 @@ import {
     STRING,
     Validator
 } from '@subsquid/util-internal-validation'
-import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
-import {project} from '../mapping/schema'
+import {Bytes, Bytes20, Bytes32, Qty} from '../base'
+
+
+function project<T extends object, F extends {[K in keyof T]?: boolean}>(
+    fields: F | undefined,
+    obj: T
+): Partial<T> {
+    if (fields == null) return {}
+    let result: Partial<T> = {}
+    let key: keyof T
+    for (key in obj) {
+        if (fields[key]) {
+            result[key] = obj[key]
+        }
+    }
+    return result
+}
 
 
 export interface DataRequest {
@@ -45,7 +60,7 @@ export interface Block {
 }
 
 
-const Transaction = object({
+export const Transaction = object({
     blockNumber: SMALL_QTY,
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
