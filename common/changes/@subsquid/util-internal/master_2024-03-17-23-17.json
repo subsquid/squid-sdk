@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "fix handling of destroyed/errored streams in `waitDrain()`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

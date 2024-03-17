@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-http-server",
+      "comment": "remove unused import statement",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-http-server"
+}
