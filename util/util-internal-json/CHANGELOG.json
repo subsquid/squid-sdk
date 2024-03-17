@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-json",
   "entries": [
     {
+      "version": "1.2.3",
+      "tag": "@subsquid/util-internal-json_v1.2.3",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "make `.stack` the first property of JSON serialized Error"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.2",
       "tag": "@subsquid/util-internal-json_v1.2.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

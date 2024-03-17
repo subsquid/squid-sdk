@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-range",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/util-internal-range_v0.3.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `isRange()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/util-internal-range_v0.2.0",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

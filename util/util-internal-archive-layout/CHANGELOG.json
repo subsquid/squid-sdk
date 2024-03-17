@@ -2,6 +2,37 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-archive-layout_v0.2.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `ArchiveLayout.getRawBlocks()`"
+          },
+          {
+            "comment": "add `.topDirSize` option"
+          },
+          {
+            "comment": "relax short block hash regex"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix: `ArchiveLayout.append()` should not try to extend passed block range when it is already completed"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/util-internal-archive-layout_v0.1.2",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

@@ -2,6 +2,48 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.2.2",
+      "tag": "@subsquid/substrate-processor_v8.2.2",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.3.2` to `^1.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.2` to `^4.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.2` to `^1.2.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.0.2` to `^4.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.3.0` to `^0.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.2.1",
       "tag": "@subsquid/substrate-processor_v8.2.1",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

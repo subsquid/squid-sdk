@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-range
 
-This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 0.3.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- add `isRange()`
 
 ## 0.2.0
 Thu, 29 Feb 2024 15:27:11 GMT

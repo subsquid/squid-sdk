@@ -1,6 +1,14 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 4.1.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- introduce `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context
+- refresh chain height metric once in 20 seconds
 
 ## 4.0.2
 Thu, 29 Feb 2024 15:27:11 GMT

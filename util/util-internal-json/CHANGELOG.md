@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-json
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 1.2.3
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Patches
+
+- make `.stack` the first property of JSON serialized Error
 
 ## 1.2.2
 Fri, 01 Dec 2023 16:55:51 GMT

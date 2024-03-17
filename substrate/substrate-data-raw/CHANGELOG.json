@@ -2,6 +2,30 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.1.2",
+      "tag": "@subsquid/substrate-data-raw_v1.1.2",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.1",
       "tag": "@subsquid/substrate-data-raw_v1.1.1",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

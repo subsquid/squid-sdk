@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/substrate-dump_v0.4.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use new dumper CLI framework"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.2",
       "tag": "@subsquid/substrate-dump_v0.3.2",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

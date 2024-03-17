@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 14 Dec 2023 11:16:15 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 1.3.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- support `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context
 
 ## 1.2.6
 Thu, 14 Dec 2023 11:16:15 GMT

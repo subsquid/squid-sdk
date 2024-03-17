@@ -1,6 +1,11 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 4.5.1
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
 
 ## 4.5.0
 Sun, 24 Dec 2023 20:05:50 GMT

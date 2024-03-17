@@ -2,6 +2,27 @@
   "name": "@subsquid/util-internal-ingest-tools",
   "entries": [
     {
+      "version": "1.1.2",
+      "tag": "@subsquid/util-internal-ingest-tools_v1.1.2",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.1` to `^0.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.1",
       "tag": "@subsquid/util-internal-ingest-tools_v1.1.1",
       "date": "Thu, 29 Feb 2024 15:27:11 GMT",

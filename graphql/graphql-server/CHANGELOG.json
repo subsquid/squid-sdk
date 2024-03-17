@@ -2,6 +2,24 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.5.1",
+      "tag": "@subsquid/graphql-server_v4.5.1",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^4.5.0` to `^4.5.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-http-server\" from `^1.2.2` to `^2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.5.0",
       "tag": "@subsquid/graphql-server_v4.5.0",
       "date": "Sun, 24 Dec 2023 20:05:50 GMT",
