@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@subsquid/solana-data": "^0.0.0",
-    "@subsquid/util-internal": "^3.0.0",
-    "@subsquid/util-internal-dump-cli": "^0.0.0"
+    "@subsquid/util-internal": "^3.1.0",
+    "@subsquid/util-internal-dump-cli": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

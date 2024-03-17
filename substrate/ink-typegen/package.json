@@ -16,7 +16,7 @@
   "dependencies": {
     "@subsquid/ink-abi": "^3.0.2",
     "@subsquid/substrate-typegen": "^8.0.2",
-    "@subsquid/util-internal": "^3.0.0",
+    "@subsquid/util-internal": "^3.1.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",
     "commander": "^11.1.0"
   },

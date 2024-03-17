@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-json": "^1.2.2",
+    "@subsquid/util-internal-json": "^1.2.3",
     "supports-color": "^8.1.1"
   },
   "devDependencies": {
