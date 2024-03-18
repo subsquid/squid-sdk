@@ -138,15 +138,16 @@ export function visitForceBatch(cp: CallParser, call: Call): void {
     cp.get(FORCE_BATCH_CALL_END)
     let items = cp.getSubcalls(call)
     for (let i = items.length - 1; i >= 0; i--) {
+        let item = items[i]
         let result = cp.get(FORCE_BATCH_ITEM)
         if (result.ok) {
             if (i > 0) {
-                cp.withBoundary(FORCE_BATCH_ITEM, () => cp.visitCall(items[i]))
+                cp.withBoundary(FORCE_BATCH_ITEM, () => cp.visitCall(item))
             } else {
-                cp.visitCall(items[i])
+                cp.visitCall(item)
             }
         } else {
-            cp.visitFailedCall(call, result.error)
+            cp.visitFailedCall(item, result.error)
         }
     }
 }

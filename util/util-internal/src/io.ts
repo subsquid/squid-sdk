@@ -4,11 +4,12 @@ import {ensureError} from './misc'
 
 export function waitDrain(out: Writable): Promise<void> {
     return new Promise((resolve, reject) => {
-        if (!out.writableNeedDrain) return resolve()
-
-        if (!out.writable) {
+        // https://github.com/nodejs/node/issues/42610
+        if (!out.writable || out.destroyed || out.errored || out.writableEnded) {
             return reject(new Error('output stream is no longer writable'))
         }
+
+        if (!out.writableNeedDrain) return resolve()
 
         function cleanup() {
             out.removeListener('error', error)

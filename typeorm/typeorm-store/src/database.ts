@@ -139,6 +139,14 @@ export class TypeormDatabase {
     }
 
     transactHot(info: HotTxInfo, cb: (store: Store, block: HashAndHeight) => Promise<void>): Promise<void> {
+        return this.transactHot2(info, async (store, sliceBeg, sliceEnd) => {
+            for (let i = sliceBeg; i < sliceEnd; i++) {
+                await cb(store, info.newBlocks[i])
+            }
+        })
+    }
+
+    transactHot2(info: HotTxInfo, cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<void>): Promise<void> {
         return this.submit(async em => {
             let state = await this.getState(em)
             let chain = [state, ...state.top]
@@ -158,19 +166,22 @@ export class TypeormDatabase {
                 await rollbackBlock(this.statusSchema, em, chain[i].height)
             }
 
-            for (let b of info.newBlocks) {
-                let changeTracker: ChangeTracker | undefined
-
-                if (b.height > info.finalizedHead.height) {
-                    await this.insertHotBlock(em, b)
-                    changeTracker = new ChangeTracker(em, this.statusSchema, b.height)
+            if (info.newBlocks.length) {
+                let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
+                if (finalizedEnd > 0) {
+                    await this.performUpdates(store => cb(store, 0, finalizedEnd), em)
+                } else {
+                    finalizedEnd = 0
                 }
-
-                await this.performUpdates(
-                    store => cb(store, b),
-                    em,
-                    changeTracker
-                )
+                for (let i = finalizedEnd; i < info.newBlocks.length; i++) {
+                    let b = info.newBlocks[i]
+                    await this.insertHotBlock(em, b)
+                    await this.performUpdates(
+                        store => cb(store, i, i + 1),
+                        em,
+                        new ChangeTracker(em, this.statusSchema, b.height)
+                    )
+                }
             }
 
             chain = chain.slice(0, rollbackPos).concat(info.newBlocks)

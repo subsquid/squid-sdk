@@ -2,6 +2,24 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/util-internal-validation_v0.4.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add ANY primitive"
+          },
+          {
+            "comment": "add `tuple()` validator"
+          },
+          {
+            "comment": "add `B58`, `BIG_NAT` primitives"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/util-internal-validation_v0.3.0",
       "date": "Wed, 21 Feb 2024 19:22:05 GMT",

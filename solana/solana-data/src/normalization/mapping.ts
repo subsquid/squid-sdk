@@ -1,4 +1,4 @@
-import {addErrorContext, groupBy, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Base58Bytes} from '../base'
 import * as rpc from '../rpc'
@@ -106,7 +106,7 @@ function mapRpcTransaction(
         getAccount,
         tx,
         src,
-        src.meta.logMessages.map(parseLogMessage),
+        src.meta.logMessages?.map(parseLogMessage),
         instructions,
         logs
     ).parse()
@@ -131,6 +131,7 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
 
 class InstructionParser {
     private pos = 0
+    private messages: Message[]
     private messagePos = 0
     private messagesTruncated = false
     private errorPos?: number
@@ -140,10 +141,16 @@ class InstructionParser {
         private getAccount: (index: number) => Base58Bytes,
         private tx: Transaction,
         private src: rpc.Transaction,
-        private messages: Message[],
+        messages: Message[] | undefined,
         private instructions: Instruction[],
         private logs: LogMessage[]
     ) {
+        if (messages == null) {
+            this.messages = []
+            this.messagesTruncated = true
+        } else {
+            this.messages = messages
+        }
         let err: any = this.src.meta.err
         if (err) {
             if ('InstructionError' in err) {

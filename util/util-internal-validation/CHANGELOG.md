@@ -1,6 +1,15 @@
 # Change Log - @subsquid/util-internal-validation
 
-This log was last generated on Wed, 21 Feb 2024 19:22:05 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 0.4.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- add ANY primitive
+- add `tuple()` validator
+- add `B58`, `BIG_NAT` primitives
 
 ## 0.3.0
 Wed, 21 Feb 2024 19:22:05 GMT

@@ -1,6 +1,18 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 3.1.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- add `concurrentWriter()` function
+
+### Patches
+
+- fix handling of destroyed/errored streams in `waitDrain()`
+- fix unhandled promise rejection crash in `concurrentMap()`
 
 ## 3.0.0
 Fri, 01 Dec 2023 16:55:51 GMT

@@ -1,6 +1,5 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import assert from 'assert'
-import * as buffer from 'buffer'
 import {HttpContext, HttpContextOptions, HttpRequest, HttpResponse} from './ctx'
 import {isHttpError} from './http-error'
 import {GetPatternParams, PathPattern} from './path-pattern'

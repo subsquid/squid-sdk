@@ -19,8 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/openreader": "^4.5.0",
-    "@subsquid/util-internal": "^3.0.0",
+    "@subsquid/openreader": "^4.5.1",
+    "@subsquid/util-internal": "^3.1.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",
     "@subsquid/util-naming": "^1.2.2",
     "commander": "^11.1.0"

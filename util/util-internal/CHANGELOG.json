@@ -2,6 +2,26 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "3.1.0",
+      "tag": "@subsquid/util-internal_v3.1.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of destroyed/errored streams in `waitDrain()`"
+          },
+          {
+            "comment": "fix unhandled promise rejection crash in `concurrentMap()`"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `concurrentWriter()` function"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.0",
       "tag": "@subsquid/util-internal_v3.0.0",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
