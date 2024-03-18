@@ -78,7 +78,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
 
 function checkLogMessages(block: Block): void {
-    if (block.height > 114_000_000 && block.height < 115_000_000) return
+    if (block.height > 114_000_000 && block.height < 115_000_000 || block.height == 126584919) return
     for (let tx of block.block.transactions!) {
         if (tx.meta.logMessages == null) {
             throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
