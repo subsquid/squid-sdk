@@ -6,6 +6,7 @@
 # Large files not needed in docker containers
 /test/data/chain
 /test/types/gen
+/test/borsh-bench/data
 
 # Rush temporary files
 /common/deploy/
