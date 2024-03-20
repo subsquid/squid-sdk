@@ -28,7 +28,8 @@
     "@subsquid/util-internal-json": "^1.2.3",
     "@subsquid/util-internal-processor-tools": "^4.1.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.4.0"
+    "@subsquid/util-internal-validation": "^0.4.0",
+    "bs58": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

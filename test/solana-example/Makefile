@@ -2,10 +2,6 @@ process: migrate
 	@npx node -r dotenv/config lib/processor.js
 
 
-serve:
-	@npx squid-graphql-server
-
-
 migrate:
 	@npx squid-typeorm-migration apply
 
@@ -26,4 +22,4 @@ down:
 	@docker-compose down -v
 
 
-.PHONY: process serve start codegen migration migrate up down
+.PHONY: process start codegen migration migrate up down

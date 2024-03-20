@@ -1,8 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
 import * as marshal from "./marshal"
 
-@Index_(["from", "to"], {unique: false})
-@Index_(["timestamp", "from", "to"], {unique: false})
 @Entity_()
 export class Exchange {
     constructor(props?: Partial<Exchange>) {
@@ -12,23 +10,29 @@ export class Exchange {
     @PrimaryColumn_()
     id!: string
 
+    @Column_("int4", {nullable: false})
+    slot!: number
+
     @Column_("text", {nullable: false})
     tx!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    timestamp!: bigint
+    @Column_("timestamp with time zone", {nullable: false})
+    timestamp!: Date
 
     @Column_("text", {nullable: false})
-    account!: string
+    fromOwner!: string
 
     @Column_("text", {nullable: false})
-    from!: string
+    fromToken!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     fromAmount!: bigint
 
     @Column_("text", {nullable: false})
-    to!: string
+    toOwner!: string
+
+    @Column_("text", {nullable: false})
+    toToken!: string
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     toAmount!: bigint

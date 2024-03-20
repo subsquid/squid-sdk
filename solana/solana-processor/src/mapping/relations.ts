@@ -44,6 +44,22 @@ export function setUpRelations(block: Block): void {
             }
         }
     }
+
+    for (let balance of block.balances) {
+        let transaction = txs[balance.transactionIndex]
+        if (transaction) {
+            balance.transaction =transaction
+            transaction.balances.push(balance)
+        }
+    }
+
+    for (let tokenBalance of block.tokenBalances) {
+        let transaction = txs[tokenBalance.transactionIndex]
+        if (transaction) {
+            tokenBalance.transaction = transaction
+            transaction.tokenBalances.push(tokenBalance)
+        }
+    }
 }
 
 
