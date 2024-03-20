@@ -21,14 +21,16 @@ export class ArrayCodec<T> implements Codec<T[]> {
 
   decode(src: Src): T[] {
     const offset = src.u32();
-    const tmpSrc = src.slice(offset);
 
-    const len = tmpSrc.u32();
+    src.safeJump(offset);
+    const len = src.u32();
 
+    const tmpSrc = src.slice(offset + 32);
     const val = new Array(len);
     for (let i = 0; i < val.length; i++) {
       val[i] = this.item.decode(tmpSrc);
     }
+    src.jumpBack();
     return val;
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   address,
   array,
+  bytes,
   fixedArray,
   int8,
   string,
@@ -88,10 +89,11 @@ describe("dynamic size array", () => {
     expect(arr.decode(new Src(sink.result()))).toStrictEqual(data);
   });
 
-  it.skip("hardcore dynamic types", () => {
-    const sink = new Sink(4);
+  it("hardcore dynamic types", () => {
+    const sink = new Sink(5);
     const arr1 = array(array(fixedArray(string, 3)));
     const arr2 = array(array(uint256));
+    const arr3 = array(fixedArray(bytes, 2));
     const data1 = [
       [
         ["aaa", "bbb", "ccc"],
@@ -100,8 +102,13 @@ describe("dynamic size array", () => {
       [["ggg", "hhh", "iii"]],
     ];
     const data2 = [[1n, 2n, 3n], [], [4n]];
+    const data3 = [
+      [Buffer.from("1234", "hex"), Buffer.from("5678", "hex")],
+      [Buffer.from("dead", "hex"), Buffer.from("beef", "hex")],
+    ];
     arr1.encode(sink, data1);
     address.encode(sink, "0x1234567890123456789012345678901234567890");
+    arr3.encode(sink, data3);
     arr2.encode(sink, data2);
     uint256.encode(sink, 123n);
     compareTypes(
@@ -109,12 +116,30 @@ describe("dynamic size array", () => {
       [
         { type: "string[3][][]" },
         { type: "address" },
+        { type: "bytes[2][]" },
         { type: "uint256[][]" },
         { type: "uint256" },
       ],
-      [data1, "0x1234567890123456789012345678901234567890", data2, 123n]
+      [
+        data1,
+        "0x1234567890123456789012345678901234567890",
+        [
+          ["0x1234", "0x5678"],
+          ["0xdead", "0xbeef"],
+        ],
+        data2,
+        123n,
+      ]
     );
 
-    expect(arr1.decode(new Src(sink.result()))).toStrictEqual(data1);
+    const src = new Src(sink.result());
+
+    expect(arr1.decode(src)).toStrictEqual(data1);
+    expect(address.decode(src)).toBe(
+      "0x1234567890123456789012345678901234567890"
+    );
+    expect(arr3.decode(src)).toStrictEqual(data3);
+    expect(arr2.decode(src)).toStrictEqual(data2);
+    expect(uint256.decode(src)).toBe(123n);
   });
 });
