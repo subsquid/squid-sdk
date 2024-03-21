@@ -78,9 +78,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
 
 function checkLogMessages(block: Block): void {
-    if (block.height > 114_000_000 && block.height < 115_000_000
-        || block.height > 126584918 && block.height < 126590000
-    ) return
+    // Seems there were issues with logging during the ancient times
+    if (block.height < 130000000) return
 
     for (let tx of block.block.transactions!) {
         if (tx.meta.logMessages == null) {
