@@ -124,11 +124,11 @@ export class Sink {
     const size = Buffer.byteLength(val);
     this.u32(size);
     const wordsCount = Math.ceil(size / WORD_SIZE);
-    const reservedSize = WORD_SIZE * (wordsCount + 1);
+    const reservedSize = WORD_SIZE * wordsCount;
     this.reserve(reservedSize);
     this.buf.set(val, this.pos);
     this.pos += reservedSize;
-    this.size += reservedSize;
+    this.size += reservedSize + WORD_SIZE;
   }
 
   staticBytes(len: number, val: Uint8Array) {
@@ -152,11 +152,11 @@ export class Sink {
     const size = Buffer.byteLength(val);
     this.u32(size);
     const wordsCount = Math.ceil(size / WORD_SIZE);
-    const reservedSize = WORD_SIZE * (wordsCount + 1);
+    const reservedSize = WORD_SIZE * wordsCount;
     this.reserve(reservedSize);
     this.buf.write(val, this.pos);
     this.pos += reservedSize;
-    this.size += reservedSize;
+    this.size += reservedSize + WORD_SIZE;
   }
 
   bool(val: boolean) {
