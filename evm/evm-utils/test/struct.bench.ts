@@ -4,6 +4,7 @@ import { Sink } from "../src/sink";
 import { Src } from "../src/src";
 import { Codec } from "../src/codec";
 import { decodeAbiParameters, encodeAbiParameters } from "viem";
+import { ethers } from "ethers";
 
 const hugeArray = Array.from({ length: 1000 }, (_, i) => BigInt(i));
 
@@ -122,6 +123,22 @@ describe("StructCodec - encoding", () => {
       ]
     );
   });
+
+  bench("ethers - encoding dynamic tuple", () => {
+    ethers.utils.defaultAbiCoder.encode(
+      ["tuple(uint256[] a,uint256 b,tuple(uint256[] d,address e) c)"],
+      [
+        {
+          a: hugeArray,
+          b: 2n,
+          c: {
+            d: hugeArray,
+            e: "0x1234567890123456789012345678901234567890",
+          },
+        },
+      ]
+    );
+  });
 });
 
 describe("StructCodec - decoding", () => {
@@ -162,6 +179,13 @@ describe("StructCodec - decoding", () => {
           ],
         },
       ],
+      sink.result()
+    );
+  });
+
+  bench("ethers - decoding dynamic tuple", () => {
+    ethers.utils.defaultAbiCoder.decode(
+      ["tuple(uint256[] a,uint256 b,tuple(uint256[] d,address e) c)"],
       sink.result()
     );
   });
