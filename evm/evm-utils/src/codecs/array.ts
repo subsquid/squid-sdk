@@ -1,4 +1,4 @@
-import { Codec } from "../codec";
+import { Codec, WORD_SIZE } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 
@@ -14,7 +14,7 @@ export class ArrayCodec<T> implements Codec<T[]> {
     for (let i = 0; i < val.length; i++) {
       this.item.encode(tempSink, val[i]);
     }
-    sink.increaseSize(32);
+    sink.increaseSize(WORD_SIZE);
     sink.append(tempSink);
     sink.jumpBack();
   }
@@ -25,7 +25,7 @@ export class ArrayCodec<T> implements Codec<T[]> {
     src.safeJump(offset);
     const len = src.u32();
 
-    const tmpSrc = src.slice(offset + 32);
+    const tmpSrc = src.slice(offset + WORD_SIZE);
     const val = new Array(len);
     for (let i = 0; i < val.length; i++) {
       val[i] = this.item.decode(tmpSrc);

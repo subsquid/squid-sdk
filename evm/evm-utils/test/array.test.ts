@@ -5,12 +5,12 @@ import {
   bytes,
   fixedArray,
   int8,
+  Sink,
+  Src,
   string,
   uint256,
-} from "../src/codecs/primitives";
-import { Sink } from "../src/sink";
+} from "../src";
 import { AbiParameter, encodeAbiParameters } from "viem";
-import { Src } from "../src/src";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
   expect(sink.toString()).toEqual(encodeAbiParameters(types, values));

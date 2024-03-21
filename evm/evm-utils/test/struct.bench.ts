@@ -1,8 +1,5 @@
 import { bench, describe } from "vitest";
-import { address, array, struct, uint256 } from "../src/codecs/primitives";
-import { Sink } from "../src/sink";
-import { Src } from "../src/src";
-import { Codec } from "../src/codec";
+import { address, array, Codec, Sink, Src, struct, uint256 } from "../src";
 import { decodeAbiParameters, encodeAbiParameters } from "viem";
 import { ethers } from "ethers";
 

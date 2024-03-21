@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  address,
-  array,
-  int8,
-  struct,
-  uint256,
-} from "../src/codecs/primitives";
-import { Sink } from "../src/sink";
-import { Src } from "../src/src";
+import { address, array, int8, Sink, Src, struct, uint256 } from "../src";
 import { AbiParameter, encodeAbiParameters } from "viem";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {

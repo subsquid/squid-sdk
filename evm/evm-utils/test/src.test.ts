@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Sink } from "../src/sink";
+import { Sink, Src } from "../src";
 import { encodeAbiParameters } from "viem";
-import { Src } from "../src/src";
 
 describe("src", () => {
   it("negative numbers", () => {

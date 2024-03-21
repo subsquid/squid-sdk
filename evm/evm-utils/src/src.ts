@@ -1,4 +1,4 @@
-const WORD_SIZE = 32;
+import { WORD_SIZE } from "./codec";
 
 export class Src {
   private view: DataView;
