@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "rm -rf lib && tsc -p tsconfig.build.json",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
   },
