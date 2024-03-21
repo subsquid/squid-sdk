@@ -64,25 +64,4 @@ export class StructCodec<S> implements Codec<S> {
     }
     return result;
   }
-
-  // private createDecode(): any {
-  //   let body = "return {\n";
-  //   for (let key in this.props) {
-  //     body += `${propName(key)}: this.props${propAccess(key)}.decode(src),\n`;
-  //   }
-  //   body += "}\n";
-  //   return new Function("src", body);
-  // }
-  //
-  //   private createEncode(): any {
-  //     let body = `
-  //
-  // `;
-  //     for (let key in this.props) {
-  //       let a = propAccess(key);
-  //       body += `this.props${a}.encode(sink, val${a})\n`;
-  //     }
-  //     return new Function("sink", "val", body);
-  //   }
-  // }
 }
