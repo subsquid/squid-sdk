@@ -55,8 +55,9 @@ export const DEFAULT_FIELDS = {
     },
     tokenBalance: {
         mint: true,
-        owner: true,
         decimals: true,
+        preOwner: true,
+        postOwner: true,
         pre: true,
         post: true
     },

@@ -19,8 +19,8 @@ export class Exchange {
     @Column_("timestamp with time zone", {nullable: false})
     timestamp!: Date
 
-    @Column_("text", {nullable: false})
-    fromOwner!: string
+    @Column_("text", {nullable: true})
+    fromOwner!: string | undefined | null
 
     @Column_("text", {nullable: false})
     fromToken!: string
@@ -28,8 +28,8 @@ export class Exchange {
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     fromAmount!: bigint
 
-    @Column_("text", {nullable: false})
-    toOwner!: string
+    @Column_("text", {nullable: true})
+    toOwner!: string | undefined | null
 
     @Column_("text", {nullable: false})
     toToken!: string

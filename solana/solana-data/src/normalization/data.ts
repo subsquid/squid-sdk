@@ -80,12 +80,13 @@ export interface Balance {
 export interface TokenBalance {
     transactionIndex: number
     account: Base58Bytes
-    mint: Base58Bytes
-    owner?: Base58Bytes
     programId?: Base58Bytes
+    mint: Base58Bytes
     decimals: number
-    pre: bigint
-    post: bigint
+    preOwner?: Base58Bytes
+    postOwner?: Base58Bytes
+    pre?: bigint
+    post?: bigint
 }
 
 

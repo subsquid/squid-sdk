@@ -111,8 +111,13 @@ function mapRpcTransaction(
         logs
     ).parse()
 
-    mapBalances(getAccount, transactionIndex, src, balances)
-    mapTokenBalances(getAccount, transactionIndex, src, tokenBalances)
+    balances.push(
+        ...mapBalances(getAccount, transactionIndex, src)
+    )
+
+    tokenBalances.push(
+        ...mapTokenBalances(getAccount, transactionIndex, src)
+    )
 
     return tx
 }
@@ -417,8 +422,9 @@ function mapBalances(
     getAccount: (idx: number) => Base58Bytes,
     transactionIndex: number,
     tx: rpc.Transaction,
-    balances: Balance[]
-): void {
+): Balance[] {
+    let balances: Balance[] = []
+
     let pre = tx.meta.preBalances
     let post = tx.meta.postBalances
 
@@ -436,41 +442,70 @@ function mapBalances(
             })
         }
     }
+
+    balances.sort((a, b) => {
+        if (a.account < b.account) return -1
+        if (a.account > b.account) return 1
+        return 0
+    })
+
+    return balances
 }
 
 
 function mapTokenBalances(
     getAccount: (idx: number) => Base58Bytes,
     transactionIndex: number,
-    tx: rpc.Transaction,
-    balances: TokenBalance[]
-): void {
+    tx: rpc.Transaction
+): TokenBalance[] {
+    let balances: TokenBalance[] = []
+
     let preBalances = new Map(
-        tx.meta.preTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+        tx.meta.preTokenBalances?.map(b => [getAccount(b.accountIndex), b])
     )
 
     let postBalances = new Map(
-        tx.meta.postTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+        tx.meta.postTokenBalances?.map(b => [getAccount(b.accountIndex), b])
     )
 
-    assert(preBalances.size == (tx.meta.preTokenBalances?.length ?? 0))
-    assert(postBalances.size == (tx.meta.postTokenBalances?.length ?? 0))
-
-    for (let [k, post] of postBalances.entries()) {
-        let pre = preBalances.get(k)
-        assert(pre == null || post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
-        let b: TokenBalance = {
+    for (let [account, post] of postBalances.entries()) {
+        let pre = preBalances.get(account)
+        if (pre) {
+            assert(post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
+            assert(post.mint === pre.mint)
+            assert(post.programId === pre.programId)
+        }
+        balances.push({
             transactionIndex,
-            account: getAccount(post.accountIndex),
-            mint: post.mint,
-            owner: post.owner ?? undefined,
+            account,
             programId: post.programId ?? undefined,
+            mint: post.mint,
             decimals: post.uiTokenAmount.decimals,
-            pre: BigInt(pre?.uiTokenAmount.amount ?? 0),
+            preOwner: pre?.owner || undefined,
+            postOwner: post.owner ?? undefined,
+            pre: pre?.uiTokenAmount.amount == null ? undefined : BigInt(pre.uiTokenAmount.amount),
             post: BigInt(post.uiTokenAmount.amount)
-        }
-        if (b.pre != b.post) {
-            balances.push(b)
-        }
+        })
     }
+
+    for (let [account, pre] of preBalances.entries()) {
+        if (postBalances.has(account)) continue
+        balances.push({
+            transactionIndex,
+            account,
+            programId: pre.programId ?? undefined,
+            mint: pre.mint,
+            decimals: pre.uiTokenAmount.decimals,
+            preOwner: pre.owner ?? undefined,
+            pre: BigInt(pre.uiTokenAmount.amount)
+        })
+    }
+
+    balances.sort((a, b) => {
+        if (a.account < b.account) return -1
+        if (a.account > b.account) return 1
+        return 0
+    })
+
+    return balances
 }

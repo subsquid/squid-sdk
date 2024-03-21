@@ -4,10 +4,10 @@ type Exchange @entity {
     slot: Int!
     tx: String!
     timestamp: DateTime!
-    fromOwner: String!
+    fromOwner: String
     fromToken: String!
     fromAmount: BigInt!
-    toOwner: String!
+    toOwner: String
     toToken: String!
     toAmount: BigInt!
 }

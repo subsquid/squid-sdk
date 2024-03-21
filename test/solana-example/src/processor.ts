@@ -38,24 +38,21 @@ processor.run(new TypeormDatabase(), async ctx => {
                     timestamp: new Date(block.header.timestamp)
                 })
 
-                // assert(ins.inner.length == 2)
-                if (ins.inner.length != 2) continue
                 let srcTransfer = tokenProgram.transfer.decode(ins.inner[0])
                 let destTransfer = tokenProgram.transfer.decode(ins.inner[1])
 
                 let srcBalance = ins.getTransaction().tokenBalances.find(tb => tb.account == srcTransfer.accounts.source)
                 let destBalance = ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.source)
 
-                if (srcBalance == null || destBalance == null) continue
-                // assert(srcBalance)
-                // assert(destBalance)
+                assert(srcBalance)
+                assert(destBalance)
 
                 exchange.fromToken = srcBalance.mint
-                exchange.fromOwner = srcBalance.owner!
+                exchange.fromOwner = srcBalance.preOwner || srcBalance.preOwner
                 exchange.fromAmount = srcTransfer.data.amount
 
                 exchange.toToken = destBalance.mint
-                exchange.toOwner = destBalance.owner!
+                exchange.toOwner = destBalance.postOwner || destBalance.preOwner
                 exchange.toAmount = destTransfer.data.amount
 
                 exchanges.push(exchange)
