@@ -14,9 +14,9 @@ const processor = new SolanaBatchProcessor()
     .addInstruction({
         programId: [whirlpool.programId],
         d8: [whirlpool.swap.d8],
-        ...whirlpool.swap.accountSelection({
-            whirlpool: ['7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm']
-        }),
+        // ...whirlpool.swap.accountSelection({
+        //     whirlpool: ['7qbRF6YsyGuLUVs6Y1q64bdVrfe4ZcUUz1JRdoVNUJnm']
+        // }),
         innerInstructions: true,
         transaction: true,
         transactionTokenBalances: true,
@@ -38,6 +38,7 @@ processor.run(new TypeormDatabase(), async ctx => {
                     timestamp: new Date(block.header.timestamp)
                 })
 
+                assert(ins.inner.length == 2)
                 let srcTransfer = tokenProgram.transfer.decode(ins.inner[0])
                 let destTransfer = tokenProgram.transfer.decode(ins.inner[1])
 
@@ -48,7 +49,7 @@ processor.run(new TypeormDatabase(), async ctx => {
                 assert(destBalance)
 
                 exchange.fromToken = srcBalance.mint
-                exchange.fromOwner = srcBalance.preOwner || srcBalance.preOwner
+                exchange.fromOwner = srcBalance.preOwner || srcBalance.postOwner
                 exchange.fromAmount = srcTransfer.data.amount
 
                 exchange.toToken = destBalance.mint
