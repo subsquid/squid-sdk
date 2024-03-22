@@ -32,7 +32,7 @@ export type LatestBlockHeight = GetSrcType<typeof LatestBlockHeight>
 export const BlockHeader = object({
     id: BYTES,
     height: STRING_NAT,
-    daHeight: STRING,
+    daHeight: BIG_NAT,
     transactionsRoot: BYTES,
     transactionsCount: BIG_NAT,
     messageReceiptRoot: BYTES,

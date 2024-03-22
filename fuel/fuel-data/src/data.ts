@@ -4,7 +4,7 @@ type Bytes = string
 export interface BlockHeader {
     id: Bytes
     height: number
-    daHeight: number
+    daHeight: BigInt
     transactionsRoot: Bytes
     transactionsCount: BigInt
     messageReceiptRoot: Bytes

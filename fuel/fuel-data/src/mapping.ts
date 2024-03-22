@@ -316,7 +316,7 @@ export function mapRawBlock(raw: raw.BlockData): Block {
     let header: BlockHeader = {
         id: raw.block.header.id,
         height: toInteger(raw.block.header.height),
-        daHeight: toInteger(raw.block.header.daHeight),
+        daHeight: BigInt(raw.block.header.daHeight),
         transactionsRoot: raw.block.header.transactionsRoot,
         transactionsCount: BigInt(raw.block.header.transactionsCount),
         messageReceiptRoot: raw.block.header.messageReceiptRoot,
