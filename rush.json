@@ -585,6 +585,24 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/fuel-data",
+      "projectFolder": "fuel/fuel-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-dump",
+      "projectFolder": "fuel/fuel-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-ingest",
+      "projectFolder": "fuel/fuel-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,

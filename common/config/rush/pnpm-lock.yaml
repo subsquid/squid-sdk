@@ -68,6 +68,15 @@ dependencies:
   '@rush-temp/frontier':
     specifier: file:./projects/frontier.tgz
     version: file:projects/frontier.tgz
+  '@rush-temp/fuel-data':
+    specifier: file:./projects/fuel-data.tgz
+    version: file:projects/fuel-data.tgz
+  '@rush-temp/fuel-dump':
+    specifier: file:./projects/fuel-dump.tgz
+    version: file:projects/fuel-dump.tgz
+  '@rush-temp/fuel-ingest':
+    specifier: file:./projects/fuel-ingest.tgz
+    version: file:projects/fuel-ingest.tgz
   '@rush-temp/gql-test-client':
     specifier: file:./projects/gql-test-client.tgz
     version: file:projects/gql-test-client.tgz(graphql@15.8.0)
@@ -246,6 +255,12 @@ dependencies:
     specifier: file:./projects/workspace.tgz
     version: file:projects/workspace.tgz
   '@subsquid/graphiql-console':
+    specifier: ^0.3.0
+    version: 0.3.0
+  '@subsquid/util-internal-range':
+    specifier: ^0.1.0
+    version: 0.1.0
+  '@subsquid/util-internal-validation':
     specifier: ^0.3.0
     version: 0.3.0
   '@substrate/calc':
@@ -1967,6 +1982,30 @@ packages:
 
   /@subsquid/graphiql-console@0.3.0:
     resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
+    dev: false
+
+  /@subsquid/util-internal-binary-heap@1.0.0:
+    resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
+    dev: false
+
+  /@subsquid/util-internal-range@0.1.0:
+    resolution: {integrity: sha512-+pJeJyH0oetqu2eRwOkP7NCSaCGzLpCCNpS9Fwi968RL+LfWSKn+wGUX6Ulf0afSslvrQ/34ZtyWdjyya1AGxA==}
+    dependencies:
+      '@subsquid/util-internal': 3.1.0
+      '@subsquid/util-internal-binary-heap': 1.0.0
+    dev: false
+
+  /@subsquid/util-internal-validation@0.3.0:
+    resolution: {integrity: sha512-P0edbjHYViluEIa87MDqL+JrNj+sy0XcIPWXipAtyrpPGdxItWtnmnvwpzZsxkIoPt9FuOmcZg9OQbCj5OCARA==}
+    peerDependencies:
+      '@subsquid/logger': ^1.3.2
+    peerDependenciesMeta:
+      '@subsquid/logger':
+        optional: true
+    dev: false
+
+  /@subsquid/util-internal@3.1.0:
+    resolution: {integrity: sha512-m1lIiy7Tc2+QR5Jcx9eGsVsB4ASR/bA5Z9gnB+qUy1BzYuz5FEiJOYCQm6J5Bt+VnYDYYyANEUMq4Cl3J5wuSg==}
     dev: false
 
   /@substrate/calc@0.2.8:
@@ -5654,6 +5693,37 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: false
+
+  file:projects/fuel-data.tgz:
+    resolution: {integrity: sha512-hlwR5GOKhQVLXil7T+mZk9NrVdNtP3lA9qge6+3b3xGoKxvnbz8dgvYrC+xxbdRnnXCB9O/eEc6A673oR+8qTg==, tarball: file:projects/fuel-data.tgz}
+    name: '@rush-temp/fuel-data'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/util-internal-range': 0.1.0
+      '@subsquid/util-internal-validation': 0.3.0
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - '@subsquid/logger'
+    dev: false
+
+  file:projects/fuel-dump.tgz:
+    resolution: {integrity: sha512-pgCMjU4N3W7m5ARI0eWtOujCaZ/pwPfwmthcPx/vdIcnPXtjQAPTo5bNEQGE4IfJxDY3usydMul9j1fmr8wOIQ==, tarball: file:projects/fuel-dump.tgz}
+    name: '@rush-temp/fuel-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/fuel-ingest.tgz:
+    resolution: {integrity: sha512-w46RcHKvDDoVqHN05Y+oFDbw/5/gC7JWRUZlaoyRq4eAqE7v7zGNUTczkiadt6sK7qwFKPpcm8V2OCQoEXu5bQ==, tarball: file:projects/fuel-ingest.tgz}
+    name: '@rush-temp/fuel-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
     dev: false
 
   file:projects/gql-test-client.tgz(graphql@15.8.0):
