@@ -41,7 +41,7 @@ function mapRawTransactionStatus(raw: raw.TransactionStatus): Status {
             return {
                 type: 'FailureStatus',
                 transactionId: raw.transactionId,
-                time: toInteger(raw.time),
+                time: BigInt(raw.time),
                 reason: raw.reason,
                 programState
             }
@@ -53,7 +53,7 @@ function mapRawTransactionStatus(raw: raw.TransactionStatus): Status {
         case 'SubmittedStatus':
             return {
                 type: 'SubmittedStatus',
-                time: toInteger(raw.time)
+                time: BigInt(raw.time)
             }
         case 'SuccessStatus':
             if (raw.programState) {
@@ -64,7 +64,7 @@ function mapRawTransactionStatus(raw: raw.TransactionStatus): Status {
             }
             return {
                 type: 'SuccessStatus',
-                time: toInteger(raw.time),
+                time: BigInt(raw.time),
                 transactionId: raw.transactionId,
                 programState,
             }
@@ -75,16 +75,16 @@ function mapRawTransactionStatus(raw: raw.TransactionStatus): Status {
 function mapRawPolicies(raw: raw.Policies | null): Policies | undefined {
     let policies: Policies = {}
     if (raw?.gasPrice) {
-        policies.gasPrice = toInteger(raw.gasPrice)
+        policies.gasPrice = BigInt(raw.gasPrice)
     }
     if (raw?.maturity) {
         policies.maturity = toInteger(raw.maturity)
     }
     if (raw?.maxFee) {
-        policies.maxFee = toInteger(raw.maxFee)
+        policies.maxFee = BigInt(raw.maxFee)
     }
     if (raw?.witnessLimit) {
-        policies.witnessLimit = toInteger(raw.witnessLimit)
+        policies.witnessLimit = BigInt(raw.witnessLimit)
     }
     return isEmpty(policies) ? undefined : policies
 }
@@ -124,19 +124,19 @@ function mapRawTransaction(raw: raw.Transaction, index: number): Transaction {
         }
     }
     if (raw.gasPrice) {
-        transaction.gasPrice = toInteger(raw.gasPrice)
+        transaction.gasPrice = BigInt(raw.gasPrice)
     }
     if (raw.scriptGasLimit) {
-        transaction.scriptGasLimit = toInteger(raw.scriptGasLimit)
+        transaction.scriptGasLimit = BigInt(raw.scriptGasLimit)
     }
     if (raw.maturity) {
         transaction.maturity = toInteger(raw.maturity)
     }
     if (raw.mintAmount) {
-        transaction.mintAmount = toInteger(raw.mintAmount)
+        transaction.mintAmount = BigInt(raw.mintAmount)
     }
     if (raw.bytecodeLength) {
-        transaction.bytecodeLength = toInteger(raw.bytecodeLength)
+        transaction.bytecodeLength = BigInt(raw.bytecodeLength)
     }
 
     return transaction
@@ -152,12 +152,12 @@ export function mapRawInput(raw: raw.TransactionInput, transactionIndex: number,
                 transactionIndex,
                 utxoId: raw.utxoId,
                 owner: raw.owner,
-                amount: toInteger(raw.amount),
+                amount: BigInt(raw.amount),
                 assetId: raw.assetId,
                 txPointer: raw.txPointer,
                 witnessIndex: raw.witnessIndex,
                 maturity: toInteger(raw.maturity),
-                predicateGasUsed: toInteger(raw.predicateGasUsed),
+                predicateGasUsed: BigInt(raw.predicateGasUsed),
                 predicate: raw.predicate,
                 predicateData: raw.predicateData
             }
@@ -179,10 +179,10 @@ export function mapRawInput(raw: raw.TransactionInput, transactionIndex: number,
                 transactionIndex,
                 sender: raw.sender,
                 recipient: raw.recipient,
-                amount: toInteger(raw.amount),
+                amount: BigInt(raw.amount),
                 nonce: raw.nonce,
                 witnessIndex: raw.witnessIndex,
-                predicateGasUsed: toInteger(raw.predicateGasUsed),
+                predicateGasUsed: BigInt(raw.predicateGasUsed),
                 data: raw.data,
                 predicate: raw.predicate,
                 predicateData: raw.predicateData
@@ -199,7 +199,7 @@ export function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: numbe
                 index,
                 transactionIndex,
                 to: raw.to,
-                amount: toInteger(raw.amount),
+                amount: BigInt(raw.amount),
                 assetId: raw.assetId,
             }
         case 'CoinOutput':
@@ -208,7 +208,7 @@ export function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: numbe
                 index,
                 transactionIndex,
                 to: raw.to,
-                amount: toInteger(raw.amount),
+                amount: BigInt(raw.amount),
                 assetId: raw.assetId,
             }
         case 'ContractCreated':
@@ -234,7 +234,7 @@ export function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: numbe
                 index,
                 transactionIndex,
                 to: raw.to,
-                amount: toInteger(raw.amount),
+                amount: BigInt(raw.amount),
                 assetId: raw.assetId
             }
     }
@@ -260,52 +260,52 @@ export function mapRawReceipt(raw: raw.Receipt, transactionIndex: number, index:
     }
 
     if (raw.pc) {
-        receipt.pc = toInteger(raw.pc)
+        receipt.pc = BigInt(raw.pc)
     }
     if (raw.is) {
-        receipt.is = toInteger(raw.is)
+        receipt.is = BigInt(raw.is)
     }
     if (raw.amount) {
-        receipt.amount = toInteger(raw.amount)
+        receipt.amount = BigInt(raw.amount)
     }
     if (raw.gas) {
-        receipt.gas = toInteger(raw.gas)
+        receipt.gas = BigInt(raw.gas)
     }
     if (raw.param1) {
-        receipt.param1 = toInteger(raw.param1)
+        receipt.param1 = BigInt(raw.param1)
     }
     if (raw.param2) {
-        receipt.param2 = toInteger(raw.param2)
+        receipt.param2 = BigInt(raw.param2)
     }
     if (raw.val) {
-        receipt.val = toInteger(raw.val)
+        receipt.val = BigInt(raw.val)
     }
     if (raw.ptr) {
-        receipt.val = toInteger(raw.ptr)
+        receipt.val = BigInt(raw.ptr)
     }
     if (raw.reason) {
-        receipt.reason = toInteger(raw.reason)
+        receipt.reason = BigInt(raw.reason)
     }
     if (raw.ra) {
-        receipt.ra = toInteger(raw.ra)
+        receipt.ra = BigInt(raw.ra)
     }
     if (raw.rb) {
-        receipt.rb = toInteger(raw.rb)
+        receipt.rb = BigInt(raw.rb)
     }
     if (raw.rc) {
-        receipt.rc = toInteger(raw.rc)
+        receipt.rc = BigInt(raw.rc)
     }
     if (raw.rd) {
-        receipt.rd = toInteger(raw.rd)
+        receipt.rd = BigInt(raw.rd)
     }
     if (raw.len) {
-        receipt.len = toInteger(raw.len)
+        receipt.len = BigInt(raw.len)
     }
     if (raw.result) {
-        receipt.result = toInteger(raw.result)
+        receipt.result = BigInt(raw.result)
     }
     if (raw.gasUsed) {
-        receipt.gasUsed = toInteger(raw.gasUsed)
+        receipt.gasUsed = BigInt(raw.gasUsed)
     }
 
     return receipt
@@ -318,11 +318,11 @@ export function mapRawBlock(raw: raw.BlockData): Block {
         height: toInteger(raw.block.header.height),
         daHeight: toInteger(raw.block.header.daHeight),
         transactionsRoot: raw.block.header.transactionsRoot,
-        transactionsCount: toInteger(raw.block.header.transactionsCount),
+        transactionsCount: BigInt(raw.block.header.transactionsCount),
         messageReceiptRoot: raw.block.header.messageReceiptRoot,
-        messageReceiptCount: toInteger(raw.block.header.messageReceiptCount),
+        messageReceiptCount: BigInt(raw.block.header.messageReceiptCount),
         prevRoot: raw.block.header.prevRoot,
-        time: toInteger(raw.block.header.time),
+        time: BigInt(raw.block.header.time),
         applicationHash: raw.block.header.applicationHash,
     }
 

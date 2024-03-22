@@ -6,20 +6,20 @@ export interface BlockHeader {
     height: number
     daHeight: number
     transactionsRoot: Bytes
-    transactionsCount: number
+    transactionsCount: BigInt
     messageReceiptRoot: Bytes
-    messageReceiptCount: number
+    messageReceiptCount: BigInt
     prevRoot: Bytes
-    time: number
+    time: BigInt
     applicationHash: Bytes
 }
 
 
 export interface Policies {
-    gasPrice?: number
-    witnessLimit?: number
+    gasPrice?: BigInt
+    witnessLimit?: BigInt
     maturity?: number
-    maxFee?: number
+    maxFee?: BigInt
 }
 
 
@@ -31,14 +31,14 @@ export interface ProgramState {
 
 export interface SubmittedStatus {
     type: 'SubmittedStatus'
-    time: number
+    time: BigInt
 }
 
 
 export interface SuccessStatus {
     type: 'SuccessStatus'
     transactionId: Bytes
-    time: number
+    time: BigInt
     programState?: ProgramState
 }
 
@@ -52,7 +52,7 @@ export interface SqueezedOutStatus {
 export interface FailureStatus {
     type: 'FailureStatus'
     transactionId: Bytes
-    time: number
+    time: BigInt
     reason: string
     programState?: ProgramState
 }
@@ -74,10 +74,10 @@ export interface Transaction {
         contract: Bytes
     }
     policies?: Policies
-    gasPrice?: number
-    scriptGasLimit?: number
+    gasPrice?: BigInt
+    scriptGasLimit?: BigInt
     maturity?: number
-    mintAmount?: number
+    mintAmount?: BigInt
     mintAssetId?: Bytes
     txPointer?: string
     isScript: boolean
@@ -94,7 +94,7 @@ export interface Transaction {
     script?: Bytes
     scriptData?: Bytes
     bytecodeWitnessIndex?: number
-    bytecodeLength?: number
+    bytecodeLength?: BigInt
     salt?: Bytes
     storageSlots?: Bytes[]
     rawPayload?: Bytes
@@ -107,12 +107,12 @@ export interface InputCoin {
     transactionIndex: number
     utxoId: Bytes
     owner: Bytes
-    amount: number
+    amount: BigInt
     assetId: Bytes
     txPointer: string
     witnessIndex: number
     maturity: number
-    predicateGasUsed: number
+    predicateGasUsed: BigInt
     predicate: Bytes
     predicateData: Bytes
 }
@@ -136,10 +136,10 @@ export interface InputMessage {
     transactionIndex: number
     sender: Bytes
     recipient: Bytes
-    amount: number
+    amount: BigInt
     nonce: Bytes
     witnessIndex: number
-    predicateGasUsed: number
+    predicateGasUsed: BigInt
     data: Bytes
     predicate: Bytes
     predicateData: Bytes
@@ -154,7 +154,7 @@ export interface CoinOutput {
     index: number
     transactionIndex: number
     to: Bytes
-    amount: number
+    amount: BigInt
     assetId: Bytes
 }
 
@@ -174,7 +174,7 @@ export interface ChangeOutput {
     index: number
     transactionIndex: number
     to: Bytes
-    amount: number
+    amount: BigInt
     assetId: Bytes
 }
 
@@ -184,7 +184,7 @@ export interface VariableOutput {
     index: number
     transactionIndex: number
     to: Bytes
-    amount: number
+    amount: BigInt
     assetId: Bytes
 }
 
@@ -212,27 +212,27 @@ export interface Receipt {
     index: number
     transactionIndex: number
     contract?: Bytes
-    pc?: number
-    is?: number
+    pc?: BigInt
+    is?: BigInt
     to?: Bytes
     toAddress?: Bytes
-    amount?: number
+    amount?: BigInt
     assetId?: Bytes
-    gas?: number
-    param1?: number
-    param2?: number
-    val?: number
-    ptr?: number
+    gas?: BigInt
+    param1?: BigInt
+    param2?: BigInt
+    val?: BigInt
+    ptr?: BigInt
     digest?: Bytes
-    reason?: number
-    ra?: number
-    rb?: number
-    rc?: number
-    rd?: number
-    len?: number
+    reason?: BigInt
+    ra?: BigInt
+    rb?: BigInt
+    rc?: BigInt
+    rd?: BigInt
+    len?: BigInt
     receiptType: ReceiptType
-    result?: number
-    gasUsed?: number
+    result?: BigInt
+    gasUsed?: BigInt
     data?: Bytes
     sender?: Bytes
     recipient?: Bytes
