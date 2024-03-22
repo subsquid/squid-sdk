@@ -2,6 +2,7 @@ import {mapRawBlock} from '@subsquid/fuel-data/lib/mapping'
 import {BlockData} from '@subsquid/fuel-data/lib/raw-data'
 import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
+import {toJSON} from '@subsquid/util-internal-json'
 
 
 export class FuelIngest extends Ingest<IngestOptions> {
@@ -18,7 +19,7 @@ export class FuelIngest extends Ingest<IngestOptions> {
             yield blocks.map(raw => {
                 try {
                     let block = mapRawBlock(raw)
-                    return block
+                    return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {
                         blockHeight: raw.height,
