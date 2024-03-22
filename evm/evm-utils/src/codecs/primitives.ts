@@ -3,6 +3,7 @@ import { Sink } from "../sink";
 import { Src } from "../src";
 import { ArrayCodec, FixedArrayCodec } from "./array";
 import { Props, StructCodec } from "./struct";
+import { AbiFunction } from "../abi-components/function";
 
 export const bool: Codec<boolean> = {
   encode: function (sink: Sink, val: boolean) {
@@ -218,3 +219,8 @@ export const fixedArray = <T>(item: Codec<T>, size: number): Codec<T[]> =>
 export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item);
 
 export const struct = <S>(props: Props<S>) => new StructCodec<S>(props);
+
+type NamedCodec<T> = { name?: string } & Codec<T>;
+
+export const fun = <T extends NamedCodec<any>[]>(signature: string, args: T) =>
+  new AbiFunction(signature, args);

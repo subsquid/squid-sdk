@@ -2,7 +2,7 @@ import { Codec, WORD_SIZE } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 
-export class ArrayCodec<T> implements Codec<T[]> {
+export class ArrayCodec<const T> implements Codec<readonly T[]> {
   public readonly isDynamic = true;
 
   constructor(public readonly item: Codec<T>) {}
@@ -35,11 +35,12 @@ export class ArrayCodec<T> implements Codec<T[]> {
   }
 }
 
-export class FixedArrayCodec<T> implements Codec<T[]> {
+export class FixedArrayCodec<const T> implements Codec<readonly T[]> {
   public isDynamic: boolean;
-
+  public slotsCount: number;
   constructor(public readonly item: Codec<T>, public readonly size: number) {
     this.isDynamic = item.isDynamic && size > 0;
+    this.slotsCount = this.isDynamic ? 1 : size;
   }
 
   encode(sink: Sink, val: T[]) {

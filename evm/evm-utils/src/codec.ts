@@ -7,4 +7,7 @@ export interface Codec<T> {
   encode(sink: Sink, val: T): void;
   decode(src: Src): T;
   isDynamic: boolean;
+  slotsCount?: number;
 }
+
+export type NamedCodec<T, S> = { name?: S } & Codec<T>;
