@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AbiFunction } from "../src/abi-components/function";
 import {
+  arg,
   array,
   bool,
   bytes4,
@@ -10,7 +11,6 @@ import {
   uint256,
 } from "../src";
 import { encodeFunctionData } from "viem";
-import { arg } from "../src/utils";
 
 describe("Function", () => {
   it("encodes/decodes simple args", () => {
@@ -33,20 +33,17 @@ describe("Function", () => {
   });
 
   it("encodes/decodes dynamic args", () => {
-    const staticStruct = struct({
-      foo: { codec: uint256, index: 0 },
-      bar: { codec: bytes4, index: 1 },
-    });
+    const staticStruct = struct(arg("foo", uint256), arg("bar", bytes4));
     const dynamicFunction = new AbiFunction("0x423917ce", [
       arg("arg1", array(uint256)),
       arg("arg2", fixedArray(array(uint256), 10)),
       arg(
         "arg3",
-        struct({
-          foo: { codec: uint256, index: 0 },
-          bar: { codec: array(uint256), index: 1 },
-          str: { codec: staticStruct, index: 2 },
-        })
+        struct(
+          arg("foo", uint256),
+          arg("bar", array(uint256)),
+          arg("str", staticStruct)
+        )
       ),
       arg("arg4", staticStruct),
     ]);

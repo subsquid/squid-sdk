@@ -10,6 +10,7 @@ import {
   uint256,
 } from "../src";
 import { AbiParameter, encodeAbiParameters } from "viem";
+import { arg } from "../src/utils";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
   expect(sink.toString()).toEqual(encodeAbiParameters(types, values));
@@ -17,16 +18,11 @@ function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
 
 describe("StructCodec", () => {
   it("static tuple", () => {
-    const s = struct({
-      a: { codec: int8, index: 0 },
-      b: { codec: uint256, index: 1 },
-      c: {
-        codec: struct({
-          e: { codec: address, index: 0 },
-        }),
-        index: 2,
-      },
-    });
+    const s = struct(
+      arg("a", int8),
+      arg("b", uint256),
+      arg("c", struct(arg("e", address)))
+    );
 
     const sink = new Sink(3);
     s.encode(sink, {
@@ -75,17 +71,11 @@ describe("StructCodec", () => {
   });
 
   it("dynamic tuple", () => {
-    const s = struct({
-      a: { codec: array(uint256), index: 0 },
-      b: { codec: uint256, index: 1 },
-      c: {
-        codec: struct({
-          d: { codec: array(uint256), index: 0 },
-          e: { codec: address, index: 1 },
-        }),
-        index: 2,
-      },
-    });
+    const s = struct(
+      arg("a", array(uint256)),
+      arg("b", uint256),
+      arg("c", struct(arg("d", array(uint256)), arg("e", address)))
+    );
 
     const sink = new Sink(1);
     s.encode(sink, {
@@ -138,17 +128,11 @@ describe("StructCodec", () => {
   });
 
   it("dynamic tuple2", () => {
-    const s = struct({
-      foo: { codec: uint256, index: 0 },
-      bar: { codec: array(uint256), index: 1 },
-      str: {
-        codec: struct({
-          foo: { codec: uint256, index: 0 },
-          bar: { codec: bytes4, index: 1 },
-        }),
-        index: 2,
-      },
-    });
+    const s = struct(
+      arg("foo", uint256),
+      arg("bar", array(uint256)),
+      arg("str", struct(arg("foo", uint256), arg("bar", bytes4)))
+    );
 
     const sink = new Sink(1);
     s.encode(sink, {
@@ -200,22 +184,3 @@ describe("StructCodec", () => {
     });
   });
 });
-
-// 0000000000000000000000000000000000000000000000000000000000000020
-// 0000000000000000000000000000000000000000000000000000000000000064
-// 0000000000000000000000000000000000000000000000000000000000000080
-// 000000000000000000000000000000000000000000000000000000000000007b
-// 1234567800000000000000000000000000000000000000000000000000000000
-// 0000000000000000000000000000000000000000000000000000000000000003
-// 0000000000000000000000000000000000000000000000000000000000000001
-// 0000000000000000000000000000000000000000000000000000000000000002
-// 0000000000000000000000000000000000000000000000000000000000000003
-//
-// 0000000000000000000000000000000000000000000000000000000000000020
-// 0000000000000000000000000000000000000000000000000000000000000064
-// 0000000000000000000000000000000000000000000000000000000000000060
-// 000000000000000000000000000000000000000000000000000000000000007b
-// 1234567800000000000000000000000000000000000000000000000000000003
-// 0000000000000000000000000000000000000000000000000000000000000001
-// 0000000000000000000000000000000000000000000000000000000000000002
-// 0000000000000000000000000000000000000000000000000000000000000003

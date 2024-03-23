@@ -1,34 +1,20 @@
-import { Codec } from "../codec";
+import { Codec, NamedCodec, ParsedNamedCodecList } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 import { slotsCount } from "../utils";
 
-export type Props<S> = {
-  [K in keyof S]: { codec: Codec<S[K]>; index: number };
-};
+export class StructCodec<const T extends ReadonlyArray<NamedCodec<any, string>>>
+  implements Codec<ParsedNamedCodecList<T>>
+{
+  public readonly isDynamic: boolean;
+  public readonly slotsCount: number;
+  private readonly childrenSlotsCount: number;
+  private readonly components: T;
 
-export class StructCodec<S> implements Codec<S> {
-  public isDynamic: boolean;
-  public slotsCount: number;
-  private childrenSlotsCount: number;
-  private readonly sortedProps: {
-    name: string;
-    codec: Codec<any>;
-    index: number;
-  }[];
-
-  constructor(public readonly props: Props<S>) {
-    this.sortedProps = Object.entries(props)
-      .map(([key, value]: [string, any]) => ({
-        name: key,
-        ...value,
-      }))
-      .sort((a, b) => a.index - b.index);
-
-    this.isDynamic = this.sortedProps.some((p) => p.codec.isDynamic);
-    this.childrenSlotsCount = slotsCount(
-      this.sortedProps.map(({ codec }) => codec)
-    );
+  constructor(...components: T) {
+    this.components = components;
+    this.isDynamic = components.some((p) => p.isDynamic);
+    this.childrenSlotsCount = slotsCount(components);
     if (this.isDynamic) {
       this.slotsCount = 1;
     } else {
@@ -36,44 +22,48 @@ export class StructCodec<S> implements Codec<S> {
     }
   }
 
-  public encode(sink: Sink, val: S): void {
+  public encode(sink: Sink, val: ParsedNamedCodecList<T>): void {
     if (this.isDynamic) {
       this.encodeDynamic(sink, val);
       return;
     }
-    for (let prop of this.sortedProps) {
-      prop.codec.encode(sink, (val as any)[prop.name]);
+    for (let i = 0; i < this.components.length; i++) {
+      let prop = this.components[i];
+      prop.encode(sink, (val as any)[prop.name ?? i]);
     }
   }
 
-  private encodeDynamic(sink: Sink, val: S): void {
+  private encodeDynamic(sink: Sink, val: ParsedNamedCodecList<T>): void {
     sink.offset();
     const tempSink = new Sink(this.childrenSlotsCount);
-    for (const prop of this.sortedProps) {
-      prop.codec.encode(tempSink, (val as any)[prop.name]);
+    for (let i = 0; i < this.components.length; i++) {
+      let prop = this.components[i];
+      prop.encode(tempSink, (val as any)[prop.name ?? i]);
     }
     sink.append(tempSink);
     sink.jumpBack();
   }
 
-  public decode(src: Src): S {
+  public decode(src: Src): ParsedNamedCodecList<T> {
     if (this.isDynamic) {
       return this.decodeDynamic(src);
     }
     let result: any = {};
-    for (const prop of this.sortedProps) {
-      result[prop.name] = prop.codec.decode(src);
+    for (let i = 0; i < this.components.length; i++) {
+      let prop = this.components[i];
+      result[prop.name ?? i] = prop.decode(src);
     }
     return result;
   }
 
-  private decodeDynamic(src: Src): S {
+  private decodeDynamic(src: Src): ParsedNamedCodecList<T> {
     let result: any = {};
 
     const offset = src.u32();
     const tmpSrc = src.slice(offset);
-    for (const prop of this.sortedProps) {
-      result[prop.name] = prop.codec.decode(tmpSrc);
+    for (let i = 0; i < this.components.length; i++) {
+      let prop = this.components[i];
+      result[prop.name ?? i] = prop.decode(tmpSrc);
     }
     return result;
   }

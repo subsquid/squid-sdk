@@ -1,8 +1,8 @@
-import { Codec } from "../codec";
+import type { Codec, NamedCodec } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 import { ArrayCodec, FixedArrayCodec } from "./array";
-import { Props, StructCodec } from "./struct";
+import { StructCodec } from "./struct";
 import { AbiFunction } from "../abi-components/function";
 
 export const bool: Codec<boolean> = {
@@ -218,9 +218,12 @@ export const fixedArray = <T>(item: Codec<T>, size: number): Codec<T[]> =>
 
 export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item);
 
-export const struct = <S>(props: Props<S>) => new StructCodec<S>(props);
+export const struct = <T extends NamedCodec<any, string>[]>(...components: T) =>
+  new StructCodec<T>(...components);
 
-type NamedCodec<T> = { name?: string } & Codec<T>;
+export const fun = <T extends NamedCodec<any, string>[]>(
+  signature: string,
+  args: T
+) => new AbiFunction(signature, args);
 
-export const fun = <T extends NamedCodec<any>[]>(signature: string, args: T) =>
-  new AbiFunction(signature, args);
+export { arg } from "../utils";
