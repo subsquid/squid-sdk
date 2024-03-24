@@ -10,7 +10,7 @@ export interface Codec<T> {
   slotsCount?: number;
 }
 
-export type NamedCodec<T, S extends string> = { name?: S } & Codec<T>;
+export type NamedCodec<T, S> = { name?: S } & Codec<T>;
 
 type Identity<T> = T extends object
   ? {
@@ -38,10 +38,12 @@ type DeepReadonly<T> = Readonly<{
     : DeepReadonly<T[K]>;
 }>;
 
-export type NamedCodecListArgs<T> = T extends readonly [
-  NamedCodec<infer U, any>
-]
+export type CodecListArgs<T> = T extends readonly [Codec<infer U>]
   ? readonly [DeepReadonly<U>]
-  : T extends readonly [NamedCodec<infer U, any>, ...infer R]
-  ? readonly [DeepReadonly<U>, ...NamedCodecListArgs<R>]
+  : T extends readonly [Codec<infer U>, ...infer R]
+  ? readonly [DeepReadonly<U>, ...CodecListArgs<R>]
   : never;
+
+export type IndexedCodec<T, U extends string> = Identity<
+  NamedCodec<T, U> & { indexed?: true }
+>;

@@ -1,7 +1,7 @@
 import {
   ParsedNamedCodecList,
   NamedCodec,
-  NamedCodecListArgs,
+  CodecListArgs,
   Codec,
 } from "../codec";
 import { Sink } from "../sink";
@@ -19,7 +19,7 @@ export class AbiFunction<
   constructor(
     public selector: string,
     public readonly args: T,
-    public readonly returnType: Codec<R>
+    public readonly returnType?: Codec<R>
   ) {
     assert(selector.startsWith("0x"), "selector must start with 0x");
     assert(selector.length === 10, "selector must be 4 bytes long");
@@ -32,7 +32,7 @@ export class AbiFunction<
     return calldata.startsWith(this.selector);
   }
 
-  encode(...args: NamedCodecListArgs<T>) {
+  encode(...args: CodecListArgs<T>) {
     const sink = new Sink(this.slotsCount);
     for (let i = 0; i < this.args.length; i++) {
       this.args[i].encode(sink, args[i]);
@@ -55,8 +55,8 @@ export class AbiFunction<
     return result;
   }
 
-  decodeResult(output: string): R {
+  decodeResult(output: string): R | undefined {
     const src = new Src(Buffer.from(output.slice(2), "hex"));
-    return this.returnType.decode(src);
+    return this.returnType?.decode(src);
   }
 }

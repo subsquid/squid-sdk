@@ -1,9 +1,10 @@
-import type { Codec, NamedCodec } from "../codec";
+import { Codec, IndexedCodec, NamedCodec } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 import { ArrayCodec, FixedArrayCodec } from "./array";
 import { StructCodec } from "./struct";
 import { AbiFunction } from "../abi-components/function";
+import { AbiEvent } from "../abi-components/event";
 
 export const bool: Codec<boolean> = {
   encode: function (sink: Sink, val: boolean) {
@@ -135,7 +136,7 @@ export const int256: Codec<bigint> = {
   isDynamic: false,
 };
 
-export const string: Codec<string> = {
+export const string = <const>{
   encode(sink: Sink, val: string) {
     sink.offset();
     sink.string(val);
@@ -147,7 +148,7 @@ export const string: Codec<string> = {
   isDynamic: true,
 };
 
-export const bytes: Codec<Uint8Array> = {
+export const bytes = <const>{
   encode(sink: Sink, val: Uint8Array) {
     sink.offset();
     sink.bytes(val);
@@ -221,9 +222,20 @@ export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item);
 export const struct = <T extends NamedCodec<any, string>[]>(...components: T) =>
   new StructCodec<T>(...components);
 
-export const fun = <T extends NamedCodec<any, string>[]>(
-  signature: string,
-  args: T
-) => new AbiFunction(signature, args);
+export const tuple = struct;
 
-export { arg } from "../utils";
+export const fun = <
+  const T extends NamedCodec<any, string>[],
+  R extends Codec<any>
+>(
+  signature: string,
+  args: T,
+  returnType?: R
+) => new AbiFunction<T, R>(signature, args, returnType);
+
+export const event = <const T extends ReadonlyArray<IndexedCodec<any, string>>>(
+  topic: string,
+  ...args: T
+) => new AbiEvent<T>(topic, ...args);
+
+export { arg, indexed } from "../utils";

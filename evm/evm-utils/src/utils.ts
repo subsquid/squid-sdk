@@ -1,4 +1,4 @@
-import type { Codec, NamedCodec } from "./codec";
+import type { Codec } from "./codec";
 
 export function slotsCount(codecs: readonly Codec<any>[]) {
   let count = 0;
@@ -8,14 +8,32 @@ export function slotsCount(codecs: readonly Codec<any>[]) {
   return count;
 }
 
-export function arg<T, S extends string>(
+export function arg<T extends Codec<any>, S extends string>(
   name: S,
-  codec: Codec<T>
-): NamedCodec<T, S> {
+  codec: T
+): T & { name: S } {
   return new Proxy(codec, {
     get(target: any, prop, receiver) {
       if (prop === "name") {
         return name;
+      }
+      const value = target[prop];
+      if (value instanceof Function) {
+        return function (...args: any[]) {
+          // @ts-ignore
+          return value.apply(this === receiver ? target : this, args);
+        };
+      }
+      return value;
+    },
+  });
+}
+
+export function indexed<T extends Codec<any>>(codec: T): T & { indexed: true } {
+  return new Proxy(codec, {
+    get(target: any, prop, receiver) {
+      if (prop === "indexed") {
+        return true;
       }
       const value = target[prop];
       if (value instanceof Function) {
