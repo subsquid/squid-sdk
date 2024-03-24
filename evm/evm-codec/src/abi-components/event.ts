@@ -1,4 +1,4 @@
-import { bytes, bytes32 } from "../codecs/primitives";
+import { bytes32 } from "../codecs/primitives";
 import { Src } from "../src";
 import { IndexedCodec, ParsedNamedCodecList } from "../codec";
 

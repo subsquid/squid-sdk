@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { AbiParameter, encodeAbiParameters } from "viem";
 import {
   address,
+  arg,
   array,
   bytes4,
   int8,
@@ -9,8 +11,6 @@ import {
   struct,
   uint256,
 } from "../src";
-import { AbiParameter, encodeAbiParameters } from "viem";
-import { arg } from "../src/utils";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
   expect(sink.toString()).toEqual(encodeAbiParameters(types, values));

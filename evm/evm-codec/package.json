@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/evm-utils",
+  "name": "@subsquid/evm-codec",
   "version": "0.0.0",
   "description": "EVM encoder/decoder tools",
   "license": "GPL-3.0-or-later",
