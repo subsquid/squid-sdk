@@ -1,5 +1,12 @@
 import type { Codec } from "./codec";
 
+/**
+ * Combines members of an intersection into a readable type.
+ *
+ * @link https://twitter.com/mattpocockuk/status/1622730173446557697?s=20&t=NdpAcmEFXY01xkqU3KO0Mg
+ */
+export type Pretty<T> = { [K in keyof T]: T[K] } & unknown;
+
 export function slotsCount(codecs: readonly Codec<any>[]) {
   let count = 0;
   for (const codec of codecs) {
@@ -11,7 +18,7 @@ export function slotsCount(codecs: readonly Codec<any>[]) {
 export function arg<T extends Codec<any>, S extends string>(
   name: S,
   codec: T
-): T & { name: S } {
+): Pretty<T & { name: S }> {
   return new Proxy(codec, {
     get(target: any, prop, receiver) {
       if (prop === "name") {
@@ -29,7 +36,9 @@ export function arg<T extends Codec<any>, S extends string>(
   });
 }
 
-export function indexed<T extends Codec<any>>(codec: T): T & { indexed: true } {
+export function indexed<T extends Codec<any>>(
+  codec: T
+): Pretty<T & { indexed: true }> {
   return new Proxy(codec, {
     get(target: any, prop, receiver) {
       if (prop === "indexed") {
