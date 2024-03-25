@@ -5,9 +5,9 @@ import {
   Codec,
 } from "../codec";
 import { Sink } from "../sink";
-import { assert } from "vitest";
 import { slotsCount } from "../utils";
 import { Src } from "../src";
+import assert from "node:assert";
 
 export class AbiFunction<
   const T extends ReadonlyArray<NamedCodec<any, any>>,
