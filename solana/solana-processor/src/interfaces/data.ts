@@ -8,7 +8,13 @@ import type {
     TokenBalanceRequiredFields,
     TransactionRequiredFields
 } from './data-partial'
-import type {GetFields, Selector, Select, Simplify} from './util'
+import type {GetFields, Select, Selector, Simplify} from './util'
+
+
+/**
+ * Hex encoded binary string
+ */
+export type Bytes = string
 
 
 export interface FieldSelection {
@@ -49,8 +55,9 @@ export const DEFAULT_FIELDS = {
     },
     tokenBalance: {
         mint: true,
-        owner: true,
         decimals: true,
+        preOwner: true,
+        postOwner: true,
         pre: true,
         post: true
     },
@@ -78,27 +85,63 @@ export type BlockHeader<F extends FieldSelection = {}> = Simplify<
 
 
 export type Transaction<F extends FieldSelection = {}> = Simplify<
-    Item<data.Transaction, TransactionRequiredFields, F, 'transaction'>
+    Item<data.Transaction, TransactionRequiredFields, F, 'transaction'> &
+    {
+        block: BlockHeader<F>
+        instructions: Instruction<F>[]
+        balances: Balance<F>[]
+        tokenBalances: TokenBalance<F>[]
+    }
 >
 
 
 export type Instruction<F extends FieldSelection = {}> = Simplify<
-    Item<data.Instruction, InstructionRequiredFields, F, 'instruction'>
+    Item<data.Instruction, InstructionRequiredFields, F, 'instruction'> &
+    (['data'] extends [GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'instruction'>] ? {
+        d1: Bytes
+        d2: Bytes
+        d4: Bytes
+        d8: Bytes
+    } : {}) &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+        inner: Instruction<F>[]
+        parent?: Instruction<F>
+    }
 >
 
 
 export type LogMessage<F extends FieldSelection = {}> = Simplify<
-    Item<data.LogMessage, LogRequiredFields, F, 'log'>
+    Item<data.LogMessage, LogRequiredFields, F, 'log'> &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+        instruction?: Instruction<F>
+        getInstruction(): Instruction<F>
+    }
 >
 
 
 export type Balance<F extends FieldSelection = {}> = Simplify<
-    Item<data.Balance, BalanceRequiredFields, F, 'balance'>
+    Item<data.Balance, BalanceRequiredFields, F, 'balance'> &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
 >
 
 
 export type TokenBalance<F extends FieldSelection = {}> = Simplify<
-    Item<data.TokenBalance, TokenBalanceRequiredFields, F, 'tokenBalance'>
+    Item<data.TokenBalance, TokenBalanceRequiredFields, F, 'tokenBalance'> &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
 >
 
 
@@ -113,6 +156,6 @@ export interface Block<F extends FieldSelection = {}> {
     instructions: Instruction<F>[]
     logs: LogMessage<F>[]
     balances: Balance<F>[]
-    // tokenBalances: TokenBalance<F>[]
-    // rewards: Reward<F>[]
+    tokenBalances: TokenBalance<F>[]
+    rewards: Reward<F>[]
 }

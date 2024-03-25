@@ -83,7 +83,8 @@ function mapRpcTransaction(
         err: src.meta.err,
         computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
         fee: BigInt(src.meta.fee),
-        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []}
+        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
+        hasDroppedLogMessages: false
     }
 
     let accounts: Base58Bytes[]
@@ -111,8 +112,13 @@ function mapRpcTransaction(
         logs
     ).parse()
 
-    mapBalances(getAccount, transactionIndex, src, balances)
-    mapTokenBalances(getAccount, transactionIndex, src, tokenBalances)
+    balances.push(
+        ...mapBalances(getAccount, transactionIndex, src)
+    )
+
+    tokenBalances.push(
+        ...mapTokenBalances(getAccount, transactionIndex, src)
+    )
 
     return tx
 }
@@ -181,6 +187,7 @@ class InstructionParser {
 
             this.pos += 1
         }
+        this.tx.hasDroppedLogMessages = this.tx.hasDroppedLogMessages || this.messagesTruncated
     }
 
     private traverse(
@@ -221,15 +228,18 @@ class InstructionParser {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
-            this.dropInvokeLessInstructionMessages(pos)
-            this.push(stackHeight, instruction)
-            return this.invokeLessTraversal(stackHeight, instructions, pos + 1)
+            let dropped = this.dropInvokeLessInstructionMessages(pos)
+            let ins = this.push(stackHeight, instruction)
+            ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || dropped
+            this.tx.hasDroppedLogMessages = this.tx.hasDroppedLogMessages || dropped
+            return this.invokeLessTraversal(dropped, stackHeight, instructions, pos + 1)
         }
 
         throw this.error(true, pos, 'missing invoke message')
     }
 
-    private dropInvokeLessInstructionMessages(pos: number): void {
+    private dropInvokeLessInstructionMessages(pos: number): boolean {
+        let initialPos = this.messagePos
         while (this.messagePos < this.messages.length && !this.messagesTruncated) {
             let msg = this.messages[this.messagePos]
             switch(msg.kind) {
@@ -242,15 +252,16 @@ class InstructionParser {
                 case 'truncate':
                     this.messagePos += 1
                     this.messagesTruncated = true
-                    return
+                    return true
                 case 'invoke':
-                    return
+                    return this.messagePos - initialPos > 0
                 case 'invoke-result':
                     throw this.error(true, pos, `invoke result message does not match any invoke`)
                 default:
                     throw unexpectedCase()
             }
         }
+        return false
     }
 
     private invokeInstruction(
@@ -275,10 +286,11 @@ class InstructionParser {
                     if (token.error) {
                         ins.error = token.error
                     }
-                    pos = this.invokeLessTraversal(stackHeight, instructions, pos)
+                    pos = this.invokeLessTraversal(true, stackHeight, instructions, pos)
                     this.messagePos += 1
                     return pos
                 case 'truncate':
+                    ins.hasDroppedLogMessages = true
                     return this.logLessTraversal(stackHeight, instructions, pos)
                 default:
                     throw unexpectedCase()
@@ -328,11 +340,13 @@ class InstructionParser {
     }
 
     private invokeLessTraversal(
+        messagesDropped: boolean,
         parentStackHeight: number,
         instructions: rpc.Instruction[],
         pos: number
     ): number {
         return this.logLessTraversal(parentStackHeight, instructions, pos, (ins, pos) => {
+            ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || messagesDropped
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
             } else {
                 throw this.error(false, pos, 'invoke message is missing')
@@ -386,7 +400,8 @@ class InstructionParser {
             programId: this.getAccount(src.programIdIndex),
             accounts: src.accounts.map(a => this.getAccount(a)),
             data: src.data,
-            isCommitted: !this.tx.err
+            isCommitted: !this.tx.err,
+            hasDroppedLogMessages: this.messagesTruncated
         }
 
         this.instructions.push(i)
@@ -417,8 +432,9 @@ function mapBalances(
     getAccount: (idx: number) => Base58Bytes,
     transactionIndex: number,
     tx: rpc.Transaction,
-    balances: Balance[]
-): void {
+): Balance[] {
+    let balances: Balance[] = []
+
     let pre = tx.meta.preBalances
     let post = tx.meta.postBalances
 
@@ -436,41 +452,70 @@ function mapBalances(
             })
         }
     }
+
+    balances.sort((a, b) => {
+        if (a.account < b.account) return -1
+        if (a.account > b.account) return 1
+        return 0
+    })
+
+    return balances
 }
 
 
 function mapTokenBalances(
     getAccount: (idx: number) => Base58Bytes,
     transactionIndex: number,
-    tx: rpc.Transaction,
-    balances: TokenBalance[]
-): void {
+    tx: rpc.Transaction
+): TokenBalance[] {
+    let balances: TokenBalance[] = []
+
     let preBalances = new Map(
-        tx.meta.preTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+        tx.meta.preTokenBalances?.map(b => [getAccount(b.accountIndex), b])
     )
 
     let postBalances = new Map(
-        tx.meta.postTokenBalances?.map(b => [`${getAccount(b.accountIndex)}_${b.mint}_${b.owner}_${b.programId}`, b])
+        tx.meta.postTokenBalances?.map(b => [getAccount(b.accountIndex), b])
     )
 
-    assert(preBalances.size == (tx.meta.preTokenBalances?.length ?? 0))
-    assert(postBalances.size == (tx.meta.postTokenBalances?.length ?? 0))
-
-    for (let [k, post] of postBalances.entries()) {
-        let pre = preBalances.get(k)
-        assert(pre == null || post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
-        let b: TokenBalance = {
+    for (let [account, post] of postBalances.entries()) {
+        let pre = preBalances.get(account)
+        if (pre) {
+            assert(post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
+            assert(post.mint === pre.mint)
+            assert(post.programId === pre.programId)
+        }
+        balances.push({
             transactionIndex,
-            account: getAccount(post.accountIndex),
-            mint: post.mint,
-            owner: post.owner ?? undefined,
+            account,
             programId: post.programId ?? undefined,
+            mint: post.mint,
             decimals: post.uiTokenAmount.decimals,
-            pre: BigInt(pre?.uiTokenAmount.amount ?? 0),
+            preOwner: pre?.owner || undefined,
+            postOwner: post.owner ?? undefined,
+            pre: pre?.uiTokenAmount.amount == null ? undefined : BigInt(pre.uiTokenAmount.amount),
             post: BigInt(post.uiTokenAmount.amount)
-        }
-        if (b.pre != b.post) {
-            balances.push(b)
-        }
+        })
     }
+
+    for (let [account, pre] of preBalances.entries()) {
+        if (postBalances.has(account)) continue
+        balances.push({
+            transactionIndex,
+            account,
+            programId: pre.programId ?? undefined,
+            mint: pre.mint,
+            decimals: pre.uiTokenAmount.decimals,
+            preOwner: pre.owner ?? undefined,
+            pre: BigInt(pre.uiTokenAmount.amount)
+        })
+    }
+
+    balances.sort((a, b) => {
+        if (a.account < b.account) return -1
+        if (a.account > b.account) return 1
+        return 0
+    })
+
+    return balances
 }

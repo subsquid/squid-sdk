@@ -51,7 +51,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             loadedAddresses: option(object({
                 readonly: array(B58),
                 writable: array(B58)
-            }))
+            })),
+            hasDroppedLogMessages: BOOLEAN
         })
     })
 
@@ -68,7 +69,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             d4: BYTES,
             d8: BYTES,
             error: option(STRING),
-            isCommitted: BOOLEAN
+            isCommitted: BOOLEAN,
+            hasDroppedLogMessages: BOOLEAN
         })
     })
 
@@ -101,11 +103,12 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         account: B58,
         ...project(fields.tokenBalance, {
             mint: B58,
-            owner: option(B58),
-            programId: option(B58),
             decimals: NAT,
-            pre: BIG_NAT,
-            post: BIG_NAT
+            programId: option(B58),
+            preOwner: option(B58),
+            postOwner: option(B58),
+            pre: option(BIG_NAT),
+            post: option(BIG_NAT)
         })
     })
 

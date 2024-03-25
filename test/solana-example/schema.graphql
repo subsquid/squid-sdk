@@ -1,15 +1,13 @@
 
-type Exchange
-@entity
-@index(fields: ["from", "to"])
-@index(fields: ["timestamp", "from", "to"])
-{
+type Exchange @entity {
     id: ID!
+    slot: Int!
     tx: String!
-    timestamp: BigInt!
-    account: String!
-    from: String!
+    timestamp: DateTime!
+    fromOwner: String
+    fromToken: String!
     fromAmount: BigInt!
-    to: String!
+    toOwner: String
+    toToken: String!
     toAmount: BigInt!
 }

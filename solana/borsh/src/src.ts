@@ -74,7 +74,7 @@ export class Src {
 
     bytes(len: number): Uint8Array {
         this.assertLength(len)
-        let val = this.buf.subarray(this.pos, len)
+        let val = this.buf.subarray(this.pos, this.pos + len)
         this.pos += len
         return val
     }

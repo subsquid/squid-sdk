@@ -33,6 +33,7 @@ export interface Transaction {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
     }
+    hasDroppedLogMessages: boolean
 }
 
 
@@ -56,6 +57,7 @@ export interface Instruction {
      * `true` when transaction completed successfully, `false` otherwise
      */
     isCommitted: boolean
+    hasDroppedLogMessages: boolean
 }
 
 
@@ -80,12 +82,13 @@ export interface Balance {
 export interface TokenBalance {
     transactionIndex: number
     account: Base58Bytes
-    mint: Base58Bytes
-    owner?: Base58Bytes
     programId?: Base58Bytes
+    mint: Base58Bytes
     decimals: number
-    pre: bigint
-    post: bigint
+    preOwner?: Base58Bytes
+    postOwner?: Base58Bytes
+    pre?: bigint
+    post?: bigint
 }
 
 
