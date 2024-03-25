@@ -224,13 +224,10 @@ export const struct = <T extends NamedCodec<any, string>[]>(...components: T) =>
 
 export const tuple = struct;
 
-export const fun = <
-  const T extends NamedCodec<any, string>[],
-  R extends Codec<any>
->(
+export const fun = <const T extends NamedCodec<any, string>[], R>(
   signature: string,
   args: T,
-  returnType?: R
+  returnType?: Codec<R>
 ) => new AbiFunction<T, R>(signature, args, returnType);
 
 export const event = <const T extends ReadonlyArray<IndexedCodec<any, string>>>(

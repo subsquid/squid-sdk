@@ -42,7 +42,7 @@ export type CodecListArgs<T> = T extends readonly [Codec<infer U>]
   ? readonly [DeepReadonly<U>]
   : T extends readonly [Codec<infer U>, ...infer R]
   ? readonly [DeepReadonly<U>, ...CodecListArgs<R>]
-  : never;
+  : [];
 
 export type IndexedCodec<T, U extends string> = Identity<
   NamedCodec<T, U> & { indexed?: true }

@@ -8,6 +8,7 @@ import {
   fixedArray,
   fun,
   int32,
+  Sink,
   struct,
   uint256,
 } from "../src";
@@ -127,5 +128,14 @@ describe("Function", () => {
       arg3: args[2],
       arg4: args[3],
     });
+  });
+
+  it("return simple type", () => {
+    const simpleFunction = fun("0x12345678", [arg("foo", uint256)], int32);
+    const sink = new Sink(1);
+    int32.encode(sink, -420);
+    sink.toString();
+    const output = simpleFunction.decodeResult(sink.toString());
+    expect(output).toBe(-420);
   });
 });

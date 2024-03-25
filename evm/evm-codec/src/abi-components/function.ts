@@ -55,8 +55,8 @@ export class AbiFunction<
     return result;
   }
 
-  decodeResult(output: string): R | undefined {
+  decodeResult(output: string): R {
     const src = new Src(Buffer.from(output.slice(2), "hex"));
-    return this.returnType?.decode(src);
+    return this.returnType?.decode(src) as any;
   }
 }
