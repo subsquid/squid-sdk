@@ -1,6 +1,6 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, ConnectionHeaders} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
@@ -36,6 +36,10 @@ export interface RpcEndpointSettings {
      * Maximum number of requests in a single batch call
      */
     maxBatchCallSize?: number
+    /**
+     * Connection headers
+     */
+    headers?: ConnectionHeaders
 }
 
 
@@ -427,6 +431,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         }
         let client = new RpcClient({
             url: this.rpcEndpoint.url,
+            headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
             requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,

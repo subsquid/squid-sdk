@@ -21,6 +21,7 @@ export interface RpcClientOptions {
     retrySchedule?: number[]
     log?: Logger | null
     fixUnsafeIntegers?: boolean
+    headers?: ConnectionHeaders
 }
 
 
@@ -38,7 +39,7 @@ export interface CallOptions<R=any> {
     validateError?: ErrorValidator<R>
 }
 
-
+export type ConnectionHeaders = {[key: string]: string}
 type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
 type ErrorValidator<R=any> = (info: RpcErrorInfo, req: RpcRequest) => R
 
@@ -81,7 +82,7 @@ export class RpcClient {
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
@@ -101,13 +102,14 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string, fixUnsafeIntegers: boolean): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: ConnectionHeaders): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':
             case 'wss:':
                 return new WsConnection({
                     url,
+                    headers,
                     onNotificationMessage: msg => this.onNotification(msg),
                     onReset: reason => {
                         if (this.closed) return
@@ -121,6 +123,7 @@ export class RpcClient {
             case 'https:':
                 return new HttpConnection({
                     url,
+                    headers,
                     log: this.log,
                     fixUnsafeIntegers
                 })

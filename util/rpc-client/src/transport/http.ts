@@ -3,6 +3,7 @@ import {Logger} from '@subsquid/logger'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {ConnectionHeaders} from '../client';
 
 
 class RpcHttpClient extends HttpClient {
@@ -27,6 +28,7 @@ export interface HttpConnectionOptions {
     url: string
     fixUnsafeIntegers?: boolean
     log?: Logger
+    headers?: ConnectionHeaders
 }
 
 
@@ -43,7 +45,8 @@ export class HttpConnection implements Connection {
             keepAlive: true
         })
         this.http = new RpcHttpClient({
-            agent: this.agent
+            agent: this.agent,
+            headers: options.headers,
         })
         this.http.fixUnsafeIntegers = options.fixUnsafeIntegers || false
     }
