@@ -1,143 +1,181 @@
-import * as ethers from 'ethers'
-import {Logger} from '@subsquid/logger'
-import {def} from '@subsquid/util-internal'
-import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
-import {getFullTupleType, getReturnType, getStructType, getTupleType, getType} from './util/types'
-
+import { Logger } from "@subsquid/logger";
+import { def } from "@subsquid/util-internal";
+import { keccak256 } from "@subsquid/evm-codec";
+import { getType } from "./util/types";
+import type { Abi, AbiEvent, AbiFunction, AbiParameter } from "abitype";
+import { PrettyFileOutput, PrettyOutDir } from "./pretty-out-dir";
 
 export class Typegen {
-    private out: FileOutput
+  private out: PrettyFileOutput;
 
-    constructor(private dest: OutDir, private abi: ethers.Interface, private basename: string, private log: Logger) {
-        this.out = dest.file(basename + '.ts')
+  constructor(
+    dest: PrettyOutDir,
+    private abi: Abi,
+    basename: string,
+    private log: Logger,
+  ) {
+    this.out = dest.file(basename + ".ts");
+  }
+
+  async generate() {
+    this.out.line(`import * as p from "@subsquid/evm-codec";`);
+    this.out.line(
+      "const { event, fun, indexed, arg, array, fixedArray, tuple, ContractBase } = p;",
+    );
+    this.out.line();
+
+    this.generateEvents();
+    this.generateFunctions();
+    this.generateContract();
+
+    await this.out.write();
+    this.log.info(`saved ${this.out.file}`);
+  }
+
+  private generateEvents() {
+    let events = this.getEvents();
+    if (events.length == 0) {
+      return;
     }
+    this.out.line();
+    this.out.block(`export const events =`, () => {
+      for (let e of events) {
+        this.out.line(
+          `${this.getPropName(e)}: event("${this.topic0(e)}", ${this.toTypes(
+            e.inputs,
+          )}),`,
+        );
+      }
+    });
+  }
 
-    generate(): void {
-        this.out.line("import * as ethers from 'ethers'")
-        this.out.line("import {LogEvent, Func, ContractBase} from './abi.support'")
-        this.out.line(`import {ABI_JSON} from './${this.basename}.abi'`)
-        this.out.line()
-        this.out.line("export const abi = new ethers.Interface(ABI_JSON);")
+  private topic0(e: AbiEvent): string {
+    return `0x${keccak256(this.sighash(e)).toString("hex")}`;
+  }
 
-        this.generateEvents()
-        this.generateFunctions()
-        this.generateContract()
+  private toTypes(inputs: readonly AbiParameter[]): string {
+    return inputs.map(getType).join(", ");
+  }
 
-        this.writeAbi()
-        this.out.write()
-        this.log.info(`saved ${this.out.file}`)
+  private generateFunctions() {
+    let functions = this.getFunctions();
+    if (functions.length == 0) {
+      return;
     }
+    this.out.line();
+    this.out.block(`export const functions =`, () => {
+      for (let f of functions) {
+        const returnType =
+          f.outputs.length > 0 ? `, ${this.toTypes(f.outputs)}` : "";
 
-    private writeAbi() {
-        let out = this.dest.file(this.basename + '.abi.ts')
-        let json = this.abi.formatJson()
-        json = JSON.stringify(JSON.parse(json), null, 4)
-        out.line(`export const ABI_JSON = ${json}`)
-        out.write()
-        this.log.info(`saved ${out.file}`)
-    }
+        this.out.line(
+          `${this.getPropName(f)}: fun("${this.functionSelector(
+            f,
+          )}", [${this.toTypes(f.inputs)}]${returnType}),`,
+        );
+      }
+    });
+  }
 
-    private generateEvents() {
-        let events = this.getEvents()
-        if (events.length == 0) {
-            return
+  private functionSelector(f: AbiFunction): string {
+    const sighash = this.sighash(f);
+    return `0x${keccak256(sighash).slice(0, 4).toString("hex")}`;
+  }
+
+  private generateContract() {
+    this.out.line();
+    this.out.block(`export class Contract extends ContractBase`, () => {
+      let functions = this.getFunctions();
+      for (let f of functions) {
+        if (
+          (f.stateMutability === "pure" || f.stateMutability === "view") &&
+          f.outputs?.length
+        ) {
+          this.out.line();
+          let argNames = f.inputs.map((a, idx) => a.name || `arg${idx}`);
+          const ref = this.getRef(f);
+          let args = f.inputs
+            .map(
+              (a, idx) =>
+                `${argNames[idx]}: Parameters<typeof functions${ref}["encode"]>[${idx}]`,
+            )
+            .join(", ");
+          this.out.block(`${this.getPropName(f)}(${args})`, () => {
+            this.out.line(
+              `return this.eth_call(functions${ref}, [${argNames.join(", ")}])`,
+            );
+          });
         }
-        this.out.line()
-        this.out.block(`export const events =`, () => {
-            for (let e of events) {
-                this.out.line(`${this.getPropName(e)}: new LogEvent<${getFullTupleType(e.inputs)}>(`)
-                this.out.indentation(() => this.out.line(`abi, '${e.topicHash}'`))
-                this.out.line('),')
-            }
-        })
-    }
+      }
+    });
+  }
 
-    private generateFunctions() {
-        let functions = this.getFunctions()
-        if (functions.length == 0) {
-            return
-        }
-        this.out.line()
-        this.out.block(`export const functions =`, () => {
-            for (let f of functions) {
-                let sighash = f.selector
-                let pArgs = getTupleType(f.inputs)
-                let pArgStruct = getStructType(f.inputs)
-                let pResult = getReturnType(f.outputs)
-                this.out.line(`${this.getPropName(f)}: new Func<${pArgs}, ${pArgStruct}, ${pResult}>(`)
-                this.out.indentation(() => this.out.line(`abi, '${sighash}'`))
-                this.out.line('),')
-            }
-        })
+  private getRef(item: AbiEvent | AbiFunction): string {
+    let key = this.getPropName(item);
+    if (key[0] == "'") {
+      return `[${key}]`;
+    } else {
+      return "." + key;
     }
+  }
 
-    private generateContract() {
-        this.out.line()
-        this.out.block(`export class Contract extends ContractBase`, () => {
-            let functions = this.getFunctions()
-            for (let f of functions) {
-                if (f.constant && f.outputs?.length) {
-                    this.out.line()
-                    let argNames = f.inputs.map((a, idx) => a.name || `arg${idx}`)
-                    let args  = f.inputs.map((a, idx) => `${argNames[idx]}: ${getType(a)}`).join(', ')
-                    this.out.block(`${this.getPropName(f)}(${args}): Promise<${getReturnType(f.outputs)}>`, () => {
-                        this.out.line(`return this.eth_call(functions${this.getRef(f)}, [${argNames.join(', ')}])`)
-                    })
-                }
-            }
-        })
+  private cannonicalType(param: AbiParameter): string {
+    if (!param.type.startsWith("tuple")) {
+      return param.type;
     }
+    const arrayBrackets = param.type.slice(5);
+    return `(${(param as any).components.map((param: AbiParameter) =>
+      this.cannonicalType(param),
+    )})${arrayBrackets}`;
+  }
 
-    private getRef(item: ethers.EventFragment | ethers.FunctionFragment): string {
-        let key = this.getPropName(item)
-        if (key[0] == "'") {
-            return `[${key}]`
-        } else {
-            return '.' + key
-        }
-    }
+  private sighash(item: AbiEvent | AbiFunction): string {
+    return `${item.name}(${item.inputs
+      .map((param) => this.cannonicalType(param))
+      .join(",")})`;
+  }
 
-    private getPropName(item: ethers.EventFragment | ethers.FunctionFragment): string {
-        if (this.getOverloads(item) == 1) {
-            return item.name
-        } else {
-            return `'${item.format('sighash')}'`
-        }
+  private getPropName(item: AbiEvent | AbiFunction): string {
+    if (this.getOverloads(item) == 1) {
+      return item.name;
+    } else {
+      return `"${this.sighash(item)}"`;
     }
+  }
 
-    private getOverloads(item: ethers.EventFragment | ethers.FunctionFragment): number {
-        if (item instanceof ethers.EventFragment) {
-            return this.eventOverloads()[item.name]
-        } else {
-            return this.functionOverloads()[item.name]
-        }
+  private getOverloads(item: AbiEvent | AbiFunction): number {
+    if (item.type === "event") {
+      return this.eventOverloads()[item.name];
+    } else {
+      return this.functionOverloads()[item.name];
     }
+  }
 
-    @def
-    private functionOverloads(): Record<string, number> {
-        let overloads: Record<string, number> = {}
-        for (let item of this.getFunctions()) {
-            overloads[item.name] = (overloads[item.name] || 0) + 1
-        }
-        return overloads
+  @def
+  private functionOverloads(): Record<string, number> {
+    let overloads: Record<string, number> = {};
+    for (let item of this.getFunctions()) {
+      overloads[item.name] = (overloads[item.name] || 0) + 1;
     }
+    return overloads;
+  }
 
-    @def
-    private eventOverloads(): Record<string, number> {
-        let overloads: Record<string, number> = {}
-        for (let item of this.getEvents()) {
-            overloads[item.name] = (overloads[item.name] || 0) + 1
-        }
-        return overloads
+  @def
+  private eventOverloads(): Record<string, number> {
+    let overloads: Record<string, number> = {};
+    for (let item of this.getEvents()) {
+      overloads[item.name] = (overloads[item.name] || 0) + 1;
     }
+    return overloads;
+  }
 
-    @def
-    private getFunctions(): ethers.FunctionFragment[] {
-        return this.abi.fragments.filter(f => f.type === 'function') as ethers.FunctionFragment[]
-    }
+  @def
+  private getFunctions(): AbiFunction[] {
+    return this.abi.filter((f) => f.type === "function") as AbiFunction[];
+  }
 
-    @def
-    private getEvents(): ethers.EventFragment[] {
-        return this.abi.fragments.filter(f => f.type === 'event') as ethers.EventFragment[]
-    }
+  @def
+  private getEvents(): AbiEvent[] {
+    return this.abi.filter((f) => f.type === "event") as AbiEvent[];
+  }
 }
