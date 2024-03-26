@@ -15,6 +15,27 @@ export function slotsCount(codecs: readonly Codec<any>[]) {
   return count;
 }
 
+export function arg<T extends Codec<any>, S extends string>(
+  name: S,
+  codec: T
+): Pretty<T & { name: S }> {
+  return new Proxy(codec, {
+    get(target: any, prop, receiver) {
+      if (prop === "name") {
+        return name;
+      }
+      const value = target[prop];
+      if (value instanceof Function) {
+        return function (...args: any[]) {
+          // @ts-ignore
+          return value.apply(this === receiver ? target : this, args);
+        };
+      }
+      return value;
+    },
+  });
+}
+
 export function indexed<T extends Codec<any>>(
   codec: T
 ): Pretty<T & { indexed: true }> {

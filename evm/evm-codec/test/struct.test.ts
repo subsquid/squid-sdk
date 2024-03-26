@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AbiParameter, encodeAbiParameters } from "viem";
 import {
   address,
+  arg,
   array,
   bytes4,
   int8,
@@ -17,11 +18,11 @@ function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
 
 describe("StructCodec", () => {
   it("static tuple", () => {
-    const s = struct({
-      a: int8,
-      b: uint256,
-      c: struct({ e: address }),
-    });
+    const s = struct(
+      arg("a", int8),
+      arg("b", uint256),
+      arg("c", struct(arg("e", address)))
+    );
 
     const sink = new Sink(3);
     s.encode(sink, {
@@ -59,6 +60,7 @@ describe("StructCodec", () => {
         },
       ]
     );
+
     expect(s.decode(new Src(sink.result()))).toStrictEqual({
       a: 1,
       b: 2n,
@@ -69,11 +71,11 @@ describe("StructCodec", () => {
   });
 
   it("dynamic tuple", () => {
-    const s = struct({
-      a: array(uint256),
-      b: uint256,
-      c: struct({ d: array(uint256), e: address }),
-    });
+    const s = struct(
+      arg("a", array(uint256)),
+      arg("b", uint256),
+      arg("c", struct(arg("d", array(uint256)), arg("e", address)))
+    );
 
     const sink = new Sink(1);
     s.encode(sink, {
@@ -126,11 +128,11 @@ describe("StructCodec", () => {
   });
 
   it("dynamic tuple2", () => {
-    const s = struct({
-      foo: uint256,
-      bar: array(uint256),
-      str: struct({ foo: uint256, bar: bytes4 }),
-    });
+    const s = struct(
+      arg("foo", uint256),
+      arg("bar", array(uint256)),
+      arg("str", struct(arg("foo", uint256), arg("bar", bytes4)))
+    );
 
     const sink = new Sink(1);
     s.encode(sink, {

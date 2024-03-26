@@ -1,4 +1,4 @@
-import { Codec } from "../codec";
+import { Codec, IndexedCodec, NamedCodec } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
 import { ArrayCodec, FixedArrayCodec } from "./array";
@@ -219,22 +219,20 @@ export const fixedArray = <T>(item: Codec<T>, size: number): Codec<T[]> =>
 
 export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item);
 
-type Struct = {
-  [key: string]: Codec<any>;
-};
-
-export const struct = <const T extends Struct>(components: T) =>
-  new StructCodec<T>(components);
+export const struct = <T extends NamedCodec<any, string>[]>(...components: T) =>
+  new StructCodec<T>(...components);
 
 export const tuple = struct;
 
-export const fun = <const T extends Struct, R>(
+export const fun = <const T extends NamedCodec<any, string>[], R>(
   signature: string,
   args: T,
   returnType?: Codec<R>
 ) => new AbiFunction<T, R>(signature, args, returnType);
 
-export const event = <const T extends Struct>(topic: string, args: T) =>
-  new AbiEvent<T>(topic, args);
+export const event = <const T extends ReadonlyArray<IndexedCodec<any, string>>>(
+  topic: string,
+  ...args: T
+) => new AbiEvent<T>(topic, ...args);
 
-export { indexed } from "../utils";
+export { arg, indexed } from "../utils";
