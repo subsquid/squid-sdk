@@ -1,18 +1,10 @@
-import {
-  ParsedNamedCodecList,
-  NamedCodec,
-  CodecListArgs,
-  Codec,
-} from "../codec";
+import { Codec, Struct, StructTypes } from "../codec";
 import { Sink } from "../sink";
 import { slotsCount } from "../utils";
 import { Src } from "../src";
 import assert from "node:assert";
 
-export class AbiFunction<
-  const T extends ReadonlyArray<NamedCodec<any, any>>,
-  R
-> {
+export class AbiFunction<const T extends Struct, R> {
   readonly #selector: Buffer;
   private readonly slotsCount: number;
 
@@ -25,16 +17,16 @@ export class AbiFunction<
     assert(selector.length === 10, "selector must be 4 bytes long");
     this.#selector = Buffer.from(selector.slice(2), "hex");
     this.args = args;
-    this.slotsCount = slotsCount(args);
+    this.slotsCount = slotsCount(Object.values(args));
   }
 
   is(calldata: string) {
     return calldata.startsWith(this.selector);
   }
 
-  encode(...args: CodecListArgs<T>) {
+  encode(args: StructTypes<T>) {
     const sink = new Sink(this.slotsCount);
-    for (let i = 0; i < this.args.length; i++) {
+    for (let i in this.args) {
       this.args[i].encode(sink, args[i]);
     }
     return `0x${Buffer.concat([this.#selector, sink.result()]).toString(
@@ -42,15 +34,15 @@ export class AbiFunction<
     )}`;
   }
 
-  decode(calldata: string): ParsedNamedCodecList<T> {
+  decode(calldata: string): StructTypes<T> {
     assert(
       this.is(calldata),
       `unexpected function signature: ${calldata.slice(0, 10)}`
     );
     const src = new Src(Buffer.from(calldata.slice(10), "hex"));
     const result = {} as any;
-    for (let i = 0; i < this.args.length; i++) {
-      result[this.args[i].name ?? i] = this.args[i].decode(src);
+    for (let i in this.args) {
+      result[i] = this.args[i].decode(src);
     }
     return result;
   }

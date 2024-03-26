@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encodeFunctionData } from "viem";
 import {
-  arg,
   array,
   bool,
   bytes4,
@@ -15,12 +14,16 @@ import {
 
 describe("Function", () => {
   it("encodes/decodes simple args", () => {
-    const simpleFunction = fun("0x12345678", [
-      arg("foo", uint256),
-      int32,
-      bool,
-    ]);
-    const calldata = simpleFunction.encode(100n, -420, true);
+    const simpleFunction = fun("0x12345678", {
+      foo: uint256,
+      _1: int32,
+      _2: bool,
+    });
+    const calldata = simpleFunction.encode({
+      foo: 100n,
+      _1: -420,
+      _2: true,
+    });
     expect(calldata).toBe(
       "0x123456780000000000000000000000000000000000000000000000000000000000000064fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe5c0000000000000000000000000000000000000000000000000000000000000001"
     );
@@ -28,30 +31,30 @@ describe("Function", () => {
     const decoded = simpleFunction.decode(calldata);
     expect(decoded).toStrictEqual({
       foo: 100n,
-      1: -420,
-      2: true,
+      _1: -420,
+      _2: true,
     });
   });
 
   it("encodes/decodes dynamic args", () => {
-    const staticStruct = struct(arg("foo", uint256), arg("bar", bytes4));
-    const dynamicFunction = fun("0x423917ce", [
-      arg("arg1", array(uint256)),
-      arg("arg2", fixedArray(array(uint256), 10)),
-      arg(
-        "arg3",
-        struct(
-          arg("foo", uint256),
-          arg("bar", array(uint256)),
-          arg("str", staticStruct)
-        )
-      ),
-      arg("arg4", staticStruct),
-    ]);
-    const args = [
-      [100n, 2n],
-      [[], [1n], [], [], [100n, 2n, 3n], [], [], [1337n], [], []],
-      {
+    const staticStruct = struct({
+      foo: uint256,
+      bar: bytes4,
+    });
+    const dynamicFunction = fun("0x423917ce", {
+      arg1: array(uint256),
+      arg2: fixedArray(array(uint256), 10),
+      arg3: struct({
+        foo: uint256,
+        bar: array(uint256),
+        str: staticStruct,
+      }),
+      arg4: staticStruct,
+    });
+    const args = {
+      arg1: [100n, 2n],
+      arg2: [[], [1n], [], [], [100n, 2n, 3n], [], [], [1337n], [], []],
+      arg3: {
         foo: 100n,
         bar: [1n, 2n, 3n],
         str: {
@@ -59,11 +62,11 @@ describe("Function", () => {
           bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
         },
       },
-      {
+      arg4: {
         foo: 100n,
         bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
       },
-    ] as const;
+    };
     const viemArgs = [
       [100n, 2n],
       [[], [1n], [], [], [100n, 2n, 3n], [], [], [1337n], [], []],
@@ -81,7 +84,7 @@ describe("Function", () => {
       },
     ] as const;
 
-    const calldata = dynamicFunction.encode(...args);
+    const calldata = dynamicFunction.encode(args);
     const expected = encodeFunctionData({
       abi: [
         {
@@ -122,16 +125,17 @@ describe("Function", () => {
     });
     expect(calldata).toBe(expected);
 
-    expect(dynamicFunction.decode(calldata)).toStrictEqual({
-      arg1: args[0],
-      arg2: args[1],
-      arg3: args[2],
-      arg4: args[3],
-    });
+    expect(dynamicFunction.decode(calldata)).toStrictEqual(args);
   });
 
   it("return simple type", () => {
-    const simpleFunction = fun("0x12345678", [arg("foo", uint256)], int32);
+    const simpleFunction = fun(
+      "0x12345678",
+      {
+        foo: uint256,
+      },
+      int32
+    );
     const sink = new Sink(1);
     int32.encode(sink, -420);
     sink.toString();

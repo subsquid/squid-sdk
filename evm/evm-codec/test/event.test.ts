@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encodeAbiParameters, encodeEventTopics, parseAbiItem } from "viem";
 import {
-  arg,
   bool,
   bytes,
   indexed,
@@ -18,11 +17,10 @@ describe("Event", () => {
       eventName: "Test",
       args: { a: 123n },
     });
-    const event = _event(
-      topics[0],
-      indexed(arg("a", uint256)),
-      arg("b", uint256)
-    );
+    const event = _event(topics[0], {
+      a: indexed(uint256),
+      b: uint256,
+    });
     const decoded = event.decode({
       topics,
       data: encodeAbiParameters([{ type: "uint256" }], [100n]),
@@ -40,14 +38,13 @@ describe("Event", () => {
       eventName: "Test",
       args: { a: "xdxdxd", e: true },
     });
-    const event = _event(
-      topics[0],
-      indexed(arg("a", string)),
-      arg("b", string),
-      arg("c", bytes),
-      arg("d", struct(uint256, string)),
-      indexed(arg("e", bool))
-    );
+    const event = _event(topics[0], {
+      a: indexed(string),
+      b: string,
+      c: bytes,
+      d: struct({ _0: uint256, _1: string }),
+      e: indexed(bool),
+    });
     const decoded = event.decode({
       topics,
       data: encodeAbiParameters(
@@ -66,7 +63,7 @@ describe("Event", () => {
       a: Buffer.from(topics[1].slice(2), "hex"),
       b: "hello",
       c: Buffer.from([0x12, 0x34]),
-      d: { 0: 100n, 1: "world" },
+      d: { _0: 100n, _1: "world" },
       e: true,
     });
   });
