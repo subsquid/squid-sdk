@@ -118,6 +118,10 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         }
                         break
                     case 'lookup':
+                        imports.useTypeorm('OneToOne')
+                        out.line(
+                            `@OneToOne_(() => ${prop.type.entity}, e => e.${prop.type.field})`
+                        )
                         break
                     case 'list-lookup':
                         imports.useTypeorm('OneToMany')
@@ -178,9 +182,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                     default:
                         throw unexpectedCase((prop.type as any).kind)
                 }
-                if (prop.type.kind != 'lookup') {
-                    out.line(`${key}!: ${getPropJsType(imports, 'entity', prop)}`)
-                }
+                out.line(`${key}!: ${getPropJsType(imports, 'entity', prop)}`)
             }
         })
         out.write()
