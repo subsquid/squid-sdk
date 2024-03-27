@@ -3,9 +3,49 @@ import { WORD_SIZE } from "./codec";
 export class Src {
   private view: DataView;
   private pos = 0;
-  private oldPos = 0;
+  private sliceStack = [[0, 0]]
+    private jumpStack: number[] = []
+
   constructor(private buf: Uint8Array) {
     this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
+
+    pushSlice(offset: number): void {
+      let pos = this.pos
+      this.pos = this.getJump(offset)
+      this.sliceStack.push([this.pos, pos])
+    }
+
+    popSlice(): void {
+        let slice = this.sliceStack.pop()!
+        this.pos = slice[1]
+    }
+
+    private getJump(pos: number): number {
+      return this.sliceStack[this.sliceStack.length - 1][0] + pos
+    }
+
+    safeJump(pos: number): void {
+      pos = this.getJump(pos)
+        if (pos < 0 || pos >= this.buf.length) {
+            throw new RangeError(
+                `Unexpected pointer location: 0x${pos.toString(16)}`
+            );
+        }
+        this.jumpStack.push(this.pos)
+        this.pos = pos;
+    }
+
+    jumpBack(): void {
+        this.pos = this.jumpStack.pop()!;
+    }
+
+  getPosition(): number {
+      return this.pos
+  }
+
+  setPosition(pos: number) {
+      this.pos = pos
   }
 
   slice(start: number, end?: number): Src {
@@ -146,19 +186,5 @@ export class Src {
     if (this.buf.length - this.pos < len) {
       throw new RangeError("Unexpected end of input");
     }
-  }
-
-  public safeJump(pos: number): void {
-    if (pos < 0 || pos >= this.buf.length) {
-      throw new RangeError(
-        `Unexpected pointer location: 0x${pos.toString(16)}`
-      );
-    }
-    this.oldPos = this.pos;
-    this.pos = pos;
-  }
-
-  public jumpBack(): void {
-    this.pos = this.oldPos;
   }
 }

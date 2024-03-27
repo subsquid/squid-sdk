@@ -9,7 +9,7 @@ import {
   Src,
   string,
   uint256,
-} from "../src";
+} from "../index";
 import { AbiParameter, encodeAbiParameters } from "viem";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {

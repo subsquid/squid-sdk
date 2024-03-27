@@ -11,7 +11,7 @@ import {
   Sink,
   struct,
   uint256,
-} from "../src";
+} from "../index";
 
 describe("Function", () => {
   it("encodes/decodes simple args", () => {

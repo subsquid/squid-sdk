@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AbiParameter, encodeAbiParameters } from "viem";
-import { Sink } from "../src";
+import { Sink } from "../index";
 
 describe("sink", () => {
   function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {

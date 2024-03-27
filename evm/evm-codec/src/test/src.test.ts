@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Sink, Src } from "../src";
+import { Sink, Src } from "../index";
 import { encodeAbiParameters } from "viem";
 
 describe("src", () => {

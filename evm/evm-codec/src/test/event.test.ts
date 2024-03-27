@@ -9,7 +9,7 @@ import {
   struct,
   uint256,
   event as _event,
-} from "../src";
+} from "../index";
 
 describe("Event", () => {
   it("decodes simple args", () => {

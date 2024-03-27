@@ -10,7 +10,7 @@ import {
   Src,
   struct,
   uint256,
-} from "../src";
+} from "../index";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
   expect(sink.toString()).toEqual(encodeAbiParameters(types, values));
