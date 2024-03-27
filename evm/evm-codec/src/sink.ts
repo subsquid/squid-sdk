@@ -1,4 +1,8 @@
 import { WORD_SIZE } from "./codec";
+import { Hex, safeToBuffer, safeToNumber } from "./utils";
+
+type Numberish = number | bigint;
+type Bufferish = Uint8Array | Hex;
 
 export class Sink {
   private pos = 0;
@@ -42,85 +46,91 @@ export class Sink {
     );
   }
 
-  u8(val: number) {
+  u8(val: Numberish) {
     this.reserve(WORD_SIZE);
     this.pos += WORD_SIZE - 1;
-    this.view.setUint8(this.pos, val);
+    this.view.setUint8(this.pos, safeToNumber(val));
     this.pos += 1;
   }
 
-  i8(val: number) {
-    this.i256(BigInt(val));
-  }
-
-  u16(val: number) {
-    this.reserve(WORD_SIZE);
-    this.pos += WORD_SIZE - 2;
-    this.view.setUint16(this.pos, val, false);
-    this.pos += 2;
-  }
-
-  i16(val: number) {
-    this.i256(BigInt(val));
-  }
-
-  u32(val: number) {
-    this.reserve(WORD_SIZE);
-    this.pos += WORD_SIZE - 4;
-    this.view.setUint32(this.pos, val, false);
-    this.pos += 4;
-  }
-
-  i32(val: number) {
-    this.i256(BigInt(val));
-  }
-
-  u64(val: bigint) {
-    this.reserve(WORD_SIZE);
-    this.pos += WORD_SIZE - 8;
-    this.view.setBigUint64(this.pos, val, false);
-    this.pos += 8;
-  }
-
-  i64(val: bigint) {
+  i8(val: Numberish) {
     this.i256(val);
   }
 
-  #u64(val: bigint) {
-    this.view.setBigUint64(this.pos, val, false);
+  u16(val: Numberish) {
+    this.reserve(WORD_SIZE);
+    this.pos += WORD_SIZE - 2;
+    this.view.setUint16(this.pos, safeToNumber(val), false);
+    this.pos += 2;
+  }
+
+  i16(val: Numberish) {
+    this.i256(val);
+  }
+
+  u32(val: Numberish) {
+    this.reserve(WORD_SIZE);
+    this.pos += WORD_SIZE - 4;
+    this.view.setUint32(this.pos, safeToNumber(val), false);
+    this.pos += 4;
+  }
+
+  i32(val: Numberish) {
+    this.i256(val);
+  }
+
+  u64(val: Numberish) {
+    this.reserve(WORD_SIZE);
+    this.pos += WORD_SIZE - 8;
+    this.view.setBigUint64(this.pos, BigInt(val), false);
     this.pos += 8;
   }
 
-  u128(val: bigint) {
+  i64(val: Numberish) {
+    this.i256(val);
+  }
+
+  #u64(val: Numberish) {
+    this.view.setBigUint64(this.pos, BigInt(val), false);
+    this.pos += 8;
+  }
+
+  u128(val: Numberish) {
+    val = BigInt(val);
     this.reserve(WORD_SIZE);
     this.pos += WORD_SIZE - 16;
     this.#u64(val & 0xffffffffffffffffn);
     this.#u64(val >> 64n);
   }
 
-  i128(val: bigint) {
-    this.i256(BigInt(val));
+  i128(val: Numberish) {
+    this.i256(val);
   }
 
-  #u128(val: bigint) {
+  #u128(val: Numberish) {
+    val = BigInt(val);
     this.reserve(WORD_SIZE);
     this.#u64(val >> 64n);
     this.#u64(val & 0xffffffffffffffffn);
   }
 
-  u256(val: bigint) {
+  u256(val: Numberish) {
+    val = BigInt(val);
     this.reserve(WORD_SIZE);
     this.#u128(val >> 128n);
     this.#u128(val & (2n ** 128n - 1n));
   }
 
-  i256(val: bigint) {
+  i256(val: Numberish) {
+    val = BigInt(val);
     let base = 2n ** 256n;
     val = (val + base) % base;
     this.u256(val);
   }
 
-  bytes(val: Uint8Array) {
+  bytes(val: Bufferish) {
+    val = safeToBuffer(val);
+
     const size = Buffer.byteLength(val);
     this.u32(size);
     const wordsCount = Math.ceil(size / WORD_SIZE);
@@ -131,7 +141,9 @@ export class Sink {
     this.size += reservedSize + WORD_SIZE;
   }
 
-  staticBytes(len: number, val: Uint8Array) {
+  staticBytes(len: number, val: Bufferish) {
+    val = safeToBuffer(val);
+
     if (len > 32) {
       throw new Error(`bytes${len} is not a valid type`);
     }
@@ -144,7 +156,7 @@ export class Sink {
     this.pos += WORD_SIZE;
   }
 
-  address(val: string) {
+  address(val: Hex) {
     this.u256(BigInt(val));
   }
 

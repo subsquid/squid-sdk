@@ -1,4 +1,5 @@
 import { WORD_SIZE } from "./codec";
+import { Hex } from "./utils";
 
 export class Src {
   private view: DataView;
@@ -101,27 +102,27 @@ export class Src {
     return lo + (hi << 128n);
   }
 
-  address(): string {
-    return "0x" + this.u256().toString(16).padStart(40, "0");
+  address(): Hex {
+    return `0x${this.u256().toString(16).padStart(40, "0")}`;
   }
 
-  bytes(): Uint8Array {
+  bytes(): Hex {
     const ptr = this.u32();
     this.safeJump(ptr);
     const len = this.u32();
     this.assertLength(len);
     const val = this.buf.subarray(this.pos, this.pos + len);
     this.jumpBack();
-    return val;
+    return `0x${Buffer.from(val).toString("hex")}`;
   }
 
-  staticBytes(len: number): Uint8Array {
+  staticBytes(len: number): Hex {
     if (len > 32) {
       throw new Error(`bytes${len} is not a valid type`);
     }
     const val = this.buf.subarray(this.pos, this.pos + len);
     this.pos += WORD_SIZE;
-    return val;
+    return `0x${Buffer.from(val).toString("hex")}`;
   }
 
   string(): string {

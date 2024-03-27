@@ -5,6 +5,7 @@ import { ArrayCodec, FixedArrayCodec } from "./array";
 import { StructCodec } from "./struct";
 import { AbiFunction } from "../abi-components/function";
 import { AbiEvent } from "../abi-components/event";
+import { Hex } from "../utils";
 
 export const bool: Codec<boolean> = {
   encode: function (sink: Sink, val: boolean) {
@@ -149,22 +150,22 @@ export const string = <const>{
 };
 
 export const bytes = <const>{
-  encode(sink: Sink, val: Uint8Array) {
+  encode(sink: Sink, val: Uint8Array | Hex) {
     sink.offset();
     sink.bytes(val);
     sink.jumpBack();
   },
-  decode(src: Src): Uint8Array {
+  decode(src: Src): Hex {
     return src.bytes();
   },
   isDynamic: true,
 };
 
-const bytesN = (size: number): Codec<Uint8Array> => ({
-  encode(sink: Sink, val: Uint8Array) {
+const bytesN = (size: number): Codec<Uint8Array | Hex> => ({
+  encode(sink: Sink, val: Uint8Array | Hex) {
     sink.staticBytes(size, val);
   },
-  decode(src: Src): Uint8Array {
+  decode(src: Src): Hex {
     return src.staticBytes(size);
   },
   isDynamic: false,
@@ -204,11 +205,11 @@ export const bytes30 = bytesN(30);
 export const bytes31 = bytesN(31);
 export const bytes32 = bytesN(32);
 
-export const address: Codec<string> = {
-  encode(sink: Sink, val: string) {
+export const address: Codec<Hex> = {
+  encode(sink: Sink, val: Hex) {
     sink.address(val);
   },
-  decode(src: Src): string {
+  decode(src: Src): Hex {
     return src.address();
   },
   isDynamic: false,
