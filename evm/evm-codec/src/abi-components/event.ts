@@ -1,40 +1,41 @@
 import { bytes32 } from "../codecs/primitives";
 import { Src } from "../src";
-import { IndexedCodec, ParsedNamedCodecList } from "../codec";
+import { Codec, StructTypes } from "../codec";
+import type { Pretty } from "../utils";
 
 export interface EventRecord {
   topics: string[];
   data: string;
 }
 
-export type IndexedCodecs<T> = T extends readonly [
-  { indexed: true; isDynamic: true; name?: string },
-  ...infer R
-]
-  ? [
-      typeof bytes32 & { indexed: true; name: T[0]["name"] },
-      ...IndexedCodecs<R>
-    ]
-  : T extends readonly [any, ...infer R]
-  ? [T[0], ...IndexedCodecs<R>]
-  : T extends readonly []
-  ? []
-  : never;
+type EventArgs = {
+  [key: string]: Pretty<Codec<any> & { indexed?: boolean }>;
+};
 
-export class AbiEvent<
-  const T extends ReadonlyArray<IndexedCodec<any, string>>
-> {
+export type IndexedCodecs<T extends EventArgs> = Pretty<{
+  [K in keyof T]: T[K] extends { indexed: true; isDynamic: true }
+    ? typeof bytes32 & { indexed: true }
+    : T[K];
+}>;
+
+export class AbiEvent<const T extends EventArgs> {
   public readonly params: any;
-  constructor(public readonly topic: string, ...args: T) {
-    this.params = args.map((arg) =>
-      arg.indexed && arg.isDynamic
-        ? {
-            ...bytes32,
-            name: arg.name,
-            isDynamic: true,
-            indexed: true,
-          }
-        : arg
+  constructor(public readonly topic: string, args: T) {
+    const entries = Object.entries(args);
+    this.params = Object.fromEntries(
+      entries.map(
+        ([key, arg]) =>
+          [
+            key,
+            arg.indexed && arg.isDynamic
+              ? {
+                  ...bytes32,
+                  isDynamic: true,
+                  indexed: true,
+                }
+              : arg,
+          ] as const
+      )
     ) as IndexedCodecs<T>;
   }
 
@@ -42,17 +43,17 @@ export class AbiEvent<
     return rec.topics[0] === this.topic;
   }
 
-  decode(rec: EventRecord): ParsedNamedCodecList<IndexedCodecs<T>> {
+  decode(rec: EventRecord): StructTypes<IndexedCodecs<T>> {
     const src = new Src(Buffer.from(rec.data.slice(2), "hex"));
     const result = {} as any;
     let topicCounter = 1;
-    for (let i = 0; i < this.params.length; i++) {
+    for (let i in this.params) {
       if (this.params[i].indexed) {
         const topic = rec.topics[topicCounter++];
         const topicSrc = new Src(Buffer.from(topic.slice(2), "hex"));
-        result[this.params[i].name ?? i] = this.params[i].decode(topicSrc);
+        result[i] = this.params[i].decode(topicSrc);
       } else {
-        result[this.params[i].name ?? i] = this.params[i].decode(src);
+        result[i] = this.params[i].decode(src);
       }
     }
     return result;
