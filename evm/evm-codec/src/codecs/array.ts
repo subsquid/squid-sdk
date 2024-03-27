@@ -25,11 +25,12 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
     src.safeJump(offset);
     const len = src.u32();
 
-    const tmpSrc = src.slice(offset + WORD_SIZE);
+    src.pushSlice(offset + WORD_SIZE);
     const val = new Array(len);
     for (let i = 0; i < val.length; i++) {
-      val[i] = this.item.decode(tmpSrc);
+      val[i] = this.item.decode(src);
     }
+    src.popSlice()
     src.jumpBack();
     return val;
   }
@@ -80,11 +81,12 @@ export class FixedArrayCodec<const T> implements Codec<readonly T[]> {
 
   private decodeDynamic(src: Src): T[] {
     const offset = src.u32();
-    const tmpSrc = src.slice(offset);
+    src.pushSlice(offset);
     let val = new Array(this.size);
     for (let i = 0; i < val.length; i++) {
-      val[i] = this.item.decode(tmpSrc);
+      val[i] = this.item.decode(src);
     }
+    src.popSlice()
     return val;
   }
 }
