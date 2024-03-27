@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
-import { address, arg, array, Codec, Sink, Src, struct, uint256 } from "../src";
+import { address, array, Codec, Sink, Src, struct, uint256 } from "../src";
 import { decodeAbiParameters, encodeAbiParameters } from "viem";
 import { ethers } from "ethers";
 
@@ -50,11 +50,11 @@ class InlinedStructCodec<
   }
 }
 
-const s = struct(
-  arg("a", array(uint256)),
-  arg("b", uint256),
-  arg("c", struct(arg("d", array(uint256)), arg("e", address)))
-);
+const s = struct({
+  a: array(uint256),
+  b: uint256,
+  c: struct({ d: array(uint256), e: address }),
+});
 const inlined = new InlinedStructCodec();
 
 describe("StructCodec - encoding", () => {
