@@ -20,6 +20,9 @@ export class Typegen {
   async generate() {
     this.out.line(`import * as p from "@subsquid/evm-codec";`);
     this.out.line(
+      `import type { EventParams as EParams, FunctionArguments, FunctionReturn } from "@subsquid/evm-codec";`,
+    );
+    this.out.line(
       "const { event, fun, indexed, struct, array, fixedArray, ContractBase } = p;",
     );
     this.out.line();
@@ -27,6 +30,8 @@ export class Typegen {
     this.generateEvents();
     this.generateFunctions();
     this.generateContract();
+    this.generateEventTypes();
+    this.generateFunctionTypes();
 
     await this.out.write();
     this.log.info(`saved ${this.out.file}`);
@@ -69,6 +74,9 @@ export class Typegen {
         if (f.outputs?.length === 1) {
           returnType = getType({ ...f.outputs[0], name: undefined });
         }
+        if (f.outputs?.length > 1) {
+          returnType = `{${this.toTypes(f.outputs)}}`;
+        }
 
         this.out.line(
           `${this.getPropName(f)}: fun("${this.functionSelector(
@@ -94,31 +102,22 @@ export class Typegen {
           f.outputs?.length
         ) {
           this.out.line();
-          let argNames = f.inputs.map((a, idx) => a.name || `arg${idx}`);
-          const ref = this.getRef(f);
+          let argNames = f.inputs.map((a, idx) => a.name || `_${idx}`);
+          const ref = this.getPropNameGetter(f);
           let args = f.inputs
             .map(
               (a, idx) =>
-                `${argNames[idx]}: Parameters<typeof functions${ref}["encode"]>[${idx}]`,
+                `${argNames[idx]}: Functions["${this.getPropName(f)}"]["Args"]["${argNames[idx]}"]`,
             )
             .join(", ");
           this.out.block(`${this.getPropName(f)}(${args})`, () => {
             this.out.line(
-              `return this.eth_call(functions${ref}, [${argNames.join(", ")}])`,
+              `return this.eth_call(functions${ref}, {${argNames.join(", ")}})`,
             );
           });
         }
       }
     });
-  }
-
-  private getRef(item: AbiEvent | AbiFunction): string {
-    let key = this.getPropName(item);
-    if (key[0] == "'") {
-      return `[${key}]`;
-    } else {
-      return "." + key;
-    }
   }
 
   private cannonicalType(param: AbiParameter): string {
@@ -145,12 +144,52 @@ export class Typegen {
     }
   }
 
+  private getPropNameGetter(item: AbiEvent | AbiFunction): string {
+    if (this.getOverloads(item) == 1) {
+      return "." + item.name;
+    } else {
+      return `["${this.sighash(item)}"]`;
+    }
+  }
+
   private getOverloads(item: AbiEvent | AbiFunction): number {
     if (item.type === "event") {
       return this.eventOverloads()[item.name];
     } else {
       return this.functionOverloads()[item.name];
     }
+  }
+
+  private generateEventTypes() {
+    const events = this.getEvents();
+    if (events.length == 0) {
+      return;
+    }
+    this.out.line();
+    this.out.block(`export type EventParams =`, () => {
+      for (let e of events) {
+        const propName = this.getPropNameGetter(e);
+        this.out.line(
+          `${this.getPropName(e)}: EParams<typeof events${propName}>,`,
+        );
+      }
+    });
+  }
+
+  private generateFunctionTypes() {
+    let functions = this.getFunctions();
+    if (functions.length == 0) {
+      return;
+    }
+    this.out.line();
+    this.out.block(`export type Functions =`, () => {
+      for (let f of functions) {
+        const propName = this.getPropNameGetter(f);
+        this.out.line(
+          `${this.getPropName(f)}: { Args: FunctionArguments<typeof functions${propName}>, Return: FunctionReturn<typeof functions${propName}> },`,
+        );
+      }
+    });
   }
 
   @def
