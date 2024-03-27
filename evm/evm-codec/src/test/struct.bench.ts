@@ -34,17 +34,17 @@ class InlinedStructCodec<
 
   public decode(src: Src): S {
     const offset = src.u32();
-    // const tmpSrc = src.slice(offset);
-    src.pushSlice(offset);
-    const decoded_0 = uint256_array.decode(src);
-    const decoded_1 = uint256.decode(src);
+    const tmpSrc = src.slice(offset);
+    // src.pushSlice(offset);
+    const decoded_0 = uint256_array.decode(tmpSrc);
+    const decoded_1 = uint256.decode(tmpSrc);
     const offset2 = src.u32();
-    src.pushSlice(offset2)
-    // const tmpSrc2 = tmpSrc.slice(offset2);
-    const decoded2_0 = uint256_array.decode(src);
-    const decoded2_1 = address.decode(src);
-    src.popSlice()
-    src.popSlice()
+    // src.pushSlice(offset2)
+    const tmpSrc2 = tmpSrc.slice(offset2);
+    const decoded2_0 = uint256_array.decode(tmpSrc2);
+    const decoded2_1 = address.decode(tmpSrc2);
+    // src.popSlice()
+    // src.popSlice()
     return {
       a: decoded_0,
       b: decoded_1,

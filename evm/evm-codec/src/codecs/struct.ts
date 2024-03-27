@@ -60,12 +60,11 @@ export class StructCodec<const T extends ReadonlyArray<NamedCodec<any, string>>>
     let result: any = {};
 
     const offset = src.u32();
-    src.pushSlice(offset);
+    const tmpSrc = src.slice(offset);
     for (let i = 0; i < this.components.length; i++) {
       let prop = this.components[i];
-      result[prop.name ?? i] = prop.decode(src);
+      result[prop.name ?? i] = prop.decode(tmpSrc);
     }
-    src.popSlice()
     return result;
   }
 }
