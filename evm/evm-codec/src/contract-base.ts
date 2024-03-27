@@ -1,5 +1,5 @@
 import { AbiFunction } from "./abi-components/function";
-import { Struct, StructTypes } from "./codec";
+import { Codec, Struct, StructTypes } from "./codec";
 
 export interface Chain {
   client: {
@@ -45,10 +45,10 @@ export class ContractBase {
     }
   }
 
-  async eth_call<const T extends Struct, R>(
-    func: AbiFunction<T, R>,
-    args: StructTypes<T>
-  ): Promise<R> {
+  async eth_call<
+    const T extends Struct,
+    const R extends Codec<any> | Struct | undefined
+  >(func: AbiFunction<T, R>, args: StructTypes<T>): Promise<R> {
     let data = func.encode(args);
     let result = await this._chain.client.call("eth_call", [
       { to: this.address, data },

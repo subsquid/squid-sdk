@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, encodeFunctionResult, parseAbiItem } from "viem";
 import {
   array,
   bool,
@@ -8,6 +8,7 @@ import {
   fun,
   int32,
   Sink,
+  string,
   struct,
   uint256,
 } from "../src";
@@ -141,5 +142,19 @@ describe("Function", () => {
     sink.toString();
     const output = simpleFunction.decodeResult(sink.toString());
     expect(output).toBe(-420);
+  });
+
+  it("return tuple", () => {
+    const data = encodeFunctionResult({
+      abi: [
+        parseAbiItem(
+          "function foo() external returns (uint256, string memory b)"
+        ),
+      ],
+      functionName: "foo",
+      result: [100n, "hello"],
+    });
+    const _fun = fun("0x12345678", {}, { _0: uint256, b: string });
+    expect(_fun.decodeResult(data)).toStrictEqual({ _0: 100n, b: "hello" });
   });
 });
