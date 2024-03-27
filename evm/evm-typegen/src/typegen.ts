@@ -20,7 +20,7 @@ export class Typegen {
   async generate() {
     this.out.line(`import * as p from "@subsquid/evm-codec";`);
     this.out.line(
-      "const { event, fun, indexed, arg, array, fixedArray, tuple, ContractBase } = p;",
+      "const { event, fun, indexed, struct, array, fixedArray, ContractBase } = p;",
     );
     this.out.line();
 
@@ -41,9 +41,9 @@ export class Typegen {
     this.out.block(`export const events =`, () => {
       for (let e of events) {
         this.out.line(
-          `${this.getPropName(e)}: event("${this.topic0(e)}", ${this.toTypes(
+          `${this.getPropName(e)}: event("${this.topic0(e)}", {${this.toTypes(
             e.inputs,
-          )}),`,
+          )}}),`,
         );
       }
     });
@@ -54,7 +54,7 @@ export class Typegen {
   }
 
   private toTypes(inputs: readonly AbiParameter[]): string {
-    return inputs.map(getType).join(", ");
+    return inputs.map((input, idx) => getType(input, idx)).join(", ");
   }
 
   private generateFunctions() {
@@ -65,13 +65,15 @@ export class Typegen {
     this.out.line();
     this.out.block(`export const functions =`, () => {
       for (let f of functions) {
-        const returnType =
-          f.outputs.length > 0 ? `, ${this.toTypes(f.outputs)}` : "";
+        let returnType = "";
+        if (f.outputs?.length === 1) {
+          returnType = getType({ ...f.outputs[0], name: undefined });
+        }
 
         this.out.line(
           `${this.getPropName(f)}: fun("${this.functionSelector(
             f,
-          )}", [${this.toTypes(f.inputs)}]${returnType}),`,
+          )}", {${this.toTypes(f.inputs)}},${returnType}),`,
         );
       }
     });

@@ -16,17 +16,21 @@ function arrayChildType(param: AbiEventParameter) {
   return param.type.replace(/\[\d*]$/, "");
 }
 
-export function getType(param: AbiEventParameter): string {
+export function getType(param: AbiEventParameter, index?: number): string {
+  const { name, ...namelessParam } = param;
+
+  if (name) {
+    return `"${name}": ${getType(namelessParam as any)}`;
+  }
+
+  if (index !== undefined) {
+    return `"_${index}": ${getType(namelessParam)}`;
+  }
+
   const { indexed, ...indexlessParam } = param;
   if (indexed) {
     return `indexed(${getType(indexlessParam as any)})`;
   }
-  const { name, ...namelessParam } = indexlessParam;
-
-  if (name) {
-    return `arg("${name}", ${getType(namelessParam as any)})`;
-  }
-
   if (isStaticArray(param)) {
     const elements = elementsCount(param);
     return `fixedArray(${getType({
@@ -43,7 +47,7 @@ export function getType(param: AbiEventParameter): string {
   }
 
   if (param.type === "tuple") {
-    return `tuple(${(param as any).components.map(getType).join(", ")})`;
+    return `struct({${(param as any).components.map((type: AbiEventParameter, idx: number) => getType(type, idx)).join(", ")}})`;
   }
 
   return `p.${param.type}`;
