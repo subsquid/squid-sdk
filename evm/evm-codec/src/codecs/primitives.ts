@@ -228,10 +228,13 @@ export const struct = <const T extends Struct>(components: T) =>
 
 export const tuple = struct;
 
-export const fun = <const T extends Struct, R>(
+export const fun = <
+  const T extends Struct,
+  const R extends Codec<any> | Struct | undefined
+>(
   signature: string,
   args: T,
-  returnType?: Codec<R>
+  returnType?: R
 ) => new AbiFunction<T, R>(signature, args, returnType);
 
 export const event = <const T extends Struct>(topic: string, args: T) =>

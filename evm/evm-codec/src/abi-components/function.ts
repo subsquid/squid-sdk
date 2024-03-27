@@ -4,14 +4,23 @@ import { slotsCount } from "../utils";
 import { Src } from "../src";
 import assert from "node:assert";
 
-export class AbiFunction<const T extends Struct, R> {
+type FunctionReturn<T> = T extends Codec<infer U>
+  ? U
+  : T extends Struct
+  ? StructTypes<T>
+  : undefined;
+
+export class AbiFunction<
+  const T extends Struct,
+  const R extends Codec<any> | Struct | undefined
+> {
   readonly #selector: Buffer;
   private readonly slotsCount: number;
 
   constructor(
     public selector: string,
     public readonly args: T,
-    public readonly returnType?: Codec<R>
+    public readonly returnType?: R
   ) {
     assert(selector.startsWith("0x"), "selector must start with 0x");
     assert(selector.length === 10, "selector must be 4 bytes long");
@@ -47,8 +56,23 @@ export class AbiFunction<const T extends Struct, R> {
     return result;
   }
 
-  decodeResult(output: string): R {
+  private isCodecs(value: any): value is Codec<any> {
+    return "decode" in value && "encode" in value;
+  }
+
+  decodeResult(output: string): FunctionReturn<R> {
+    if (!this.returnType) {
+      return undefined as any;
+    }
     const src = new Src(Buffer.from(output.slice(2), "hex"));
-    return this.returnType?.decode(src) as any;
+    if (this.isCodecs(this.returnType)) {
+      return this.returnType.decode(src) as any;
+    }
+    const result = {} as any;
+    for (let i in this.returnType) {
+      const codec = this.returnType[i] as Codec<any>;
+      result[i] = codec.decode(src);
+    }
+    return result;
   }
 }
