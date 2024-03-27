@@ -432,6 +432,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-codec-2",
+      "projectFolder": "evm/evm-codec-2",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,
