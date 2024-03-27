@@ -3,7 +3,6 @@ import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
 import {Connection, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
-import {ConnectionHeaders} from '../client';
 
 
 const MB = 1024 * 1024
@@ -17,7 +16,7 @@ interface RequestHandle {
 
 export interface WsConnectionOptions {
     url: string
-    headers?: ConnectionHeaders
+    headers?: Record<string, string>
     onNotificationMessage?: (msg: RpcNotification) => void
     onReset?: (err: Error) => void
     fixUnsafeIntegers?: boolean
@@ -27,7 +26,7 @@ export interface WsConnectionOptions {
 export class WsConnection implements Connection {
     private url: string
     private fixUnsafeIntegers: boolean
-    private headers?: ConnectionHeaders
+    private headers?: Record<string, string>
     private onNotificationMessage?: (msg: RpcNotification) => void
     private onReset?: (err: Error) => void
     private _ws?: WebSocket

@@ -39,7 +39,7 @@ export interface RpcEndpointSettings {
     /**
      * Connection headers
      */
-    headers?: ConnectionHeaders
+    headers?: Record<string, string>
 }
 
 

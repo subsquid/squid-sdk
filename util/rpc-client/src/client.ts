@@ -39,7 +39,7 @@ export interface CallOptions<R=any> {
     validateError?: ErrorValidator<R>
 }
 
-export type ConnectionHeaders = {[key: string]: string}
+export type ConnectionHeaders = Record<string, string>
 type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
 type ErrorValidator<R=any> = (info: RpcErrorInfo, req: RpcRequest) => R
 
