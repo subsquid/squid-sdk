@@ -149,7 +149,7 @@ export const string = <const>{
   isDynamic: true,
 };
 
-export const bytes = <const>{
+export const bytes: Codec<Uint8Array | Hex, Hex> = <const>{
   encode(sink: Sink, val: Uint8Array | Hex) {
     sink.offset();
     sink.bytes(val);
@@ -161,7 +161,7 @@ export const bytes = <const>{
   isDynamic: true,
 };
 
-const bytesN = (size: number): Codec<Uint8Array | Hex> => ({
+const bytesN = (size: number): Codec<Uint8Array | Hex, Hex> => ({
   encode(sink: Sink, val: Uint8Array | Hex) {
     sink.staticBytes(size, val);
   },
