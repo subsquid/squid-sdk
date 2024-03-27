@@ -85,11 +85,9 @@ describe("src", () => {
     const src = new Src(encoded);
     expect(src.u8()).toBe(69);
     expect(src.string()).toBe(str1);
-    expect(src.staticBytes(7)).toStrictEqual(
-      Buffer.from(bytes7.slice(2), "hex")
-    );
+    expect(src.staticBytes(7)).toStrictEqual(bytes7);
     expect(src.i128()).toBe(-21312312452243312424534213123123123123n);
-    expect(src.bytes()).toStrictEqual(bytes1);
+    expect(src.bytes()).toStrictEqual("0x" + bytes1.toString("hex"));
     expect(src.address()).toBe(address);
     expect(src.string()).toBe(str2);
   });
@@ -132,6 +130,6 @@ describe("src", () => {
       "hex"
     );
     const src = new Src(encoded);
-    expect(src.bytes()).toStrictEqual(buffer);
+    expect(src.bytes()).toStrictEqual("0x" + buffer.toString("hex"));
   });
 });

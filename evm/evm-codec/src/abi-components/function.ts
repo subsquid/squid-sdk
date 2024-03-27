@@ -4,7 +4,7 @@ import { slotsCount } from "../utils";
 import { Src } from "../src";
 import assert from "node:assert";
 
-type FunctionReturn<T> = T extends Codec<infer U>
+type FunctionReturn<T> = T extends Codec<any, infer U>
   ? U
   : T extends Struct
   ? StructTypes<T>

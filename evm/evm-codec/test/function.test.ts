@@ -60,12 +60,12 @@ describe("Function", () => {
         bar: [1n, 2n, 3n],
         str: {
           foo: 123n,
-          bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
+          bar: "0x12345678" as const,
         },
       },
       arg4: {
         foo: 100n,
-        bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
+        bar: "0x12345678" as const,
       },
     };
     const viemArgs = [

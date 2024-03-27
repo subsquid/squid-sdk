@@ -1,6 +1,6 @@
 import { bench, describe } from "vitest";
 import { address, array, Codec, Sink, Src, struct, uint256 } from "../src";
-import { decodeAbiParameters, encodeAbiParameters } from "viem";
+import { decodeAbiParameters, encodeAbiParameters, Hex } from "viem";
 import { ethers } from "ethers";
 
 const hugeArray = Array.from({ length: 1000 }, (_, i) => BigInt(i));
@@ -11,7 +11,7 @@ class InlinedStructCodec<
     b: bigint;
     c: {
       d: bigint[];
-      e: string;
+      e: Hex;
     };
   }
 > implements Codec<S>

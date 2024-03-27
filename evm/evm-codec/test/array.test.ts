@@ -10,7 +10,7 @@ import {
   string,
   uint256,
 } from "../src";
-import { AbiParameter, encodeAbiParameters } from "viem";
+import { AbiParameter, encodeAbiParameters, Hex } from "viem";
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
   expect(sink.toString()).toEqual(encodeAbiParameters(types, values));
@@ -102,9 +102,9 @@ describe("dynamic size array", () => {
       [["ggg", "hhh", "iii"]],
     ];
     const data2 = [[1n, 2n, 3n], [], [4n]];
-    const data3 = [
-      [Buffer.from("1234", "hex"), Buffer.from("5678", "hex")],
-      [Buffer.from("dead", "hex"), Buffer.from("beef", "hex")],
+    const data3: Hex[][] = [
+      ["0x1234", "0x5678"],
+      ["0xdead", "0xbeef"],
     ];
     arr1.encode(sink, data1);
     address.encode(sink, "0x1234567890123456789012345678901234567890");
