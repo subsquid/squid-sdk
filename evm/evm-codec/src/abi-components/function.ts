@@ -7,18 +7,18 @@ import assert from "node:assert";
 export type FunctionArguments<F extends AbiFunction<any, any>> =
   F extends AbiFunction<infer T, any> ? StructTypes<T> : never;
 
-export type FunctionReturn<F extends AbiFunction<any, any>> =
+export type FunctionReturn<F extends AbiFunction<any, any | undefined>> =
   F extends AbiFunction<any, infer R> ? ReturnType<R> : never;
 
 type ReturnType<T> = T extends Codec<infer U>
   ? U
   : T extends Struct
   ? StructTypes<T>
-  : undefined;
+  : void;
 
 export class AbiFunction<
   const T extends Struct,
-  const R extends Codec<any> | Struct | undefined
+  const R extends Codec<any> | Struct | void = void
 > {
   readonly #selector: Buffer;
   private readonly slotsCount: number;

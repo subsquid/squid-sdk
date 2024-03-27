@@ -230,7 +230,7 @@ export const tuple = struct;
 
 export const fun = <
   const T extends Struct,
-  const R extends Codec<any> | Struct | undefined
+  const R extends Codec<any> | Struct | void = void
 >(
   signature: string,
   args: T,

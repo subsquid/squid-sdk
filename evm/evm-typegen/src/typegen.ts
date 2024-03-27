@@ -107,7 +107,7 @@ export class Typegen {
           let args = f.inputs
             .map(
               (a, idx) =>
-                `${argNames[idx]}: Functions["${this.getPropName(f)}"]["Args"]["${argNames[idx]}"]`,
+                `${argNames[idx]}: Functions["${this.getPropName(f).replace(/"/g, "")}"]["Args"]["${argNames[idx]}"]`,
             )
             .join(", ");
           this.out.block(`${this.getPropName(f)}(${args})`, () => {
