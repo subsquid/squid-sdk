@@ -1,13 +1,17 @@
+import assert from "node:assert";
 import { WORD_SIZE } from "./codec";
 
 export class Sink {
   private pos = 0;
-  private previousPos = 0;
   private buf: Buffer;
   private view: DataView;
-  public size = 0;
+  private stack: { start: number; prev: number; size: number }[] = [];
   constructor(fields: number, capacity: number = 1280) {
-    this.size = fields * WORD_SIZE;
+    this.stack.push({
+      start: 0,
+      prev: 0,
+      size: fields * WORD_SIZE,
+    });
     this.buf = Buffer.alloc(capacity);
     this.view = new DataView(
       this.buf.buffer,
@@ -17,7 +21,11 @@ export class Sink {
   }
 
   result(): Buffer {
-    return this.buf.subarray(0, this.size);
+    assert(
+      this.stack.length === 1,
+      "Cannot get result during dynamic encoding"
+    );
+    return this.buf.subarray(0, this.size());
   }
 
   toString() {
@@ -28,6 +36,10 @@ export class Sink {
     if (this.buf.length - this.pos < additional) {
       this._allocate(this.pos + additional);
     }
+  }
+
+  size() {
+    return this.stack.at(-1)!.size;
   }
 
   private _allocate(cap: number): void {
@@ -128,7 +140,7 @@ export class Sink {
     this.reserve(reservedSize);
     this.buf.set(val, this.pos);
     this.pos += reservedSize;
-    this.size += reservedSize + WORD_SIZE;
+    this.increaseSize(reservedSize + WORD_SIZE);
   }
 
   staticBytes(len: number, val: Uint8Array) {
@@ -156,36 +168,52 @@ export class Sink {
     this.reserve(reservedSize);
     this.buf.write(val, this.pos);
     this.pos += reservedSize;
-    this.size += reservedSize + WORD_SIZE;
+    this.increaseSize(reservedSize + WORD_SIZE);
   }
 
   bool(val: boolean) {
     this.u8(val ? 1 : 0);
   }
 
-  offset() {
-    const ptr = this.size;
+  offset(slotsCount = 0) {
+    const ptr = this.size();
     this.u32(ptr);
-    this.previousPos = this.pos;
-    this.reserve(ptr);
-    this.pos = ptr;
+    const _start = this.start();
+    this.startDynamic(_start + ptr, slotsCount);
+    this.pos = _start + ptr;
   }
 
-  increaseSize(size: number) {
-    this.size += size;
+  dynamicOffset(slotsCount: number) {
+    const ptr = this.size();
+    this.u32(ptr);
+    const _start = this.start();
+    this.startDynamic(_start + ptr + WORD_SIZE, slotsCount);
+    this.pos = _start + ptr;
+    this.u32(slotsCount);
   }
 
-  jumpBack() {
-    if (this.previousPos === 0) {
-      throw new Error("no jump destination found");
-    }
-    this.pos = this.previousPos;
+  private start() {
+    return this.stack.at(-1)!.start;
   }
 
-  append(sink: Sink) {
-    this.reserve(sink.size);
-    this.buf.set(sink.result(), this.pos);
-    this.size += sink.size;
-    this.pos += sink.pos;
+  public increaseSize(amount: number) {
+    this.stack.at(-1)!.size += amount;
+  }
+
+  private startDynamic(start: number, slotsCount: number) {
+    const size = slotsCount * WORD_SIZE;
+    this.reserve(start + size);
+    this.stack.push({
+      start,
+      prev: this.pos,
+      size,
+    });
+  }
+
+  endDynamic() {
+    assert(this.stack.length > 1, "No dynamic encoding started");
+    const { prev, size } = this.stack.pop()!;
+    this.increaseSize(size);
+    this.pos = prev;
   }
 }

@@ -35,15 +35,12 @@ export class StructCodec<const T extends Struct>
   }
 
   private encodeDynamic(sink: Sink, val: StructTypes<T>): void {
-    sink.offset();
-    const tempSink = new Sink(this.childrenSlotsCount);
+    sink.offset(this.childrenSlotsCount);
     for (let i in this.components) {
       let prop = this.components[i];
-      prop.encode(tempSink, val[i]);
+      prop.encode(sink, val[i]);
     }
-
-    sink.append(tempSink);
-    sink.jumpBack();
+    sink.endDynamic();
   }
 
   public decode(src: Src): StructTypes<T> {

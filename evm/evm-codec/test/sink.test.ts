@@ -67,6 +67,7 @@ describe("sink", () => {
       const sink = new Sink(1);
       sink.offset();
       sink.string("hello");
+      sink.endDynamic();
       compareTypes(sink, [{ type: "string" }], ["hello"]);
     });
 
@@ -74,6 +75,7 @@ describe("sink", () => {
       const sink = new Sink(1);
       sink.offset();
       sink.string("this string length is 32 bytes!!");
+      sink.endDynamic();
       compareTypes(
         sink,
         [{ type: "string" }],
@@ -85,6 +87,7 @@ describe("sink", () => {
       const sink = new Sink(1);
       sink.offset();
       sink.string("this string length is 33 bytes!!!");
+      sink.endDynamic();
       compareTypes(
         sink,
         [{ type: "string" }],
@@ -96,6 +99,7 @@ describe("sink", () => {
       const sink = new Sink(1);
       sink.offset();
       sink.string("привет 👍");
+      sink.endDynamic();
       compareTypes(sink, [{ type: "string" }], ["привет 👍"]);
     });
   });
@@ -106,6 +110,7 @@ describe("sink", () => {
     const buffer = Buffer.alloc(150);
     buffer.fill("xd");
     sink.bytes(buffer);
+    sink.endDynamic();
     compareTypes(sink, [{ type: "bytes" }], [`0x${buffer.toString("hex")}`]);
   });
 });

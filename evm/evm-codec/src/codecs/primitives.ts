@@ -140,7 +140,7 @@ export const string = <const>{
   encode(sink: Sink, val: string) {
     sink.offset();
     sink.string(val);
-    sink.jumpBack();
+    sink.endDynamic();
   },
   decode(src: Src): string {
     return src.string();
@@ -152,7 +152,7 @@ export const bytes = <const>{
   encode(sink: Sink, val: Uint8Array) {
     sink.offset();
     sink.bytes(val);
-    sink.jumpBack();
+    sink.endDynamic();
   },
   decode(src: Src): Uint8Array {
     return src.bytes();

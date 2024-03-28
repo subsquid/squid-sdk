@@ -8,15 +8,12 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
   constructor(public readonly item: Codec<T>) {}
 
   encode(sink: Sink, val: T[]) {
-    sink.offset();
-    sink.u32(val.length);
-    const tempSink = new Sink(val.length);
+    sink.dynamicOffset(val.length);
     for (let i = 0; i < val.length; i++) {
-      this.item.encode(tempSink, val[i]);
+      this.item.encode(sink, val[i]);
     }
     sink.increaseSize(WORD_SIZE);
-    sink.append(tempSink);
-    sink.jumpBack();
+    sink.endDynamic();
   }
 
   decode(src: Src): T[] {
@@ -58,13 +55,11 @@ export class FixedArrayCodec<const T> implements Codec<readonly T[]> {
   }
 
   private encodeDynamic(sink: Sink, val: T[]) {
-    sink.offset();
-    const tempSink = new Sink(this.size);
+    sink.offset(this.size);
     for (let i = 0; i < val.length; i++) {
-      this.item.encode(tempSink, val[i]);
+      this.item.encode(sink, val[i]);
     }
-    sink.append(tempSink);
-    sink.jumpBack();
+    sink.endDynamic();
   }
 
   decode(src: Src): T[] {

@@ -76,6 +76,18 @@ describe("dynamic size array", () => {
     expect(arr.decode(new Src(sink.result()))).toStrictEqual([1, 2, -3, -4, 5]);
   });
 
+  it("array of arrays", () => {
+    const arr = array(array(int8));
+    const sink = new Sink(1);
+    const data = [
+      [1, 2, -3, -4, 5],
+      [1, 2, -3, -4, 5],
+    ];
+    arr.encode(sink, data);
+    compareTypes(sink, [{ type: "int8[][]" }], [data]);
+    expect(arr.decode(new Src(sink.result()))).toStrictEqual(data);
+  });
+
   it("dynamic types encoding", () => {
     const arr = array(string);
     const sink = new Sink(1);
