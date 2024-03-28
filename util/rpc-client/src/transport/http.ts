@@ -1,4 +1,4 @@
-import {FetchRequest, FetchResponse, HttpAgent, HttpClient} from '@subsquid/http-client'
+import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcProtocolError} from '../errors'
@@ -27,7 +27,7 @@ export interface HttpConnectionOptions {
     url: string
     fixUnsafeIntegers?: boolean
     log?: Logger
-    headers?: Record<string, string>
+    headers?: HttpClientOptions['headers']
 }
 
 

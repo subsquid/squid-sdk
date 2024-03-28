@@ -2,7 +2,7 @@ import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integer
 import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
-import {Connection, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
+import {Connection, HttpHeaders, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
 
 
 const MB = 1024 * 1024
@@ -16,7 +16,7 @@ interface RequestHandle {
 
 export interface WsConnectionOptions {
     url: string
-    headers?: Record<string, string>
+    headers?: HttpHeaders
     onNotificationMessage?: (msg: RpcNotification) => void
     onReset?: (err: Error) => void
     fixUnsafeIntegers?: boolean
@@ -26,7 +26,7 @@ export interface WsConnectionOptions {
 export class WsConnection implements Connection {
     private url: string
     private fixUnsafeIntegers: boolean
-    private headers?: Record<string, string>
+    private headers?: HttpHeaders
     private onNotificationMessage?: (msg: RpcNotification) => void
     private onReset?: (err: Error) => void
     private _ws?: WebSocket

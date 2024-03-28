@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "Allows to define connection headers for both HTTP and WS",
+      "comment": "Allow to configure HTTP headers on RPC client",
       "type": "minor"
     }
   ],

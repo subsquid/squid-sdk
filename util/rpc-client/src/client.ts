@@ -4,7 +4,7 @@ import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/uti
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
@@ -21,7 +21,7 @@ export interface RpcClientOptions {
     retrySchedule?: number[]
     log?: Logger | null
     fixUnsafeIntegers?: boolean
-    headers?: ConnectionHeaders
+    headers?: HttpHeaders
 }
 
 
@@ -39,7 +39,7 @@ export interface CallOptions<R=any> {
     validateError?: ErrorValidator<R>
 }
 
-export type ConnectionHeaders = Record<string, string>
+
 type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
 type ErrorValidator<R=any> = (info: RpcErrorInfo, req: RpcRequest) => R
 
@@ -102,7 +102,7 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: ConnectionHeaders): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: HttpHeaders): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':

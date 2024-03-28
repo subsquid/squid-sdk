@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/rpc-client",
-      "comment": "Accepts connection headers",
+      "comment": "Allow to configure HTTP headers",
       "type": "minor"
     }
   ],
