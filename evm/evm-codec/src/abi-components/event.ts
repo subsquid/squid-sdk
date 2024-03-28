@@ -8,6 +8,10 @@ export interface EventRecord {
   data: string;
 }
 
+export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U>
+  ? StructTypes<IndexedCodecs<U>>
+  : never;
+
 type EventArgs = {
   [key: string]: Pretty<Codec<any> & { indexed?: boolean }>;
 };

@@ -4,15 +4,21 @@ import { slotsCount } from "../utils";
 import { Src } from "../src";
 import assert from "node:assert";
 
-type FunctionReturn<T> = T extends Codec<infer U>
+export type FunctionArguments<F extends AbiFunction<any, any>> =
+  F extends AbiFunction<infer T, any> ? StructTypes<T> : never;
+
+export type FunctionReturn<F extends AbiFunction<any, any | undefined>> =
+  F extends AbiFunction<any, infer R> ? ReturnType<R> : never;
+
+type ReturnType<T> = T extends Codec<infer U>
   ? U
   : T extends Struct
   ? StructTypes<T>
-  : undefined;
+  : void;
 
 export class AbiFunction<
   const T extends Struct,
-  const R extends Codec<any> | Struct | undefined
+  const R extends Codec<any> | Struct | void = void
 > {
   readonly #selector: Buffer;
   private readonly slotsCount: number;
@@ -60,7 +66,7 @@ export class AbiFunction<
     return "decode" in value && "encode" in value;
   }
 
-  decodeResult(output: string): FunctionReturn<R> {
+  decodeResult(output: string): ReturnType<R> {
     if (!this.returnType) {
       return undefined as any;
     }
