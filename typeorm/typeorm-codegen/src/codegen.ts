@@ -35,13 +35,13 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         index.line(`export * from "./${toCamelCase(name)}.model"`)
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry(name)
-        imports.useTypeorm('Entity', 'Column', 'PrimaryColumn')
+        imports.useTypeormStore('Entity', 'Column', 'PrimaryColumn')
         out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
-            imports.useTypeorm('Index')
+            imports.useTypeormStore('Index')
             out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
         out.line('@Entity_()')
@@ -100,14 +100,14 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         break
                     case 'fk':
                         if (getFieldIndex(entity, key)?.unique) {
-                            imports.useTypeorm('OneToOne', 'Index', 'JoinColumn')
+                            imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
                                 `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
-                            imports.useTypeorm('ManyToOne', 'Index')
+                            imports.useTypeormStore('ManyToOne', 'Index')
                             if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
                                 out.line(`@Index_()`)
                             }
@@ -120,7 +120,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                     case 'lookup':
                         break
                     case 'list-lookup':
-                        imports.useTypeorm('OneToMany')
+                        imports.useTypeormStore('OneToMany')
                         out.line(
                             `@OneToMany_(() => ${prop.type.entity}, e => e.${prop.type.field})`
                         )
@@ -495,7 +495,7 @@ function collectVariants(model: Model): Set<string> {
 function addIndexAnnotation(entity: Entity, field: string, imports: ImportRegistry, out: Output): void {
     let index = getFieldIndex(entity, field)
     if (index == null) return
-    imports.useTypeorm('Index')
+    imports.useTypeormStore('Index')
     if (index.unique) {
         out.line(`@Index_({unique: true})`)
     } else {
@@ -531,7 +531,7 @@ class ImportRegistry {
 
     constructor(private owner: string) {}
 
-    useTypeorm(...names: string[]): void {
+    useTypeormStore(...names: string[]): void {
         names.forEach((name) => this.typeorm.add(name))
     }
 
@@ -565,7 +565,7 @@ class ImportRegistry {
             const importList = Array.from(this.typeorm).map(
                 (name) => name + ' as ' + name + '_'
             )
-            out.line(`import {${importList.join(', ')}} from "typeorm"`)
+            out.line(`import {${importList.join(', ')}} from "@subsquid/typeorm-store"`)
         }
         if (this.marshal) {
             out.line(`import * as marshal from "./marshal"`)
