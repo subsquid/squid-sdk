@@ -27,6 +27,7 @@ export interface HttpConnectionOptions {
     url: string
     fixUnsafeIntegers?: boolean
     log?: Logger
+    headers?: Record<string, string>
 }
 
 
@@ -43,7 +44,8 @@ export class HttpConnection implements Connection {
             keepAlive: true
         })
         this.http = new RpcHttpClient({
-            agent: this.agent
+            agent: this.agent,
+            headers: options.headers,
         })
         this.http.fixUnsafeIntegers = options.fixUnsafeIntegers || false
     }

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "Allows to define connection headers for both HTTP and WS",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}

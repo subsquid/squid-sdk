@@ -16,6 +16,7 @@ interface RequestHandle {
 
 export interface WsConnectionOptions {
     url: string
+    headers?: Record<string, string>
     onNotificationMessage?: (msg: RpcNotification) => void
     onReset?: (err: Error) => void
     fixUnsafeIntegers?: boolean
@@ -25,6 +26,7 @@ export interface WsConnectionOptions {
 export class WsConnection implements Connection {
     private url: string
     private fixUnsafeIntegers: boolean
+    private headers?: Record<string, string>
     private onNotificationMessage?: (msg: RpcNotification) => void
     private onReset?: (err: Error) => void
     private _ws?: WebSocket
@@ -34,6 +36,7 @@ export class WsConnection implements Connection {
     constructor(options: WsConnectionOptions) {
         this.url = options.url
         this.fixUnsafeIntegers = options.fixUnsafeIntegers || false
+        this.headers = options.headers
         this.onNotificationMessage = options.onNotificationMessage
         this.onReset = options.onReset
     }
@@ -43,7 +46,7 @@ export class WsConnection implements Connection {
             if (this.connected) return resolve()
             if (this._ws) return reject(new Error('Already connecting'))
 
-            let ws = this._ws = new WebSocket(this.url, undefined, undefined, undefined, undefined, {
+            let ws = this._ws = new WebSocket(this.url, undefined, undefined, this.headers, undefined, {
                 // default: true
                 fragmentOutgoingMessages: true,
                 // default: 16K (bump, the Node has issues with too many fragments, e.g. on setCode)

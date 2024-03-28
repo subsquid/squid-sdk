@@ -36,6 +36,10 @@ export interface RpcEndpointSettings {
      * Maximum number of requests in a single batch call
      */
     maxBatchCallSize?: number
+    /**
+     * Connection headers
+     */
+    headers?: Record<string, string>
 }
 
 
@@ -427,6 +431,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         }
         let client = new RpcClient({
             url: this.rpcEndpoint.url,
+            headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
             requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
