@@ -39,7 +39,7 @@ export class Sink {
   }
 
   size() {
-    return this.stack.at(-1)!.size;
+    return this.stack[this.stack.length - 1].size;
   }
 
   private _allocate(cap: number): void {
@@ -193,11 +193,11 @@ export class Sink {
   }
 
   private start() {
-    return this.stack.at(-1)!.start;
+    return this.stack[this.stack.length - 1].start;
   }
 
   public increaseSize(amount: number) {
-    this.stack.at(-1)!.size += amount;
+    this.stack[this.stack.length - 1].size += amount;
   }
 
   private startDynamic(start: number, slotsCount: number) {
