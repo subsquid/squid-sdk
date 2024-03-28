@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "Allow to configure RPC HTTP headers",
-      "type": "minor"
+      "comment": "",
+      "type": "none"
     }
   ],
   "packageName": "@subsquid/evm-processor"

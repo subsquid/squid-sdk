@@ -37,7 +37,7 @@ export interface RpcEndpointSettings {
      */
     maxBatchCallSize?: number
     /**
-     * Connection headers
+     * HTTP headers
      */
     headers?: Record<string, string>
 }
