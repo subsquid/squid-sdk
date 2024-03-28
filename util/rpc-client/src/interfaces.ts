@@ -41,3 +41,6 @@ export interface Connection {
     call(req: RpcRequest, timeout?: number): Promise<RpcResponse>
     batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]>
 }
+
+
+export type HttpHeaders = Record<string, string>

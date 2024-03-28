@@ -33,6 +33,7 @@ export interface Transaction {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
     }
+    hasDroppedLogMessages: boolean
 }
 
 
@@ -56,6 +57,7 @@ export interface Instruction {
      * `true` when transaction completed successfully, `false` otherwise
      */
     isCommitted: boolean
+    hasDroppedLogMessages: boolean
 }
 
 

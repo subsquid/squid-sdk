@@ -83,7 +83,8 @@ function mapRpcTransaction(
         err: src.meta.err,
         computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
         fee: BigInt(src.meta.fee),
-        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []}
+        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
+        hasDroppedLogMessages: false
     }
 
     let accounts: Base58Bytes[]
@@ -186,6 +187,7 @@ class InstructionParser {
 
             this.pos += 1
         }
+        this.tx.hasDroppedLogMessages = this.tx.hasDroppedLogMessages || this.messagesTruncated
     }
 
     private traverse(
@@ -226,15 +228,18 @@ class InstructionParser {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
-            this.dropInvokeLessInstructionMessages(pos)
-            this.push(stackHeight, instruction)
-            return this.invokeLessTraversal(stackHeight, instructions, pos + 1)
+            let dropped = this.dropInvokeLessInstructionMessages(pos)
+            let ins = this.push(stackHeight, instruction)
+            ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || dropped
+            this.tx.hasDroppedLogMessages = this.tx.hasDroppedLogMessages || dropped
+            return this.invokeLessTraversal(dropped, stackHeight, instructions, pos + 1)
         }
 
         throw this.error(true, pos, 'missing invoke message')
     }
 
-    private dropInvokeLessInstructionMessages(pos: number): void {
+    private dropInvokeLessInstructionMessages(pos: number): boolean {
+        let initialPos = this.messagePos
         while (this.messagePos < this.messages.length && !this.messagesTruncated) {
             let msg = this.messages[this.messagePos]
             switch(msg.kind) {
@@ -247,15 +252,16 @@ class InstructionParser {
                 case 'truncate':
                     this.messagePos += 1
                     this.messagesTruncated = true
-                    return
+                    return true
                 case 'invoke':
-                    return
+                    return this.messagePos - initialPos > 0
                 case 'invoke-result':
                     throw this.error(true, pos, `invoke result message does not match any invoke`)
                 default:
                     throw unexpectedCase()
             }
         }
+        return false
     }
 
     private invokeInstruction(
@@ -280,10 +286,11 @@ class InstructionParser {
                     if (token.error) {
                         ins.error = token.error
                     }
-                    pos = this.invokeLessTraversal(stackHeight, instructions, pos)
+                    pos = this.invokeLessTraversal(true, stackHeight, instructions, pos)
                     this.messagePos += 1
                     return pos
                 case 'truncate':
+                    ins.hasDroppedLogMessages = true
                     return this.logLessTraversal(stackHeight, instructions, pos)
                 default:
                     throw unexpectedCase()
@@ -333,11 +340,13 @@ class InstructionParser {
     }
 
     private invokeLessTraversal(
+        messagesDropped: boolean,
         parentStackHeight: number,
         instructions: rpc.Instruction[],
         pos: number
     ): number {
         return this.logLessTraversal(parentStackHeight, instructions, pos, (ins, pos) => {
+            ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || messagesDropped
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
             } else {
                 throw this.error(false, pos, 'invoke message is missing')
@@ -391,7 +400,8 @@ class InstructionParser {
             programId: this.getAccount(src.programIdIndex),
             accounts: src.accounts.map(a => this.getAccount(a)),
             data: src.data,
-            isCommitted: !this.tx.err
+            isCommitted: !this.tx.err,
+            hasDroppedLogMessages: this.messagesTruncated
         }
 
         this.instructions.push(i)

@@ -13,8 +13,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "node lib/test.js"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "bs58": "^5.0.0"
