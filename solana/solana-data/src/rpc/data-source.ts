@@ -17,11 +17,18 @@ export interface RpcDataSourceOptions {
 }
 
 
+interface HeightAndSlot {
+    height: number
+    slot: number
+}
+
+
 export class RpcDataSource {
     private rpc: Rpc
     private headPollInterval: number
     private strideSize: number
     private strideConcurrency: number
+    private slotTips: HeightAndSlot[] = []
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
@@ -31,9 +38,25 @@ export class RpcDataSource {
         assert(this.strideSize >= 1)
     }
 
+    addSlotTip(tip: HeightAndSlot): void {
+        this.slotTips.push(tip)
+    }
+
     async getFinalizedHeight(): Promise<number> {
         let top = await getFinalizedTop(this.rpc)
         return top.height
+    }
+
+    private getTopSlot(bottom: HeightAndSlot, top: number): HeightAndSlot {
+        if (bottom.height == top) return bottom
+        assert(bottom.height < top)
+        for (let tip of this.slotTips) {
+            if (tip.height == top) return tip
+            if (bottom.height < tip.height && tip.height < top) {
+                bottom = tip
+            }
+        }
+        return bottom
     }
 
     async *getFinalizedBlocks(
@@ -43,6 +66,7 @@ export class RpcDataSource {
         let head = new Throttler(() => getFinalizedTop(this.rpc), this.headPollInterval)
         let rpc = this.rpc
         let strideSize = this.strideSize
+        let self = this
 
         async function* splits(): AsyncIterable<{
             slots: FiniteRange
@@ -55,6 +79,8 @@ export class RpcDataSource {
             for (let req of requests) {
                 let beg = req.range.from
                 let end = req.range.to ?? Infinity
+
+                bottom = self.getTopSlot(bottom, beg)
 
                 while (beg <= end) {
                     if (top.height < beg) {
