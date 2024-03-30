@@ -1,14 +1,6 @@
 import {Block, RpcDataSource} from '@subsquid/solana-data/lib/rpc'
 import {def} from '@subsquid/util-internal'
-import {
-    Command,
-    Dumper,
-    DumperOptions,
-    ErrorMessage,
-    positiveInt,
-    Range,
-    removeOption
-} from '@subsquid/util-internal-dump-cli'
+import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
 
 interface Options extends DumperOptions {
@@ -23,7 +15,6 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.description('Data archiving tool for Solana')
         removeOption(program, 'endpointMaxBatchCallSize')
         removeOption(program, 'endpointCapacity')
-        program.option('--slot-tip <BLOCK:SLOT...>', 'BLOCK:SLOT pair to help to locate required blocks')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 10)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
     }
@@ -33,17 +24,6 @@ export class SolanaDumper extends Dumper<Block, Options> {
         let options = this.program().parse().opts<Options>()
         options.endpointCapacity = options.strideConcurrency + 5
         return options
-    }
-
-    private getSlotTips(): {height: number, slot: number}[] {
-        return this.options().slotTip?.map(tip => {
-            let m = /^(\d+):(\d+)$/.exec(tip)
-            if (!m) throw new ErrorMessage(`invalid slot tip: ${tip}`)
-            return {
-                height: parseInt(m[1]),
-                slot: parseInt(m[2])
-            }
-        }) ?? []
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -68,14 +48,12 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
     @def
     private getDataSource(): RpcDataSource {
-        let src = new RpcDataSource({
+        return new RpcDataSource({
             rpc: this.rpc(),
             headPollInterval: 10_000,
             strideSize: this.options().strideSize,
             strideConcurrency: this.options().strideConcurrency
         })
-        this.getSlotTips().forEach(tip => src.addSlotTip(tip))
-        return src
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
