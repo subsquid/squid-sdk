@@ -59,34 +59,11 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         if (key === 'id') {
                             out.line('@PrimaryColumn_()')
                         } else {
+                            const decorator = getDecorator(prop.type.name)
+                            imports.useTypeormStore(decorator)
+
                             addIndexAnnotation(entity, key, imports, out)
-                            switch (prop.type.name) {
-                                case 'BigInt':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                case 'BigDecimal':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigdecimalTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                case 'Float':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.floatTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                default:
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                            prop.nullable
-                                        }})`
-                                    )
-                                    break
-                            }
+                            out.line(`@${decorator}_({nullable: ${prop.nullable}})`)
                         }
                         break
                     case 'enum':
@@ -144,8 +121,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                                 if (scalar == 'BigInt' || scalar == 'BigDecimal') {
                                     throw new Error(`Property ${name}.${key} has unsupported type: can't generate code for native ${scalar} arrays.`)
                                 }
+
+                                const decorator = getDecorator(scalar)
+                                imports.useTypeormStore(decorator)
+
                                 out.line(
-                                    `@Column_("${getDbType(scalar)}", {array: true, nullable: ${prop.nullable}})`
+                                    `@${decorator}_({array: true, nullable: ${prop.nullable}})`
                                 )
                                 break
                             }
@@ -186,26 +167,25 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         out.write()
     }
 
-    function getDbType(scalar: string): string {
+    function getDecorator(scalar: string): string {
         switch(scalar) {
             case 'ID':
             case 'String':
-                return 'text'
+                return 'StringColumn'
             case 'Int':
-                return 'int4'
+                return 'IntColumn'
             case 'Float':
-                return 'numeric'
+                return 'FloatColumn'
             case 'Boolean':
-                return 'bool'
+                return 'BooleanColumn'
             case 'DateTime':
-                return 'timestamp with time zone'
+                return 'DateTimeColumn'
             case 'BigInt':
+                return 'BigIntColumn'
             case 'BigDecimal':
-                return 'numeric'
+                return 'BigDecimalColumn'
             case 'Bytes':
-                return 'bytea'
-            case 'JSON':
-                return 'jsonb'
+                return 'BytesColumn'
             default:
                 throw unexpectedCase(scalar)
         }

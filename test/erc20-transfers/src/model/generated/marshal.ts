@@ -127,36 +127,6 @@ export function nonNull<T>(val: T | undefined | null): T {
 }
 
 
-export const bigintTransformer = {
-    to(x?: bigint) {
-        return x?.toString()
-    },
-    from(s?: string): bigint | undefined {
-        return s == null ? undefined : BigInt(s)
-    }
-}
-
-
-export const floatTransformer = {
-    to(x?: number) {
-        return x?.toString()
-    },
-    from(s?: string): number | undefined {
-        return s == null ? undefined : Number(s)
-    }
-}
-
-
-export const bigdecimalTransformer = {
-    to(x?: any) {
-        return x?.toString()
-    },
-    from(s?: any): any | undefined {
-        return s == null ? undefined : decimal.BigDecimal(s)
-    }
-}
-
-
 export function enumFromJson<E extends object>(json: unknown, enumObject: E): E[keyof E] {
     assert(typeof json == 'string', 'invalid enum value')
     let val = (enumObject as any)[json]
