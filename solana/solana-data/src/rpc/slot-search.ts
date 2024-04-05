@@ -1,11 +1,16 @@
 import {createLogger} from '@subsquid/logger'
 import {last} from '@subsquid/util-internal'
 import assert from 'assert'
-import {HeightAndSlot} from './fetch'
 import {Rpc} from './rpc'
 
 
 const log = createLogger('sqd:solana-data')
+
+
+export interface HeightAndSlot {
+    slot: number
+    height: number
+}
 
 
 export function findSlot(rpc: Rpc, height: number, bottom: HeightAndSlot, top: HeightAndSlot): Promise<number> {

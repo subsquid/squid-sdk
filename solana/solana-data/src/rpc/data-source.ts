@@ -1,12 +1,11 @@
 import type {RpcClient} from '@subsquid/rpc-client'
-import {concurrentMap, last, Throttler} from '@subsquid/util-internal'
-import {Batch} from '@subsquid/util-internal-ingest-tools'
-import {FiniteRange, RangeRequest, splitRange} from '@subsquid/util-internal-range'
+import {Batch, HotState, HotUpdate} from '@subsquid/util-internal-ingest-tools'
+import {RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import {ingestColdBlocks} from './ingest/cold'
 import {Block, DataRequest} from './data'
-import {getData, getFinalizedTop, isConsistentChain} from './fetch'
 import {Rpc} from './rpc'
-import {findSlot} from './slot-search'
+import {ChainConsistencyValidator} from './util'
 
 
 export interface RpcDataSourceOptions {
@@ -24,99 +23,45 @@ export class RpcDataSource {
     private strideSize: number
     private strideConcurrency: number
 
-    constructor(options: RpcDataSourceOptions) {
+    constructor(private options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
-        this.headPollInterval = options.headPollInterval ?? 500
-        this.strideSize = options.strideSize || 10
+        this.headPollInterval = options.headPollInterval ?? 2000
+        this.strideSize = options.strideSize || 5
         this.strideConcurrency = options.strideConcurrency || 5
         assert(this.strideSize >= 1)
     }
 
     async getFinalizedHeight(): Promise<number> {
-        let top = await getFinalizedTop(this.rpc)
-        return top.height
+        let slot = await this.rpc.getTopSlot('finalized')
+        return this.rpc.getFinalizedBlockHeight(slot)
     }
 
     async *getFinalizedBlocks(
         requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean
     ): AsyncIterable<Batch<Block>> {
-        let head = new Throttler(() => getFinalizedTop(this.rpc), this.headPollInterval)
-        let rpc = this.rpc
-        let strideSize = this.strideSize
+        let chain = new ChainConsistencyValidator()
 
-        async function* splits(): AsyncIterable<{
-            slots: FiniteRange
-            request: DataRequest
-            isHead: boolean
-        }> {
-            let bottom = {height: 0, slot: 0}
-            let top = await head.get()
+        let blockStream = ingestColdBlocks({
+            requests,
+            rpc: this.rpc,
+            headPollInterval: this.headPollInterval,
+            strideConcurrency: this.strideConcurrency,
+            strideSize: this.strideSize,
+            stopOnHead
+        })
 
-            for (let req of requests) {
-                let beg = req.range.from
-                let end = req.range.to ?? Infinity
-                while (beg <= end) {
-                    if (top.height < beg) {
-                        top = await head.get()
-                    }
-                    while (top.height < beg) {
-                        if (stopOnHead) return
-                        top = await head.call()
-                    }
-                    let startSlot = await findSlot(rpc, beg, bottom, top)
-                    let endSlot: number
-                    if (top.height > end) {
-                        endSlot = await findSlot(rpc, end, {height: beg, slot: startSlot}, top)
-                        bottom = {height: end, slot: endSlot}
-                        beg = end + 1
-                    } else {
-                        endSlot = top.slot
-                        bottom = top
-                        beg = top.height + 1
-                    }
-                    for (let range of splitRange(strideSize, {from: startSlot, to: endSlot})) {
-                        if (range.to == endSlot) {
-                            top = await head.get()
-                        }
-                        let isHead = top.slot == endSlot
-                        yield {
-                            slots: range,
-                            request: req.request,
-                            isHead
-                        }
-                    }
-                }
-            }
+        for await (let blocks of blockStream) {
+            chain.assertNextBatch(blocks)
+            yield {blocks, isHead: false}
         }
+    }
 
-        let prev: Block | undefined
+    async processHotBlocks(
+        requests: RangeRequest<DataRequest>[],
+        state: HotState,
+        cb: (upd: HotUpdate<Block>) => Promise<void>
+    ): Promise<void> {
 
-        for await (let batch of concurrentMap(
-            this.strideConcurrency,
-            splits(),
-            async s => {
-                let blocks = await getData(
-                    rpc.withPriority(s.slots.from),
-                    'finalized',
-                    s.slots,
-                    s.request
-                )
-                return {
-                    blocks: blocks as Block[],
-                    isHead: s.isHead
-                }
-            }
-        )) {
-            if (batch.blocks.length == 0) continue
-            if (prev?.height === batch.blocks[0].height - 1) {
-                assert(isConsistentChain(prev, batch.blocks[0]))
-            }
-            for (let i = 1; i < batch.blocks.length; i++) {
-                assert(isConsistentChain(batch.blocks[i-1], batch.blocks[i]))
-            }
-            prev = last(batch.blocks)
-            yield batch
-        }
     }
 }

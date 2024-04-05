@@ -1,5 +1,6 @@
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
+import {wait} from '@subsquid/util-internal'
 import {
     array,
     B58,
@@ -72,6 +73,30 @@ export class Rpc {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
+    }
+
+    async getTopSlot(commitment: Commitment): Promise<number> {
+        let {context: {slot}} = await this.getLatestBlockhash(commitment)
+        return slot
+    }
+
+    async getFinalizedBlockHeight(slot: number): Promise<number> {
+        let attempts = 10
+        while (attempts) {
+            let block = await this.getBlockInfo('finalized', slot)
+            if (block === undefined) throw new Error(`No block at slot ${slot}`)
+            if (block) {
+                if (block.blockHeight == null) {
+                    throw new Error(`Block height is not available at slot ${slot}`)
+                } else {
+                    return block.blockHeight
+                }
+            } else {
+                await wait(100)
+                attempts -= 1
+            }
+        }
+        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} 10 times in a row`)
     }
 
     getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
