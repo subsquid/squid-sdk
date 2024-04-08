@@ -321,10 +321,6 @@ class FromV14 {
                 prefix: pallet.storage.prefix,
                 items
             }
-
-            if (storage[pallet.storage.prefix] == null) {
-                storage[pallet.storage.prefix] = storage[pallet.name]
-            }
         })
         return storage
     }
@@ -724,10 +720,6 @@ class FromOld {
             storage[mod.name] = {
                 prefix: mod.storage.prefix,
                 items
-            }
-
-            if (storage[mod.storage.prefix] == null) {
-                storage[mod.storage.prefix] = storage[mod.name]
             }
         })
         return storage
