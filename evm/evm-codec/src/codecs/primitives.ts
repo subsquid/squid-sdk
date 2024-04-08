@@ -1,7 +1,7 @@
 import { Codec } from "../codec";
 import { Sink } from "../sink";
 import { Src } from "../src";
-import { ArrayCodec, FixedArrayCodec } from "./array";
+import { ArrayCodec, FixedSizeArrayCodec } from "./array";
 import { StructCodec } from "./struct";
 import { AbiFunction } from "../abi-components/function";
 import { AbiEvent } from "../abi-components/event";
@@ -214,8 +214,8 @@ export const address: Codec<string> = {
   isDynamic: false,
 };
 
-export const fixedArray = <T>(item: Codec<T>, size: number): Codec<T[]> =>
-  new FixedArrayCodec(item, size);
+export const fixedSizeArray = <T>(item: Codec<T>, size: number): Codec<T[]> =>
+  new FixedSizeArrayCodec(item, size);
 
 export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item);
 

@@ -32,7 +32,7 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
   }
 }
 
-export class FixedArrayCodec<const T> implements Codec<readonly T[]> {
+export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
   public isDynamic: boolean;
   public slotsCount: number;
   constructor(public readonly item: Codec<T>, public readonly size: number) {

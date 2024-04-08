@@ -3,7 +3,7 @@ import {
   address,
   array,
   bytes,
-  fixedArray,
+  fixedSizeArray,
   int8,
   Sink,
   Src,
@@ -18,21 +18,21 @@ function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
 
 describe("fixed size array", () => {
   it("static types encoding", () => {
-    const arr = fixedArray(int8, 5);
+    const arr = fixedSizeArray(int8, 5);
     const sink = new Sink(5);
     arr.encode(sink, [1, 2, -3, 4, 5]);
     compareTypes(sink, [{ type: "int8[5]" }], [[1, 2, -3, 4, 5]]);
   });
 
   it("static types decoding", () => {
-    const arr = fixedArray(int8, 5);
+    const arr = fixedSizeArray(int8, 5);
     const sink = new Sink(5);
     arr.encode(sink, [1, 2, -3, -4, 5]);
     expect(arr.decode(new Src(sink.result()))).toStrictEqual([1, 2, -3, -4, 5]);
   });
 
   it("dynamic types encoding", () => {
-    const arr = fixedArray(string, 3);
+    const arr = fixedSizeArray(string, 3);
     const sink = new Sink(1);
     const data = [
       "aaa",
@@ -45,7 +45,7 @@ describe("fixed size array", () => {
   });
 
   it("deep nested arrays", () => {
-    const arr = fixedArray(fixedArray(string, 3), 2);
+    const arr = fixedSizeArray(fixedSizeArray(string, 3), 2);
     const sink = new Sink(1);
     const data = [
       "aaa",
@@ -103,9 +103,9 @@ describe("dynamic size array", () => {
 
   it("hardcore dynamic types", () => {
     const sink = new Sink(5);
-    const arr1 = array(array(fixedArray(string, 3)));
+    const arr1 = array(array(fixedSizeArray(string, 3)));
     const arr2 = array(array(uint256));
-    const arr3 = array(fixedArray(bytes, 2));
+    const arr3 = array(fixedSizeArray(bytes, 2));
     const data1 = [
       [
         ["aaa", "bbb", "ccc"],

@@ -4,7 +4,7 @@ import {
   array,
   bool,
   bytes4,
-  fixedArray,
+  fixedSizeArray,
   fun,
   int32,
   Sink,
@@ -44,7 +44,7 @@ describe("Function", () => {
     });
     const dynamicFunction = fun("0x423917ce", {
       arg1: array(uint256),
-      arg2: fixedArray(array(uint256), 10),
+      arg2: fixedSizeArray(array(uint256), 10),
       arg3: struct({
         foo: uint256,
         bar: array(uint256),
