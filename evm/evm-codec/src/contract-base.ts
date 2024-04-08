@@ -45,15 +45,23 @@ export class ContractBase {
     }
   }
 
+  /**
+   * Call a contract function using eth_call with the given calldata.
+   * Might be necessary to override for some chains.
+   */
+  private async rpc_call(calldata: string) {
+    return this._chain.client.call("eth_call", [
+      { to: this.address, data: calldata },
+      "0x" + this.blockHeight.toString(16),
+    ]);
+  }
+
   async eth_call<
     const T extends Struct,
     const R extends Codec<any> | Struct | undefined
   >(func: AbiFunction<T, R>, args: StructTypes<T>): Promise<R> {
-    let data = func.encode(args);
-    let result = await this._chain.client.call("eth_call", [
-      { to: this.address, data },
-      "0x" + this.blockHeight.toString(16),
-    ]);
+    const data = func.encode(args);
+    const result = await this.rpc_call(data);
     return func.decodeResult(result);
   }
 }
