@@ -16,8 +16,7 @@
     "build": "rm -rf lib && tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^18.18.14",
     "ethers": "^5.7.2",
