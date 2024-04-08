@@ -285,14 +285,7 @@ class FromV14 {
         this.metadata.pallets.forEach(pallet => {
             if (pallet.storage == null) return
 
-            if (storage[pallet.name] == null) {
-                storage[pallet.name] = {
-                    prefix: pallet.storage.prefix,
-                    items: {}                    
-                }
-            }
-            
-            let items: Record<string, StorageItem> = storage[pallet.name].items
+            let items: Record<string, StorageItem> = {}
             pallet.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -324,9 +317,13 @@ class FromV14 {
                     docs: e.docs
                 }
             })
-            storage[pallet.storage.prefix] = {
+            storage[pallet.name] = {
                 prefix: pallet.storage.prefix,
                 items
+            }
+
+            if (storage[pallet.storage.prefix] == null) {
+                storage[pallet.storage.prefix] = storage[pallet.name]
             }
         })
         return storage
@@ -685,14 +682,7 @@ class FromOld {
         this.forEachPallet(null, mod => {
             if (mod.storage == null) return
 
-            if (storage[mod.name] == null) {
-                storage[mod.name] = {
-                    prefix: mod.storage.prefix,
-                    items: {}                    
-                }
-            }
-            
-            let items: Record<string, StorageItem> = storage[mod.name].items
+            let items: Record<string, StorageItem> = {}
             mod.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -731,11 +721,13 @@ class FromOld {
                     docs: e.docs
                 }
             })
+            storage[mod.name] = {
+                prefix: mod.storage.prefix,
+                items
+            }
+
             if (storage[mod.storage.prefix] == null) {
-                storage[mod.storage.prefix] = {
-                    prefix: mod.storage.prefix,
-                    items
-                }
+                storage[mod.storage.prefix] = storage[mod.name]
             }
         })
         return storage
