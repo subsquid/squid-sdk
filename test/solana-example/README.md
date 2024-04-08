@@ -1,55 +1,112 @@
-# Squid SDK - Solana Example
 
-The Squid SDK is a set of tools to ingest, transform and present blockchain data.
-The SDK currently supports indexing of EVM- and [Substrate](https://substrate.io)-based chains.
-This is an MVP indexing [Orca Exchange](https://www.orca.so/) with the Squid SDK. 
+# Solana Example with Squid SDK
 
-## Getting started
+Welcome to the Solana example using the Squid SDK! This README provides a comprehensive guide to get you started with indexing Orca Exchange on the Solana blockchain using the Squid SDK. The Squid SDK is a versatile toolkit designed for ingesting, transforming, and presenting blockchain data, with support for EVM- and Substrate-based chains. This guide focuses on an MVP for indexing Orca Exchange.
 
-To get started, download or clone the [Squid SDK repo](https://github.com/subsquid/squid-sdk) and follow the instructions from README. 
-To start Solana example, run `rush build` in the squid-sdk folder. 
-Next, run `cd ./test/solana-example`.
-To generate the model types, use `npx squid-typeorm-codegen` command.
-To start the docker container, run `docker-compose up -d`. This will start the database container. 
-Next, generate the migration with `npx squid-typeorm-migration generate`.
-To start the indexing process, run `npx node -r dotenv/config lib/processor.js`. This will start the `SolanaBatchProcessor`. 
-To shut down, use `docker-compose down -v`.
+## Getting Started
 
-For step-by-step instructions, follow one of the [Quickstart guides](https://docs.subsquid.io/quickstart/).
+To set up and start using the Solana example, follow the steps below:
+
+### Prerequisites
+
+- Docker installed on your system for running containers.
+- Node.js (version 14.x or higher) installed.
+- Git for cloning the repository.
+- [Rush](https://www.npmjs.com/package/@microsoft/rush)
+
+### Setup Instructions
+
+1. **Clone the Squid SDK Repository**
+
+   Download or clone the Squid SDK repository:
+
+   ```bash
+   git clone https://github.com/your/squid-sdk.git
+   ```
+
+2. **Build the Project**
+
+   Navigate to the Squid SDK directory and build the project:
+
+   ```bash
+   cd squid-sdk
+   rush build
+   ```
+
+3. **Navigate to Solana Example**
+
+   Change into the Solana example directory:
+
+   ```bash
+   cd ./test/solana-example
+   ```
+
+4. **Generate Model Types**
+
+   Use the Squid typeorm codegen tool to generate model types:
+
+   ```bash
+   npx squid-typeorm-codegen
+   ```
+
+5. **Start the Docker Container**
+
+   Run the following command to start the database container:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+6. **Generate Migration**
+
+   Generate the migration for your database:
+
+   ```bash
+   npx squid-typeorm-migration generate
+   ```
+
+7. **Start the Indexing Process**
+
+   Execute the command below to start the SolanaBatchProcessor:
+
+   ```bash
+   npx node -r dotenv/config lib/processor.js
+   ```
+
+8. **Shutdown the Docker Container**
+
+   To shut down and clean up, use:
+
+   ```bash
+   docker-compose down -v
+   ```
 
 ## Overview
 
-The Solana example contains several key components. 
-
 ### ABI
 
-Contract ABI in the `./abi` folder is used to decode intructions. Squid typegen tool generates facade TypeScript classes for
-type-safe decoding of Solana instrcutions and inner instrcutions.
+The ABI folder (`./abi`) contains contract ABIs used to decode instructions. The Squid typegen tool generates TypeScript classes for type-safe decoding of Solana instructions and inner instructions.
 
 ### Processor
 
-`processor.ts` file contains `SolanaBatchProcessor`, which is used to set gateway (https://v2.archive.subsquid.io/network/solana-mainnet for Solana mainnet),
-define block range and add instrcutions.
+The `processor.ts` file is central to the operation, setting up the SolanaBatchProcessor with necessary configurations such as the gateway, block range, and instructions.
 
-### Setting up the processor
+### Setting Up the Processor
 
-To set the block range and gateway, you can refer to [general settings page](https://docs.subsquid.io/sdk/reference/processors/evm-batch/general/). 
-To define the set of instrcutions, `options` has the following structure:
+Configure the processor as follows:
 
-```
+- **Gateway and Block Range**: Refer to the general settings page to set the gateway (e.g., `https://v2.archive.subsquid.io/network/solana-mainnet` for Solana mainnet) and the block range for processing.
+
+- **Defining Instructions**: The instruction set is defined with an options structure, including program IDs, operation codes (d8 for specific operations), and flags for additional data retrieval like inner instructions, transaction details, and token balances.
+
+```json
 {
-  // data requests
-    programId:  string[],
-    d8:  string[],
-  // related data retrieval
-    innerInstructions: boolean,
-    transaction: boolean,
-    transactionTokenBalances: boolean,
-    isCommitted: boolean,
+  "programId": ["string[]"],
+  "d8": ["string[]"],
+  "innerInstructions": true,
+  "transaction": true,
+  "transactionTokenBalances": true,
+  "isCommitted": true
 }
 ```
-
-
-
-
 
