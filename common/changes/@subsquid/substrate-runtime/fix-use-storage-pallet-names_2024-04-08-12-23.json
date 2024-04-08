@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "map storage by pallet name instead of prefix",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
