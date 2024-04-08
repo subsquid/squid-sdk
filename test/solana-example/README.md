@@ -110,8 +110,8 @@ Configure the processor as follows:
 }
 ```
 
-- **Example**: Defining `SolanaBatchProcessor` to extract `swap` instrcutions. 
-- 
+- **Example**: Defining `SolanaBatchProcessor` to extract `swap` instrcutions.
+   
 ```js
 const processor = new SolanaBatchProcessor()
   .setGateway("https://v2.archive.subsquid.io/network/solana-mainnet")
