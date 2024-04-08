@@ -303,7 +303,7 @@ export class Typegen {
             runtime => {
                 let storage = runtime.description.storage
                 return getStorageItems(runtime).map(({pallet, prefix, name}) => {
-                    let def = assertNotNull(storage[prefix][name])
+                    let def = assertNotNull(storage[pallet][name])
                     return {
                         runtime,
                         name: pallet + '.' + name,

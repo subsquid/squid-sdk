@@ -270,10 +270,10 @@ class FromV14 {
         return assertNotNull(def.type.params[idx].type)
     }
 
-    private getStorageItem(prefix: string, name: string): StorageItem {
+    private getStorageItem(pallet: string, name: string): StorageItem {
         let storage = this.storage()
-        let item = storage[prefix]?.[name]
-        return assertNotNull(item, `Can't find ${prefix}.${name} storage item`)
+        let item = storage[pallet]?.[name]
+        return assertNotNull(item, `Can't find ${pallet}.${name} storage item`)
     }
 
     @def
@@ -281,7 +281,7 @@ class FromV14 {
         let storage: Storage = {}
         this.metadata.pallets.forEach(pallet => {
             if (pallet.storage == null) return
-            let items: Record<string, StorageItem> = storage[pallet.storage.prefix] = {}
+            let items: Record<string, StorageItem> = storage[pallet.name] = {}
             pallet.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -313,6 +313,9 @@ class FromV14 {
                     docs: e.docs
                 }
             })
+            if (storage[pallet.storage.prefix] == null) {
+                storage[pallet.storage.prefix] = items
+            }
         })
         return storage
     }
@@ -669,7 +672,7 @@ class FromOld {
         let storage: Storage = {}
         this.forEachPallet(null, mod => {
             if (mod.storage == null) return
-            let items: Record<string, StorageItem> = storage[mod.storage.prefix] || {}
+            let items: Record<string, StorageItem> = storage[mod.name] = {}
             mod.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -708,7 +711,9 @@ class FromOld {
                     docs: e.docs
                 }
             })
-            storage[mod.storage.prefix] = items
+            if (storage[mod.storage.prefix] == null) {
+                storage[mod.storage.prefix] = items
+            }
         })
         return storage
     }
