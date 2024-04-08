@@ -1,5 +1,5 @@
 
-# Solana Example with Squid SDK
+# Solana Indexing with Squid SDK
 
 Welcome to the Solana example using the Squid SDK! This README provides a comprehensive guide to get you started with indexing Orca Exchange on Solana mainnet using the Squid SDK. The Squid SDK is designed for ingesting, transforming, and presenting blockchain data, with support for EVM- and Substrate-based chains. This guide focuses on a Solana MVP for indexing Orca Exchange.
 
