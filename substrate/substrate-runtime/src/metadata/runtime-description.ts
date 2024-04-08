@@ -72,7 +72,10 @@ export interface StorageItem {
 
 export interface Storage {
     [prefix: string]: {
-        [name: string]: StorageItem
+        prefix: string
+        items: {
+          [name: string]: StorageItem
+        }
     }
 }
 
@@ -272,7 +275,7 @@ class FromV14 {
 
     private getStorageItem(pallet: string, name: string): StorageItem {
         let storage = this.storage()
-        let item = storage[pallet]?.[name]
+        let item = storage[pallet]?.items[name]
         return assertNotNull(item, `Can't find ${pallet}.${name} storage item`)
     }
 
@@ -281,7 +284,15 @@ class FromV14 {
         let storage: Storage = {}
         this.metadata.pallets.forEach(pallet => {
             if (pallet.storage == null) return
-            let items: Record<string, StorageItem> = storage[pallet.name] = {}
+
+            if (storage[pallet.name] == null) {
+                storage[pallet.name] = {
+                    prefix: pallet.storage.prefix,
+                    items: {}                    
+                }
+            }
+            
+            let items: Record<string, StorageItem> = storage[pallet.name].items
             pallet.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -313,8 +324,9 @@ class FromV14 {
                     docs: e.docs
                 }
             })
-            if (storage[pallet.storage.prefix] == null) {
-                storage[pallet.storage.prefix] = items
+            storage[pallet.storage.prefix] = {
+                prefix: pallet.storage.prefix,
+                items
             }
         })
         return storage
@@ -672,7 +684,15 @@ class FromOld {
         let storage: Storage = {}
         this.forEachPallet(null, mod => {
             if (mod.storage == null) return
-            let items: Record<string, StorageItem> = storage[mod.name] = {}
+
+            if (storage[mod.name] == null) {
+                storage[mod.name] = {
+                    prefix: mod.storage.prefix,
+                    items: {}                    
+                }
+            }
+            
+            let items: Record<string, StorageItem> = storage[mod.name].items
             mod.storage.items.forEach(e => {
                 let hashers: StorageHasher[]
                 let keys: Ti[]
@@ -712,7 +732,10 @@ class FromOld {
                 }
             })
             if (storage[mod.storage.prefix] == null) {
-                storage[mod.storage.prefix] = items
+                storage[mod.storage.prefix] = {
+                    prefix: mod.storage.prefix,
+                    items
+                }
             }
         })
         return storage

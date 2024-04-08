@@ -198,7 +198,7 @@ export class Typegen {
                         out.blockComment(it.def.docs)
                         out.line(
                             `${this.getVersionName(it.runtime)}: new StorageType(` +
-                            `'${it.def.prefix}.${it.name.split('.')[1]}', ` +
+                            `'${it.name}', ` +
                             `'${it.def.modifier}', ` +
                             `[${keyListExp}], ` +
                             `${valueExp}` +
@@ -303,7 +303,7 @@ export class Typegen {
             runtime => {
                 let storage = runtime.description.storage
                 return getStorageItems(runtime).map(({pallet, prefix, name}) => {
-                    let def = assertNotNull(storage[pallet][name])
+                    let def = assertNotNull(storage[pallet]?.items[name])
                     return {
                         runtime,
                         name: pallet + '.' + name,
