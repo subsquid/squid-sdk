@@ -18,11 +18,11 @@ class InlinedStructCodec<
 {
   isDynamic = true
   public encode(sink: Sink, val: S): void {
-    sink.offset()
+    sink.newStaticDataArea()
     const tempSink = new Sink(3)
     array(uint256).encode(tempSink, val.a)
     uint256.encode(tempSink, val.b)
-    sink.offset()
+    sink.newStaticDataArea()
     const tempSink2 = new Sink(2)
     array(uint256).encode(tempSink2, val.c.d)
     address.encode(tempSink2, val.c.e)

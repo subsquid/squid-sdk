@@ -129,7 +129,7 @@ export class Sink {
     this.reserve(reservedSize)
     this.buf.set(val, this.pos)
     this.pos += reservedSize
-    this.increaseSize(reservedSize + WORD_SIZE)
+    this.increaseDataSize(reservedSize + WORD_SIZE)
   }
 
   staticBytes(len: number, val: Uint8Array) {
@@ -157,52 +157,57 @@ export class Sink {
     this.reserve(reservedSize)
     this.buf.write(val, this.pos)
     this.pos += reservedSize
-    this.increaseSize(reservedSize + WORD_SIZE)
+    this.increaseDataSize(reservedSize + WORD_SIZE)
   }
 
   bool(val: boolean) {
     this.u8(val ? 1 : 0)
   }
 
-  offset(slotsCount = 0) {
-    const ptr = this.size()
-    this.u32(ptr)
-    const _start = this.start()
-    this.startDynamic(_start + ptr, slotsCount)
-    this.pos = _start + ptr
+  /**
+   * @example
+   * @link [Solidity docs](https://docs.soliditylang.org/en/latest/abi-spec.html#use-of-dynamic-types)
+   */
+  newStaticDataArea(slotsCount = 0) {
+    const sinkEndPtr = this.size()
+    this.u32(sinkEndPtr)
+    const dataAreaStart = this.currentDataAreaStart()
+    this.pushDataArea(dataAreaStart + sinkEndPtr, slotsCount)
+    this.pos = dataAreaStart + sinkEndPtr
   }
 
-  dynamicOffset(slotsCount: number) {
-    const ptr = this.size()
-    this.u32(ptr)
-    const _start = this.start()
-    this.startDynamic(_start + ptr + WORD_SIZE, slotsCount)
-    this.pos = _start + ptr
+  // Adds elements count before the data area in an additional slot
+  newDynamicDataArea(slotsCount: number) {
+    const sinkEndPtr = this.size()
+    this.u32(sinkEndPtr)
+    const dataAreaStart = this.currentDataAreaStart()
+    this.pushDataArea(dataAreaStart + sinkEndPtr + WORD_SIZE, slotsCount)
+    this.pos = dataAreaStart + sinkEndPtr
     this.u32(slotsCount)
   }
 
-  private start() {
+  private currentDataAreaStart() {
     return this.stack[this.stack.length - 1].start
   }
 
-  public increaseSize(amount: number) {
+  public increaseDataSize(amount: number) {
     this.stack[this.stack.length - 1].size += amount
   }
 
-  private startDynamic(start: number, slotsCount: number) {
+  private pushDataArea(dataAreaStart: number, slotsCount: number) {
     const size = slotsCount * WORD_SIZE
-    this.reserve(start + size)
+    this.reserve(dataAreaStart + size)
     this.stack.push({
-      start,
+      start: dataAreaStart,
       prev: this.pos,
       size,
     })
   }
 
-  endDynamic() {
+  public endCurrentDataArea() {
     assert(this.stack.length > 1, 'No dynamic encoding started')
     const { prev, size } = this.stack.pop()!
-    this.increaseSize(size)
+    this.increaseDataSize(size)
     this.pos = prev
   }
 }

@@ -138,9 +138,9 @@ export const int256: Codec<bigint> = {
 
 export const string = <const>{
   encode(sink: Sink, val: string) {
-    sink.offset()
+    sink.newStaticDataArea()
     sink.string(val)
-    sink.endDynamic()
+    sink.endCurrentDataArea()
   },
   decode(src: Src): string {
     return src.string()
@@ -150,9 +150,9 @@ export const string = <const>{
 
 export const bytes = <const>{
   encode(sink: Sink, val: Uint8Array) {
-    sink.offset()
+    sink.newStaticDataArea()
     sink.bytes(val)
-    sink.endDynamic()
+    sink.endCurrentDataArea()
   },
   decode(src: Src): Uint8Array {
     return src.bytes()

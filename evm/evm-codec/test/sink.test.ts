@@ -46,44 +46,44 @@ describe('sink', () => {
   describe('string', () => {
     it('short string', () => {
       const sink = new Sink(1)
-      sink.offset()
+      sink.newStaticDataArea()
       sink.string('hello')
-      sink.endDynamic()
+      sink.endCurrentDataArea()
       compareTypes(sink, [{ type: 'string' }], ['hello'])
     })
 
     it('32 byte string', () => {
       const sink = new Sink(1)
-      sink.offset()
+      sink.newStaticDataArea()
       sink.string('this string length is 32 bytes!!')
-      sink.endDynamic()
+      sink.endCurrentDataArea()
       compareTypes(sink, [{ type: 'string' }], ['this string length is 32 bytes!!'])
     })
 
     it('longer string', () => {
       const sink = new Sink(1)
-      sink.offset()
+      sink.newStaticDataArea()
       sink.string('this string length is 33 bytes!!!')
-      sink.endDynamic()
+      sink.endCurrentDataArea()
       compareTypes(sink, [{ type: 'string' }], ['this string length is 33 bytes!!!'])
     })
 
     it('UTF', () => {
       const sink = new Sink(1)
-      sink.offset()
+      sink.newStaticDataArea()
       sink.string('привет 👍')
-      sink.endDynamic()
+      sink.endCurrentDataArea()
       compareTypes(sink, [{ type: 'string' }], ['привет 👍'])
     })
   })
 
   it('bytes', () => {
     const sink = new Sink(1)
-    sink.offset()
+    sink.newStaticDataArea()
     const buffer = Buffer.alloc(150)
     buffer.fill('xd')
     sink.bytes(buffer)
-    sink.endDynamic()
+    sink.endCurrentDataArea()
     compareTypes(sink, [{ type: 'bytes' }], [`0x${buffer.toString('hex')}`])
   })
 })

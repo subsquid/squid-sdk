@@ -8,12 +8,12 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
   constructor(public readonly item: Codec<T>) {}
 
   encode(sink: Sink, val: T[]) {
-    sink.dynamicOffset(val.length)
+    sink.newDynamicDataArea(val.length)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
     }
-    sink.increaseSize(WORD_SIZE)
-    sink.endDynamic()
+    sink.increaseDataSize(WORD_SIZE)
+    sink.endCurrentDataArea()
   }
 
   decode(src: Src): T[] {
@@ -53,11 +53,11 @@ export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
   }
 
   private encodeDynamic(sink: Sink, val: T[]) {
-    sink.offset(this.size)
+    sink.newStaticDataArea(this.size)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
     }
-    sink.endDynamic()
+    sink.endCurrentDataArea()
   }
 
   decode(src: Src): T[] {
