@@ -12,7 +12,7 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
     }
-    sink.increaseDataSize(WORD_SIZE)
+    sink.increaseCurrentDataAreaSize(WORD_SIZE)
     sink.endCurrentDataArea()
   }
 
