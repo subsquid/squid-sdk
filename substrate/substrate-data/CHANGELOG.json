@@ -2,6 +2,27 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.0.4",
+      "tag": "@subsquid/substrate-data_v4.0.4",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.7.0` to `4.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.7.0` to `4.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.3",
       "tag": "@subsquid/substrate-data_v4.0.3",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

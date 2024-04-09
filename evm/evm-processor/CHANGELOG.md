@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 1.18.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- Allow to configure RPC HTTP headers
 
 ## 1.17.1
 Sun, 17 Mar 2024 23:20:20 GMT

@@ -1,6 +1,11 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 4.0.4
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
 
 ## 4.0.3
 Sun, 17 Mar 2024 23:20:20 GMT

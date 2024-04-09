@@ -1,6 +1,11 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 3.0.3
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
 
 ## 3.0.2
 Fri, 01 Dec 2023 16:55:51 GMT
