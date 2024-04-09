@@ -43,7 +43,8 @@ runProgram(async () => {
 
     let dir = new OutDir(MIGRATIONS_DIR)
     let timestamp = Date.now()
-    let out = dir.file(`${timestamp}-${name}.js`)
+    let filename = `${timestamp}-${name}.js`
+    let out = dir.file(filename)
     out.block(`module.exports = class ${name}${timestamp}`, () => {
         out.line(`name = '${name}${timestamp}'`)
         out.line()
@@ -61,7 +62,7 @@ runProgram(async () => {
     })
     out.write()
     // Output the path of the generated file
-    console.log(`create:\t ${dir.resolve(out.path)}`);
+    console.log(`create:\t ${dir.path(filename)}`);
 })
 
 
