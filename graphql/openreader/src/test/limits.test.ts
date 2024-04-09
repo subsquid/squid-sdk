@@ -155,7 +155,7 @@ describe('response size limits', function() {
         `, {
             errors: [
                 expect.objectContaining({
-                    message: 'only 3 root query fields allowed, but got 4'
+                    message: 'only 3 root fields allowed, but got 4'
                 })
             ]
         })

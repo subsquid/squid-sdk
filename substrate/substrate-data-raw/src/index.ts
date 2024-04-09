@@ -1,4 +1,5 @@
 export * from './datasource'
+export * from './fetch1'
 export * from './interfaces'
 export * from './rpc'
 export * from './util'

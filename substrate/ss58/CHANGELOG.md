@@ -1,6 +1,29 @@
 # Change Log - @subsquid/ss58
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 2.0.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+
+## 2.0.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- fix false positive test errors
+- update dependencies
+- compile with TypeScript 5
+
+## 2.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- use hex encoded byte strings as a canonical raw address type
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

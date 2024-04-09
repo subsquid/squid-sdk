@@ -16,6 +16,7 @@ describe('TypeormDatabase', function() {
             big_integer numeric,
             date_time timestamp with time zone,
             "bytes" bytea,
+            "json" jsonb,
             item_id text references item
         )`
     ])
@@ -107,7 +108,8 @@ describe('TypeormDatabase', function() {
             integerArray: [1, 10],
             bigInteger: 1000000000000000000000000000000000000000000000000000000000n,
             dateTime: new Date(1000000000000),
-            bytes: Buffer.from([100, 100, 100])
+            bytes: Buffer.from([100, 100, 100]),
+            json: [1, {foo: 'bar'}]
         })
 
         let a2 = new Data({
@@ -118,7 +120,8 @@ describe('TypeormDatabase', function() {
             integerArray: [2, 20],
             bigInteger: 2000000000000000000000000000000000000000000000000000000000n,
             dateTime: new Date(2000000000000),
-            bytes: Buffer.from([200, 200, 200])
+            bytes: Buffer.from([200, 200, 200]),
+            json: [2, {foo: 'baz'}]
         })
 
         let a3 = new Data({
@@ -129,7 +132,8 @@ describe('TypeormDatabase', function() {
             integerArray: [30, 300],
             bigInteger: 3000000000000000000000000000000000000000000000000000000000n,
             dateTime: new Date(3000000000000),
-            bytes: Buffer.from([3, 3, 3])
+            bytes: Buffer.from([3, 3, 3]),
+            json: [3, {foo: 'qux'}]
         })
 
         await db.transactHot({
@@ -162,7 +166,8 @@ describe('TypeormDatabase', function() {
             integerArray: [10, 100],
             bigInteger: 8000000000000000000000000000000000000000000000000000000000_000_000n,
             dateTime: new Date(100000),
-            bytes: Buffer.from([1, 1, 1])
+            bytes: Buffer.from([1, 1, 1]),
+            json: ["b1", {foo: 'bar'}]
         })
 
         let b2 = new Data({
@@ -173,7 +178,8 @@ describe('TypeormDatabase', function() {
             integerArray: [20, 200],
             bigInteger: 9000000000000000000000000000000000000000000000000000000000_000n,
             dateTime: new Date(2000),
-            bytes: Buffer.from([2, 2, 2])
+            bytes: Buffer.from([2, 2, 2]),
+            json: {b2: true}
         })
 
         await db.transactHot({

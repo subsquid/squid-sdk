@@ -2,6 +2,399 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.0.3",
+      "tag": "@subsquid/substrate-data_v4.0.3",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix incorrect handling of `Utility.force_batch` call with failed items"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.2",
+      "tag": "@subsquid/substrate-data_v4.0.2",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.1",
+      "tag": "@subsquid/substrate-data_v4.0.1",
+      "date": "Thu, 04 Jan 2024 17:31:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix genesis block fetch error by allowing `null` event storage values"
+          },
+          {
+            "comment": "fix: sometimes block validator is not set"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.0.1` to `^1.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.0",
+      "tag": "@subsquid/substrate-data_v4.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`"
+          },
+          {
+            "comment": "overhaul hot block ingestion"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^4.0.0` to `^4.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.1.0` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.1",
+      "tag": "@subsquid/substrate-data_v3.0.1",
+      "date": "Thu, 19 Oct 2023 08:58:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "pass RPC client to `Runtime` instances"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.3` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.0` to `^1.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.0` to `^1.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.0",
+      "tag": "@subsquid/substrate-data_v3.0.0",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `Sudo.sudo_as` call parsing"
+          },
+          {
+            "comment": "fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala"
+          },
+          {
+            "comment": "adapt to `sts.tuple()` signature change"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "implement `Multisig.approve_as_multi` call traversal"
+          }
+        ],
+        "major": [
+          {
+            "comment": "change bit sequence JS representation in decoded data"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^3.0.0` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.2` to `^0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.1` to `^4.4.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.1` to `^4.4.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.5",
+      "tag": "@subsquid/substrate-data_v2.0.5",
+      "date": "Fri, 15 Sep 2023 11:35:40 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't panic when `Session.Validators` storage doesn't exist"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.4",
+      "tag": "@subsquid/substrate-data_v2.0.4",
+      "date": "Thu, 14 Sep 2023 12:05:35 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `Proxy.proxy` call expansion"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.3",
+      "tag": "@subsquid/substrate-data_v2.0.3",
+      "date": "Wed, 13 Sep 2023 22:16:51 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.1` to `^0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.2",
+      "tag": "@subsquid/substrate-data_v2.0.2",
+      "date": "Thu, 07 Sep 2023 20:03:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip batch call handling for polymesh network"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.0` to `^2.5.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-data_v2.0.1",
+      "date": "Thu, 07 Sep 2023 18:37:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "unwrap old batch calls"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.0",
+      "tag": "@subsquid/substrate-data_v2.0.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to a new scale type system"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^2.2.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.0` to `^4.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.0` to `^4.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.1",
+      "tag": "@subsquid/substrate-data_v1.2.1",
+      "date": "Thu, 10 Aug 2023 11:43:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove extra `0x` on storage key encoding"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.0",
+      "tag": "@subsquid/substrate-data_v1.2.0",
+      "date": "Fri, 04 Aug 2023 07:25:15 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extract and expose `RuntimeTracker`"
+          },
+          {
+            "comment": "re-export `Rpc` from raw package"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-data_v1.1.0",
+      "date": "Wed, 02 Aug 2023 22:59:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support indexing of special events and calls"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-data_v1.0.0",
+      "date": "Tue, 01 Aug 2023 16:40:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "annotate block parsing errors with `.blockHeight` and `.blockHash`"
+          },
+          {
+            "comment": "fix extrinsic fee calculation"
+          }
+        ],
+        "major": [
+          {
+            "comment": "migrate to per block runtime tracking"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.4.0` to `^2.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-data_v0.0.1",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix block validator parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/substrate-data_v0.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

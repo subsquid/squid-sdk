@@ -1,256 +1,698 @@
-import {Bytes, Bytes20, Bytes32, Bytes8, Qty} from '../interfaces/evm'
+import {Logger} from '@subsquid/logger'
+import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
+import {groupBy, last} from '@subsquid/util-internal'
+import {assertIsValid, BlockConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
+import {FiniteRange, rangeToArray, SplitRequest} from '@subsquid/util-internal-range'
+import {array, DataValidationError, GetSrcType, nullable, Validator} from '@subsquid/util-internal-validation'
+import assert from 'assert'
+import {Bytes, Bytes32, Qty} from '../interfaces/base'
+import {isEmpty} from '../mapping/schema'
+import {
+    Block,
+    DataRequest,
+    DebugFrameResult,
+    DebugStateDiffResult,
+    GetBlock,
+    GetBlockNoTransactions,
+    GetBlockWithTransactions,
+    getTraceTransactionReplayValidator,
+    Log,
+    TraceFrame,
+    TraceReplayTraces,
+    TransactionReceipt
+} from './rpc-data'
+import {getTxHash, qty2Int, toQty} from './util'
 
 
-export interface Block {
-    number: Qty
-    hash: Bytes32
-    parentHash: Bytes32
-    nonce?: Bytes8
-    sha3Uncles: Bytes32
-    logsBloom: Bytes
-    transactionsRoot: Bytes32
-    stateRoot: Bytes32
-    receiptsRoot: Bytes32
-    mixHash?: Bytes
-    miner: Bytes20
-    difficulty?: Qty
-    totalDifficulty?: Qty
-    extraData: Bytes
-    size: Qty
-    gasLimit: Qty
-    gasUsed: Qty
-    timestamp: Qty
-    baseFeePerGas?: Qty
-    transactions: Bytes32[] | Transaction[]
-    _receipts?: TransactionReceipt[]
-    _logs?: Log[]
-    _traceReplays?: TraceTransactionReplay[]
-    _debugFrames?: DebugFrameResult[]
-    _debugStateDiffs?: DebugStateDiffResult[]
-}
+const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
 
 
-export interface Transaction {
-    blockNumber: Qty
-    blockHash: Bytes32
-    from: Bytes20
-    gas: Qty
-    gasPrice: Qty
-    maxFeePerGas?: Qty
-    maxPriorityFeePerGas?: Qty
-    hash: Bytes32
-    input: Bytes
-    nonce: Qty
-    to?: Bytes20
-    transactionIndex: Qty
-    value: Qty
-    v?: Qty
-    r?: Bytes32
-    s?: Bytes32
-    yParity?: Qty
-    chainId?: Qty
-}
-
-
-export interface TransactionReceipt {
-    transactionHash: Bytes32
-    transactionIndex: Qty
-    blockHash: Bytes32
-    blockNumber: Qty
-    cumulativeGasUsed: Qty
-    effectiveGasPrice: Qty
-    gasUsed: Qty
-    contractAddress: Bytes20 | null
-    logs: Log[]
-    type: Qty
-    status: Qty
-}
-
-
-export interface Log {
-    blockNumber: Qty
-    blockHash: Bytes32
-    logIndex: Qty
-    transactionIndex: Qty
-    transactionHash: Bytes32
-    address: Bytes20
-    data: Bytes
-    topics: Bytes32[]
-}
-
-
-export interface TraceFrameBase {
-    traceAddress: number[]
-    subtraces: number
-    error: string | null
-    transactionHash?: Bytes32
-    blockHash?: Bytes32
-}
-
-
-export interface TraceCreateFrame extends TraceFrameBase {
-    type: 'create'
-    action: TraceCreateAction
-    result?: TraceCreateResult
-}
-
-
-export interface TraceCreateAction {
-    from: Bytes20
-    value: Qty
-    gas: Qty
-    init: Bytes
-}
-
-
-export interface TraceCreateResult {
-    gasUsed: Qty
-    code: Bytes
-    address: Bytes20
-}
-
-
-export interface TraceCallFrame extends TraceFrameBase {
-    type: 'call'
-    action: TraceCallAction
-    result?: TraceCallResult
-}
-
-
-export interface TraceCallAction {
-    callType: string
-    from: Bytes20
-    to: Bytes20
-    value: Qty
-    gas: Qty
-    input: Bytes
-}
-
-
-export interface TraceCallResult {
-    gasUsed: bigint
-    output: Bytes
-}
-
-
-export interface TraceSuicideFrame extends TraceFrameBase {
-    type: 'suicide'
-    action: TraceSuicideAction
-}
-
-
-export interface TraceSuicideAction {
-    address: Bytes20
-    refundAddress: Bytes20
-    balance: Qty
-}
-
-
-export interface TraceRewardFrame extends TraceFrameBase {
-    type: 'reward'
-    action: TraceRewardAction
-}
-
-
-export interface TraceRewardAction {
-    author: Bytes20
-    value: Qty
-    type: string
-}
-
-
-export type TraceFrame = TraceCreateFrame | TraceCallFrame | TraceSuicideFrame | TraceRewardFrame
-
-
-interface TraceAddDiff {
-    '+': Bytes
-    '*'?: undefined
-    '-'?: undefined
-}
-
-
-interface TraceChangeDiff {
-    '+'?: undefined
-    '*': {
-        from: Bytes
-        to: Bytes
+function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
+    return function(result: unknown) {
+        let err = validator.validate(result)
+        if (err) {
+            throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
+        } else {
+            return result as any
+        }
     }
-    '-'?: undefined
 }
 
 
-interface TraceDeleteDiff {
-    '+'?: undefined
-    '*'?: undefined
-    '-': Bytes
+export class Rpc {
+    private props: RpcProps
+
+    constructor(
+        public readonly client: RpcClient,
+        private log?: Logger,
+        private genesisHeight: number = 0,
+        private priority: number = 0,
+        props?: RpcProps
+    ) {
+        this.props = props || new RpcProps(this.client, this.genesisHeight)
+    }
+
+    withPriority(priority: number): Rpc {
+        return new Rpc(this.client, this.log, this.genesisHeight, priority, this.props)
+    }
+
+    call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
+        return this.client.call(method, params, {priority: this.priority, ...options})
+    }
+
+    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+        return this.client.batchCall(batch, {priority: this.priority, ...options})
+    }
+
+    getBlockByNumber(height: number, withTransactions: boolean): Promise<GetBlock | null> {
+        return this.call('eth_getBlockByNumber', [
+            toQty(height),
+            withTransactions
+        ], {
+            validateResult: getResultValidator(
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            )
+        })
+    }
+
+    getBlockByHash(hash: Bytes, withTransactions: boolean): Promise<GetBlock | null> {
+        return this.call('eth_getBlockByHash', [hash, withTransactions], {
+            validateResult: getResultValidator(
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            )
+        })
+    }
+
+    async getBlockHash(height: number): Promise<Bytes | undefined> {
+        let block = await this.getBlockByNumber(height, false)
+        return block?.hash
+    }
+
+    async getHeight(): Promise<number> {
+        let height: Qty = await this.call('eth_blockNumber')
+        return qty2Int(height)
+    }
+
+    async getColdBlock(blockHash: Bytes32, req?: DataRequest, finalizedHeight?: number): Promise<Block> {
+        let block = await this.getBlockByHash(blockHash, req?.transactions || false).then(toBlock)
+        if (block == null) throw new BlockConsistencyError({hash: blockHash})
+        if (req) {
+            await this.addRequestedData([block], req, finalizedHeight)
+        }
+        if (block._isInvalid) throw new BlockConsistencyError(block, block._errorMessage)
+        return block
+    }
+
+    async getColdSplit(req: SplitRequest<DataRequest>): Promise<Block[]> {
+        let blocks = await this.getColdBlockBatch(
+            rangeToArray(req.range),
+            req.request.transactions ?? false,
+            1
+        )
+        return this.addColdRequestedData(blocks, req.request, 1)
+    }
+
+    private async addColdRequestedData(blocks: Block[], req: DataRequest, depth: number): Promise<Block[]> {
+        let result = blocks.map(b => ({...b}))
+
+        await this.addRequestedData(result, req)
+
+        if (depth > 9) {
+            assertIsValid(result)
+            return result
+        }
+
+        let missing: number[] = []
+        for (let i = 0; i < result.length; i++) {
+            if (result[i]._isInvalid) {
+                missing.push(i)
+            }
+        }
+
+        if (missing.length == 0) return result
+
+        let missed = await this.addColdRequestedData(
+            missing.map(i => blocks[i]),
+            req,
+            depth + 1
+        )
+
+        for (let i = 0; i < missing.length; i++) {
+            result[missing[i]] = missed[i]
+        }
+
+        return result
+    }
+
+    private async getColdBlockBatch(numbers: number[], withTransactions: boolean, depth: number): Promise<Block[]> {
+        let result = await this.getBlockBatch(numbers, withTransactions)
+        let missing: number[] = []
+        for (let i = 0; i < result.length; i++) {
+            if (result[i] == null) {
+                missing.push(i)
+            }
+        }
+
+        if (missing.length == 0) return result as Block[]
+
+        if (depth > 9) throw new BlockConsistencyError({
+            height: numbers[missing[0]]
+        }, `failed to get finalized block after ${depth} attempts`)
+
+        let missed = await this.getColdBlockBatch(
+            missing.map(i => numbers[i]),
+            withTransactions,
+            depth + 1
+        )
+
+        for (let i = 0; i < missing.length; i++) {
+            result[missing[i]] = missed[i]
+        }
+
+        return result as Block[]
+    }
+
+    async getHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<Block[]> {
+        let blocks = await this.getBlockBatch(rangeToArray(req.range), req.request.transactions ?? false)
+
+        let chain: Block[] = []
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            if (block == null) break
+            if (i > 0 && chain[i - 1].hash !== block.block.parentHash) break
+            chain.push(block)
+        }
+
+        await this.addRequestedData(chain, req.request, req.finalizedHeight)
+
+        return trimInvalid(chain)
+    }
+
+    private async getBlockBatch(numbers: number[], withTransactions: boolean): Promise<(Block | undefined)[]> {
+        let call = numbers.map(height => {
+            return {
+                method: 'eth_getBlockByNumber',
+                params: [toQty(height), withTransactions]
+            }
+        })
+        let blocks = await this.batchCall(call, {
+            validateResult: getResultValidator(
+                withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
+            ),
+            validateError: info => {
+                // Avalanche
+                if (info.message.includes('cannot query unfinalized data')) return null
+                throw new RpcError(info)
+            }
+        })
+        return blocks.map(toBlock)
+    }
+
+    private async addRequestedData(blocks: Block[], req: DataRequest, finalizedHeight?: number): Promise<void> {
+        if (blocks.length == 0) return
+
+        let subtasks = []
+
+        if (req.logs) {
+            subtasks.push(this.addLogs(blocks))
+        }
+
+        if (req.receipts) {
+            subtasks.push(this.addReceipts(blocks))
+        }
+
+        if (req.traces || req.stateDiffs) {
+            subtasks.push(this.addTraces(blocks, req, finalizedHeight))
+        }
+
+        await Promise.all(subtasks)
+    }
+
+    private async addLogs(blocks: Block[]): Promise<void> {
+        if (blocks.length == 0) return
+
+        let logs = await this.getLogs(
+            blocks[0].height,
+            last(blocks).height
+        )
+
+        let logsByBlock = groupBy(logs, log => log.blockHash)
+
+        for (let block of blocks) {
+            let logs = logsByBlock.get(block.hash) || []
+            if (logs.length == 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
+                block._isInvalid = true
+                block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
+            } else {
+                block.logs = logs
+            }
+        }
+    }
+
+    getLogs(from: number, to: number): Promise<Log[]> {
+        return this.call('eth_getLogs', [{
+            fromBlock: toQty(from),
+            toBlock: toQty(to)
+        }], {
+            validateResult: getResultValidator(array(Log)),
+            validateError: info => {
+                if (info.message.includes('after last accepted block')) {
+                    // Regular RVM networks simply return an empty array in case
+                    // of out of range request, but Avalanche returns an error.
+                    return []
+                }
+                throw new RpcError(info)
+            }
+        }).catch(async err => {
+            let range = asTryAnotherRangeError(err)
+            if (range && range.from == from && from <= range.to && range.to < to) {
+                let result = await Promise.all([
+                    this.getLogs(range.from, range.to),
+                    this.getLogs(range.to + 1, to)
+                ])
+                return result[0].concat(result[1])
+            } else {
+                throw err
+            }
+        })
+    }
+
+    private async addReceipts(blocks: Block[]): Promise<void> {
+        let method = await this.props.getReceiptsMethod()
+        switch(method) {
+            case 'alchemy_getTransactionReceipts':
+            case 'eth_getBlockReceipts':
+                return this.addReceiptsByBlock(blocks, method)
+            default:
+                return this.addReceiptsByTx(blocks)
+        }
+    }
+
+    private async addReceiptsByBlock(
+        blocks: Block[],
+        method: 'eth_getBlockReceipts' | 'alchemy_getTransactionReceipts'
+    ): Promise<void> {
+        let call = blocks.map(block => {
+            if (method == 'eth_getBlockReceipts') {
+                return {
+                    method,
+                    params: [block.block.number]
+                }
+            } else {
+                return {
+                    method,
+                    params: [{blockHash: block.hash}]
+                }
+            }
+        })
+
+        let results: (TransactionReceipt[] | null)[] = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(array(TransactionReceipt)))
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let receipts = results[i]
+            if (receipts == null) {
+                block._isInvalid = true
+                block._errorMessage = `${method} returned null`
+            } else if (block.block.transactions.length === receipts.length) {
+                for (let receipt of receipts) {
+                    if (receipt.blockHash !== block.hash) {
+                        block._isInvalid = true
+                        block._errorMessage = `${method} returned receipts for a different block`
+                    }
+                }
+                block.receipts = receipts
+            } else {
+                block._isInvalid = true
+                block._errorMessage = `got invalid number of receipts from ${method}`
+            }
+        }
+    }
+
+    private async addReceiptsByTx(blocks: Block[]): Promise<void> {
+        let call = []
+        for (let block of blocks) {
+            for (let tx of block.block.transactions) {
+                call.push({
+                    method: 'eth_getTransactionReceipt',
+                    params: [getTxHash(tx)]
+                })
+            }
+        }
+
+        let receipts = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(TransactionReceipt))
+        })
+
+        let receiptsByBlock = groupBy(
+            receipts.filter(r => r != null) as TransactionReceipt[],
+            r => r.blockHash
+        )
+
+        for (let block of blocks) {
+            let rs = receiptsByBlock.get(block.hash) || []
+            if (rs.length === block.block.transactions.length) {
+                block.receipts = rs
+            } else {
+                block._isInvalid = true
+                block._errorMessage = 'failed to get receipts for all transactions'
+            }
+        }
+    }
+
+    private async addTraceTxReplays(
+        blocks: Block[],
+        traces: TraceReplayTraces,
+        method: string = 'trace_replayBlockTransactions'
+    ): Promise<void> {
+        let tracers: string[] = []
+
+        if (traces.trace) {
+            tracers.push('trace')
+        }
+
+        if (traces.stateDiff) {
+            tracers.push('stateDiff')
+        }
+
+        if (tracers.length == 0) return
+
+        let call = blocks.map(block => ({
+            method,
+            params: [block.block.number, tracers]
+        }))
+
+        let replaysByBlock = await this.batchCall(call, {
+            validateResult: getResultValidator(
+                array(getTraceTransactionReplayValidator(traces))
+            )
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let replays = replaysByBlock[i]
+            let txs = new Set(block.block.transactions.map(getTxHash))
+
+            for (let rep of replays) {
+                if (!rep.transactionHash) { // FIXME: Who behaves like that? Arbitrum?
+                    let txHash: Bytes32 | null | undefined = undefined
+                    for (let frame of rep.trace || []) {
+                        assert(txHash == null || txHash === frame.transactionHash)
+                        txHash = txHash || frame.transactionHash
+                    }
+                    assert(txHash, "Can't match transaction replay with its transaction")
+                    rep.transactionHash = txHash
+                }
+                // Sometimes replays might be missing. FIXME: when?
+                if (!txs.has(rep.transactionHash)) {
+                    block._isInvalid = true
+                    block._errorMessage = `${method} returned a trace of a different block`
+                }
+            }
+
+            block.traceReplays = replays
+        }
+    }
+
+    private async addTraceBlockTraces(blocks: Block[]): Promise<void> {
+        let call = blocks.map(block => ({
+            method: 'trace_block',
+            params: [block.block.number]
+        }))
+
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(array(TraceFrame))
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+            if (frames.length == 0) {
+                if (block.block.transactions.length > 0) {
+                    block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
+                }
+            } else {
+                for (let frame of frames) {
+                    if (frame.blockHash !== block.hash) {
+                        block._isInvalid = true
+                        block._errorMessage = 'trace_block returned a trace of a different block'
+                        break
+                    }
+                }
+                if (!block._isInvalid) {
+                    block.traceReplays = []
+                    let byTx = groupBy(frames, f => f.transactionHash)
+                    for (let [transactionHash, txFrames] of byTx.entries()) {
+                        if (transactionHash) {
+                            block.traceReplays.push({
+                                transactionHash,
+                                trace: txFrames
+                            })
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
+        let traceConfig = {
+            tracer: 'callTracer',
+            tracerConfig: {
+                onlyTopCall: false,
+                withLog: false, // will study log <-> frame matching problem later
+                timeout: req.debugTraceTimeout
+            }
+        }
+
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
+
+        let validateFrameResult = getResultValidator(array(DebugFrameResult))
+
+        let results = await this.batchCall(call, {
+            validateResult: result => {
+                if (Array.isArray(result)) {
+                    // Moonbeam quirk
+                    for (let i = 0; i < result.length; i++) {
+                        if (!('result' in result[i])) {
+                            result[i] = {result: result[i]}
+                        }
+                    }
+                }
+                return validateFrameResult(result)
+            },
+            validateError: captureNotFound
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+            if (frames == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else if (block.block.transactions.length === frames.length) {
+                block.debugFrames = frames
+            } else {
+                block.debugFrames = this.matchDebugTrace(
+                    'debug call frame',
+                    block,
+                    frames
+                )
+            }
+        }
+    }
+
+    private async addDebugStateDiffs(blocks: Block[], req: DataRequest): Promise<void> {
+        let traceConfig = {
+            tracer: 'prestateTracer',
+            tracerConfig: {
+                onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
+                diffMode: true,
+                timeout: req.debugTraceTimeout
+            }
+        }
+
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
+
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(array(DebugStateDiffResult)),
+            validateError: captureNotFound
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let diffs = results[i]
+            if (diffs == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else if (block.block.transactions.length === diffs.length) {
+                block.debugStateDiffs = diffs
+            } else {
+                block.debugStateDiffs = this.matchDebugTrace(
+                    'debug state diff',
+                    block,
+                    diffs
+                )
+            }
+        }
+    }
+
+    private matchDebugTrace<T extends {txHash?: Bytes | null}>(type: string, block: Block, trace: T[]): (T | undefined)[] {
+        let mapping = new Map(trace.map(t => [t.txHash, t]))
+        let out = new Array(block.block.transactions.length)
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let txHash = getTxHash(block.block.transactions[i])
+            let rec = mapping.get(txHash)
+            if (rec) {
+                out[i] = rec
+            } else {
+                this.log?.warn({
+                    blockHeight: block.height,
+                    blockHash: block.hash,
+                    transactionIndex: i,
+                    transactionHash: txHash
+                }, `no ${type} for transaction`)
+            }
+        }
+        return out
+    }
+
+    private async addArbitrumOneTraces(blocks: Block[], req: DataRequest): Promise<void> {
+        if (req.stateDiffs) {
+            throw new Error('State diffs are not supported on Arbitrum One')
+        }
+        if (!req.traces) return
+
+        let arbBlocks = blocks.filter(b => b.height <= 22207815)
+        let debugBlocks = blocks.filter(b => b.height >= 22207818)
+
+        if (arbBlocks.length) {
+            await this.addTraceTxReplays(arbBlocks, {trace: true}, 'arbtrace_replayBlockTransactions')
+        }
+
+        if (debugBlocks.length) {
+            await this.addDebugFrames(debugBlocks, req)
+        }
+    }
+
+    private async addTraces(
+        blocks: Block[],
+        req: DataRequest,
+        finalizedHeight: number = Number.MAX_SAFE_INTEGER
+    ): Promise<void> {
+        let isArbitrumOne = await this.props.getGenesisHash() === '0x7ee576b35482195fc49205cec9af72ce14f003b9ae69f6ba0faef4514be8b442'
+        if (isArbitrumOne) return this.addArbitrumOneTraces(blocks, req)
+
+        let tasks: Promise<void>[] = []
+        let replayTraces: TraceReplayTraces = {}
+
+        if (req.stateDiffs) {
+            if (finalizedHeight < last(blocks).height || req.useDebugApiForStateDiffs) {
+                tasks.push(this.addDebugStateDiffs(blocks, req))
+            } else {
+                replayTraces.stateDiff = true
+            }
+        }
+
+        if (req.traces) {
+            if (req.preferTraceApi) {
+                if (finalizedHeight < last(blocks).height || isEmpty(replayTraces)) {
+                    tasks.push(this.addTraceBlockTraces(blocks))
+                } else {
+                    replayTraces.trace = true
+                }
+            } else {
+                tasks.push(this.addDebugFrames(blocks, req))
+            }
+        }
+
+        if (!isEmpty(replayTraces)) {
+            tasks.push(this.addTraceTxReplays(blocks, replayTraces))
+        }
+
+        await Promise.all(tasks)
+    }
 }
 
 
-export type TraceDiff = '=' | TraceAddDiff | TraceChangeDiff | TraceDeleteDiff
+type GetReceiptsMethod =
+    'eth_getTransactionReceipt' |
+    'eth_getBlockReceipts' |
+    'alchemy_getTransactionReceipts'
 
 
-export interface TraceStateDiff {
-    balance: TraceDiff
-    code: TraceDiff
-    nonce: TraceDiff
-    storage: Record<Bytes20, TraceDiff>
+class RpcProps {
+    private genesisHash?: Bytes
+    private receiptsMethod?: GetReceiptsMethod
+
+    constructor(
+        private client: RpcClient,
+        private genesisHeight: number = 0
+    ) {}
+
+    async getGenesisHash(): Promise<Bytes> {
+        if (this.genesisHash) return this.genesisHash
+        let rpc = new Rpc(this.client)
+        let hash = await rpc.getBlockHash(this.genesisHeight)
+        if (hash == null) throw new Error(`block ${this.genesisHeight} is not known to ${this.client.url}`)
+        return this.genesisHash = hash
+    }
+
+    async getReceiptsMethod(): Promise<GetReceiptsMethod> {
+        if (this.receiptsMethod) return this.receiptsMethod
+
+        let alchemy = await this.client.call('alchemy_getTransactionReceipts', [{blockNumber: '0x1'}]).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (alchemy) return this.receiptsMethod = 'alchemy_getTransactionReceipts'
+
+        let eth = await this.client.call('eth_getBlockReceipts', ['latest']).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (eth) return this.receiptsMethod = 'eth_getBlockReceipts'
+
+        return this.receiptsMethod = 'eth_getTransactionReceipt'
+    }
 }
 
 
-export interface TraceTransactionReplay {
-    transactionHash: Bytes32
-    trace?: TraceFrame[]
-    stateDiff?: Record<Bytes20, TraceStateDiff>
+function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
+    if (!(err instanceof RpcError)) return
+    let m = /Try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
+    if (m == null) return
+    let from = qty2Int(m[1])
+    let to = qty2Int(m[2])
+    if (from <= to) return {from, to}
 }
 
 
-export type TraceTracers = 'trace' | 'stateDiff'
-
-
-export interface DebugFrame {
-    type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT' | 'INVALID'
-    from: Bytes20
-    to: Bytes20
-    value?: Qty
-    gas: Qty
-    gasUsed: Qty
-    input: Bytes
-    output: Bytes
-    error?: string
-    revertReason?: string
-    calls?: DebugFrame[]
+function toBlock(getBlock: GetBlock): Block
+function toBlock(getBlock?: null): undefined
+function toBlock(getBlock?: GetBlock | null): Block | undefined
+function toBlock(getBlock?: GetBlock | null): Block | undefined {
+    if (getBlock == null) return
+    return {
+        height: qty2Int(getBlock.number),
+        hash: getBlock.hash,
+        block: getBlock
+    }
 }
 
 
-export interface DebugFrameResult {
-    result: DebugFrame
-}
-
-
-export interface DebugStateMap {
-    balance?: Qty
-    code?: Bytes
-    nonce?: number
-    storage?: Record<Bytes32, Bytes>
-}
-
-
-export interface DebugStateDiff {
-    pre: Record<Bytes20, DebugStateMap>
-    post: Record<Bytes20, DebugStateMap>
-}
-
-
-export interface DebugStateDiffResult {
-    result: DebugStateDiff
-}
-
-
-export interface DataRequest {
-    logs: boolean
-    transactions: boolean
-    receipts: boolean
-    traces: boolean
-    stateDiffs: boolean
-    transactionList?: boolean
+function captureNotFound(info: RpcErrorInfo): null {
+    if (info.message.includes('not found')) return null
+    throw new RpcError(info)
 }

@@ -1,29 +1,32 @@
+import {Bytes} from '@subsquid/substrate-runtime'
+import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
-import {ChainContext, Event} from './interfaces'
-import {registry} from './registry'
+import {Event, EventType} from './types'
+
+
+const EvmLogType: sts.Type<EvmLog> = sts.struct({
+    address: sts.bytes(),
+    data: sts.bytes(),
+    topics: sts.array(sts.bytes)
+})
+
+
+const EvmLogEventLegacy = new EventType(EvmLogType)
+const EvmLogEventLatest = new EventType(sts.struct({log: EvmLogType}))
+
 
 export interface EvmLog {
-    address: string
-    data: string
-    topics: string[]
+    address: Bytes
+    data: Bytes
+    topics: Bytes[]
 }
 
-export function getEvmLog(ctx: ChainContext, event: Event): EvmLog {
+
+export function getEvmLog(event: Event): EvmLog {
     assert(event.name === 'EVM.Log')
-    switch (ctx._chain.runtime.getEventTypeHash('EVM.Log')) {
-        case registry.getHash('EVM.LogV0'):
-            return getAsV0(event.args)
-        case registry.getHash('EVM.LogV1'):
-            return getAsV1(event.args)
-        default:
-            throw new Error('Unknown "EVM.Log" version')
+    if (EvmLogEventLegacy.is(event)) {
+        return EvmLogEventLegacy.decode(event)
+    } else {
+        return EvmLogEventLatest.decode(event).log
     }
-}
-
-export function getAsV0(args: any): EvmLog {
-    return args
-}
-
-export function getAsV1(args: any): EvmLog {
-    return args.log
 }

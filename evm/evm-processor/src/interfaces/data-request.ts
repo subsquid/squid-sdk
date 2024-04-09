@@ -1,5 +1,6 @@
+import {Bytes, Bytes20, Bytes32} from './base'
 import {FieldSelection} from './data'
-import {Bytes, Bytes20, Bytes32, EvmStateDiff} from './evm'
+import {EvmStateDiff} from './evm'
 
 
 export interface DataRequest {
@@ -19,6 +20,8 @@ export interface LogRequest {
     topic2?: Bytes32[]
     topic3?: Bytes32[]
     transaction?: boolean
+    transactionTraces?: boolean
+    transactionLogs?: boolean
 }
 
 
@@ -36,10 +39,12 @@ export interface TraceRequest {
     type?: string[]
     createFrom?: Bytes20[]
     callTo?: Bytes20[]
+    callFrom?: Bytes20[]
     callSighash?: Bytes[]
     suicideRefundAddress?: Bytes[]
     rewardAuthor?: Bytes20[]
     transaction?: boolean
+    transactionLogs?: boolean
     subtraces?: boolean
     parents?: boolean
 }

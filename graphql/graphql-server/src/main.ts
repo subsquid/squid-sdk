@@ -2,6 +2,7 @@ import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {nat} from '@subsquid/util-internal-commander'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
+import {registerTsNodeIfRequired} from '@subsquid/util-internal-ts-node'
 import assert from 'assert'
 import {Command, Option} from 'commander'
 import {DumbInMemoryCacheOptions, DumbRedisCacheOptions, Server} from './server'
@@ -39,7 +40,10 @@ runProgram(async () => {
         subscriptions?: boolean
         subscriptionPollInterval: number
         subscriptionMaxResponseSize?: number
+        tsNode?: boolean
     }
+
+    await registerTsNodeIfRequired()
 
     let {maxRequestSize, maxResponseSize, subscriptionMaxResponseSize, dumbCache: dumbCacheType, ...rest} = opts
 

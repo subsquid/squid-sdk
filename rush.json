@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.100.1",
+  "rushVersion": "5.117.9",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "8.6.5",
+  "pnpmVersion": "8.8.0",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=16.13.1 <19.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <21.0.0",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -290,7 +290,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid",
+     "url": "https://github.com/subsquid/squid"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -336,37 +336,6 @@
      */
     "postRushBuild": []
   },
-
-  /**
-   * Installation variants allow you to maintain a parallel set of configuration files that can be
-   * used to build the entire monorepo with an alternate set of dependencies.  For example, suppose
-   * you upgrade all your projects to use a new release of an important framework, but during a transition period
-   * you intend to maintain compatibility with the old release.  In this situation, you probably want your
-   * CI validation to build the entire repo twice: once with the old release, and once with the new release.
-   *
-   * Rush "installation variants" correspond to sets of config files located under this folder:
-   *
-   *   common/config/rush/variants/<variant_name>
-   *
-   * The variant folder can contain an alternate common-versions.json file.  Its "preferredVersions" field can be used
-   * to select older versions of dependencies (within a loose SemVer range specified in your package.json files).
-   * To install a variant, run "rush install --variant <variant_name>".
-   *
-   * For more details and instructions, see this article:  https://rushjs.io/pages/advanced/installation_variants/
-   */
-  "variants": [
-    // {
-    //   /**
-    //    * The folder name for this variant.
-    //    */
-    //   "variantName": "old-sdk",
-    //
-    //   /**
-    //    * An informative description
-    //    */
-    //   "description": "Build this repo using the previous release of the SDK"
-    // }
-  ],
 
   /**
    * Rush can collect anonymous telemetry about everyday developer activity such as
@@ -497,6 +466,41 @@
       "shouldPublish": false
     },
     {
+      "packageName": "@subsquid/borsh",
+      "projectFolder": "solana/borsh",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-data",
+      "projectFolder": "solana/solana-data",
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-dump",
+      "projectFolder": "solana/solana-dump",
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "projectFolder": "solana/solana-ingest",
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-processor",
+      "projectFolder": "solana/solana-processor",
+      "shouldPublish": false
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",
       "shouldPublish": true,
@@ -505,6 +509,12 @@
     {
       "packageName": "@subsquid/scale-codec",
       "projectFolder": "substrate/scale-codec",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "projectFolder": "substrate/scale-type-system",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -545,8 +555,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/substrate-metadata",
-      "projectFolder": "substrate/substrate-metadata",
+      "packageName": "@subsquid/substrate-runtime",
+      "projectFolder": "substrate/substrate-runtime",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -555,6 +565,12 @@
       "projectFolder": "substrate/substrate-metadata-explorer",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/substrate-metadata-service",
+      "projectFolder": "substrate/substrate-metadata-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/substrate-processor",
@@ -599,12 +615,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "chain-status-service",
-      "projectFolder": "util/chain-status-service",
-      "shouldPublish": true,
-      "versionPolicyName": "docker"
-    },
-    {
       "packageName": "@subsquid/commands",
       "projectFolder": "util/commands",
       "shouldPublish": true,
@@ -631,6 +641,12 @@
     {
       "packageName": "@subsquid/util-internal",
       "projectFolder": "util/util-internal",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-archive-client",
+      "projectFolder": "util/util-internal-archive-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -671,6 +687,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "projectFolder": "util/util-internal-dump-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
       "shouldPublish": true,
@@ -689,14 +711,32 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-ingest-cli",
+      "projectFolder": "util/util-internal-ingest-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-ingest-tools",
       "projectFolder": "util/util-internal-ingest-tools",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-ts-node",
+      "projectFolder": "util/util-internal-ts-node",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-json",
       "projectFolder": "util/util-internal-json",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-json-fix-unsafe-integers",
+      "projectFolder": "util/util-internal-json-fix-unsafe-integers",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -725,6 +765,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-validation",
+      "projectFolder": "util/util-internal-validation",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
@@ -748,13 +794,18 @@
       "shouldPublish": false
     },
     {
+      "packageName": "borsh-bench",
+      "projectFolder": "test/borsh-bench",
+      "shouldPublish": false
+    },
+    {
       "packageName": "data-test",
       "projectFolder": "test/data",
       "shouldPublish": false
     },
     {
-      "packageName": "eth-usdc-transfers",
-      "projectFolder": "test/eth-usdc-transfers",
+      "packageName": "erc20-transfers",
+      "projectFolder": "test/erc20-transfers",
       "shouldPublish": false
     },
     {
@@ -775,6 +826,11 @@
     {
       "packageName": "shibuya-psp22",
       "projectFolder": "test/shibuya-psp22",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "solana-example",
+      "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
 //    {

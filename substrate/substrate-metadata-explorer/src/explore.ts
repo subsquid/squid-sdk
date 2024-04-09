@@ -1,7 +1,7 @@
-import {Logger} from "@subsquid/logger"
-import {last} from "@subsquid/util-internal"
-import {Out} from "./out"
-import {SpecVersion, SpecVersionRecord} from "./specVersion"
+import {Logger} from '@subsquid/logger'
+import {last} from '@subsquid/util-internal'
+import {Out} from './out'
+import {SpecVersion, SpecVersionRecord} from './specVersion'
 
 
 export interface ExploreApi {
@@ -22,7 +22,7 @@ export async function explore(api: ExploreApi, out: Out, log?: Logger): Promise<
     for (let known of knownVersions) {
         log?.info(`checking ${known.specName}@${known.specVersion} block ${known.blockNumber} against current chain`)
         let current = await api.getVersionRecord(known.blockNumber)
-        if (known.blockHash === current?.blockHash) {
+        if (current?.blockHash && known.blockHash.startsWith(current.blockHash)) {
             matched += 1
         } else {
             log?.info('record mismatch')

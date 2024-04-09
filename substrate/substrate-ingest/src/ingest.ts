@@ -1,184 +1,83 @@
-import {createLogger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
-import {Block, DataRequest, Parser, RpcDataSource} from '@subsquid/substrate-data'
+import {Parser} from '@subsquid/substrate-data'
 import * as raw from '@subsquid/substrate-data-raw'
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
-import {assertNotNull, def, ensureError, wait} from '@subsquid/util-internal'
-import {ArchiveLayout, DataChunk, getChunkPath} from '@subsquid/util-internal-archive-layout'
-import {createFs} from '@subsquid/util-internal-fs'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypesBundle,
+    readOldTypesBundle
+} from '@subsquid/substrate-runtime/lib/metadata'
+import {def} from '@subsquid/util-internal'
+import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
-import {assertRange, Range, rangeEnd, RangeRequestList} from '@subsquid/util-internal-range'
-import * as readline from 'readline'
-import {Writable} from 'stream'
-import {pipeline} from 'stream/promises'
-import {createGunzip} from 'zlib'
 
 
-export interface IngestOptions {
-    rawArchive?: string
-    endpoint?: string
-    endpointCapacity: number
-    endpointRateLimit?: number
-    firstBlock?: number
-    lastBlock?: number
+interface Options extends IngestOptions {
     typesBundle?: string
 }
 
 
-export class Ingest {
-    private log = createLogger('sqd:substrate-ingest')
+export class SubstrateIngest extends Ingest<Options> {
+    protected getLoggingNamespace(): string {
+        return 'sqd:substrate-ingest'
+    }
 
-    constructor(private options: IngestOptions) {}
+    protected hasRpc(): 'required' | boolean {
+        return 'required'
+    }
 
-    @def
-    range(): Range {
-        let range = {
-            from: this.options.firstBlock ?? 0,
-            to: this.options.lastBlock
-        }
-        assertRange(range)
-        return range
+    protected setUpProgram(program: Command) {
+        program.description('Data decoder and fetcher for substrate based chains')
+        program.option('--types-bundle <file>', 'JSON file with custom type definitions')
     }
 
     @def
-    dataRequest(): RangeRequestList<DataRequest> {
-        return [{
-            range: this.range(),
-            request: {
-                blockValidator: true,
-                blockTimestamp: true,
-                events: true,
-                calls: true,
-                extrinsicHash: true,
-                extrinsicFee: true
-            }
-        }]
+    private typesBundle(): OldTypesBundle | OldSpecsBundle | undefined {
+        let {typesBundle} = this.options()
+        if (typesBundle == null) return
+        return getOldTypesBundle(typesBundle) || readOldTypesBundle(typesBundle)
     }
 
-    @def
-    rpc(): RpcClient {
-        return new RpcClient({
-            url: assertNotNull(this.options.endpoint, 'chain RPC endpoint is required'),
-            capacity: this.options.endpointCapacity,
-            rateLimit: this.options.endpointRateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER
+    private async *getRawBlocksFromRpc(range: Range): AsyncIterable<raw.BlockData[]> {
+        let src = new raw.RpcDataSource({
+            rpc: this.rpc()
         })
-    }
-
-    @def
-    typesBundle(): OldTypesBundle | OldSpecsBundle | undefined {
-        if (this.options.typesBundle == null) return
-        return getOldTypesBundle(this.options.typesBundle) || readOldTypesBundle(this.options.typesBundle)
-    }
-
-    @def
-    private archive(): ArchiveLayout {
-        let fs = createFs(assertNotNull(this.options.rawArchive))
-        return new ArchiveLayout(fs)
-    }
-
-    private async *getArchiveChunks(): AsyncIterable<DataChunk> {
-        let range = this.range()
-        while (true) {
-            for await (let chunk of this.archive().getDataChunks(range)) {
-                yield chunk
-                if (chunk.to >= rangeEnd(range)) return
+        for await (let batch of src.getFinalizedBlocks([{
+            range,
+            request: {
+                runtimeVersion: true,
+                extrinsics: true,
+                events: true
             }
-            this.log.info('waiting 1 minute for new chunks')
-            await wait(60_000)
+        }])) {
+            yield batch.blocks
         }
     }
 
-    private async archiveIngest(cb: (blocks: Block[]) => Promise<void>): Promise<void> {
-        let range = this.range()
-
+    protected async *getBlocks(range: Range): AsyncIterable<object[]> {
         let parser = new Parser(
             new raw.Rpc(this.rpc()),
-            this.dataRequest(),
+            [{
+                range,
+                request: {
+                    blockValidator: true,
+                    blockTimestamp: true,
+                    events: true,
+                    extrinsics: {
+                        fee: true,
+                        hash: true
+                    }
+                }
+            }],
             this.typesBundle()
         )
 
-        const process = async (rawBlocks: raw.BlockData[]) => {
-            if (rawBlocks.length == 0) return
-            let blocks = await parser.parse(rawBlocks)
-            await cb(blocks)
-        }
+        let blockStream = this.hasArchive()
+            ? this.archive().getRawBlocks<raw.BlockData>(range)
+            : this.getRawBlocksFromRpc(range)
 
-        for await (let chunk of this.getArchiveChunks()) {
-            this.log.info(`processing chunk ${getChunkPath(chunk)}`)
-            let fs = this.archive().getChunkFs(chunk)
-            await pipeline(
-                await fs.readStream('blocks.jsonl.gz'),
-                createGunzip(),
-                input => readline.createInterface({input, crlfDelay: Infinity}),
-                async lines => {
-                    let batch = []
-                    for await (let line of lines) {
-                        let block: raw.BlockData = JSON.parse(line)
-                        if (range.from <= block.height && block.height <= rangeEnd(range)) {
-                            batch.push(block)
-                            if (batch.length >= 20) {
-                                await process(batch)
-                                batch = []
-                            }
-                        }
-                    }
-                    await process(batch)
-                }
-            )
+        for await (let batch of blockStream) {
+            let blocks = await parser.parseCold(batch)
+            yield toJSON(blocks)
         }
     }
-
-    private async rpcIngest(cb: (blocks: Block[]) => Promise<void>): Promise<void> {
-        let ds = new RpcDataSource({
-            rpc: this.rpc(),
-            typesBundle: this.typesBundle()
-        })
-
-        for await (let batch of ds.getFinalizedBlocks(this.dataRequest())) {
-            await cb(batch.blocks)
-        }
-    }
-
-    private async dumpToStdout(blocks: Block[]): Promise<void> {
-        let flushed = true
-        for (let block of blocks) {
-            flushed = process.stdout.write(JSON.stringify(toJSON(block)) + '\n')
-        }
-        if (!flushed) {
-            await waitDrain(process.stdout)
-        }
-    }
-
-    @def
-    async run(): Promise<void> {
-        if (this.options.rawArchive) {
-            await this.archiveIngest(blocks => this.dumpToStdout(blocks))
-        } else {
-            await this.rpcIngest(blocks => this.dumpToStdout(blocks))
-        }
-    }
-}
-
-
-function waitDrain(out: Writable): Promise<void> {
-    return new Promise((resolve, reject) => {
-        function cleanup() {
-            out.removeListener('error', error)
-            out.removeListener('drain', drain)
-        }
-
-        function drain() {
-            cleanup()
-            resolve()
-        }
-
-        function error(err: any) {
-            cleanup()
-            reject(ensureError(err))
-        }
-
-        out.on('drain', drain)
-        out.on('error', error)
-    })
 }

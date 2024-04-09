@@ -4,6 +4,15 @@ import assert from 'assert'
 import {FiniteRange, Range, RangeList, RangeRequest, RangeRequestList} from './interfaces'
 
 
+export function isRange(obj: any): obj is Range {
+    return typeof obj == 'object'
+        && obj
+        && Number.isSafeInteger(obj.from)
+        && obj.from >= 0
+        && (obj.to == null || Number.isSafeInteger(obj.to) && obj.from <= obj.to)
+}
+
+
 export function assertRange(range: Range): void {
     assert(Number.isSafeInteger(range.from))
     assert(range.to == null || Number.isSafeInteger(range.to))
@@ -140,4 +149,23 @@ export function printRange(range?: Range): string {
     } else {
         return `[${range?.from ?? 0})`
     }
+}
+
+
+export function mapRangeRequestList<T, R>(requests: RangeRequestList<T>, f: (req: T) => R): RangeRequestList<R> {
+    return requests.map(req => {
+        return {
+            range: req.range,
+            request: f(req.request)
+        }
+    })
+}
+
+
+export function rangeToArray(range: FiniteRange): number[] {
+    let result: number[] = new Array(range.to - range.from + 1)
+    for (let i = 0; i < result.length; i++) {
+        result[i] = range.from + i
+    }
+    return result
 }

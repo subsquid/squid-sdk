@@ -38,7 +38,7 @@ export function tryParseTop(s: string): number | undefined {
 
 
 export function tryParseChunkDir(s: string): Omit<DataChunk, 'top'> | undefined {
-    let m = /^(\d+)-(\d+)-([0-9a-f]+)$/i.exec(s)
+    let m = /^(\d+)-(\d+)-([0-9a-z]+)$/i.exec(s)
     if (m) {
         let from = parseInt(m[1])
         let to = parseInt(m[2])

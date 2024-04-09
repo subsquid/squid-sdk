@@ -1,6 +1,35 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jan 2024 16:47:41 GMT and should not be manually modified.
+
+## 3.3.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add `.is()` methods to support classes
+
+## 3.2.4
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+
+## 3.2.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 3.2.2
+Thu, 27 Jul 2023 13:21:04 GMT
+
+### Patches
+
+- bump `ethers` peer to `^6.6.5`
 
 ## 3.2.1
 Wed, 19 Jul 2023 16:48:14 GMT

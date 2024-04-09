@@ -1,12 +1,13 @@
-import {getUnwrappedType} from "@subsquid/scale-codec/lib/types-codec"
-import {ChainDescription, getTypeHash, Ti, Type, TypeKind} from "@subsquid/substrate-metadata"
-import assert from "assert"
+import {RuntimeDescription, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
+import {getTypeHash} from '@subsquid/substrate-runtime/lib/sts'
+import assert from 'assert'
 import {asOptionType, asResultType} from './util'
+
 
 /**
  * Assign names to types
  */
-export function assignNames(d: ChainDescription): Map<Ti, string> {
+export function assignNames(d: RuntimeDescription): Map<Ti, string> {
     let names = new Names(d.types)
 
     // assign good names for events and calls
@@ -37,25 +38,23 @@ function forEachPallet(types: Type[], ti: Ti, cb: (name: string, ti: Ti) => void
 export class Names {
     private assignment = new Map<Ti, string>()
     private assigned = new Map<string, string>() // Map<Name, TypeHash>
-    private reserved = new Set<string>(['Result', 'Option'])
+    private reserved = new Set<string>(['Result', 'Option', 'Bytes', 'BitSequence'])
     private aliases = new Map<Ti, Set<string>>()
 
     constructor(private types: Type[]) {}
 
     assign(ti: Ti, name: string): void {
-        assert(this.isValidAssignment(ti, name))
+        assert(this.isFree(name))
         this.assigned.set(name, getTypeHash(this.types, ti))
         this.assignment.set(ti, name)
     }
 
-    private isValidAssignment(ti: Ti, name: string): boolean {
-        if (this.reserved.has(name)) return false
-        let hash = this.assigned.get(name)
-        return hash == null || getTypeHash(this.types, ti) == hash
+    private isFree(name: string): boolean {
+        return !(this.reserved.has(name) || this.assigned.has(name))
     }
 
     reserve(name: string): void {
-        assert(!this.assigned.has(name))
+        assert(this.isFree(name))
         this.reserved.add(name)
     }
 
@@ -74,13 +73,13 @@ export class Names {
             if (!needsName(this.types, ti)) return
 
             let name = deriveName(type)
-            if (name && this.isValidAssignment(ti, name)) {
+            if (name && this.isFree(name)) {
                 this.assign(ti, name)
                 return
             }
 
             for (let name of this.aliases.get(ti)?.values() || []) {
-                if (this.isValidAssignment(ti, name)) {
+                if (this.isFree(name)) {
                     this.assign(ti, name)
                     return
                 }
@@ -91,10 +90,22 @@ export class Names {
 
         this.types.forEach((type, ti) => {
             if (this.assignment.has(ti)) return
+            if (type.kind == TypeKind.Sequence) return
+
+            let name = deriveName(type)
+            if (name && this.isFree(name)) {
+                this.assign(ti, name)
+            }
+        })
+
+        this.types.forEach((type, ti) => {
+            if (this.assignment.has(ti)) return
+            if (type.kind == TypeKind.Sequence) return
+
             let aliases = this.aliases.get(ti)
             if (aliases?.size !== 1) return
             let name = Array.from(aliases)[0]
-            if (this.isValidAssignment(ti, name)) {
+            if (this.isFree(name)) {
                 this.assign(ti, name)
             }
         })
@@ -105,7 +116,7 @@ export class Names {
 
 
 /**
- * Derive "the best" name from a path.
+ * Derive "the best" name from the path.
  */
 export function deriveName(type: Type): string | undefined {
     if (!type.path?.length) return undefined
@@ -120,10 +131,10 @@ export function deriveName(type: Type): string | undefined {
 
 
 export function needsName(types: Type[], ti: Ti): boolean {
-    let type = getUnwrappedType(types, ti)
-    switch(type.kind) {
+    let ty = types[ti]
+    switch(ty.kind) {
         case TypeKind.Variant:
-            return !(asResultType(type) || asOptionType(type))
+            return !asResultType(ty) && !asOptionType(ty)
         case TypeKind.Composite:
             return true
         default:

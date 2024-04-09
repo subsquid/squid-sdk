@@ -1,6 +1,93 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 3.6.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- use new ingest CLI framework
+
+## 3.5.1
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 3.5.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- upgrade `@subsquid/*` dependencies
+
+### Patches
+
+- update dependencies
+
+## 3.4.5
+Thu, 19 Oct 2023 08:58:05 GMT
+
+_Version update only_
+
+## 3.4.4
+Wed, 11 Oct 2023 19:13:41 GMT
+
+### Patches
+
+- fix service response completion
+
+## 3.4.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- fix `Sudo.sudo_as` call parsing
+- fix handling of `TransactionPayment.TransactionFeePaid` in Karura/Acala
+- update dependencies
+
+## 3.4.2
+Wed, 13 Sep 2023 22:16:51 GMT
+
+_Version update only_
+
+## 3.4.1
+Tue, 12 Sep 2023 08:42:04 GMT
+
+_Version update only_
+
+## 3.4.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Minor changes
+
+- migrate to new substrate runtime packages
+
+## 3.3.0
+Wed, 23 Aug 2023 14:37:23 GMT
+
+### Minor changes
+
+- add `--endpoint-max-batch-call-size` cli option
+
+## 3.2.0
+Wed, 02 Aug 2023 22:59:19 GMT
+
+### Minor changes
+
+- support indexing of special events and calls
+
+## 3.1.1
+Tue, 01 Aug 2023 16:40:12 GMT
+
+_Version update only_
+
+## 3.1.0
+Thu, 27 Jul 2023 13:21:04 GMT
+
+### Minor changes
+
+- introduce HTTP service mode
 
 ## 3.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

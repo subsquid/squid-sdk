@@ -1,24 +1,15 @@
-import {Codec as ScaleCodec, JsonCodec} from '@subsquid/scale-codec'
-import {
-    ChainDescription,
-    decodeExtrinsic,
-    decodeMetadata,
-    encodeExtrinsic,
-    getChainDescriptionFromMetadata,
-    getOldTypesBundle
-} from '@subsquid/substrate-metadata'
+import {HttpClient} from '@subsquid/http-client'
+import {RpcClient} from '@subsquid/rpc-client'
 import {readSpecVersions, SpecVersion} from '@subsquid/substrate-metadata-explorer/lib/specVersion'
-import * as eac from '@subsquid/substrate-metadata/lib/events-and-calls'
-import {getTypesFromBundle} from '@subsquid/substrate-metadata/lib/old/typesBundle'
+import {Bytes, Runtime} from '@subsquid/substrate-runtime'
+import {decodeMetadata} from '@subsquid/substrate-runtime/lib/metadata'
 import {assertNotNull, def, last} from '@subsquid/util-internal'
 import {toHex} from '@subsquid/util-internal-hex'
-import {HttpClient} from '@subsquid/http-client'
 import {readLines} from '@subsquid/util-internal-read-lines'
-import {RpcClient} from '@subsquid/util-internal-resilient-rpc'
+import assert from 'assert'
 import expect from 'expect'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as pg from 'pg'
 import {ProgressReporter} from './util'
 
 
@@ -33,45 +24,6 @@ export class Chain {
     @def
     versions(): SpecVersion[] {
         return readSpecVersions(this.item('versions.jsonl'))
-    }
-
-    async selectTestBlocks(): Promise<void> {
-        let selected = new Set(this.readIfExists<number[]>('block-numbers.json'))
-        let maxSelected = -1
-        for (let b of selected.values()) {
-            maxSelected = Math.max(maxSelected, b)
-        }
-        let versions = this.description()
-        await this.withDatabase(async db => {
-            for (let i = 0; i < versions.length; i++) {
-                let beg = versions[i].blockNumber + 1
-                let end = i + 1 < versions.length ? versions[i+1].blockNumber : beg + 10000
-                if (end < maxSelected) continue
-                let v = versions[i]
-                for (let event in v.events.definitions) {
-                    let result = await db.query({
-                        text: `SELECT block_number FROM substrate_event WHERE name = $1 AND block_number >= $2 AND block_number <= $3 LIMIT 5`,
-                        values: [event, beg, end]
-                    })
-                    result.rows.forEach(row => {
-                        selected.add(Number.parseInt(row.block_number))
-                    })
-                    console.log(`spec: ${v.specVersion}, total: ${selected.size}, event: ${event}`)
-                }
-                for (let call in v.calls.definitions) {
-                    let result = await db.query({
-                        text: `SELECT block_number FROM substrate_extrinsic WHERE name = $1 AND block_number >= $2 AND block_number <= $3 LIMIT 5`,
-                        values: [call, beg, end]
-                    })
-                    result.rows.forEach(row => {
-                        selected.add(Number.parseInt(row.block_number))
-                    })
-                    console.log(`spec: ${v.specVersion}, total: ${selected.size}, call: ${call}`)
-                }
-            }
-        })
-        let blockList = Array.from(selected).sort((a, b) => a - b)
-        this.save('block-numbers.json', blockList)
     }
 
     @def
@@ -147,10 +99,10 @@ export class Chain {
         let decoded = this.decodedExtrinsics()
 
         let encoded = decoded.map(b => {
-            let d = this.getVersion(b.blockNumber)
+            let runtime = this.getRuntime(b.blockNumber)
             let extrinsics = b.extrinsics.map(ex => {
                 return toHex(
-                    encodeExtrinsic(ex, d.description, d.codec)
+                    runtime.encodeExtrinsic(ex)
                 )
             })
             return {
@@ -185,12 +137,17 @@ export class Chain {
         for (let i = 0; i < encoded.length; i++) {
             try {
                 expect(encoded[i]).toEqual(original[i])
-            } catch(e) { // FIXME SQD-749
+            } catch(e: any) {
+                let enc = encoded[i].extrinsic
+                let org = original[i].extrinsic
+                let j = 0
+                for (j = 0; j < Math.min(enc.length, org.length); j++) {
+                    if (enc[j] !== org[j]) break
+                }
                 let b = original[i]
-                let d = this.getVersion(b.blockNumber)
-                let fromEncoded = decodeExtrinsic(encoded[i].extrinsic, d.description, d.codec)
-                let fromOriginal = decodeExtrinsic(b.extrinsic, d.description, d.codec)
-                expect(fromEncoded).toEqual(fromOriginal)
+                let runtime = this.getRuntime(b.blockNumber)
+                let decoded = runtime.decodeExtrinsic(b.extrinsic)
+                throw e
             }
         }
     }
@@ -199,9 +156,9 @@ export class Chain {
     decodedExtrinsics(): DecodedBlockExtrinsics[] {
         let blocks = this.blocks()
         return blocks.map(b => {
-            let d = this.getVersion(b.blockNumber)
+            let runtime = this.getRuntime(b.blockNumber)
             let extrinsics = b.extrinsics.map(hex => {
-                return decodeExtrinsic(hex, d.description, d.codec)
+                return runtime.decodeExtrinsic(hex)
             })
             return {
                 blockNumber: b.blockNumber,
@@ -216,12 +173,12 @@ export class Chain {
             case 'kintsugi':
                 return
         }
-        this.description().forEach(v => {
-            for (let pallet in v.description.constants) {
-                for (let name in v.description.constants[pallet]) {
-                    let def = v.description.constants[pallet][name]
-                    let value = v.codec.decodeBinary(def.type, def.value)
-                    let encoded = v.codec.encodeToBinary(def.type, value)
+        this.runtimes().forEach(([bn, rt]) => {
+            for (let pallet in rt.description.constants) {
+                for (let name in rt.description.constants[pallet]) {
+                    let def = rt.description.constants[pallet][name]
+                    let value = rt.getConstant(pallet + '.' + name)
+                    let encoded = toHex(rt.scaleCodec.encodeToBinary(def.type, value))
                     expect({pallet, name, bytes: encoded}).toEqual({pallet, name, bytes: def.value})
                 }
             }
@@ -231,8 +188,8 @@ export class Chain {
     testEventsScaleEncodingDecoding(): void {
         let decoded = this.decodedEvents()
         let encoded = decoded.map(b => {
-            let d = this.getVersion(b.blockNumber)
-            let events = d.codec.encodeToHex(d.description.eventRecordList, b.events)
+            let runtime = this.getRuntime(b.blockNumber)
+            let events = runtime.scaleCodec.encodeToHex(runtime.description.eventRecordList, b.events)
             return {blockNumber: b.blockNumber, events}
         })
         let original = this.events()
@@ -245,34 +202,35 @@ export class Chain {
     decodedEvents(): DecodedBlockEvents[] {
         let blocks = this.events()
         return blocks.map(b => {
-            let d = this.getVersion(b.blockNumber)
-            let events = d.codec.decodeBinary(d.description.eventRecordList, b.events)
+            let runtime = this.getRuntime(b.blockNumber)
+            let events = runtime.decodeStorageValue('System.Events', b.events)
             return {blockNumber: b.blockNumber, events}
         })
     }
 
-    getVersion(blockNumber: number): VersionDescription {
-        let description = this.description()
-        let next = description.findIndex(d => d.blockNumber >= blockNumber)
-        let e = next < 0 ? description[description.length - 1] : description[next - 1]
-        return assertNotNull(e, `not found metadata for block ${blockNumber}`)
+    getRuntime(blockNumber: number): Runtime {
+        let runtimes = this.runtimes()
+        let next = runtimes.findIndex(d => d[0] >= blockNumber)
+        let e = next < 0 ? runtimes[runtimes.length - 1] : runtimes[next - 1]
+        assert(e != null, `not found metadata for block ${blockNumber}`)
+        return e[1]
     }
 
     @def
-    description(): VersionDescription[] {
+    runtimes(): [blockNumber: number, runtime: Runtime][] {
         return this.versions().map(v => {
-            let metadata = decodeMetadata(v.metadata)
-            let typesBundle = getOldTypesBundle(v.specName)
-            let types = typesBundle && getTypesFromBundle(typesBundle, v.specVersion)
-            let description = getChainDescriptionFromMetadata(metadata, types)
-            return {
-                ...v,
-                description,
-                codec: new ScaleCodec(description.types),
-                jsonCodec: new JsonCodec(description.types),
-                events: new eac.Registry(description.types, description.event),
-                calls: new eac.Registry(description.types, description.call)
-            }
+            return [
+                v.blockNumber,
+                new Runtime(
+                    {
+                        specName: v.specName,
+                        specVersion: v.specVersion,
+                        implName: '-',
+                        implVersion: 0
+                    },
+                    v.metadata
+                )
+            ]
         })
     }
 
@@ -289,7 +247,7 @@ export class Chain {
 
     private async withRpcClient<T>(cb: (client: RpcClient) => Promise<T>): Promise<T> {
         let client = new RpcClient({
-            endpoints: [{url: this.info().chain, capacity: 5}],
+            url: this.info().chain,
             retryAttempts: 3
         })
         try {
@@ -305,21 +263,6 @@ export class Chain {
            baseUrl: assertNotNull(this.info().archive),
            retryAttempts: 3
        })
-    }
-
-    private archiveRequest<T>(query: string): Promise<T> {
-        return this.archiveClient().graphqlRequest(query)
-    }
-
-    private async withDatabase<T>(cb: (client: pg.Client) => Promise<T>): Promise<T> {
-        let connectionString = assertNotNull(process.env.DB, 'DB env variable is not specified')
-        let client = new pg.Client(connectionString)
-        await client.connect()
-        try {
-            return await cb(client)
-        } finally {
-            await client.end()
-        }
     }
 
     private item(name: string): string {
@@ -372,15 +315,6 @@ export class Chain {
 }
 
 
-interface VersionDescription extends SpecVersion {
-    description: ChainDescription
-    codec: ScaleCodec
-    jsonCodec: JsonCodec
-    events: eac.Registry
-    calls: eac.Registry
-}
-
-
 interface DecodedBlockEvents {
     blockNumber: number
     events: any[]
@@ -389,7 +323,7 @@ interface DecodedBlockEvents {
 
 interface RawBlockEvents {
     blockNumber: number
-    events: string
+    events: Bytes
 }
 
 
@@ -401,12 +335,12 @@ interface RawBlock extends RpcBlock {
 interface RpcBlock {
     header: {
         number: string
-        parentHash: string
+        parentHash: Bytes
         digest: {
-            logs: string[]
+            logs: Bytes[]
         }
     }
-    extrinsics: string[]
+    extrinsics: Bytes[]
 }
 
 

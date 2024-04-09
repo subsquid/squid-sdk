@@ -1,25 +1,24 @@
+import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {WithRuntime} from '@subsquid/substrate-data'
-import {getOldTypesBundle, OldSpecsBundle, OldTypesBundle, readOldTypesBundle} from '@subsquid/substrate-metadata'
+import {
+    getOldTypesBundle,
+    OldSpecsBundle,
+    OldTypesBundle,
+    readOldTypesBundle
+} from '@subsquid/substrate-runtime/lib/metadata'
 import {
     eliminatePolkadotjsTypesBundle,
     PolkadotjsTypesBundle
-} from '@subsquid/substrate-metadata/lib/old/typesBundle-polkadotjs'
-import {def, last, runProgram} from '@subsquid/util-internal'
-import {
-    applyRangeBound,
-    Batch,
-    Database,
-    getOrGenerateSquidId,
-    mergeRangeRequests,
-    PrometheusServer,
-    Range,
-    RangeRequest,
-    Runner
-} from '@subsquid/util-internal-processor-tools'
+} from '@subsquid/substrate-runtime/lib/metadata/old/typesBundle-polkadotjs'
+import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
+import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {Batch, Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Chain} from './chain'
+import {SubstrateArchive} from './ds-archive'
 import {RpcDataSource} from './ds-rpc'
 import {Block, FieldSelection} from './interfaces/data'
 import {
@@ -29,43 +28,91 @@ import {
     EthereumTransactRequest,
     EventRequest,
     EvmLogRequest,
-    GearMessageEnqueuedRequest,
+    GearMessageQueuedRequest,
     GearUserMessageSentRequest
 } from './interfaces/data-request'
+import {getFieldSelectionValidator} from './selection'
 
 
-export type DataSource = ArchiveDataSource | ChainDataSource
-
-
-type ChainRpc = string | {
+export interface RpcEndpointSettings {
+    /**
+     * RPC endpoint URL (either http(s) or ws(s))
+     */
     url: string
+    /**
+     * Maximum number of ongoing concurrent requests
+     */
     capacity?: number
+    /**
+     * Maximum number of requests per second
+     */
     rateLimit?: number
+    /**
+     * Request timeout in `ms`
+     */
     requestTimeout?: number
+    /**
+     * Maximum number of requests in a single batch call
+     */
     maxBatchCallSize?: number
+    /**
+     * HTTP headers
+     */
+    headers?: Record<string, string>
 }
 
 
-interface ArchiveDataSource {
+export interface RpcDataIngestionSettings {
     /**
-     * Subsquid evm archive endpoint URL
+     * Poll interval for new blocks in `ms`
+     *
+     * Poll mechanism is used to get new blocks via HTTP connection.
      */
-    archive: string
+    headPollInterval?: number
+    /**
+     * When websocket subscription is used to get new blocks,
+     * this setting specifies timeout in `ms` after which connection
+     * will be reset and subscription re-initiated if no new block where received.
+     */
+    newHeadTimeout?: number
+    /**
+     * Disable RPC data ingestion entirely
+     */
+    disabled?: boolean
+}
+
+
+export interface GatewaySettings {
+    /**
+     * Subsquid Network Gateway url
+     */
+    url: string
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+}
+
+
+/**
+ * @deprecated
+ */
+export type ArchiveSettings = GatewaySettings
+
+
+/**
+ * @deprecated
+ */
+export interface DataSource {
+    /**
+     * Subsquid archive endpoint URL
+     */
+    archive?: string
     /**
      * Chain node RPC endpoint URL
      */
-    chain?: ChainRpc
+    chain: string | RpcEndpointSettings
 }
-
-
-interface ChainDataSource {
-    archive?: undefined
-    /**
-     * Chain node RPC endpoint URL
-     */
-    chain: ChainRpc
-}
-
 
 
 interface BlockRange {
@@ -73,14 +120,25 @@ interface BlockRange {
 }
 
 
+/**
+ * API and data that is passed to the data handler
+ */
 export interface DataHandlerContext<Store, Fields extends FieldSelection> {
     /**
-     * Not yet public description of chain metadata
      * @internal
      */
     _chain: Chain
+    /**
+     * An instance of a structured logger.
+     */
     log: Logger
+    /**
+     * Storage interface provided by the database
+     */
     store: Store
+    /**
+     * List of blocks to map and process
+     */
     blocks: Block<Fields>[]
     /**
      * Signals, that the processor reached the head of a chain.
@@ -101,17 +159,130 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private src?: DataSource
-    private chainPollInterval?: number
+    private archive?: GatewaySettings
+    private rpcEndpoint?: RpcEndpointSettings
+    private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
     private prometheus = new PrometheusServer()
     private running = false
 
-    private add(request: DataRequest, range?: Range): void {
-        this.requests.push({
-            range: range || {from: 0},
-            request
-        })
+    /**
+     * @deprecated Use {@link .setGateway()}
+     */
+    setArchive(url: string | GatewaySettings): this {
+        return this.setGateway(url)
+    }
+
+    /**
+     * Set Subsquid Network Gateway endpoint (ex Archive).
+     *
+     * Subsquid Network allows to get data from finalized blocks up to
+     * infinite times faster and more efficient than via regular RPC.
+     *
+     * @example
+     * processor.setGateway('https://v2.archive.subsquid.io/network/kusama')
+     */
+    setGateway(url: string | GatewaySettings): this {
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {url}
+        } else {
+            this.archive = url
+        }
+        return this
+    }
+
+    /**
+     * Set chain RPC endpoint
+     *
+     * @example
+     * // just pass a URL
+     * processor.setRpcEndpoint('https://kusama-rpc.polkadot.io')
+     *
+     * // adjust some connection options
+     * processor.setRpcEndpoint({
+     *     url: 'https://kusama-rpc.polkadot.io',
+     *     rateLimit: 10
+     * })
+     */
+    setRpcEndpoint(url: string | RpcEndpointSettings): this {
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.rpcEndpoint = {url}
+        } else {
+            this.rpcEndpoint = url
+        }
+        return this
+    }
+
+    /**
+     * Sets blockchain data source.
+     *
+     * @example
+     * processor.setDataSource({
+     *     archive: 'https://v2.archive.subsquid.io/network/kusama',
+     *     chain: 'https://kusama-rpc.polkadot.io'
+     * })
+     *
+     * @deprecated Use separate {@link .setGateway()} and {@link .setRpcEndpoint()} methods
+     * to specify data sources.
+     */
+    setDataSource(src: DataSource): this {
+        this.assertNotRunning()
+        if (src.archive) {
+            this.setGateway(src.archive)
+        } else {
+            this.archive = undefined
+        }
+        if (src.chain) {
+            this.setRpcEndpoint(src.chain)
+        } else {
+            this.rpcEndpoint = undefined
+        }
+        return this
+    }
+
+    /**
+     * Set up RPC data ingestion settings
+     */
+    setRpcDataIngestionSettings(settings: RpcDataIngestionSettings): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = settings
+        return this
+    }
+
+    /**
+     * @deprecated Use {@link .setRpcDataIngestionSettings()} instead
+     */
+    setChainPollInterval(ms: number): this {
+        assert(ms >= 0)
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, headPollInterval: ms}
+        return this
+    }
+
+    /**
+     * Never use RPC endpoint for data ingestion.
+     *
+     * @deprecated This is the same as `.setRpcDataIngestionSettings({disabled: true})`
+     */
+    useArchiveOnly(yes?: boolean): this {
+        this.assertNotRunning()
+        this.rpcIngestSettings = {...this.rpcIngestSettings, disabled: true}
+        return this
+    }
+
+
+    /**
+     * Limits the range of blocks to be processed.
+     *
+     * When the upper bound is specified,
+     * the processor will terminate with exit code 0 once it reaches it.
+     */
+    setBlockRange(range?: Range): this {
+        this.assertNotRunning()
+        this.blockRange = range
+        return this
     }
 
     /**
@@ -119,56 +290,16 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      */
     setFields<T extends FieldSelection>(fields: T): SubstrateBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 
-    addEvent(options: EventRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({events: [options]}, options.range)
-        return this
-    }
-
-    addCall(options: CallRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({calls: [options]}, options.range)
-        return this
-    }
-
-    addEvmLog(options: EvmLogRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({evmLogs: [{
-            ...options,
-            address: options.address?.map(s => s.toLowerCase())
-        }]}, options.range)
-        return this
-    }
-
-    addEthereumTransaction(options: EthereumTransactRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({ethereumTransactions: [{
-            ...options,
-            to: options.to?.map(s => s.toLowerCase())
-        }]}, options.range)
-        return this
-    }
-
-    addContractsContractEmitted(options: ContractsContractEmittedRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({contractsEvents: [options]}, options.range)
-        return this
-    }
-
-    addGearMessageEnqueued(options: GearMessageEnqueuedRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({gearMessagesEnqueued: [options]}, options.range)
-        return this
-    }
-
-    addGearUserMessageSent(options: GearUserMessageSentRequest & BlockRange): this {
-        this.assertNotRunning()
-        this.add({gearUserMessagesSent: [options]}, options.range)
-        return this
+    private add(request: DataRequest, range?: Range): void {
+        this.requests.push({
+            range: range || {from: 0},
+            request
+        })
     }
 
     /**
@@ -185,37 +316,58 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
-    /**
-     * Limits the range of blocks to be processed.
-     *
-     * When the upper bound is specified,
-     * the processor will terminate with exit code 0 once it reaches it.
-     */
-    setBlockRange(range?: Range): this {
+    addEvent(options: EventRequest & BlockRange): this {
         this.assertNotRunning()
-        this.blockRange = range
+        let {range, ...req} = options
+        this.add({events: [req]}, range)
         return this
     }
 
-    /**
-     * Sets blockchain data source.
-     *
-     * @example
-     * processor.setDataSource({
-     *     chain: 'wss://rpc.polkadot.io',
-     *     archive: 'https://polkadot.archive.subsquid.io/graphql'
-     * })
-     */
-    setDataSource(src: DataSource): this {
+    addCall(options: CallRequest & BlockRange): this {
         this.assertNotRunning()
-        this.src = src
+        let {range, ...req} = options
+        this.add({calls: [req]}, range)
         return this
     }
 
-    setChainPollInterval(ms: number): this {
-        assert(ms >= 0)
+    addEvmLog(options: EvmLogRequest & BlockRange): this {
         this.assertNotRunning()
-        this.chainPollInterval = ms
+        let {range, address, ...req} = options
+        this.add({evmLogs: [{
+            ...req,
+            address: address?.map(s => s.toLowerCase())
+        }]}, range)
+        return this
+    }
+
+    addEthereumTransaction(options: EthereumTransactRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, to, ...req} = options
+        this.add({ethereumTransactions: [{
+            ...req,
+            to: to?.map(s => s.toLowerCase())
+        }]}, range)
+        return this
+    }
+
+    addContractsContractEmitted(options: ContractsContractEmittedRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add({contractsEvents: [req]}, range)
+        return this
+    }
+
+    addGearMessageQueued(options: GearMessageQueuedRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add({gearMessagesQueued: [req]}, range)
+        return this
+    }
+
+    addGearUserMessageSent(options: GearUserMessageSentRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add({gearUserMessagesSent: [req]}, range)
         return this
     }
 
@@ -274,14 +426,6 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         }
     }
 
-    private getArchiveEndpoint(): string {
-        let url = this.src?.archive
-        if (url == null) {
-            throw new Error('use .setDataSource() to specify archive url')
-        }
-        return url
-    }
-
     @def
     private getSquidId(): string {
         return getOrGenerateSquidId()
@@ -289,21 +433,18 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getChainRpcClient(): RpcClient {
-        let options = this.src?.chain
-        if (options == null) {
-            throw new Error(`use .setDataSource() to specify chain RPC endpoint`)
-        }
-        if (typeof options == 'string') {
-            options = {url: options}
+        if (this.rpcEndpoint == null) {
+            throw new Error(`use .setRpcEndpoint() to specify chain RPC endpoint`)
         }
         let client = new RpcClient({
-            url: options.url,
-            maxBatchCallSize: options.maxBatchCallSize ?? 100,
-            requestTimeout:  options.requestTimeout ?? 30_000,
-            capacity: options.capacity ?? 10,
-            rateLimit: options.rateLimit,
+            url: this.rpcEndpoint.url,
+            headers: this.rpcEndpoint.headers,
+            maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
+            requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
+            capacity: this.rpcEndpoint.capacity ?? 10,
+            rateLimit: this.rpcEndpoint.rateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: options.url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
         })
         this.prometheus.addChainRpcMetrics(() => client.getMetrics())
         return client
@@ -313,7 +454,36 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private getRpcDataSource(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.getChainRpcClient(),
-            pollInterval: this.chainPollInterval,
+            headPollInterval: this.rpcIngestSettings?.headPollInterval,
+            newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
+            typesBundle: this.typesBundle
+        })
+    }
+
+    @def
+    private getArchiveDataSource(): SubstrateArchive {
+        let options = assertNotNull(this.archive)
+
+        let log = this.getLogger().child('archive')
+
+        let http = new HttpClient({
+            headers: {
+                'x-squid-id': this.getSquidId()
+            },
+            agent: new HttpAgent({
+                keepAlive: true
+            }),
+            log
+        })
+
+        return new SubstrateArchive({
+            client: new ArchiveClient({
+                http,
+                url: options.url,
+                queryTimeout: options.requestTimeout,
+                log
+            }),
+            rpc: this.getChainRpcClient(),
             typesBundle: this.typesBundle
         })
     }
@@ -344,7 +514,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 evmLogs: concat(a.evmLogs, b.evmLogs),
                 ethereumTransactions: concat(a.ethereumTransactions, b.ethereumTransactions),
                 contractsEvents: concat(a.contractsEvents, b.contractsEvents),
-                gearMessagesEnqueued: concat(a.gearMessagesEnqueued, b.gearMessagesEnqueued),
+                gearMessagesQueued: concat(a.gearMessagesQueued, b.gearMessagesQueued),
                 gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent)
             }
         })
@@ -364,19 +534,20 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return applyRangeBound(requests, this.blockRange)
     }
 
+    @def
+    private getChain(): Chain {
+        return new Chain(
+            () => this.getChainRpcClient(),
+        )
+    }
+
     private processBatch<Store>(
         store: Store,
-        batch: Batch<Block<F>> & WithRuntime,
+        batch: Batch<Block<F>>,
         handler: (ctx: DataHandlerContext<Store, F>) => Promise<void>
     ): Promise<void> {
-        let chain = new Chain(
-            () => this.getChainRpcClient(),
-            {from: batch.blocks[0].header.height, to: last(batch.blocks).header.height},
-            batch.runtime,
-            batch.prevRuntime
-        )
         return handler({
-            _chain: chain,
+            _chain: this.getChain(),
             log: this.getLogger().child('mapping'),
             store,
             blocks: batch.blocks,
@@ -401,10 +572,20 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         this.running = true
         let log = this.getLogger()
         runProgram(async () => {
+            if (this.rpcEndpoint == null) {
+                throw new Error('Chain RPC endpoint is always required. Use .setRpcEndpoint() to specify it.')
+            }
+            if (this.rpcIngestSettings?.disabled && this.archive == null) {
+                throw new Error(
+                    'Archive is required when RPC data ingestion is disabled. ' +
+                    'Use .setArchive() to specify it.'
+                )
+            }
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                hotDataSource: this.getRpcDataSource(),
+                archive: this.archive == null ? undefined : this.getArchiveDataSource(),
+                hotDataSource: this.rpcIngestSettings?.disabled ? undefined : this.getRpcDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log

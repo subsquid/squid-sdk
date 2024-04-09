@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from 'assert'
 import {
     checkSignedBigInt,
     checkSignedInt,
@@ -6,7 +6,7 @@ import {
     checkUnsignedInt,
     unsignedIntByteLength,
     UTF8_ENCODER
-} from "./util"
+} from './util'
 
 
 export abstract class Sink {
@@ -151,23 +151,23 @@ export abstract class Sink {
 
 
 export class HexSink extends Sink {
-    private hex = '0x'
+    private out = '0x'
 
     protected write(byte: number): void {
-        this.hex += (byte >>> 4).toString(16)
-        this.hex += (byte & 15).toString(16)
+        this.out += (byte >>> 4).toString(16)
+        this.out += (byte & 15).toString(16)
     }
 
     bytes(b: Uint8Array): void {
         if (Buffer.isBuffer(b)) {
-            this.hex += b.toString('hex')
+            this.out += b.toString('hex')
         } else {
-            this.hex += Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString('hex')
+            this.out += Buffer.from(b.buffer, b.byteOffset, b.byteLength).toString('hex')
         }
     }
 
     toHex(): string {
-        return this.hex
+        return this.out
     }
 }
 

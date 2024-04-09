@@ -77,15 +77,7 @@ async function execute(config: Config, command: Command): Promise<number> {
         if (typeof arg == 'string') {
             args.push(arg)
         } else {
-            let expanded: string[] = await new Promise((resolve, reject) => {
-                glob(arg.glob, {cwd}, (err, matches) => {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(matches)
-                    }
-                })
-            })
+            let expanded = await glob(arg.glob, {cwd})
             args.push(...expanded)
         }
     }

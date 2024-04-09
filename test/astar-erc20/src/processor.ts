@@ -14,7 +14,8 @@ const CONTRACTS = [
 
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
-        chain: 'https://rpc.astar.network/'
+        chain: 'https://rpc.astar.network/',
+        archive: 'https://v2.archive.subsquid.io/network/astar-substrate'
     })
     .setBlockRange({
         from: 4_021_130
@@ -30,13 +31,13 @@ const processor = new SubstrateBatchProcessor()
     })
 
 
-processor.run(new TypeormDatabase(), async (ctx) => {
+processor.run(new TypeormDatabase(), async ctx => {
     let transactions = []
 
     for (let block of ctx.blocks) {
         for (let event of block.events) {
             if (event.name == 'Ethereum.Executed' && event.call) {
-                let result = getTransactionResult(ctx, event)
+                let result = getTransactionResult(event)
                 if (!CONTRACTS.includes(result.to)) continue
 
                 if (result.status !== 'Succeed') {
@@ -44,7 +45,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
                     continue
                 }
 
-                let transaction = getTransaction(ctx, event.call)
+                let transaction = getTransaction(event.call)
                 let input = decodeTxInput(transaction.input)
                 if (input) transactions.push(
                     new Transaction({

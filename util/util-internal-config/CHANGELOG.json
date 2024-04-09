@@ -2,6 +2,33 @@
   "name": "@subsquid/util-internal-config",
   "entries": [
     {
+      "version": "2.2.2",
+      "tag": "@subsquid/util-internal-config_v2.2.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.2.1",
+      "tag": "@subsquid/util-internal-config_v2.2.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.2.0",
       "tag": "@subsquid/util-internal-config_v2.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

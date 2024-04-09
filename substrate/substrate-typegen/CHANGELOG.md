@@ -1,6 +1,60 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 8.0.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+
+## 8.0.1
+Wed, 11 Oct 2023 19:13:41 GMT
+
+### Patches
+
+- fix incorrect typing of optional storage values
+- add missing `.is()` method to storage interface
+
+## 8.0.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Breaking changes
+
+- new code generation schema
+- update bit sequence JS representation
+
+### Minor changes
+
+- add optional by pallet selection of objects to generate
+
+### Patches
+
+- improve handling of `Result<T, E>` and `Option<T>` types
+- update dependencies
+- compile with TypeScript 5
+
+## 7.0.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Breaking changes
+
+- when `.specVersions` is http url, fetch it as JSON lines
+
+## 6.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- migrate to a new scale type system
+
+## 5.0.0
+Tue, 01 Aug 2023 16:40:12 GMT
+
+### Breaking changes
+
+- adapt to per block runtime tracking in substrate processor
 
 ## 4.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

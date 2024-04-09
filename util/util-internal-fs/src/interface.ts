@@ -12,4 +12,6 @@ export interface Fs {
     write(path: string, content: Readable | Uint8Array | string): Promise<void>
     delete(path: string): Promise<void>
     readStream(path: string): Promise<Readable>
+    readFile(path: string): Promise<Uint8Array>
+    readFile(path: string, encoding: BufferEncoding): Promise<string>
 }

@@ -1,5 +1,6 @@
 import {createOrmConfig} from "@subsquid/typeorm-config"
 import {runProgram} from "@subsquid/util-internal"
+import {registerTsNodeIfRequired} from '@subsquid/util-internal-ts-node'
 import {program} from "commander"
 import * as dotenv from "dotenv"
 import {DataSource} from "typeorm"
@@ -9,6 +10,8 @@ runProgram(async () => {
     program.description('Revert the last applied migration').parse()
 
     dotenv.config()
+
+    await registerTsNodeIfRequired()
 
     let connection = new DataSource({
         ...createOrmConfig(),

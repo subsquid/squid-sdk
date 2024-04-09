@@ -10,12 +10,12 @@ export interface DataRequest {
     evmLogs?: EvmLogRequest[]
     ethereumTransactions?: EthereumTransactRequest[]
     contractsEvents?: ContractsContractEmittedRequest[]
-    gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
+    gearMessagesQueued?: GearMessageQueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
 }
 
 
-interface EventRelations {
+export interface EventRelations {
     extrinsic?: boolean
     call?: boolean
     stack?: boolean
@@ -27,7 +27,7 @@ export interface EventRequest extends EventRelations {
 }
 
 
-interface CallRelations {
+export interface CallRelations {
     extrinsic?: boolean
     stack?: boolean
     events?: boolean
@@ -59,7 +59,7 @@ export interface ContractsContractEmittedRequest extends EventRelations {
 }
 
 
-export interface GearMessageEnqueuedRequest extends EventRelations {
+export interface GearMessageQueuedRequest extends EventRelations {
     programId?: Bytes[]
 }
 

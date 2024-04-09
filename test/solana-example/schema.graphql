@@ -1,0 +1,13 @@
+
+type Exchange @entity {
+    id: ID!
+    slot: Int!
+    tx: String!
+    timestamp: DateTime!
+    fromOwner: String
+    fromToken: String!
+    fromAmount: BigInt!
+    toOwner: String
+    toToken: String!
+    toAmount: BigInt!
+}

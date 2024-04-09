@@ -1,4 +1,4 @@
-import {Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
+import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
 
 
 @Entity()
@@ -60,6 +60,9 @@ export class Data {
 
     @Column('bytea')
     bytes?: Uint8Array | null
+
+    @Column_("jsonb", {nullable: true})
+    json?: unknown | null
 
     @ManyToOne(() => Item)
     item?: Item | null

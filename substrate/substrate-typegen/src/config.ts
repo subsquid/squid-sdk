@@ -1,7 +1,9 @@
-import {getOldTypesBundle, QualifiedName} from '@subsquid/substrate-metadata'
+import {QualifiedName} from '@subsquid/substrate-runtime'
+import {getOldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {read} from '@subsquid/util-internal-config'
 import * as path from 'path'
 import CONFIG_SCHEMA from './config.schema.json'
+import {ItemSelection} from './typegen'
 
 
 export interface Config {
@@ -12,6 +14,9 @@ export interface Config {
     calls?: QualifiedName[] | boolean
     storage?: QualifiedName[] | boolean
     constants?: QualifiedName[] | boolean
+    pallets?: {
+        [name: string]: ItemSelection | boolean
+    }
 }
 
 
@@ -22,7 +27,7 @@ export async function readConfig(file: string): Promise<Config> {
 
     let specVersions = cfg.specVersions
     if (specVersions) {
-        if (!/^https?:\/\//.test(specVersions)) {
+        if (!/^https?:\//.test(specVersions)) {
             specVersions = path.resolve(dir, specVersions)
         }
     }
@@ -39,6 +44,7 @@ export async function readConfig(file: string): Promise<Config> {
         events: cfg.events,
         calls: cfg.calls,
         storage: cfg.storage,
-        constants: cfg.constants
+        constants: cfg.constants,
+        pallets: cfg.pallets
     }
 }

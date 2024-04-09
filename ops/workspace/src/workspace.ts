@@ -48,6 +48,7 @@ export class Workspace {
     async update(major?: boolean): Promise<void> {
         let versions = this.unifiedDependencies()
         for (let name in versions) {
+            if (this.packages().has(name)) continue
             let fullCurrent = versions[name]!
             let current = pure(fullCurrent)
             let latest = major

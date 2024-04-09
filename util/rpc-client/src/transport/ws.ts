@@ -1,7 +1,8 @@
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import assert from 'assert'
 import {w3cwebsocket as WebSocket} from 'websocket'
 import {RpcConnectionError, RpcProtocolError} from '../errors'
-import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {Connection, HttpHeaders, RpcIncomingMessage, RpcNotification, RpcRequest, RpcResponse} from '../interfaces'
 
 
 const MB = 1024 * 1024
@@ -13,19 +14,39 @@ interface RequestHandle {
 }
 
 
+export interface WsConnectionOptions {
+    url: string
+    headers?: HttpHeaders
+    onNotificationMessage?: (msg: RpcNotification) => void
+    onReset?: (err: Error) => void
+    fixUnsafeIntegers?: boolean
+}
+
+
 export class WsConnection implements Connection {
+    private url: string
+    private fixUnsafeIntegers: boolean
+    private headers?: HttpHeaders
+    private onNotificationMessage?: (msg: RpcNotification) => void
+    private onReset?: (err: Error) => void
     private _ws?: WebSocket
     private connected = false
     private requests = new Map<number, RequestHandle>()
 
-    constructor(private url: string) {}
+    constructor(options: WsConnectionOptions) {
+        this.url = options.url
+        this.fixUnsafeIntegers = options.fixUnsafeIntegers || false
+        this.headers = options.headers
+        this.onNotificationMessage = options.onNotificationMessage
+        this.onReset = options.onReset
+    }
 
     connect(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             if (this.connected) return resolve()
             if (this._ws) return reject(new Error('Already connecting'))
 
-            let ws = this._ws = new WebSocket(this.url, undefined, undefined, undefined, undefined, {
+            let ws = this._ws = new WebSocket(this.url, undefined, undefined, this.headers, undefined, {
                 // default: true
                 fragmentOutgoingMessages: true,
                 // default: 16K (bump, the Node has issues with too many fragments, e.g. on setCode)
@@ -74,6 +95,7 @@ export class WsConnection implements Connection {
         this.requests.clear()
         this._ws = undefined
         this.connected = false
+        this.onReset?.(err)
     }
 
     close(err?: Error): void {
@@ -93,8 +115,11 @@ export class WsConnection implements Connection {
         if (typeof data != 'string') {
             throw new RpcProtocolError(1003, 'Received non-text frame')
         }
-        let msg: RpcResponse | RpcResponse[]
+        let msg: RpcIncomingMessage | RpcIncomingMessage[]
         try {
+            if (this.fixUnsafeIntegers) {
+                data = fixUnsafeIntegers(data)
+            }
             msg = JSON.parse(data)
         } catch(e: any) {
             throw new RpcProtocolError(1007, 'Received invalid JSON message')
@@ -108,14 +133,18 @@ export class WsConnection implements Connection {
         }
     }
 
-    private handleResponse(res: RpcResponse): void {
+    private handleResponse(res: RpcIncomingMessage): void {
         // TODO: more strictness, more validation
-        let h = this.requests.get(res.id)
-        if (h == null) {
-            throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
+        if (isNotification(res)) {
+            this.onNotificationMessage?.(res)
+        } else {
+            let h = this.requests.get(res.id)
+            if (h == null) {
+                throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
+            }
+            this.requests.delete(res.id)
+            h.resolve(res)
         }
-        this.requests.delete(res.id)
-        h.resolve(res)
     }
 
     private ws(): WebSocket {
@@ -192,4 +221,9 @@ class BatchItemHandle {
     reject(err: Error): void {
         this.handle.reject(err)
     }
+}
+
+
+function isNotification(res: RpcResponse | RpcNotification): res is RpcNotification {
+    return typeof (res as any).method == 'string'
 }

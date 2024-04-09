@@ -1,6 +1,56 @@
-import {ExtrinsicSignature, QualifiedName} from '@subsquid/substrate-data'
-import {HashAndHeight} from '@subsquid/util-internal-processor-tools'
+import {Bytes, ExtrinsicSignature, Hash, QualifiedName} from '@subsquid/substrate-data'
+import {Runtime} from '@subsquid/substrate-runtime'
+import {assertNotNull, maybeLast} from '@subsquid/util-internal'
+import {formatId} from '@subsquid/util-internal-processor-tools'
+import {ParentBlockHeader} from './interfaces/data'
 import {PartialBlockHeader} from './interfaces/data-partial'
+
+
+export class BlockHeader implements PartialBlockHeader {
+    id: string
+    height!: number
+    hash!: Hash
+    parentHash!: Hash
+    stateRoot?: Hash
+    extrinsicsRoot?: Hash
+    digest?: {logs: Bytes[]}
+    specName!: string
+    specVersion!: number
+    implName!: string
+    implVersion!: number
+    timestamp?: number
+    validator?: Bytes
+    #runtime: Runtime
+    #runtimeOfPrevBlock: Runtime
+
+    constructor(
+        runtime: Runtime,
+        runtimeOfPrevBlock: Runtime,
+        src: PartialBlockHeader
+    ) {
+        this.id = formatId(src)
+        this.#runtime = runtime
+        this.#runtimeOfPrevBlock = runtimeOfPrevBlock
+        Object.assign(this, src)
+    }
+
+    get _runtime(): Runtime {
+        return this.#runtime
+    }
+
+    get _runtimeOfPrevBlock(): Runtime {
+        return this.#runtimeOfPrevBlock
+    }
+
+    getParent(): ParentBlockHeader {
+        if (this.height == 0) return this
+        return {
+            _runtime: this._runtimeOfPrevBlock,
+            height: this.height - 1,
+            hash: this.parentHash
+        }
+    }
+}
 
 
 export class Extrinsic {
@@ -13,13 +63,13 @@ export class Extrinsic {
     error?: any
     success?: boolean
     hash?: string
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #call?: Call
     #events?: Event[]
     #subcalls?: Call[]
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         index: number
     ) {
         this.id = formatId(block, index)
@@ -27,11 +77,11 @@ export class Extrinsic {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -68,6 +118,27 @@ export class Extrinsic {
     set events(events: Event[]) {
         this.#events = events
     }
+
+    encode(): Uint8Array {
+        let runtime = this.block._runtime
+        let version = assertNotNull(this.version, 'missing .version property')
+
+        let callRecord = this.getCall()
+        let name = assertNotNull(callRecord.name, 'missing .name property on a call')
+        let args = runtime.decodeJsonCallRecordArguments({name, args: callRecord.args})
+        let call = runtime.toDecodedCall({name, args})
+
+        let signature = this.signature && runtime.jsonCodec.decode(
+            runtime.description.signature,
+            this.signature
+        )
+
+        return runtime.encodeExtrinsic({
+            version,
+            signature,
+            call
+        })
+    }
 }
 
 
@@ -80,14 +151,16 @@ export class Call {
     origin?: any
     error?: any
     success?: boolean
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #extrinsic?: Extrinsic
     #parentCall?: Call
     #subcalls?: Call[]
     #events?: Event[]
+    #ethereumTransactTo?: Bytes
+    #ethereumTransactSighash?: Bytes
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         extrinsicIndex: number,
         address: number[]
     ) {
@@ -97,11 +170,11 @@ export class Call {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -154,6 +227,30 @@ export class Call {
     set events(events: Event[]) {
         this.#events = events
     }
+
+    encode(): Uint8Array {
+        let runtime = this.block._runtime
+        let name = assertNotNull(this.name, 'missing .name property')
+        let args = runtime.decodeJsonCallRecordArguments({name, args: this.args})
+        let decodedCall = runtime.toDecodedCall({name, args})
+        return runtime.encodeCall(decodedCall)
+    }
+
+    get _ethereumTransactTo(): Bytes | undefined {
+        return this.#ethereumTransactTo
+    }
+
+    set _ethereumTransactTo(value: Bytes | undefined) {
+        this.#ethereumTransactTo = value
+    }
+
+    get _ethereumTransactSighash(): Bytes | undefined {
+        return this.#ethereumTransactSighash
+    }
+
+    set _ethereumTransactSighash(value: Bytes | undefined) {
+        this.#ethereumTransactSighash = value
+    }
 }
 
 
@@ -165,12 +262,16 @@ export class Event {
     phase?: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
-    #block: PartialBlockHeader
+    #block: BlockHeader
     #extrinsic?: Extrinsic
     #call?: Call
+    #evmLogAddress?: Bytes
+    #evmLogTopics?: Bytes[]
+    #contractAddress?: Bytes
+    #gearProgramId?: Bytes
 
     constructor(
-        block: PartialBlockHeader,
+        block: BlockHeader,
         index: number
     ) {
         this.id = formatId(block, index)
@@ -178,11 +279,11 @@ export class Event {
         this.#block = block
     }
 
-    get block(): PartialBlockHeader {
+    get block(): BlockHeader {
         return this.#block
     }
 
-    set block(value: PartialBlockHeader) {
+    set block(value: BlockHeader) {
         this.#block = value
     }
 
@@ -217,20 +318,62 @@ export class Event {
             return this.call
         }
     }
+
+    get _evmLogAddress(): Bytes | undefined {
+        return this.#evmLogAddress
+    }
+
+    set _evmLogAddress(value: Bytes | undefined) {
+        this.#evmLogAddress = value
+    }
+
+    get _evmLogTopics(): Bytes[] | undefined {
+        return this.#evmLogTopics
+    }
+
+    set _evmLogTopics(value: Bytes[] | undefined) {
+        this.#evmLogTopics = value
+    }
+
+    get _evmLogTopic0(): Bytes | undefined {
+        return this._evmLogTopics?.[0]
+    }
+
+    get _evmLogTopic1(): Bytes | undefined {
+        return this._evmLogTopics?.[1]
+    }
+
+    get _evmLogTopic2(): Bytes | undefined {
+        return this._evmLogTopics?.[2]
+    }
+
+    get _evmLogTopic3(): Bytes | undefined {
+        return this._evmLogTopics?.[3]
+    }
+
+    get _contractAddress(): Bytes | undefined {
+        return this.#contractAddress
+    }
+
+    set _contractAddress(value: Bytes | undefined) {
+        this.#contractAddress = value
+    }
+
+    get _gearProgramId(): Bytes | undefined {
+        return this.#gearProgramId
+    }
+
+    set _gearProgramId(value: Bytes | undefined) {
+        this.#gearProgramId = value
+    }
 }
 
 
 export class Block {
-    id: string
-    header: PartialBlockHeader
+    constructor(public header: BlockHeader) {}
     extrinsics: Extrinsic[] = []
     calls: Call[] = []
     events: Event[] = []
-
-    constructor(header: PartialBlockHeader) {
-        this.id = formatId(header)
-        this.header = header
-    }
 }
 
 
@@ -239,37 +382,51 @@ export function setUpItems(block: Block): void {
     block.extrinsics.sort((a, b) => a.index - b.index)
     block.calls.sort(callCompare)
 
-    let extrinsicsByIndex = new Map(block.extrinsics.map(ex => [ex.index, ex]))
+    let extrinsics: (Extrinsic | undefined)[] = new Array((maybeLast(block.extrinsics)?.index ?? -1) + 1)
+    for (let rec of block.extrinsics) {
+        extrinsics[rec.index] = rec
+    }
 
-    for (let i = 0; i < block.calls.length; i++) {
-        let call = block.calls[i]
-        let extrinsic = extrinsicsByIndex.get(call.extrinsicIndex)
+    for (let i = block.calls.length - 1; i >= 0; i--) {
+        let rec = block.calls[i]
+        let extrinsic = extrinsics[rec.extrinsicIndex]
         if (extrinsic) {
-            if (call.address.length == 0) {
-                extrinsic.call = call
+            if (rec.address.length == 0) {
+                extrinsic.call = rec
             }
-            call.extrinsic = extrinsic
-            extrinsic.subcalls.push(call)
+            rec.extrinsic = extrinsic
+            extrinsic.subcalls.push(rec)
         }
-        setUpCallTree(block.calls, i)
+
+        if (i < block.calls.length - 1) {
+            let prev = block.calls[i + 1]
+            if (isSubcall(prev, rec)) {
+                rec.parentCall = prev
+                populateSubcalls(prev, rec)
+            }
+        }
     }
 
     for (let event of block.events) {
         if (event.extrinsicIndex == null) continue
-        let extrinsic = extrinsicsByIndex.get(event.extrinsicIndex)
+
+        let extrinsic = extrinsics[event.extrinsicIndex]
         if (extrinsic) {
             extrinsic.events.push(event)
             event.extrinsic = extrinsic
         }
+
         if (event.callAddress && block.calls.length) {
             let pos = bisectCalls(block.calls, event.extrinsicIndex, event.callAddress)
-            for (let i = pos; i >= 0; i--) {
-                let parent = block.calls[pos]
-                if (isSubcall(parent, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
-                    parent.events.push(event)
-                    if (addressCompare(parent.address, event.callAddress) == 0) {
-                        event.call = parent
+            for (let i = pos; i < block.calls.length; i++) {
+                let call = block.calls[i]
+                if (isSubcall(call, {extrinsicIndex: event.extrinsicIndex, address: event.callAddress})) {
+                    call.events.push(event)
+                    if (addressCompare(call.address, event.callAddress) == 0) {
+                        event.call = call
                     }
+                } else {
+                    break
                 }
             }
         }
@@ -296,21 +453,11 @@ function bisectCalls(calls: Call[], extrinsicIndex: number, callAddress: number[
 }
 
 
-function setUpCallTree(calls: Call[], pos: number): void {
-    let offset = -1
-    let parent = calls[pos]
-    for (let i = pos - 1; i >= 0; i--) {
-        if (isSubcall(parent, calls[i])) {
-            if (calls[i].address.length == parent.address.length + 1) {
-                calls[i].parentCall = parent
-            }
-            offset = i
-        } else {
-            break
-        }
+function populateSubcalls(parent: Call | undefined, child: Call): void {
+    while (parent) {
+        parent.subcalls.push(child)
+        parent = parent.parentCall
     }
-    if (offset < 0) return
-    parent.subcalls = calls.slice(offset, pos)
 }
 
 
@@ -324,7 +471,7 @@ function addressCompare(a: number[], b: number[]): number {
         let order = a[i] - b[i]
         if (order) return order
     }
-    return b.length - a.length
+    return b.length - a.length // this differs from EVM call ordering
 }
 
 
@@ -338,17 +485,4 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
         if (parent.address[i] != call.address[i]) return false
     }
     return true
-}
-
-
-function formatId(block: HashAndHeight, ...address: number[]): string {
-    let no = block.height.toString().padStart(10, '0')
-    let hash = block.hash.startsWith('0x')
-        ? block.hash.slice(2, 7)
-        : block.hash.slice(0, 5)
-    let id = `${no}-${hash}`
-    for (let index of address) {
-        id += '-' + index.toString().padStart(6, '0')
-    }
-    return id
 }

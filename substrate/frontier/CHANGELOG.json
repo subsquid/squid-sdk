@@ -2,6 +2,110 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "4.0.2",
+      "tag": "@subsquid/frontier_v4.0.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.1",
+      "tag": "@subsquid/frontier_v4.0.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "adapt to latest `sts.tuple()` api"
+          },
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          },
+          {
+            "comment": "use updated `@subsquid/substrate-runtime` interface"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.1` to `^1.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.0",
+      "tag": "@subsquid/frontier_v4.0.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "migrate to a new scale type system"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.0",
+      "tag": "@subsquid/frontier_v3.0.0",
+      "date": "Tue, 01 Aug 2023 16:40:12 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "adapt to per block runtime tracking in substrate processor"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.4.0` to `^2.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "2.0.1",
+      "tag": "@subsquid/frontier_v2.0.1",
+      "date": "Thu, 27 Jul 2023 13:21:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "bump `ethers` peer to `^6.6.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/frontier_v2.0.0",
       "date": "Wed, 19 Jul 2023 16:48:14 GMT",

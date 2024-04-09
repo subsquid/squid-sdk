@@ -1,5 +1,5 @@
 test:
-	npx mocha -r dotenv/config ./lib/test/*.test.js --exit
+	npx mocha -r dotenv/config ./lib/test/*.test.js --exit --timeout 20000
 
 test-cockroach:
 	@DB_TYPE=cockroach make test

@@ -1,11 +1,12 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
 
@@ -19,6 +20,8 @@ export interface RpcClientOptions {
     retryAttempts?: number
     retrySchedule?: number[]
     log?: Logger | null
+    fixUnsafeIntegers?: boolean
+    headers?: HttpHeaders
 }
 
 
@@ -32,11 +35,13 @@ export interface CallOptions<R=any> {
      * This option is mainly a way to utilize built-in retry machinery by throwing {@link RetryError}.
      * Otherwise, `client.call(...).then(validateResult)` is a better option.
      */
-    validateResult?: ResultValidator
+    validateResult?: ResultValidator<R>
+    validateError?: ErrorValidator<R>
 }
 
 
 type ResultValidator<R=any> = (result: any, req: RpcRequest) => R
+type ErrorValidator<R=any> = (info: RpcErrorInfo, req: RpcRequest) => R
 
 
 interface Req {
@@ -47,6 +52,7 @@ interface Req {
     resolve(result: any): void
     reject(error: Error): void
     validateResult?: ResultValidator | undefined
+    validateError?: ErrorValidator | undefined
 }
 
 
@@ -60,6 +66,7 @@ export class RpcClient {
     private retrySchedule: number[]
     private retryAttempts: number
     private capacity: number
+    private maxCapacity: number
     private log?: Logger
     private rate?: RateMeter
     private rateLimit: number = Number.MAX_SAFE_INTEGER
@@ -67,14 +74,17 @@ export class RpcClient {
     private connectionErrorsInRow = 0
     private connectionErrors = 0
     private requestsServed = 0
+    private notificationsReceived = 0
     private backoffEpoch = 0
+    private notificationListeners: ((msg: RpcNotification) => void)[] = []
+    private resetListeners: ((reason: Error) => void)[] = []
     private closed = false
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
-        this.capacity = options.capacity ?? 10
+        this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
         this.retryAttempts = options.retryAttempts ?? 0
         this.retrySchedule = options.retrySchedule ?? [10, 100, 500, 2000, 10000, 20000]
@@ -92,26 +102,93 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: HttpHeaders): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':
             case 'wss:':
-                return new WsConnection(url)
+                return new WsConnection({
+                    url,
+                    headers,
+                    onNotificationMessage: msg => this.onNotification(msg),
+                    onReset: reason => {
+                        if (this.closed) return
+                        for (let cb of this.resetListeners) {
+                            this.safeCallback(cb, reason)
+                        }
+                    },
+                    fixUnsafeIntegers
+                })
             case 'http:':
             case 'https:':
-                return new HttpConnection(url)
+                return new HttpConnection({
+                    url,
+                    headers,
+                    log: this.log,
+                    fixUnsafeIntegers
+                })
             default:
                 throw new TypeError(`unsupported protocol: ${protocol}`)
         }
+    }
+
+    getConcurrency(): number {
+        return this.maxCapacity
     }
 
     getMetrics() {
         return {
             url: this.url,
             requestsServed: this.requestsServed,
-            connectionErrors: this.connectionErrors
+            connectionErrors: this.connectionErrors,
+            notificationsReceived: this.notificationsReceived
         }
+    }
+
+    private onNotification(msg: RpcNotification): void {
+        this.notificationsReceived += 1
+        this.log?.debug({rpcMsg: msg}, 'rpc notification')
+        for (let cb of this.notificationListeners) {
+            this.safeCallback(cb, msg)
+        }
+    }
+
+    private safeCallback<T>(cb: (arg: T) => void, arg: T): void {
+        try {
+            cb(arg)
+        } catch(err: any) {
+            this.log?.error(err, 'callback error')
+        }
+    }
+
+    addNotificationListener(cb: (msg: RpcNotification) => void): void {
+        this.notificationListeners.push(cb)
+    }
+
+    removeNotificationListener(cb: (msg: RpcNotification) => void): void {
+        removeItem(this.notificationListeners, cb)
+    }
+
+    addResetListener(cb: (reason: Error) => void): void {
+        this.resetListeners.push(cb)
+    }
+
+    removeResetListener(cb: (reason: Error) => void): void {
+        removeItem(this.resetListeners, cb)
+    }
+
+    subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
+        return this.subscriptions().add(sub)
+    }
+
+    @def
+    private subscriptions(): Subscriptions {
+        assert(this.supportsNotifications(), 'subscriptions are only supported by websocket connections')
+        return new Subscriptions(this)
+    }
+
+    supportsNotifications(): boolean {
+        return this.con instanceof WsConnection
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -138,12 +215,13 @@ export class RpcClient {
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
                 reject,
-                validateResult: options?.validateResult
+                validateResult: options?.validateResult,
+                validateError: options?.validateError,
             })
         })
     }
 
-    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+    batchCall<T=any>(batch: RpcCall[], options?: CallOptions<T>): Promise<T[]> {
         return splitParallelWork(
             this.maxBatchCallSize,
             batch,
@@ -151,7 +229,7 @@ export class RpcClient {
         )
     }
 
-    private batchCallInternal(batch: {method: string, params?: any[]}[], options?: CallOptions): Promise<any[]> {
+    private batchCallInternal(batch: RpcCall[], options?: CallOptions): Promise<any[]> {
         if (batch.length == 0) return Promise.resolve([])
         if (batch.length == 1) return this.call(batch[0].method, batch[0].params, options).then(res => [res])
         return new Promise((resolve, reject) => {
@@ -182,7 +260,8 @@ export class RpcClient {
                 retryAttempts: options?.retryAttempts ?? this.retryAttempts,
                 resolve,
                 reject,
-                validateResult: options?.validateResult
+                validateResult: options?.validateResult,
+                validateError: options?.validateError
             })
         })
     }
@@ -242,7 +321,7 @@ export class RpcClient {
             promise = this.con.batchCall(call, req.timeout).then(res => {
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
-                    result[i] = this.receiveResult(call[i], res[i], req.validateResult)
+                    result[i] = this.receiveResult(call[i], res[i], req.validateResult, req.validateError)
                 }
                 return result
             })
@@ -250,7 +329,7 @@ export class RpcClient {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
             promise = this.con.call(call, req.timeout).then(res => {
-                return this.receiveResult(call, res, req.validateResult)
+                return this.receiveResult(call, res, req.validateResult, req.validateError)
             })
         }
         promise.then(result => {
@@ -269,7 +348,7 @@ export class RpcClient {
                     req.reject(err)
                 }
                 if (this.backoffEpoch == backoffEpoch) {
-                    this.backoff(err)
+                    this.backoff(err, req)
                 }
             } else {
                 req.reject(err)
@@ -299,12 +378,25 @@ export class RpcClient {
         }
     }
 
-    private backoff(reason: Error): void {
-        this.log?.warn({reason: reason.toString()}, 'connection failure')
+    private backoff(reason: Error, req?: Req): void {
         this.backoffEpoch += 1
         this.connectionErrorsInRow += 1
         this.connectionErrors += 1
-        this.log?.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        if (this.log?.isWarn()) {
+            let httpResponseBody = undefined
+            if (reason instanceof HttpError &&
+                reason.response.body &&
+                !reason.response.headers.get('content-type')?.includes('text/html')
+            ) {
+                httpResponseBody = reason.response.body
+            }
+            this.log.warn({
+                reason: reason.toString(),
+                httpResponseBody,
+                rpcCall: req?.call
+            }, 'connection failure')
+            this.log.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
+        }
     }
 
     private getBackoffPause(): number {
@@ -313,7 +405,12 @@ export class RpcClient {
         return this.retrySchedule[idx]
     }
 
-    private receiveResult(call: RpcRequest, res: RpcResponse, validateResult: ResultValidator | undefined): any {
+    private receiveResult(
+        call: RpcRequest,
+        res: RpcResponse,
+        validateResult: ResultValidator | undefined,
+        validateError: ErrorValidator | undefined
+    ): any {
         if (this.log?.isDebug()) {
             this.log.debug({
                 rpcId: call.id,
@@ -324,7 +421,11 @@ export class RpcClient {
         }
         try {
             if (res.error) {
-                throw new RpcError(res.error)
+                if (validateError) {
+                    return validateError(res.error, call)
+                } else {
+                    throw new RpcError(res.error)
+                }
             } else if (validateResult) {
                 return validateResult(res.result, call)
             } else {
@@ -332,9 +433,11 @@ export class RpcClient {
             }
         } catch(err: any) {
             throw addErrorContext(err, {
+                rpcUrl: this.url,
                 rpcId: call.id,
                 rpcMethod: call.method,
-                rpcParams: call.params
+                rpcParams: call.params,
+                rpcResponse: res
             })
         }
     }
@@ -357,6 +460,13 @@ export class RpcClient {
             }
         }
         return false
+    }
+
+    reset(reason?: RpcConnectionError): void {
+        if (this.closed) return
+        if (this.con instanceof WsConnection) {
+            this.con.close(reason || new RpcConnectionError('client was reset'))
+        }
     }
 
     close(err?: Error) {
@@ -403,4 +513,11 @@ function trimCredentials(url: string): string {
 
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
+}
+
+
+function removeItem<T>(arr: T[], item: T): void {
+    let index = arr.indexOf(item)
+    if (index < 0) return
+    arr.splice(index, 1)
 }

@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/substrate-ingest",
   "description": "Data decoder and fetcher for substrate based chains",
-  "version": "3.0.0",
+  "version": "3.6.0",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -19,22 +19,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.3.0",
-    "@subsquid/rpc-client": "^4.4.0",
-    "@subsquid/substrate-data": "^0.0.0",
-    "@subsquid/substrate-data-raw": "^0.0.0",
-    "@subsquid/substrate-metadata": "^3.3.0",
-    "@subsquid/util-internal": "^2.4.0",
-    "@subsquid/util-internal-archive-layout": "^0.0.0",
-    "@subsquid/util-internal-commander": "^1.3.0",
-    "@subsquid/util-internal-counters": "^1.3.0",
-    "@subsquid/util-internal-fs": "^0.0.0",
-    "@subsquid/util-internal-hex": "^1.2.0",
-    "@subsquid/util-internal-json": "^1.2.0",
-    "@subsquid/util-internal-range": "^0.0.0",
-    "commander": "^11.0.0"
+    "@subsquid/rpc-client": "^4.7.0",
+    "@subsquid/substrate-data": "^4.0.3",
+    "@subsquid/substrate-data-raw": "^1.1.2",
+    "@subsquid/substrate-runtime": "^1.0.3",
+    "@subsquid/util-internal": "^3.1.0",
+    "@subsquid/util-internal-ingest-cli": "^0.0.1",
+    "@subsquid/util-internal-json": "^1.2.3"
   },
   "devDependencies": {
-    "@types/node": "^18.16.17"
+    "@types/node": "^18.18.14"
   }
 }

@@ -1,6 +1,36 @@
 # Change Log - @subsquid/substrate-metadata-explorer
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+
+## 3.1.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+
+## 3.1.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 3.1.0
+Wed, 13 Sep 2023 22:16:51 GMT
+
+### Minor changes
+
+- add `squid-substrate-metadata-explorer(1)` back in addition to `substrate-metadata-explorer(1)`
+
+## 3.0.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Breaking changes
+
+- remove FireSquid archive metadata source
+- rename `--chain` to `--rpc`
 
 ## 2.2.1
 Wed, 19 Jul 2023 16:48:14 GMT

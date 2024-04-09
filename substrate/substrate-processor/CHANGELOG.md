@@ -1,6 +1,139 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 8.2.2
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 8.2.1
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 8.2.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
+
+## 8.1.1
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Patches
+
+- fix archive error when limiting item request by block range
+
+## 8.1.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+-  rename `.setArchive()` to `.setGateway()`
+
+## 8.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`
+
+### Minor changes
+
+- support chain head tracking via RPC subscription
+- deprecate `.setDataSource()` in favour of separate `.setArchive()` and `.setRpcEndpoint()` methods
+- introduce `.setRpcDataIngestionSettings()` and deprecate `.setChainPollInterval()`, `.useArchiveOnly()`
+
+### Patches
+
+- update dependencies
+- add `Chain.client` alias for compatibility with `evm-typegen` (closes #212)
+
+## 7.2.1
+Thu, 19 Oct 2023 08:58:05 GMT
+
+_Version update only_
+
+## 7.2.0
+Sat, 14 Oct 2023 22:24:52 GMT
+
+### Minor changes
+
+- add `.useArchiveOnly()` option
+
+## 7.1.0
+Wed, 11 Oct 2023 19:13:41 GMT
+
+### Minor changes
+
+- implement block item filtering for RPC data source
+
+## 7.0.0
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Breaking changes
+
+- change bit sequence JS representation in decoded data
+
+### Minor changes
+
+- add `extrinsic.encode()`, `call.encode()` functions
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 6.0.2
+Wed, 13 Sep 2023 22:16:51 GMT
+
+_Version update only_
+
+## 6.0.1
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Patches
+
+- don't warn users on partial archive unavailability which is part of its normal operation
+
+## 6.0.0
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Breaking changes
+
+- migrate to new substrate runtime packages
+
+### Patches
+
+- fix event `call.events` assignment
+
+## 5.1.0
+Fri, 04 Aug 2023 07:25:15 GMT
+
+### Minor changes
+
+- introduce ArrowSquid archive
+
+## 5.0.1
+Wed, 02 Aug 2023 22:59:19 GMT
+
+### Patches
+
+- upgrade `substrate-data` dependency
+
+## 5.0.0
+Tue, 01 Aug 2023 16:40:12 GMT
+
+### Breaking changes
+
+- migrate to per block runtime tracking
+
+## 4.0.1
+Thu, 27 Jul 2023 13:21:04 GMT
+
+_Version update only_
 
 ## 4.0.0
 Wed, 19 Jul 2023 16:48:14 GMT

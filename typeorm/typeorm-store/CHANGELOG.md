@@ -1,6 +1,47 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 29 Jun 2023 10:25:09 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 1.3.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- support `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context
+
+## 1.2.6
+Thu, 14 Dec 2023 11:16:15 GMT
+
+_Version update only_
+
+## 1.2.5
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+
+## 1.2.4
+Thu, 19 Oct 2023 08:58:05 GMT
+
+### Patches
+
+- fix handling of JSON arrays during hot block rollbacks
+
+## 1.2.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 1.2.2
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Patches
+
+- fix cochroach compatibility
 
 ## 1.2.1
 Thu, 29 Jun 2023 10:25:09 GMT

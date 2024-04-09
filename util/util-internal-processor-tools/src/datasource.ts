@@ -30,10 +30,14 @@ export interface HotUpdate<B> {
 export interface DataSource<B, R> {
     getFinalizedBlocks(requests: RangeRequestList<R>, stopOnHead?: boolean): AsyncIterable<Batch<B>>
     getFinalizedHeight(): Promise<number>
-    getBlockHash(height: number): Promise<string>
+    getBlockHash(height: number): Promise<string | null | undefined>
 }
 
 
 export interface HotDataSource<B, R> extends DataSource<B, R> {
-    getHotBlocks(requests: RangeRequestList<R>, state: HotDatabaseState): AsyncIterable<HotUpdate<B>>
+    processHotBlocks(
+        requests: RangeRequestList<R>,
+        state: HotDatabaseState,
+        cb: (upd: HotUpdate<B>) => Promise<void>
+    ): Promise<void>
 }

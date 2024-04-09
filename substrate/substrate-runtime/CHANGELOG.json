@@ -1,0 +1,121 @@
+{
+  "name": "@subsquid/substrate-runtime",
+  "entries": [
+    {
+      "version": "1.0.3",
+      "tag": "@subsquid/substrate-runtime_v1.0.3",
+      "date": "Sat, 06 Jan 2024 13:28:46 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support Avail Goldberg metadata"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.2",
+      "tag": "@subsquid/substrate-runtime_v1.0.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^4.0.0` to `^4.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-type-system\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^1.2.1` to `^1.2.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.1",
+      "tag": "@subsquid/substrate-runtime_v1.0.1",
+      "date": "Thu, 19 Oct 2023 08:58:05 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix `RpcClient.batchCall()` signature"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-runtime_v1.0.0",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `Runtime.metadata` property"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "major": [
+          {
+            "comment": "change bit sequence JS representation in decoded data"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^3.0.0` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-type-system\" from `^0.0.1` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.1` to `^2.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^1.2.0` to `^1.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-xxhash\" from `^1.2.0` to `^1.2.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/substrate-runtime_v0.0.1",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/scale-codec\" from `^2.2.0` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/scale-type-system\" from `^0.0.0` to `^0.0.1`"
+          }
+        ]
+      }
+    }
+  ]
+}

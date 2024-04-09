@@ -2,6 +2,91 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "4.1.0",
+      "tag": "@subsquid/typeorm-config_v4.1.0",
+      "date": "Sun, 24 Dec 2023 20:05:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support `ts-node`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.1",
+      "tag": "@subsquid/typeorm-config_v4.0.1",
+      "date": "Wed, 20 Dec 2023 07:15:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix default `username`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.0",
+      "tag": "@subsquid/typeorm-config_v4.0.0",
+      "date": "Thu, 14 Dec 2023 11:16:15 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.3.2",
+      "tag": "@subsquid/typeorm-config_v3.3.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^1.2.1` to `^1.2.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.3.1",
+      "tag": "@subsquid/typeorm-config_v3.3.1",
+      "date": "Thu, 28 Sep 2023 20:58:19 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "compile with TypeScript 5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-naming\" from `^1.2.0` to `^1.2.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.3.0",
+      "tag": "@subsquid/typeorm-config_v3.3.0",
+      "date": "Tue, 05 Sep 2023 20:32:34 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support `DB_SSL=true` to connect to the database via TLS"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.0",
       "tag": "@subsquid/typeorm-config_v3.2.0",
       "date": "Sun, 11 Jun 2023 15:49:45 GMT",

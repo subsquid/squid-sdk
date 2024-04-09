@@ -1,25 +1,28 @@
-import {RpcClient} from '@subsquid/rpc-client'
-import {
-    BlockData,
-    BlockHeader,
-    Bytes,
-    DataRequest,
-    GetBlockResult,
-    Hash,
-    PartialGetBlockResult,
-    RuntimeVersion
-} from './interfaces'
-import {qty2Int, toQty} from './util'
+import {CallOptions, RpcClient, RpcError} from '@subsquid/rpc-client'
+import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
+import {BlockHeader, Bytes, GetBlockResult, Hash, RuntimeVersion} from './interfaces'
+import {toQty} from './util'
 
 
 export class Rpc {
     constructor(
-        private client: RpcClient,
-        private priority = 0
+        public readonly client: RpcClient,
+        public readonly options: CallOptions = {}
     ) {}
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
+        return new Rpc(this.client, {
+            ...this.options,
+            priority
+        })
+    }
+
+    call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
+        return this.client.call(method, params, {...this.options, ...options})
+    }
+
+    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+        return this.client.batchCall(batch, {...this.options, ...options})
     }
 
     getFinalizedHead(): Promise<Hash> {
@@ -30,54 +33,57 @@ export class Rpc {
         return this.call('chain_getHead')
     }
 
-    getBlockHash(height: number): Promise<Hash> {
+    getBlockHash(height: number): Promise<Hash | null> {
         return this.call('chain_getBlockHash', [toQty(height)])
     }
 
-    getBlockHeader(hash: Hash): Promise<BlockHeader> {
-        return this.call('chain_getHeader', [hash])
+    getBlockHeader(blockHash: Hash): Promise<BlockHeader | null> {
+        return this.call('chain_getHeader', [blockHash])
     }
 
-    getBlock(hash: Hash): Promise<GetBlockResult> {
-        return this.call('chain_getBlock', [hash])
+    getBlock(blockHash: Hash): Promise<GetBlockResult | null> {
+        return this.call('chain_getBlock', [blockHash])
     }
 
-    getRuntimeVersion(blockHash: Hash): Promise<RuntimeVersion> {
-        return this.call('state_getRuntimeVersion', [blockHash])
-    }
-
-    getMetadata(blockHash: Hash): Promise<Bytes> {
-        return this.call('state_getMetadata', [blockHash])
-    }
-
-    getStorage(blockHash: Hash, key: Bytes): Promise<Bytes> {
-        return this.call('state_getStorageAt', [key, blockHash])
-    }
-
-    async getBlock0(hash: Hash, req?: DataRequest): Promise<BlockData> {
-        let block: PartialGetBlockResult
-        if (req?.extrinsics) {
-            block = await this.getBlock(hash)
-        } else {
-            let header = await this.getBlockHeader(hash)
-            block = {block: {header}}
-        }
-        return {
-            hash,
-            height: qty2Int(block.block.header.number),
-            block
-        }
-    }
-
-    call(method: string, params?: any[]): Promise<any> {
-        return this.client.call(method, params, {
-            priority: this.priority
+    getRuntimeVersion(blockHash: Hash): Promise<RuntimeVersion | undefined> {
+        return this.call('state_getRuntimeVersion', [blockHash], {
+            validateError: captureMissingBlock
         })
     }
 
-    batchCall(batch: {method: string, params?: any[]}[]): Promise<any[]> {
-        return this.client.batchCall(batch, {
-            priority: this.priority
+    getMetadata(blockHash: Hash): Promise<Bytes | undefined> {
+        return this.call('state_getMetadata', [blockHash], {
+            validateError: captureMissingBlock
         })
     }
+
+    getStorage(key: Bytes, blockHash: Hash): Promise<Bytes | null | undefined> {
+        return this.call('state_getStorageAt', [key, blockHash], {
+            validateError: captureMissingBlock
+        })
+    }
+
+    getStorageMany(query: [key: Bytes, blockHash: Hash][]): Promise<(Bytes | null | undefined)[]> {
+        let call = query.map(q => ({
+            method: 'state_getStorageAt',
+            params: q
+        }))
+        return this.batchCall(call, {
+            validateError: captureMissingBlock
+        })
+    }
+}
+
+
+export function captureMissingBlock(info: RpcErrorInfo): undefined {
+    if (isMissingBlockError(info)) {
+        return undefined
+    } else {
+        throw new RpcError(info)
+    }
+}
+
+
+export function isMissingBlockError(info: RpcErrorInfo): boolean {
+    return info.message.includes(' not found')
 }

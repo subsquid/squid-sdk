@@ -1,6 +1,51 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Sun, 11 Jun 2023 15:49:45 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 1.4.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- expose `FetchResponse` type
+
+## 1.3.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+- update dependencies
+
+## 1.3.1
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 1.3.0
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Minor changes
+
+- add response stream mode
+- expose `HttpBody` type
+
+## 1.2.2
+Thu, 07 Sep 2023 18:37:04 GMT
+
+### Patches
+
+- fix: `HttpClient.isRetryableError()` should handle `HttpError` instances
+
+## 1.2.1
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Patches
+
+- support basic auth urls
 
 ## 1.2.0
 Sun, 11 Jun 2023 15:49:45 GMT

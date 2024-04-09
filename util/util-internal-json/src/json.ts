@@ -15,12 +15,13 @@ export function toJSON(val: unknown): any {
             } else if (typeof (val as any).toJSON == 'function' && (json = (val as any).toJSON()) !== val) {
                 return toJSON(json)
             } else if (val instanceof Error) {
-                json = toJsonObject(val)
+                json = {}
                 if (val.stack) {
                     json.stack = val.stack
                 } else {
                     json.stack = val.toString()
                 }
+                json = toJsonObject(val, json)
                 return json
             } else if (val instanceof Map) {
                 let entries: {k: unknown, v: unknown}[] = []
@@ -50,8 +51,8 @@ function toJsonArray(val: unknown[]): any[] {
 }
 
 
-function toJsonObject(val: any): any {
-    let result: any = {}
+function toJsonObject(val: any, result?: any): any {
+    result = result || {}
     for (let key in val) {
         result[key] = toJSON(val[key])
     }

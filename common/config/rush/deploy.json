@@ -18,8 +18,11 @@
    * and then specify those projects in the "additionalProjectsToInclude" list.
    */
   "deploymentProjectNames": [
+    "@subsquid/solana-dump",
+    "@subsquid/solana-ingest",
     "@subsquid/substrate-dump",
-    "chain-status-service"
+    "@subsquid/substrate-ingest",
+    "@subsquid/substrate-metadata-service"
   ],
 
   /**

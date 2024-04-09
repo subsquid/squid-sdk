@@ -1,6 +1,55 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 3.1.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- add `concurrentWriter()` function
+
+### Patches
+
+- fix handling of destroyed/errored streams in `waitDrain()`
+- fix unhandled promise rejection crash in `concurrentMap()`
+
+## 3.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- rework `AsyncQueue`
+
+### Minor changes
+
+- add `weakMemo()`, `partitionBy()`, `safeCall()` functions
+
+### Patches
+
+- update dependencies
+
+## 2.5.2
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 2.5.1
+Thu, 07 Sep 2023 20:03:29 GMT
+
+### Patches
+
+- fix `@annotateAsyncError()`
+
+## 2.5.0
+Tue, 01 Aug 2023 16:40:12 GMT
+
+### Minor changes
+
+- introduce `annotateSyncError` and `annotateAsyncError` decorators 
 
 ## 2.4.0
 Wed, 19 Jul 2023 16:48:14 GMT

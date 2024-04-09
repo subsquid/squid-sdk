@@ -1,4 +1,6 @@
+import {assertNotNull} from '@subsquid/util-internal'
 import type {EntityManager, EntityMetadata} from 'typeorm'
+import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import {Entity, EntityClass} from './store'
 
 
@@ -61,7 +63,7 @@ export class ChangeTracker {
         let meta = this.getEntityMetadata(type)
 
         let touchedRows = await this.fetchEntities(
-            meta.tableName,
+            meta,
             entities.map(e => e.id)
         ).then(
             entities => new Map(
@@ -90,7 +92,7 @@ export class ChangeTracker {
 
     async trackDelete(type: EntityClass<Entity>, ids: string[]): Promise<void> {
         let meta = this.getEntityMetadata(type)
-        let deletedEntities = await this.fetchEntities(meta.tableName, ids)
+        let deletedEntities = await this.fetchEntities(meta, ids)
         return this.writeChangeRows(deletedEntities.map(e => {
             let {id, ...fields} = e
             return {
@@ -102,16 +104,17 @@ export class ChangeTracker {
         }))
     }
 
-    private async fetchEntities(table: string, ids: string[]): Promise<Entity[]> {
+    private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<Entity[]> {
         let entities = await this.em.query(
-            `SELECT * FROM ${this.escape(table)} WHERE id = ANY($1::text[])`,
+            `SELECT * FROM ${this.escape(meta.tableName)} WHERE id = ANY($1::text[])`,
             [ids]
         )
 
-        // Use different representation for raw bytes.
-        // That's because we can't serialize Buffer values in change records
-        // via `JSON.stringify()` (even with replacement function).
-        // It would be better to handle this issue during change record serialization,
+        // Here we transform the row object returned by the driver to its
+        // JSON variant in such a way, that `driver.query('UPDATE entity SET field = $1', [json.field])`
+        // would be always correctly handled.
+        //
+        // It would be better to handle it during change record serialization,
         // but it is just easier to do it here...
         for (let e of entities) {
             for (let key in e) {
@@ -121,6 +124,8 @@ export class ChangeTracker {
                         ? value
                         : Buffer.from(value.buffer, value.byteOffset, value.byteLength)
                     e[key] = '\\x' + value.toString('hex').toUpperCase()
+                } else if (Array.isArray(value) && isJsonProp(meta, key)) {
+                    e[key] = JSON.stringify(value)
                 }
             }
         }
@@ -206,4 +211,34 @@ export async function rollbackBlock(
 
 function escape(em: EntityManager, name: string): string {
     return em.connection.driver.escape(name)
+}
+
+
+const ENTITY_COLUMNS = new WeakMap<EntityMetadata, Map<string, ColumnMetadata>>()
+
+
+function getColumn(meta: EntityMetadata, fieldName: string): ColumnMetadata {
+    let columns = ENTITY_COLUMNS.get(meta)
+    if (columns == null) {
+        columns = new Map()
+        ENTITY_COLUMNS.set(meta, columns)
+    }
+    let col = columns.get(fieldName)
+    if (col == null) {
+        col = assertNotNull(meta.findColumnWithDatabaseName(fieldName))
+        columns.set(fieldName, col)
+    }
+    return col
+}
+
+
+function isJsonProp(meta: EntityMetadata, fieldName: string): boolean {
+    let col = getColumn(meta, fieldName)
+    switch(col.type) {
+        case 'jsonb':
+        case 'json':
+            return true
+        default:
+            return false
+    }
 }

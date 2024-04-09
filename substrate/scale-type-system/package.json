@@ -1,0 +1,29 @@
+{
+  "name": "@subsquid/scale-type-system",
+  "version": "1.0.2",
+  "description": "Check scale codec types against pre-defined pattern",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/util-internal": "^3.1.0"
+  },
+  "peerDependencies": {
+    "@subsquid/scale-codec": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "@subsquid/scale-codec": "^4.0.1",
+    "typescript": "~5.3.2"
+  }
+}

@@ -9,8 +9,6 @@ runProgram(async () => {
             let specVersion = process.argv[4]
             return chain.printMetadata(specVersion && parseInt(specVersion) || undefined)
         }
-        case 'select-test-blocks':
-            return chain.selectTestBlocks()
         case 'save-blocks':
             return chain.saveBlocks()
         case 'save-events':

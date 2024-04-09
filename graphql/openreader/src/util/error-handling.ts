@@ -1,40 +1,50 @@
-import {Logger, LogLevel} from "@subsquid/logger"
-import {GraphQLError, printError} from "graphql"
+import {Logger, LogLevel} from '@subsquid/logger'
+import {weakMemo} from '@subsquid/util-internal'
+import {ExecutionArgs, GraphQLError, print} from 'graphql'
 
 
-export function logGraphQLError(log: Logger, err: GraphQLError, level: LogLevel = LogLevel.ERROR): void {
+export interface DocumentCtx {
+    graphqlOperationName?: string
+    graphqlDocument: string
+    graphqlVariables: any
+}
+
+
+export const getDocumentCtx = weakMemo((args: ExecutionArgs): DocumentCtx => {
+    return {
+        graphqlOperationName: args.operationName || undefined,
+        graphqlDocument: print(args.document),
+        graphqlVariables: args.variableValues
+    }
+})
+
+
+export function logGraphQLErrors(
+    log: Logger,
+    args: ExecutionArgs,
+    errors: readonly GraphQLError[] | undefined,
+): void {
+    if (!errors?.length) return
+    let level = 0
+    let graphqlErrors = errors.map(err => {
+        level = Math.max(level, getErrorLevel(err))
+        return {
+            message: err.message,
+            path: err.path?.join('.'),
+            extensions: err.extensions,
+            originalError: err.originalError
+        }
+    })
     if (log.level > level) return
-    let msg = printError(err) + '\n'
     log.write(level, {
-        graphqlOriginalError: err.originalError,
-        graphqlPath: err.path?.join('.'),
-        graphqlQuery: err.source?.body,
-    }, msg)
+        graphqlErrors,
+        ...getDocumentCtx(args)
+    }, 'graphql query ended with errors')
 }
 
 
-export function withErrorContext(ctx: object): (err: unknown) => never {
-    return function(err): never {
-        throw addErrorContext(err, ctx)
-    }
-}
-
-
-export function addErrorContext(error: unknown, ctx: object): Error {
-    let e = ensureError(error)
-    Object.assign(e, ctx)
-    return e
-}
-
-
-export function ensureError(err: unknown): Error {
-    if (err instanceof Error) return err
-    return new NonErrorThrown(err)
-}
-
-
-export class NonErrorThrown extends Error {
-    constructor(public readonly value: unknown) {
-        super('Non error object thrown')
-    }
+function getErrorLevel(err: GraphQLError): LogLevel {
+    if ((err as any).__openreaderLogLevel) return (err as any).__openreaderLogLevel
+    if (err.extensions?.code === 'BAD_USER_INPUT') return LogLevel.WARN
+    return LogLevel.ERROR
 }

@@ -1,6 +1,51 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 4.7.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- add `.fixUnsafeIntegers` request option
+
+### Patches
+
+- refine retry warning message
+
+## 4.6.0
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Minor changes
+
+- annotate rpc errors with endpoint url and response body
+
+## 4.5.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- introduce subscriptions and notifications
+- introduce `.validateError` call option
+
+### Patches
+
+- update dependencies
+
+## 4.4.2
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+
+## 4.4.1
+Tue, 05 Sep 2023 20:32:34 GMT
+
+### Patches
+
+- support basic auth http urls
 
 ## 4.4.0
 Wed, 19 Jul 2023 16:48:14 GMT

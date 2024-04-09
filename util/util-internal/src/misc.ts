@@ -77,6 +77,56 @@ export function withErrorContext(ctx: any): (err: Error) => never {
 }
 
 
+export function annotateSyncError(getCtx: (...args: any[]) => any): (proto: any, prop: string, d: PropertyDescriptor) => PropertyDescriptor {
+    return function decorate(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
+        let {value: fn, ...options} = d
+
+        function annotate(err: any, args: any[]) {
+            return addErrorContext(
+                ensureError(err),
+                getCtx(...args)
+            )
+        }
+
+        let value = function(this: any, ...args: any[]) {
+            try {
+                return fn.apply(this, args)
+            } catch(err: any) {
+                throw annotate(err, args)
+            }
+        } as any
+
+        return {value, ...options}
+    }
+}
+
+
+export function annotateAsyncError(getCtx: (...args: any[]) => any): (proto: any, prop: string, d: PropertyDescriptor) => PropertyDescriptor {
+    return function decorate(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
+        let {value: fn, ...options} = d
+
+        function annotate(err: any, args: any[]) {
+            return addErrorContext(
+                ensureError(err),
+                getCtx(...args)
+            )
+        }
+
+        let value = function(this: any, ...args: any[]) {
+            try {
+                return fn.apply(this, args).catch((err: any) => {
+                    throw annotate(err, args)
+                })
+            } catch(err: any) {
+                throw annotate(err, args)
+            }
+        } as any
+
+        return {value, ...options}
+    }
+}
+
+
 export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
     if (abortSignal) {
         return new Promise((resolve, reject) => {
@@ -154,4 +204,38 @@ export async function splitParallelWork<T, R>(maxSize: number, tasks: T[], run: 
         result.push(...group)
     }
     return result
+}
+
+
+export function* partitionBy<T, V>(items: T[], value: (a: T) => V): Iterable<{items: T[], value: V}> {
+    if (items.length == 0) return
+    let pack: T[] = [items[0]]
+    let packValue = value(items[0])
+    for (let i = 1; i < items.length; i++) {
+        let item = items[i]
+        let itemValue = value(item)
+        if (itemValue === packValue) {
+            pack.push(item)
+        } else {
+            yield {items: pack, value: packValue}
+            pack = [item]
+            packValue = itemValue
+        }
+    }
+    if (pack.length > 0) {
+        yield {items: pack, value: packValue}
+    }
+}
+
+
+export function weakMemo<T extends object, R>(f: (obj: T) => R): (obj: T) => R {
+    let cache = new WeakMap<T, R>()
+    return function(obj: T): R {
+        let val = cache.get(obj)
+        if (val === undefined) {
+            val = f(obj)
+            cache.set(obj, val)
+        }
+        return val
+    }
 }

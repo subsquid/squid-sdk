@@ -1,6 +1,188 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 19 Jul 2023 16:48:14 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 1.17.1
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 1.17.0
+Thu, 29 Feb 2024 15:27:11 GMT
+
+### Minor changes
+
+- fix debug trace validation for failed `CREATE` case and make `EvmTraceCreateResult.address` non-optional again
+
+### Patches
+
+- Handle Avalanche RPC inconsistency issues
+
+## 1.16.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
+- update evm trace schema definition
+
+## 1.15.0
+Sat, 17 Feb 2024 17:47:08 GMT
+
+### Minor changes
+
+- extend `.addTrace()` with `callFrom` filter
+
+## 1.14.1
+Wed, 14 Feb 2024 20:01:22 GMT
+
+_Version update only_
+
+## 1.14.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add transaction items to log and trace requests
+
+## 1.13.0
+Thu, 11 Jan 2024 18:08:14 GMT
+
+### Minor changes
+
+- add `l1BlockNumber` to block fields
+
+## 1.12.2
+Tue, 09 Jan 2024 20:23:26 GMT
+
+### Patches
+
+- do not output '=' state diffs when ingesting data from RPC
+
+## 1.12.1
+Tue, 09 Jan 2024 15:50:08 GMT
+
+### Patches
+
+- fix call trace parent-child relation setup
+
+## 1.12.0
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Minor changes
+
+- warn when debug trace is missing from transaction instead of hard error
+- handle `INVALID` debug frame like a regular call
+
+## 1.11.1
+Fri, 29 Dec 2023 18:36:04 GMT
+
+### Patches
+
+- allow `null` sighash in archive call trace
+
+## 1.11.0
+Thu, 28 Dec 2023 19:59:01 GMT
+
+### Minor changes
+
+- support `debugTraceTimeout` RPC data ingestion option
+
+### Patches
+
+- allow empty `sighash` from archive
+- report block fetch consistency errors in a mode detailed manner
+
+## 1.10.2
+Tue, 26 Dec 2023 16:11:36 GMT
+
+### Patches
+
+- fix: `sighash` is not set when ingesting data from RPC
+- don't forget to filter state diffs when ingesting from RPC
+
+## 1.10.1
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Patches
+
+- allow missing `.gas`, `.gasUsed` fields in debug call trace
+
+## 1.10.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+- rename `.setArchive()` to `.setGateway()`
+
+### Patches
+
+- block timestamp should be in `ms`
+- fix `BlockHeader.size` validation
+
+## 1.9.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- introduce RPC data filtering
+- support chain head tracking via RPC subscription
+- improve hot block data ingestion speed via batch processing
+
+### Patches
+
+- update dependencies
+
+## 1.8.5
+Fri, 20 Oct 2023 17:49:18 GMT
+
+### Patches
+
+- handle `CALLCODE` debug frames
+
+## 1.8.4
+Sat, 14 Oct 2023 22:24:52 GMT
+
+### Patches
+
+- better handle case when hot datasource is behind already indexed finanlized head
+
+## 1.8.3
+Thu, 28 Sep 2023 20:58:19 GMT
+
+### Patches
+
+- update dependencies
+- compile with TypeScript 5
+- ignore STOP debug frame
+
+## 1.8.2
+Tue, 12 Sep 2023 08:42:04 GMT
+
+### Patches
+
+- don't warn users on partial archive unavailability which is part of its normal operation
+
+## 1.8.1
+Wed, 06 Sep 2023 13:16:47 GMT
+
+### Patches
+
+- prefer `alchemy_getTransactionReceipts` over `eth_getBlockReceipts`
+
+## 1.8.0
+Tue, 08 Aug 2023 21:22:05 GMT
+
+### Minor changes
+
+- allow to configure archive request timeout and increase the default up to 180 seconds
+
+## 1.7.3
+Thu, 20 Jul 2023 23:47:03 GMT
+
+### Patches
+
+- fix `TypeError: Cannot convert null to a BigInt` during data mapping
 
 ## 1.7.2
 Wed, 19 Jul 2023 16:48:14 GMT
