@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-runtime",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Encoding/decoding/metadata tools for Substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
