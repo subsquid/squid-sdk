@@ -55,10 +55,6 @@ export class Src {
     return lo + (hi << 128n)
   }
 
-  address(): string {
-    return '0x' + this.u256().toString(16).padStart(40, '0')
-  }
-
   bytes(): Uint8Array {
     const ptr = this.nat()
     this.safeJump(ptr)
