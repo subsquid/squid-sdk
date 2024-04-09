@@ -1,8 +1,13 @@
-import { Codec, Struct, StructTypes } from '../codec'
-import { Sink } from '../sink'
-import { slotsCount } from '../utils'
-import { Src } from '../src'
 import assert from 'node:assert'
+import { type Codec, type Struct, type StructTypes, Sink, Src } from '@subsquid/evm-codec'
+
+function slotsCount(codecs: readonly Codec<any>[]) {
+  let count = 0
+  for (const codec of codecs) {
+    count += codec.slotsCount ?? 1
+  }
+  return count
+}
 
 type FunctionReturn<T> = T extends Codec<infer U> ? U : T extends Struct ? StructTypes<T> : undefined
 
@@ -60,3 +65,9 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return result
   }
 }
+
+export const fun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
+  signature: string,
+  args: T,
+  returnType?: R,
+) => new AbiFunction<T, R>(signature, args, returnType)

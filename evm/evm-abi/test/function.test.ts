@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { encodeFunctionData, encodeFunctionResult, parseAbiItem } from 'viem'
-import { array, bool, bytes4, fixedSizeArray, fun, int32, Sink, string, struct, uint256 } from '../src'
+import { array, bool, bytes4, fixedSizeArray, int32, Sink, string, struct, uint256 } from '@subsquid/evm-codec'
+import { fun } from '../src'
 
 describe('Function', () => {
   it('encodes/decodes simple args', () => {

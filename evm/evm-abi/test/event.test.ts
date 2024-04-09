@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { encodeAbiParameters, encodeEventTopics, parseAbiItem } from 'viem'
-import { bool, bytes, indexed, string, struct, uint256, event as _event } from '../src'
+import { bool, bytes, string, struct, uint256 } from '@subsquid/evm-codec'
+import { event as _event, indexed } from '../src'
 
 describe('Event', () => {
   it('decodes simple args', () => {

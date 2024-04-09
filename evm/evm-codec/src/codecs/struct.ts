@@ -1,7 +1,14 @@
 import { Codec, Struct, StructTypes } from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
-import { slotsCount } from '../utils'
+
+function slotsCount(codecs: readonly Codec<any>[]) {
+  let count = 0
+  for (const codec of codecs) {
+    count += codec.slotsCount ?? 1
+  }
+  return count
+}
 
 export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>> {
   public readonly isDynamic: boolean

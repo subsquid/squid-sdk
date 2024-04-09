@@ -3,8 +3,6 @@ import { Sink } from '../sink'
 import { Src } from '../src'
 import { ArrayCodec, FixedSizeArrayCodec } from './array'
 import { StructCodec } from './struct'
-import { AbiFunction } from '../abi-components/function'
-import { AbiEvent } from '../abi-components/event'
 import assert from 'node:assert'
 
 function safeSignedRangeCodec<T extends number | bigint | boolean | string>(
@@ -168,16 +166,6 @@ type Struct = {
 export const struct = <const T extends Struct>(components: T) => new StructCodec<T>(components)
 
 export const tuple = struct
-
-export const fun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
-  signature: string,
-  args: T,
-  returnType?: R,
-) => new AbiFunction<T, R>(signature, args, returnType)
-
-export const event = <const T extends Struct>(topic: string, args: T) => new AbiEvent<T>(topic, args)
-
-export { indexed } from '../utils'
 
 export const uint24 = uintCodec(24)
 export const int24 = intCodec(24)

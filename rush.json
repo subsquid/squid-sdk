@@ -432,6 +432,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-abi",
+      "projectFolder": "evm/evm-abi",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,

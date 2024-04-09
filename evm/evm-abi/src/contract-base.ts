@@ -1,5 +1,5 @@
-import { AbiFunction } from './abi-components/function'
-import { Codec, Struct, StructTypes } from './codec'
+import type { AbiFunction } from './abi-components/function'
+import type { Codec, Struct, StructTypes } from '@subsquid/evm-codec'
 
 export interface Chain {
   client: {

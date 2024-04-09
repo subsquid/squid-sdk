@@ -1,7 +1,5 @@
-import { bytes32 } from '../codecs/primitives'
-import { Src } from '../src'
-import { Codec, StructTypes } from '../codec'
-import type { Pretty } from '../utils'
+import type { Pretty } from '../indexed'
+import { bytes32, Src, type Codec, type StructTypes, type Struct } from '@subsquid/evm-codec'
 
 export interface EventRecord {
   topics: string[]
@@ -57,3 +55,5 @@ export class AbiEvent<const T extends EventArgs> {
     return result
   }
 }
+
+export const event = <const T extends Struct>(topic: string, args: T) => new AbiEvent<T>(topic, args)
