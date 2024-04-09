@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/typeorm-codegen",
       "comment": "use decorators from typeorm-store package",
-      "type": "minor"
+      "type": "major"
     }
   ],
   "packageName": "@subsquid/typeorm-codegen"
