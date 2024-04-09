@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "make OneToOne relations bi-directional",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}
