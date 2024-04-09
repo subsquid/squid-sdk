@@ -84,21 +84,10 @@ export class Sink {
     this.increaseCurrentDataAreaSize(reservedSize + WORD_SIZE)
   }
 
-  staticBytes(len: number, val: Uint8Array) {
-    if (len > 32) {
-      throw new Error(`bytes${len} is not a valid type`)
-    }
-    const size = Buffer.byteLength(val)
-    if (size > len) {
-      throw new Error(`invalid data size for bytes${len}`)
-    }
+  staticBytes(val: Uint8Array) {
     this.reserve(WORD_SIZE)
     this.buf.set(val, this.pos)
     this.pos += WORD_SIZE
-  }
-
-  address(val: string) {
-    this.u256(BigInt(val))
   }
 
   string(val: string) {
@@ -110,10 +99,6 @@ export class Sink {
     this.buf.write(val, this.pos)
     this.pos += reservedSize
     this.increaseCurrentDataAreaSize(reservedSize + WORD_SIZE)
-  }
-
-  bool(val: boolean) {
-    this.u8(val ? 1 : 0)
   }
 
   /**

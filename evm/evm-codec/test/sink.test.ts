@@ -30,16 +30,15 @@ describe('sink', () => {
   })
 
   it('mixed types', () => {
-    const sink = new Sink(5)
+    const sink = new Sink(4)
     sink.nat(1)
     sink.i256(-2n)
-    sink.address('0x1234567890123456789012345678901234567890')
     sink.u256(3n)
-    sink.staticBytes(7, Buffer.from('1234567890abcd', 'hex'))
+    sink.staticBytes(Buffer.from('1234567890abcd', 'hex'))
     compareTypes(
       sink,
-      [{ type: 'uint8' }, { type: 'int8' }, { type: 'address' }, { type: 'uint256' }, { type: 'bytes7' }],
-      [1, -2, '0x1234567890123456789012345678901234567890', 3n, '0x1234567890abcd'],
+      [{ type: 'uint8' }, { type: 'int8' }, { type: 'uint256' }, { type: 'bytes7' }],
+      [1, -2, 3n, '0x1234567890abcd'],
     )
   })
 

@@ -43,13 +43,11 @@ describe('src', () => {
     const sink = new Sink(4)
     sink.nat(1)
     sink.i256(-2n)
-    sink.address('0x1234567890123456789012345678901234567890')
     sink.u256(3n)
 
     const src = new Src(sink.result())
     expect(src.nat()).toBe(1)
     expect(src.i256()).toBe(-2n)
-    expect(src.address()).toBe('0x1234567890123456789012345678901234567890')
     expect(src.u256()).toBe(3n)
   })
 
@@ -58,7 +56,6 @@ describe('src', () => {
     const bytes1 = Buffer.alloc(100).fill('321')
     const bytes7 = '0x1234567890abcd'
     const str2 = 'hello'
-    const address = '0xabc4567890123456789012345678901234567890'
     const encoded = Buffer.from(
       encodeAbiParameters(
         [
@@ -67,20 +64,20 @@ describe('src', () => {
           { type: 'bytes7' },
           { type: 'int128' },
           { type: 'bytes' },
-          { type: 'address' },
           { type: 'string' },
         ],
-        [69, str1, bytes7, -21312312452243312424534213123123123123n, `0x${bytes1.toString('hex')}`, address, str2],
+        [69, str1, bytes7, -21312312452243312424534213123123123123n, `0x${bytes1.toString('hex')}`, str2],
       ).slice(2),
       'hex',
     )
     const src = new Src(encoded)
     expect(src.nat()).toBe(69)
     expect(src.string()).toBe(str1)
-    expect(src.staticBytes(7)).toStrictEqual(Buffer.from(bytes7.slice(2), 'hex'))
+    expect(src.staticBytes()).toStrictEqual(
+      Buffer.from('1234567890abcd00000000000000000000000000000000000000000000000000', 'hex'),
+    )
     expect(src.i256()).toBe(-21312312452243312424534213123123123123n)
     expect(src.bytes()).toStrictEqual(bytes1)
-    expect(src.address()).toBe(address)
     expect(src.string()).toBe(str2)
   })
 

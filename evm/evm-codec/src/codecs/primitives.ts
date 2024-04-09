@@ -104,12 +104,21 @@ export const bytes = <const>{
   isDynamic: true,
 }
 
-const bytesN = (size: number): Codec<Uint8Array> => ({
+const bytesN = (len: number): Codec<Uint8Array> => ({
   encode(sink: Sink, val: Uint8Array) {
-    sink.staticBytes(size, val)
+    const size = Buffer.byteLength(val)
+    if (size > len) {
+      throw new Error(`invalid data size for bytes${len}`)
+    }
+    sink.staticBytes(val)
   },
   decode(src: Src): Uint8Array {
-    return src.staticBytes(size)
+    const val = src.staticBytes()
+    assert(
+      val.slice(len).every((byte) => byte === 0),
+      `nonzero padding for bytes${len}`,
+    )
+    return val.slice(0, len)
   },
   isDynamic: false,
 })

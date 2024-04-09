@@ -69,11 +69,8 @@ export class Src {
     return val
   }
 
-  staticBytes(len: number): Uint8Array {
-    if (len > 32) {
-      throw new Error(`bytes${len} is not a valid type`)
-    }
-    const val = this.buf.subarray(this.pos, this.pos + len)
+  staticBytes(): Uint8Array {
+    const val = this.buf.subarray(this.pos, this.pos + WORD_SIZE)
     this.pos += WORD_SIZE
     return val
   }
