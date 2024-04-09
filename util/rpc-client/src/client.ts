@@ -12,16 +12,54 @@ import {WsConnection} from './transport/ws'
 
 
 export interface RpcClientOptions {
+    /**
+     * RPC endpoint URL (either http(s) or ws(s))
+     */
     url: string
-    maxBatchCallSize?: number
+    /**
+     * Maximum number of ongoing concurrent requests
+     *
+     * Batch call is counted as a single request.
+     */
     capacity?: number
-    requestTimeout?: number
+    /**
+     * Maximum number of calls per second
+     *
+     * Batch call items are counted towards the limit.
+     */
     rateLimit?: number
+    /**
+     * Request timeout in `ms`
+     */
+    requestTimeout?: number
+    /**
+     * When set, every call (by default) will be retried specified number of times after connection error.
+     */
     retryAttempts?: number
+    /**
+     * Retry pauses in `ms.
+     *
+     * First value will be used for a first retry pause,
+     * second - for a second, etc.
+     *
+     * For all further retry attempts the last pause value will be used.
+     *
+     * Default is `[10, 100, 500, 2000, 10000, 20000]`
+     */
     retrySchedule?: number[]
-    log?: Logger | null
+    /**
+     * Maximum number of requests in a single batch call
+     */
+    maxBatchCallSize?: number
+    /**
+     * Convert unsafe integers to strings in incoming JSON messages
+     */
     fixUnsafeIntegers?: boolean
+    /**
+     * HTTP headers
+     */
     headers?: HttpHeaders
+    log?: Logger | null
 }
 
 

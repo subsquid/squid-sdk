@@ -472,13 +472,7 @@
       //      "shouldPublish": true,
       //      "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-data",
-      "projectFolder": "solana/solana-data",
-      "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-    },
+
     {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
@@ -494,11 +488,32 @@
 //      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/solana-processor",
-      "projectFolder": "solana/solana-processor",
+      "packageName": "@subsquid/solana-normalization",
+      "projectFolder": "solana/solana-normalization",
       "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "projectFolder": "solana/solana-rpc",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc-data",
+      "projectFolder": "solana/solana-rpc-data",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-stream",
+      "projectFolder": "solana/solana-stream",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/frontier",
@@ -828,11 +843,11 @@
       "projectFolder": "test/shibuya-psp22",
       "shouldPublish": false
     },
-    {
-      "packageName": "solana-example",
-      "projectFolder": "test/solana-example",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "solana-example",
+//      "projectFolder": "test/solana-example",
+//      "shouldPublish": false
+//    },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",

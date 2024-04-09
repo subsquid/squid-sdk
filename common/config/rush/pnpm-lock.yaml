@@ -104,21 +104,24 @@ dependencies:
   '@rush-temp/shibuya-psp22':
     specifier: file:./projects/shibuya-psp22.tgz
     version: file:projects/shibuya-psp22.tgz(supports-color@8.1.1)(ts-node@10.9.2)
-  '@rush-temp/solana-data':
-    specifier: file:./projects/solana-data.tgz
-    version: file:projects/solana-data.tgz
   '@rush-temp/solana-dump':
     specifier: file:./projects/solana-dump.tgz
     version: file:projects/solana-dump.tgz
-  '@rush-temp/solana-example':
-    specifier: file:./projects/solana-example.tgz
-    version: file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/solana-ingest':
     specifier: file:./projects/solana-ingest.tgz
     version: file:projects/solana-ingest.tgz
-  '@rush-temp/solana-processor':
-    specifier: file:./projects/solana-processor.tgz
-    version: file:projects/solana-processor.tgz
+  '@rush-temp/solana-normalization':
+    specifier: file:./projects/solana-normalization.tgz
+    version: file:projects/solana-normalization.tgz
+  '@rush-temp/solana-rpc':
+    specifier: file:./projects/solana-rpc.tgz
+    version: file:projects/solana-rpc.tgz
+  '@rush-temp/solana-rpc-data':
+    specifier: file:./projects/solana-rpc-data.tgz
+    version: file:projects/solana-rpc-data.tgz
+  '@rush-temp/solana-stream':
+    specifier: file:./projects/solana-stream.tgz
+    version: file:projects/solana-stream.tgz
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -5883,17 +5886,8 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
-  file:projects/solana-data.tgz:
-    resolution: {integrity: sha512-XAGRWV64ooGt2ArW4Iq0LYe9dvAUTM9EKG5HaCU0TSMVZNs6So9vI/LZmDlIPrnpUkVzzSHSz9SV7+PXK6zJ2g==, tarball: file:projects/solana-data.tgz}
-    name: '@rush-temp/solana-data'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 18.19.4
-      typescript: 5.3.3
-    dev: false
-
   file:projects/solana-dump.tgz:
-    resolution: {integrity: sha512-y67sbtWmNsQc8NbHD0KYI8n/0TmKLy0YgWMtoJHI8jNuTCQusc0OcyiWuth+tv5h4YELAYUoN/bpBIJmoBF89A==, tarball: file:projects/solana-dump.tgz}
+    resolution: {integrity: sha512-R5E7joVFpVriCIrCS6pzJ1SgvGi+7Yq94MEoJlIk+9glKpjyLew8RFht2FDnnJ4iwLB3LjIyoUSCS2WwPi1+lQ==, tarball: file:projects/solana-dump.tgz}
     name: '@rush-temp/solana-dump'
     version: 0.0.0
     dependencies:
@@ -5901,40 +5895,8 @@ packages:
       typescript: 5.3.3
     dev: false
 
-  file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-UmUZ9BOpj31csJXviYOO3WHJFtfFKZtfAXET2WZpy+IXee0izhWOOOwkyGvwfoCJDANJlerK5LoyG0BOYe7Byw==, tarball: file:projects/solana-example.tgz}
-    id: file:projects/solana-example.tgz
-    name: '@rush-temp/solana-example'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 18.19.4
-      bs58: 5.0.0
-      dotenv: 16.3.1
-      pg: 8.11.3
-      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-      typescript: 5.3.3
-    transitivePeerDependencies:
-      - '@google-cloud/spanner'
-      - '@sap/hana-client'
-      - better-sqlite3
-      - hdb-pool
-      - ioredis
-      - mongodb
-      - mssql
-      - mysql2
-      - oracledb
-      - pg-native
-      - pg-query-stream
-      - redis
-      - sql.js
-      - sqlite3
-      - supports-color
-      - ts-node
-      - typeorm-aurora-data-api-driver
-    dev: false
-
   file:projects/solana-ingest.tgz:
-    resolution: {integrity: sha512-vg0M0RPXsX4emXSNlgvUQs28i6ZxdQnHsKpuhD1Iial+BmVmXfLFtkGU/mgJ11Tl/ABcx7vRNsEk7Z0hSYqvkQ==, tarball: file:projects/solana-ingest.tgz}
+    resolution: {integrity: sha512-CgxvO58UEBDHMGgUXKb/Vka/+zljUvt9eHTcImNC4ZlFs2sxg7OSfHrua1CDQLYw8TeNyS7dGUNpf2yzPpgP+A==, tarball: file:projects/solana-ingest.tgz}
     name: '@rush-temp/solana-ingest'
     version: 0.0.0
     dependencies:
@@ -5942,9 +5904,36 @@ packages:
       typescript: 5.3.3
     dev: false
 
-  file:projects/solana-processor.tgz:
-    resolution: {integrity: sha512-o/tqnEeHFyucoms6BnKUmi4mRIsr2Alp39q6YQjUVb+qqzC0SmEzNbyDWI9z9JcgWh9EtG2JJbyV1Oy+C7Mvpg==, tarball: file:projects/solana-processor.tgz}
-    name: '@rush-temp/solana-processor'
+  file:projects/solana-normalization.tgz:
+    resolution: {integrity: sha512-GDF4JKo4MqjpFxOE2Tj3QrFkk+UWzRFkpnPZRWVaWuupALB0x1uH2BOZ4FD7zEH0AEdsiaBoXCGHV+YhXRiuOA==, tarball: file:projects/solana-normalization.tgz}
+    name: '@rush-temp/solana-normalization'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-rpc-data.tgz:
+    resolution: {integrity: sha512-fTi9WU4yVhvxnW8SodtT1ti8VHXwEQAJ0wxMhOV6OoLoSXVenS1Y5xdUehG3hRC5hGGKM1Kwj4cipppZVsVorg==, tarball: file:projects/solana-rpc-data.tgz}
+    name: '@rush-temp/solana-rpc-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-rpc.tgz:
+    resolution: {integrity: sha512-5yz3rQFeg52JT1lxVvHAhFFZNjsOnCCeqivSm54WyQX96bPdmy0wY+ldxPfUDzbpcitaQ7pQXie66FlAtwEI3A==, tarball: file:projects/solana-rpc.tgz}
+    name: '@rush-temp/solana-rpc'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-stream.tgz:
+    resolution: {integrity: sha512-08vvjbe8VNXwWIpDNkV84mZop43BgWYcaeXQdzjJ8FPXSoU0a+enBJQrF17XcmRuCth9giwPWAaRKFWyWqkEwg==, tarball: file:projects/solana-stream.tgz}
+    name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4

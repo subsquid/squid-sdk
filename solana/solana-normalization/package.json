@@ -1,30 +1,25 @@
 {
-  "name": "@subsquid/solana-ingest",
+  "name": "@subsquid/solana-normalization",
   "version": "0.0.0",
-  "description": "Data fetcher and normalizer for Solana",
+  "description": "Normalized Solana data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
     "access": "public"
   },
-  "bin": {
-    "solana-ingest": "./bin/run.js"
-  },
   "files": [
-    "bin",
     "lib",
     "src"
   ],
+  "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/solana-normalization": "^0.0.0",
     "@subsquid/solana-rpc-data": "^0.0.0",
     "@subsquid/util-internal": "^3.1.0",
-    "@subsquid/util-internal-ingest-cli": "^0.0.1",
-    "@subsquid/util-internal-json": "^1.2.3",
     "@subsquid/util-internal-validation": "^0.4.0"
+
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
