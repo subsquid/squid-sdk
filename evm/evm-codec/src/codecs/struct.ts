@@ -56,7 +56,7 @@ export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>
   private decodeDynamic(src: Src): StructTypes<T> {
     let result: any = {}
 
-    const offset = src.u32()
+    const offset = src.nat()
     const tmpSrc = src.slice(offset)
     for (let i in this.components) {
       let prop = this.components[i]

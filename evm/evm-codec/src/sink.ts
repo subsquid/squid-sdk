@@ -43,64 +43,16 @@ export class Sink {
     this.view = new DataView(this.buf.buffer, this.buf.byteOffset, this.buf.byteLength)
   }
 
-  u8(val: number) {
-    this.reserve(WORD_SIZE)
-    this.pos += WORD_SIZE - 1
-    this.view.setUint8(this.pos, val)
-    this.pos += 1
-  }
-
-  i8(val: number) {
-    this.i256(BigInt(val))
-  }
-
-  u16(val: number) {
-    this.reserve(WORD_SIZE)
-    this.pos += WORD_SIZE - 2
-    this.view.setUint16(this.pos, val, false)
-    this.pos += 2
-  }
-
-  i16(val: number) {
-    this.i256(BigInt(val))
-  }
-
-  u32(val: number) {
+  nat(val: number) {
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 4
     this.view.setUint32(this.pos, val, false)
     this.pos += 4
   }
 
-  i32(val: number) {
-    this.i256(BigInt(val))
-  }
-
-  u64(val: bigint) {
-    this.reserve(WORD_SIZE)
-    this.pos += WORD_SIZE - 8
-    this.view.setBigUint64(this.pos, val, false)
-    this.pos += 8
-  }
-
-  i64(val: bigint) {
-    this.i256(val)
-  }
-
   #u64(val: bigint) {
     this.view.setBigUint64(this.pos, val, false)
     this.pos += 8
-  }
-
-  u128(val: bigint) {
-    this.reserve(WORD_SIZE)
-    this.pos += WORD_SIZE - 16
-    this.#u64(val & 0xffffffffffffffffn)
-    this.#u64(val >> 64n)
-  }
-
-  i128(val: bigint) {
-    this.i256(BigInt(val))
   }
 
   #u128(val: bigint) {
@@ -123,7 +75,7 @@ export class Sink {
 
   bytes(val: Uint8Array) {
     const size = Buffer.byteLength(val)
-    this.u32(size)
+    this.nat(size)
     const wordsCount = Math.ceil(size / WORD_SIZE)
     const reservedSize = WORD_SIZE * wordsCount
     this.reserve(reservedSize)
@@ -151,7 +103,7 @@ export class Sink {
 
   string(val: string) {
     const size = Buffer.byteLength(val)
-    this.u32(size)
+    this.nat(size)
     const wordsCount = Math.ceil(size / WORD_SIZE)
     const reservedSize = WORD_SIZE * wordsCount
     this.reserve(reservedSize)
@@ -170,7 +122,7 @@ export class Sink {
    */
   newStaticDataArea(slotsCount = 0) {
     const offset = this.size()
-    this.u32(offset)
+    this.nat(offset)
     const dataAreaStart = this.currentDataAreaStart()
     this.pushDataArea(dataAreaStart + offset, slotsCount)
     this.pos = dataAreaStart + offset
@@ -179,11 +131,11 @@ export class Sink {
   // Adds elements count before the data area in an additional slot
   newDynamicDataArea(slotsCount: number) {
     const offset = this.size()
-    this.u32(offset)
+    this.nat(offset)
     const dataAreaStart = this.currentDataAreaStart()
     this.pushDataArea(dataAreaStart + offset + WORD_SIZE, slotsCount)
     this.pos = dataAreaStart + offset
-    this.u32(slotsCount)
+    this.nat(slotsCount)
   }
 
   private currentDataAreaStart() {

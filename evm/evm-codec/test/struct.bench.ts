@@ -33,10 +33,10 @@ class InlinedStructCodec<
   }
 
   public decode(src: Src): S {
-    const offset = src.u32()
+    const offset = src.nat()
     const tmpSrc = src.slice(offset)
     const decoded = [array(uint256).decode(tmpSrc), uint256.decode(tmpSrc)]
-    const offset2 = tmpSrc.u32()
+    const offset2 = tmpSrc.nat()
     const tmpSrc2 = tmpSrc.slice(offset2)
     const decoded2 = [array(uint256).decode(tmpSrc2), address.decode(tmpSrc2)]
     return {
