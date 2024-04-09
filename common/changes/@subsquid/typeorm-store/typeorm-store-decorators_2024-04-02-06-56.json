@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "re-export typeorm decorators",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
