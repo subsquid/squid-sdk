@@ -1,4 +1,3 @@
-import assert from 'node:assert'
 import { type Codec, type Struct, type StructTypes, Sink, Src } from '@subsquid/evm-codec'
 
 function slotsCount(codecs: readonly Codec<any>[]) {
@@ -16,8 +15,12 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   private readonly slotsCount: number
 
   constructor(public selector: string, public readonly args: T, public readonly returnType?: R) {
-    assert(selector.startsWith('0x'), 'selector must start with 0x')
-    assert(selector.length === 10, 'selector must be 4 bytes long')
+    if(!selector.startsWith('0x')) {
+      throw new Error('Selector must start with 0x')
+    }
+    if (selector.length !== 10) {
+      throw new Error('Selector must be 4 bytes long')
+    }
     this.#selector = Buffer.from(selector.slice(2), 'hex')
     this.args = args
     this.slotsCount = slotsCount(Object.values(args))
@@ -36,7 +39,9 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   }
 
   decode(calldata: string): StructTypes<T> {
-    assert(this.is(calldata), `unexpected function signature: ${calldata.slice(0, 10)}`)
+    if (!this.is(calldata)) {
+      throw new Error(`Unexpected function signature: ${calldata.slice(0, 10)}`)
+    }
     const src = new Src(Buffer.from(calldata.slice(10), 'hex'))
     const result = {} as any
     for (let i in this.args) {
