@@ -17,10 +17,10 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
   }
 
   decode(src: Src): T[] {
-    const offset = src.nat()
+    const offset = src.u32()
 
     src.safeJump(offset)
-    const len = src.nat()
+    const len = src.u32()
 
     const tmpSrc = src.slice(offset + WORD_SIZE)
     const val = new Array(len)
@@ -72,7 +72,7 @@ export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
   }
 
   private decodeDynamic(src: Src): T[] {
-    const offset = src.nat()
+    const offset = src.u32()
     const tmpSrc = src.slice(offset)
     let val = new Array(this.size)
     for (let i = 0; i < val.length; i++) {

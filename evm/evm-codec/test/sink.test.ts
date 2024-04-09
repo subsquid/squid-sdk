@@ -9,11 +9,11 @@ describe('sink', () => {
 
   it('negative numbers', () => {
     const sink = new Sink(6)
-    sink.i256(-1n)
-    sink.i256(-123n)
-    sink.i256(-123456n)
-    sink.i256(-1234567890n)
-    sink.i256(-12345678901234567890n)
+    sink.i8(-1)
+    sink.i16(-123)
+    sink.i32(-123456)
+    sink.i64(-1234567890n)
+    sink.i128(-12345678901234567890n)
     sink.i256(-1234567890123456789012345678901234567890n)
     compareTypes(
       sink,
@@ -30,15 +30,16 @@ describe('sink', () => {
   })
 
   it('mixed types', () => {
-    const sink = new Sink(4)
-    sink.nat(1)
-    sink.i256(-2n)
+    const sink = new Sink(5)
+    sink.u8(1)
+    sink.i8(-2)
+    sink.address('0x1234567890123456789012345678901234567890')
     sink.u256(3n)
-    sink.staticBytes(Buffer.from('1234567890abcd', 'hex'))
+    sink.staticBytes(7, Buffer.from('1234567890abcd', 'hex'))
     compareTypes(
       sink,
-      [{ type: 'uint8' }, { type: 'int8' }, { type: 'uint256' }, { type: 'bytes7' }],
-      [1, -2, 3n, '0x1234567890abcd'],
+      [{ type: 'uint8' }, { type: 'int8' }, { type: 'address' }, { type: 'uint256' }, { type: 'bytes7' }],
+      [1, -2, '0x1234567890123456789012345678901234567890', 3n, '0x1234567890abcd'],
     )
   })
 
