@@ -60,6 +60,8 @@ runProgram(async () => {
         })
     })
     out.write()
+    // Output the path of the generated file
+    console.log(`create:\t ${dir.resolve(out.path)}`);
 })
 
 
