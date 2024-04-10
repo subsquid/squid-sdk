@@ -137,10 +137,10 @@ export type Reward<F extends FieldSelection = {}> = Item<
 
 export interface Block<F extends FieldSelection = {}> {
     header: BlockHeader<F>
-    transactions?: Transaction<F>[]
-    instructions?: Instruction<F>[]
-    logs?: LogMessage<F>[]
-    balances?: Balance<F>[]
-    tokenBalances?: TokenBalance<F>[]
-    rewards?: Reward<F>[]
+    transactions: Transaction<F>[]
+    instructions: Instruction<F>[]
+    logs: LogMessage<F>[]
+    balances: Balance<F>[]
+    tokenBalances: TokenBalance<F>[]
+    rewards: Reward<F>[]
 }

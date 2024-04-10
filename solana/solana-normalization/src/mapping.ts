@@ -57,7 +57,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
         logs,
         balances,
         tokenBalances,
-        rewards
+        rewards: rewards || []
     }
 }
 

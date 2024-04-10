@@ -38,6 +38,18 @@ export interface RpcSettings {
      * RPC client
      */
     client: SolanaRpcClient
+    /**
+     * `getBlock` batch call size.
+     *
+     * Default is `5`.
+     */
+    strideSize?: number
+    /**
+     * Maximum number of concurrent `getBlock` batch calls.
+     *
+     * Default is `10`
+     */
+    strideConcurrency?: number
 }
 
 
@@ -212,7 +224,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 export interface DataSource<F extends FieldSelection> {
     getFinalizedHeight(): Promise<number>
     getBlockHash(height: number): Promise<Base58Bytes | undefined>
-    streamFinalizedBlocks(fromBlockHeight?: number): AsyncIterable<Block<F>[]>
+    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]>
 }
 
 
@@ -250,7 +262,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         }
     }
 
-    async *streamFinalizedBlocks(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
+    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
         let requests = fromBlockHeight == null
             ? this.requests
             : applyRangeBound(this.requests, {from: fromBlockHeight})
@@ -264,7 +276,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
                 let height = await archive.getFinalizedHeight()
                 let firstBlock = requests[0].range.from
                 if (height > firstBlock) {
-                    for await (let batch of archive.streamFinalizedBlocks(requests, !this.rpc)) {
+                    for await (let batch of archive.getBlockStream(requests, !this.rpc)) {
                         firstBlock = last(batch).header.height + 1
                         yield batch as Block<F>[]
                     }
@@ -278,7 +290,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
 
         assert(this.rpc)
 
-        yield* this.rpc.streamFinalizedBlocks(requests) as AsyncIterable<Block<F>[]>
+        yield* this.rpc.getBlockStream(requests) as AsyncIterable<Block<F>[]>
     }
 
     private createArchive(agent?: HttpAgent): SolanaArchive {

@@ -107,6 +107,9 @@ dependencies:
   '@rush-temp/solana-dump':
     specifier: file:./projects/solana-dump.tgz
     version: file:projects/solana-dump.tgz
+  '@rush-temp/solana-example':
+    specifier: file:./projects/solana-example.tgz
+    version: file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/solana-ingest':
     specifier: file:./projects/solana-ingest.tgz
     version: file:projects/solana-ingest.tgz
@@ -5895,6 +5898,38 @@ packages:
       typescript: 5.3.3
     dev: false
 
+  file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
+    resolution: {integrity: sha512-4u0AszaYdXmILOHA+wi6WpbNw+LVpGdAsjeY91yXfq0nCqaELCnQkfuFt76QAgRSR9uZzyQgUhekjo7zNaFrbA==, tarball: file:projects/solana-example.tgz}
+    id: file:projects/solana-example.tgz
+    name: '@rush-temp/solana-example'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      bs58: 5.0.0
+      dotenv: 16.3.1
+      pg: 8.11.3
+      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+    dev: false
+
   file:projects/solana-ingest.tgz:
     resolution: {integrity: sha512-CgxvO58UEBDHMGgUXKb/Vka/+zljUvt9eHTcImNC4ZlFs2sxg7OSfHrua1CDQLYw8TeNyS7dGUNpf2yzPpgP+A==, tarball: file:projects/solana-ingest.tgz}
     name: '@rush-temp/solana-ingest'
@@ -5932,7 +5967,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-08vvjbe8VNXwWIpDNkV84mZop43BgWYcaeXQdzjJ8FPXSoU0a+enBJQrF17XcmRuCth9giwPWAaRKFWyWqkEwg==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-8DNcjLvm+8gN35WmgAD9St9iY9O9A3M2TLXpZaTZwwGj8l9a79aM1Kkf/TVYnhQsgZ72PKS0Rus2dxBq4JnDEQ==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:

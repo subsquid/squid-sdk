@@ -305,7 +305,7 @@ class BlockFilter {
         this.block.logs = this.block.logs.filter(i => this.include.logs.has(i))
         this.block.balances = this.block.balances.filter(i => this.include.balances.has(i))
         this.block.tokenBalances = this.block.tokenBalances.filter(i => this.include.tokenBalances.has(i))
-        this.block.rewards = this.block.rewards?.filter(i => this.include.rewards.has(i))
+        this.block.rewards = this.block.rewards.filter(i => this.include.rewards.has(i))
     }
 }
 

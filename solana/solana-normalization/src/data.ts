@@ -108,5 +108,5 @@ export interface Block {
     logs: LogMessage[]
     balances: Balance[]
     tokenBalances: TokenBalance[]
-    rewards?: Reward[]
+    rewards: Reward[]
 }

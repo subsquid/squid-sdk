@@ -27,7 +27,7 @@ export class SolanaArchive {
         return blocks[0].header.hash
     }
 
-    async *streamFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {
+    async *getBlockStream(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {
         let archiveRequests = mapRangeRequestList(requests, req => {
             let {fields, includeAllBlocks, ...items} = req
             let archiveItems: any = {}
@@ -65,7 +65,12 @@ export class SolanaArchive {
                 let {header: {number, ...hdr}, ...items} = b
                 return {
                     header: {height: number, ...hdr},
-                    ...items
+                    transactions: items.transactions || [],
+                    instructions: items.instructions || [],
+                    logs: items.logs || [],
+                    balances: items.balances || [],
+                    tokenBalances: items.tokenBalances || [],
+                    rewards: items.rewards || []
                 }
             })
 

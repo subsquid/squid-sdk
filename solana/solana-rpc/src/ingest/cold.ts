@@ -1,5 +1,5 @@
 import {Block, GetBlock} from '@subsquid/solana-rpc-data'
-import {concurrentMap, last, maybeLast, Throttler} from '@subsquid/util-internal'
+import {concurrentMap, last, maybeLast, Throttler, wait} from '@subsquid/util-internal'
 import {assertRangeList, FiniteRange, getRequestAt, RangeRequest, splitRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {DataRequest} from '../base'
@@ -152,11 +152,17 @@ class ColdIngest {
             fromSlot
         )
 
+        let retrySchedule = [0, 100, 200, 400, 1000, 2000]
+        let retryAttempts = 0
+
         while (stream.isOnHead() || headProbe.get() - stream.getHeadSlot() < this.options.strideSize * 2) {
             let blocks = await stream.next()
             if (blocks.length == 0) {
-                // TODO: exponential decay
+                let pause = retrySchedule[Math.max(retryAttempts, retrySchedule.length - 1)]
+                await wait(pause)
+                retryAttempts += 1
             } else {
+                retryAttempts = 0
                 while (last(blocks).height > endBlock) {
                     blocks.pop()
                 }

@@ -15,8 +15,8 @@ import {
     option,
     STRING
 } from '@subsquid/util-internal-validation'
+import {project} from '../data/fields'
 import {FieldSelection} from '../data/model'
-import {Selector} from '../data/type-util'
 
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {
@@ -132,16 +132,3 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         rewards: option(array(Reward))
     })
 })
-
-
-function project<T>(fields: Selector<keyof T> | undefined, obj: T): Partial<T> {
-    if (fields == null) return {}
-    let result: Partial<T> = {}
-    let key: keyof T
-    for (key in obj) {
-        if (fields[key]) {
-            result[key] = obj[key]
-        }
-    }
-    return result
-}

@@ -31,7 +31,7 @@ export class RpcDataSource {
         return block.blockhash
     }
 
-    async *streamFinalizedBlocks(
+    async *getBlockStream(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean | undefined
     ): AsyncIterable<PartialBlock[]> {
@@ -40,8 +40,8 @@ export class RpcDataSource {
             stopOnHead,
             rpc: this.rpc,
             headPollInterval: 5_000,
-            strideSize: 5,
-            strideConcurrency: 5
+            strideSize: this.options.strideSize ?? 5,
+            strideConcurrency: this.options.strideConcurrency ?? 10
         })
 
         for await (let batch of blockStream) {
