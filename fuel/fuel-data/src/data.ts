@@ -2,7 +2,7 @@ type Bytes = string
 
 
 export interface BlockHeader {
-    id: Bytes
+    hash: Bytes
     height: number
     daHeight: BigInt
     transactionsRoot: Bytes
@@ -61,6 +61,9 @@ export interface FailureStatus {
 export type Status = SubmittedStatus | SuccessStatus | SqueezedOutStatus | FailureStatus
 
 
+export type TransactionType = 'Script' | 'Create' | 'Mint'
+
+
 export interface Transaction {
     index: number
     hash: Bytes
@@ -83,6 +86,7 @@ export interface Transaction {
     isScript: boolean
     isCreate: boolean
     isMint: boolean
+    type: TransactionType
     outputContract?: {
         inputIndex: number
         balanceRoot: Bytes

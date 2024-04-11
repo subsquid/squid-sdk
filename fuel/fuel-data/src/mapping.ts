@@ -11,6 +11,7 @@ import {
     Block,
     BlockHeader
 } from './data'
+import {unexpectedCase} from '@subsquid/util-internal'
 
 
 function toInteger(val: string): number {
@@ -90,13 +91,27 @@ function mapRawPolicies(raw: raw.Policies | null): Policies | undefined {
 }
 
 
-function mapRawTransaction(raw: raw.Transaction, index: number): Transaction {
+function getTransactionType(raw: raw.Transaction) {
+    if (raw.isScript) {
+        return 'Script'
+    } else if (raw.isCreate) {
+        return 'Create'
+    } else if (raw.isMint) {
+        return 'Mint'
+    } else {
+        throw unexpectedCase()
+    }
+}
+
+
+function mapRawTransaction(raw: raw.Transaction, transactionIndex: number): Transaction {
     let transaction: Transaction = {
-        index,
+        index: transactionIndex,
         hash: raw.id,
         isCreate: raw.isCreate,
         isMint: raw.isMint,
         isScript: raw.isScript,
+        type: getTransactionType(raw),
         status: mapRawTransactionStatus(raw.status),
         policies: mapRawPolicies(raw.policies),
         salt: raw.salt ?? undefined,
@@ -143,7 +158,7 @@ function mapRawTransaction(raw: raw.Transaction, index: number): Transaction {
 }
 
 
-export function mapRawInput(raw: raw.TransactionInput, transactionIndex: number, index: number): TransactionInput {
+function mapRawInput(raw: raw.TransactionInput, transactionIndex: number, index: number): TransactionInput {
     switch (raw.__typename) {
         case 'InputCoin':
             return {
@@ -191,7 +206,7 @@ export function mapRawInput(raw: raw.TransactionInput, transactionIndex: number,
 }
 
 
-export function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: number, index: number): TransactionOutput {
+function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: number, index: number): TransactionOutput {
     switch (raw.__typename) {
         case 'ChangeOutput':
             return {
@@ -241,7 +256,7 @@ export function mapRawOutput(raw: raw.TransactionOutput, transactionIndex: numbe
 }
 
 
-export function mapRawReceipt(raw: raw.Receipt, transactionIndex: number, index: number): Receipt {
+function mapRawReceipt(raw: raw.Receipt, transactionIndex: number, index: number): Receipt {
     let receipt: Receipt = {
         index,
         transactionIndex,
@@ -314,7 +329,7 @@ export function mapRawReceipt(raw: raw.Receipt, transactionIndex: number, index:
 
 export function mapRawBlock(raw: raw.BlockData): Block {
     let header: BlockHeader = {
-        id: raw.block.header.id,
+        hash: raw.block.header.id,
         height: toInteger(raw.block.header.height),
         daHeight: BigInt(raw.block.header.daHeight),
         transactionsRoot: raw.block.header.transactionsRoot,

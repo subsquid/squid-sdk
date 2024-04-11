@@ -603,6 +603,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/fuel-processor",
+      "projectFolder": "fuel/fuel-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,
@@ -849,6 +855,11 @@
     {
       "packageName": "solana-example",
       "projectFolder": "test/solana-example",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "fuel-spot-market",
+      "projectFolder": "test/fuel-spot-market",
       "shouldPublish": false
     },
 //    {

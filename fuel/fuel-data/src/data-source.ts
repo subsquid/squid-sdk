@@ -3,7 +3,7 @@ import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest} from '@subsquid/util-internal-range'
 import {DataValidationError, GetSrcType, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {BlockData, Blocks, LatestBlockHeight, DataRequest} from './raw-data'
+import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest} from './raw-data'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
@@ -58,6 +58,18 @@ export class HttpDataSource {
         return height
     }
 
+    async getBlockHash(height: number): Promise<string | undefined> {
+        let query = `
+            {
+                block(height: "${height}") {
+                    id
+                }
+            }
+        `
+        let response: GetBlockHash = await this.request(query, getResultValidator(GetBlockHash))
+        return response.block?.id
+    }
+
     getFinalizedBlocks(
         requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean
@@ -65,11 +77,14 @@ export class HttpDataSource {
         return coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
             getSplit: async req => {
-                let after = Math.max(0, req.range.from - 1)
                 let first = req.range.to - req.range.from
+                let args = `first: ${first + 1}`
+                if (req.range.from != 0) {
+                    args += `, after: "${req.range.from - 1}"`
+                }
                 let query = `
                 {
-                    blocks(after: "${after}", first: ${first}) {
+                    blocks(${args}) {
                         nodes {
                             header {
                                 id
@@ -246,6 +261,13 @@ export class HttpDataSource {
                                     contractId
                                     subId
                                 }
+                                script
+                                scriptData
+                                bytecodeWitnessIndex
+                                bytecodeLength
+                                salt
+                                storageSlots
+                                rawPayload
                             }
                         }
                     }

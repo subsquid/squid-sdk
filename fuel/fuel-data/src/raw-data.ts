@@ -11,6 +11,7 @@ import {
     STRING_NAT,
     BOOLEAN,
     oneOf,
+    option,
     BIG_NAT
 } from '@subsquid/util-internal-validation'
 
@@ -27,6 +28,16 @@ export const LatestBlockHeight = object({
 
 
 export type LatestBlockHeight = GetSrcType<typeof LatestBlockHeight>
+
+
+export const GetBlockHash = object({
+    block: option(object({
+        id: STRING
+    }))
+})
+
+
+export type GetBlockHash = GetSrcType<typeof GetBlockHash>
 
 
 export const BlockHeader = object({
