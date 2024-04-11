@@ -1,5 +1,6 @@
 import {ReceiptType, TransactionType} from '@subsquid/fuel-data/lib/data'
 import {HashAndHeight, shortHash} from '@subsquid/util-internal-processor-tools'
+import {unexpectedCase} from '@subsquid/util-internal'
 import {
     PartialOutput,
     PartialBlock,
@@ -8,7 +9,6 @@ import {
     PartialTransaction,
     PartialInput
 } from '../interfaces/data-partial'
-import {unexpectedCase} from '@subsquid/util-internal'
 
 
 export class Block {
@@ -91,6 +91,8 @@ export class Transaction implements PartialTransaction {
     type?: TransactionType
     #block: BlockHeader
     #receipts?: Receipt[]
+    #inputs?: Input[]
+    #outputs?: Output[]
 
     constructor(block: BlockHeader, tx: PartialTransaction) {
         this.id = formatId(block, tx.index)
@@ -116,6 +118,28 @@ export class Transaction implements PartialTransaction {
 
     set receipts(value: Receipt[]) {
         this.#receipts = value
+    }
+
+    set inputs(value: Input[]) {
+        this.#inputs = value
+    }
+
+    get inputs(): Input[] {
+        if (this.#inputs == null) {
+            this.#inputs = []
+        }
+        return this.#inputs
+    }
+
+    set outputs(value: Output[]) {
+        this.#outputs = value
+    }
+
+    get outputs(): Output[] {
+        if (this.#outputs == null) {
+            this.#outputs = []
+        }
+        return this.#outputs
     }
 }
 
@@ -165,6 +189,7 @@ export class Receipt implements PartialReceipt {
 
 export class InputBase {
     id: string
+    index: number
     transactionIndex: number
     #block: BlockHeader
     #transaction?: Transaction
@@ -172,6 +197,7 @@ export class InputBase {
     constructor(block: BlockHeader, src: PartialInput) {
         this.#block = block
         this.id = formatId(block, src.transactionIndex, src.index)
+        this.index = src.index
         this.transactionIndex = src.transactionIndex
         Object.assign(this, src)
     }
@@ -222,12 +248,14 @@ export type Input = InputCoin | InputContract | InputMessage
 
 
 export class OutputBase {
+    index: number
     transactionIndex: number
     #block: BlockHeader
     #transaction?: Transaction
 
     constructor(block: BlockHeader, src: PartialOutput) {
         this.#block = block
+        this.index = src.index
         this.transactionIndex = src.transactionIndex
         Object.assign(this, src)
     }
