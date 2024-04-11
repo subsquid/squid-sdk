@@ -8,7 +8,8 @@ export class Throttler<T> {
 
     constructor(
         private fn: () => Promise<T>,
-        private interval: number
+        private interval: number,
+        private prefetch = false
     ) {}
 
     call(): Promise<T> {
@@ -28,7 +29,13 @@ export class Throttler<T> {
 
     private performCall(pause: number): Promise<T> {
         if (this.pending) return this.pending
-        return this.pending = this.execute(pause).finally(() => this.pending = undefined)
+        return this.pending = this.execute(pause).finally(() => {
+            this.pending = undefined
+            if (this.prefetch) {
+                let pause = Math.round(this.interval * 0.9)
+                this.performCall(pause).catch(() => {})
+            }
+        })
     }
 
     private async execute(pause: number): Promise<T> {

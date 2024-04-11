@@ -5,8 +5,11 @@ export class RateMeter {
     private window: number[]
     private time = 0
 
-    constructor() {
-        this.window = new Array(11)
+    constructor(
+        public readonly windowSize: number = 10,
+        public readonly slotTime: number = 100
+    ) {
+        this.window = new Array(windowSize + 1)
         this.window.fill(0)
     }
 
@@ -34,12 +37,12 @@ export class RateMeter {
             rate += this.window[time % this.window.length]
             time -= 1
         }
-        return rate
+        return 1000 * rate / (this.windowSize * this.slotTime)
     }
 
     private toTime(now?: number): number {
         now = now ?? Date.now()
-        let time = Math.ceil(now / 100)
+        let time = Math.ceil(now / this.slotTime)
         time = Math.max(time, this.time)
         assert(time > this.window.length)
         return time

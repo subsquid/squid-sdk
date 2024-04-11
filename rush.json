@@ -466,13 +466,19 @@
       "shouldPublish": false
     },
     {
+      "packageName": "@subsquid/batch-processor",
+      "projectFolder": "processor/batch-processor",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/borsh",
       "projectFolder": "solana/borsh",
       "shouldPublish": false
       //      "shouldPublish": true,
       //      "versionPolicyName": "npm"
     },
-
     {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",

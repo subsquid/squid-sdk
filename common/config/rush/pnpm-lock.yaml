@@ -41,6 +41,9 @@ dependencies:
   '@rush-temp/balances':
     specifier: file:./projects/balances.tgz
     version: file:projects/balances.tgz(supports-color@8.1.1)
+  '@rush-temp/batch-processor':
+    specifier: file:./projects/batch-processor.tgz
+    version: file:projects/batch-processor.tgz
   '@rush-temp/big-decimal':
     specifier: file:./projects/big-decimal.tgz
     version: file:projects/big-decimal.tgz
@@ -5532,6 +5535,16 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
+  file:projects/batch-processor.tgz:
+    resolution: {integrity: sha512-4NsCr/63brjR3o4mZ64uwgA49Z8uXyBnhduMCAiJWH78ena0EKFvWxrWgUOeVD5O1KLEKKPybELTB52S2h81Qw==, tarball: file:projects/batch-processor.tgz}
+    name: '@rush-temp/batch-processor'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      prom-client: 14.2.0
+      typescript: 5.3.3
+    dev: false
+
   file:projects/big-decimal.tgz:
     resolution: {integrity: sha512-/Er4O4+BTjIgMcLL/oy3KUDz5o/97kqUHu1HGrIvixflTucO3M2Dm/GnwE1d81EtsEaCR57yWvZ7u07HLEU3og==, tarball: file:projects/big-decimal.tgz}
     name: '@rush-temp/big-decimal'
@@ -5899,7 +5912,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-4u0AszaYdXmILOHA+wi6WpbNw+LVpGdAsjeY91yXfq0nCqaELCnQkfuFt76QAgRSR9uZzyQgUhekjo7zNaFrbA==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-SfX55sqC2Ab62jKLJVFq0FtkR4OoqB3IS6VaJc165ZXRlDuh/uVSt89UL1PWmTupPmuIjheuUKbjgzJVdKT6Sw==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0

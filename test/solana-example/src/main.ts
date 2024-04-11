@@ -1,3 +1,4 @@
+import {run} from '@subsquid/batch-processor'
 import {createLogger} from '@subsquid/logger'
 import {DataSourceBuilder, SolanaRpcClient} from '@subsquid/solana-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
@@ -8,35 +9,34 @@ import * as whirlpool from './abi/whirpool'
 import {Exchange} from './model'
 
 
-const log = createLogger('main')
+const log = createLogger('mapping')
 
 
-runProgram(async () => {
-    let source = new DataSourceBuilder()
-        .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
-        .setRpc({
-            client: new SolanaRpcClient({
-                url: assertNotNull(process.env.SOLANA_NODE)
-            })
+const dataSource = new DataSourceBuilder()
+    .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
+    .setRpc({
+        client: new SolanaRpcClient({
+            url: assertNotNull(process.env.SOLANA_NODE)
         })
-        .setBlockRange({from: 239_632_000})
-        .addInstruction({
-            where: {
-                programId: [whirlpool.programId],
-                d8: [whirlpool.swap.d8],
-                isCommitted: true
-            },
-            include: {
-                innerInstructions: true,
-                transaction: true,
-                transactionTokenBalances: true,
-            }
-        }).build()
+    })
+    .setBlockRange({from: 239_632_000})
+    .addInstruction({
+        where: {
+            programId: [whirlpool.programId],
+            d8: [whirlpool.swap.d8],
+            isCommitted: true
+        },
+        include: {
+            innerInstructions: true,
+            transaction: true,
+            transactionTokenBalances: true,
+        }
+    }).build()
 
-    for await (let batch of source.getBlockStream()) {
-        log.info(`batch: ${batch.length}, last slot: ${last(batch).header.slot}`)
-    }
-}, err => log.fatal(err))
+
+run(dataSource, new TypeormDatabase(), async ctx => {
+
+})
 
 
 // processor.run(new TypeormDatabase(), async ctx => {
