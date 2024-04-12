@@ -25,30 +25,11 @@ export interface FieldSelection {
 
 
 export const DEFAULT_FIELDS = {
-    block: {
-        // slot: true,
-        // parentSlot: true,
-        // timestamp: true
-    },
-    transaction: {
-        // signatures: true,
-        // err: true
-    },
-    receipt: {
-        // programId: true,
-        // accounts: true,
-        // data: true,
-        // isCommitted: true
-    },
-    input: {
-    //     programId: true,
-    //     kind: true,
-    //     message: true
-    },
-    output: {
-    //     pre: true,
-    //     post: true
-    },
+    block: {},
+    transaction: {},
+    receipt: {},
+    input: {},
+    output: {},
 } as const
 
 
@@ -72,74 +53,47 @@ export type Transaction<F extends FieldSelection = {}> = Simplify<
     Item<data.Transaction, TransactionRequiredFields, F, 'transaction'> &
     {
         block: BlockHeader<F>
-        // instructions: Instruction<F>[]
-        // balances: Balance<F>[]
-        // tokenBalances: TokenBalance<F>[]
+        receipts: Receipt<F>[]
+        inputs: Input<F>[]
+        outputs: Output<F>[]
     }
 >
 
 
 export type Receipt<F extends FieldSelection = {}> = Simplify<
     Item<data.Receipt, ReceiptRequiredFields, F, 'receipt'> &
-    (['data'] extends [GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'receipt'>] ? {
-        d1: Bytes
-        d2: Bytes
-        d4: Bytes
-        d8: Bytes
-    } : {}) &
     {
         block: BlockHeader<F>
         transaction?: Transaction<F>
         getTransaction(): Transaction<F>
-        inner: Receipt<F>[]
-        parent?: Receipt<F>
     }
 >
 
 
-// export type LogMessage<F extends FieldSelection = {}> = Simplify<
-//     Item<data.LogMessage, LogRequiredFields, F, 'log'> &
-//     {
-//         block: BlockHeader<F>
-//         transaction?: Transaction<F>
-//         getTransaction(): Transaction<F>
-//         instruction?: Instruction<F>
-//         getInstruction(): Instruction<F>
-//     }
-// >
+export type Input<F extends FieldSelection = {}> = Simplify<
+    Item<data.TransactionInput, InputRequiredFields, F, 'input'> &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
+>
 
 
-// export type Balance<F extends FieldSelection = {}> = Simplify<
-//     Item<data.Balance, BalanceRequiredFields, F, 'balance'> &
-//     {
-//         block: BlockHeader<F>
-//         transaction?: Transaction<F>
-//         getTransaction(): Transaction<F>
-//     }
-// >
-
-
-// export type TokenBalance<F extends FieldSelection = {}> = Simplify<
-//     Item<data.TokenBalance, TokenBalanceRequiredFields, F, 'tokenBalance'> &
-//     {
-//         block: BlockHeader<F>
-//         transaction?: Transaction<F>
-//         getTransaction(): Transaction<F>
-//     }
-// >
-
-
-// export type Reward<F extends FieldSelection = {}> = Simplify<
-//     Item<data.Reward, RewardRequiredFields, F, 'reward'>
-// >
+export type Output<F extends FieldSelection = {}> = Simplify<
+    Item<data.TransactionOutput, OutputRequiredFields, F, 'output'> &
+    {
+        block: BlockHeader<F>
+        transaction?: Transaction<F>
+        getTransaction(): Transaction<F>
+    }
+>
 
 
 export interface Block<F extends FieldSelection = {}> {
     header: BlockHeader<F>
     transactions: Transaction<F>[]
     receipts: Receipt<F>[]
-    // logs: LogMessage<F>[]
-    // balances: Balance<F>[]
-    // tokenBalances: TokenBalance<F>[]
-    // rewards: Reward<F>[]
+    inputs: Input<F>[]
+    outputs: Output<F>[]
 }
