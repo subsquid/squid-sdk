@@ -4,8 +4,9 @@ import {Batch} from '@subsquid/util-internal-ingest-tools'
 import {FiniteRange, RangeRequest, splitRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, DataRequest} from './data'
-import {findSlot, getData, getFinalizedTop, isConsistentChain} from './fetch'
+import {getData, getFinalizedTop, isConsistentChain} from './fetch'
 import {Rpc} from './rpc'
+import {findSlot} from './slot-search'
 
 
 export interface RpcDataSourceOptions {
@@ -55,7 +56,6 @@ export class RpcDataSource {
             for (let req of requests) {
                 let beg = req.range.from
                 let end = req.range.to ?? Infinity
-
                 while (beg <= end) {
                     if (top.height < beg) {
                         top = await head.get()

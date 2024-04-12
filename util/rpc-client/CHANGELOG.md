@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 4.8.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- Allow to configure HTTP headers
 
 ## 4.7.0
 Sun, 17 Mar 2024 23:20:20 GMT

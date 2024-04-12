@@ -6,6 +6,7 @@ import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '
 interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
+    slotTip?: string[]
 }
 
 

@@ -73,19 +73,19 @@ export class Runtime {
 
     hasStorageItem(name: QualifiedName): boolean {
         let qn = parseQualifiedName(name)
-        return !!this.description.storage[qn[0]]?.[qn[1]]
+        return !!this.description.storage[qn[0]]?.items[qn[1]]
     }
 
-    private _getStorageItem([prefix, name]: [string, string]): StorageItem  {
-        let items = this.description.storage[prefix]
-        if (items == null) throw new Error(
-            `There are no storage items under prefix ${prefix}`
+    private _getStorageItem([pallet, name]: [string, string]): StorageItem & {prefix: string}  {
+        let desc = this.description.storage[pallet]
+        if (desc == null) throw new Error(
+            `There are no storage items in pallet ${pallet}`
         )
-        let def = items[name]
+        let def = desc.items[name]
         if (def == null) throw new Error(
-            `Unknown storage item: ${prefix}.${name}`
+            `Unknown storage item: ${pallet}.${name}`
         )
-        return def
+        return {...def, prefix: desc.prefix}
     }
 
     encodeStorageKey(name: QualifiedName, ...key: any[]): Bytes {
@@ -130,7 +130,7 @@ export class Runtime {
         let qn = parseQualifiedName(name)
         let item = this._getStorageItem(qn)
         assert(item.keys.length === key.length)
-        let encodedKey = sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, key)
+        let encodedKey = sto.encodeKey(this.scaleCodec, item.prefix, qn[1], item, key)
         let value: Bytes | undefined = await this.rpc.call('state_getStorageAt', [encodedKey, blockHash])
         if (value == null) return
         return this._decodeStorageValue(item, value)
@@ -142,12 +142,12 @@ export class Runtime {
 
         let query: Bytes[]
         if (keys == null) {
-            query = await this.rpc.call('state_getKeys', [sto.encodeName(qn[0], qn[1]), blockHash])
+            query = await this.rpc.call('state_getKeys', [sto.encodeName(item.prefix, qn[1]), blockHash])
         } else {
             query = keys.map(key => {
                 let ks = item.keys.length > 1 ? key : [key]
                 assert(ks.length === item.keys.length)
-                return sto.encodeKey(this.scaleCodec, qn[0], qn[1], item, ks)
+                return sto.encodeKey(this.scaleCodec, item.prefix, qn[1], item, ks)
             })
         }
 
@@ -431,7 +431,7 @@ export class Runtime {
         valueTy: sts.Type
     ): boolean {
         let qn = parseQualifiedName(name)
-        let def = this.description.storage[qn[0]]?.[qn[1]]
+        let def = this.description.storage[qn[0]]?.items[qn[1]]
         if (def == null) return false
         if (Array.isArray(modifier)) {
             if (!modifier.includes(def.modifier)) return false

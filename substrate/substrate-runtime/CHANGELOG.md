@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Sat, 06 Jan 2024 13:28:46 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 2.0.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Breaking changes
+
+- map storage by pallet name instead of prefix
 
 ## 1.0.3
 Sat, 06 Jan 2024 13:28:46 GMT

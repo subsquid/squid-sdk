@@ -4,7 +4,7 @@ import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/uti
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
@@ -21,6 +21,7 @@ export interface RpcClientOptions {
     retrySchedule?: number[]
     log?: Logger | null
     fixUnsafeIntegers?: boolean
+    headers?: HttpHeaders
 }
 
 
@@ -81,7 +82,7 @@ export class RpcClient {
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
@@ -101,13 +102,14 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string, fixUnsafeIntegers: boolean): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: HttpHeaders): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':
             case 'wss:':
                 return new WsConnection({
                     url,
+                    headers,
                     onNotificationMessage: msg => this.onNotification(msg),
                     onReset: reason => {
                         if (this.closed) return
@@ -121,6 +123,7 @@ export class RpcClient {
             case 'https:':
                 return new HttpConnection({
                     url,
+                    headers,
                     log: this.log,
                     fixUnsafeIntegers
                 })

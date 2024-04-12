@@ -2,6 +2,21 @@
   "name": "@subsquid/ink-abi",
   "entries": [
     {
+      "version": "3.0.3",
+      "tag": "@subsquid/ink-abi_v3.0.3",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.2",
       "tag": "@subsquid/ink-abi_v3.0.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",
