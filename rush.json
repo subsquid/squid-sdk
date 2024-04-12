@@ -858,8 +858,8 @@
       "shouldPublish": false
     },
     {
-      "packageName": "fuel-spot-market",
-      "projectFolder": "test/fuel-spot-market",
+      "packageName": "fuel-indexer",
+      "projectFolder": "test/fuel-indexer",
       "shouldPublish": false
     },
 //    {

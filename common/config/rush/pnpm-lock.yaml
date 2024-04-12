@@ -74,15 +74,15 @@ dependencies:
   '@rush-temp/fuel-dump':
     specifier: file:./projects/fuel-dump.tgz
     version: file:projects/fuel-dump.tgz
+  '@rush-temp/fuel-indexer':
+    specifier: file:./projects/fuel-indexer.tgz
+    version: file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/fuel-ingest':
     specifier: file:./projects/fuel-ingest.tgz
     version: file:projects/fuel-ingest.tgz
   '@rush-temp/fuel-processor':
     specifier: file:./projects/fuel-processor.tgz
     version: file:projects/fuel-processor.tgz
-  '@rush-temp/fuel-spot-market':
-    specifier: file:./projects/fuel-spot-market.tgz
-    version: file:projects/fuel-spot-market.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/gql-test-client':
     specifier: file:./projects/gql-test-client.tgz
     version: file:projects/gql-test-client.tgz(graphql@15.8.0)
@@ -1227,103 +1227,6 @@ packages:
     resolution: {integrity: sha512-5Aap/GaRupgNx/feGBwLLTVv8OQFfv3pq2lPRzPg9R+IOBnDgghTGW7l7EuVXOvg5cc/xSAlRW8rBrjIC3Nvqw==}
     dev: false
 
-  /@fuel-ts/address@0.78.0:
-    resolution: {integrity: sha512-1qT4jgMej8cqUFS40gQ53RTHYnYtgilKnY7GF7GFJdxFpBNIWQWNRbzYZM0NV/MYfLDRHEXCv0Ec0ditPVtXbw==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/crypto': 0.78.0
-      '@fuel-ts/errors': 0.78.0
-      '@fuel-ts/interfaces': 0.78.0
-      '@fuel-ts/utils': 0.78.0
-      '@fuel-ts/versions': 0.78.0
-      '@noble/hashes': 1.3.3
-      bech32: 2.0.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@fuel-ts/crypto@0.78.0:
-    resolution: {integrity: sha512-3SV7lFjK9EvEwgE5v+2R5PeTTZdr/27LaD4FvZ+O2qby0YV503jmDvy4AlZ0Ps3q9dQl5AmpIUkFpoWhVUJMWA==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/errors': 0.78.0
-      '@fuel-ts/utils': 0.78.0
-      '@noble/hashes': 1.3.3
-      ethers: 6.9.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@fuel-ts/errors@0.78.0:
-    resolution: {integrity: sha512-54hclzlXn847pOLz59GitIQ3jQFPwjuZFVUolgmESQ6d3udfG6loCups1GbPPnSBJADyDtnn6q+k49g/lO+e6Q==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/versions': 0.78.0
-    dev: false
-
-  /@fuel-ts/hasher@0.78.0:
-    resolution: {integrity: sha512-nw6jAYF4m9kydxvt2iPHsxbpti+N2HbDRnXz7nPuVBCYFDxoql5HzmMdK4DhaqgzLCGomkFZH2O1wJ/nLlPSOQ==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/address': 0.78.0
-      '@fuel-ts/crypto': 0.78.0
-      '@fuel-ts/interfaces': 0.78.0
-      '@fuel-ts/math': 0.78.0
-      '@fuel-ts/utils': 0.78.0
-      '@noble/hashes': 1.3.3
-      ramda: 0.29.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@fuel-ts/interfaces@0.78.0:
-    resolution: {integrity: sha512-VRj1V8bmJ0l6hiRXw5sNk1KcHEtu8AYy4U4WqAeTUpQwJBMKDQN89QtJPqoZMHh1/j9wOcJbfnnRyskpKRkgJg==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dev: false
-
-  /@fuel-ts/math@0.78.0:
-    resolution: {integrity: sha512-JeDz/7GQJrIhm0EM3jim1qOCNw3/FoG0M3hN2TSzItN5tiaupwjMXb5CgQS5k+WwmXWKQikWJwQBz5dLdbB3qA==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/errors': 0.78.0
-      '@types/bn.js': 5.1.5
-      bn.js: 5.2.1
-    dev: false
-
-  /@fuel-ts/merkle@0.78.0:
-    resolution: {integrity: sha512-Aw+TNQJv/nOPMkq9YoSMBOePn1/ZWblJbs1lGQ1F4HK4Dv0ghPeJPJgMoY8E7CAQKD2iajX8QqdSUUBwHpnfjQ==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/hasher': 0.78.0
-      '@fuel-ts/interfaces': 0.78.0
-      '@fuel-ts/math': 0.78.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /@fuel-ts/utils@0.78.0:
-    resolution: {integrity: sha512-PnWRSbMyEQDjXJxbESoOsec6FEdyvxr34A72eEtsqypJ5vM4RQsQ8/DHMGiI6gDAWkLZhZWcNGNuzqpHcvl5xA==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    dependencies:
-      '@fuel-ts/errors': 0.78.0
-      '@fuel-ts/interfaces': 0.78.0
-      ramda: 0.29.1
-      rimraf: 3.0.2
-    dev: false
-
-  /@fuel-ts/versions@0.78.0:
-    resolution: {integrity: sha512-w0cXfNcOcpqC2gJoKx+so8by6QMEs0pqlSWThhBoarkvy33DdMk682kiO0QfF47d7IlqLvDPiJhRTGQYo24IFA==}
-    engines: {node: ^18.18.2 || ^20.0.0}
-    hasBin: true
-    dependencies:
-      chalk: 4.1.2
-      cli-table: 0.3.11
-    dev: false
-
   /@graphql-tools/merge@8.3.1(graphql@15.8.0):
     resolution: {integrity: sha512-BMm99mqdNZbEYeTPK3it9r9S6rsZsQKtlqJsSBknAclXq2pGEfOxjcIZi+kBSkHZKPKCRrYDd5vY0+rUmIHVLg==}
     peerDependencies:
@@ -2141,12 +2044,6 @@ packages:
       '@types/node': 18.19.4
     dev: false
 
-  /@types/bn.js@5.1.5:
-    resolution: {integrity: sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==}
-    dependencies:
-      '@types/node': 18.19.4
-    dev: false
-
   /@types/body-parser@1.19.2:
     resolution: {integrity: sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==}
     dependencies:
@@ -2661,10 +2558,6 @@ packages:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
     dev: false
 
-  /bech32@2.0.0:
-    resolution: {integrity: sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==}
-    dev: false
-
   /big.js@6.2.1:
     resolution: {integrity: sha512-bCtHMwL9LeDIozFn+oNhhFoq+yQ3BNdnsLSASUxLciOb1vgvpHsIO1dsENiGMgbb4SkP5TrzWzRiLddn8ahVOQ==}
     dev: false
@@ -2908,13 +2801,6 @@ packages:
       yargs: 16.2.0
     dev: false
 
-  /cli-table@0.3.11:
-    resolution: {integrity: sha512-IqLQi4lO0nIB4tcdTpN4LCB9FI3uqrJZK7RC515EnhZ6qBaglkIgICb1wjeAqpdoOabm1+SuQtkXIPdYC93jhQ==}
-    engines: {node: '>= 0.2.0'}
-    dependencies:
-      colors: 1.0.3
-    dev: false
-
   /cliui@7.0.4:
     resolution: {integrity: sha512-OcRE68cOsVMXp1Yvonl/fzkQOyjLSu/8bhPDfQt0e0/Eb283TKP20Fs2MqoPsr9SwA595rRCA+QMzYc9nBP+JQ==}
     dependencies:
@@ -2962,11 +2848,6 @@ packages:
 
   /color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
-    dev: false
-
-  /colors@1.0.3:
-    resolution: {integrity: sha512-pFGrxThWcWQ2MsAz6RtgeWe4NK2kUE1WfsrvvlctdII745EW9I0yflqhe7++M5LEc7bV2c/9/5zc8sFcpL0Drw==}
-    engines: {node: '>=0.1.90'}
     dev: false
 
   /commander@11.1.0:
@@ -4726,10 +4607,6 @@ packages:
       side-channel: 1.0.4
     dev: false
 
-  /ramda@0.29.1:
-    resolution: {integrity: sha512-OfxIeWzd4xdUNxlWhgFazxsA/nl3mS4/jGZI5n00uWOoSSFRhC1b6gl6xvmzUamgmqELraWp0J/qqVlXYPDPyA==}
-    dev: false
-
   /randombytes@2.1.0:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
     dependencies:
@@ -4844,13 +4721,6 @@ packages:
   /retry@0.13.1:
     resolution: {integrity: sha512-XQBQ3I8W1Cge0Seh+6gjj03LbmRFWuoszgK9ooCpwYIrhhoO80pfq4cUkU5DkknwfOfFteRwlZ56PYOGYyFWdg==}
     engines: {node: '>= 4'}
-    dev: false
-
-  /rimraf@3.0.2:
-    resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
-    hasBin: true
-    dependencies:
-      glob: 7.2.3
     dev: false
 
   /rpc-websockets@7.9.0:
@@ -5848,6 +5718,37 @@ packages:
       typescript: 5.3.3
     dev: false
 
+  file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2):
+    resolution: {integrity: sha512-tq4s0CKlZfMA/vWcF4R4mDjxt9W3kAYo6+rzxxTeItOyE1MwSjVf9BuJtZaNtm4nMdEcnqng8GQISiD0IxWGtg==, tarball: file:projects/fuel-indexer.tgz}
+    id: file:projects/fuel-indexer.tgz
+    name: '@rush-temp/fuel-indexer'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      dotenv: 16.3.1
+      pg: 8.11.3
+      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+    dev: false
+
   file:projects/fuel-ingest.tgz:
     resolution: {integrity: sha512-RPy6bzvJd4r5akDVVwot3ivJPWgbzsbLVkJyjS7EVcRTx2DrWXAmTG49XBytAO3eVSy5QzEnMNwsA4qcSRGI0w==, tarball: file:projects/fuel-ingest.tgz}
     name: '@rush-temp/fuel-ingest'
@@ -5864,41 +5765,6 @@ packages:
     dependencies:
       '@types/node': 18.19.4
       typescript: 5.3.3
-    dev: false
-
-  file:projects/fuel-spot-market.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-8Z0Kh2wc/zPEtWPGM8r83Nvc6IeJocGUFxxWqfhw+gWCLkElWC7ozVZgY1HEcNwA+lSutUjXgCZ6Mlczmq+z+g==, tarball: file:projects/fuel-spot-market.tgz}
-    id: file:projects/fuel-spot-market.tgz
-    name: '@rush-temp/fuel-spot-market'
-    version: 0.0.0
-    dependencies:
-      '@fuel-ts/hasher': 0.78.0
-      '@fuel-ts/merkle': 0.78.0
-      '@types/node': 18.19.4
-      dotenv: 16.3.1
-      pg: 8.11.3
-      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-      typescript: 5.3.3
-    transitivePeerDependencies:
-      - '@google-cloud/spanner'
-      - '@sap/hana-client'
-      - better-sqlite3
-      - bufferutil
-      - hdb-pool
-      - ioredis
-      - mongodb
-      - mssql
-      - mysql2
-      - oracledb
-      - pg-native
-      - pg-query-stream
-      - redis
-      - sql.js
-      - sqlite3
-      - supports-color
-      - ts-node
-      - typeorm-aurora-data-api-driver
-      - utf-8-validate
     dev: false
 
   file:projects/gql-test-client.tgz(graphql@15.8.0):
