@@ -1,5 +1,5 @@
 import {ReceiptType, TransactionType, InputType, OutputType} from '@subsquid/fuel-data/lib/data'
-import {FieldSelection} from './data'
+import {FieldSelection, Bytes} from './data'
 
 
 export interface DataRequest {
@@ -22,20 +22,20 @@ export interface TransactionRequest {
 
 export interface ReceiptRequest {
     type?: ReceiptType[]
-    logDataContract?: string[]
+    logDataContract?: Bytes[]
     transaction?: boolean
 }
 
 
 export interface InputRequest {
     type?: InputType[]
-    coinOwner?: string[]
-    coinAssetId?: string[]
-    coinPredicate?: string[]
-    contractContract?: string[]
-    messageSender?: string[]
-    messageRecipient?: string[]
-    messagePredicate?: string[]
+    coinOwner?: Bytes[]
+    coinAssetId?: Bytes[]
+    coinPredicate?: Bytes[]
+    contractContract?: Bytes[]
+    messageSender?: Bytes[]
+    messageRecipient?: Bytes[]
+    messagePredicate?: Bytes[]
     transaction?: boolean
 }
 

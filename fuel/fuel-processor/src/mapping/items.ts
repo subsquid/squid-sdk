@@ -9,6 +9,7 @@ import {
     PartialTransaction,
     PartialInput
 } from '../interfaces/data-partial'
+import {Bytes} from '../interfaces/data'
 
 
 export class Block {
@@ -71,9 +72,9 @@ export class Block {
 
 export class BlockHeader implements PartialBlockHeader {
     id: string
-    hash: string
     height: number
-    parentHash: string
+    hash: Bytes
+    parentHash: Bytes
 
     constructor(header: PartialBlockHeader) {
         this.id = formatId(header)
@@ -149,7 +150,7 @@ export class Receipt implements PartialReceipt {
     index: number
     transactionIndex: number
     receiptType?: ReceiptType
-    contract?: string
+    contract?: Bytes
     #block: BlockHeader
     #transaction?: Transaction
 
@@ -231,40 +232,40 @@ export class InputBase {
 
 export class InputCoin extends InputBase {
     type: 'InputCoin' = 'InputCoin'
-    utxoId?: string
-    owner?: string
+    utxoId?: Bytes
+    owner?: Bytes
     amount?: BigInt
-    assetId?: string
+    assetId?: Bytes
     txPointer?: string
     witnessIndex?: number
     maturity?: number
     predicateGasUsed?: BigInt
-    predicate?: string
-    predicateData?: string
+    predicate?: Bytes
+    predicateData?: Bytes
 }
 
 
 export class InputContract extends InputBase {
     type: 'InputContract' = 'InputContract'
-    utxoId?: string
-    balanceRoot?: string
-    stateRoot?: string
+    utxoId?: Bytes
+    balanceRoot?: Bytes
+    stateRoot?: Bytes
     txPointer?: string
-    contract?: string
+    contract?: Bytes
 }
 
 
 export class InputMessage extends InputBase {
     type: 'InputMessage' = 'InputMessage'
-    sender?: string
-    recipient?: string
+    sender?: Bytes
+    recipient?: Bytes
     amount?: BigInt
-    nonce?: string
+    nonce?: Bytes
     witnessIndex?: number
     predicateGasUsed?: BigInt
-    data?: string
-    predicate?: string
-    predicateData?: string
+    data?: Bytes
+    predicate?: Bytes
+    predicateData?: Bytes
 }
 
 
