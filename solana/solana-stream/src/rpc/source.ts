@@ -1,5 +1,5 @@
-import {Base58Bytes, findSlot, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
-import {addErrorContext} from '@subsquid/util-internal'
+import {Base58Bytes, findSlot, GetBlock, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
+import {addErrorContext, wait} from '@subsquid/util-internal'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
@@ -16,6 +16,17 @@ export class RpcDataSource {
 
     getFinalizedHeight(): Promise<number> {
         return this.rpc.getFinalizedHeight()
+    }
+
+    async getBlockInfo(slot: number): Promise<Omit<GetBlock, 'transactions' | 'rewards'> | undefined> {
+        let attempts = 10
+        while (attempts) {
+            let block = await this.rpc.getBlockInfo('finalized', slot)
+            if (block || block === undefined) return block
+            await wait(100)
+            attempts -= 1
+        }
+        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} 10 times in a row`)
     }
 
     async getBlockHash(height: number): Promise<Base58Bytes | undefined> {

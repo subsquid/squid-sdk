@@ -1,3 +1,4 @@
+import {BlockHeader} from '@subsquid/solana-normalization'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
@@ -5,7 +6,7 @@ import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {PartialBlock} from '../data/partial'
+import {PartialBlock, PartialBlockHeader} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {getDataSchema} from './schema'
 
@@ -25,6 +26,23 @@ export class SolanaArchive {
         })
         assert(blocks.length == 1)
         return blocks[0].header.hash
+    }
+
+    async getBlockHeader(height: number): Promise<BlockHeader> {
+        let blocks = await this.client.query({
+            fromBlock: height,
+            toBlock: height,
+            includeAllBlocks: true,
+            fields: {
+                block: {
+                    slot: true,
+                    parentSlot: true,
+                    timestamp: true
+                }
+            }
+        })
+        assert(blocks.length == 1)
+        return blocks[0].header as unknown as BlockHeader
     }
 
     async *getBlockStream(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {

@@ -1,6 +1,6 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {def, last} from '@subsquid/util-internal'
+import {addErrorContext, def, last} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
@@ -8,6 +8,7 @@ import assert from 'assert'
 import {SolanaArchive} from './archive/source'
 import {getFields} from './data/fields'
 import {Block, FieldSelection} from './data/model'
+import {PartialBlockHeader} from './data/partial'
 import {
     BalanceRequest,
     DataRequest,
@@ -230,6 +231,7 @@ export interface DataSource<F extends FieldSelection> {
 
 class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
     private rpc?: RpcDataSource
+    private isConsistent?: boolean
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
@@ -251,6 +253,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
     }
 
     async getBlockHash(height: number): Promise<Base58Bytes | undefined> {
+        await this.assertConsistency()
         if (this.archiveSettings == null) {
             assert(this.rpc)
             return this.rpc.getBlockHash(height)
@@ -262,7 +265,33 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         }
     }
 
+    private async assertConsistency(): Promise<void> {
+        if (this.isConsistent || this.archiveSettings == null || this.rpc == null) return
+        let inconsistentSlot = await this.performConsistencyCheck().catch(err => {
+            throw addErrorContext(
+                new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
+                {reason: err}
+            )
+        })
+        if (inconsistentSlot == null) {
+            this.isConsistent = true
+        } else {
+            throw new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${inconsistentSlot}`)
+        }
+    }
+
+    private async performConsistencyCheck(): Promise<number | undefined> {
+        let archive = this.createArchive()
+        let height = await archive.getFinalizedHeight()
+        let archiveBlock = await archive.getBlockHeader(height)
+        let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.slot)
+        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
+        return archiveBlock.slot
+    }
+
     async *getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
+        await this.assertConsistency()
+
         let requests = fromBlockHeight == null
             ? this.requests
             : applyRangeBound(this.requests, {from: fromBlockHeight})
@@ -274,19 +303,20 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
             try {
                 let archive = this.createArchive(agent)
                 let height = await archive.getFinalizedHeight()
-                let firstBlock = requests[0].range.from
-                if (height > firstBlock) {
+                let from = requests[0].range.from
+                if (height > from || !this.rpc) {
                     for await (let batch of archive.getBlockStream(requests, !this.rpc)) {
-                        firstBlock = last(batch).header.height + 1
                         yield batch as Block<F>[]
+                        from = last(batch).header.height + 1
                     }
-                    requests = applyRangeBound(requests, {from: firstBlock})
-                    if (requests.length == 0) return
+                    requests = applyRangeBound(requests, {from})
                 }
             } finally {
                 agent.close()
             }
         }
+
+        if (requests.length == 0) return
 
         assert(this.rpc)
 
