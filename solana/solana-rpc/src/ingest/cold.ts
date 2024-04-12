@@ -181,10 +181,10 @@ class ColdIngest {
                 range,
                 req
             ).then(blocks => {
-                let block = maybeLast(blocks)
-                if (block && block.height > this.bottom.height) {
-                    this.setBottom(block)
-                }
+                this.setBottom({
+                    height: Math.max(this.bottom.height, maybeLast(blocks)?.height ?? 0),
+                    slot: Math.max(this.bottom.slot, range.to)
+                })
                 return blocks
             })
             jobs.register(promise)
@@ -193,8 +193,8 @@ class ColdIngest {
         await jobs.done()
     }
 
-    private setBottom(block: Block): void {
-        assert(block.height > this.bottom.height)
+    private setBottom(block: HeightAndSlot): void {
+        assert(block.height >= this.bottom.height && block.slot >= this.bottom.slot)
         this.bottom = {
             height: block.height,
             slot: block.slot
