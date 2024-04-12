@@ -231,16 +231,40 @@ export class InputBase {
 
 export class InputCoin extends InputBase {
     type: 'InputCoin' = 'InputCoin'
+    utxoId?: string
+    owner?: string
+    amount?: BigInt
+    assetId?: string
+    txPointer?: string
+    witnessIndex?: number
+    maturity?: number
+    predicateGasUsed?: BigInt
+    predicate?: string
+    predicateData?: string
 }
 
 
 export class InputContract extends InputBase {
     type: 'InputContract' = 'InputContract'
+    utxoId?: string
+    balanceRoot?: string
+    stateRoot?: string
+    txPointer?: string
+    contract?: string
 }
 
 
 export class InputMessage extends InputBase {
     type: 'InputMessage' = 'InputMessage'
+    sender?: string
+    recipient?: string
+    amount?: BigInt
+    nonce?: string
+    witnessIndex?: number
+    predicateGasUsed?: BigInt
+    data?: string
+    predicate?: string
+    predicateData?: string
 }
 
 

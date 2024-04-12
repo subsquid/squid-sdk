@@ -1,5 +1,5 @@
 import {EntityFilter, FilterBuilder} from '@subsquid/util-internal-processor-tools'
-import {weakMemo} from '@subsquid/util-internal'
+import {assertNotNull, weakMemo} from '@subsquid/util-internal'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
 import {DataRequest} from './interfaces/data-request'
 import {Block, Input, Output, Receipt, Transaction} from './mapping'
@@ -90,9 +90,26 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<Input, InputRe
     let inputs = new EntityFilter<Input, InputRelations>()
 
     dataRequest.inputs?.forEach(req => {
-        let {...relations} = req
+        let {
+            type,
+            coinOwner,
+            coinAssetId,
+            coinPredicate,
+            contractContract,
+            messageSender,
+            messageRecipient,
+            messagePredicate,
+            ...relations
+        } = req
         let filter = new FilterBuilder<Input>()
-        // filter.propIn('type', type)
+        filter.propIn('type', req.type)
+        filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.owner), coinOwner)
+        filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.assetId), coinAssetId)
+        filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.predicate), coinPredicate)
+        filter.getIn(input => input.type == 'InputContract' && assertNotNull(input.contract), contractContract)
+        filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.sender), messageSender)
+        filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.recipient), messageRecipient)
+        filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.predicate), messagePredicate)
         inputs.add(filter, relations)
     })
 
@@ -104,9 +121,9 @@ function buildOutputFilter(dataRequest: DataRequest): EntityFilter<Output, Outpu
     let outputs = new EntityFilter<Output, OutputRelations>()
 
     dataRequest.outputs?.forEach(req => {
-        let {...relations} = req
+        let {type, ...relations} = req
         let filter = new FilterBuilder<Output>()
-        // filter.propIn('type', type)
+        filter.propIn('type', type)
         outputs.add(filter, relations)
     })
 
@@ -127,11 +144,8 @@ const getItemFilter = weakMemo((dataRequest: DataRequest) => {
 export function filterBlock(block: Block, dataRequest: DataRequest): void {
     let items = getItemFilter(dataRequest)
 
-    // let logsByTransaction = groupBy(block.logs, log => log.transactionIndex)
-    // let tracesByTransaction = groupBy(block.traces, trace => trace.transactionIndex)
-
     let include = new IncludeSet()
-    
+
     if (items.receipts.present()) {
         for (let receipt of block.receipts) {
             let rel = items.receipts.match(receipt)
@@ -180,37 +194,33 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
 
     block.receipts = block.receipts.filter(receipt => {
         if (!include.receipts.has(receipt)) return false
-        // if (receipt.transaction && !include.receipts.has(log.transaction)) {
-        //     log.transaction = undefined
-        // }
+        if (receipt.transaction && !include.transactions.has(receipt.transaction)) {
+            receipt.transaction = undefined
+        }
         return true
     })
 
     block.transactions = block.transactions.filter(tx => {
         if (!include.transactions.has(tx)) return false
-        // tx.logs = tx.logs.filter(it => include.logs.has(it))
-        // tx.traces = tx.traces.filter(it => include.traces.has(it))
-        // tx.stateDiffs = tx.stateDiffs.filter(it => include.stateDiffs.has(it))
+        tx.receipts = tx.receipts.filter(receipt => include.receipts.has(receipt))
+        tx.inputs = tx.inputs.filter(input => include.inputs.has(input))
+        tx.outputs = tx.outputs.filter(output => include.outputs.has(output))
         return true
     })
 
     block.inputs = block.inputs.filter(input => {
         if (!include.inputs.has(input)) return false
-        // if (diff.transaction && !include.transactions.has(diff.transaction)) {
-        //     diff.transaction = undefined
-        // }
+        if (input.transaction && !include.transactions.has(input.transaction)) {
+            input.transaction = undefined
+        }
         return true
     })
 
     block.outputs = block.outputs.filter(output => {
         if (!include.outputs.has(output)) return false
-        // if (trace.transaction && !include.transactions.has(trace.transaction)) {
-        //     trace.transaction = undefined
-        // }
-        // if (trace.parent && !include.traces.has(trace.parent)) {
-        //     trace.parent = undefined
-        // }
-        // trace.children = trace.children.filter(it => include.traces.has(it))
+        if (output.transaction && !include.transactions.has(output.transaction)) {
+            output.transaction = undefined
+        }
         return true
     })
 }

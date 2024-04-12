@@ -150,6 +150,9 @@ export interface InputMessage {
 }
 
 
+export type InputType = 'InputCoin' | 'InputContract' | 'InputMessage'
+
+
 export type TransactionInput = InputCoin | InputContract | InputMessage
 
 
@@ -204,6 +207,9 @@ export interface ContractCreated {
     }
     stateRoot: Bytes
 }
+
+
+export type OutputType = 'CoinOutput' | 'ContractOutput' | 'ChangeOutput' | 'VariableOutput' | 'ContractCreated'
 
 
 export type TransactionOutput = CoinOutput | ContractOutput | ChangeOutput | VariableOutput | ContractCreated
