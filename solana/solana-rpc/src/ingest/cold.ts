@@ -38,7 +38,7 @@ export async function* ingestFinalizedBlocks(options: IngestFinalizedBlocksOptio
         if (getRequestAt(requests, batch[0].height - 1)) {
             if (prev == null) throw new ChainConsistencyError(batch[0])
         } else if (prev) {
-            assert(prev.height < batch[0].height)
+            assert(prev.height + 1 < batch[0].height)
             prev = undefined
         }
 
