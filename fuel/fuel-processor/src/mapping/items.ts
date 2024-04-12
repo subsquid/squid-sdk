@@ -313,26 +313,44 @@ export class OutputBase {
 
 export class CoinOutput extends OutputBase {
     type: 'CoinOutput' = 'CoinOutput'
+    to?: Bytes
+    amount?: BigInt
+    assetId?: Bytes
 }
 
 
 export class ContractOutput extends OutputBase {
     type: 'ContractOutput' = 'ContractOutput'
+    inputIndex?: number
+    balanceRoot?: Bytes
+    stateRoot?: Bytes
 }
 
 
 export class ChangeOutput extends OutputBase {
     type: 'ChangeOutput' = 'ChangeOutput'
+    to?: Bytes
+    amount?: BigInt
+    assetId?: Bytes
 }
 
 
 export class VariableOutput extends OutputBase {
     type: 'VariableOutput' = 'VariableOutput'
+    to?: Bytes
+    amount?: BigInt
+    assetId?: Bytes
 }
 
 
 export class ContractCreated extends OutputBase {
     type: 'ContractCreated' = 'ContractCreated'
+    contract?: {
+        id?: Bytes
+        bytecode?: Bytes
+        salt?: Bytes
+    }
+    stateRoot?: Bytes
 }
 
 
