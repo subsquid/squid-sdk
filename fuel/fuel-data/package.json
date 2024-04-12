@@ -21,7 +21,8 @@
     "@subsquid/util-internal": "^3.0.0",
     "@subsquid/util-internal-ingest-tools": "^1.1.0",
     "@subsquid/util-internal-range": "^0.1.0",
-    "@subsquid/util-internal-validation": "^0.4.0"
+    "@subsquid/util-internal-validation": "^0.4.0",
+    "@fuel-ts/predicate": "^0.73.0"
   },
   "peerDependencies": {
     "@subsquid/http-client": "^1.3.2"

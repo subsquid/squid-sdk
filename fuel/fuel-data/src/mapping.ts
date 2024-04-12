@@ -1,6 +1,9 @@
+import {unexpectedCase} from '@subsquid/util-internal'
+import {getPredicateRoot} from '@fuel-ts/predicate'
 import assert from 'assert'
 import * as raw from './raw-data'
 import {
+    Bytes,
     Status,
     ProgramState,
     Transaction,
@@ -11,13 +14,21 @@ import {
     Block,
     BlockHeader
 } from './data'
-import {unexpectedCase} from '@subsquid/util-internal'
 
 
 function toInteger(val: string): number {
     let int = parseInt(val)
     assert(Number.isSafeInteger(int))
     return int
+}
+
+
+function toPredicateRoot(predicate: Bytes): Bytes | undefined {
+    if (predicate.length > 2) {
+        return getPredicateRoot(predicate)
+    } else {
+        return undefined
+    }
 }
 
 
@@ -174,7 +185,8 @@ function mapRawInput(raw: raw.TransactionInput, transactionIndex: number, index:
                 maturity: toInteger(raw.maturity),
                 predicateGasUsed: BigInt(raw.predicateGasUsed),
                 predicate: raw.predicate,
-                predicateData: raw.predicateData
+                predicateData: raw.predicateData,
+                _predicateRoot: toPredicateRoot(raw.predicate)
             }
         case 'InputContract':
             return {
@@ -200,7 +212,8 @@ function mapRawInput(raw: raw.TransactionInput, transactionIndex: number, index:
                 predicateGasUsed: BigInt(raw.predicateGasUsed),
                 data: raw.data,
                 predicate: raw.predicate,
-                predicateData: raw.predicateData
+                predicateData: raw.predicateData,
+                _predicateRoot: toPredicateRoot(raw.predicate)
             }
     }
 }

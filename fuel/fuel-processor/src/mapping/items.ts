@@ -242,6 +242,15 @@ export class InputCoin extends InputBase {
     predicateGasUsed?: BigInt
     predicate?: Bytes
     predicateData?: Bytes
+    #predicateRoot?: Bytes
+
+    get _predicateRoot(): Bytes | undefined {
+        return this.#predicateRoot
+    }
+
+    set _predicateRoot(value: Bytes | undefined) {
+        this.#predicateRoot = value
+    }
 }
 
 
@@ -266,6 +275,15 @@ export class InputMessage extends InputBase {
     data?: Bytes
     predicate?: Bytes
     predicateData?: Bytes
+    #predicateRoot?: Bytes
+
+    get _predicateRoot(): Bytes | undefined {
+        return this.#predicateRoot
+    }
+
+    set _predicateRoot(value: Bytes | undefined) {
+        this.#predicateRoot = value
+    }
 }
 
 
