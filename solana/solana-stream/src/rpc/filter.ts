@@ -18,7 +18,7 @@ import {
     TokenBalanceRequestRelations,
     TransactionRequestRelations
 } from '../data/request'
-import {getDescriptor} from './instruction'
+import {getInstructionDescriptor} from '../instruction'
 
 
 function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transaction, TransactionRequestRelations> {
@@ -39,10 +39,10 @@ function buildInstructionFilter(dataRequest: DataRequest): EntityFilter<Instruct
         let filter = new FilterBuilder<Instruction>()
         let where = req.where || {}
         filter.propIn('programId', where.programId)
-        filter.matchAny((i, d) => getDescriptor(i).startsWith(d), where.d1)
-        filter.matchAny((i, d) => getDescriptor(i).startsWith(d), where.d2)
-        filter.matchAny((i, d) => getDescriptor(i).startsWith(d), where.d4)
-        filter.getIn(getDescriptor, where.d8)
+        filter.matchAny((i, d) => getInstructionDescriptor(i).startsWith(d), where.d1)
+        filter.matchAny((i, d) => getInstructionDescriptor(i).startsWith(d), where.d2)
+        filter.matchAny((i, d) => getInstructionDescriptor(i).startsWith(d), where.d4)
+        filter.getIn(getInstructionDescriptor, where.d8)
         filter.getIn(i => i.accounts[0], where.a0)
         filter.getIn(i => i.accounts[1], where.a1)
         filter.getIn(i => i.accounts[2], where.a2)

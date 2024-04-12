@@ -501,6 +501,13 @@
       //      "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-objects",
+      "projectFolder": "solana/solana-objects",
+      "shouldPublish": false
+      //      "shouldPublish": true,
+      //      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
       "shouldPublish": false

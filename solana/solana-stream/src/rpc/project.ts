@@ -2,6 +2,7 @@ import {Block} from '@subsquid/solana-normalization'
 import {project} from '../data/fields'
 import {FieldSelection} from '../data/model'
 import {PartialBlock} from '../data/partial'
+import {D8_SYM, DATA_SYM} from '../instruction'
 
 
 export function projectFields(block: Block, fields: FieldSelection): PartialBlock {
@@ -19,11 +20,14 @@ export function projectFields(block: Block, fields: FieldSelection): PartialBloc
             }
         }),
         instructions: block.instructions.map(i => {
-            return {
+            let ins = {
                 transactionIndex: i.transactionIndex,
                 instructionAddress: i.instructionAddress,
                 ...project(fields.instruction, i)
             }
+            ;(ins as any)[D8_SYM] = (i as any)[D8_SYM]
+            ;(ins as any)[DATA_SYM] = (i as any)[DATA_SYM]
+            return ins
         }),
         logs: block.logs.map(log => {
             return {

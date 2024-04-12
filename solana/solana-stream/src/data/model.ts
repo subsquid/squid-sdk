@@ -17,6 +17,12 @@ import type {GetFields, Select, Selector, Simplify} from './type-util'
 export type Bytes = string
 
 
+/**
+ * Base58 encoded binary string
+ */
+export type Base58Bytes = string
+
+
 export interface FieldSelection {
     block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
     transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>

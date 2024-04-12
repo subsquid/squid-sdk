@@ -119,6 +119,9 @@ dependencies:
   '@rush-temp/solana-normalization':
     specifier: file:./projects/solana-normalization.tgz
     version: file:projects/solana-normalization.tgz
+  '@rush-temp/solana-objects':
+    specifier: file:./projects/solana-objects.tgz
+    version: file:projects/solana-objects.tgz
   '@rush-temp/solana-rpc':
     specifier: file:./projects/solana-rpc.tgz
     version: file:projects/solana-rpc.tgz
@@ -5912,7 +5915,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-SfX55sqC2Ab62jKLJVFq0FtkR4OoqB3IS6VaJc165ZXRlDuh/uVSt89UL1PWmTupPmuIjheuUKbjgzJVdKT6Sw==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-jSdFsHXyoDL4D8mUNyC/jQfEqc95kU0Z05WCvU+S008M88lolifQHgG3xyOiQ77I3IXyuIwE22hyEur2jA67Zg==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -5958,6 +5961,16 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/solana-objects.tgz:
+    resolution: {integrity: sha512-Un0XPRG5qeMPTddAq4g9g8rvYeMB92Z1zQKOxE51ite8zn783rMHthv0X/EW0odCF/ZBjqJrtIbv9FtMyc2y7w==, tarball: file:projects/solana-objects.tgz}
+    name: '@rush-temp/solana-objects'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      bs58: 5.0.0
       typescript: 5.3.3
     dev: false
 
