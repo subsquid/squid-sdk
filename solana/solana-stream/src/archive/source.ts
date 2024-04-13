@@ -6,7 +6,7 @@ import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {PartialBlock, PartialBlockHeader} from '../data/partial'
+import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {getDataSchema} from './schema'
 
@@ -20,6 +20,7 @@ export class SolanaArchive {
 
     async getBlockHash(height: number): Promise<Base58Bytes | undefined> {
         let blocks = await this.client.query({
+            type: 'solana',
             fromBlock: height,
             toBlock: height,
             includeAllBlocks: true
@@ -30,6 +31,7 @@ export class SolanaArchive {
 
     async getBlockHeader(height: number): Promise<BlockHeader> {
         let blocks = await this.client.query({
+            type: 'solana',
             fromBlock: height,
             toBlock: height,
             includeAllBlocks: true,
@@ -37,12 +39,17 @@ export class SolanaArchive {
                 block: {
                     slot: true,
                     parentSlot: true,
+                    parentHash: true,
                     timestamp: true
                 }
             }
         })
         assert(blocks.length == 1)
-        return blocks[0].header as unknown as BlockHeader
+        let {number, ...rest} = blocks[0].header
+        return {
+            height: number,
+            ...rest
+        } as BlockHeader
     }
 
     async *getBlockStream(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {

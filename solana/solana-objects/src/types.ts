@@ -22,6 +22,7 @@ export type Instruction<F extends FieldSelection = {}> = base.Instruction<F> &
         d8: Bytes
     } : {}) &
     {
+        id: string
         block: BlockHeader<F>
         transaction?: Transaction<F>
         getTransaction(): Transaction<F>
@@ -31,6 +32,7 @@ export type Instruction<F extends FieldSelection = {}> = base.Instruction<F> &
 
 
 export type LogMessage<F extends FieldSelection = {}> = base.LogMessage<F> & {
+    id: string
     block: BlockHeader<F>
     transaction?: Transaction<F>
     getTransaction(): Transaction<F>
@@ -40,6 +42,7 @@ export type LogMessage<F extends FieldSelection = {}> = base.LogMessage<F> & {
 
 
 export type Balance<F extends FieldSelection = {}> = base.Balance<F> & {
+    id: string
     block: BlockHeader<F>
     transaction?: Transaction<F>
     getTransaction(): Transaction<F>
@@ -47,6 +50,7 @@ export type Balance<F extends FieldSelection = {}> = base.Balance<F> & {
 
 
 export type TokenBalance<F extends FieldSelection = {}> = base.TokenBalance<F> & {
+    id: string
     block: BlockHeader<F>
     transaction?: Transaction<F>
     getTransaction(): Transaction<F>

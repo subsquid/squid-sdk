@@ -1,7 +1,7 @@
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
-import {wait} from '@subsquid/util-internal'
+import {Simplify, wait} from '@subsquid/util-internal'
 import {
     array,
     B58,
@@ -14,6 +14,9 @@ import {
 } from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Commitment} from './base'
+
+
+export type BlockInfo = Simplify<Omit<GetBlock, 'transactions' | 'rewards'>>
 
 
 export class Rpc {
@@ -61,7 +64,7 @@ export class Rpc {
         })
     }
 
-    getBlockInfo(commitment: Commitment, slot: number): Promise<undefined | null | Omit<GetBlock, 'transactions' | 'rewards'>> {
+    getBlockInfo(commitment: Commitment, slot: number): Promise<undefined | null | BlockInfo> {
         return this.call('getBlock', [
             slot,
             {
@@ -80,7 +83,7 @@ export class Rpc {
         return slot
     }
 
-    async getFinalizedBlockInfo(slot: number): Promise<Omit<GetBlock, 'transactions' | 'rewards'>> {
+    async getFinalizedBlockInfo(slot: number): Promise<BlockInfo> {
         let attempts = 10
         while (attempts) {
             let block = await this.getBlockInfo('finalized', slot)

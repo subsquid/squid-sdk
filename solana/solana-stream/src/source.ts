@@ -1,4 +1,5 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import {BlockInfo} from '@subsquid/solana-rpc'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def, last} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
@@ -7,7 +8,7 @@ import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestLi
 import assert from 'assert'
 import {SolanaArchive} from './archive/source'
 import {getFields} from './data/fields'
-import {Block, FieldSelection} from './data/model'
+import {Block, BlockHeader, FieldSelection} from './data/model'
 import {PartialBlockHeader} from './data/partial'
 import {
     BalanceRequest,
@@ -87,7 +88,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     /**
      * Set up RPC data ingestion
      */
-    setRpc(settings: RpcSettings): this {
+    setRpc(settings?: RpcSettings): this {
         this.rpc = settings
         return this
     }
@@ -267,26 +268,32 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
 
     private async assertConsistency(): Promise<void> {
         if (this.isConsistent || this.archiveSettings == null || this.rpc == null) return
-        let inconsistentSlot = await this.performConsistencyCheck().catch(err => {
+        let blocks = await this.performConsistencyCheck().catch(err => {
             throw addErrorContext(
                 new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
                 {reason: err}
             )
         })
-        if (inconsistentSlot == null) {
+        if (blocks == null) {
             this.isConsistent = true
         } else {
-            throw new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${inconsistentSlot}`)
+            throw addErrorContext(
+                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.slot}`),
+                blocks
+            )
         }
     }
 
-    private async performConsistencyCheck(): Promise<number | undefined> {
+    private async performConsistencyCheck(): Promise<{
+        archiveBlock: BlockHeader
+        rpcBlock: BlockInfo | null
+    } | undefined> {
         let archive = this.createArchive()
         let height = await archive.getFinalizedHeight()
         let archiveBlock = await archive.getBlockHeader(height)
         let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.slot)
         if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
-        return archiveBlock.slot
+        return {archiveBlock, rpcBlock: rpcBlock || null}
     }
 
     async *getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
