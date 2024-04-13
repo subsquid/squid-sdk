@@ -95,6 +95,9 @@ dependencies:
   '@rush-temp/ops-xcm-typegen':
     specifier: file:./projects/ops-xcm-typegen.tgz
     version: file:projects/ops-xcm-typegen.tgz
+  '@rush-temp/raw-archive-validator':
+    specifier: file:./projects/raw-archive-validator.tgz
+    version: file:projects/raw-archive-validator.tgz
   '@rush-temp/rpc-client':
     specifier: file:./projects/rpc-client.tgz
     version: file:projects/rpc-client.tgz
@@ -5845,6 +5848,16 @@ packages:
       typescript: 5.3.3
     dev: false
 
+  file:projects/raw-archive-validator.tgz:
+    resolution: {integrity: sha512-pAhLYPukqyraBdtQAxbaHM/aF/vzBBRKm+4c+PvFdZRdmm6XCkLhBlH3FWoH8cdiY/XwSP6DSPaExd1u5Bepfg==, tarball: file:projects/raw-archive-validator.tgz}
+    name: '@rush-temp/raw-archive-validator'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      commander: 11.1.0
+      typescript: 5.3.3
+    dev: false
+
   file:projects/rpc-client.tgz:
     resolution: {integrity: sha512-3dtSuQyuOHepc5y8Clzx21FhwiaVawIKuxawuDm6R4Ni7FqIX9LG8sA+c2C0p4fDu9ds8Qgg+EALSPeLp7RHAQ==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
@@ -5915,7 +5928,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-jSdFsHXyoDL4D8mUNyC/jQfEqc95kU0Z05WCvU+S008M88lolifQHgG3xyOiQ77I3IXyuIwE22hyEur2jA67Zg==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-/UZkAjkJHGj3BQGx5NvuIA7H0zqVd7xjtcq4qpdQ30396+m4oagTAqihq8XvHMO5Pbfk0N8KIEs2VW8dm7JJuQ==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -5965,7 +5978,7 @@ packages:
     dev: false
 
   file:projects/solana-objects.tgz:
-    resolution: {integrity: sha512-Un0XPRG5qeMPTddAq4g9g8rvYeMB92Z1zQKOxE51ite8zn783rMHthv0X/EW0odCF/ZBjqJrtIbv9FtMyc2y7w==, tarball: file:projects/solana-objects.tgz}
+    resolution: {integrity: sha512-D917JH+I/EQ8yyuN9U4VQZIUr5DQFMD1YuOSCy9dDk+VII3augB24OTPICj/QWNO4798Lmk49fgMVrzHxTseqw==, tarball: file:projects/solana-objects.tgz}
     name: '@rush-temp/solana-objects'
     version: 0.0.0
     dependencies:

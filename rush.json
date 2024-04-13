@@ -661,6 +661,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "raw-archive-validator",
+      "projectFolder": "util/raw-archive-validator",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
