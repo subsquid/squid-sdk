@@ -8,7 +8,7 @@ export class Metrics {
     private lastBlock = -1
     private mappingSpeed = new Speed({windowSize: 5})
     private mappingItemSpeed = new Speed({windowSize: 5})
-    private blockProgress = new Progress({initialValue: 0})
+    private blockProgress = new Progress({initialValue: 0, windowSize: 5})
 
     setChainHeight(height: number): void {
         this.chainHeight = Math.max(height, this.lastBlock)
