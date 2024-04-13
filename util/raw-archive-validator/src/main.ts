@@ -41,6 +41,7 @@ runProgram(async () => {
     let archive = new ArchiveLayout(createFs(archiveUrl))
 
     let prev: RawBlock | undefined
+    let hasErrors = false
 
     for await (let chunk of archive.getDataChunks(range)) {
         let errors: string[] = []
@@ -53,7 +54,6 @@ runProgram(async () => {
                         errors.push(`${block.height} follows ${prev.height}`)
                     }
                     if (getParentHash && getParentHash(block) !== prev.hash) {
-                        console.log(getParentHash(block))
                         errors.push(`parent hash of block ${block.height} does not match the hash of block ${prev.height}`)
                     }
                 }
@@ -79,11 +79,14 @@ runProgram(async () => {
         if (errors.length == 0) {
             console.log(`chunk ${getChunkPath(chunk)}: ok`)
         } else {
+            hasErrors = true
             for (let err of errors) {
                 console.log(`chunk ${getChunkPath(chunk)}: error: ${err}`)
             }
         }
     }
+
+    process.exit(hasErrors ? 1 : 0)
 })
 
 
