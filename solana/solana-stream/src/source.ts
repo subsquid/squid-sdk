@@ -248,7 +248,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         private archiveSettings?: GatewaySettings,
         rpcSettings?: RpcSettings
     ) {
-        assert(this.archiveSettings || rpcSettings, 'at least either archive or RPC should be specified')
+        assert(this.archiveSettings || rpcSettings, 'either archive or RPC should be provided')
         if (rpcSettings) {
             this.rpc = new RpcDataSource(rpcSettings)
         }
