@@ -52,7 +52,8 @@ export class RpcDataSource {
             rpc: this.rpc,
             headPollInterval: 5_000,
             strideSize: this.options.strideSize ?? 5,
-            strideConcurrency: this.options.strideConcurrency ?? 10
+            strideConcurrency: this.options.strideConcurrency ?? 5,
+            concurrentFetchThreshold: this.options.concurrentFetchThreshold ?? 50
         })
 
         for await (let batch of blockStream) {

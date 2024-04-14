@@ -59,6 +59,20 @@ export interface RpcSettings {
      * Default is `10`
      */
     strideConcurrency?: number
+    /**
+     * Minimum distance from finalized head below which concurrent
+     * fetch procedure is allowed.
+     *
+     * Default is `50` blocks.
+     *
+     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
+     * but assumes consistent behaviour of RPC endpoint.
+     *
+     * The latter might not be the case due to load balancing,
+     * when one request is sent to node `A` with head slot `X` and
+     * another to node `B` with head slot `X - 10`.
+     */
+    concurrentFetchThreshold?: number
 }
 
 

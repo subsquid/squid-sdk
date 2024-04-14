@@ -13,9 +13,10 @@ export interface IngestFinalizedBlocksOptions {
     requests: RangeRequest<DataRequest>[]
     stopOnHead?: boolean
     rpc: Rpc
+    headPollInterval: number
     strideSize: number
     strideConcurrency: number
-    headPollInterval: number
+    concurrentFetchThreshold: number
 }
 
 
@@ -129,10 +130,10 @@ class ColdIngest {
             while (beg <= end) {
                 let headSlot = await this.head.get()
                 if (this.options.stopOnHead && headSlot < begSlot) return
-                if (!this.options.stopOnHead && headSlot - begSlot < this.options.strideSize) {
+                if (headSlot - this.options.concurrentFetchThreshold - begSlot <= this.options.strideSize) {
                     yield* this.serialFetch(req.request, begSlot, end)
                 } else {
-                    let endSlot = Math.min(headSlot, begSlot + end - beg)
+                    let endSlot = Math.min(headSlot - this.options.concurrentFetchThreshold, begSlot + end - beg)
                     yield* this.concurrentFetch(req.request, begSlot, endSlot)
                 }
                 beg = this.bottom.height + 1
@@ -155,7 +156,10 @@ class ColdIngest {
         let retrySchedule = [0, 100, 200, 400, 1000, 2000]
         let retryAttempts = 0
 
-        while (stream.isOnHead() || headProbe.get() - stream.getHeadSlot() < this.options.strideSize * 2) {
+        while (
+            stream.isOnHead() ||
+            headProbe.get() - stream.getHeadSlot() - this.options.concurrentFetchThreshold < 2 * this.options.strideSize
+        ) {
             let blocks = await stream.next()
             if (blocks.length == 0) {
                 let pause = retrySchedule[Math.max(retryAttempts, retrySchedule.length - 1)]
