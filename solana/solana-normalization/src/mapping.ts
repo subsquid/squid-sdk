@@ -236,6 +236,7 @@ class InstructionParser {
             return this.invokeLessTraversal(dropped, stackHeight, instructions, pos + 1)
         }
 
+        // FIXME: add an option to ignore this
         throw this.error(true, pos, 'missing invoke message')
     }
 
