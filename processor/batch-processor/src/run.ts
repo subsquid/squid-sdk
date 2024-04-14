@@ -101,9 +101,15 @@ class Processor<B extends BlockBase, S> {
         this.metrics.setLastProcessedBlock(state.height)
         let left: number
         let processed: number
-        if (this.src.getBlocksLeft) {
-            left = this.src.getBlocksLeft(this.metrics.getLastProcessedBlock() + 1)
-            processed = this.src.getBlocksLeft(0) - left
+        if (this.src.getBlocksCountInRange) {
+            left = this.src.getBlocksCountInRange({
+                from: this.metrics.getLastProcessedBlock() + 1,
+                to: this.metrics.getChainHeight()
+            })
+            processed = this.src.getBlocksCountInRange({
+                from: 0,
+                to: this.metrics.getChainHeight()
+            }) - left
         } else {
             left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
             processed = this.metrics.getLastProcessedBlock()

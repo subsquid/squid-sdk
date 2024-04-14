@@ -4,12 +4,19 @@ import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def, last} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
-import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {
+    applyRangeBound,
+    FiniteRange,
+    getSize,
+    mergeRangeRequests,
+    Range,
+    RangeRequest,
+    RangeRequestList
+} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {SolanaArchive} from './archive/source'
 import {getFields} from './data/fields'
 import {Block, BlockHeader, FieldSelection} from './data/model'
-import {PartialBlockHeader} from './data/partial'
 import {
     BalanceRequest,
     DataRequest,
@@ -226,6 +233,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 export interface DataSource<F extends FieldSelection> {
     getFinalizedHeight(): Promise<number>
     getBlockHash(height: number): Promise<Base58Bytes | undefined>
+    getBlocksCountInRange(range: FiniteRange): number
     getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]>
 }
 
@@ -233,6 +241,7 @@ export interface DataSource<F extends FieldSelection> {
 class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
     private rpc?: RpcDataSource
     private isConsistent?: boolean
+    private ranges: Range[]
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
@@ -243,6 +252,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         if (rpcSettings) {
             this.rpc = new RpcDataSource(rpcSettings)
         }
+        this.ranges = this.requests.map(req => req.range)
     }
 
     getFinalizedHeight(): Promise<number> {
@@ -294,6 +304,10 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.slot)
         if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
         return {archiveBlock, rpcBlock: rpcBlock || null}
+    }
+
+    getBlocksCountInRange(range: FiniteRange): number {
+        return getSize(this.ranges, range)
     }
 
     async *getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
