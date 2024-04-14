@@ -15,7 +15,7 @@ const dataSource = new DataSourceBuilder()
             url: process.env.SOLANA_NODE
         })
     })
-    .setBlockRange({from: 220_000_000})
+    .setBlockRange({from: 240_229_000})
     .addInstruction({
         where: {
             programId: [whirlpool.programId],
