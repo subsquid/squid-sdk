@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.8.0",
+      "tag": "@subsquid/rpc-client_v4.8.0",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Allow to configure HTTP headers"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.7.0",
       "tag": "@subsquid/rpc-client_v4.7.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

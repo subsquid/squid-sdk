@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "8.1.0",
+      "tag": "@subsquid/substrate-typegen_v8.1.0",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "map storage by pallet name instead of prefix"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.0.2",
       "tag": "@subsquid/substrate-typegen_v8.0.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

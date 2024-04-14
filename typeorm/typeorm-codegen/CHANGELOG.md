@@ -1,6 +1,17 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 2.0.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Breaking changes
+
+- use decorators from typeorm-store package
+
+### Minor changes
+
+- make OneToOne relations bi-directional
 
 ## 1.3.3
 Fri, 01 Dec 2023 16:55:51 GMT

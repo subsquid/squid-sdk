@@ -1,0 +1,29 @@
+{
+  "name": "@subsquid/evm-abi",
+  "version": "0.0.0",
+  "description": "EVM ABI encoding and decoding helpers",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@subsquid/evm-codec": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "ethers": "^5.7.2",
+    "typescript": "~5.3.2",
+    "viem": "^2.8.14",
+    "vitest": "^1.4.0"
+  }
+}
