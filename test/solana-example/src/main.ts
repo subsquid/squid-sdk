@@ -12,8 +12,9 @@ const dataSource = new DataSourceBuilder()
     .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
     .setRpc(process.env.SOLANA_NODE == null ? undefined : {
         client: new SolanaRpcClient({
-            url: process.env.SOLANA_NODE
-        })
+            url: process.env.SOLANA_NODE,
+        }),
+        strideConcurrency: 10
     })
     .setBlockRange({from: 240_229_000})
     .addInstruction({
