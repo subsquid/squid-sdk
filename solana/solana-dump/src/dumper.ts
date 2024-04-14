@@ -63,7 +63,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
             }],
             headPollInterval: 10_000,
             strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency
+            strideConcurrency: this.options().strideConcurrency,
+            concurrentFetchThreshold: 100
         })
 
         let prev: Block | undefined
