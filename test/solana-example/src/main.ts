@@ -16,7 +16,7 @@ const dataSource = new DataSourceBuilder()
         }),
         strideConcurrency: 10
     })
-    .setBlockRange({from: 240_229_000})
+    .setBlockRange({from: 220_000_000})
     .addInstruction({
         where: {
             programId: [whirlpool.programId],

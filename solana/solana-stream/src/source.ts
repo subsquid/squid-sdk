@@ -17,6 +17,7 @@ import assert from 'assert'
 import {SolanaArchive} from './archive/source'
 import {getFields} from './data/fields'
 import {Block, BlockHeader, FieldSelection} from './data/model'
+import {PartialBlock} from './data/partial'
 import {
     BalanceRequest,
     DataRequest,
@@ -238,21 +239,28 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return applyRangeBound(requests, this.blockRange)
     }
 
-    build(): DataSource<F> {
-        return new SolanaDataSource<F>(this.getRequests(), this.archive, this.rpc)
+    build(): DataSource<Block<F>> {
+        return new SolanaDataSource(
+            this.getRequests(),
+            this.archive,
+            this.rpc
+        ) as DataSource<Block<F>>
     }
 }
 
 
-export interface DataSource<F extends FieldSelection> {
+export interface DataSource<Block> {
     getFinalizedHeight(): Promise<number>
     getBlockHash(height: number): Promise<Base58Bytes | undefined>
     getBlocksCountInRange(range: FiniteRange): number
-    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]>
+    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block[]>
 }
 
 
-class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
+export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
+
+
+class SolanaDataSource implements DataSource<PartialBlock> {
     private rpc?: RpcDataSource
     private isConsistent?: boolean
     private ranges: Range[]
@@ -324,7 +332,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
         return getSize(this.ranges, range)
     }
 
-    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<Block<F>[]> {
+    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<PartialBlock[]> {
         await this.assertConsistency()
 
         let requests = fromBlockHeight == null
@@ -341,7 +349,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
                 let from = requests[0].range.from
                 if (height > from || !this.rpc) {
                     for await (let batch of archive.getBlockStream(requests, !this.rpc)) {
-                        yield batch as Block<F>[]
+                        yield batch
                         from = last(batch).header.height + 1
                     }
                     requests = applyRangeBound(requests, {from})
@@ -355,7 +363,7 @@ class SolanaDataSource<F extends FieldSelection> implements DataSource<F> {
 
         assert(this.rpc)
 
-        yield* this.rpc.getBlockStream(requests) as AsyncIterable<Block<F>[]>
+        yield* this.rpc.getBlockStream(requests)
     }
 
     private createArchive(agent?: HttpAgent): SolanaArchive {
