@@ -1,0 +1,20 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add `bisect()`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add prefetch option to `Throttler`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add `Simplify<T>` type",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

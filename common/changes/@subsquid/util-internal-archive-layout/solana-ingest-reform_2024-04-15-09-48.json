@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "export `RawBlock` type",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}
