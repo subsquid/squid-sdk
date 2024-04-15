@@ -34,12 +34,20 @@ export class Block {
         if (src.inputs) {
             block.inputs = src.inputs.map(i => {
                 switch (i.type) {
-                    case 'InputCoin':
-                        return new InputCoin(block.header, i)
+                    case 'InputCoin': {
+                        let {_predicateRoot, ...props} = i as any
+                        let input = new InputCoin(block.header, props)
+                        input._predicateRoot = _predicateRoot
+                        return input
+                    }
                     case 'InputContract':
                         return new InputContract(block.header, i)
-                    case 'InputMessage':
-                        return new InputMessage(block.header, i)
+                    case 'InputMessage': {
+                        let {_predicateRoot, ...props} = i as any
+                        let input = new InputMessage(block.header, props)
+                        input._predicateRoot = _predicateRoot
+                        return input
+                    }
                     default:
                         throw unexpectedCase(i.type)
                 }
