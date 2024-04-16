@@ -19,7 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/solana-data": "^0.0.0",
+    "@subsquid/rpc-client": "^4.7.0",
+    "@subsquid/solana-rpc": "^0.0.0",
     "@subsquid/util-internal": "^3.1.0",
     "@subsquid/util-internal-dump-cli": "^0.0.1"
   },

@@ -1,8 +1,7 @@
-import {Block, mapRpcBlock} from '@subsquid/solana-data/lib/normalization'
-import {Block as RawBlock} from '@subsquid/solana-data/lib/rpc'
 import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
+import {mapRawBlock, RawBlock} from './mapping'
 
 
 interface Options extends IngestOptions {
@@ -13,6 +12,10 @@ interface Options extends IngestOptions {
 export class SolanaIngest extends Ingest<Options> {
     protected getLoggingNamespace(): string {
         return 'sqd:solana-ingest'
+    }
+
+    protected hasRpc(): 'required' | boolean {
+        return false
     }
 
     protected setUpProgram(program: Command) {
@@ -30,40 +33,16 @@ export class SolanaIngest extends Ingest<Options> {
         for await (let blocks of this.archive().getRawBlocks<RawBlock>(range)) {
             yield blocks.map(raw => {
                 try {
-                    let block = mapRpcBlock(raw)
-                    if (!votes) {
-                        removeVotes(block)
-                    }
+                    let block = mapRawBlock(raw, !votes)
                     return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {
-                        blockHeight: raw.height,
                         blockHash: raw.hash,
+                        blockHeight: raw.height,
                         blockSlot: raw.slot
                     })
                 }
             })
         }
     }
-}
-
-
-function removeVotes(block: Block): void {
-    let removed = new Set<number>()
-
-    for (let i of block.instructions) {
-        if (i.programId == 'Vote111111111111111111111111111111111111111') {
-            removed.add(i.transactionIndex)
-        }
-    }
-
-    function kept(item: {transactionIndex: number}): boolean {
-        return !removed.has(item.transactionIndex)
-    }
-
-    block.transactions = block.transactions.filter(kept)
-    block.instructions = block.instructions.filter(kept)
-    block.logs = block.logs.filter(kept)
-    block.balances = block.balances.filter(kept)
-    block.tokenBalances = block.tokenBalances.filter(kept)
 }

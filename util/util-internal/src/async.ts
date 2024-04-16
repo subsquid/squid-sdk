@@ -192,7 +192,11 @@ export async function* concurrentWriter<T>(
 
     cb(value => queue.put(value)).then(
         () => queue.close(),
-        err => queue.tryPut(ensureError(err))
+        err => {
+            if (!queue.isClosed()) {
+                queue.forcePut(ensureError(err))
+            }
+        }
     )
 
     for await (let valueOrError of queue.iterate()) {

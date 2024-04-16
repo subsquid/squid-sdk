@@ -1,12 +1,12 @@
-import {Block, RpcDataSource} from '@subsquid/solana-data/lib/rpc'
+import {Block, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
+import assert from 'assert'
 
 
 interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
-    slotTip?: string[]
 }
 
 
@@ -15,7 +15,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.description('Data archiving tool for Solana')
         removeOption(program, 'endpointMaxBatchCallSize')
         removeOption(program, 'endpointCapacity')
-        program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 10)
+        program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
     }
 
@@ -47,33 +47,44 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     @def
-    private getDataSource(): RpcDataSource {
-        return new RpcDataSource({
-            rpc: this.rpc(),
-            headPollInterval: 10_000,
-            strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency
-        })
+    private solanaRpc(): Rpc {
+        return new Rpc(this.rpc())
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
-        let batches = this.getDataSource().getFinalizedBlocks([{
-            range,
-            request: {
-                rewards: true,
-                transactions: true
+        let blockStream = ingestFinalizedBlocks({
+            rpc: this.solanaRpc(),
+            requests: [{
+                range,
+                request: {
+                    rewards: true,
+                    transactions: true
+                }
+            }],
+            headPollInterval: 10_000,
+            strideSize: this.options().strideSize,
+            strideConcurrency: this.options().strideConcurrency,
+            concurrentFetchThreshold: 100
+        })
+
+        let prev: Block | undefined
+
+        for await (let batch of blockStream) {
+            for (let block of batch) {
+                if (prev) {
+                    assert(block.block.parentSlot === prev.slot)
+                    assert(block.block.previousBlockhash === prev.block.blockhash)
+                    assert(block.height === prev.height + 1)
+                }
+                prev = block
+                checkLogMessages(block)
             }
-        }])
-        for await (let batch of batches) {
-            for (let b of batch.blocks) {
-                checkLogMessages(b)
-            }
-            yield batch.blocks
+            yield batch
         }
     }
 
     protected getFinalizedHeight(): Promise<number> {
-        return this.getDataSource().getFinalizedHeight()
+        return this.solanaRpc().getFinalizedHeight()
     }
 }
 

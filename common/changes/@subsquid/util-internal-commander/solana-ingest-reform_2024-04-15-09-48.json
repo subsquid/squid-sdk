@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-commander",
+      "comment": "add `positiveReal` validator",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-commander"
+}

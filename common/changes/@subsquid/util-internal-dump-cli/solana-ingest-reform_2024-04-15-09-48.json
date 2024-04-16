@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "allow less than 1 rps rate limits",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}
