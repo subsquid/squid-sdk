@@ -60,12 +60,14 @@ export const DEFAULT_FIELDS = {
         post: true
     },
     tokenBalance: {
-        mint: true,
-        decimals: true,
+        preMint: true,
+        preDecimals: true,
         preOwner: true,
+        preAmount: true,
+        postMint: true,
+        postDecimals: true,
         postOwner: true,
-        pre: true,
-        post: true
+        postAmount: true
     },
     reward: {
         lamports: true,

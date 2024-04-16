@@ -115,8 +115,10 @@ export interface TokenBalanceRequest {
 
 export interface TokenBalanceRequestWhere {
     account?: Base58Bytes[]
-    mint?: Base58Bytes[]
-    programId?: Base58Bytes[]
+    preProgramId?: Base58Bytes[]
+    postProgramId?: Base58Bytes[]
+    preMint?: Base58Bytes[]
+    postMint?: Base58Bytes[]
     preOwner?: Base58Bytes[]
     postOwner?: Base58Bytes[]
 }

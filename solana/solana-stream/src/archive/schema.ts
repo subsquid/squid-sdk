@@ -102,13 +102,16 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         transactionIndex: NAT,
         account: B58,
         ...project(fields.tokenBalance, {
-            mint: B58,
-            decimals: NAT,
-            programId: option(B58),
+            preProgramId: option(B58),
+            postProgramId: option(B58),
+            preMint: option(B58),
+            postMint: option(B58),
+            preDecimals: option(NAT),
+            postDecimals: option(NAT),
             preOwner: option(B58),
             postOwner: option(B58),
-            pre: option(BIG_NAT),
-            post: option(BIG_NAT)
+            preAmount: option(BIG_NAT),
+            postAmount: option(BIG_NAT)
         })
     })
 

@@ -79,16 +79,58 @@ export interface Balance {
 }
 
 
-export interface TokenBalance {
+export type TokenBalance = PreTokenBalance | PostTokenBalance | PrePostTokenBalance
+
+
+export interface PreTokenBalance {
     transactionIndex: number
     account: Base58Bytes
-    programId?: Base58Bytes
-    mint: Base58Bytes
-    decimals: number
+
+    preProgramId?: Base58Bytes
+    preMint: Base58Bytes
+    preDecimals: number
     preOwner?: Base58Bytes
+    preAmount: bigint
+
+    postProgramId?: undefined
+    postMint?: undefined
+    postDecimals?: undefined
+    postOwner?: undefined
+    postAmount?: undefined
+}
+
+
+export interface PostTokenBalance {
+    transactionIndex: number
+    account: Base58Bytes
+
+    preProgramId?: undefined
+    preMint?: undefined
+    preDecimals?: undefined
+    preOwner?: undefined
+    preAmount?: undefined
+
+    postProgramId?: Base58Bytes
+    postMint: Base58Bytes
+    postDecimals: number
     postOwner?: Base58Bytes
-    pre?: bigint
-    post?: bigint
+    postAmount: bigint
+}
+
+
+export interface PrePostTokenBalance {
+    transactionIndex: number
+    account: Base58Bytes
+    preProgramId?: Base58Bytes
+    preMint: Base58Bytes
+    preDecimals: number
+    preOwner?: Base58Bytes
+    preAmount: bigint
+    postProgramId?: Base58Bytes
+    postMint: Base58Bytes
+    postDecimals: number
+    postOwner?: Base58Bytes
+    postAmount: bigint
 }
 
 

@@ -483,20 +483,33 @@ function mapTokenBalances(
     for (let [account, post] of postBalances.entries()) {
         let pre = preBalances.get(account)
         if (pre) {
-            assert(post.mint === pre.mint)
-            assert(post.programId === pre.programId)
+            balances.push({
+                transactionIndex,
+                account,
+
+                preProgramId: pre.programId ?? undefined,
+                preMint: pre.mint,
+                preDecimals: pre.uiTokenAmount.decimals,
+                preOwner: pre.owner ?? undefined,
+                preAmount: BigInt(pre.uiTokenAmount.amount),
+
+                postProgramId: post.programId ?? undefined,
+                postMint: post.mint,
+                postDecimals: post.uiTokenAmount.decimals,
+                postOwner: post.owner ?? undefined,
+                postAmount: BigInt(post.uiTokenAmount.amount)
+            })
+        } else {
+            balances.push({
+                transactionIndex,
+                account,
+                postProgramId: post.programId ?? undefined,
+                postMint: post.mint,
+                postDecimals: post.uiTokenAmount.decimals,
+                postOwner: post.owner ?? undefined,
+                postAmount: BigInt(post.uiTokenAmount.amount)
+            })
         }
-        balances.push({
-            transactionIndex,
-            account,
-            programId: post.programId ?? undefined,
-            mint: post.mint,
-            decimals: post.uiTokenAmount.decimals,
-            preOwner: pre?.owner || undefined,
-            postOwner: post.owner ?? undefined,
-            pre: pre?.uiTokenAmount.amount == null ? undefined : BigInt(pre.uiTokenAmount.amount),
-            post: BigInt(post.uiTokenAmount.amount)
-        })
     }
 
     for (let [account, pre] of preBalances.entries()) {
@@ -504,11 +517,11 @@ function mapTokenBalances(
         balances.push({
             transactionIndex,
             account,
-            programId: pre.programId ?? undefined,
-            mint: pre.mint,
-            decimals: pre.uiTokenAmount.decimals,
+            preProgramId: pre.programId ?? undefined,
+            preMint: pre.mint,
+            preDecimals: pre.uiTokenAmount.decimals,
             preOwner: pre.owner ?? undefined,
-            pre: BigInt(pre.uiTokenAmount.amount)
+            preAmount: BigInt(pre.uiTokenAmount.amount)
         })
     }
 

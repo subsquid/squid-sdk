@@ -16,7 +16,7 @@ export type PartialTransaction = MakePartial<data.Transaction, TransactionRequir
 export type PartialInstruction = MakePartial<data.Instruction, InstructionRequiredFields>
 export type PartialLogMessage = MakePartial<data.LogMessage, LogRequiredFields>
 export type PartialBalance = MakePartial<data.Balance, BalanceRequiredFields>
-export type PartialTokenBalance = MakePartial<data.TokenBalance, TokenBalanceRequiredFields>
+export type PartialTokenBalance = MakePartial<data.PrePostTokenBalance, TokenBalanceRequiredFields>
 export type PartialReward = MakePartial<data.Reward, RewardRequiredFields>
 
 

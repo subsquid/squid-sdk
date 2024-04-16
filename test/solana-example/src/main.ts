@@ -67,8 +67,8 @@ const dataSource = new DataSourceBuilder()
             data: true
         },
         tokenBalance: { // token balance record fields
-            pre: true,
-            post: true,
+            preAmount: true,
+            postAmount: true,
             preOwner: true,
             postOwner: true
         }
@@ -157,7 +157,7 @@ run(dataSource, database, async ctx => {
                     id: ins.id,
                     slot: block.header.slot,
                     tx: ins.getTransaction().signatures[0],
-                    timestamp: new Date(block.header.timestamp)
+                    timestamp: new Date(block.header.timestamp * 1000)
                 })
 
                 assert(ins.inner.length == 2)
@@ -167,14 +167,14 @@ run(dataSource, database, async ctx => {
                 let srcBalance = ins.getTransaction().tokenBalances.find(tb => tb.account == srcTransfer.accounts.source)
                 let destBalance = ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.destination)
 
-                let srcMint = srcBalance?.mint || ins.getTransaction().tokenBalances.find(tb => tb.account === srcTransfer.accounts.destination)?.mint
-                let destMint = destBalance?.mint || ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.source)?.mint
+                let srcMint = ins.getTransaction().tokenBalances.find(tb => tb.account === srcTransfer.accounts.destination)?.preMint
+                let destMint = ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.source)?.preMint
 
                 assert(srcMint)
                 assert(destMint)
 
                 exchange.fromToken = srcMint
-                exchange.fromOwner = srcBalance?.preOwner || srcBalance?.postOwner || srcTransfer.accounts.source
+                exchange.fromOwner = srcBalance?.preOwner || srcTransfer.accounts.source
                 exchange.fromAmount = srcTransfer.data.amount
 
                 exchange.toToken = destMint

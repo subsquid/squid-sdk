@@ -93,8 +93,10 @@ function buildTokenBalanceFilter(dataRequest: DataRequest): EntityFilter<TokenBa
         let filter = new FilterBuilder<TokenBalance>()
         let where = req.where || {}
         filter.propIn('account', where.account)
-        filter.propIn('mint', where.mint)
-        filter.propIn('programId', where.programId)
+        filter.propIn('preProgramId', where.preProgramId)
+        filter.propIn('postProgramId', where.postProgramId)
+        filter.propIn('preMint', where.preMint)
+        filter.propIn('postMint', where.postMint)
         filter.propIn('preOwner', where.preOwner)
         filter.propIn('postOwner', where.postOwner)
         items.add(filter, req.include || {})
