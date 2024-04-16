@@ -32,6 +32,20 @@ interface BlockBase {
 }
 
 
+/**
+ * Run data processing.
+ *
+ * This method assumes full control over the current OS process as
+ * it terminates the entire program in case of error or
+ * at the end of data processing.
+ *
+ * @param src - data source to ingest data from
+ *
+ * @param db - database is responsible for providing storage API to data handler
+ * and persisting mapping progress and status.
+ *
+ * @param dataHandler - The data handler, see {@link DataHandlerContext} for an API available to the handler.
+ */
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
