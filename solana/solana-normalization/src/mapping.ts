@@ -483,7 +483,6 @@ function mapTokenBalances(
     for (let [account, post] of postBalances.entries()) {
         let pre = preBalances.get(account)
         if (pre) {
-            assert(post.uiTokenAmount.decimals === pre.uiTokenAmount.decimals)
             assert(post.mint === pre.mint)
             assert(post.programId === pre.programId)
         }
