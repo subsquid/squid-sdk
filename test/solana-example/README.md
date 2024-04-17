@@ -13,10 +13,10 @@ Subsquid SDK is a TypeScript ETL toolkit for blockchain data, that currently sup
 Subsquid SDK stands apart from the competition by
 
 * Being a toolkit (rather than an indexing app like TheGraph or Ponder)
-* Fast data codecs and type-safe access to decoded data  
+* Fast binary data codecs and type-safe access to decoded data  
 * Native support for sourcing the data from Subsquid Network.
 
-The latter is very important, as Subsquid Network is a decentralized data lake and query engine, 
+The latter is a key point, as Subsquid Network is a decentralized data lake and query engine, 
 that allows to granularly select and stream subset of block data to lightweight clients 
 while providing game changing performance over traditional RPC API.
 
