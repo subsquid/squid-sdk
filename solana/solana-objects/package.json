@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.1.0"
+    "@subsquid/util-internal": "^3.2.0"
   },
   "peerDependencies": {
     "@subsquid/solana-stream": "^0.0.0"

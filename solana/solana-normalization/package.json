@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/solana-rpc-data": "^0.0.0",
-    "@subsquid/util-internal": "^3.1.0",
+    "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-validation": "^0.4.0"
 
   },
