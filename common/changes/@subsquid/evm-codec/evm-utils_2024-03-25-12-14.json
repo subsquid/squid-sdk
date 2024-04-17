@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-codec",
-      "comment": "Introduce new package for encoding/decoding EVM ABI data",
+      "comment": "",
       "type": "none"
     }
   ],
