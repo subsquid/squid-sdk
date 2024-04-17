@@ -348,7 +348,7 @@ class SolanaDataSource implements DataSource<PartialBlock> {
                 let height = await archive.getFinalizedHeight()
                 let from = requests[0].range.from
                 if (height > from || !this.rpc) {
-                    for await (let batch of archive.getBlockStream(requests, !this.rpc)) {
+                    for await (let batch of archive.getBlockStream(requests, !!this.rpc)) {
                         yield batch
                         from = last(batch).header.height + 1
                     }

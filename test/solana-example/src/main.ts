@@ -23,14 +23,14 @@ const dataSource = new DataSourceBuilder()
         }),
         strideConcurrency: 10
     })
-    // Currently only blocks from 220_000_000 and above are stored in Subsquid Network.
+    // Currently only blocks from 240_000_000 and above are stored in Subsquid Network.
     // When we specify it, we must also limit the range of requested blocks.
     //
     // Same applies to RPC endpoint of a node that cleanups its history.
     //
     // NOTE, that block ranges are specified in heights, not in slots !!!
     //
-    .setBlockRange({from: 220_000_000})
+    .setBlockRange({from: 240_000_000})
     //
     // Block data returned by the data source has the following structure:
     //
