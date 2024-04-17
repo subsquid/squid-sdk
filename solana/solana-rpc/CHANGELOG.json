@@ -1,0 +1,23 @@
+{
+  "name": "@subsquid/solana-rpc",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/solana-rpc_v0.0.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.8.0` to `4.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.8.0` to `4.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}
