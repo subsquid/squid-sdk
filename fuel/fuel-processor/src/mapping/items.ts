@@ -34,20 +34,12 @@ export class Block {
         if (src.inputs) {
             block.inputs = src.inputs.map(i => {
                 switch (i.type) {
-                    case 'InputCoin': {
-                        let {_predicateRoot, ...props} = i as any
-                        let input = new InputCoin(block.header, props)
-                        input._predicateRoot = _predicateRoot
-                        return input
-                    }
+                    case 'InputCoin':
+                        return new InputCoin(block.header, i)
                     case 'InputContract':
                         return new InputContract(block.header, i)
-                    case 'InputMessage': {
-                        let {_predicateRoot, ...props} = i as any
-                        let input = new InputMessage(block.header, props)
-                        input._predicateRoot = _predicateRoot
-                        return input
-                    }
+                    case 'InputMessage':
+                        return new InputMessage(block.header, i)
                     default:
                         throw unexpectedCase(i.type)
                 }
@@ -250,15 +242,6 @@ export class InputCoin extends InputBase {
     predicateGasUsed?: BigInt
     predicate?: Bytes
     predicateData?: Bytes
-    #predicateRoot?: Bytes
-
-    get _predicateRoot(): Bytes | undefined {
-        return this.#predicateRoot
-    }
-
-    set _predicateRoot(value: Bytes | undefined) {
-        this.#predicateRoot = value
-    }
 }
 
 
@@ -283,15 +266,6 @@ export class InputMessage extends InputBase {
     data?: Bytes
     predicate?: Bytes
     predicateData?: Bytes
-    #predicateRoot?: Bytes
-
-    get _predicateRoot(): Bytes | undefined {
-        return this.#predicateRoot
-    }
-
-    set _predicateRoot(value: Bytes | undefined) {
-        this.#predicateRoot = value
-    }
 }
 
 

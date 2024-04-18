@@ -119,7 +119,6 @@ export interface InputCoin {
     predicateGasUsed: BigInt
     predicate: Bytes
     predicateData: Bytes
-    _predicateRoot?: Bytes
 }
 
 
@@ -148,7 +147,6 @@ export interface InputMessage {
     data: Bytes
     predicate: Bytes
     predicateData: Bytes
-    _predicateRoot?: Bytes
 }
 
 

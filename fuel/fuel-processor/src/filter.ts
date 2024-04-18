@@ -94,22 +94,18 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<Input, InputRe
             type,
             coinOwner,
             coinAssetId,
-            coinPredicateRoot,
             contractContract,
             messageSender,
             messageRecipient,
-            messagePredicateRoot,
             ...relations
         } = req
         let filter = new FilterBuilder<Input>()
         filter.propIn('type', req.type)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.owner), coinOwner)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.assetId), coinAssetId)
-        filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input._predicateRoot), coinPredicateRoot)
         filter.getIn(input => input.type == 'InputContract' && assertNotNull(input.contract), contractContract)
         filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.sender), messageSender)
         filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.recipient), messageRecipient)
-        filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input._predicateRoot), messagePredicateRoot)
         inputs.add(filter, relations)
     })
 

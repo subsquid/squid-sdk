@@ -31,11 +31,9 @@ export interface InputRequest {
     type?: InputType[]
     coinOwner?: Bytes[]
     coinAssetId?: Bytes[]
-    coinPredicateRoot?: Bytes[]
     contractContract?: Bytes[]
     messageSender?: Bytes[]
     messageRecipient?: Bytes[]
-    messagePredicateRoot?: Bytes[]
     transaction?: boolean
 }
 
