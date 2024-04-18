@@ -26,8 +26,7 @@
     "@subsquid/util-internal-commander": "^1.4.0",
     "@subsquid/evm-codec": "0.0.0",
     "@subsquid/evm-abi": "0.0.0",
-    "commander": "^11.1.0",
-    "prettier": "^3.2.5"
+    "commander": "^11.1.0"
   },
   "devDependencies": {
     "abitype": "^1.0.0",
