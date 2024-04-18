@@ -478,39 +478,58 @@
       "shouldPublish": false
     },
     {
-      "packageName": "@subsquid/borsh",
-      "projectFolder": "solana/borsh",
-      "shouldPublish": false
-      //      "shouldPublish": true,
-      //      "versionPolicyName": "npm"
+      "packageName": "@subsquid/batch-processor",
+      "projectFolder": "processor/batch-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/solana-data",
-      "projectFolder": "solana/solana-data",
-      "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
+      "packageName": "@subsquid/borsh",
+      "projectFolder": "solana/borsh",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
-      "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/solana-ingest",
       "projectFolder": "solana/solana-ingest",
-      "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/solana-processor",
-      "projectFolder": "solana/solana-processor",
-      "shouldPublish": false
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
+      "packageName": "@subsquid/solana-normalization",
+      "projectFolder": "solana/solana-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-objects",
+      "projectFolder": "solana/solana-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "projectFolder": "solana/solana-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc-data",
+      "projectFolder": "solana/solana-rpc-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-stream",
+      "projectFolder": "solana/solana-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/frontier",
@@ -645,6 +664,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "raw-archive-validator",
+      "projectFolder": "util/raw-archive-validator",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
@@ -773,6 +797,12 @@
     {
       "packageName": "@subsquid/util-internal-read-lines",
       "projectFolder": "util/util-internal-read-lines",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-squid-id",
+      "projectFolder": "util/util-internal-squid-id",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

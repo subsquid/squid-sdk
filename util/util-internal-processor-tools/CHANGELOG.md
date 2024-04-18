@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+
+## 4.1.1
+Wed, 17 Apr 2024 12:46:35 GMT
+
+### Patches
+
+- factor out `getOrGenerateSquidId()` function into a separate package
 
 ## 4.1.0
 Sun, 17 Mar 2024 23:20:20 GMT

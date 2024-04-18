@@ -228,6 +228,25 @@ export function* partitionBy<T, V>(items: T[], value: (a: T) => V): Iterable<{it
 }
 
 
+export function bisect<I, K>(items: I[], key: K, compare: (item: I, key: K) => number): number {
+    let beg = 0
+    let end = items.length
+    while (beg < end) {
+        let dist = end - beg
+        let pos = beg + (dist - (dist % 2)) / 2
+        let it = items[pos]
+        let order = compare(it, key)
+        if (order == 0) return pos
+        if (order > 0) {
+            end = pos
+        } else {
+            beg = pos + 1
+        }
+    }
+    return beg
+}
+
+
 export function weakMemo<T extends object, R>(f: (obj: T) => R): (obj: T) => R {
     let cache = new WeakMap<T, R>()
     return function(obj: T): R {

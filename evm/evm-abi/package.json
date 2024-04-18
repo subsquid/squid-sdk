@@ -13,8 +13,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc -p tsconfig.build.json",
-    "test": "vitest run"
+    "build": "rm -rf lib && tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@subsquid/evm-codec": "^0.0.0"

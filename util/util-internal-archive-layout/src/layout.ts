@@ -12,6 +12,12 @@ import {ArchiveLayoutError, TopDirError} from './errors'
 import {formatBlockNumber, getShortHash} from './util'
 
 
+export interface RawBlock {
+    hash: string
+    height: number
+}
+
+
 export interface ArchiveLayoutOptions {
     topDirSize?: number
 }
@@ -274,6 +280,32 @@ export class ArchiveLayout {
                     }
                 )
             }
+            if (blocks.length) {
+                await write(blocks)
+            }
+        })
+    }
+
+    readRawChunk<B>(chunk: DataChunk): AsyncIterable<B[]> {
+        return concurrentWriter(1, async write => {
+            let blocks: B[] = []
+            let fs = this.getChunkFs(chunk)
+            await pipeline(
+                await fs.readStream('blocks.jsonl.gz'),
+                createGunzip(),
+                async dataChunks => {
+                    for await (let lines of splitLines(dataChunks)) {
+                        for (let line of lines) {
+                            let block: B = JSON.parse(line)
+                            blocks.push(block)
+                            if (blocks.length > 10) {
+                                await write(blocks)
+                                blocks = []
+                            }
+                        }
+                    }
+                }
+            )
             if (blocks.length) {
                 await write(blocks)
             }

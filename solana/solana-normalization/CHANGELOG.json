@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/solana-normalization",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/solana-normalization_v0.0.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

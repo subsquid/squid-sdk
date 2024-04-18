@@ -1,6 +1,11 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+
+## 3.6.2
+Wed, 17 Apr 2024 12:46:35 GMT
+
+_Version update only_
 
 ## 3.6.1
 Tue, 09 Apr 2024 17:45:37 GMT
