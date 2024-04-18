@@ -33,21 +33,21 @@ export function getType(param: AbiEventParameter, index?: number): string {
   }
   if (isStaticArray(param)) {
     const elements = elementsCount(param);
-    return `fixedArray(${getType({
+    return `p.fixedSizeArray(${getType({
       ...param,
       type: arrayChildType(param),
     })}, ${elements})`;
   }
 
   if (isDynamicArray(param)) {
-    return `array(${getType({
+    return `p.array(${getType({
       ...param,
       type: arrayChildType(param),
     })})`;
   }
 
   if (param.type === "tuple") {
-    return `struct({${(param as any).components.map((type: AbiEventParameter, idx: number) => getType(type, idx)).join(", ")}})`;
+    return `p.struct({${(param as any).components.map((type: AbiEventParameter, idx: number) => getType(type, idx)).join(", ")}})`;
   }
 
   return `p.${param.type}`;

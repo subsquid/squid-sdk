@@ -1,9 +1,9 @@
-import { Logger } from "@subsquid/logger";
-import { def } from "@subsquid/util-internal";
-import { keccak256 } from "@subsquid/evm-codec";
-import { getType } from "./util/types";
-import type { Abi, AbiEvent, AbiFunction, AbiParameter } from "abitype";
-import { PrettyFileOutput, PrettyOutDir } from "./pretty-out-dir";
+import {Logger} from "@subsquid/logger";
+import {def} from "@subsquid/util-internal";
+import {keccak256} from "@subsquid/evm-abi";
+import {getType} from "./util/types";
+import type {Abi, AbiEvent, AbiFunction, AbiParameter} from "abitype";
+import {PrettyFileOutput, PrettyOutDir} from "./pretty-out-dir";
 
 export class Typegen {
   private out: PrettyFileOutput;
@@ -18,12 +18,12 @@ export class Typegen {
   }
 
   async generate() {
-    this.out.line(`import * as p from "@subsquid/evm-codec";`);
+    this.out.line(`import * as p from '@subsquid/evm-codec'`);
     this.out.line(
-      `import type { EventParams as EParams, FunctionArguments, FunctionReturn } from "@subsquid/evm-codec";`,
+      `import { event, fun, indexed, ContractBase } from '@subsquid/evm-abi'`,
     );
     this.out.line(
-      "const { event, fun, indexed, struct, array, fixedArray, ContractBase } = p;",
+      `import type { EventParams as EParams, FunctionArguments, FunctionReturn } from '@subsquid/evm-abi'`,
     );
     this.out.line();
 
@@ -72,7 +72,7 @@ export class Typegen {
       for (let f of functions) {
         let returnType = "";
         if (f.outputs?.length === 1) {
-          returnType = getType({ ...f.outputs[0], name: undefined });
+          returnType = getType({...f.outputs[0], name: undefined});
         }
         if (f.outputs?.length > 1) {
           returnType = `{${this.toTypes(f.outputs)}}`;
