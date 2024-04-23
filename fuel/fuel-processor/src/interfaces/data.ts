@@ -15,12 +15,25 @@ import type {GetFields, Select, Selector, Simplify} from './util'
 export type Bytes = string
 
 
+type AddPrefix<Prefix extends string, S extends string> = `${Prefix}${Capitalize<S>}`
+
+
 export interface FieldSelection {
     block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
     transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
     receipt?: Selector<Exclude<keyof data.Receipt, ReceiptRequiredFields>>
-    input?: Selector<Exclude<keyof data.TransactionInput, InputRequiredFields>>
-    output?: Selector<Exclude<keyof data.TransactionOutput, OutputRequiredFields>>
+    input?: Selector<
+        AddPrefix<'coin', Exclude<keyof data.InputCoin, InputRequiredFields>> |
+        AddPrefix<'contract', Exclude<keyof data.InputContract, InputRequiredFields>> |
+        AddPrefix<'message', Exclude<keyof data.InputMessage, InputRequiredFields>>
+    >
+    output?: Selector<
+        AddPrefix<'coin', Exclude<keyof data.CoinOutput, OutputRequiredFields>> |
+        AddPrefix<'contract', Exclude<keyof data.ContractOutput, OutputRequiredFields>> |
+        AddPrefix<'change', Exclude<keyof data.ChangeOutput, OutputRequiredFields>> |
+        AddPrefix<'variable', Exclude<keyof data.VariableOutput, OutputRequiredFields>> |
+        AddPrefix<'contractCreated', Exclude<keyof data.ContractCreated, OutputRequiredFields | 'contract'> | 'contractId'>
+    >
 }
 
 

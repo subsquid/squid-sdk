@@ -20,7 +20,7 @@ import {
 
 export interface GraphqlEndpointSettings {
     /**
-     * RPC endpoint URL (either http(s) or ws(s))
+     * GraphQL endpoint URL
      */
     url: string
     /**
@@ -35,10 +35,6 @@ export interface GraphqlEndpointSettings {
      * Request timeout in `ms`
      */
     requestTimeout?: number
-    /**
-     * Maximum number of requests in a single batch call
-     */
-    maxBatchCallSize?: number
     /**
      * HTTP headers
      */
@@ -318,7 +314,7 @@ export class FuelBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): FuelArchive {
+    private getGatewayDataSource(): FuelArchive {
         let options = assertNotNull(this.gateway)
 
         let log = this.getLogger().child('archive')
@@ -397,7 +393,7 @@ export class FuelBatchProcessor<F extends FieldSelection = {}> {
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                // archive: this.gateway ? this.getArchiveDataSource() : undefined,
+                archive: this.gateway ? this.getGatewayDataSource() : undefined,
                 hotDataSource: this.graphqlEndpoint && !this.graphqlIngestSettings?.disabled
                     ? this.getHotDataSource()
                     : undefined,

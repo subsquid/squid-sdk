@@ -1,4 +1,3 @@
-// import {Base58Bytes} from '@subsquid/fuel-data'
 import {assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
@@ -29,42 +28,34 @@ export class FuelArchive implements DataSource<Block, DataRequest> {
     }
 
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<Batch<Block>> {
-        // let archiveRequests = mapRangeRequestList(requests, req => {
-        //     let {fields, ...items} = req
-        //     return {
-        //         type: 'solana',
-        //         fields: {
-        //             block: {parentHash: true, ...fields?.block},
-        //             transaction: fields?.transaction,
-        //             instruction: fields?.receipt,
-        //             log: {instructionAddress: true, ...fields?.log},
-        //             balance: fields?.balance,
-        //             tokenBalance: fields?.tokenBalance,
-        //             reward: fields?.reward
-        //         },
-        //         ...items
-        //     }
-        // })
+        let archiveRequests = mapRangeRequestList(requests, req => {
+            let {fields, ...items} = req
+            return {
+                type: 'fuel',
+                fields,
+                ...items
+            }
+        })
 
-        // for await (let batch of archiveIngest({
-        //     client: this.client,
-        //     requests: archiveRequests,
-        //     stopOnHead
-        // })) {
-        //     let req = getRequestAt(requests, batch.blocks[0].header.number)
+        for await (let batch of archiveIngest({
+            client: this.client,
+            requests: archiveRequests,
+            stopOnHead
+        })) {
+            let req = getRequestAt(requests, batch.blocks[0].header.number)
 
-        //     let blocks = cast(
-        //         array(getDataSchema(assertNotNull(req?.fields))),
-        //         batch.blocks
-        //     ).map(b => {
-        //         let {header: {number, ...hdr}, ...items} = b
-        //         return mapBlock({
-        //             header: {height: number, ...hdr},
-        //             ...items
-        //         })
-        //     })
+            let blocks = cast(
+                array(getDataSchema(assertNotNull(req?.fields))),
+                batch.blocks
+            ).map(b => {
+                let {header: {number, ...hdr}, ...items} = b
+                return mapBlock({
+                    header: {height: number, ...hdr},
+                    ...items
+                })
+            })
 
-        //     yield {blocks, isHead: batch.isHead}
-        // }
+            yield {blocks, isHead: batch.isHead}
+        }
     }
 }
