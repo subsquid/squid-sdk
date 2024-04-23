@@ -387,7 +387,7 @@ export class FuelBatchProcessor<F extends FieldSelection = {}> {
             }
 
             if (this.gateway == null && this.graphqlIngestSettings?.disabled) {
-                throw new Error('Subsquid Network Gateway is required when RPC data ingestion is disabled')
+                throw new Error('Subsquid Network Gateway is required when GraphQL data ingestion is disabled')
             }
 
             return new Runner({

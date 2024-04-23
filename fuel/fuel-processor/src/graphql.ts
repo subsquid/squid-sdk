@@ -37,24 +37,6 @@ export class GraphqlDataSource implements HotDataSource<Block, DataRequest> {
         return this.baseDataSource.getBlockHash(height)
     }
 
-    // getFinalizedBlocks(
-    //     requests: RangeRequest<DataRequest>[],
-    //     stopOnHead?: boolean
-    // ): AsyncIterable<Batch<Block>> {
-    //     return coldIngest({
-    //         getFinalizedHeight: () => this.getFinalizedHeight(),
-    //         getSplit: req => {
-    //             this.baseDataSource.getFinalizedBlocks
-    //         },
-    //         requests: mapRangeRequestList(requests, req => req),
-    //         splitSize: 10,
-    //         concurrency: 5,
-    //         // concurrency: Math.min(5, this.rpc.client.getConcurrency()),
-    //         stopOnHead,
-    //         headPollInterval: this.headPollInterval
-    //     })
-    // }
-
     async *getFinalizedBlocks(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
@@ -76,88 +58,7 @@ export class GraphqlDataSource implements HotDataSource<Block, DataRequest> {
         requests: RangeRequestList<DataRequest>,
         state: HotDatabaseState,
         cb: (upd: HotUpdate<Block>) => Promise<void>
-    ): Promise<void> {
-        // if (requests.length == 0) return
-
-        // let mappingRequests = mapRangeRequestList(requests, req => this.toMappingRequest(req))
-
-        // let self = this
-
-        // let proc = new HotProcessor<Block>(state, {
-        //     process: cb,
-        //     getBlock: async ref => {
-        //         let req = getRequestAt(mappingRequests, ref.height) || NO_REQUEST
-        //         let block = await this.rpc.getColdBlock(ref.hash, req, proc.getFinalizedHeight())
-        //         return mapBlock(block, req)
-        //     },
-        //     async *getBlockRange(from: number, to: BlockRef): AsyncIterable<Block[]> {
-        //         assert(to.height != null)
-        //         if (from > to.height) {
-        //             from = to.height
-        //         }
-        //         for (let split of splitRangeByRequest(mappingRequests, {from, to: to.height})) {
-        //             let request = split.request || NO_REQUEST
-        //             for (let range of splitRange(10, split.range)) {
-        //                 let rpcBlocks = await self.rpc.getHotSplit({
-        //                     range,
-        //                     request,
-        //                     finalizedHeight: proc.getFinalizedHeight()
-        //                 })
-        //                 let blocks = rpcBlocks.map(b => mapBlock(b, request))
-        //                 let lastBlock = maybeLast(blocks)?.header.height ?? range.from - 1
-        //                 yield blocks
-        //                 if (lastBlock < range.to) {
-        //                     throw new BlockConsistencyError({height: lastBlock + 1})
-        //                 }
-        //             }
-        //         }
-        //     },
-        //     getHeader(block) {
-        //         return block.header
-        //     }
-        // })
-
-        // let isEnd = () => proc.getFinalizedHeight() >= rangeEnd(last(requests).range)
-
-        // let navigate = (head: {height: number, hash?: Bytes32}): Promise<void> => {
-        //     return proc.goto({
-        //         best: head,
-        //         finalized: {
-        //             height: Math.max(head.height - this.finalityConfirmation, 0)
-        //         }
-        //     })
-        // }
-
-        // if (this.rpc.client.supportsNotifications()) {
-        //     return this.subscription(navigate, isEnd)
-        // } else {
-        //     return this.polling(navigate, isEnd)
-        // }
+    ): Promise<void> { 
+        throw new Error('All blocks in Fuel are finalized')
     }
-
-    // private async polling(cb: (head: {height: number}) => Promise<void>, isEnd: () => boolean): Promise<void> {
-    //     let prev = -1
-    //     let height = new Throttler(() => this.rpc.getHeight(), this.headPollInterval)
-    //     while (!isEnd()) {
-    //         let next = await height.call()
-    //         if (next <= prev) continue
-    //         prev = next
-    //         for (let i = 0; i < 100; i++) {
-    //             try {
-    //                 await cb({height: next})
-    //                 break
-    //             } catch(err: any) {
-    //                 if (isDataConsistencyError(err)) {
-    //                     this.log?.write(
-    //                         i > 0 ? LogLevel.WARN : LogLevel.DEBUG,
-    //                         err.message
-    //                     )
-    //                     await wait(100)
-    //                 } else {
-    //                     throw err
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
