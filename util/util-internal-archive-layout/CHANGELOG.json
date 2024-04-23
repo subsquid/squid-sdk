@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/util-internal-archive-layout_v0.3.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "export `RawBlock` type"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/util-internal-archive-layout_v0.2.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

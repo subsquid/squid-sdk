@@ -2,7 +2,7 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
 import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
-import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
+import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
@@ -50,7 +50,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         let program = new Command()
         program.requiredOption('-e, --endpoint <url>', 'RPC endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
         program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
-        program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', nat)
+        program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
         program.option('-b, --endpoint-max-batch-call-size <number>', 'Maximum size of RPC batch call', positiveInt)
         program.option('--dest <archive>', 'Either local dir or s3:// url where to store the dumped data', FileOrUrl(['s3:']))
         program.option('--first-block <number>', 'Height of the first block to dump', nat)
@@ -102,6 +102,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
             capacity: options.endpointCapacity || 10,
             maxBatchCallSize: options.endpointMaxBatchCallSize,
             rateLimit: options.endpointRateLimit,
+            requestTimeout: 180_000,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             fixUnsafeIntegers: this.fixUnsafeIntegers()
         })

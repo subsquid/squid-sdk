@@ -2,6 +2,42 @@
   "name": "@subsquid/substrate-ingest",
   "entries": [
     {
+      "version": "3.6.2",
+      "tag": "@subsquid/substrate-ingest_v3.6.2",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.8.0` to `4.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.0.1` to `0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.6.1",
+      "tag": "@subsquid/substrate-ingest_v3.6.1",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.7.0` to `4.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.3` to `4.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.6.0",
       "tag": "@subsquid/substrate-ingest_v3.6.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

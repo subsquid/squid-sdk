@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 8.3.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- Allow to configure RPC HTTP headers
 
 ## 8.2.2
 Sun, 17 Mar 2024 23:20:20 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-commander
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+
+## 1.4.0
+Wed, 17 Apr 2024 12:46:35 GMT
+
+### Minor changes
+
+- add `positiveReal` validator
 
 ## 1.3.2
 Fri, 01 Dec 2023 16:55:51 GMT

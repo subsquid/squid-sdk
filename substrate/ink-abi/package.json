@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ink-abi",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Ink! ABI tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -18,15 +18,15 @@
   },
   "dependencies": {
     "@subsquid/scale-codec": "^4.0.1",
-    "@subsquid/util-internal": "^3.1.0",
+    "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-hex": "^1.2.2",
     "ajv": "^8.12.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.3"
+    "@subsquid/substrate-runtime": "^2.0.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.3",
+    "@subsquid/substrate-runtime": "^2.0.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.18.14",
     "expect": "^29.7.0",

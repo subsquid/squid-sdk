@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 8.1.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- map storage by pallet name instead of prefix
 
 ## 8.0.2
 Fri, 01 Dec 2023 16:55:51 GMT

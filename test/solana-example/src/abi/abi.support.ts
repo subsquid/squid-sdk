@@ -1,6 +1,7 @@
 import {Codec, GetCodecType, Src} from '@subsquid/borsh'
-import {decodeHex} from '@subsquid/util-internal-hex'
+import {getInstructionData} from '@subsquid/solana-stream'
 import assert from 'assert'
+
 
 export type Bytes = string
 export type Base58Bytes = string
@@ -62,7 +63,7 @@ class Ins<A, D> {
     }): DecodedInstruction<A, D> {
         return {
             accounts: this.decodeAccounts(ins.accounts),
-            data: this.decodeData(ins.data)
+            data: this.decodeData(getInstructionData(ins))
         }
     }
 
@@ -74,10 +75,7 @@ class Ins<A, D> {
         return result
     }
 
-    decodeData(data: Bytes | Uint8Array): D {
-        if (typeof data == 'string') {
-            data = decodeHex(data)
-        }
+    decodeData(data: Uint8Array): D {
         let src = new Src(data)
         this.assertDiscriminator(src)
         return this.data.decode(src)
@@ -116,6 +114,11 @@ class Ins<A, D> {
             }
         }
     }
+}
+
+
+function decodeHex(bytes: Bytes): Uint8Array {
+    return Buffer.from(bytes.slice(2), 'hex')
 }
 
 
