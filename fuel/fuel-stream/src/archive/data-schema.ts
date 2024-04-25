@@ -12,8 +12,8 @@ import {
     oneOf,
     constant
 } from '@subsquid/util-internal-validation'
-import {FieldSelection} from '../interfaces/data'
-import {Selector} from '../interfaces/util'
+import {FieldSelection} from '../data/model'
+import {Selector} from '../data/util'
 
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {

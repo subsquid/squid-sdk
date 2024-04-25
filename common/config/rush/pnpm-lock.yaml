@@ -89,6 +89,9 @@ dependencies:
   '@rush-temp/fuel-normalization':
     specifier: file:./projects/fuel-normalization.tgz
     version: file:projects/fuel-normalization.tgz
+  '@rush-temp/fuel-objects':
+    specifier: file:./projects/fuel-objects.tgz
+    version: file:projects/fuel-objects.tgz
   '@rush-temp/fuel-stream':
     specifier: file:./projects/fuel-stream.tgz
     version: file:projects/fuel-stream.tgz
@@ -7783,7 +7786,7 @@ packages:
     dev: false
 
   file:projects/fuel-ingest.tgz:
-    resolution: {integrity: sha512-L4hws396QXrXkfZL8kManOovVq4G3uZjrRUrYPQuQX04jEO0th2z3KwfFmLPUfmvb021nHxZGSgIAoI9fKGqpg==, tarball: file:projects/fuel-ingest.tgz}
+    resolution: {integrity: sha512-5biA6vZQSyAyc6Jt2009fJ98pUFQRxM1rZY++e820rmTI5EE0xQgylW4k6HQSgG3DNWJw2X+Z+c/PaeZ0itzcA==, tarball: file:projects/fuel-ingest.tgz}
     name: '@rush-temp/fuel-ingest'
     version: 0.0.0
     dependencies:
@@ -7804,8 +7807,17 @@ packages:
       typescript: 5.3.3
     dev: false
 
+  file:projects/fuel-objects.tgz:
+    resolution: {integrity: sha512-/cLpE43C/LZmt77zkDpyMkbOgPVjhFvKoLjfUR0HDCyp19rYpEAGH0943iib3L+XoMrhNgrF7xLjeVRX6LoYig==, tarball: file:projects/fuel-objects.tgz}
+    name: '@rush-temp/fuel-objects'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
   file:projects/fuel-stream.tgz:
-    resolution: {integrity: sha512-+SwFZpaaL1iR6opL/ilRQtipdubfBiS7oQrnbK3UofGCu47ajvkleDXqBB9OQWCWbhcTmveBpVgKoxyml/3IcA==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-++/X62euSQaaUal5hLSMLSht7AO/7uwNh7pvZdmMWVUjxxFDaKXzfxTT/ITCueIUPjTQ8sPmxluUgOT98D3xzQ==, tarball: file:projects/fuel-stream.tgz}
     name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:

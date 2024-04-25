@@ -1,5 +1,4 @@
 import {ReceiptType, TransactionType} from '@subsquid/fuel-data/lib/data'
-import {HashAndHeight, shortHash} from '@subsquid/util-internal-processor-tools'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {
     PartialOutput,
@@ -8,8 +7,9 @@ import {
     PartialReceipt,
     PartialTransaction,
     PartialInput
-} from '../interfaces/data-partial'
-import {Bytes} from '../interfaces/data'
+} from '@subsquid/fuel-stream/lib/data/data-partial'
+import {Bytes} from '@subsquid/fuel-stream'
+import {formatId} from './util'
 
 
 export class Block {
@@ -355,14 +355,3 @@ export class ContractCreated extends OutputBase {
 
 
 export type Output = CoinOutput | ContractOutput | ChangeOutput | VariableOutput | ContractCreated
-
-
-function formatId(block: HashAndHeight, ...address: number[]): string {
-    let no = block.height.toString().padStart(12, '0')
-    let hash = shortHash(block.hash)
-    let id = `${no}-${hash}`
-    for (let index of address) {
-        id += '-' + index.toString().padStart(6, '0')
-    }
-    return id
-}

@@ -2,8 +2,8 @@ import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-ran
 import {HttpDataSource} from '@subsquid/fuel-data/lib/data-source'
 import {BlockHeader} from '@subsquid/fuel-data/lib/raw-data'
 import {mapRawBlock} from '@subsquid/fuel-normalization'
-import {DataRequest} from './interfaces/data-request'
-import {PartialBlock} from './interfaces/data-partial'
+import {DataRequest} from './data/data-request'
+import {PartialBlock} from './data/data-partial'
 import {filterBlockBatch} from './filter'
 
 

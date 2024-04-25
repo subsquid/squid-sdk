@@ -1,2 +1,2 @@
-export * from './interfaces/data'
+export * from './data/model'
 export * from './source'

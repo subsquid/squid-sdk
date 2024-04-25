@@ -18,16 +18,16 @@ import {HttpDataSource} from '@subsquid/fuel-data/lib/data-source'
 import assert from 'assert'
 import {FuelArchive} from './archive/source'
 import {getFields} from './fields'
-import {Block, FieldSelection} from './interfaces/data'
+import {Block, FieldSelection} from './data/model'
 import {GraphqlDataSource} from './graphql'
-import {PartialBlock} from './interfaces/data-partial'
+import {PartialBlock} from './data/data-partial'
 import {
     DataRequest,
     ReceiptRequest,
     InputRequest,
     OutputRequest,
     TransactionRequest
-} from './interfaces/data-request'
+} from './data/data-request'
 
 
 export interface GraphqlSettings {

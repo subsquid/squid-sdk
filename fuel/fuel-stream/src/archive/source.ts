@@ -5,9 +5,9 @@ import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {DataRequest} from '../interfaces/data-request'
+import {DataRequest} from '../data/data-request'
 import {getDataSchema} from './data-schema'
-import { PartialBlock } from '../interfaces/data-partial'
+import { PartialBlock } from '../data/data-partial'
 
 
 export class FuelArchive {

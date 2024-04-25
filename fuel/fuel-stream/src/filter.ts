@@ -2,7 +2,7 @@ import {EntityFilter, FilterBuilder} from '@subsquid/util-internal-processor-too
 import {assertNotNull, groupBy, weakMemo} from '@subsquid/util-internal'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
 import {Block, TransactionInput, TransactionOutput, Receipt, Transaction} from '@subsquid/fuel-normalization'
-import {DataRequest} from './interfaces/data-request'
+import {DataRequest} from './data/data-request'
 
 
 class IncludeSet {

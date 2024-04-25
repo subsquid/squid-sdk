@@ -1,5 +1,5 @@
 import {ReceiptType, TransactionType, InputType, OutputType} from '@subsquid/fuel-data/lib/data'
-import {FieldSelection, Bytes} from './data'
+import {FieldSelection, Bytes} from './model'
 
 
 export interface DataRequest {

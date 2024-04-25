@@ -1,5 +1,5 @@
-import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
-import {Selector} from './interfaces/util'
+import {DEFAULT_FIELDS, FieldSelection} from './data/model'
+import {Selector} from './data/util'
 
 
 /**
