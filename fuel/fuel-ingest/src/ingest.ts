@@ -1,4 +1,4 @@
-import {mapRawBlock} from '@subsquid/fuel-data/lib/mapping'
+import {mapRawBlock} from '@subsquid/fuel-normalization'
 import {BlockData} from '@subsquid/fuel-data/lib/raw-data'
 import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'

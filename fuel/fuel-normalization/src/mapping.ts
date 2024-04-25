@@ -1,6 +1,6 @@
 import {unexpectedCase} from '@subsquid/util-internal'
+import * as raw from '@subsquid/fuel-data/lib/raw-data'
 import assert from 'assert'
-import * as raw from './raw-data'
 import {
     Status,
     ProgramState,

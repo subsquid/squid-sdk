@@ -83,15 +83,15 @@ dependencies:
   '@rush-temp/fuel-dump':
     specifier: file:./projects/fuel-dump.tgz
     version: file:projects/fuel-dump.tgz
-  '@rush-temp/fuel-indexer':
-    specifier: file:./projects/fuel-indexer.tgz
-    version: file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/fuel-ingest':
     specifier: file:./projects/fuel-ingest.tgz
     version: file:projects/fuel-ingest.tgz
-  '@rush-temp/fuel-processor':
-    specifier: file:./projects/fuel-processor.tgz
-    version: file:projects/fuel-processor.tgz
+  '@rush-temp/fuel-normalization':
+    specifier: file:./projects/fuel-normalization.tgz
+    version: file:projects/fuel-normalization.tgz
+  '@rush-temp/fuel-stream':
+    specifier: file:./projects/fuel-stream.tgz
+    version: file:projects/fuel-stream.tgz
   '@rush-temp/gql-test-client':
     specifier: file:./projects/gql-test-client.tgz
     version: file:projects/gql-test-client.tgz(graphql@15.8.0)
@@ -287,9 +287,6 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
-  '@subsquid/typeorm-codegen':
-    specifier: ^1.3.3
-    version: 1.3.3(supports-color@8.1.1)
   '@subsquid/util-internal-dump-cli':
     specifier: ^0.0.1
     version: 0.0.1
@@ -3069,41 +3066,6 @@ packages:
       supports-color: 8.1.1
     dev: false
 
-  /@subsquid/openreader@4.5.1(supports-color@8.1.1):
-    resolution: {integrity: sha512-N4aFZ0AzYiFCzocqbW971M8LOIKo9E8d4lt5He4x8Jcm19hwYYlNy8wwnOv1USCxFO/uCPZm/RTkARlyjOL10A==}
-    hasBin: true
-    peerDependencies:
-      '@subsquid/big-decimal': ^1.0.0
-    peerDependenciesMeta:
-      '@subsquid/big-decimal':
-        optional: true
-    dependencies:
-      '@graphql-tools/merge': 9.0.1(graphql@15.8.0)
-      '@subsquid/graphiql-console': 0.3.0
-      '@subsquid/logger': 1.3.3
-      '@subsquid/util-internal': 3.1.0
-      '@subsquid/util-internal-commander': 1.4.0(commander@11.1.0)
-      '@subsquid/util-internal-hex': 1.2.2
-      '@subsquid/util-internal-http-server': 2.0.0
-      '@subsquid/util-naming': 1.2.2
-      apollo-server-core: 3.13.0(graphql@15.8.0)
-      apollo-server-express: 3.13.0(express@4.18.2)(graphql@15.8.0)
-      commander: 11.1.0
-      deep-equal: 2.2.3
-      express: 4.18.2
-      graphql: 15.8.0
-      graphql-parse-resolve-info: 4.14.0(graphql@15.8.0)(supports-color@8.1.1)
-      graphql-ws: 5.14.3(graphql@15.8.0)
-      pg: 8.11.3
-      ws: 8.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - pg-native
-      - supports-color
-      - utf-8-validate
-    dev: false
-
   /@subsquid/rpc-client@4.9.0:
     resolution: {integrity: sha512-lpb6qRMMlaacXOFPRhv4CZ7g4w7pKIR7ZEbMjyFexLOdv9MkcYzuGD5XT5REGaBA6mfQMaLa33K5lqAb+tJKBQ==}
     dependencies:
@@ -3114,24 +3076,6 @@ packages:
       '@subsquid/util-internal-counters': 1.3.2
       '@subsquid/util-internal-json-fix-unsafe-integers': 0.0.0
       websocket: 1.0.34
-    dev: false
-
-  /@subsquid/typeorm-codegen@1.3.3(supports-color@8.1.1):
-    resolution: {integrity: sha512-6k1oRWnaBNX4GZX737dvZll925uZKt2or/oXNaQRnHAmrCISkIEz7dYkl6PFfppYuardch41FBSFmOQaovPCXw==}
-    hasBin: true
-    dependencies:
-      '@subsquid/openreader': 4.5.1(supports-color@8.1.1)
-      '@subsquid/util-internal': 3.1.0
-      '@subsquid/util-internal-code-printer': 1.2.2
-      '@subsquid/util-naming': 1.2.2
-      commander: 11.1.0
-    transitivePeerDependencies:
-      - '@subsquid/big-decimal'
-      - bufferutil
-      - encoding
-      - pg-native
-      - supports-color
-      - utf-8-validate
     dev: false
 
   /@subsquid/util-internal-archive-layout@0.2.0(@subsquid/util-internal-fs@0.1.2):
@@ -3147,10 +3091,6 @@ packages:
 
   /@subsquid/util-internal-binary-heap@1.0.0:
     resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
-    dev: false
-
-  /@subsquid/util-internal-code-printer@1.2.2:
-    resolution: {integrity: sha512-uerf8T/FU4bxxhat09MgRrdmwifLwV+tO7QvlMvZ5ccwaVrJjHs+0/LY/h1e9YowH3+ZtwPqjYrd5tNOHWX8wA==}
     dev: false
 
   /@subsquid/util-internal-commander@1.4.0(commander@11.1.0):
@@ -3267,13 +3207,6 @@ packages:
 
   /@subsquid/util-internal@3.2.0:
     resolution: {integrity: sha512-foNCjOmZaP8MKMa9sNe2GXTjFSDM9UqA0I0C0/ZvCxM1lCmG3mxZb70f8Wyi7TePXC/eV8eARbIqFyz0GjQmzA==}
-    dev: false
-
-  /@subsquid/util-naming@1.2.2:
-    resolution: {integrity: sha512-NveXOiAbWiWkWd3Iv2jEwSAKvQHOG/HfIsPmmNab8TPX/XgJ6J5Ngx6lHEiqs746m4sOhZ2yipxKAEDgrERaxA==}
-    dependencies:
-      camelcase: 6.3.0
-      inflected: 2.1.0
     dev: false
 
   /@substrate/calc@0.2.8:
@@ -7849,42 +7782,6 @@ packages:
       - aws-crt
     dev: false
 
-  file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-E6KainLbR9exF4rl5DMMknpJEtL9SKT7FDFc98kgYrfcnyxYq0AGPEZF4hzoHXfS2VY3iHpzK21YNxZ86eO9aw==, tarball: file:projects/fuel-indexer.tgz}
-    id: file:projects/fuel-indexer.tgz
-    name: '@rush-temp/fuel-indexer'
-    version: 0.0.0
-    dependencies:
-      '@subsquid/typeorm-codegen': 1.3.3(supports-color@8.1.1)
-      '@types/node': 18.19.4
-      dotenv: 16.3.1
-      pg: 8.11.3
-      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-      typescript: 5.3.3
-    transitivePeerDependencies:
-      - '@google-cloud/spanner'
-      - '@sap/hana-client'
-      - '@subsquid/big-decimal'
-      - better-sqlite3
-      - bufferutil
-      - encoding
-      - hdb-pool
-      - ioredis
-      - mongodb
-      - mssql
-      - mysql2
-      - oracledb
-      - pg-native
-      - pg-query-stream
-      - redis
-      - sql.js
-      - sqlite3
-      - supports-color
-      - ts-node
-      - typeorm-aurora-data-api-driver
-      - utf-8-validate
-    dev: false
-
   file:projects/fuel-ingest.tgz:
     resolution: {integrity: sha512-L4hws396QXrXkfZL8kManOovVq4G3uZjrRUrYPQuQX04jEO0th2z3KwfFmLPUfmvb021nHxZGSgIAoI9fKGqpg==, tarball: file:projects/fuel-ingest.tgz}
     name: '@rush-temp/fuel-ingest'
@@ -7897,9 +7794,19 @@ packages:
       - aws-crt
     dev: false
 
-  file:projects/fuel-processor.tgz:
-    resolution: {integrity: sha512-0FcPBYYm6m/iYYuTXClGoiavIEid2nkwczETyxELBEIczn8wVeJREeWjBZY0zIKnEQN5NTa+S76Sra67rY4l+A==, tarball: file:projects/fuel-processor.tgz}
-    name: '@rush-temp/fuel-processor'
+  file:projects/fuel-normalization.tgz:
+    resolution: {integrity: sha512-a9uTQvnWO/ENGCVObNhPq8Nfi4GOHt59vHuYNYgoW6LemWl4tP3SWjptvAQfiop6VcuN2VycAa/O61u8EOZiiw==, tarball: file:projects/fuel-normalization.tgz}
+    name: '@rush-temp/fuel-normalization'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/util-internal-range': 0.1.0
+      '@types/node': 18.19.4
+      typescript: 5.3.3
+    dev: false
+
+  file:projects/fuel-stream.tgz:
+    resolution: {integrity: sha512-+SwFZpaaL1iR6opL/ilRQtipdubfBiS7oQrnbK3UofGCu47ajvkleDXqBB9OQWCWbhcTmveBpVgKoxyml/3IcA==, tarball: file:projects/fuel-stream.tgz}
+    name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4

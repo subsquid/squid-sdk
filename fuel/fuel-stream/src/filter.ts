@@ -1,15 +1,15 @@
 import {EntityFilter, FilterBuilder} from '@subsquid/util-internal-processor-tools'
-import {assertNotNull, weakMemo} from '@subsquid/util-internal'
+import {assertNotNull, groupBy, weakMemo} from '@subsquid/util-internal'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
+import {Block, TransactionInput, TransactionOutput, Receipt, Transaction} from '@subsquid/fuel-normalization'
 import {DataRequest} from './interfaces/data-request'
-import {Block, Input, Output, Receipt, Transaction} from './mapping'
 
 
 class IncludeSet {
     public readonly receipts = new Set<Receipt>()
     public readonly transactions = new Set<Transaction>()
-    public readonly inputs = new Set<Input>()
-    public readonly outputs = new Set<Output>()
+    public readonly inputs = new Set<TransactionInput>()
+    public readonly outputs = new Set<TransactionOutput>()
 
     addReceipt(receipt?: Receipt): void {
         if (receipt) {
@@ -23,13 +23,13 @@ class IncludeSet {
         }
     }
 
-    addInput(input?: Input): void {
+    addInput(input?: TransactionInput): void {
         if (input) {
             this.inputs.add(input)
         }
     }
 
-    addOutput(output?: Output): void {
+    addOutput(output?: TransactionOutput): void {
         if (output) {
             this.outputs.add(output)
         }
@@ -44,6 +44,8 @@ interface ReceiptRelations {
 
 interface TransactionRelations {
     receipts?: boolean
+    inputs?: boolean
+    outputs?: boolean
 }
 
 
@@ -86,8 +88,8 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
 }
 
 
-function buildInputFilter(dataRequest: DataRequest): EntityFilter<Input, InputRelations> {
-    let inputs = new EntityFilter<Input, InputRelations>()
+function buildInputFilter(dataRequest: DataRequest): EntityFilter<TransactionInput, InputRelations> {
+    let inputs = new EntityFilter<TransactionInput, InputRelations>()
 
     dataRequest.inputs?.forEach(req => {
         let {
@@ -99,7 +101,7 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<Input, InputRe
             messageRecipient,
             ...relations
         } = req
-        let filter = new FilterBuilder<Input>()
+        let filter = new FilterBuilder<TransactionInput>()
         filter.propIn('type', req.type)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.owner), coinOwner)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.assetId), coinAssetId)
@@ -113,12 +115,12 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<Input, InputRe
 }
 
 
-function buildOutputFilter(dataRequest: DataRequest): EntityFilter<Output, OutputRelations> {
-    let outputs = new EntityFilter<Output, OutputRelations>()
+function buildOutputFilter(dataRequest: DataRequest): EntityFilter<TransactionOutput, OutputRelations> {
+    let outputs = new EntityFilter<TransactionOutput, OutputRelations>()
 
     dataRequest.outputs?.forEach(req => {
         let {type, ...relations} = req
-        let filter = new FilterBuilder<Output>()
+        let filter = new FilterBuilder<TransactionOutput>()
         filter.propIn('type', type)
         outputs.add(filter, relations)
     })
@@ -142,13 +144,19 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
 
     let include = new IncludeSet()
 
+    let transactions = new Map(block.transactions.map(tx => [tx.index, tx]))
+    let inputsByTx = groupBy(block.inputs, input => input.transactionIndex)
+    let outputsByTx = groupBy(block.outputs, ouput => ouput.transactionIndex)
+    let receiptsByTx = groupBy(block.receipts, receipt => receipt.transactionIndex)
+
     if (items.receipts.present()) {
         for (let receipt of block.receipts) {
             let rel = items.receipts.match(receipt)
             if (rel == null) continue
             include.addReceipt(receipt)
             if (rel.transaction) {
-                include.addTransaction(receipt.transaction)
+                let tx = assertNotNull(transactions.get(receipt.transactionIndex))
+                include.addTransaction(tx)
             }
         }
     }
@@ -159,8 +167,21 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel == null) continue
             include.addTransaction(tx)
             if (rel.receipts) {
-                for (let receipt of tx.receipts) {
+                let receipts = assertNotNull(receiptsByTx.get(tx.index))
+                for (let receipt of receipts) {
                     include.addReceipt(receipt)
+                }
+            }
+            if (rel.inputs) {
+                let inputs = assertNotNull(inputsByTx.get(tx.index))
+                for (let input of inputs) {
+                    include.addInput(input)
+                }
+            }
+            if (rel.outputs) {
+                let outputs = assertNotNull(outputsByTx.get(tx.index))
+                for (let output of outputs) {
+                    include.addOutput(output)
                 }
             }
         }
@@ -172,7 +193,8 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel == null) continue
             include.addInput(input)
             if (rel.transaction) {
-                include.addTransaction(input.transaction)
+                let tx = assertNotNull(transactions.get(input.transactionIndex))
+                include.addTransaction(tx)
             }
         }
     }
@@ -183,42 +205,16 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel == null) continue
             include.addOutput(output)
             if (rel.transaction) {
-                include.addTransaction(output.transaction)
+                let tx = assertNotNull(transactions.get(output.transactionIndex))
+                include.addTransaction(tx)
             }
         }
     }
 
-    block.receipts = block.receipts.filter(receipt => {
-        if (!include.receipts.has(receipt)) return false
-        if (receipt.transaction && !include.transactions.has(receipt.transaction)) {
-            receipt.transaction = undefined
-        }
-        return true
-    })
-
-    block.transactions = block.transactions.filter(tx => {
-        if (!include.transactions.has(tx)) return false
-        tx.receipts = tx.receipts.filter(receipt => include.receipts.has(receipt))
-        tx.inputs = tx.inputs.filter(input => include.inputs.has(input))
-        tx.outputs = tx.outputs.filter(output => include.outputs.has(output))
-        return true
-    })
-
-    block.inputs = block.inputs.filter(input => {
-        if (!include.inputs.has(input)) return false
-        if (input.transaction && !include.transactions.has(input.transaction)) {
-            input.transaction = undefined
-        }
-        return true
-    })
-
-    block.outputs = block.outputs.filter(output => {
-        if (!include.outputs.has(output)) return false
-        if (output.transaction && !include.transactions.has(output.transaction)) {
-            output.transaction = undefined
-        }
-        return true
-    })
+    block.receipts = block.receipts.filter(receipt => include.receipts.has(receipt))
+    block.transactions = block.transactions.filter(tx => include.transactions.has(tx))
+    block.inputs = block.inputs.filter(input => include.inputs.has(input))
+    block.outputs = block.outputs.filter(output => include.outputs.has(output))
 }
 
 

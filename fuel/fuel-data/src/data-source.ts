@@ -3,7 +3,7 @@ import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest} from '@subsquid/util-internal-range'
 import {DataValidationError, GetSrcType, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest} from './raw-data'
+import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest, GetBlockHeader, BlockHeader} from './raw-data'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
@@ -68,6 +68,29 @@ export class HttpDataSource {
         `
         let response: GetBlockHash = await this.request(query, getResultValidator(GetBlockHash))
         return response.block?.id
+    }
+
+    async getBlockHeader(height: number): Promise<BlockHeader | undefined> {
+        let query = `
+            {
+                block(height: "${height}") {
+                    header {
+                        id
+                        height
+                        daHeight
+                        transactionsRoot
+                        transactionsCount
+                        messageReceiptRoot
+                        messageReceiptCount
+                        prevRoot
+                        time
+                        applicationHash
+                    }
+                }
+            }
+        `
+        let response: GetBlockHeader = await this.request(query, getResultValidator(GetBlockHeader))
+        return response.block?.header
     }
 
     getFinalizedBlocks(

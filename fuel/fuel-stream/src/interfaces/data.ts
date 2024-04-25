@@ -51,55 +51,49 @@ type Item<
     RequiredFields extends keyof Data,
     F extends FieldSelection,
     K extends keyof FieldSelection
-> =
-    {id: string} &
+> = Simplify<
     Pick<Data, RequiredFields> &
     Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
-
-
-export type BlockHeader<F extends FieldSelection = {}> = Simplify<
-    Item<data.BlockHeader, BlockRequiredFields, F, 'block'>
 >
 
 
-export type Transaction<F extends FieldSelection = {}> = Simplify<
-    Item<data.Transaction, TransactionRequiredFields, F, 'transaction'> &
-    {
-        block: BlockHeader<F>
-        receipts: Receipt<F>[]
-        inputs: Input<F>[]
-        outputs: Output<F>[]
-    }
+export type BlockHeader<F extends FieldSelection = {}> = Item<
+    data.BlockHeader,
+    BlockRequiredFields,
+    F,
+    'block'
 >
 
 
-export type Receipt<F extends FieldSelection = {}> = Simplify<
-    Item<data.Receipt, ReceiptRequiredFields, F, 'receipt'> &
-    {
-        block: BlockHeader<F>
-        transaction?: Transaction<F>
-        getTransaction(): Transaction<F>
-    }
+export type Transaction<F extends FieldSelection = {}> = Item<
+    data.Transaction,
+    TransactionRequiredFields,
+    F,
+    'transaction'
 >
 
 
-export type Input<F extends FieldSelection = {}> = Simplify<
-    Item<data.TransactionInput, InputRequiredFields, F, 'input'> &
-    {
-        block: BlockHeader<F>
-        transaction?: Transaction<F>
-        getTransaction(): Transaction<F>
-    }
+export type Receipt<F extends FieldSelection = {}> = Item<
+    data.Receipt,
+    ReceiptRequiredFields,
+    F,
+    'receipt'
 >
 
 
-export type Output<F extends FieldSelection = {}> = Simplify<
-    Item<data.TransactionOutput, OutputRequiredFields, F, 'output'> &
-    {
-        block: BlockHeader<F>
-        transaction?: Transaction<F>
-        getTransaction(): Transaction<F>
-    }
+export type Input<F extends FieldSelection = {}> = Item<
+    data.TransactionInput,
+    InputRequiredFields,
+    F,
+    'input'
+>
+
+
+export type Output<F extends FieldSelection = {}> = Item<
+    data.TransactionOutput,
+    OutputRequiredFields,
+    F,
+    'output'
 >
 
 

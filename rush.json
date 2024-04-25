@@ -622,6 +622,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/fuel-normalization",
+      "projectFolder": "fuel/fuel-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/fuel-dump",
       "projectFolder": "fuel/fuel-dump",
       "shouldPublish": true,
@@ -634,8 +640,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/fuel-processor",
-      "projectFolder": "fuel/fuel-processor",
+      "packageName": "@subsquid/fuel-stream",
+      "projectFolder": "fuel/fuel-stream",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -899,11 +905,11 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-    {
-      "packageName": "fuel-indexer",
-      "projectFolder": "test/fuel-indexer",
-      "shouldPublish": false
-    },
+    // {
+    //   "packageName": "fuel-indexer",
+    //   "projectFolder": "test/fuel-indexer",
+    //   "shouldPublish": false
+    // },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",

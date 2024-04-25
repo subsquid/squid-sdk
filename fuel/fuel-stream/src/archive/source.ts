@@ -1,16 +1,16 @@
+import {BlockHeader} from '@subsquid/fuel-normalization'
 import {assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
-import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {DataRequest} from '../interfaces/data-request'
-import {Block, mapBlock} from '../mapping'
 import {getDataSchema} from './data-schema'
+import { PartialBlock } from '../interfaces/data-partial'
 
 
-export class FuelArchive implements DataSource<Block, DataRequest> {
+export class FuelArchive {
     constructor(private client: ArchiveClient) {}
 
     getFinalizedHeight(): Promise<number> {
@@ -27,7 +27,36 @@ export class FuelArchive implements DataSource<Block, DataRequest> {
         return blocks[0].header.hash
     }
 
-    async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<Batch<Block>> {
+    async getBlockHeader(height: number): Promise<BlockHeader> {
+        let blocks = await this.client.query({
+            type: 'fuel',
+            fromBlock: height,
+            toBlock: height,
+            includeAllBlocks: true,
+            fields: {
+                block: {
+                    hash: true,
+                    height: true,
+                    daHeight: true,
+                    transactionsRoot: true,
+                    transactionsCount: true,
+                    messageReceiptRoot: true,
+                    messageReceiptCount: true,
+                    prevRoot: true,
+                    time: true,
+                    applicationHash: true
+                }
+            }
+        })
+        assert(blocks.length == 1)
+        let {number, ...rest} = blocks[0].header
+        return {
+            height: number,
+            ...rest
+        } as BlockHeader
+    }
+
+    async *getBlockStream(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {
         let archiveRequests = mapRangeRequestList(requests, req => {
             let {fields, ...items} = req
             return {
@@ -49,13 +78,13 @@ export class FuelArchive implements DataSource<Block, DataRequest> {
                 batch.blocks
             ).map(b => {
                 let {header: {number, ...hdr}, ...items} = b
-                return mapBlock({
+                return {
                     header: {height: number, ...hdr},
                     ...items
-                })
+                }
             })
 
-            yield {blocks, isHead: batch.isHead}
+            yield blocks
         }
     }
 }

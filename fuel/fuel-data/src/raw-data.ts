@@ -57,6 +57,16 @@ export const BlockHeader = object({
 export type BlockHeader = GetSrcType<typeof BlockHeader>
 
 
+export const GetBlockHeader = object({
+    block: option(object({
+        header: BlockHeader
+    }))
+})
+
+
+export type GetBlockHeader = GetSrcType<typeof GetBlockHeader>
+
+
 export const TransactionStatus = taggedUnion('__typename', {
     SubmittedStatus: object({time: BIG_NAT}),
     SuccessStatus: object({
