@@ -1,5 +1,5 @@
 process: migrate
-	@npx node -r dotenv/config lib/processor.js
+	@npx node -r dotenv/config lib/main.js
 
 
 migrate:

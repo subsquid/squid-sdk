@@ -911,11 +911,11 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-    // {
-    //   "packageName": "fuel-indexer",
-    //   "projectFolder": "test/fuel-indexer",
-    //   "shouldPublish": false
-    // },
+    {
+      "packageName": "fuel-indexer",
+      "projectFolder": "test/fuel-indexer",
+      "shouldPublish": false
+    },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",

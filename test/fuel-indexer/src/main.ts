@@ -1,19 +1,15 @@
-import {FuelBatchProcessor} from '@subsquid/fuel-processor'
-import { Store } from '@subsquid/typeorm-store'
+import {run} from '@subsquid/batch-processor'
+import {augmentBlock} from '@subsquid/fuel-objects'
+import {DataSourceBuilder} from '@subsquid/fuel-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
-import assert from 'assert'
 import {Contract} from './model'
 
 
-const processor = new FuelBatchProcessor()
-    .setGraphqlEndpoint('https://beta-5.fuel.network/graphql')
-    .setGraphqlDataIngestionSettings({
+const dataSource = new DataSourceBuilder()
+    .setGraphql({
+        url: 'https://beta-5.fuel.network/graphql',
         strideConcurrency: 1,
-        strideSize: 5,
-    })
-    .includeAllBlocks()
-    .setBlockRange({
-        from: 0,
+        strideSize: 5
     })
     .setFields({
         block: {
@@ -26,12 +22,18 @@ const processor = new FuelBatchProcessor()
     })
     .addReceipt({
         type: ['LOG_DATA'],
-    })
+    }).build()
 
 
-processor.run(new TypeormDatabase(), async ctx => {
+const database = new TypeormDatabase()
+
+
+run(dataSource, database, async ctx => {
     let contracts: Map<String, Contract> = new Map()
-    for (let block of ctx.blocks) {
+
+    let blocks = ctx.blocks.map(augmentBlock)
+
+    for (let block of blocks) {
         for (let receipt of block.receipts) {
             if (receipt.receiptType == 'LOG_DATA' && receipt.contract != null) {
                 let contract = contracts.get(receipt.contract)
@@ -53,5 +55,6 @@ processor.run(new TypeormDatabase(), async ctx => {
             }
         }
     }
+
     ctx.store.upsert([...contracts.values()])
 })
