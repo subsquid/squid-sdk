@@ -254,8 +254,8 @@ export const Transaction = object({
     isScript: BOOLEAN,
     isCreate: BOOLEAN,
     isMint: BOOLEAN,
-    inputs: nullable(array(TransactionInput)),
-    outputs: array(TransactionOutput),
+    inputs: option(array(TransactionInput)),
+    outputs: option(array(TransactionOutput)),
     outputContract: nullable(object({
         inputIndex: INT,
         balanceRoot: BYTES,
@@ -264,7 +264,7 @@ export const Transaction = object({
     witnesses: nullable(array(BYTES)),
     receiptsRoot: nullable(BYTES),
     status: TransactionStatus,
-    receipts: nullable(array(Receipt)),
+    receipts: option(array(Receipt)),
     script: nullable(BYTES),
     scriptData: nullable(BYTES),
     bytecodeWitnessIndex: nullable(INT),
@@ -304,4 +304,9 @@ export interface BlockData {
 }
 
 
-export interface DataRequest {}
+export interface DataRequest {
+    transactions?: boolean
+    inputs?: boolean
+    outputs?: boolean
+    receipts?: boolean
+}

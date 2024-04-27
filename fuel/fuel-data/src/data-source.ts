@@ -1,9 +1,10 @@
 import {HttpClient} from '@subsquid/http-client'
 import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
-import {RangeRequest} from '@subsquid/util-internal-range'
+import {RangeRequest, SplitRequest} from '@subsquid/util-internal-range'
 import {DataValidationError, GetSrcType, Validator} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest, GetBlockHeader, BlockHeader} from './raw-data'
+import {getLatesBlockQuery, getBlockHashQuery, getBlockHeaderQuery, getBlocksQuery} from './query'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
@@ -41,17 +42,7 @@ export class HttpDataSource {
     }
 
     async getFinalizedHeight(): Promise<number> {
-        let query = `
-            {
-                chain {
-                    latestBlock {
-                        header {
-                            height
-                        }
-                    }
-                }
-            }
-        `
+        let query = getLatesBlockQuery()
         let response: LatestBlockHeight = await this.request(query, getResultValidator(LatestBlockHeight))
         let height = parseInt(response.chain.latestBlock.header.height)
         assert(Number.isSafeInteger(height))
@@ -59,36 +50,13 @@ export class HttpDataSource {
     }
 
     async getBlockHash(height: number): Promise<string | undefined> {
-        let query = `
-            {
-                block(height: "${height}") {
-                    id
-                }
-            }
-        `
+        let query = getBlockHashQuery(height)
         let response: GetBlockHash = await this.request(query, getResultValidator(GetBlockHash))
         return response.block?.id
     }
 
     async getBlockHeader(height: number): Promise<BlockHeader | undefined> {
-        let query = `
-            {
-                block(height: "${height}") {
-                    header {
-                        id
-                        height
-                        daHeight
-                        transactionsRoot
-                        transactionsCount
-                        messageReceiptRoot
-                        messageReceiptCount
-                        prevRoot
-                        time
-                        applicationHash
-                    }
-                }
-            }
-        `
+        let query = getBlockHeaderQuery(height)
         let response: GetBlockHeader = await this.request(query, getResultValidator(GetBlockHeader))
         return response.block?.header
     }
@@ -99,223 +67,30 @@ export class HttpDataSource {
     ): AsyncIterable<Batch<BlockData>> {
         return coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
-            getSplit: async req => {
-                let first = req.range.to - req.range.from
-                let args = `first: ${first + 1}`
-                if (req.range.from != 0) {
-                    args += `, after: "${req.range.from - 1}"`
-                }
-                let query = `
-                {
-                    blocks(${args}) {
-                        nodes {
-                            header {
-                                id
-                                height
-                                daHeight
-                                transactionsRoot
-                                transactionsCount
-                                messageReceiptRoot
-                                messageReceiptCount
-                                prevRoot
-                                time
-                                applicationHash
-                            }
-                            transactions {
-                                id
-                                inputAssetIds
-                                inputContracts {
-                                    id
-                                }
-                                inputContract {
-                                    utxoId
-                                    balanceRoot
-                                    stateRoot
-                                    txPointer
-                                    contract {
-                                        id
-                                    }
-                                }
-                                policies {
-                                    gasPrice
-                                    witnessLimit
-                                    maturity
-                                    maxFee
-                                }
-                                gasPrice
-                                scriptGasLimit
-                                maturity
-                                mintAmount
-                                mintAssetId
-                                txPointer
-                                isScript
-                                isCreate
-                                isMint
-                                inputs {
-                                    __typename
-                                    ... on InputCoin {
-                                        utxoId
-                                        owner
-                                        amount
-                                        assetId
-                                        txPointer
-                                        witnessIndex
-                                        maturity
-                                        predicateGasUsed
-                                        predicate
-                                        predicateData
-                                    }
-                                    ... on InputContract {
-                                        utxoId
-                                        balanceRoot
-                                        stateRoot
-                                        txPointer
-                                        contract {
-                                            id
-                                        }
-                                    }
-                                    ... on InputMessage {
-                                        sender
-                                        recipient
-                                        amount
-                                        nonce
-                                        witnessIndex
-                                        predicateGasUsed
-                                        data
-                                        predicate
-                                        predicateData
-                                    }
-                                }
-                                outputs {
-                                    __typename
-                                    ... on CoinOutput {
-                                        to
-                                        amount
-                                        assetId
-                                    }
-                                    ... on ContractOutput {
-                                        inputIndex
-                                        balanceRoot
-                                        stateRoot
-                                    }
-                                    ... on ChangeOutput {
-                                        to
-                                        amount
-                                        assetId
-                                    }
-                                    ... on VariableOutput {
-                                        to
-                                        amount
-                                        assetId
-                                    }
-                                    ... on ContractCreated {
-                                        contract {
-                                            id
-                                            bytecode
-                                            salt
-                                        }
-                                        stateRoot
-                                    }
-                                }
-                                outputContract {
-                                    inputIndex
-                                    balanceRoot
-                                    stateRoot
-                                }
-                                witnesses
-                                receiptsRoot
-                                status {
-                                    __typename
-                                    ... on SubmittedStatus {
-                                        time
-                                    }
-                                    ... on SuccessStatus {
-                                        transactionId
-                                        time
-                                        programState {
-                                            returnType
-                                            data
-                                        }
-                                    }
-                                    ... on SqueezedOutStatus {
-                                        reason
-                                    }
-                                    ... on FailureStatus {
-                                        transactionId
-                                        time
-                                        reason
-                                        programState {
-                                            returnType
-                                            data
-                                        }
-                                    }
-                                }
-                                receipts {
-                                    contract {
-                                        id
-                                    }
-                                    pc
-                                    is
-                                    to {
-                                        id
-                                    }
-                                    toAddress
-                                    amount
-                                    assetId
-                                    gas
-                                    param1
-                                    param2
-                                    val
-                                    ptr
-                                    digest
-                                    reason
-                                    ra
-                                    rb
-                                    rc
-                                    rd
-                                    len
-                                    receiptType
-                                    result
-                                    gasUsed
-                                    data
-                                    sender
-                                    recipient
-                                    nonce
-                                    contractId
-                                    subId
-                                }
-                                script
-                                scriptData
-                                bytecodeWitnessIndex
-                                bytecodeLength
-                                salt
-                                storageSlots
-                                rawPayload
-                            }
-                        }
-                    }
-                }
-                `
-                let response: Blocks = await this.request(query, getResultValidator(Blocks))
-                let blocks = []
-                for (let block of response.blocks.nodes) {
-                    let height = parseInt(block.header.height)
-                    assert(Number.isSafeInteger(height))
-                    let blockData = {
-                        hash: block.header.id,
-                        height,
-                        block,
-                    }
-                    blocks.push(blockData)
-                }
-                return blocks
-            },
+            getSplit: (req) => this.getSplit(req),
             requests,
             concurrency: this.strideConcurrency,
             splitSize: this.strideSize,
             stopOnHead,
             headPollInterval: this.headPollInterval
         })
+    }
+
+    private async getSplit(req: SplitRequest<DataRequest>): Promise<BlockData[]> {
+        let first = req.range.to - req.range.from + 1
+        let after = req.range.from == 0 ? undefined : req.range.from - 1
+        let query = getBlocksQuery(req.request, first, after)
+        let response: Blocks = await this.request(query, getResultValidator(Blocks))
+        let blocks = response.blocks.nodes.map(block => {
+            let height = parseInt(block.header.height)
+            assert(Number.isSafeInteger(height))
+            return {
+                hash: block.header.id,
+                height,
+                block
+            }
+        })
+        return blocks
     }
 
     private async request<T>(

@@ -353,7 +353,7 @@ export function mapRawBlock(raw: raw.BlockData): Block {
             inputs.push(mapRawInput(input, index, inputIndex))
         })
 
-        tx.outputs.forEach((output, outputIndex) => {
+        tx.outputs?.forEach((output, outputIndex) => {
             outputs.push(mapRawOutput(output, index, outputIndex))
         })
 

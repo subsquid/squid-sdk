@@ -67,7 +67,12 @@ export class FuelDumper extends Dumper<BlockData, Options> {
     protected async* getBlocks(range: Range): AsyncIterable<BlockData[]> {
         let batches = this.getDataSource().getFinalizedBlocks([{
             range,
-            request: {}
+            request: {
+                transactions: true,
+                inputs: true,
+                outputs: true,
+                receipts: true
+            }
         }])
         for await (let batch of batches) {
             yield batch.blocks
