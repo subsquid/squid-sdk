@@ -20,27 +20,8 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
     }
 
-    @def
-    protected options(): Options {
-        let options = this.program().parse().opts<Options>()
-        options.endpointCapacity = options.strideConcurrency + 5
-        return options
-    }
-
-    protected fixUnsafeIntegers(): boolean {
-        return true
-    }
-
     protected getLoggingNamespace(): string {
         return 'sqd:fuel-dump'
-    }
-
-    protected getDefaultChunkSize(): number {
-        return 128
-    }
-
-    protected getDefaultTopDirSize(): number {
-        return 8192
     }
 
     protected getPrevBlockHash(block: BlockData): string {
