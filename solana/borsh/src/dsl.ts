@@ -1,8 +1,10 @@
 import {Codec, GetCodecType} from './codec'
-import {ArrayCodec} from './codecs/array'
+import {ArrayCodec, FixedArrayCodec} from './codecs/array'
 import {SumCodec, Variant} from './codecs/enum'
+import {OptionCodec} from './codecs/option'
 import {RefCodec} from './codecs/ref'
 import {GetStructType, StructCodec} from './codecs/struct'
+import {GetTupleType, TupleCodec} from './codecs/tuple'
 
 
 export * from './codecs/primitives'
@@ -16,10 +18,25 @@ export function array<IC extends Codec<any>>(item: IC): ArrayCodec<GetCodecType<
 }
 
 
+export function fixedArray<IC extends Codec<any>>(item: IC, size: number): FixedArrayCodec<GetCodecType<IC>> {
+    return new FixedArrayCodec(item, size)
+}
+
+
 export function struct<Props extends Record<string, Codec<any>>>(
     props: Props
 ): StructCodec<GetStructType<Props>> {
     return new StructCodec(props as any)
+}
+
+export function tuple<const Tuple extends any[]>(
+    tuple: Tuple
+): TupleCodec<GetTupleType<Tuple>> {
+    return new TupleCodec(tuple as any)
+}
+
+export function option<IC extends Codec<any>>(item: IC): OptionCodec<GetCodecType<IC>> {
+    return new OptionCodec(item)
 }
 
 
