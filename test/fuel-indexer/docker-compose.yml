@@ -10,12 +10,3 @@ services:
     ports:
       - "${DB_PORT}:5432"
       # command: ["postgres", "-c", "log_statement=all"]
-
-#  cockroach:
-#    image: cockroachdb/cockroach:v21.2.9
-#    ports:
-#      - "${DB_PORT}:26257"
-#    command: [
-#      "start-single-node",
-#      "--insecure"
-#    ]

@@ -7,10 +7,10 @@ import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {DataRequest} from '../data/data-request'
 import {getDataSchema} from './data-schema'
-import { PartialBlock } from '../data/data-partial'
+import {PartialBlock} from '../data/data-partial'
 
 
-export class FuelArchive {
+export class FuelGateway {
     constructor(private client: ArchiveClient) {}
 
     getFinalizedHeight(): Promise<number> {

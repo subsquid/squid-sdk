@@ -14,13 +14,12 @@ export type Transaction<F extends FieldSelection = {}> = base.Transaction<F> & {
 }
 
 
-export type Receipt<F extends FieldSelection = {}> = base.Receipt<F> &
-    {
-        id: string
-        block: BlockHeader<F>
-        transaction?: Transaction<F>
-        getTransaction(): Transaction<F>
-    }
+export type Receipt<F extends FieldSelection = {}> = base.Receipt<F> & {
+    id: string
+    block: BlockHeader<F>
+    transaction?: Transaction<F>
+    getTransaction(): Transaction<F>
+}
 
 
 export type Input<F extends FieldSelection = {}> = base.Input<F> & {

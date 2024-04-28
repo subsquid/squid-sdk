@@ -16,7 +16,7 @@ import {
 import {BlockHeader as RawBlockHeader} from '@subsquid/fuel-data/lib/raw-data'
 import {HttpDataSource} from '@subsquid/fuel-data/lib/data-source'
 import assert from 'assert'
-import {FuelArchive} from './archive/source'
+import {FuelGateway} from './archive/source'
 import {getFields} from './fields'
 import {Block, FieldSelection} from './data/model'
 import {GraphqlDataSource} from './graphql'
@@ -35,7 +35,17 @@ export interface GraphqlSettings {
      * GraphQL endpoint URL
      */
     url: string
+    /**
+     * Maximum number of concurrent `blocks` queries.
+     *
+     * Default is `10`
+     */
     strideConcurrency?: number
+    /**
+     * `blocks` query size.
+     *
+     * Default is `5`.
+     */
     strideSize?: number
 }
 
@@ -104,7 +114,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
      * Set Subsquid Network Gateway endpoint (ex Archive).
      *
      * Subsquid Network allows to get data from finalized blocks up to
-     * infinite times faster and more efficient than via regular RPC.
+     * infinite times faster and more efficient than via regular GraphQL.
      *
      * @example
      * processor.setGateway('https://v2.archive.subsquid.io/network/fuel-mainnet')
@@ -119,6 +129,9 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
+    /**
+     * Set up GraphQL data ingestion
+     */
     setGraphql(settings?: GraphqlSettings): this {
         this.assertNotRunning()
         this.graphql = settings
@@ -283,7 +296,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
         if (this.graphql) {
             return this.graphql.getFinalizedHeight()
         } else {
-            return this.createArchive().getFinalizedHeight()
+            return this.createGateway().getFinalizedHeight()
         }
     }
 
@@ -293,9 +306,9 @@ class FuelDataSource implements DataSource<PartialBlock> {
             assert(this.graphql)
             return this.graphql.getBlockHash(height)
         } else {
-            let archive = this.createArchive()
-            let head = await archive.getFinalizedHeight()
-            if (head >= height) return archive.getBlockHash(height)
+            let gateway = this.createGateway()
+            let head = await gateway.getFinalizedHeight()
+            if (head >= height) return gateway.getBlockHash(height)
             if (this.graphql) return this.graphql.getBlockHash(height)
         }
     }
@@ -312,7 +325,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
             this.isConsistent = true
         } else {
             throw addErrorContext(
-                new Error(`Provided Subsquid Gateway and GraphQL endpoints don't agree on block №${blocks.archiveBlock}`),
+                new Error(`Provided Subsquid Gateway and GraphQL endpoints don't agree on block №${blocks.archiveBlock.height}`),
                 blocks
             )
         }
@@ -322,7 +335,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
         archiveBlock: BlockHeader
         gqlBlock: RawBlockHeader | null
     } | undefined> {
-        let archive = this.createArchive()
+        let archive = this.createGateway()
         let height = await archive.getFinalizedHeight()
         let archiveBlock = await archive.getBlockHeader(height)
         let gqlBlock = await this.graphql!.getBlockHeader(archiveBlock.height)
@@ -346,7 +359,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
         if (this.gatewaySettings) {
             let agent = new HttpAgent({keepAlive: true})
             try {
-                let archive = this.createArchive(agent)
+                let archive = this.createGateway(agent)
                 let height = await archive.getFinalizedHeight()
                 let from = requests[0].range.from
                 if (height > from || !this.graphql) {
@@ -368,7 +381,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
         yield* this.graphql.getBlockStream(requests)
     }
 
-    private createArchive(agent?: HttpAgent): FuelArchive {
+    private createGateway(agent?: HttpAgent): FuelGateway {
         assert(this.gatewaySettings)
 
         let http = new HttpClient({
@@ -378,7 +391,7 @@ class FuelDataSource implements DataSource<PartialBlock> {
             agent
         })
 
-        return new FuelArchive(
+        return new FuelGateway(
             new ArchiveClient({
                 http,
                 url: this.gatewaySettings.url,
