@@ -38,9 +38,17 @@ export interface FieldSelection {
 
 
 export const DEFAULT_FIELDS = {
-    block: {},
-    transaction: {},
-    receipt: {},
+    block: {
+        time: true
+    },
+    transaction: {
+        hash: true,
+        type: true,
+        status: true
+    },
+    receipt: {
+        receiptType: true
+    },
     input: {},
     output: {},
 } as const
