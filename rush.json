@@ -532,6 +532,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-typegen",
+      "projectFolder": "solana/solana-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",
       "shouldPublish": true,
