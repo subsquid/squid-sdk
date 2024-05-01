@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "support `sslmode=disable` in connection string",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}
