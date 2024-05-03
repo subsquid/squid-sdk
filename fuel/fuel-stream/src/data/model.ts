@@ -32,7 +32,7 @@ export interface FieldSelection {
         AddPrefix<'contract', Exclude<keyof data.ContractOutput, OutputRequiredFields>> |
         AddPrefix<'change', Exclude<keyof data.ChangeOutput, OutputRequiredFields>> |
         AddPrefix<'variable', Exclude<keyof data.VariableOutput, OutputRequiredFields>> |
-        AddPrefix<'contractCreated', Exclude<keyof data.ContractCreated, OutputRequiredFields | 'contract'> | 'contractId'>
+        AddPrefix<'contractCreated', Exclude<keyof data.ContractCreated, OutputRequiredFields>>
     >
 }
 

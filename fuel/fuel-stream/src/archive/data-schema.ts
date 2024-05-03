@@ -269,7 +269,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         transactionIndex: NAT,
         index: NAT,
         ...project({
-            contract: fields.output?.contractCreatedContractId,
+            contract: fields.output?.contractCreatedContract,
             stateRoot: fields.output?.contractCreatedStateRoot
         }, {
             contract: object({
