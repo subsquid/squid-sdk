@@ -3,6 +3,9 @@ import { Sink } from '../sink'
 import { Src } from '../src'
 import { ArrayCodec, FixedSizeArrayCodec } from './array'
 import { StructCodec } from './struct'
+import {safeToNumber} from "../safeToNumber";
+
+type Numberish = number | bigint
 
 export const bool: Codec<boolean> = {
   encode: function (sink: Sink, val: boolean) {
@@ -14,9 +17,9 @@ export const bool: Codec<boolean> = {
   isDynamic: false,
 }
 
-export const uint8: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.u8(val)
+export const uint8: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u8(safeToNumber(val, 0, 255))
   },
   decode(src: Src): number {
     return src.u8()
@@ -24,9 +27,9 @@ export const uint8: Codec<number> = {
   isDynamic: false,
 }
 
-export const int8: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.i8(val)
+export const int8: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i8(safeToNumber(val, -128, 127))
   },
   decode(src: Src): number {
     return src.i8()
@@ -34,9 +37,9 @@ export const int8: Codec<number> = {
   isDynamic: false,
 }
 
-export const uint16: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.u16(val)
+export const uint16: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u16(safeToNumber(val, 0, 65535))
   },
   decode(src: Src): number {
     return src.u16()
@@ -44,9 +47,9 @@ export const uint16: Codec<number> = {
   isDynamic: false,
 }
 
-export const int16: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.i16(val)
+export const int16: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i16(safeToNumber(val, -32768, 32767))
   },
   decode(src: Src): number {
     return src.i16()
@@ -54,9 +57,9 @@ export const int16: Codec<number> = {
   isDynamic: false,
 }
 
-export const uint32: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.u32(val)
+export const uint32: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u32(safeToNumber(val, 0, 4294967295))
   },
   decode(src: Src): number {
     return src.u32()
@@ -64,9 +67,9 @@ export const uint32: Codec<number> = {
   isDynamic: false,
 }
 
-export const int32: Codec<number> = {
-  encode(sink: Sink, val: number) {
-    sink.i32(val)
+export const int32: Codec<Numberish, number> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i32(safeToNumber(val, -2147483648, 2147483647))
   },
   decode(src: Src): number {
     return src.i32()
@@ -74,9 +77,9 @@ export const int32: Codec<number> = {
   isDynamic: false,
 }
 
-export const uint64: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.u64(val)
+export const uint64: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u64(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.u64()
@@ -84,9 +87,9 @@ export const uint64: Codec<bigint> = {
   isDynamic: false,
 }
 
-export const int64: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.i64(val)
+export const int64: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i64(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.i64()
@@ -94,9 +97,9 @@ export const int64: Codec<bigint> = {
   isDynamic: false,
 }
 
-export const uint128: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.u128(val)
+export const uint128: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u128(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.u128()
@@ -104,9 +107,9 @@ export const uint128: Codec<bigint> = {
   isDynamic: false,
 }
 
-export const int128: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.i128(val)
+export const int128: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i128(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.i128()
@@ -114,9 +117,9 @@ export const int128: Codec<bigint> = {
   isDynamic: false,
 }
 
-export const uint256: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.u256(val)
+export const uint256: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.u256(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.u256()
@@ -124,9 +127,9 @@ export const uint256: Codec<bigint> = {
   isDynamic: false,
 }
 
-export const int256: Codec<bigint> = {
-  encode(sink: Sink, val: bigint) {
-    sink.i256(val)
+export const int256: Codec<Numberish, bigint> = {
+  encode(sink: Sink, val: Numberish) {
+    sink.i256(BigInt(val))
   },
   decode(src: Src): bigint {
     return src.i256()
@@ -223,3 +226,57 @@ type Struct = {
 export const struct = <const T extends Struct>(components: T) => new StructCodec<T>(components)
 
 export const tuple = struct
+
+export const uint24 = uint32
+export const int24 = int32
+export const uint40 = uint64
+export const int40 = int64
+export const uint48 = uint64
+export const int48 = int64
+export const uint56 = uint64
+export const int56 = int64
+export const uint72 = uint128
+export const int72 = int128
+export const uint80 = uint128
+export const int80 = int128
+export const uint88 = uint128
+export const int88 = int128
+export const uint96 = uint128
+export const int96 = int128
+export const uint104 = uint128
+export const int104 = int128
+export const uint112 = uint128
+export const int112 = int128
+export const uint120 = uint128
+export const int120 = int128
+export const uint136 = uint256
+export const int136 = int256
+export const uint144 = uint256
+export const int144 = int256
+export const uint152 = uint256
+export const int152 = int256
+export const uint160 = uint256
+export const int160 = int256
+export const uint168 = uint256
+export const int168 = int256
+export const uint176 = uint256
+export const int176 = int256
+export const uint184 = uint256
+export const int184 = int256
+export const uint192 = uint256
+export const int192 = int256
+export const uint200 = uint256
+export const int200 = int256
+export const uint208 = uint256
+export const int208 = int256
+export const uint216 = uint256
+export const int216 = int256
+export const uint224 = uint256
+export const int224 = int256
+export const uint232 = uint256
+export const int232 = int256
+export const uint240 = uint256
+export const int240 = int256
+export const uint248 = uint256
+export const int248 = int256
+

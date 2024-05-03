@@ -3,9 +3,9 @@ import type { Src } from './src'
 
 export const WORD_SIZE = 32
 
-export interface Codec<T> {
-  encode(sink: Sink, val: T): void
-  decode(src: Src): T
+export interface Codec<TIn, TOut = TIn> {
+  encode(sink: Sink, val: TIn): void
+  decode(src: Src): TOut
   isDynamic: boolean
   slotsCount?: number
 }
