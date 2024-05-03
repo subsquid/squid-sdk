@@ -106,8 +106,7 @@ export class Typegen {
     this.out.block(`export class Contract extends ContractBase`, () => {
       let functions = this.getFunctions()
       for (let f of functions) {
-        if (true ||
-          (f.stateMutability === 'pure' || f.stateMutability === 'view') &&
+        if ((f.stateMutability === 'pure' || f.stateMutability === 'view') &&
           f.outputs?.length
         ) {
           this.out.line()
