@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "Support both number and bignumber types when encoding numbers, add missing int/uint evm codecs",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}
