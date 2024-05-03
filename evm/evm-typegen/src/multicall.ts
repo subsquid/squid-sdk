@@ -1,3 +1,5 @@
+/**
+ * TODO migrate multicall
 import * as ethers from 'ethers'
 import {ContractBase, Func} from './abi.support'
 
@@ -210,3 +212,4 @@ function* splitIntoPages(size: number, page: number): Iterable<[from: number, to
         from = to
     }
 }
+*/
