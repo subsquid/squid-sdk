@@ -183,34 +183,36 @@ export function getBlocksQuery(request: DataRequest, first: number, after?: numb
                         }
 
                         if (request.outputs) {
-                            output.line('__typename')
-                            output.block('... on CoinOutput', () => {
-                                output.line('to')
-                                output.line('amount')
-                                output.line('assetId')
-                            })
-                            output.block('... on ContractOutput', () => {
-                                output.line('inputIndex')
-                                output.line('balanceRoot')
-                                output.line('stateRoot')
-                            })
-                            output.block('... on ChangeOutput', () => {
-                                output.line('to')
-                                output.line('amount')
-                                output.line('assetId')
-                            })
-                            output.block('... on VariableOutput', () => {
-                                output.line('to')
-                                output.line('amount')
-                                output.line('assetId')
-                            })
-                            output.block('... on ContractCreated', () => {
-                                output.block('contract', () => {
-                                    output.line('id')
-                                    output.line('bytecode')
-                                    output.line('salt')
+                            output.block('outputs', () => {
+                                output.line('__typename')
+                                output.block('... on CoinOutput', () => {
+                                    output.line('to')
+                                    output.line('amount')
+                                    output.line('assetId')
                                 })
-                                output.line('stateRoot')
+                                output.block('... on ContractOutput', () => {
+                                    output.line('inputIndex')
+                                    output.line('balanceRoot')
+                                    output.line('stateRoot')
+                                })
+                                output.block('... on ChangeOutput', () => {
+                                    output.line('to')
+                                    output.line('amount')
+                                    output.line('assetId')
+                                })
+                                output.block('... on VariableOutput', () => {
+                                    output.line('to')
+                                    output.line('amount')
+                                    output.line('assetId')
+                                })
+                                output.block('... on ContractCreated', () => {
+                                    output.block('contract', () => {
+                                        output.line('id')
+                                        output.line('bytecode')
+                                        output.line('salt')
+                                    })
+                                    output.line('stateRoot')
+                                })
                             })
                         }
 
