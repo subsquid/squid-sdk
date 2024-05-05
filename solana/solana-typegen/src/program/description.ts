@@ -2,9 +2,8 @@ export class IdlDescription {}
 
 import {DefinedType, GenericArg, GenericArgKind, Type} from './types'
 
-type Bytes = string
-
 export type Program = {
+    programId?: string
     instructions: Instruction[]
     accounts: Account[]
     events: Event[]
@@ -16,7 +15,7 @@ export type Program = {
 export type Instruction = {
     name: string
     docs?: string[]
-    discriminator: Bytes
+    discriminator: string
     accounts: InstructionAccount[]
     args: InstructionArg[]
     returns?: Type
@@ -35,12 +34,12 @@ export type InstructionArg = {
 
 export type Account = {
     name: string
-    discriminator: Bytes
+    discriminator: string
 }
 
 export type Event = {
     name: string
-    discriminator: Bytes
+    discriminator: string
 }
 
 export type Error = {

@@ -362,7 +362,7 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                 name: typeDef.name,
                 type: {
                     kind: TypeKind.Enum,
-                    variants: typeDef.type.variants.map((v) => fromEnumVariant(v)),
+                    variants: typeDef.type.variants.map((v, i) => fromEnumVariant(v, i)),
                 },
             }
         case 'struct':
@@ -389,9 +389,10 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
     }
 }
 
-function fromEnumVariant(variant: IdlEnumVariant): Variant {
+function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
     return {
         name: variant.name,
+        discriminator: index,
         type: variant.fields?.length
             ? variant.fields?.every((f) => typeof f === 'object' && 'type' in f)
                 ? {

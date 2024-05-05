@@ -70,6 +70,7 @@ export interface EnumType {
 
 export interface Variant {
     name: string
+    discriminator: number
     type: Type
 }
 
