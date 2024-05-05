@@ -35,8 +35,6 @@ export class FuelGateway {
             includeAllBlocks: true,
             fields: {
                 block: {
-                    hash: true,
-                    height: true,
                     daHeight: true,
                     transactionsRoot: true,
                     transactionsCount: true,

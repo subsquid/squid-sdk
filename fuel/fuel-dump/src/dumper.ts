@@ -28,6 +28,10 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         return block.block.header.prevRoot
     }
 
+    protected validateChainContinuity(): boolean {
+        return false
+    }
+
     @def
     protected http(): HttpClient {
         return new HttpClient({

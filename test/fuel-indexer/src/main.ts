@@ -9,9 +9,9 @@ const dataSource = new DataSourceBuilder()
     .setGraphql({
         url: 'https://beta-5.fuel.network/graphql',
         strideConcurrency: 2,
-        strideSize: 5
+        strideSize: 50
     })
-    .setBlockRange({from: 10895962})
+    .setGateway('https://v2.archive.subsquid.io/network/fuel-stage-5')
     .setFields({
         receipt: {
             contract: true,
