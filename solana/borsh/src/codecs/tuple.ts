@@ -8,7 +8,7 @@ export type GetTupleType<T> = {
 }
 
 
-export class TupleCodec<const T extends any[]> implements Codec<T> {
+export class TupleCodec<T extends any[]> implements Codec<T> {
     encode: (sink: Sink, val: T) => void
     decode: (src: Src) => T
 
