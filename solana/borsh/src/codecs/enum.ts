@@ -12,11 +12,7 @@ export interface Variant<T> {
 }
 
 
-type ValueProp<T> = [T] extends [undefined]
-    ? {value?: undefined}
-    : undefined extends T
-        ? {value?: T}
-        : {value: T}
+type ValueProp<T> = [undefined] extends [T] ? {value?: T} : {value: T}
 
 
 export type GetSumType<Variants> = {
