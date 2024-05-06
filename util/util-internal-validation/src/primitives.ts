@@ -135,6 +135,29 @@ export const ANY_NAT: Validator<bigint, number | string> = {
 }
 
 
+export const STRING_NAT: Validator<number, string> = {
+    cast(value: unknown): number | ValidationFailure {
+        if (typeof value == 'string') {
+            let val = parseInt(value)
+            if (Number.isSafeInteger(val)) {
+                return val
+            } else {
+                return new ValidationFailure(value, `{value} is not a safe integer`)
+            }
+        } else {
+            return new ValidationFailure(value, '{value} is not a string natural number')
+        }
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        let i = this.cast(value)
+        if (i instanceof ValidationFailure) return i
+    },
+    phantom(): string {
+        return '0'
+    }
+}
+
+
 /**
  * Hex encoded binary string or natural number
  */

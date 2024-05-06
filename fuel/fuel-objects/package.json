@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/evm-abi",
+  "name": "@subsquid/fuel-objects",
   "version": "0.0.0",
-  "description": "EVM ABI encoding and decoding helpers",
+  "description": "Augmented Fuel data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -13,17 +13,18 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc -p tsconfig.build.json"
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/evm-codec": "^0.0.0",
-    "keccak256": "^1.0.6"
+    "@subsquid/fuel-data": "^0.0.0",
+    "@subsquid/util-internal": "^3.2.0"
+  },
+  "peerDependencies": {
+    "@subsquid/fuel-stream": "^0.0.0"
   },
   "devDependencies": {
+    "@subsquid/fuel-stream": "^0.0.0",
     "@types/node": "^18.18.14",
-    "ethers": "^6.9.0",
-    "typescript": "~5.3.2",
-    "viem": "^2.8.14",
-    "vitest": "^1.4.0"
+    "typescript": "~5.3.2"
   }
 }

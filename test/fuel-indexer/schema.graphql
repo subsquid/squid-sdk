@@ -1,0 +1,5 @@
+type Contract @entity {
+    id: ID!
+    logsCount: Int!
+    foundAt: Int!
+}

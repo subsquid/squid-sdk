@@ -54,3 +54,21 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/substrate
 FROM node AS substrate-metadata-service
 COPY --from=substrate-metadata-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/substrate/substrate-metadata-service/bin/run.js"]
+
+
+FROM builder AS fuel-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump
+
+
+FROM node AS fuel-dump
+COPY --from=fuel-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/fuel/fuel-dump/bin/run.js"]
+
+
+FROM builder AS fuel-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-ingest
+
+
+FROM node AS fuel-ingest
+COPY --from=fuel-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/fuel/fuel-ingest/bin/run.js"]
