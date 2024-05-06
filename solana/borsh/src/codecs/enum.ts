@@ -12,7 +12,7 @@ export interface Variant<T> {
 
 
 type ValueProp<T> = [T] extends [undefined]
-    ? {}
+    ? {value?: undefined}
     : [undefined] extends T
         ? {value?: T}
         : {value: T}
