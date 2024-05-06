@@ -14,7 +14,6 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "node lib/test.js"
   },
   "dependencies": {
     "@subsquid/fuel-data": "^0.0.0",
