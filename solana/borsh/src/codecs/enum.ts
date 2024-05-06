@@ -1,6 +1,7 @@
-import {Codec, GetCodecType} from '../codec'
+import {Codec} from '../codec'
 import {Sink} from '../sink'
 import {Src} from '../src'
+import {Simplify} from '../type-util'
 import {propAccess} from '../util'
 import {unit} from './primitives'
 
@@ -13,14 +14,14 @@ export interface Variant<T> {
 
 type ValueProp<T> = [T] extends [undefined]
     ? {value?: undefined}
-    : [undefined] extends T
+    : undefined extends T
         ? {value?: T}
         : {value: T}
 
 
 export type GetSumType<Variants> = {
     [K in keyof Variants]: Variants[K] extends Variant<infer C>
-        ? {kind: K} & ValueProp<GetCodecType<C>>
+        ? Simplify<{kind: K} & ValueProp<C>>
         : never
 }[keyof Variants]
 
