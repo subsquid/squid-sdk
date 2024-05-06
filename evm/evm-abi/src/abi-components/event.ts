@@ -14,6 +14,8 @@ export type IndexedCodecs<T extends EventArgs> = Pretty<{
   [K in keyof T]: T[K] extends { indexed: true; isDynamic: true } ? typeof bytes32 & { indexed: true } : T[K]
 }>
 
+export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? StructTypes<U> : never
+
 export class AbiEvent<const T extends EventArgs> {
   public readonly params: any
   constructor(public readonly topic: string, args: T) {

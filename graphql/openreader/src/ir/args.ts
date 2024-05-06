@@ -82,4 +82,4 @@ export interface OrderBy {
 }
 
 
-export type SortOrder = 'ASC' | 'DESC' | 'ASC NULLS FIRST' | 'DESC NULLS LAST'
+export type SortOrder = 'ASC' | 'DESC' | 'ASC NULLS FIRST' | 'ASC NULLS LAST' | 'DESC NULLS FIRST' | 'DESC NULLS LAST'

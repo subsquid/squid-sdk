@@ -317,6 +317,9 @@ dependencies:
   '@types/xxhashjs':
     specifier: ^0.2.4
     version: 0.2.4
+  abitype:
+    specifier: ^1.0.0
+    version: 1.0.0(typescript@5.3.3)
   ajv:
     specifier: ^8.12.0
     version: 8.12.0
@@ -338,9 +341,6 @@ dependencies:
   bs58:
     specifier: ^5.0.0
     version: 5.0.0
-  camelcase:
-    specifier: ^6.3.0
-    version: 6.3.0
   commander:
     specifier: ^11.1.0
     version: 11.1.0
@@ -377,6 +377,9 @@ dependencies:
   jsonc-parser:
     specifier: ^3.2.0
     version: 3.2.1
+  keccak256:
+    specifier: ^1.0.6
+    version: 1.0.6
   keyv:
     specifier: ~4.5.4
     version: 4.5.4
@@ -5024,6 +5027,24 @@ packages:
     engines: {'0': node >= 0.2.0}
     dev: false
 
+  /keccak256@1.0.6:
+    resolution: {integrity: sha512-8GLiM01PkdJVGUhR1e6M/AvWnSqYS0HaERI+K/QtStGDGlSTx2B1zTqZk4Zlqu5TxHJNTxWAdP9Y+WI50OApUw==}
+    dependencies:
+      bn.js: 5.2.1
+      buffer: 6.0.3
+      keccak: 3.0.4
+    dev: false
+
+  /keccak@3.0.4:
+    resolution: {integrity: sha512-3vKuW0jV8J3XNTzvfyicFR5qvxrSAGl7KIhvgOu5cmWwM7tZRj3fMbj/pfIf4be7aznbc+prBWGjywox/g2Y6Q==}
+    engines: {node: '>=10.0.0'}
+    requiresBuild: true
+    dependencies:
+      node-addon-api: 2.0.2
+      node-gyp-build: 4.8.0
+      readable-stream: 3.6.2
+    dev: false
+
   /keyv@3.1.0:
     resolution: {integrity: sha512-9ykJ/46SN/9KPM/sichzQ7OvXyGDYKGTaDlKMGCAlg2UK8KRy4jb0d8sFc+0Tt0YYnThq8X2RZgCg74RPxgcVA==}
     dependencies:
@@ -5326,6 +5347,10 @@ packages:
 
   /node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    dev: false
+
+  /node-addon-api@2.0.2:
+    resolution: {integrity: sha512-Ntyt4AIXyaLIuMHF6IOoTakB3K+RWxwtsHNRxllEoA6vPwP9o4866g6YWDLUdnucilZhmkxiHwHr11gAENw+QA==}
     dev: false
 
   /node-domexception@1.0.0:
@@ -5777,6 +5802,15 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: false
 
+  /readable-stream@3.6.2:
+    resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
+    engines: {node: '>= 6'}
+    dependencies:
+      inherits: 2.0.4
+      string_decoder: 1.3.0
+      util-deprecate: 1.0.2
+    dev: false
+
   /readdirp@3.6.0:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
@@ -6085,6 +6119,12 @@ packages:
       eastasianwidth: 0.2.0
       emoji-regex: 9.2.2
       strip-ansi: 7.1.0
+    dev: false
+
+  /string_decoder@1.3.0:
+    resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
+    dependencies:
+      safe-buffer: 5.2.1
     dev: false
 
   /strip-ansi@6.0.1:
@@ -6434,6 +6474,10 @@ packages:
     requiresBuild: true
     dependencies:
       node-gyp-build: 4.8.0
+    dev: false
+
+  /util-deprecate@1.0.2:
+    resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: false
 
   /utils-merge@1.0.1:
@@ -7023,7 +7067,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-w8ruAJxB6ltamGibPUHKM/+pHxwS7xGxWoOxzTPyz3nXT1rMgb+DfCteu0CGfexgOyVDfmkfOO4PikL8cTBaYA==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-ZPH70QtJyb73hMpIoYxthlGAT85ABfgLAdD4/Bo/GVUYPsAKaa1YqFPXgBqBifgb4Zg8EFtTfAzQeAqet49jvw==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7057,13 +7101,14 @@ packages:
     dev: false
 
   file:projects/evm-abi.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-eeEXWV2rbpT4HsWaeAdqNZyKmon8bYTpQ9qi9GXLywPKCQVjWiXlhJcDsLXnX1Z7NDGxOKAY65Fd0BUk8kkf3A==, tarball: file:projects/evm-abi.tgz}
+    resolution: {integrity: sha512-TSyzSGlR2VFAe5ttBEwFauaiTwtlKWhANj5LC8rf93OeqTw0R6NvHoYS2+LQ0rvUzGdNU9Y/xwj13H7WdGHrkw==, tarball: file:projects/evm-abi.tgz}
     id: file:projects/evm-abi.tgz
     name: '@rush-temp/evm-abi'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.31
       ethers: 5.7.2
+      keccak256: 1.0.6
       typescript: 5.3.3
       viem: 2.9.16(typescript@5.3.3)
       vitest: 1.5.0(@types/node@18.19.31)(supports-color@8.1.1)
@@ -7124,17 +7169,17 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-0HmFBsJcQfmNlxPF0BAyvHyKiSgacRxDJU28ElY4YvyMVssFkH64C6RWcGxaM+jVgHotV/1A/oa6yld+kl3LqA==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-zamIWuiMSvLY80Y7Vw9XvT4t9w+mf0ECBdoQI/8t4Acfbelj+KDzM7+SckAkWrc40jxKX5PiQzcqxjyYQqUxkg==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.31
+      abitype: 1.0.0(typescript@5.3.3)
       commander: 11.1.0
       ethers: 6.11.1
       typescript: 5.3.3
     transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
+      - zod
     dev: false
 
   file:projects/frontier.tgz:
@@ -7939,7 +7984,7 @@ packages:
     dev: false
 
   file:projects/util-naming.tgz:
-    resolution: {integrity: sha512-Bzmg3bQcqCNvkrX3tzYzrVKUEO6Ij+K0l3VvmSFBaUfTBi+Rf4TbYhYqjUsG9ISTyDqQdFu7b+aQmvLCm8fTiA==, tarball: file:projects/util-naming.tgz}
+    resolution: {integrity: sha512-LimOwP0N/ObnMEeSBJnHb3Vtq7LS/CwFxW2EMNsLqqxqyssAXDyOL1/0FjZJk2hR6ikjz+SaDupBOgOW8rMr0g==, tarball: file:projects/util-naming.tgz}
     name: '@rush-temp/util-naming'
     version: 0.0.0
     dependencies:

@@ -43,8 +43,9 @@ function buildOrderByMapping(model: Model, typeName: string, depth: number): Ope
                     m.set(key + '_ASC', { [key]: 'ASC' })
                     m.set(key + '_DESC', { [key]: 'DESC' })
                     m.set(key + '_ASC_NULLS_FIRST', { [key]: 'ASC NULLS FIRST' });
+                    m.set(key + '_ASC_NULLS_LAST', { [key]: 'ASC NULLS LAST' });
+                    m.set(key + '_DESC_NULLS_FIRST', { [key]: 'DESC NULLS FIRST' });
                     m.set(key + '_DESC_NULLS_LAST', { [key]: 'DESC NULLS LAST' });
-                    
                 }
                 break
             case 'object':
