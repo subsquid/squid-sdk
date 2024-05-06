@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "allow to disable chain continuity validation",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}
