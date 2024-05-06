@@ -328,7 +328,7 @@ function toDslName(value: string) {
 }
 
 function toTypeName(value: string) {
-    return toCamelCase(toDslName(value), true) + `Type`
+    return toCamelCase(toDslName(value), true)
 }
 
 function isOptional(type: Type) {
