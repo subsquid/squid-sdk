@@ -232,12 +232,12 @@ export class InputCoin extends InputBase {
     type: 'InputCoin' = 'InputCoin'
     utxoId?: Bytes
     owner?: Bytes
-    amount?: BigInt
+    amount?: bigint
     assetId?: Bytes
     txPointer?: string
     witnessIndex?: number
     maturity?: number
-    predicateGasUsed?: BigInt
+    predicateGasUsed?: bigint
     predicate?: Bytes
     predicateData?: Bytes
 }
@@ -257,10 +257,10 @@ export class InputMessage extends InputBase {
     type: 'InputMessage' = 'InputMessage'
     sender?: Bytes
     recipient?: Bytes
-    amount?: BigInt
+    amount?: bigint
     nonce?: Bytes
     witnessIndex?: number
-    predicateGasUsed?: BigInt
+    predicateGasUsed?: bigint
     data?: Bytes
     predicate?: Bytes
     predicateData?: Bytes
@@ -312,7 +312,7 @@ export class OutputBase {
 export class CoinOutput extends OutputBase {
     type: 'CoinOutput' = 'CoinOutput'
     to?: Bytes
-    amount?: BigInt
+    amount?: bigint
     assetId?: Bytes
 }
 
@@ -328,7 +328,7 @@ export class ContractOutput extends OutputBase {
 export class ChangeOutput extends OutputBase {
     type: 'ChangeOutput' = 'ChangeOutput'
     to?: Bytes
-    amount?: BigInt
+    amount?: bigint
     assetId?: Bytes
 }
 
@@ -336,7 +336,7 @@ export class ChangeOutput extends OutputBase {
 export class VariableOutput extends OutputBase {
     type: 'VariableOutput' = 'VariableOutput'
     to?: Bytes
-    amount?: BigInt
+    amount?: bigint
     assetId?: Bytes
 }
 
