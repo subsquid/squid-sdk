@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-validation",
+      "comment": "add `STRING_NAT` primitive",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-validation"
+}
