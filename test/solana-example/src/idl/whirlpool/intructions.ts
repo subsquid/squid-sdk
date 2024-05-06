@@ -1,8 +1,8 @@
 import {struct, address, u16, u128, i32, u8, u64, unit, bool} from '@subsquid/borsh'
 import {instruction} from '../idl.support'
-import {WhirlpoolBumpsType, WhirlpoolBumps, OpenPositionBumpsType, OpenPositionBumps, OpenPositionWithMetadataBumpsType, OpenPositionWithMetadataBumps} from './types'
+import {WhirlpoolBumps, OpenPositionBumps, OpenPositionWithMetadataBumps} from './types'
 
-export type InitializeConfigType = {
+export interface InitializeConfig {
     feeAuthority: string
     collectProtocolFeesAuthority: string
     rewardEmissionsSuperAuthority: string
@@ -26,8 +26,8 @@ export const initializeConfig = instruction(
     }),
 )
 
-export type InitializePoolType = {
-    bumps: WhirlpoolBumpsType
+export interface InitializePool {
+    bumps: WhirlpoolBumps
     tickSpacing: number
     initialSqrtPrice: bigint
 }
@@ -56,7 +56,7 @@ export const initializePool = instruction(
     }),
 )
 
-export type InitializeTickArrayType = {
+export interface InitializeTickArray {
     startTickIndex: number
 }
 
@@ -75,7 +75,7 @@ export const initializeTickArray = instruction(
     }),
 )
 
-export type InitializeFeeTierType = {
+export interface InitializeFeeTier {
     tickSpacing: number
     defaultFeeRate: number
 }
@@ -97,7 +97,7 @@ export const initializeFeeTier = instruction(
     }),
 )
 
-export type InitializeRewardType = {
+export interface InitializeReward {
     rewardIndex: number
 }
 
@@ -120,7 +120,7 @@ export const initializeReward = instruction(
     }),
 )
 
-export type SetRewardEmissionsType = {
+export interface SetRewardEmissions {
     rewardIndex: number
     emissionsPerSecondX64: bigint
 }
@@ -140,8 +140,8 @@ export const setRewardEmissions = instruction(
     }),
 )
 
-export type OpenPositionType = {
-    bumps: OpenPositionBumpsType
+export interface OpenPosition {
+    bumps: OpenPositionBumps
     tickLowerIndex: number
     tickUpperIndex: number
 }
@@ -169,8 +169,8 @@ export const openPosition = instruction(
     }),
 )
 
-export type OpenPositionWithMetadataType = {
-    bumps: OpenPositionWithMetadataBumpsType
+export interface OpenPositionWithMetadata {
+    bumps: OpenPositionWithMetadataBumps
     tickLowerIndex: number
     tickUpperIndex: number
 }
@@ -201,7 +201,7 @@ export const openPositionWithMetadata = instruction(
     }),
 )
 
-export type IncreaseLiquidityType = {
+export interface IncreaseLiquidity {
     liquidityAmount: bigint
     tokenMaxA: bigint
     tokenMaxB: bigint
@@ -231,7 +231,7 @@ export const increaseLiquidity = instruction(
     }),
 )
 
-export type DecreaseLiquidityType = {
+export interface DecreaseLiquidity {
     liquidityAmount: bigint
     tokenMinA: bigint
     tokenMinB: bigint
@@ -261,7 +261,7 @@ export const decreaseLiquidity = instruction(
     }),
 )
 
-export type UpdateFeesAndRewardsType = undefined
+export type UpdateFeesAndRewards = undefined
 
 export const updateFeesAndRewards = instruction(
     {
@@ -276,7 +276,7 @@ export const updateFeesAndRewards = instruction(
     unit,
 )
 
-export type CollectFeesType = undefined
+export type CollectFees = undefined
 
 export const collectFees = instruction(
     {
@@ -296,7 +296,7 @@ export const collectFees = instruction(
     unit,
 )
 
-export type CollectRewardType = {
+export interface CollectReward {
     rewardIndex: number
 }
 
@@ -318,7 +318,7 @@ export const collectReward = instruction(
     }),
 )
 
-export type CollectProtocolFeesType = undefined
+export type CollectProtocolFees = undefined
 
 export const collectProtocolFees = instruction(
     {
@@ -337,7 +337,7 @@ export const collectProtocolFees = instruction(
     unit,
 )
 
-export type SwapType = {
+export interface Swap {
     amount: bigint
     otherAmountThreshold: bigint
     sqrtPriceLimit: bigint
@@ -371,7 +371,7 @@ export const swap = instruction(
     }),
 )
 
-export type ClosePositionType = undefined
+export type ClosePosition = undefined
 
 export const closePosition = instruction(
     {
@@ -388,7 +388,7 @@ export const closePosition = instruction(
     unit,
 )
 
-export type SetDefaultFeeRateType = {
+export interface SetDefaultFeeRate {
     defaultFeeRate: number
 }
 
@@ -406,7 +406,7 @@ export const setDefaultFeeRate = instruction(
     }),
 )
 
-export type SetDefaultProtocolFeeRateType = {
+export interface SetDefaultProtocolFeeRate {
     defaultProtocolFeeRate: number
 }
 
@@ -423,7 +423,7 @@ export const setDefaultProtocolFeeRate = instruction(
     }),
 )
 
-export type SetFeeRateType = {
+export interface SetFeeRate {
     feeRate: number
 }
 
@@ -441,7 +441,7 @@ export const setFeeRate = instruction(
     }),
 )
 
-export type SetProtocolFeeRateType = {
+export interface SetProtocolFeeRate {
     protocolFeeRate: number
 }
 
@@ -459,7 +459,7 @@ export const setProtocolFeeRate = instruction(
     }),
 )
 
-export type SetFeeAuthorityType = undefined
+export type SetFeeAuthority = undefined
 
 export const setFeeAuthority = instruction(
     {
@@ -473,7 +473,7 @@ export const setFeeAuthority = instruction(
     unit,
 )
 
-export type SetCollectProtocolFeesAuthorityType = undefined
+export type SetCollectProtocolFeesAuthority = undefined
 
 export const setCollectProtocolFeesAuthority = instruction(
     {
@@ -487,7 +487,7 @@ export const setCollectProtocolFeesAuthority = instruction(
     unit,
 )
 
-export type SetRewardAuthorityType = {
+export interface SetRewardAuthority {
     rewardIndex: number
 }
 
@@ -505,7 +505,7 @@ export const setRewardAuthority = instruction(
     }),
 )
 
-export type SetRewardAuthorityBySuperAuthorityType = {
+export interface SetRewardAuthorityBySuperAuthority {
     rewardIndex: number
 }
 
@@ -524,7 +524,7 @@ export const setRewardAuthorityBySuperAuthority = instruction(
     }),
 )
 
-export type SetRewardEmissionsSuperAuthorityType = undefined
+export type SetRewardEmissionsSuperAuthority = undefined
 
 export const setRewardEmissionsSuperAuthority = instruction(
     {
@@ -538,7 +538,7 @@ export const setRewardEmissionsSuperAuthority = instruction(
     unit,
 )
 
-export type TwoHopSwapType = {
+export interface TwoHopSwap {
     amount: bigint
     otherAmountThreshold: bigint
     amountSpecifiedIsInput: boolean
@@ -585,7 +585,7 @@ export const twoHopSwap = instruction(
     }),
 )
 
-export type InitializePositionBundleType = undefined
+export type InitializePositionBundle = undefined
 
 export const initializePositionBundle = instruction(
     {
@@ -605,7 +605,7 @@ export const initializePositionBundle = instruction(
     unit,
 )
 
-export type InitializePositionBundleWithMetadataType = undefined
+export type InitializePositionBundleWithMetadata = undefined
 
 export const initializePositionBundleWithMetadata = instruction(
     {
@@ -628,7 +628,7 @@ export const initializePositionBundleWithMetadata = instruction(
     unit,
 )
 
-export type DeletePositionBundleType = undefined
+export type DeletePositionBundle = undefined
 
 export const deletePositionBundle = instruction(
     {
@@ -645,7 +645,7 @@ export const deletePositionBundle = instruction(
     unit,
 )
 
-export type OpenBundledPositionType = {
+export interface OpenBundledPosition {
     bundleIndex: number
     tickLowerIndex: number
     tickUpperIndex: number
@@ -672,7 +672,7 @@ export const openBundledPosition = instruction(
     }),
 )
 
-export type CloseBundledPositionType = {
+export interface CloseBundledPosition {
     bundleIndex: number
 }
 

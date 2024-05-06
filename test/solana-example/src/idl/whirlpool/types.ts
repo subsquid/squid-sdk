@@ -1,34 +1,34 @@
 import {Codec, struct, u8, u128, u64, bool, i128, fixedArray, address, unit, sum, u16, i32, ref} from '@subsquid/borsh'
 
-export type OpenPositionBumpsType = {
+export interface OpenPositionBumps {
     positionBump: number
 }
 
-export const OpenPositionBumps: Codec<OpenPositionBumpsType> = struct({
+export const OpenPositionBumps: Codec<OpenPositionBumps> = struct({
     positionBump: u8,
 })
 
-export type OpenPositionWithMetadataBumpsType = {
+export interface OpenPositionWithMetadataBumps {
     positionBump: number
     metadataBump: number
 }
 
-export const OpenPositionWithMetadataBumps: Codec<OpenPositionWithMetadataBumpsType> = struct({
+export const OpenPositionWithMetadataBumps: Codec<OpenPositionWithMetadataBumps> = struct({
     positionBump: u8,
     metadataBump: u8,
 })
 
-export type PositionRewardInfoType = {
+export interface PositionRewardInfo {
     growthInsideCheckpoint: bigint
     amountOwed: bigint
 }
 
-export const PositionRewardInfo: Codec<PositionRewardInfoType> = struct({
+export const PositionRewardInfo: Codec<PositionRewardInfo> = struct({
     growthInsideCheckpoint: u128,
     amountOwed: u64,
 })
 
-export type TickType = {
+export interface Tick {
     initialized: boolean
     liquidityNet: bigint
     liquidityGross: bigint
@@ -37,7 +37,7 @@ export type TickType = {
     rewardGrowthsOutside: Array<bigint>
 }
 
-export const Tick: Codec<TickType> = struct({
+export const Tick: Codec<Tick> = struct({
     initialized: bool,
     liquidityNet: i128,
     liquidityGross: u128,
@@ -46,7 +46,7 @@ export const Tick: Codec<TickType> = struct({
     rewardGrowthsOutside: fixedArray(u128, 3),
 })
 
-export type WhirlpoolRewardInfoType = {
+export interface WhirlpoolRewardInfo {
     mint: string
     vault: string
     authority: string
@@ -54,7 +54,7 @@ export type WhirlpoolRewardInfoType = {
     growthGlobalX64: bigint
 }
 
-export const WhirlpoolRewardInfo: Codec<WhirlpoolRewardInfoType> = struct({
+export const WhirlpoolRewardInfo: Codec<WhirlpoolRewardInfo> = struct({
     mint: address,
     vault: address,
     authority: address,
@@ -62,41 +62,41 @@ export const WhirlpoolRewardInfo: Codec<WhirlpoolRewardInfoType> = struct({
     growthGlobalX64: u128,
 })
 
-export type WhirlpoolBumpsType = {
+export interface WhirlpoolBumps {
     whirlpoolBump: number
 }
 
-export const WhirlpoolBumps: Codec<WhirlpoolBumpsType> = struct({
+export const WhirlpoolBumps: Codec<WhirlpoolBumps> = struct({
     whirlpoolBump: u8,
 })
 
-export type CurrIndexType_Below = undefined
+export type CurrIndex_Below = undefined
 
 export const CurrIndex_Below = unit
 
-export type CurrIndexType_Inside = undefined
+export type CurrIndex_Inside = undefined
 
 export const CurrIndex_Inside = unit
 
-export type CurrIndexType_Above = undefined
+export type CurrIndex_Above = undefined
 
 export const CurrIndex_Above = unit
 
-export type CurrIndexType = 
+export type CurrIndex = 
     | {
         kind: 'Below'
-        value?: CurrIndexType_Below
+        value?: CurrIndex_Below
       }
     | {
         kind: 'Inside'
-        value?: CurrIndexType_Inside
+        value?: CurrIndex_Inside
       }
     | {
         kind: 'Above'
-        value?: CurrIndexType_Above
+        value?: CurrIndex_Above
       }
 
-export const CurrIndex: Codec<CurrIndexType> = sum(1, {
+export const CurrIndex: Codec<CurrIndex> = sum(1, {
     Below: {
         discriminator: 0,
         value: CurrIndex_Below,
@@ -111,25 +111,25 @@ export const CurrIndex: Codec<CurrIndexType> = sum(1, {
     },
 })
 
-export type TickLabelType_Upper = undefined
+export type TickLabel_Upper = undefined
 
 export const TickLabel_Upper = unit
 
-export type TickLabelType_Lower = undefined
+export type TickLabel_Lower = undefined
 
 export const TickLabel_Lower = unit
 
-export type TickLabelType = 
+export type TickLabel = 
     | {
         kind: 'Upper'
-        value?: TickLabelType_Upper
+        value?: TickLabel_Upper
       }
     | {
         kind: 'Lower'
-        value?: TickLabelType_Lower
+        value?: TickLabel_Lower
       }
 
-export const TickLabel: Codec<TickLabelType> = sum(1, {
+export const TickLabel: Codec<TickLabel> = sum(1, {
     Upper: {
         discriminator: 0,
         value: TickLabel_Upper,
@@ -140,25 +140,25 @@ export const TickLabel: Codec<TickLabelType> = sum(1, {
     },
 })
 
-export type DirectionType_Left = undefined
+export type Direction_Left = undefined
 
 export const Direction_Left = unit
 
-export type DirectionType_Right = undefined
+export type Direction_Right = undefined
 
 export const Direction_Right = unit
 
-export type DirectionType = 
+export type Direction = 
     | {
         kind: 'Left'
-        value?: DirectionType_Left
+        value?: Direction_Left
       }
     | {
         kind: 'Right'
-        value?: DirectionType_Right
+        value?: Direction_Right
       }
 
-export const Direction: Codec<DirectionType> = sum(1, {
+export const Direction: Codec<Direction> = sum(1, {
     Left: {
         discriminator: 0,
         value: Direction_Left,
@@ -169,43 +169,43 @@ export const Direction: Codec<DirectionType> = sum(1, {
     },
 })
 
-export type WhirlpoolsConfigType = {
+export interface WhirlpoolsConfig {
     feeAuthority: string
     collectProtocolFeesAuthority: string
     rewardEmissionsSuperAuthority: string
     defaultProtocolFeeRate: number
 }
 
-export const WhirlpoolsConfig: Codec<WhirlpoolsConfigType> = struct({
+export const WhirlpoolsConfig: Codec<WhirlpoolsConfig> = struct({
     feeAuthority: address,
     collectProtocolFeesAuthority: address,
     rewardEmissionsSuperAuthority: address,
     defaultProtocolFeeRate: u16,
 })
 
-export type FeeTierType = {
+export interface FeeTier {
     whirlpoolsConfig: string
     tickSpacing: number
     defaultFeeRate: number
 }
 
-export const FeeTier: Codec<FeeTierType> = struct({
+export const FeeTier: Codec<FeeTier> = struct({
     whirlpoolsConfig: address,
     tickSpacing: u16,
     defaultFeeRate: u16,
 })
 
-export type PositionBundleType = {
+export interface PositionBundle {
     positionBundleMint: string
     positionBitmap: Array<number>
 }
 
-export const PositionBundle: Codec<PositionBundleType> = struct({
+export const PositionBundle: Codec<PositionBundle> = struct({
     positionBundleMint: address,
     positionBitmap: fixedArray(u8, 32),
 })
 
-export type PositionType = {
+export interface Position {
     whirlpool: string
     positionMint: string
     liquidity: bigint
@@ -215,10 +215,10 @@ export type PositionType = {
     feeOwedA: bigint
     feeGrowthCheckpointB: bigint
     feeOwedB: bigint
-    rewardInfos: Array<PositionRewardInfoType>
+    rewardInfos: Array<PositionRewardInfo>
 }
 
-export const Position: Codec<PositionType> = struct({
+export const Position: Codec<Position> = struct({
     whirlpool: address,
     positionMint: address,
     liquidity: u128,
@@ -231,19 +231,19 @@ export const Position: Codec<PositionType> = struct({
     rewardInfos: fixedArray(ref(() => PositionRewardInfo), 3),
 })
 
-export type TickArrayType = {
+export interface TickArray {
     startTickIndex: number
-    ticks: Array<TickType>
+    ticks: Array<Tick>
     whirlpool: string
 }
 
-export const TickArray: Codec<TickArrayType> = struct({
+export const TickArray: Codec<TickArray> = struct({
     startTickIndex: i32,
     ticks: fixedArray(ref(() => Tick), 88),
     whirlpool: address,
 })
 
-export type WhirlpoolType = {
+export interface Whirlpool {
     whirlpoolsConfig: string
     whirlpoolBump: Array<number>
     tickSpacing: number
@@ -262,10 +262,10 @@ export type WhirlpoolType = {
     tokenVaultB: string
     feeGrowthGlobalB: bigint
     rewardLastUpdatedTimestamp: bigint
-    rewardInfos: Array<WhirlpoolRewardInfoType>
+    rewardInfos: Array<WhirlpoolRewardInfo>
 }
 
-export const Whirlpool: Codec<WhirlpoolType> = struct({
+export const Whirlpool: Codec<Whirlpool> = struct({
     whirlpoolsConfig: address,
     whirlpoolBump: fixedArray(u8, 1),
     tickSpacing: u16,

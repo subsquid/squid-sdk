@@ -54,7 +54,11 @@ export class Typegen {
             const typeName = toTypeName(i.name)
             out.line()
             out.blockComment(i.docs)
-            out.printType(`export type ${typeName} = `, {type: argsType, name: typeName})
+            if (argsType.kind === TypeKind.Struct) {
+                out.printType(`export interface ${typeName} `, {type: argsType, name: typeName})
+            } else {
+                out.printType(`export type ${typeName} = `, {type: argsType, name: typeName})
+            }
 
             const varName = toJsName(i.name)
             out.line()
@@ -70,7 +74,7 @@ export class Typegen {
                 out.indentation(() => {
                     for (let j = 0; j < i.accounts.length; j++) {
                         out.blockComment(i.accounts[j].docs)
-                        out.line(`${i.accounts[j].name}: ${j},`)
+                        out.line(`${toPropName(i.accounts[j].name)}: ${j},`)
                     }
                 })
                 out.line(`},`)
@@ -97,12 +101,11 @@ export class Typegen {
 
         for (let e of events) {
             const typeName = toTypeName(e.name)
-            out.types.add({name: typeName, alias: typeName + `_`})
+            out.types.add({name: typeName, alias: dedup(typeName)})
             out.line()
-            out.line(`export type ${typeName} = ${typeName + `_`}`)
+            out.line(`export type ${typeName} = ${dedup(typeName)}`)
 
             const varName = toDslName(e.name)
-            out.types.add({name: varName, alias: varName + `_`})
             out.line()
             out.line(`export const ${varName} = event(`)
             out.indentation(() => {
@@ -111,7 +114,7 @@ export class Typegen {
                     out.line(`d${(e.discriminator.length - 2) / 2}: '${e.discriminator}',`)
                 })
                 out.line(`},`)
-                out.line(varName + `_` + `,`)
+                out.line(dedup(varName) + `,`)
             })
             out.line(')')
         }
@@ -144,9 +147,13 @@ export class Typegen {
             }
             out.line()
             out.blockComment(t.docs)
-            out.printType(`export type ${typeName} = `, {type: t.type, name: typeName})
+            if (t.type.kind === TypeKind.Struct) {
+                out.printType(`export interface ${typeName} `, {type: t.type, name: typeName})
+            } else {
+                out.printType(`export type ${typeName} = `, {type: t.type, name: typeName})
+            }
 
-            const varName = toDslName(t.name)
+            const varName = toTypeName(t.name)
             out.line()
             out.blockComment(t.docs)
             out.printDsl(`export const ${varName}: Codec<${typeName}> = `, {type: t.type, name: varName})
@@ -200,7 +207,7 @@ export class TypeModuleOutput extends FileOutput {
                 this.indentation(() => {
                     for (const f of type.fields) {
                         this.blockComment(f.docs)
-                        this.printDsl(`${f.name}: `, {type: f.type}, ',')
+                        this.printDsl(`${toPropName(f.name)}: `, {type: f.type}, ',')
                     }
                 })
                 this.line(`})` + end)
@@ -216,7 +223,7 @@ export class TypeModuleOutput extends FileOutput {
                 this.line(`])` + end)
                 break
             case TypeKind.Defined:
-                const typeName = toDslName(type.name)
+                const typeName = toTypeName(type.name)
                 this.types.add(typeName)
                 if (this.isTypes) {
                     this.borsh.add('ref')
@@ -267,7 +274,7 @@ export class TypeModuleOutput extends FileOutput {
                 this.indentation(() => {
                     for (const f of type.fields) {
                         this.blockComment(f.docs)
-                        this.printType(`${f.name}${isOptional(f.type) ? `?` : ``}: `, {type: f.type})
+                        this.printType(`${toPropName(f.name)}${isOptional(f.type) ? `?` : ``}: `, {type: f.type})
                     }
                 })
                 this.line(`}` + end)
@@ -329,6 +336,14 @@ function toDslName(value: string) {
 
 function toTypeName(value: string) {
     return toCamelCase(toDslName(value), true)
+}
+
+function toPropName(value: string) {
+    return toCamelCase(toJsName(value))
+}
+
+function dedup(value: string) {
+    return value + '_'
 }
 
 function isOptional(type: Type) {

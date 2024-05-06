@@ -1,7 +1,7 @@
 import {event} from '../idl.support'
-import {SomeEventType as SomeEventType_, SomeEvent as SomeEvent_} from './types'
+import {SomeEvent as SomeEvent_} from './types'
 
-export type SomeEventType = SomeEventType_
+export type SomeEvent = SomeEvent_
 
 export const SomeEvent = event(
     {
