@@ -13,7 +13,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "rm -rf lib && tsc"
   },
   "dependencies": {
     "@subsquid/fuel-data": "^0.0.0",
