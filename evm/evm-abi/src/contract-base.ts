@@ -55,7 +55,7 @@ export class ContractBase {
   async eth_call<const T extends Struct, const R extends Codec<any> | Struct | undefined>(
     func: AbiFunction<T, R>,
     args: StructTypes<T>,
-  ): Promise<R> {
+  ) {
     const data = func.encode(args)
     const result = await this.rpc_call(data)
     return func.decodeResult(result)
