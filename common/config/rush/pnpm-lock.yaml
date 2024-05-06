@@ -362,6 +362,9 @@ dependencies:
   bs58:
     specifier: ^5.0.0
     version: 5.0.0
+  camelcase:
+    specifier: ^6.3.0
+    version: 6.3.0
   commander:
     specifier: ^11.1.0
     version: 11.1.0
@@ -7668,7 +7671,7 @@ packages:
     dev: false
 
   file:projects/util-naming.tgz:
-    resolution: {integrity: sha512-LimOwP0N/ObnMEeSBJnHb3Vtq7LS/CwFxW2EMNsLqqxqyssAXDyOL1/0FjZJk2hR6ikjz+SaDupBOgOW8rMr0g==, tarball: file:projects/util-naming.tgz}
+    resolution: {integrity: sha512-Bzmg3bQcqCNvkrX3tzYzrVKUEO6Ij+K0l3VvmSFBaUfTBi+Rf4TbYhYqjUsG9ISTyDqQdFu7b+aQmvLCm8fTiA==, tarball: file:projects/util-naming.tgz}
     name: '@rush-temp/util-naming'
     version: 0.0.0
     dependencies:

@@ -1,8 +1,9 @@
+import camelcase from 'camelcase'
 import {camelize, pluralize, underscore, } from "inflected"
 
 
 export function toCamelCase(name: string, uppercaseFirstLetter = false): string {
-    return camelize(name, uppercaseFirstLetter)
+    return camelcase(name, {pascalCase: uppercaseFirstLetter})
 }
 
 
