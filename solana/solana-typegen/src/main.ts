@@ -57,8 +57,14 @@ The generated facades are assumed to be used by "squids" indexing solana data.
 
         for (let spec of specs) {
             LOG.info(`processing ${spec.src}`)
-            let idl = await read(spec, opts)
-            new Typegen(dest, fromAnchor(idl), spec.name, LOG).generate()
+            let idlRaw = await read(spec, opts)
+            let idl = fromAnchor(idlRaw)
+
+            if (spec.kind === 'address' && idl.programId == null) {
+                idl.programId = spec.src
+            }
+
+            new Typegen(dest, idl, spec.name, LOG).generate()
         }
     },
     (err) => LOG.fatal(err)

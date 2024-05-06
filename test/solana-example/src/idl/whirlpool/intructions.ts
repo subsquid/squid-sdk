@@ -1,4 +1,4 @@
-import {struct, address, u16, ref, u128, i32, u8, u64, unit, bool} from '@subsquid/borsh'
+import {struct, address, u16, u128, i32, u8, u64, unit, bool} from '@subsquid/borsh'
 import {instruction} from '../idl.support'
 import {WhirlpoolBumpsType, WhirlpoolBumps, OpenPositionBumpsType, OpenPositionBumps, OpenPositionWithMetadataBumpsType, OpenPositionWithMetadataBumps} from './types'
 
@@ -261,8 +261,7 @@ export const decreaseLiquidity = instruction(
     }),
 )
 
-export type UpdateFeesAndRewardsType = {
-}
+export type UpdateFeesAndRewardsType = undefined
 
 export const updateFeesAndRewards = instruction(
     {
@@ -274,11 +273,10 @@ export const updateFeesAndRewards = instruction(
         tickArrayLower: 2,
         tickArrayUpper: 3,
     },
-    unit
+    unit,
 )
 
-export type CollectFeesType = {
-}
+export type CollectFeesType = undefined
 
 export const collectFees = instruction(
     {
@@ -295,7 +293,7 @@ export const collectFees = instruction(
         tokenVaultB: 7,
         tokenProgram: 8,
     },
-    unit
+    unit,
 )
 
 export type CollectRewardType = {
@@ -320,8 +318,7 @@ export const collectReward = instruction(
     }),
 )
 
-export type CollectProtocolFeesType = {
-}
+export type CollectProtocolFeesType = undefined
 
 export const collectProtocolFees = instruction(
     {
@@ -337,7 +334,7 @@ export const collectProtocolFees = instruction(
         tokenDestinationB: 6,
         tokenProgram: 7,
     },
-    unit
+    unit,
 )
 
 export type SwapType = {
@@ -374,8 +371,7 @@ export const swap = instruction(
     }),
 )
 
-export type ClosePositionType = {
-}
+export type ClosePositionType = undefined
 
 export const closePosition = instruction(
     {
@@ -389,7 +385,7 @@ export const closePosition = instruction(
         positionTokenAccount: 4,
         tokenProgram: 5,
     },
-    unit
+    unit,
 )
 
 export type SetDefaultFeeRateType = {
@@ -463,8 +459,7 @@ export const setProtocolFeeRate = instruction(
     }),
 )
 
-export type SetFeeAuthorityType = {
-}
+export type SetFeeAuthorityType = undefined
 
 export const setFeeAuthority = instruction(
     {
@@ -475,11 +470,10 @@ export const setFeeAuthority = instruction(
         feeAuthority: 1,
         newFeeAuthority: 2,
     },
-    unit
+    unit,
 )
 
-export type SetCollectProtocolFeesAuthorityType = {
-}
+export type SetCollectProtocolFeesAuthorityType = undefined
 
 export const setCollectProtocolFeesAuthority = instruction(
     {
@@ -490,7 +484,7 @@ export const setCollectProtocolFeesAuthority = instruction(
         collectProtocolFeesAuthority: 1,
         newCollectProtocolFeesAuthority: 2,
     },
-    unit
+    unit,
 )
 
 export type SetRewardAuthorityType = {
@@ -530,8 +524,7 @@ export const setRewardAuthorityBySuperAuthority = instruction(
     }),
 )
 
-export type SetRewardEmissionsSuperAuthorityType = {
-}
+export type SetRewardEmissionsSuperAuthorityType = undefined
 
 export const setRewardEmissionsSuperAuthority = instruction(
     {
@@ -542,7 +535,7 @@ export const setRewardEmissionsSuperAuthority = instruction(
         rewardEmissionsSuperAuthority: 1,
         newRewardEmissionsSuperAuthority: 2,
     },
-    unit
+    unit,
 )
 
 export type TwoHopSwapType = {
@@ -592,8 +585,7 @@ export const twoHopSwap = instruction(
     }),
 )
 
-export type InitializePositionBundleType = {
-}
+export type InitializePositionBundleType = undefined
 
 export const initializePositionBundle = instruction(
     {
@@ -610,11 +602,10 @@ export const initializePositionBundle = instruction(
         rent: 7,
         associatedTokenProgram: 8,
     },
-    unit
+    unit,
 )
 
-export type InitializePositionBundleWithMetadataType = {
-}
+export type InitializePositionBundleWithMetadataType = undefined
 
 export const initializePositionBundleWithMetadata = instruction(
     {
@@ -634,11 +625,10 @@ export const initializePositionBundleWithMetadata = instruction(
         associatedTokenProgram: 10,
         metadataProgram: 11,
     },
-    unit
+    unit,
 )
 
-export type DeletePositionBundleType = {
-}
+export type DeletePositionBundleType = undefined
 
 export const deletePositionBundle = instruction(
     {
@@ -652,7 +642,7 @@ export const deletePositionBundle = instruction(
         receiver: 4,
         tokenProgram: 5,
     },
-    unit
+    unit,
 )
 
 export type OpenBundledPositionType = {

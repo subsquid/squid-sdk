@@ -89,31 +89,31 @@ export type FooEnumType =
     | {
         kind: 'Unnamed'
         value: FooEnumType_Unnamed
-    }
+      }
     | {
         kind: 'UnnamedSingle'
         value: FooEnumType_UnnamedSingle
-    }
+      }
     | {
         kind: 'Named'
         value: FooEnumType_Named
-    }
+      }
     | {
         kind: 'Struct'
         value: FooEnumType_Struct
-    }
+      }
     | {
         kind: 'OptionStruct'
         value: FooEnumType_OptionStruct
-    }
+      }
     | {
         kind: 'VecStruct'
         value: FooEnumType_VecStruct
-    }
+      }
     | {
         kind: 'NoFields'
         value?: FooEnumType_NoFields
-    }
+      }
 
 /**
  * Enum type

@@ -86,15 +86,15 @@ export type CurrIndexType =
     | {
         kind: 'Below'
         value?: CurrIndexType_Below
-    }
+      }
     | {
         kind: 'Inside'
         value?: CurrIndexType_Inside
-    }
+      }
     | {
         kind: 'Above'
         value?: CurrIndexType_Above
-    }
+      }
 
 export const CurrIndex: Codec<CurrIndexType> = sum(1, {
     Below: {
@@ -123,11 +123,11 @@ export type TickLabelType =
     | {
         kind: 'Upper'
         value?: TickLabelType_Upper
-    }
+      }
     | {
         kind: 'Lower'
         value?: TickLabelType_Lower
-    }
+      }
 
 export const TickLabel: Codec<TickLabelType> = sum(1, {
     Upper: {
@@ -152,11 +152,11 @@ export type DirectionType =
     | {
         kind: 'Left'
         value?: DirectionType_Left
-    }
+      }
     | {
         kind: 'Right'
         value?: DirectionType_Right
-    }
+      }
 
 export const Direction: Codec<DirectionType> = sum(1, {
     Left: {

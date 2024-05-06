@@ -1,9 +1,8 @@
-import {unit, struct, bool, u8, i8, u16, i16, u32, i32, f32, u64, i64, f64, u128, i128, binary, string, address, array, ref, option, fixedArray} from '@subsquid/borsh'
+import {unit, struct, bool, u8, i8, u16, i16, u32, i32, f32, u64, i64, f64, u128, i128, binary, string, address, array, option, fixedArray} from '@subsquid/borsh'
 import {instruction} from '../idl.support'
 import {FooStructType, FooEnumType, FooStruct, FooEnum} from './types'
 
-export type CauseErrorType = {
-}
+export type CauseErrorType = undefined
 
 export const cause_error = instruction(
     {
@@ -11,11 +10,10 @@ export const cause_error = instruction(
     },
     {
     },
-    unit
+    unit,
 )
 
-export type InitializeType = {
-}
+export type InitializeType = undefined
 
 export const initialize = instruction(
     {
@@ -39,7 +37,7 @@ export const initialize = instruction(
         payer: 8,
         system_program: 9,
     },
-    unit
+    unit,
 )
 
 /**

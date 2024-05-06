@@ -16,7 +16,6 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "camelcase": "^6.3.0",
     "inflected": "^2.1.0"
   },
   "devDependencies": {

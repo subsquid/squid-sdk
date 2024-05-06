@@ -308,6 +308,7 @@ export function build(idl: Idl): Program {
     }
 
     const res: Program = {
+        programId: idl.address,
         instructions,
         types,
         accounts:

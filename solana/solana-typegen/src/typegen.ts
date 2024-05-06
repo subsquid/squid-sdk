@@ -1,12 +1,13 @@
 import {Logger} from '@subsquid/logger'
-import {def, unexpectedCase} from '@subsquid/util-internal'
-import {FileOutput, OutDir, Output} from '@subsquid/util-internal-code-printer'
+import {unexpectedCase} from '@subsquid/util-internal'
+import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
 import {Program} from './program/description'
 import {Primitive, Type, TypeKind} from './program/types'
-import {toCamelCase} from '@subsquid/util-naming'
+import {toCamelCase, toJsName} from '@subsquid/util-naming'
 
 export class Typegen {
     private dest: OutDir
+    private modules: Set<string> = new Set()
 
     constructor(dest: OutDir, private program: Program, basename: string, private log: Logger) {
         this.dest = dest.child(basename)
@@ -14,8 +15,22 @@ export class Typegen {
 
     generate(): void {
         this.generateInstructions()
-        // this.generateEvents()
+        this.generateEvents()
         this.generateTypes()
+
+        const out = this.dest.file(`index.ts`)
+
+        for (const module of this.modules) {
+            out.line(`export * as ${module} from './${module}'`)
+        }
+
+        if (this.program.programId) {
+            out.line()
+            out.line(`export const programId = '${this.program.programId}'`)
+        }
+
+        out.write()
+        this.log.info(`saved ${out.file}`)
     }
 
     private generateInstructions() {
@@ -23,6 +38,8 @@ export class Typegen {
         if (instructions.length == 0) {
             return
         }
+
+        this.modules.add('intructions')
 
         const out = new TypeModuleOutput(this.dest.path('intructions.ts'))
 
@@ -34,7 +51,7 @@ export class Typegen {
                     ? {kind: TypeKind.Struct, fields: i.args}
                     : {kind: TypeKind.Primitive, primitive: 'unit'}
 
-            const typeName = toTsName(i.name)
+            const typeName = toTypeName(i.name)
             out.line()
             out.blockComment(i.docs)
             out.printType(`export type ${typeName} = `, {type: argsType, name: typeName})
@@ -57,7 +74,7 @@ export class Typegen {
                     }
                 })
                 out.line(`},`)
-                out.printDSL(``, {type: argsType}, `,`)
+                out.printDsl(``, {type: argsType}, `,`)
             })
             out.line(')')
         }
@@ -66,29 +83,42 @@ export class Typegen {
         this.log.info(`saved ${out.file}`)
     }
 
-    // private generateEvents() {
-    //     let events = this.program.events
-    //     if (events.length == 0) {
-    //         return
-    //     }
-    //     this.useSupport(`event`)
-    //     this.useBorsh('ref')
-    //     out.line()
-    //     out.block(`export const events =`, () => {
-    //         for (let e of events) {
-    //             out.line(`${e.name}: event(`)
-    //             out.indentation(() => {
-    //                 out.line(`{`)
-    //                 out.indentation(() => {
-    //                     out.line(`d${(e.discriminator.length - 2) / 2}: '${e.discriminator}',`)
-    //                 })
-    //                 out.line(`},`)
-    //                 out.line(`ref(() => ${e.name}),`)
-    //             })
-    //             out.line('),')
-    //         }
-    //     })
-    // }
+    private generateEvents() {
+        let events = this.program.events
+        if (events.length == 0) {
+            return
+        }
+
+        this.modules.add('events')
+
+        const out = new TypeModuleOutput(this.dest.path('events.ts'))
+
+        out.support.add(`event`)
+
+        for (let e of events) {
+            const typeName = toTypeName(e.name)
+            out.types.add({name: typeName, alias: typeName + `_`})
+            out.line()
+            out.line(`export type ${typeName} = ${typeName + `_`}`)
+
+            const varName = toDslName(e.name)
+            out.types.add({name: varName, alias: varName + `_`})
+            out.line()
+            out.line(`export const ${varName} = event(`)
+            out.indentation(() => {
+                out.line(`{`)
+                out.indentation(() => {
+                    out.line(`d${(e.discriminator.length - 2) / 2}: '${e.discriminator}',`)
+                })
+                out.line(`},`)
+                out.line(varName + `_` + `,`)
+            })
+            out.line(')')
+        }
+
+        out.write()
+        this.log.info(`saved ${out.file}`)
+    }
 
     private generateTypes() {
         let types = this.program.types
@@ -96,28 +126,30 @@ export class Typegen {
             return
         }
 
+        this.modules.add('types')
+
         const out = new TypeModuleOutput(this.dest.path('types.ts'), true)
 
         out.borsh.add(`Codec`)
 
         for (let t of types) {
-            const typeName = toTsName(t.name)
+            const typeName = toTypeName(t.name)
             if (t.type.kind === TypeKind.Enum) {
                 for (const v of t.type.variants) {
                     out.line()
                     out.printType(`export type ${typeName}_${v.name} = `, {type: v.type, name: typeName})
                     out.line()
-                    out.printDSL(`export const ${t.name}_${v.name} = `, {type: v.type, name: t.name})
+                    out.printDsl(`export const ${t.name}_${v.name} = `, {type: v.type, name: t.name})
                 }
             }
             out.line()
             out.blockComment(t.docs)
             out.printType(`export type ${typeName} = `, {type: t.type, name: typeName})
 
-            const varName = toJsName(t.name)
+            const varName = toDslName(t.name)
             out.line()
             out.blockComment(t.docs)
-            out.printDSL(`export const ${varName}: Codec<${typeName}> = `, {type: t.type, name: varName})
+            out.printDsl(`export const ${varName}: Codec<${typeName}> = `, {type: t.type, name: varName})
         }
 
         out.write()
@@ -125,33 +157,26 @@ export class Typegen {
     }
 }
 
+type Import = string | {name: string; alias?: string}
+
 export class TypeModuleOutput extends FileOutput {
-    readonly borsh: Set<string> = new Set()
-    readonly support: Set<string> = new Set()
-    readonly types: Set<string> = new Set()
+    readonly borsh: Set<Import> = new Set()
+    readonly support: Set<Import> = new Set()
+    readonly types: Set<Import> = new Set()
 
     constructor(file: string, private isTypes: boolean = false) {
         super(file)
 
         this.lazy(() => {
-            if (this.borsh.size == 0) return
-            this.line(`import {${[...this.borsh].join(', ')}} from '@subsquid/borsh'`)
+            this.printImports(this.borsh, '@subsquid/borsh')
+            this.printImports(this.support, '../idl.support')
+            if (!isTypes) {
+                this.printImports(this.types, './types')
+            }
         })
-
-        this.lazy(() => {
-            if (this.support.size == 0) return
-            this.line(`import {${[...this.support].join(', ')}} from '../idl.support'`)
-        })
-
-        if (!isTypes) {
-            this.lazy(() => {
-                if (this.types.size == 0) return
-                this.line(`import {${[...this.types].join(', ')}} from './types'`)
-            })
-        }
     }
 
-    printDSL(start: string, {name, type}: {name?: string; type: Type}, end: string = ''): void {
+    printDsl(start: string, {name, type}: {name?: string; type: Type}, end: string = ''): void {
         switch (type.kind) {
             case TypeKind.Primitive:
                 this.borsh.add(type.primitive)
@@ -159,15 +184,15 @@ export class TypeModuleOutput extends FileOutput {
                 break
             case TypeKind.Array:
                 this.borsh.add('array')
-                this.printDSL(start + `array(`, {type: type.type}, `)` + end)
+                this.printDsl(start + `array(`, {type: type.type}, `)` + end)
                 break
             case TypeKind.FixedArray:
                 this.borsh.add('fixedArray')
-                this.printDSL(start + `fixedArray(`, {type: type.type}, `, ${type.len})` + end)
+                this.printDsl(start + `fixedArray(`, {type: type.type}, `, ${type.len})` + end)
                 break
             case TypeKind.Option:
                 this.borsh.add('option')
-                this.printDSL(start + `option(`, {type: type.type}, `)` + end)
+                this.printDsl(start + `option(`, {type: type.type}, `)` + end)
                 break
             case TypeKind.Struct:
                 this.borsh.add('struct')
@@ -175,7 +200,7 @@ export class TypeModuleOutput extends FileOutput {
                 this.indentation(() => {
                     for (const f of type.fields) {
                         this.blockComment(f.docs)
-                        this.printDSL(`${f.name}: `, {type: f.type}, ',')
+                        this.printDsl(`${f.name}: `, {type: f.type}, ',')
                     }
                 })
                 this.line(`})` + end)
@@ -185,15 +210,20 @@ export class TypeModuleOutput extends FileOutput {
                 this.line(start + `tuple([`)
                 this.indentation(() => {
                     for (const t of type.tuple) {
-                        this.printDSL(``, {type: t}, ',')
+                        this.printDsl(``, {type: t}, ',')
                     }
                 })
                 this.line(`])` + end)
                 break
             case TypeKind.Defined:
-                this.borsh.add('ref')
-                this.types.add(toJsName(type.name))
-                this.line(start + (this.isTypes ? `ref(() => ${toJsName(type.name)})` : type.name) + end)
+                const typeName = toDslName(type.name)
+                this.types.add(typeName)
+                if (this.isTypes) {
+                    this.borsh.add('ref')
+                    this.line(start + `ref(() => ${typeName})` + end)
+                } else {
+                    this.line(start + typeName + end)
+                }
                 break
             case TypeKind.Enum:
                 this.borsh.add('sum')
@@ -207,7 +237,7 @@ export class TypeModuleOutput extends FileOutput {
                             if (name) {
                                 this.line(`value: ${name}_${v.name},`)
                             } else {
-                                this.printDSL(`value: `, {type: v.type}, ',')
+                                this.printDsl(`value: `, {type: v.type}, ',')
                             }
                         })
                         this.line(`},`)
@@ -252,8 +282,8 @@ export class TypeModuleOutput extends FileOutput {
                 this.line(`]` + end)
                 break
             case TypeKind.Defined:
-                this.types.add(toTsName(type.name))
-                this.line(start + toTsName(type.name) + end)
+                this.types.add(toTypeName(type.name))
+                this.line(start + toTypeName(type.name) + end)
                 break
             case TypeKind.Enum:
                 this.line(start)
@@ -269,7 +299,7 @@ export class TypeModuleOutput extends FileOutput {
                                 this.printType(`value${isOptional(v.type) ? `?` : ``}: `, {type: v.type})
                             }
                         })
-                        this.line(`}`)
+                        this.line(`  }`)
                     }
                 })
                 if (end) this.line(end)
@@ -278,19 +308,27 @@ export class TypeModuleOutput extends FileOutput {
                 throw unexpectedCase(type.kind)
         }
     }
+
+    private printImports(imports: Set<Import>, from: string) {
+        if (imports.size == 0) return
+        this.line(
+            `import {${[...imports]
+                .map((i) => (typeof i === 'string' ? i : i.alias ? `${i.name} as ${i.alias}` : i.name))
+                .join(', ')}} from '${from}'`
+        )
+    }
 }
 
-function toPascalCase(value: string) {
-    const r = toCamelCase(value)
-    return r[0].toUpperCase() + r.slice(1)
-}
-
-function toJsName(value: string) {
+function sanitize(value: string) {
     return value.replace(/[:<>]/g, `_`)
 }
 
-function toTsName(value: string) {
-    return toPascalCase(toJsName(value)) + `Type`
+function toDslName(value: string) {
+    return toJsName(sanitize(value))
+}
+
+function toTypeName(value: string) {
+    return toCamelCase(toDslName(value), true) + `Type`
 }
 
 function isOptional(type: Type) {
