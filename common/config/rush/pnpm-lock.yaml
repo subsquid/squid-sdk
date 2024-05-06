@@ -296,9 +296,6 @@ dependencies:
   '@subsquid/typeorm-codegen':
     specifier: ^1.3.3
     version: 1.3.3(supports-color@8.1.1)
-  '@subsquid/util-internal-dump-cli':
-    specifier: ^0.0.1
-    version: 0.0.1
   '@subsquid/util-internal-ingest-cli':
     specifier: ^0.0.1
     version: 0.0.1
@@ -344,6 +341,9 @@ dependencies:
   '@types/xxhashjs':
     specifier: ^0.2.4
     version: 0.2.4
+  abitype:
+    specifier: ^1.0.0
+    version: 1.0.0(typescript@5.3.3)
   ajv:
     specifier: ^8.12.0
     version: 8.12.0
@@ -404,6 +404,9 @@ dependencies:
   jsonc-parser:
     specifier: ^3.2.0
     version: 3.2.0
+  keccak256:
+    specifier: ^1.0.6
+    version: 1.0.6
   keyv:
     specifier: ~4.5.4
     version: 4.5.4
@@ -5632,6 +5635,24 @@ packages:
     engines: {'0': node >= 0.2.0}
     dev: false
 
+  /keccak256@1.0.6:
+    resolution: {integrity: sha512-8GLiM01PkdJVGUhR1e6M/AvWnSqYS0HaERI+K/QtStGDGlSTx2B1zTqZk4Zlqu5TxHJNTxWAdP9Y+WI50OApUw==}
+    dependencies:
+      bn.js: 5.2.1
+      buffer: 6.0.3
+      keccak: 3.0.4
+    dev: false
+
+  /keccak@3.0.4:
+    resolution: {integrity: sha512-3vKuW0jV8J3XNTzvfyicFR5qvxrSAGl7KIhvgOu5cmWwM7tZRj3fMbj/pfIf4be7aznbc+prBWGjywox/g2Y6Q==}
+    engines: {node: '>=10.0.0'}
+    requiresBuild: true
+    dependencies:
+      node-addon-api: 2.0.2
+      node-gyp-build: 4.7.1
+      readable-stream: 3.6.2
+    dev: false
+
   /keyv@3.1.0:
     resolution: {integrity: sha512-9ykJ/46SN/9KPM/sichzQ7OvXyGDYKGTaDlKMGCAlg2UK8KRy4jb0d8sFc+0Tt0YYnThq8X2RZgCg74RPxgcVA==}
     dependencies:
@@ -5958,6 +5979,10 @@ packages:
 
   /node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    dev: false
+
+  /node-addon-api@2.0.2:
+    resolution: {integrity: sha512-Ntyt4AIXyaLIuMHF6IOoTakB3K+RWxwtsHNRxllEoA6vPwP9o4866g6YWDLUdnucilZhmkxiHwHr11gAENw+QA==}
     dev: false
 
   /node-domexception@1.0.0:
@@ -6433,6 +6458,15 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: false
 
+  /readable-stream@3.6.2:
+    resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
+    engines: {node: '>= 6'}
+    dependencies:
+      inherits: 2.0.4
+      string_decoder: 1.3.0
+      util-deprecate: 1.0.2
+    dev: false
+
   /readdirp@3.6.0:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
@@ -6743,6 +6777,12 @@ packages:
       eastasianwidth: 0.2.0
       emoji-regex: 9.2.2
       strip-ansi: 7.1.0
+    dev: false
+
+  /string_decoder@1.3.0:
+    resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
+    dependencies:
+      safe-buffer: 5.2.1
     dev: false
 
   /strip-ansi@6.0.1:
@@ -7114,6 +7154,10 @@ packages:
     requiresBuild: true
     dependencies:
       node-gyp-build: 4.7.1
+    dev: false
+
+  /util-deprecate@1.0.2:
+    resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: false
 
   /utils-merge@1.0.1:
@@ -7702,7 +7746,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-en1E+SwBR3ub/5K9ybRHXIxyfEgqZldiefAJHfvC9MuAnFTIJQlJbpFHgm2R9b5A27PgqM3V+EmKr9pgGDdM+Q==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-/3DAYAm6BSSIVicXLXjuzqZKGMzl07To9ecg1q+swfu0MJd7tBXGLFKBMkFtfQU8TJnTBNVs6tONdPjmaLmAWw==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7736,13 +7780,14 @@ packages:
     dev: false
 
   file:projects/evm-abi.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-iGwaVpQ1b2kAr7NplbftX+bTwhll7eiEyT8T3DM/ElBFzUTm599Ku1qQn5tf27v+Zx0AI/o2H7m/GYpZHdDJ+w==, tarball: file:projects/evm-abi.tgz}
+    resolution: {integrity: sha512-n0iKZh2IavFOXaK342RnYVMbyzX6HD3k6xqzXaBuDBYxvxUUUEuHfntX5NwaEwesG2OHG2RVvTr4MulPAvHH9w==, tarball: file:projects/evm-abi.tgz}
     id: file:projects/evm-abi.tgz
     name: '@rush-temp/evm-abi'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4
       ethers: 5.7.2
+      keccak256: 1.0.6
       typescript: 5.3.3
       viem: 2.9.25(typescript@5.3.3)
       vitest: 1.5.0(@types/node@18.19.4)(supports-color@8.1.1)
@@ -7803,17 +7848,17 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-pEbUAnlj+As6dqrWwU8EjjaCXIOLYw5I6Ad7nDT3se8SYhrhcTZ/d7kkvTWxSSRSk+Mlq8WmS8NyIp9xf1aLWw==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-B+O0paxob71hiQ5pivl5tYxB5mfGVhKGSkAJhSo6hsfKU2tZ2MvbpfqykrbdLFmjVhWtIEDqxVccBNaxmF8iyA==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.4
+      abitype: 1.0.0(typescript@5.3.3)
       commander: 11.1.0
       ethers: 6.9.1
       typescript: 5.3.3
     transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
+      - zod
     dev: false
 
   file:projects/frontier.tgz:
@@ -7830,7 +7875,7 @@ packages:
     dev: false
 
   file:projects/fuel-data.tgz:
-    resolution: {integrity: sha512-wz4iGwnNTkuuMYrVKw5wZhBxW1P2NijU/RI32/skMR3EdJrtvxcDC4+XwrrhprFII/yW+961dr6X4h80RvIfug==, tarball: file:projects/fuel-data.tgz}
+    resolution: {integrity: sha512-GW6SktFGKAlMV+UK2RS0pKdf/AX1ZZGwOEr2p/zFXpnuy53EWW+IYSZc0+LIfotCsmw5o848EIU5GrkG1f1mMQ==, tarball: file:projects/fuel-data.tgz}
     name: '@rush-temp/fuel-data'
     version: 0.0.0
     dependencies:
@@ -7844,15 +7889,13 @@ packages:
     dev: false
 
   file:projects/fuel-dump.tgz:
-    resolution: {integrity: sha512-JsBxy+WWGwbFUn8gboH69zk+F6SvIMvU1SvdccDPeTSN4xaLfK0rnDswGibckA7s/ApLGDjZ0bsB2b97hT0q+w==, tarball: file:projects/fuel-dump.tgz}
+    resolution: {integrity: sha512-8fi7N+LDgBwSw+kQSGBKRbCQ0pFYw7IP0T9hWiEZ5uVMi6YehewM94bUh/um0+NJ14ZQteJ0pIFyY9TC9sXWlg==, tarball: file:projects/fuel-dump.tgz}
     name: '@rush-temp/fuel-dump'
     version: 0.0.0
     dependencies:
       '@subsquid/util-internal-dump-cli': 0.0.1
       '@types/node': 18.19.4
       typescript: 5.3.3
-    transitivePeerDependencies:
-      - aws-crt
     dev: false
 
   file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2):
@@ -7923,7 +7966,7 @@ packages:
     dev: false
 
   file:projects/fuel-stream.tgz:
-    resolution: {integrity: sha512-++/X62euSQaaUal5hLSMLSht7AO/7uwNh7pvZdmMWVUjxxFDaKXzfxTT/ITCueIUPjTQ8sPmxluUgOT98D3xzQ==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-AUjLwzWzdz6ZfaKqj0GdzQn+M0N1l7tpd5YwYBccCgsJwiAa/5t+jVf6TULRDssMjGJ3kFKIUoiFz/MGhVKPbw==, tarball: file:projects/fuel-stream.tgz}
     name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:

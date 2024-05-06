@@ -9,7 +9,9 @@ function slotsCount(codecs: readonly Codec<any>[]) {
   return count
 }
 
-type FunctionReturn<T> = T extends Codec<infer U> ? U : T extends Struct ? StructTypes<T> : undefined
+export type FunctionReturn<T> = T extends Codec<infer U> ? U : T extends Struct ? StructTypes<T> : void
+
+export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? StructTypes<U> : never
 
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer

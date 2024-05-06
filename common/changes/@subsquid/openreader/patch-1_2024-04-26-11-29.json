@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add ASC_NULLS_LAST and DESC_NULLS_FIRST for graphql sorting",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

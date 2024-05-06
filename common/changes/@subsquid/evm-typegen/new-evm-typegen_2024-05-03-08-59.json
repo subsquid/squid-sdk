@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "Migrate typegen to new codec; Drop dependency to ethers.js",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

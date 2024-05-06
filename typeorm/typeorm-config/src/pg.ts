@@ -41,6 +41,7 @@ export function extractAndClearSSLParams(url: URL): SslOptions | undefined | fal
             case 'sslmode':
                 switch(v) {
                     case 'disabled':
+                    case 'disable':
                         disabled = true
                         break
                     case 'no-verify':
