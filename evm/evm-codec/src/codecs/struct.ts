@@ -1,4 +1,4 @@
-import { Codec, Struct, StructTypes } from '../codec'
+import {Codec, Struct, DecodedStruct, EncodedStruct} from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
 
@@ -10,7 +10,7 @@ function slotsCount(codecs: readonly Codec<any>[]) {
   return count
 }
 
-export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>> {
+export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<T>, DecodedStruct<T>> {
   public readonly isDynamic: boolean
   public readonly slotsCount: number
   private readonly childrenSlotsCount: number
@@ -28,7 +28,7 @@ export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>
     }
   }
 
-  public encode(sink: Sink, val: StructTypes<T>): void {
+  public encode(sink: Sink, val: EncodedStruct<T>): void {
     if (this.isDynamic) {
       this.encodeDynamic(sink, val)
       return
@@ -39,7 +39,7 @@ export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>
     }
   }
 
-  private encodeDynamic(sink: Sink, val: StructTypes<T>): void {
+  private encodeDynamic(sink: Sink, val: EncodedStruct<T>): void {
     sink.newStaticDataArea(this.childrenSlotsCount)
     for (let i in this.components) {
       let prop = this.components[i]
@@ -48,7 +48,7 @@ export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>
     sink.endCurrentDataArea()
   }
 
-  public decode(src: Src): StructTypes<T> {
+  public decode(src: Src): DecodedStruct<T> {
     if (this.isDynamic) {
       return this.decodeDynamic(src)
     }
@@ -60,7 +60,7 @@ export class StructCodec<const T extends Struct> implements Codec<StructTypes<T>
     return result
   }
 
-  private decodeDynamic(src: Src): StructTypes<T> {
+  private decodeDynamic(src: Src): DecodedStruct<T> {
     let result: any = {}
 
     const offset = src.u32()

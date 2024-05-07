@@ -16,6 +16,10 @@ export type Struct = {
 
 type Pretty<T> = { [K in keyof T]: T[K] } & unknown
 
-export type StructTypes<T extends Struct> = Pretty<{
+export type DecodedStruct<T extends Struct> = Pretty<{
   [K in keyof T]: T[K] extends Codec<any, infer U> ? U : never
+}>
+
+export type EncodedStruct<T extends Struct> = Pretty<{
+  [K in keyof T]: T[K] extends Codec<infer U, any> ? U : never
 }>

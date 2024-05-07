@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { type Codec, type Struct, type StructTypes, Sink, Src } from '@subsquid/evm-codec'
+import {type Codec, type Struct, type DecodedStruct, type EncodedStruct, Sink, Src} from '@subsquid/evm-codec'
 
 function slotsCount(codecs: readonly Codec<any>[]) {
   let count = 0
@@ -9,9 +9,9 @@ function slotsCount(codecs: readonly Codec<any>[]) {
   return count
 }
 
-export type FunctionReturn<T> = T extends Codec<any, infer U> ? U : T extends Struct ? StructTypes<T> : void
+export type FunctionReturn<T> = T extends Codec<any, infer U> ? U : T extends Struct ? DecodedStruct<T> : void
 
-export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? StructTypes<U> : never
+export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer
@@ -29,7 +29,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return calldata.startsWith(this.selector)
   }
 
-  encode(args: StructTypes<T>) {
+  encode(args: EncodedStruct<T>) {
     const sink = new Sink(this.slotsCount)
     for (let i in this.args) {
       this.args[i].encode(sink, args[i])
@@ -37,7 +37,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return `0x${Buffer.concat([this.#selector, sink.result()]).toString('hex')}`
   }
 
-  decode(calldata: string): StructTypes<T> {
+  decode(calldata: string): DecodedStruct<T> {
     assert(this.is(calldata), `unexpected function signature: ${calldata.slice(0, 10)}`)
     const src = new Src(Buffer.from(calldata.slice(10), 'hex'))
     const result = {} as any
