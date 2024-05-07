@@ -9,7 +9,9 @@ function slotsCount(codecs: readonly Codec<any>[]) {
   return count
 }
 
-export type FunctionReturn<T> = T extends Codec<any, infer U> ? U : T extends Struct ? DecodedStruct<T> : void
+export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunction<any, infer R>
+  ? R extends Codec<any, infer U> ? U : R extends Struct ? DecodedStruct<R> : void
+  : never
 
 export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
@@ -51,7 +53,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return 'decode' in value && 'encode' in value
   }
 
-  decodeResult(output: string): FunctionReturn<R> {
+  decodeResult(output: string): FunctionReturn<typeof this> {
     if (!this.returnType) {
       return undefined as any
     }
