@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-naming",
+      "comment": "add toJsName function",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-naming"
+}

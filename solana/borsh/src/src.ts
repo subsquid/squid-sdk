@@ -72,6 +72,18 @@ export class Src {
         return lo + (hi << 64n)
     }
 
+    f32(): number {
+        let val = this.view.getFloat32(this.pos, true)
+        this.pos += 4
+        return val
+    }
+
+    f64(): number {
+        let val = this.view.getFloat64(this.pos, true)
+        this.pos += 8
+        return val
+    }
+
     bytes(len: number): Uint8Array {
         this.assertLength(len)
         let val = this.buf.subarray(this.pos, this.pos + len)

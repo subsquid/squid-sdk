@@ -24,6 +24,26 @@ export const bool: Codec<boolean> = {
 }
 
 
+export const f32: Codec<number> = {
+    encode(sink: Sink, val: number): void {
+        sink.f32(val)
+    },
+    decode(src: Src): number {
+        return src.f32()
+    }
+}
+
+
+export const f64: Codec<number> = {
+    encode(sink: Sink, val: number): void {
+        sink.f64(val)
+    },
+    decode(src: Src): number {
+        return src.f64()
+    }
+}
+
+
 export const u8: Codec<number> = {
     encode(sink: Sink, val: number): void {
         sink.u8(val)
