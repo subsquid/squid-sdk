@@ -1,0 +1,23 @@
+{
+  "name": "@subsquid/fuel-objects",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/fuel-objects_v0.0.1",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-data\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-stream\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-stream\" from `^0.0.0` to `0.0.1`"
+          }
+        ]
+      }
+    }
+  ]
+}
