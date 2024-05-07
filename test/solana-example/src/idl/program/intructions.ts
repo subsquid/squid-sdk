@@ -4,7 +4,7 @@ import {FooStruct, FooEnum} from './types'
 
 export type CauseError = undefined
 
-export const cause_error = instruction(
+export const causeError = instruction(
     {
         d8: '0x43682511029b4411',
     },
@@ -75,7 +75,7 @@ export interface InitializeWithValues {
 /**
  * Initializes an account with specified values
  */
-export const initialize_with_values = instruction(
+export const initializeWithValues = instruction(
     {
         d8: '0xdc4908d5b245b58d',
     },
@@ -140,7 +140,7 @@ export interface InitializeWithValues2 {
  * a separate instruction due to initialize_with_values having too many arguments
  * https://github.com/solana-labs/solana/issues/23978
  */
-export const initialize_with_values2 = instruction(
+export const initializeWithValues2 = instruction(
     {
         d8: '0xf8be1561ef9427b5',
     },

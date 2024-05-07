@@ -1,9 +1,10 @@
 import {Logger} from '@subsquid/logger'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
+import {toCamelCase, toJsName} from '@subsquid/util-naming'
 import {Program} from './program/description'
 import {Primitive, Type, TypeKind} from './program/types'
-import {toCamelCase, toJsName} from '@subsquid/util-naming'
+
 
 export class Typegen {
     private dest: OutDir
@@ -60,7 +61,7 @@ export class Typegen {
                 out.printType(`export type ${typeName} = `, {type: argsType, name: typeName})
             }
 
-            const varName = toJsName(i.name)
+            const varName = toCamelCase(toJsName(i.name))
             out.line()
             out.blockComment(i.docs)
             out.line(`export const ${varName} = instruction(`)
