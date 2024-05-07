@@ -1,5 +1,5 @@
 import camelcase from 'camelcase'
-import {camelize, pluralize, underscore, } from "inflected"
+import {pluralize, underscore} from 'inflected'
 
 
 export function toCamelCase(name: string, uppercaseFirstLetter = false): string {
@@ -15,6 +15,7 @@ export function toSnakeCase(name: string): string {
 export function toPlural(name: string): string {
     return pluralize(name)
 }
+
 
 const jsReservedKeywords = new Set([
     'break',
