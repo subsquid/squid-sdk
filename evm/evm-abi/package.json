@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-abi",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "EVM ABI encoding and decoding helpers",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
