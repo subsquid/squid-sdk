@@ -1,8 +1,10 @@
 import {Codec, GetCodecType} from './codec'
-import {ArrayCodec} from './codecs/array'
+import {ArrayCodec, FixedArrayCodec} from './codecs/array'
 import {SumCodec, Variant} from './codecs/enum'
+import {OptionCodec} from './codecs/option'
 import {RefCodec} from './codecs/ref'
 import {GetStructType, StructCodec} from './codecs/struct'
+import {GetTupleType, TupleCodec} from './codecs/tuple'
 
 
 export * from './codecs/primitives'
@@ -16,10 +18,33 @@ export function array<IC extends Codec<any>>(item: IC): ArrayCodec<GetCodecType<
 }
 
 
+export function fixedArray<IC extends Codec<any>>(item: IC, size: number): FixedArrayCodec<GetCodecType<IC>> {
+    return new FixedArrayCodec(item, size)
+}
+
+
 export function struct<Props extends Record<string, Codec<any>>>(
     props: Props
 ): StructCodec<GetStructType<Props>> {
     return new StructCodec(props as any)
+}
+
+export function tuple(tuple: []): TupleCodec<[]>
+export function tuple<T>(tuple: [T]): TupleCodec<GetTupleType<[T]>>
+export function tuple<T1, T2>(tuple: [T1, T2]): TupleCodec<GetTupleType<[T1, T2]>>
+export function tuple<T1, T2, T3>(tuple: [T1, T2, T3]): TupleCodec<GetTupleType<[T1, T2, T3]>>
+export function tuple<T1, T2, T3, T4>(tuple: [T1, T2, T3, T4]): TupleCodec<GetTupleType<[T1, T2, T3, T4]>>
+export function tuple<T1, T2, T3, T4, T5>(tuple: [T1, T2, T3, T4, T5]): TupleCodec<GetTupleType<[T1, T2, T3, T4, T5]>>
+export function tuple<T1, T2, T3, T4, T5, T6>(tuple: [T1, T2, T3, T4, T5, T6]): TupleCodec<GetTupleType<[T1, T2, T3, T4, T5, T6]>>
+export function tuple<T1, T2, T3, T4, T5, T6, T7>(tuple: [T1, T2, T3, T4, T5, T6, T7]): TupleCodec<GetTupleType<[T1, T2, T3, T4, T5, T6, T7]>>
+export function tuple<T1, T2, T3, T4, T5, T6, T7, T8>(tuple: [T1, T2, T3, T4, T5, T6, T7, T8]): TupleCodec<GetTupleType<[T1, T2, T3, T4, T5, T6, T7, T8]>>
+export function tuple<T1, T2, T3, T4, T5, T6, T7, T8, T9>(tuple: [T1, T2, T3, T4, T5, T6, T7, T8, T9]): TupleCodec<GetTupleType<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>>
+export function tuple<T extends any[]>(tuple: T): TupleCodec<T> {
+    return new TupleCodec(tuple as any)
+}
+
+export function option<IC extends Codec<any>>(item: IC): OptionCodec<GetCodecType<IC>> {
+    return new OptionCodec(item)
 }
 
 

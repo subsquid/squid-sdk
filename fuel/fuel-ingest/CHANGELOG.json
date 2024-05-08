@@ -1,0 +1,20 @@
+{
+  "name": "@subsquid/fuel-ingest",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/fuel-ingest_v0.0.1",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-data\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-normalization\" from `^0.0.0` to `0.0.1`"
+          }
+        ]
+      }
+    }
+  ]
+}

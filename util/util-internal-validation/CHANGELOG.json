@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@subsquid/util-internal-validation_v0.5.0",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `STRING_NAT` primitive"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/util-internal-validation_v0.4.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

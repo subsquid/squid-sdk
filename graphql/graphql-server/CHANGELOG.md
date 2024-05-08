@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+
+## 4.6.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Minor changes
+
+- add ASC_NULLS_LAST and DESC_NULLS_FIRST for graphql sorting
 
 ## 4.5.1
 Sun, 17 Mar 2024 23:20:20 GMT

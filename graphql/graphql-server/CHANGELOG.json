@@ -2,6 +2,26 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.6.0",
+      "tag": "@subsquid/graphql-server_v4.6.0",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add ASC_NULLS_LAST and DESC_NULLS_FIRST for graphql sorting"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^4.5.1` to `4.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^4.1.0` to `4.1.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.5.1",
       "tag": "@subsquid/graphql-server_v4.5.1",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

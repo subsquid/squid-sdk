@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-validation
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+
+## 0.5.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Minor changes
+
+- add `STRING_NAT` primitive
 
 ## 0.4.0
 Sun, 17 Mar 2024 23:20:20 GMT

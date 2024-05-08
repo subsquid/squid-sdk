@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+
+## 4.1.1
+Tue, 07 May 2024 07:40:43 GMT
+
+### Patches
+
+- support `sslmode=disable` in connection string
 
 ## 4.1.0
 Sun, 24 Dec 2023 20:05:50 GMT
