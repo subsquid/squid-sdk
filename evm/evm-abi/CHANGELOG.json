@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-abi",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-abi_v0.2.0",
+      "date": "Wed, 08 May 2024 19:54:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "update evm codec types"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.0.0` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/evm-abi_v0.1.0",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
