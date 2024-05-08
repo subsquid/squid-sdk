@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-abi",
+      "comment": "update evm codec types",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-abi"
+}
