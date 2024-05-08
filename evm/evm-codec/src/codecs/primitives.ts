@@ -19,7 +19,7 @@ export const bool: Codec<boolean> = {
 
 export const uint8: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.u8(safeToNumber(val, 0, 255))
+    sink.u8(Number(val))
   },
   decode(src: Src): number {
     return src.u8()
@@ -29,7 +29,7 @@ export const uint8: Codec<Numberish, number> = {
 
 export const int8: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.i8(safeToNumber(val, -128, 127))
+    sink.i8(Number(val))
   },
   decode(src: Src): number {
     return src.i8()
@@ -39,7 +39,7 @@ export const int8: Codec<Numberish, number> = {
 
 export const uint16: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.u16(safeToNumber(val, 0, 65535))
+    sink.u16(Number(val))
   },
   decode(src: Src): number {
     return src.u16()
@@ -49,7 +49,7 @@ export const uint16: Codec<Numberish, number> = {
 
 export const int16: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.i16(safeToNumber(val, -32768, 32767))
+    sink.i16(Number(val))
   },
   decode(src: Src): number {
     return src.i16()
@@ -59,7 +59,7 @@ export const int16: Codec<Numberish, number> = {
 
 export const uint32: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.u32(safeToNumber(val, 0, 4294967295))
+    sink.u32(Number(val))
   },
   decode(src: Src): number {
     return src.u32()
@@ -69,7 +69,7 @@ export const uint32: Codec<Numberish, number> = {
 
 export const int32: Codec<Numberish, number> = {
   encode(sink: Sink, val: Numberish) {
-    sink.i32(safeToNumber(val, -2147483648, 2147483647))
+    sink.i32(Number(val))
   },
   decode(src: Src): number {
     return src.i32()
