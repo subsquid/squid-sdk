@@ -59,7 +59,7 @@ export class Sink {
 
   i8(val: number) {
     this.checkNumberBounds(val, -128n, 127n, 'int8')
-    this.i256(BigInt(val))
+    this.#i256(BigInt(val))
   }
 
   u16(val: number) {
@@ -72,7 +72,7 @@ export class Sink {
 
   i16(val: number) {
     this.checkNumberBounds(val, -32768n, 32767n, 'int16')
-    this.i256(BigInt(val))
+    this.#i256(BigInt(val))
   }
 
   u32(val: number) {
@@ -85,7 +85,7 @@ export class Sink {
 
   i32(val: number) {
     this.checkNumberBounds(val, -2147483648n, 2147483647n, 'int32')
-    this.i256(BigInt(val))
+    this.#i256(BigInt(val))
   }
 
   u64(val: bigint) {
@@ -98,7 +98,7 @@ export class Sink {
 
   i64(val: bigint) {
     this.checkNumberBounds(val, -9223372036854775808n, 9223372036854775807n, 'int64')
-    this.i256(val)
+    this.#i256(val)
   }
 
   #u64(val: bigint) {
@@ -116,7 +116,7 @@ export class Sink {
 
   i128(val: bigint) {
     this.checkNumberBounds(val, -170141183460469231731687303715884105728n, 170141183460469231731687303715884105727n, 'int128')
-    this.i256(BigInt(val))
+    this.#i256(val)
   }
 
   #u128(val: bigint) {
@@ -138,9 +138,15 @@ export class Sink {
       57896044618658097711785492504343953926634992332820282019728792003956564819967n,
       'int256'
     )
+    this.#i256(val)
+  }
+
+  #i256(val: bigint) {
     let base = 2n ** 256n
-    val = (val + base) % base
-    this.u256(val)
+    const uval = (val + base) % base
+    this.reserve(WORD_SIZE)
+    this.#u128(uval >> 128n)
+    this.#u128(uval & (2n ** 128n - 1n))
   }
 
   bytes(val: Uint8Array) {
