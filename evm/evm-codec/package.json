@@ -13,7 +13,8 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc -p tsconfig.build.json"
+    "build": "rm -rf lib && tsc -p tsconfig.build.json",
+    "test": "vitest --run"
   },
   "dependencies": {},
   "devDependencies": {

@@ -29,6 +29,16 @@ describe('sink', () => {
     )
   })
 
+  it('number overflow', () => {
+    const sink = new Sink(1)
+    expect(() => sink.u8(0x1234567890)).toThrowError('78187493520 is out of bounds for uint8[0, 255]')
+    expect(() => sink.i8(0x1234567890)).toThrowError('78187493520 is out of bounds for int8[-128, 127]')
+    expect(() => sink.u16(0x1234567890)).toThrowError('78187493520 is out of bounds for uint16[0, 65535]')
+    expect(() => sink.i16(0x1234567890)).toThrowError('78187493520 is out of bounds for int16[-32768, 32767]')
+    expect(() => sink.u32(0x1234567890)).toThrowError('78187493520 is out of bounds for uint32[0, 4294967295]')
+    expect(() => sink.i32(0x1234567890)).toThrowError('78187493520 is out of bounds for int32[-2147483648, 2147483647]')
+  });
+
   it('mixed types', () => {
     const sink = new Sink(5)
     sink.u8(1)

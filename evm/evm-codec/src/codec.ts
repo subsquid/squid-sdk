@@ -3,9 +3,9 @@ import type { Src } from './src'
 
 export const WORD_SIZE = 32
 
-export interface Codec<T> {
-  encode(sink: Sink, val: T): void
-  decode(src: Src): T
+export interface Codec<TIn, TOut = TIn> {
+  encode(sink: Sink, val: TIn): void
+  decode(src: Src): TOut
   isDynamic: boolean
   slotsCount?: number
 }
@@ -16,6 +16,10 @@ export type Struct = {
 
 type Pretty<T> = { [K in keyof T]: T[K] } & unknown
 
-export type StructTypes<T extends Struct> = Pretty<{
-  [K in keyof T]: T[K] extends Codec<infer U> ? U : never
+export type DecodedStruct<T extends Struct> = Pretty<{
+  [K in keyof T]: T[K] extends Codec<any, infer U> ? U : never
+}>
+
+export type EncodedStruct<T extends Struct> = Pretty<{
+  [K in keyof T]: T[K] extends Codec<infer U, any> ? U : never
 }>

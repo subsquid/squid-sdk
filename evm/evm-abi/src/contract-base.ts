@@ -1,5 +1,5 @@
 import type { AbiFunction } from './abi-components/function'
-import type { Codec, Struct, StructTypes } from '@subsquid/evm-codec'
+import type { Codec, Struct, EncodedStruct } from '@subsquid/evm-codec'
 
 export interface Chain {
   client: {
@@ -54,8 +54,8 @@ export class ContractBase {
 
   async eth_call<const T extends Struct, const R extends Codec<any> | Struct | undefined>(
     func: AbiFunction<T, R>,
-    args: StructTypes<T>,
-  ): Promise<R> {
+    args: EncodedStruct<T>,
+  ) {
     const data = func.encode(args)
     const result = await this.rpc_call(data)
     return func.decodeResult(result)

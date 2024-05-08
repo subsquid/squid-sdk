@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "allow to use both number and bigint as int type codecs input",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "add missing int type codecs",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}
