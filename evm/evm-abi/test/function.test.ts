@@ -50,30 +50,15 @@ describe('Function', () => {
         bar: [1n, 2n, 3n],
         str: {
           foo: 123n,
-          bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
+          bar: '0x12345678',
         },
       },
       arg4: {
         foo: 100n,
-        bar: Buffer.from([0x12, 0x34, 0x56, 0x78]),
-      },
-    }
-    const viemArgs = [
-      [100n, 2n],
-      [[], [1n], [], [], [100n, 2n, 3n], [], [], [1337n], [], []],
-      {
-        foo: 100n,
-        bar: [1n, 2n, 3n],
-        str: {
-          foo: 123n,
-          bar: '0x12345678',
-        },
-      },
-      {
-        foo: 100n,
         bar: '0x12345678',
       },
-    ] as const
+    }
+    const viemArgs = Object.values(args)
 
     const calldata = dynamicFunction.encode(args)
     const expected = encodeFunctionData({
