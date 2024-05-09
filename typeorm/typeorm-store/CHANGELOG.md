@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Thu, 09 May 2024 14:50:57 GMT and should not be manually modified.
+
+## 1.5.0
+Thu, 09 May 2024 14:50:57 GMT
+
+### Minor changes
+
+- add `JSONColumn` decorator
 
 ## 1.4.0
 Tue, 09 Apr 2024 17:45:37 GMT
