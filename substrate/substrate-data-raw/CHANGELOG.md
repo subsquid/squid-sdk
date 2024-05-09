@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data-raw
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Thu, 09 May 2024 10:22:17 GMT and should not be manually modified.
+
+## 1.1.3
+Thu, 09 May 2024 10:22:17 GMT
+
+### Patches
+
+- fix ".getFinalizedBlockHeight() method is not available" error
 
 ## 1.1.2
 Sun, 17 Mar 2024 23:20:20 GMT
