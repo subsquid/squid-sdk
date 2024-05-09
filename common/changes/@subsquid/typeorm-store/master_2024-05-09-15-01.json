@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "make @subsquid/big-decimal peer dependecy",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
