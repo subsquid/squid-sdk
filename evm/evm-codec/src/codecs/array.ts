@@ -2,12 +2,12 @@ import { Codec, WORD_SIZE } from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
 
-export class ArrayCodec<const T> implements Codec<readonly T[]> {
+export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
   public readonly isDynamic = true
 
-  constructor(public readonly item: Codec<T>) {}
+  constructor(public readonly item: Codec<TIn, TOut>) {}
 
-  encode(sink: Sink, val: T[]) {
+  encode(sink: Sink, val: TIn[]) {
     sink.newDynamicDataArea(val.length)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
@@ -16,7 +16,7 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
     sink.endCurrentDataArea()
   }
 
-  decode(src: Src): T[] {
+  decode(src: Src): TOut[] {
     const offset = src.u32()
 
     src.safeJump(offset)
@@ -32,15 +32,15 @@ export class ArrayCodec<const T> implements Codec<readonly T[]> {
   }
 }
 
-export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
+export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
   public isDynamic: boolean
   public slotsCount: number
-  constructor(public readonly item: Codec<T>, public readonly size: number) {
+  constructor(public readonly item: Codec<TIn, TOut>, public readonly size: number) {
     this.isDynamic = item.isDynamic && size > 0
     this.slotsCount = this.isDynamic ? 1 : size
   }
 
-  encode(sink: Sink, val: T[]) {
+  encode(sink: Sink, val: TIn[]) {
     if (val.length !== this.size) {
       throw new Error(`invalid array length: ${val.length}. Expected: ${this.size}`)
     }
@@ -52,7 +52,7 @@ export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
     }
   }
 
-  private encodeDynamic(sink: Sink, val: T[]) {
+  private encodeDynamic(sink: Sink, val: TIn[]) {
     sink.newStaticDataArea(this.size)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
@@ -60,7 +60,7 @@ export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
     sink.endCurrentDataArea()
   }
 
-  decode(src: Src): T[] {
+  decode(src: Src): TOut[] {
     if (this.isDynamic) {
       return this.decodeDynamic(src)
     }
@@ -71,7 +71,7 @@ export class FixedSizeArrayCodec<const T> implements Codec<readonly T[]> {
     return val
   }
 
-  private decodeDynamic(src: Src): T[] {
+  private decodeDynamic(src: Src): TOut[] {
     const offset = src.u32()
     const tmpSrc = src.slice(offset)
     let val = new Array(this.size)

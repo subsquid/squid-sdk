@@ -215,9 +215,9 @@ export const address: Codec<string> = {
   isDynamic: false,
 }
 
-export const fixedSizeArray = <T>(item: Codec<T>, size: number): Codec<T[]> => new FixedSizeArrayCodec(item, size)
+export const fixedSizeArray = <TIn, TOut>(item: Codec<TIn, TOut>, size: number): Codec<TIn[], TOut[]> => new FixedSizeArrayCodec(item, size)
 
-export const array = <T>(item: Codec<T>): Codec<T[]> => new ArrayCodec(item)
+export const array = <TIn, TOut>(item: Codec<TIn, TOut>): Codec<TIn[], TOut[]> => new ArrayCodec(item)
 
 type Struct = {
   [key: string]: Codec<any>
