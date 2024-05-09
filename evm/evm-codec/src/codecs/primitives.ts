@@ -1,9 +1,10 @@
+import { decodeHex, isHex, toHex } from '@subsquid/util-internal-hex'
 import { Codec } from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
 import { ArrayCodec, FixedSizeArrayCodec } from './array'
 import { StructCodec } from './struct'
-import { safeToNumber } from "../safeToNumber";
+import { safeToNumber } from '../safeToNumber'
 
 type Numberish = number | bigint
 
@@ -149,24 +150,34 @@ export const string = <const>{
   isDynamic: true,
 }
 
-export const bytes = <const>{
-  encode(sink: Sink, val: Uint8Array) {
+function toBuffer(val: Uint8Array | string): Uint8Array {
+  if (val instanceof Uint8Array) {
+    return val
+  }
+  if (!isHex(val)) {
+    throw new Error(`Expected hex string or buffer, got: ${val}`)
+  }
+  return decodeHex(val)
+}
+
+export const bytes: Codec<Uint8Array | string, string>  = <const>{
+  encode(sink: Sink, val: Uint8Array | string) {
     sink.newStaticDataArea()
-    sink.bytes(val)
+    sink.bytes(toBuffer(val))
     sink.endCurrentDataArea()
   },
-  decode(src: Src): Uint8Array {
-    return src.bytes()
+  decode(src: Src): string {
+    return toHex(src.bytes())
   },
   isDynamic: true,
 }
 
-const bytesN = (size: number): Codec<Uint8Array> => ({
-  encode(sink: Sink, val: Uint8Array) {
-    sink.staticBytes(size, val)
+const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
+  encode(sink: Sink, val: Uint8Array | string) {
+    sink.staticBytes(size, toBuffer(val))
   },
-  decode(src: Src): Uint8Array {
-    return src.staticBytes(size)
+  decode(src: Src): string {
+    return toHex(src.staticBytes(size))
   },
   isDynamic: false,
 })

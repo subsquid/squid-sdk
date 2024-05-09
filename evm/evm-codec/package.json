@@ -16,7 +16,9 @@
     "build": "rm -rf lib && tsc -p tsconfig.build.json",
     "test": "vitest --run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@subsquid/util-internal-hex": "^1.2.2"
+  },
   "devDependencies": {
     "@types/node": "^18.18.14",
     "ethers": "^6.9.0",

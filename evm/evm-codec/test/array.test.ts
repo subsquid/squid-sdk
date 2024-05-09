@@ -101,8 +101,8 @@ describe('dynamic size array', () => {
     ]
     const data2 = [[1n, 2n, 3n], [], [4n]]
     const data3 = [
-      [Buffer.from('1234', 'hex'), Buffer.from('5678', 'hex')],
-      [Buffer.from('dead', 'hex'), Buffer.from('beef', 'hex')],
+      ['0x1234', '0x5678'],
+      ['0xdead', '0xbeef'],
     ]
     arr1.encode(sink, data1)
     address.encode(sink, '0x1234567890123456789012345678901234567890')
