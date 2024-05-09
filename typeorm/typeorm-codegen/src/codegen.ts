@@ -188,6 +188,8 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                 return 'BigDecimalColumn'
             case 'Bytes':
                 return 'BytesColumn'
+            case 'JSON':
+                return 'JSONColumn'
             default:
                 throw unexpectedCase(scalar)
         }

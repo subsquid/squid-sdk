@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "add `JSONColumn` decorator",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
