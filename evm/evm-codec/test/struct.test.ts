@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AbiParameter, encodeAbiParameters } from 'viem'
+import { AbiParameter, encodeAbiParameters, isAddress } from 'viem'
 import { address, array, bytes4, int8, Sink, Src, struct, uint256 } from '../src'
 
 function compareTypes(sink: Sink, types: AbiParameter[], values: any[]) {
@@ -72,7 +72,7 @@ describe('StructCodec', () => {
       b: 2n,
       c: {
         d: [3n, 4n],
-        e: '0x1234567890123456789012345678901234567890',
+        e: '0xabcdef789012345678901234567890123456abcd',
       },
     })
     compareTypes(
@@ -100,7 +100,7 @@ describe('StructCodec', () => {
           b: 2n,
           c: {
             d: [3n, 4n],
-            e: '0x1234567890123456789012345678901234567890',
+            e: '0xabcdef789012345678901234567890123456abcd',
           },
         },
       ],
@@ -111,9 +111,12 @@ describe('StructCodec', () => {
       b: 2n,
       c: {
         d: [3n, 4n],
-        e: '0x1234567890123456789012345678901234567890',
+        e: '0xabCDef789012345678901234567890123456ABCD',
       },
     })
+    expect(isAddress('0xabCDef789012345678901234567890123456ABCD', {
+      strict: true
+    })).toBe(true)
   })
 
   it('dynamic tuple2', () => {

@@ -16,7 +16,9 @@
     "build": "rm -rf lib && tsc -p tsconfig.build.json",
     "test": "vitest --run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "keccak256": "^1.0.6"
+  },
   "devDependencies": {
     "@types/node": "^18.18.14",
     "ethers": "^6.9.0",

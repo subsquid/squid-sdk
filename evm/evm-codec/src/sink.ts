@@ -174,6 +174,9 @@ export class Sink {
   }
 
   address(val: string) {
+    if (!val.match(/^0x[0-9a-fA-F]{40}$/)) {
+      throw new Error(`invalid address: ${val}`)
+    }
     this.u256(BigInt(val))
   }
 

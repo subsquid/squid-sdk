@@ -4,6 +4,7 @@ import { Src } from '../src'
 import { ArrayCodec, FixedSizeArrayCodec } from './array'
 import { StructCodec } from './struct'
 import { safeToNumber } from "../safeToNumber";
+import {toChecksumAddress} from "../toChecksumAddress";
 
 type Numberish = number | bigint
 
@@ -210,7 +211,7 @@ export const address: Codec<string> = {
     sink.address(val)
   },
   decode(src: Src): string {
-    return src.address()
+    return toChecksumAddress(src.address())
   },
   isDynamic: false,
 }
