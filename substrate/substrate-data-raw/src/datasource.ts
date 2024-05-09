@@ -24,7 +24,7 @@ import {
 import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
 import assert from 'assert'
 import {Fetch1} from './fetch1'
-import {BlockData, BlockHeader, DataRequest} from './interfaces'
+import {BlockData, BlockHeader, DataRequest, Hash} from './interfaces'
 import {Rpc} from './rpc'
 import {RuntimeVersionTracker} from './runtimeVersionTracker'
 import {qty2Int} from './util'
@@ -146,6 +146,11 @@ export class RpcDataSource {
                     hash: block.hash,
                     parentHash: block.block.block.header.parentHash
                 }
+            },
+            async getFinalizedBlockHeight(hash: Hash): Promise<number> {
+                let header = await rpc.getBlockHeader(hash)
+                assert(header, 'finalized blocks must be always available')
+                return qty2Int(header.number)
             }
         })
 

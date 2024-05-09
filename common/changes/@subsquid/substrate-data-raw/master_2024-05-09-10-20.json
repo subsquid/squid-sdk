@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data-raw",
+      "comment": "fix \".getFinalizedBlockHeight() method is not available\" error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data-raw"
+}
