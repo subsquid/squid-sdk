@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 09 May 2024 14:50:57 GMT and should not be manually modified.
+This log was last generated on Thu, 09 May 2024 15:10:28 GMT and should not be manually modified.
+
+## 1.5.1
+Thu, 09 May 2024 15:10:28 GMT
+
+### Patches
+
+- make @subsquid/big-decimal peer dependecy
 
 ## 1.5.0
 Thu, 09 May 2024 14:50:57 GMT

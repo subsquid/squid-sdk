@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.5.1",
+      "tag": "@subsquid/typeorm-store_v1.5.1",
+      "date": "Thu, 09 May 2024 15:10:28 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "make @subsquid/big-decimal peer dependecy"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.0",
       "tag": "@subsquid/typeorm-store_v1.5.0",
       "date": "Thu, 09 May 2024 14:50:57 GMT",
