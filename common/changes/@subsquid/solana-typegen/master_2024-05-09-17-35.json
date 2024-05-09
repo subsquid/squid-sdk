@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "fix typo in generated instructions module name",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}

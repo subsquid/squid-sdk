@@ -84,7 +84,7 @@ const dataSource = new DataSourceBuilder()
         // select instructions, that:
         where: {
             programId: [whirlpool.programId], // where executed by Whirlpool program
-            d8: [whirlpool.intructions.swap.d8], // have first 8 bytes of .data equal to swap descriptor
+            d8: [whirlpool.instructions.swap.d8], // have first 8 bytes of .data equal to swap descriptor
             isCommitted: true // where successfully committed
         },
         // for each instruction selected above
@@ -152,7 +152,7 @@ run(dataSource, database, async ctx => {
 
     for (let block of blocks) {
         for (let ins of block.instructions) {
-            if (ins.programId === whirlpool.programId && ins.d8 === whirlpool.intructions.swap.d8) {
+            if (ins.programId === whirlpool.programId && ins.d8 === whirlpool.instructions.swap.d8) {
                 let exchange = new Exchange({
                     id: ins.id,
                     slot: block.header.slot,
