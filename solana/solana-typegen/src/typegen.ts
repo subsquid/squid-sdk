@@ -40,9 +40,9 @@ export class Typegen {
             return
         }
 
-        this.modules.add('intructions')
+        this.modules.add('instructions')
 
-        const out = new TypeModuleOutput(this.dest.path('intructions.ts'))
+        const out = new TypeModuleOutput(this.dest.path('instructions.ts'))
 
         out.support.add(`instruction`)
 

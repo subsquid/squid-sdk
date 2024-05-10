@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "Codec for bytes will accept 0x-padded hex strings and return strings instead of Buffer",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}

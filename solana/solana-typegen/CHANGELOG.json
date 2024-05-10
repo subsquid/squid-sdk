@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/solana-typegen_v0.0.2",
+      "date": "Thu, 09 May 2024 17:37:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix typo in generated instructions module name"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/solana-typegen_v0.0.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
