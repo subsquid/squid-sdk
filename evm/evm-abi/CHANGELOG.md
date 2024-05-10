@@ -1,6 +1,11 @@
 # Change Log - @subsquid/evm-abi
 
-This log was last generated on Wed, 08 May 2024 19:54:43 GMT and should not be manually modified.
+This log was last generated on Fri, 10 May 2024 10:23:43 GMT and should not be manually modified.
+
+## 0.2.1
+Fri, 10 May 2024 10:23:43 GMT
+
+_Version update only_
 
 ## 0.2.0
 Wed, 08 May 2024 19:54:43 GMT

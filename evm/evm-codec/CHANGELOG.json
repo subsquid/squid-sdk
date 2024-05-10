@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-codec",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-codec_v0.2.0",
+      "date": "Fri, 10 May 2024 10:23:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Codec for bytes will accept 0x-padded hex strings and return strings instead of Buffer"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/evm-codec_v0.1.0",
       "date": "Wed, 08 May 2024 19:54:43 GMT",

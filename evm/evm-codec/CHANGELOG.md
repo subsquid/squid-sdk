@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-codec
 
-This log was last generated on Wed, 08 May 2024 19:54:43 GMT and should not be manually modified.
+This log was last generated on Fri, 10 May 2024 10:23:43 GMT and should not be manually modified.
+
+## 0.2.0
+Fri, 10 May 2024 10:23:43 GMT
+
+### Minor changes
+
+- Codec for bytes will accept 0x-padded hex strings and return strings instead of Buffer
 
 ## 0.1.0
 Wed, 08 May 2024 19:54:43 GMT

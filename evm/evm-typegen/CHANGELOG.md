@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 08 May 2024 19:54:43 GMT and should not be manually modified.
+This log was last generated on Fri, 10 May 2024 10:23:43 GMT and should not be manually modified.
+
+## 4.1.0
+Fri, 10 May 2024 10:23:43 GMT
+
+### Minor changes
+
+- Migrate multicall to new codec
 
 ## 4.0.1
 Wed, 08 May 2024 19:54:43 GMT
