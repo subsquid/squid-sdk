@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/typeorm-codegen_v2.0.1",
+      "date": "Thu, 09 May 2024 14:50:57 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add support for `JSONColumn` decorator"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/typeorm-codegen_v2.0.0",
       "date": "Tue, 09 Apr 2024 17:45:37 GMT",

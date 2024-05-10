@@ -49,9 +49,9 @@ describe('Event', () => {
       ),
     })
     expect(decoded).toEqual({
-      a: Buffer.from(topics[1].slice(2), 'hex'),
+      a: topics[1],
       b: 'hello',
-      c: Buffer.from([0x12, 0x34]),
+      c: '0x1234',
       d: { _0: 100n, _1: 'world' },
       e: true,
     })

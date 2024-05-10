@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Thu, 09 May 2024 14:50:57 GMT and should not be manually modified.
+
+## 2.0.1
+Thu, 09 May 2024 14:50:57 GMT
+
+### Patches
+
+- add support for `JSONColumn` decorator
 
 ## 2.0.0
 Tue, 09 Apr 2024 17:45:37 GMT
