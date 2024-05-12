@@ -272,13 +272,40 @@ export class Rpc {
                     range = {from, to: Math.floor(from + (to - from) / 2)}
                 }
 
-                if (range.from == from && from <= range.to && range.to < to) {
+                if (range.from == from && from <= range.to && to > range.to) {
                     let result = await Promise.all([this.getLogs(range.from, range.to), this.getLogs(range.to + 1, to)])
                     return result[0].concat(result[1])
+                } else {
+                    this.log?.warn(
+                        {range: [from, to]},
+                        `unable to fetch logs with eth_getLogs, fallback to eth_getTransactionReceipt`
+                    )
+
+                    let result = await Promise.all(rangeToArray({from, to}).map(n => this.getLogsByReceipts(n)))
+                    return result.flat()
                 }
             }
             throw err
         })
+    }
+
+    private async getLogsByReceipts(blockHeight: number) {
+        let header = await this.getBlockByNumber(blockHeight, false)
+        assert(header)
+
+        let logs: Log[] = []
+        let validateResult = getResultValidator(nullable(TransactionReceipt))
+
+        for (let tx of header.transactions) {
+            let receipt = await this.call('eth_getTransactionReceipt', [getTxHash(tx)], {validateResult})
+            if (receipt == null || receipt.blockHash !== header.hash)
+                throw new Error("retry the whole procedure")
+
+            logs.push(...receipt.logs)
+
+        }
+
+        return logs
     }
 
     private async addReceipts(blocks: Block[]): Promise<void> {
