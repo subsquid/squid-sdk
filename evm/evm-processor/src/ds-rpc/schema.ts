@@ -57,6 +57,7 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
 
     let Receipt = object({
         transactionIndex: SMALL_QTY,
+        transactionHash: BYTES,
         ...getTxReceiptProps(req.fields.transaction, false),
         logs: req.logList ? array(Log) : undefined
     })

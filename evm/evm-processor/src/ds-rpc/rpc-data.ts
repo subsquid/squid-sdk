@@ -99,6 +99,7 @@ export const TransactionReceipt = object({
     blockNumber: SMALL_QTY,
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
+    transactionHash: BYTES,
     logs: array(Log)
 })
 
