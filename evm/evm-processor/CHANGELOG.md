@@ -1,6 +1,17 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+This log was last generated on Sun, 12 May 2024 13:49:00 GMT and should not be manually modified.
+
+## 1.19.0
+Sun, 12 May 2024 13:49:00 GMT
+
+### Minor changes
+
+- handle "query returned more than N results" errors for logs requests, add fallback to fetching by receipts
+
+### Patches
+
+- match transactions and receipts by hash instead of index
 
 ## 1.18.1
 Tue, 07 May 2024 07:40:43 GMT

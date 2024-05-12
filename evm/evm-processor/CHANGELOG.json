@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.19.0",
+      "tag": "@subsquid/evm-processor_v1.19.0",
+      "date": "Sun, 12 May 2024 13:49:00 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "handle \"query returned more than N results\" errors for logs requests, add fallback to fetching by receipts"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "match transactions and receipts by hash instead of index"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.18.1",
       "tag": "@subsquid/evm-processor_v1.18.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
