@@ -289,17 +289,16 @@ export class Rpc {
         })
     }
 
-    private async getLogsByReceipts(blockHeight: number) {
+    private async getLogsByReceipts(blockHeight: number): Promise<Log[]> {
         let header = await this.getBlockByNumber(blockHeight, false)
-        assert(header)
+        if (header == null) return []
 
         let logs: Log[] = []
         let validateResult = getResultValidator(nullable(TransactionReceipt))
 
         for (let tx of header.transactions) {
             let receipt = await this.call('eth_getTransactionReceipt', [getTxHash(tx)], {validateResult})
-            if (receipt == null || receipt.blockHash !== header.hash)
-                throw new Error("retry the whole procedure")
+            if (receipt == null || receipt.blockHash !== header.hash) return []
 
             logs.push(...receipt.logs)
 
