@@ -84,9 +84,12 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     if (req.receipts) {
         let receipts = assertNotNull(src.receipts)
         for (let i = 0; i < receipts.length; i++) {
-            let {transactionIndex, logs, ...props} = receipts[i]
-            assert(transactionIndex === i)
-            Object.assign(block.transactions[i], props)
+            let {transactionIndex, transactionHash, logs, ...props} = receipts[i]
+            
+            let transaction = block.transactions[i]
+            assert(transactionHash === transaction.hash)
+            Object.assign(transaction, props)
+
             if (req.logList) {
                 for (let log of assertNotNull(logs)) {
                     block.logs.push(makeLog(header, log))
