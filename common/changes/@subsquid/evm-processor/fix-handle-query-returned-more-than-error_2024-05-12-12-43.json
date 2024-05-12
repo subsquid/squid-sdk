@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "handle \"query returned more than N results\" errors",
+      "comment": "handle \"query returned more than N results\" errors for logs requests",
       "type": "minor"
     }
   ],
