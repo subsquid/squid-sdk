@@ -293,15 +293,17 @@ export class Rpc {
         let header = await this.getBlockByNumber(blockHeight, false)
         if (header == null) return []
 
-        let logs: Log[] = []
         let validateResult = getResultValidator(nullable(TransactionReceipt))
+        let receipts = await Promise.all(
+            header.transactions.map((tx) =>
+                this.call('eth_getTransactionReceipt', [getTxHash(tx)], {validateResult})
+            )
+        )
 
-        for (let tx of header.transactions) {
-            let receipt = await this.call('eth_getTransactionReceipt', [getTxHash(tx)], {validateResult})
+        let logs: Log[] = []
+        for (let receipt of receipts) {
             if (receipt == null || receipt.blockHash !== header.hash) return []
-
             logs.push(...receipt.logs)
-
         }
 
         return logs
