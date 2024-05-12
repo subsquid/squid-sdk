@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/borsh",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/borsh_v0.1.0",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for `f32`, `f64`, `Tuple` and `Option` type codecs"
+          }
+        ]
+      }
+    }
+  ]
+}

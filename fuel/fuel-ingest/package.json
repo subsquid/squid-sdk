@@ -1,0 +1,32 @@
+{
+  "name": "@subsquid/fuel-ingest",
+  "version": "0.0.1",
+  "description": "Data fetcher and normalizer for Fuel",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "fuel-ingest": "./bin/run.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/fuel-data": "^0.0.1",
+    "@subsquid/fuel-normalization": "^0.0.1",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-ingest-cli": "^0.0.2",
+    "@subsquid/util-internal-json": "^1.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "~5.3.2"
+  }
+}

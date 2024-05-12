@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/borsh",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Borsh encoder/decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

@@ -1,5 +1,5 @@
 import type { Pretty } from '../indexed'
-import { bytes32, Src, type Codec, type StructTypes, type Struct } from '@subsquid/evm-codec'
+import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
 
 export interface EventRecord {
   topics: string[]
@@ -13,6 +13,8 @@ type EventArgs = {
 export type IndexedCodecs<T extends EventArgs> = Pretty<{
   [K in keyof T]: T[K] extends { indexed: true; isDynamic: true } ? typeof bytes32 & { indexed: true } : T[K]
 }>
+
+export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<U> : never
 
 export class AbiEvent<const T extends EventArgs> {
   public readonly params: any
@@ -39,7 +41,7 @@ export class AbiEvent<const T extends EventArgs> {
     return rec.topics[0] === this.topic
   }
 
-  decode(rec: EventRecord): StructTypes<IndexedCodecs<T>> {
+  decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
     const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
     const result = {} as any
     let topicCounter = 1

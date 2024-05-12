@@ -1,6 +1,18 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Tue, 23 Jan 2024 16:47:41 GMT and should not be manually modified.
+This log was last generated on Wed, 08 May 2024 19:54:43 GMT and should not be manually modified.
+
+## 4.0.1
+Wed, 08 May 2024 19:54:43 GMT
+
+_Version update only_
+
+## 4.0.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Breaking changes
+
+- Migrate typegen to new codec; Drop dependency to ethers.js
 
 ## 3.3.0
 Tue, 23 Jan 2024 16:47:41 GMT

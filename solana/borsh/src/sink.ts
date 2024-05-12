@@ -92,6 +92,18 @@ export class Sink {
         this.u128(val)
     }
 
+    f32(val: number): void {
+        this.reserve(4)
+        this.view.setFloat32(this.pos, val)
+        this.pos += 4
+    }
+
+    f64(val: number): void {
+        this.reserve(8)
+        this.view.setFloat64(this.pos, val)
+        this.pos += 8
+    }
+
     bytes(val: Uint8Array): void {
         this.reserve(val.length)
         this.buf.set(val, this.pos)

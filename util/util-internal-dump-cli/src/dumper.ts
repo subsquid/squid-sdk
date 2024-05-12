@@ -112,6 +112,10 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         return false
     }
 
+    protected validateChainContinuity(): boolean {
+        return true
+    }
+
     @def
     protected prometheus() {
         return new PrometheusServer(
@@ -147,13 +151,15 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         }, 5000)
 
         for await (let blocks of this.getBlocks(range)) {
-            if (blocks[0].height === from && prevHash) {
-                let parentHash = getShortHash(this.getPrevBlockHash(blocks[0]))
-                if (parentHash !== prevHash) {
-                    throw new ErrorMessage(
-                        `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
-                        `is not a child of already archived block ${parentHash}`
-                    )
+            if (this.validateChainContinuity()) {
+                if (blocks[0].height === from && prevHash) {
+                    let parentHash = getShortHash(this.getPrevBlockHash(blocks[0]))
+                    if (parentHash !== prevHash) {
+                        throw new ErrorMessage(
+                            `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
+                            `is not a child of already archived block ${parentHash}`
+                        )
+                    }
                 }
             }
 

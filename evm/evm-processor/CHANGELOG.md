@@ -1,6 +1,11 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+
+## 1.18.1
+Tue, 07 May 2024 07:40:43 GMT
+
+_Version update only_
 
 ## 1.18.0
 Tue, 09 Apr 2024 17:45:37 GMT
