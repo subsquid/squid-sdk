@@ -266,17 +266,47 @@ export class Rpc {
                 throw new RpcError(info)
             }
         }).catch(async err => {
-            let range = asTryAnotherRangeError(err)
-            if (range && range.from == from && from <= range.to && range.to < to) {
-                let result = await Promise.all([
-                    this.getLogs(range.from, range.to),
-                    this.getLogs(range.to + 1, to)
-                ])
-                return result[0].concat(result[1])
-            } else {
-                throw err
+            if (isQueryReturnedMoreThanNResultsError(err)) {
+                let range = asTryAnotherRangeError(err)
+                if (range == null) {
+                    range = {from, to: Math.floor(from + (to - from) / 2)}
+                }
+
+                if (range.from == from && from <= range.to && to > range.to) {
+                    let result = await Promise.all([this.getLogs(range.from, range.to), this.getLogs(range.to + 1, to)])
+                    return result[0].concat(result[1])
+                } else {
+                    this.log?.warn(
+                        {range: [from, to]},
+                        `unable to fetch logs with eth_getLogs, fallback to eth_getTransactionReceipt`
+                    )
+
+                    let result = await Promise.all(rangeToArray({from, to}).map(n => this.getLogsByReceipts(n)))
+                    return result.flat()
+                }
             }
+            throw err
         })
+    }
+
+    private async getLogsByReceipts(blockHeight: number): Promise<Log[]> {
+        let header = await this.getBlockByNumber(blockHeight, false)
+        if (header == null) return []
+
+        let validateResult = getResultValidator(nullable(TransactionReceipt))
+        let receipts = await Promise.all(
+            header.transactions.map((tx) =>
+                this.call('eth_getTransactionReceipt', [getTxHash(tx)], {validateResult})
+            )
+        )
+
+        let logs: Log[] = []
+        for (let receipt of receipts) {
+            if (receipt == null || receipt.blockHash !== header.hash) return []
+            logs.push(...receipt.logs)
+        }
+
+        return logs
     }
 
     private async addReceipts(blocks: Block[]): Promise<void> {
@@ -668,6 +698,10 @@ class RpcProps {
     }
 }
 
+function isQueryReturnedMoreThanNResultsError(err: unknown) {
+    if (!(err instanceof RpcError)) return false
+    return err.message.includes(`query returned more than`)
+}
 
 function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
     if (!(err instanceof RpcError)) return
