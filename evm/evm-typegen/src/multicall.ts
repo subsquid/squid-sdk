@@ -1,6 +1,5 @@
 import * as p from '@subsquid/evm-codec'
-import {fun, ContractBase, AbiFunction} from '@subsquid/evm-abi'
-import {Codec, Struct} from "@subsquid/evm-codec";
+import {fun, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
 
 const aggregate = fun('0x252dba42', {
   calls: p.array(p.struct({
@@ -14,9 +13,9 @@ const tryAggregate = fun('0xbce38bd7', {
   calls: p.array(p.struct({target: p.address, callData: p.bytes}))
 }, p.array(p.struct({success: p.bool, returnData: p.bytes})))
 
-export type MulticallResult<T> = {
+export type MulticallResult<T extends AbiFunction<any, any>> = {
   success: true
-  value: T
+  value: FunctionReturn<T>
 } | {
   success: false
   returnData?: string
@@ -24,25 +23,25 @@ export type MulticallResult<T> = {
 }
 
 type AnyFunc = AbiFunction<any, any>
-type AggregateTuple<T extends AnyFunc = AnyFunc> = [func: T, address: string, args: T extends AbiFunction<infer U, any> ? U : never]
+type AggregateTuple<T extends AnyFunc = AnyFunc> = [func: T, address: string, args: T extends AnyFunc ? FunctionArguments<T> : never]
 type Call = {target: string, callData: string}
 
 export class Multicall extends ContractBase {
   static aggregate = aggregate
   static tryAggregate = tryAggregate
 
-  aggregate<Args extends Struct, R extends Struct | Codec<any, any>>(
-    func: AbiFunction<Args, R>,
+  aggregate<TF extends AnyFunc>(
+    func: TF,
     address: string,
-    calls: Args[],
+    calls: FunctionArguments<TF>[],
     paging?: number
-  ): Promise<R[]>
+  ): Promise<FunctionReturn<TF>[]>
 
-  aggregate<Args extends Struct, R extends Struct | Codec<any, any>>(
-    func: AbiFunction<Args, R>,
-    calls: [address: string, args: Args][],
+  aggregate<TF extends AnyFunc>(
+    func: TF,
+    calls: [address: string, args: FunctionArguments<TF>][],
     paging?: number
-  ): Promise<R[]>
+  ): Promise<FunctionReturn<TF>[]>
 
   aggregate(
     calls: AggregateTuple[],
@@ -63,18 +62,18 @@ export class Multicall extends ContractBase {
     return results
   }
 
-  tryAggregate<Args extends Struct, R extends Struct | Codec<any, any>>(
-    func: AbiFunction<Args, R>,
+  tryAggregate<TF extends AnyFunc>(
+    func: TF,
     address: string,
-    calls: Args[],
+    calls: FunctionArguments<TF>[],
     paging?: number
-  ): Promise<MulticallResult<R>[]>
+  ): Promise<MulticallResult<TF>[]>
 
-  tryAggregate<Args extends Struct, R extends Struct | Codec<any, any>>(
-    func: AbiFunction<Args, R>,
-    calls: [address: string, args: Args][],
+  tryAggregate<TF extends AnyFunc>(
+    func: TF,
+    calls: [address: string, args: FunctionArguments<TF>][],
     paging?: number
-  ): Promise<MulticallResult<R>[]>
+  ): Promise<MulticallResult<TF>[]>
 
   tryAggregate(
     calls: AggregateTuple[],
