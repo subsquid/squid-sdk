@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "Fix multicall function argument types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}
