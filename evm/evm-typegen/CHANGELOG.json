@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.1.1",
+      "tag": "@subsquid/evm-typegen_v4.1.1",
+      "date": "Mon, 13 May 2024 06:39:01 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix multicall function argument types"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@subsquid/evm-typegen_v4.1.0",
       "date": "Fri, 10 May 2024 10:23:43 GMT",

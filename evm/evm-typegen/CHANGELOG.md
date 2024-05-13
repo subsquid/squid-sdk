@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Fri, 10 May 2024 10:23:43 GMT and should not be manually modified.
+This log was last generated on Mon, 13 May 2024 06:39:01 GMT and should not be manually modified.
+
+## 4.1.1
+Mon, 13 May 2024 06:39:01 GMT
+
+### Patches
+
+- Fix multicall function argument types
 
 ## 4.1.0
 Fri, 10 May 2024 10:23:43 GMT
