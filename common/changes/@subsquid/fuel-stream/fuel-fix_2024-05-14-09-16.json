@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-stream",
+      "comment": "rename `ReceiptRequest.logDataContract` to `ReceiptRequest.contract`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-stream"
+}
