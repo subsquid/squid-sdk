@@ -22,7 +22,7 @@ export interface TransactionRequest {
 
 export interface ReceiptRequest {
     type?: ReceiptType[]
-    logDataContract?: Bytes[]
+    contract?: Bytes[]
     transaction?: boolean
 }
 

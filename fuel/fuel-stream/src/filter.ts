@@ -63,10 +63,10 @@ function buildReceiptFilter(dataRequest: DataRequest): EntityFilter<Receipt, Rec
     let receipts = new EntityFilter<Receipt, ReceiptRelations>()
 
     dataRequest.receipts?.forEach(req => {
-        let {type, logDataContract, ...relations} = req
+        let {type, contract, ...relations} = req
         let filter = new FilterBuilder<Receipt>()
         filter.propIn('receiptType', type)
-        filter.propIn('contract', logDataContract)
+        filter.propIn('contract', contract)
         receipts.add(filter, relations)
     })
 
