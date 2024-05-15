@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-ingest-cli",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/util-internal-ingest-cli_v0.0.3",
+      "date": "Wed, 15 May 2024 10:11:41 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^0.3.0` to `0.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/util-internal-ingest-cli_v0.0.2",
       "date": "Wed, 17 Apr 2024 12:46:35 GMT",

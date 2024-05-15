@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sun, 12 May 2024 13:49:00 GMT and should not be manually modified.
+This log was last generated on Wed, 15 May 2024 10:11:41 GMT and should not be manually modified.
+
+## 1.19.1
+Wed, 15 May 2024 10:11:41 GMT
+
+### Patches
+
+- ignore case in RPC error message parsing
 
 ## 1.19.0
 Sun, 12 May 2024 13:49:00 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-ingest",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/fuel-ingest_v0.0.2",
+      "date": "Wed, 15 May 2024 10:11:41 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/fuel-ingest_v0.0.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",

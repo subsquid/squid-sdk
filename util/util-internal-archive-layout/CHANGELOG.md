@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-archive-layout
 
-This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+This log was last generated on Wed, 15 May 2024 10:11:41 GMT and should not be manually modified.
+
+## 0.4.0
+Wed, 15 May 2024 10:11:41 GMT
+
+### Minor changes
+
+- Write raw blocks in fix-sized batches to fix reproducilbility issues.
 
 ## 0.3.0
 Wed, 17 Apr 2024 12:46:35 GMT

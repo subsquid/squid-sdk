@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/solana-dump_v0.0.3",
+      "date": "Wed, 15 May 2024 10:11:41 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.2.0` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/solana-dump_v0.0.2",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
