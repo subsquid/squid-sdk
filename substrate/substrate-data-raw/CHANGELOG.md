@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data-raw
 
-This log was last generated on Thu, 09 May 2024 10:22:17 GMT and should not be manually modified.
+This log was last generated on Wed, 15 May 2024 12:47:01 GMT and should not be manually modified.
+
+## 1.1.4
+Wed, 15 May 2024 12:47:01 GMT
+
+### Patches
+
+- hot data ingestion: ignore blocks lying below finalized head
 
 ## 1.1.3
 Thu, 09 May 2024 10:22:17 GMT

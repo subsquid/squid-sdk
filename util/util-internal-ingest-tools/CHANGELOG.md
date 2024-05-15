@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-ingest-tools
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Wed, 15 May 2024 12:47:01 GMT and should not be manually modified.
+
+## 1.1.3
+Wed, 15 May 2024 12:47:01 GMT
+
+### Patches
+
+- hot data ingestion: ignore blocks lying below finalized head
 
 ## 1.1.2
 Sun, 17 Mar 2024 23:20:20 GMT
