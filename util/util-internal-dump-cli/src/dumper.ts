@@ -19,6 +19,7 @@ export interface DumperOptions {
     firstBlock?: number
     lastBlock?: number
     chunkSize: number
+    writeBatchSize: number
     topDirSize: number
     metrics?: number
 }
@@ -57,6 +58,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         program.option('--last-block <number>', 'Height of the last block to dump', nat)
         this.setUpProgram(program)
         program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
+        program.option('--write-batch-size <number>', 'Number of blocks to write at a time', positiveInt, 10)
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
@@ -203,6 +205,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                     blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
+                    writeBatchSize: this.options().writeBatchSize,
                     onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
                 })
             }

@@ -197,7 +197,8 @@ export class ArchiveLayout {
             blocks: (nextBlock: number, prevHash?: string) => AsyncIterable<HashAndHeight[]>
             range?: Range
             chunkSize?: number,
-            onSuccessWrite?: (args: { chunk: string, blockRange: { from: HashAndHeight, to: HashAndHeight } }) => void
+            writeBatchSize?: number,
+            onSuccessWrite?: (args: {chunk: string, blockRange: {from: HashAndHeight, to: HashAndHeight}}) => void
         }
     ): Promise<void> {
         return this.append(
@@ -232,18 +233,28 @@ export class ArchiveLayout {
                     out = new GzipBuffer()
                 }
 
-                for await (let bb of args.blocks(nextBlock, prevHash)) {
-                    if (bb.length == 0) continue
-                    if (firstBlock == null) {
-                        firstBlock = peekHashAndHeight(bb[0])
-                    }
-                    lastBlock = peekHashAndHeight(last(bb))
-                    for (let b of bb) {
-                        out.write(JSON.stringify(b) + '\n')
-                    }
-                    await out.flush()
-                    if (out.getSize() > chunkSize) {
-                        await save()
+                let buf: HashAndHeight[] = []
+
+                for await (let batch of args.blocks(nextBlock, prevHash)) {
+                    if (batch.length == 0) continue
+
+                    buf.push(...batch)
+
+                    for (let bb of pack(buf, args.writeBatchSize ?? 10)) {
+                        if (firstBlock == null) {
+                            firstBlock = peekHashAndHeight(bb[0])
+                        }
+
+                        lastBlock = peekHashAndHeight(last(bb))
+
+                        for (let b of bb) {
+                            out.write(JSON.stringify(b) + '\n')
+                        }
+
+                        await out.flush()
+                        if (out.getSize() > chunkSize) {
+                            await save()
+                        }
                     }
                 }
 
@@ -417,4 +428,20 @@ function getRange(range?: Range): {from: number, to: number} {
 function peekHashAndHeight(block: HashAndHeight): HashAndHeight {
     let {hash, height} = block
     return {hash, height}
+}
+
+
+function* pack<T>(items: T[], size: number): Iterable<T[]> {
+    assert(size > 0)
+
+    let offset = 0
+    let end = size
+
+    while (end <= items.length) {
+        yield items.slice(offset, end)
+        offset = end
+        end = offset + size
+    }
+
+    items.splice(0, offset)
 }
