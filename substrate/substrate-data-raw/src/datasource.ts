@@ -122,7 +122,7 @@ export class RpcDataSource {
                 } else {
                     top = to.height
                 }
-                if (top < proc.getFinalizedHeight()) return
+                if (top <= proc.getFinalizedHeight()) return
                 if (from > top) {
                     from = top
                 }
