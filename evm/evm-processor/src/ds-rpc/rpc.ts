@@ -203,7 +203,7 @@ export class Rpc {
             ),
             validateError: info => {
                 // Avalanche
-                if (info.message.includes('cannot query unfinalized data')) return null
+                if (/cannot query unfinalized data/i.test(info.message)) return null
                 throw new RpcError(info)
             }
         })
@@ -700,7 +700,7 @@ class RpcProps {
 
 function isQueryReturnedMoreThanNResultsError(err: unknown) {
     if (!(err instanceof RpcError)) return false
-    return err.message.includes(`query returned more than`)
+    return /query returned more than/i.test(err.message)
 }
 
 function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
