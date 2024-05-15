@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-stream",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/fuel-stream_v0.0.2",
+      "date": "Wed, 15 May 2024 05:10:08 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "rename `ReceiptRequest.logDataContract` to `ReceiptRequest.contract`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/fuel-stream_v0.0.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
