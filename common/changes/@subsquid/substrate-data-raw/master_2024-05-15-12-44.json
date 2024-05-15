@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data-raw",
+      "comment": "hot data ingestion: ignore blocks lying below finalized head",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data-raw"
+}
