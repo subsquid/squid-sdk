@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-stream",
+      "comment": "add missing `tx.status` to gateway validation schema",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-stream"
+}

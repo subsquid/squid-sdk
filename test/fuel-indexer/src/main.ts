@@ -16,10 +16,14 @@ const dataSource = new DataSourceBuilder()
         receipt: {
             contract: true,
             receiptType: true
+        },
+        transaction: {
+            status: true
         }
     })
     .addReceipt({
-        type: ['LOG_DATA']
+        type: ['LOG_DATA'],
+        transaction: true,
     })
     .build()
 
