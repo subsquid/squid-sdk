@@ -32,6 +32,36 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         })
     })
 
+    let TransactionStatus = taggedUnion('type', {
+        SubmittedStatus: object({time: BIG_NAT}),
+        SuccessStatus: object({
+            transactionId: BYTES,
+            time: BIG_NAT,
+            programState: option(object({
+                returnType: oneOf({
+                    return: constant('RETURN'),
+                    returnData: constant('RETURN_DATA'),
+                    revert: constant('REVERT'),
+                }),
+                data: BYTES,
+            })),
+        }),
+        SqueezedOutStatus: object({reason: STRING}),
+        FailureStatus: object({
+            transactionId: BYTES,
+            time: BIG_NAT,
+            reason: STRING,
+            programState: option(object({
+                returnType: oneOf({
+                    RETURN: constant('RETURN'),
+                    RETURN_DATA: constant('RETURN_DATA'),
+                    REVERT: constant('REVERT'),
+                }),
+                data: BYTES,
+            })),
+        })
+    })
+
     let Transaction = object({
         index: NAT,
         ...project(fields.transaction, {
@@ -79,6 +109,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
                 mint: constant('Mint'),
             }),
             witnesses: option(array(BYTES)),
+            status: option(TransactionStatus),
         })
     })
 
