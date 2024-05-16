@@ -1,6 +1,5 @@
 import type { Pretty } from '../indexed'
 import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
-import assert from "node:assert";
 
 export interface EventRecord {
   topics: string[]
@@ -17,8 +16,20 @@ export type IndexedCodecs<T extends EventArgs> = Pretty<{
 
 export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<U> : never
 
+export class UnexpectedEventError extends Error {
+  constructor(expectedTopic: string, gotTopic: string, expectedTopicCount: number, gotTopicCount: number) {
+    if (expectedTopic !== gotTopic) {
+      super(`unexpected event signature. Expected: ${expectedTopic}, got: ${gotTopic}`)
+    } else {
+      super(`unexpected event topic count. Expected: ${expectedTopicCount}, got: ${gotTopicCount}`)
+    }
+    this.name = 'UnexpectedEventError';
+  }
+}
+
 export class AbiEvent<const T extends EventArgs> {
-  public readonly params: any
+  public readonly params: IndexedCodecs<T>
+  private readonly topicCount: number
   constructor(public readonly topic: string, args: T) {
     const entries = Object.entries(args)
     this.params = Object.fromEntries(
@@ -36,14 +47,17 @@ export class AbiEvent<const T extends EventArgs> {
           ] as const,
       ),
     ) as IndexedCodecs<T>
+    this.topicCount = entries.filter(([, arg]) => arg.indexed).length + 1
   }
 
   is(rec: EventRecord): boolean {
-    return rec.topics[0] === this.topic
+    return rec.topics[0] === this.topic && rec.topics.length === this.topicCount
   }
 
   decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
-    assert(this.is(rec), `Unexpected event signature. Expected: ${this.topic}, got: ${rec.topics[0]}`)
+    if (!this.is(rec)) {
+      throw new UnexpectedEventError(this.topic, rec.topics[0], this.topicCount, rec.topics.length)
+    }
     const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
     const result = {} as any
     let topicCounter = 1

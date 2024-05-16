@@ -15,6 +15,13 @@ export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunct
 
 export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
+export class UnexpectedFunctionError extends Error {
+  constructor(expectedSignature: string, gotSignature: string) {
+    super(`unexpected function signature. Expected: ${expectedSignature}, got: ${gotSignature}`)
+    this.name = 'UnexpectedFunctionError';
+  }
+}
+
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer
   private readonly slotsCount: number
@@ -40,7 +47,9 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   }
 
   decode(calldata: string): DecodedStruct<T> {
-    assert(this.is(calldata), `Unexpected function signature. Expected: ${this.selector}, got: ${calldata.slice(0, 10)}`)
+    if (!this.is(calldata)) {
+      throw new UnexpectedFunctionError(this.selector, calldata.slice(0, 10))
+    }
     const src = new Src(Buffer.from(calldata.slice(10), 'hex'))
     const result = {} as any
     for (let i in this.args) {
