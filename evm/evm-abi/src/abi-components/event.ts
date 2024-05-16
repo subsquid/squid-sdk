@@ -1,5 +1,6 @@
-import type { Pretty } from '../indexed'
+import type { Simplify } from '../indexed'
 import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
+import {EventEmptyTopicsError, EventInvalidSignatureError, EventTopicCountMismatchError} from '../errors'
 
 export interface EventRecord {
   topics: string[]
@@ -7,57 +8,55 @@ export interface EventRecord {
 }
 
 type EventArgs = {
-  [key: string]: Pretty<Codec<any> & { indexed?: boolean }>
+  [key: string]: Codec<any> & { indexed?: boolean }
 }
 
-export type IndexedCodecs<T extends EventArgs> = Pretty<{
-  [K in keyof T]: T[K] extends { indexed: true; isDynamic: true } ? typeof bytes32 & { indexed: true } : T[K]
+export type IndexedCodecs<T extends EventArgs> = Simplify<{
+    [K in keyof T]: T[K] extends {indexed: true; isDynamic: true}
+        ? Codec<Uint8Array | string, string> & {isDynamic: true; indexed: true}
+        : T[K]
 }>
 
 export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<U> : never
 
-export class UnexpectedEventError extends Error {
-  constructor(expectedTopic: string, gotTopic: string, expectedTopicCount: number, gotTopicCount: number) {
-    if (expectedTopic !== gotTopic) {
-      super(`unexpected event signature. Expected: ${expectedTopic}, got: ${gotTopic}`)
-    } else {
-      super(`unexpected event topic count. Expected: ${expectedTopicCount}, got: ${gotTopicCount}`)
-    }
-    this.name = 'UnexpectedEventError';
-  }
-}
-
 export class AbiEvent<const T extends EventArgs> {
   public readonly params: IndexedCodecs<T>
   private readonly topicCount: number
+
   constructor(public readonly topic: string, args: T) {
-    const entries = Object.entries(args)
-    this.params = Object.fromEntries(
-      entries.map(
-        ([key, arg]) =>
-          [
-            key,
-            arg.indexed && arg.isDynamic
-              ? {
-                  ...bytes32,
-                  isDynamic: true,
-                  indexed: true,
-                }
-              : arg,
-          ] as const,
-      ),
-    ) as IndexedCodecs<T>
-    this.topicCount = entries.filter(([, arg]) => arg.indexed).length + 1
+    this.topicCount = 1
+    this.params = {} as IndexedCodecs<T>
+    for (const i in args) {
+      const arg = args[i]
+      this.params[i] = arg.indexed && arg.isDynamic
+      ? {
+          ...bytes32,
+          isDynamic: true,
+          indexed: true,
+        } as any
+      : arg
+
+      if (arg.indexed) this.topicCount += 1
+    }
   }
 
   is(rec: EventRecord): boolean {
-    return rec.topics[0] === this.topic && rec.topics.length === this.topicCount
+    return this.checkTopicsCount(rec) && this.checkSignature(rec)
   }
 
   decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
-    if (!this.is(rec)) {
-      throw new UnexpectedEventError(this.topic, rec.topics[0], this.topicCount, rec.topics.length)
+    if (rec.topics.length == 0) {
+      throw new EventEmptyTopicsError()
     }
+
+    if (!this.checkTopicsCount(rec)) {
+      throw new EventTopicCountMismatchError({targetCount: this.topicCount, count: rec.topics.length})
+    }
+
+    if (!this.checkSignature(rec)) {
+      throw new EventInvalidSignatureError({targetSig: this.topic, sig: rec.topics[0]})
+    }
+    
     const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
     const result = {} as any
     let topicCounter = 1
@@ -71,6 +70,14 @@ export class AbiEvent<const T extends EventArgs> {
       }
     }
     return result
+  }
+
+  private checkSignature(rec: EventRecord) {
+    return rec.topics[0] === this.topic
+  }
+
+  private checkTopicsCount(rec: EventRecord) {
+    return rec.topics.length === this.topicCount
   }
 }
 
