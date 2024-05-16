@@ -1,5 +1,6 @@
 import type { Pretty } from '../indexed'
 import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
+import assert from "node:assert";
 
 export interface EventRecord {
   topics: string[]
@@ -42,6 +43,7 @@ export class AbiEvent<const T extends EventArgs> {
   }
 
   decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
+    assert(this.is(rec), `Unexpected event signature. Expected: ${this.topic}, got: ${rec.topics[0]}`)
     const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
     const result = {} as any
     let topicCounter = 1

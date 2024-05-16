@@ -40,7 +40,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   }
 
   decode(calldata: string): DecodedStruct<T> {
-    assert(this.is(calldata), `unexpected function signature: ${calldata.slice(0, 10)}`)
+    assert(this.is(calldata), `Unexpected function signature. Expected: ${this.selector}, got: ${calldata.slice(0, 10)}`)
     const src = new Src(Buffer.from(calldata.slice(10), 'hex'))
     const result = {} as any
     for (let i in this.args) {
