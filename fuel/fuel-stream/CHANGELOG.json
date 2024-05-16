@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-stream",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/fuel-stream_v0.0.3",
+      "date": "Thu, 16 May 2024 06:00:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "add missing `tx.status` to gateway validation schema"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/fuel-stream_v0.0.2",
       "date": "Wed, 15 May 2024 05:10:08 GMT",

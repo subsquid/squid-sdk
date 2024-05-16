@@ -1,6 +1,11 @@
 # Change Log - @subsquid/fuel-objects
 
-This log was last generated on Wed, 15 May 2024 05:10:08 GMT and should not be manually modified.
+This log was last generated on Thu, 16 May 2024 06:00:34 GMT and should not be manually modified.
+
+## 0.0.3
+Thu, 16 May 2024 06:00:34 GMT
+
+_Version update only_
 
 ## 0.0.2
 Wed, 15 May 2024 05:10:08 GMT

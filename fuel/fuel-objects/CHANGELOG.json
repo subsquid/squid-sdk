@@ -2,6 +2,21 @@
   "name": "@subsquid/fuel-objects",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/fuel-objects_v0.0.3",
+      "date": "Thu, 16 May 2024 06:00:34 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-stream\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-stream\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/fuel-objects_v0.0.2",
       "date": "Wed, 15 May 2024 05:10:08 GMT",
