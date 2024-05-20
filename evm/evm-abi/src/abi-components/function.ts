@@ -1,5 +1,10 @@
 import assert from 'node:assert'
 import {type Codec, type Struct, type DecodedStruct, type EncodedStruct, Sink, Src} from '@subsquid/evm-codec'
+import {FunctionInvalidSignatureError} from '../errors'
+
+export interface CallRecord {
+  input: string
+}
 
 function slotsCount(codecs: readonly Codec<any>[]) {
   let count = 0
@@ -15,6 +20,13 @@ export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunct
 
 export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
+export class UnexpectedFunctionError extends Error {
+  constructor(expectedSignature: string, gotSignature: string) {
+    super(`unexpected function signature. Expected: ${expectedSignature}, got: ${gotSignature}`)
+    this.name = 'UnexpectedFunctionError';
+  }
+}
+
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer
   private readonly slotsCount: number
@@ -27,8 +39,8 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     this.slotsCount = slotsCount(Object.values(args))
   }
 
-  is(calldata: string) {
-    return calldata.startsWith(this.selector)
+  is(calldata: string | CallRecord) {
+    return this.checkSighature(typeof calldata === 'string' ? calldata : calldata.input)
   }
 
   encode(args: EncodedStruct<T>) {
@@ -39,9 +51,13 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return `0x${Buffer.concat([this.#selector, sink.result()]).toString('hex')}`
   }
 
-  decode(calldata: string): DecodedStruct<T> {
-    assert(this.is(calldata), `unexpected function signature: ${calldata.slice(0, 10)}`)
-    const src = new Src(Buffer.from(calldata.slice(10), 'hex'))
+  decode(calldata: string | CallRecord): DecodedStruct<T> {
+    const input = typeof calldata === 'string' ? calldata : calldata.input
+
+    if (!this.checkSighature(input)) {
+      throw new FunctionInvalidSignatureError({targetSig: this.selector, sig: input.slice(0, this.selector.length)})
+    }
+    const src = new Src(Buffer.from(input.slice(10), 'hex'))
     const result = {} as any
     for (let i in this.args) {
       result[i] = this.args[i].decode(src)
@@ -67,6 +83,10 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
       result[i] = codec.decode(src)
     }
     return result
+  }
+
+  private checkSighature(val: string) {
+    return val.startsWith(this.selector)
   }
 }
 

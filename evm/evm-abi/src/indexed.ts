@@ -1,8 +1,8 @@
 import type { Codec } from '@subsquid/evm-codec'
 
-export type Pretty<T> = { [K in keyof T]: T[K] } & unknown
+export type Simplify<T> = { [K in keyof T]: T[K] } & {}
 
-export function indexed<T extends Codec<any>>(codec: T): Pretty<T & { indexed: true }> {
+export function indexed<T extends Codec<any>>(codec: T): Simplify<T & { indexed: true }> {
   return new Proxy(codec, {
     get(target: any, prop, receiver) {
       if (prop === 'indexed') {
