@@ -14,7 +14,7 @@ const processor = new EvmBatchProcessor()
     .setBlockRange({from: 190000000})
     .setFields({
         block: {size: true},
-        log: {transactionHash: true}
+        log: {transactionHash: true},
     })
     .addLog({
         address: [CONTRACT],
@@ -25,9 +25,10 @@ const processor = new EvmBatchProcessor()
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
 
+    
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
-            if (log.address == CONTRACT && log.topics[0] === erc20.events.Transfer.topic) {
+            if (log.address == CONTRACT &&  erc20.events.Transfer.is(log)) {
                 let {from, to, value} = erc20.events.Transfer.decode(log)
                 transfers.push(new Transfer({
                     id: log.id,
