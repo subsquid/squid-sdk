@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "Add checks for some corrupted string and bytes data; Fix bigint to number conversion issue",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}

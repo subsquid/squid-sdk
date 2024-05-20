@@ -107,9 +107,9 @@ export class Src {
 
   bytes(): Uint8Array {
     const ptr = this.u32()
-    this.safeJump(ptr)
-    const len = this.u32()
-    this.assertLength(len)
+    this.safeJump(ptr, 'bytes')
+    const len = Number(this.u256())
+    this.assertLength(len, 'bytes')
     const val = this.buf.subarray(this.pos, this.pos + len)
     this.jumpBack()
     return val
@@ -126,9 +126,9 @@ export class Src {
 
   string(): string {
     const ptr = this.u32()
-    this.safeJump(ptr)
-    const len = this.u32()
-    this.assertLength(len)
+    this.safeJump(ptr, 'string')
+    const len = Number(this.u256())
+    this.assertLength(len, 'string')
     const val = Buffer.from(this.buf.buffer, this.buf.byteOffset + this.pos, len).toString('utf-8')
     this.jumpBack()
     return val
@@ -138,15 +138,15 @@ export class Src {
     return !!this.u8()
   }
 
-  private assertLength(len: number): void {
+  private assertLength(len: number, typeName: string): void {
     if (this.buf.length - this.pos < len) {
-      throw new RangeError('Unexpected end of input')
+      throw new RangeError(`Unexpected end of input. Attempting to read ${typeName} of length ${len} from 0x${Buffer.from(this.buf).toString('hex')}`)
     }
   }
 
-  public safeJump(pos: number): void {
+  public safeJump(pos: number, typeName: string): void {
     if (pos < 0 || pos >= this.buf.length) {
-      throw new RangeError(`Unexpected pointer location: 0x${pos.toString(16)}`)
+      throw new RangeError(`Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${typeName} from 0x${Buffer.from(this.buf).toString('hex')}`)
     }
     this.oldPos = this.pos
     this.pos = pos
