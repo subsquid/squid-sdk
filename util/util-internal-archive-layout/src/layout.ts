@@ -444,4 +444,5 @@ function* pack<T>(items: T[], size: number): Iterable<T[]> {
     }
 
     items.splice(0, offset)
+    yield items
 }
