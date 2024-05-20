@@ -39,7 +39,7 @@ export class Multicall extends ContractBase {
 
   aggregate<TF extends AnyFunc>(
     func: TF,
-    calls: [address: string, args: FunctionArguments<TF>][],
+    calls: (readonly [address: string, args: FunctionArguments<TF>])[],
     paging?: number
   ): Promise<FunctionReturn<TF>[]>
 
@@ -71,7 +71,7 @@ export class Multicall extends ContractBase {
 
   tryAggregate<TF extends AnyFunc>(
     func: TF,
-    calls: [address: string, args: FunctionArguments<TF>][],
+    calls: (readonly [address: string, args: FunctionArguments<TF>])[],
     paging?: number
   ): Promise<MulticallResult<TF>[]>
 
