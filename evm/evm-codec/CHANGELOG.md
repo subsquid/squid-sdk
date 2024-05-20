@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-codec
 
-This log was last generated on Fri, 10 May 2024 10:23:43 GMT and should not be manually modified.
+This log was last generated on Mon, 20 May 2024 19:49:38 GMT and should not be manually modified.
+
+## 0.2.1
+Mon, 20 May 2024 19:49:38 GMT
+
+### Patches
+
+- Add checks for some corrupted string and bytes data; Fix bigint to number conversion issue
 
 ## 0.2.0
 Fri, 10 May 2024 10:23:43 GMT
