@@ -108,7 +108,7 @@ export class Src {
   bytes(): Uint8Array {
     const ptr = this.u32()
     this.safeJump(ptr, 'bytes')
-    const len = this.u32()
+    const len = Number(this.u256())
     this.assertLength(len, 'bytes')
     const val = this.buf.subarray(this.pos, this.pos + len)
     this.jumpBack()

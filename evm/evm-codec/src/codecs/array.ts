@@ -19,7 +19,7 @@ export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], 
   decode(src: Src): TOut[] {
     const offset = src.u32()
 
-    src.safeJump(offset)
+    src.safeJump(offset, 'array')
     const len = src.u32()
 
     const tmpSrc = src.slice(offset + WORD_SIZE)
