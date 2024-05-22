@@ -682,6 +682,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/typeorm-store-cached",
+      "projectFolder": "typeorm/typeorm-store-cached",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/big-decimal",
       "projectFolder": "util/big-decimal",
       "shouldPublish": true,

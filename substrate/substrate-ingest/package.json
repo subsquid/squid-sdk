@@ -28,6 +28,7 @@
     "@subsquid/util-internal-json": "^1.2.3"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14"
+    "@types/node": "^18.18.14",
+    "typescript": "^5.4.5"
   }
 }

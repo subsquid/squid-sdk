@@ -21,7 +21,7 @@ export interface TypeormDatabaseOptions {
 export class TypeormDatabase {
     private statusSchema: string
     private isolationLevel: IsolationLevel
-    private con?: DataSource
+    protected con?: DataSource
     private projectDir: string
 
     public readonly supportsHotBlocks: boolean
@@ -227,7 +227,7 @@ export class TypeormDatabase {
         )
     }
 
-    private async performUpdates(
+    protected async performUpdates(
         cb: (store: Store) => Promise<void>,
         em: EntityManager,
         changeTracker?: ChangeTracker
