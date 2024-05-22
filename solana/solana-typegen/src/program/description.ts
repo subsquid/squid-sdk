@@ -1,6 +1,6 @@
 export class IdlDescription {}
 
-import {DefinedType, GenericArg, GenericArgKind, Type} from './types'
+import {GenericArgKind, Type} from './types'
 
 export type Program = {
     programId?: string

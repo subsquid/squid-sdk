@@ -1,0 +1,2560 @@
+{
+    "version": "0.1.0",
+    "name": "mpl_core_program",
+    "instructions": [
+        {
+            "name": "CreateV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The address of the new asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The authority signing for creation"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "owner",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner of the new asset. Defaults to the authority if not present."
+                    ]
+                },
+                {
+                    "name": "updateAuthority",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The authority on the new asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "createV1Args",
+                    "type": {
+                        "defined": "CreateV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 0
+            }
+        },
+        {
+            "name": "CreateCollectionV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The address of the new asset"
+                    ]
+                },
+                {
+                    "name": "updateAuthority",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The authority of the new asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "createCollectionV1Args",
+                    "type": {
+                        "defined": "CreateCollectionV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 1
+            }
+        },
+        {
+            "name": "AddPluginV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "addPluginV1Args",
+                    "type": {
+                        "defined": "AddPluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 2
+            }
+        },
+        {
+            "name": "AddCollectionPluginV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "addCollectionPluginV1Args",
+                    "type": {
+                        "defined": "AddCollectionPluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 3
+            }
+        },
+        {
+            "name": "RemovePluginV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "removePluginV1Args",
+                    "type": {
+                        "defined": "RemovePluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 4
+            }
+        },
+        {
+            "name": "RemoveCollectionPluginV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "removeCollectionPluginV1Args",
+                    "type": {
+                        "defined": "RemoveCollectionPluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 5
+            }
+        },
+        {
+            "name": "UpdatePluginV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "updatePluginV1Args",
+                    "type": {
+                        "defined": "UpdatePluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 6
+            }
+        },
+        {
+            "name": "UpdateCollectionPluginV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "updateCollectionPluginV1Args",
+                    "type": {
+                        "defined": "UpdateCollectionPluginV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 7
+            }
+        },
+        {
+            "name": "ApprovePluginAuthorityV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "approvePluginAuthorityV1Args",
+                    "type": {
+                        "defined": "ApprovePluginAuthorityV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 8
+            }
+        },
+        {
+            "name": "ApproveCollectionPluginAuthorityV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "approveCollectionPluginAuthorityV1Args",
+                    "type": {
+                        "defined": "ApproveCollectionPluginAuthorityV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 9
+            }
+        },
+        {
+            "name": "RevokePluginAuthorityV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "revokePluginAuthorityV1Args",
+                    "type": {
+                        "defined": "RevokePluginAuthorityV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 10
+            }
+        },
+        {
+            "name": "RevokeCollectionPluginAuthorityV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "revokeCollectionPluginAuthorityV1Args",
+                    "type": {
+                        "defined": "RevokeCollectionPluginAuthorityV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 11
+            }
+        },
+        {
+            "name": "BurnV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "burnV1Args",
+                    "type": {
+                        "defined": "BurnV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 12
+            }
+        },
+        {
+            "name": "BurnCollectionV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "burnCollectionV1Args",
+                    "type": {
+                        "defined": "BurnCollectionV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 13
+            }
+        },
+        {
+            "name": "TransferV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "newOwner",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The new owner to which to transfer the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "transferV1Args",
+                    "type": {
+                        "defined": "TransferV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 14
+            }
+        },
+        {
+            "name": "UpdateV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The update authority or update authority delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "updateV1Args",
+                    "type": {
+                        "defined": "UpdateV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 15
+            }
+        },
+        {
+            "name": "UpdateCollectionV1",
+            "accounts": [
+                {
+                    "name": "collection",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The update authority or update authority delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "newUpdateAuthority",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The new update authority of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "updateCollectionV1Args",
+                    "type": {
+                        "defined": "UpdateCollectionV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 16
+            }
+        },
+        {
+            "name": "CompressV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account receiving the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "compressV1Args",
+                    "type": {
+                        "defined": "CompressV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 17
+            }
+        },
+        {
+            "name": "DecompressV1",
+            "accounts": [
+                {
+                    "name": "asset",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the asset"
+                    ]
+                },
+                {
+                    "name": "collection",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The collection to which the asset belongs"
+                    ]
+                },
+                {
+                    "name": "payer",
+                    "isMut": true,
+                    "isSigner": true,
+                    "docs": [
+                        "The account paying for the storage fees"
+                    ]
+                },
+                {
+                    "name": "authority",
+                    "isMut": false,
+                    "isSigner": true,
+                    "isOptional": true,
+                    "docs": [
+                        "The owner or delegate of the asset"
+                    ]
+                },
+                {
+                    "name": "systemProgram",
+                    "isMut": false,
+                    "isSigner": false,
+                    "docs": [
+                        "The system program"
+                    ]
+                },
+                {
+                    "name": "logWrapper",
+                    "isMut": false,
+                    "isSigner": false,
+                    "isOptional": true,
+                    "docs": [
+                        "The SPL Noop Program"
+                    ]
+                }
+            ],
+            "args": [
+                {
+                    "name": "decompressV1Args",
+                    "type": {
+                        "defined": "DecompressV1Args"
+                    }
+                }
+            ],
+            "discriminant": {
+                "type": "u8",
+                "value": 18
+            }
+        },
+        {
+            "name": "Collect",
+            "accounts": [
+                {
+                    "name": "recipient1",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the recipient 1"
+                    ]
+                },
+                {
+                    "name": "recipient2",
+                    "isMut": true,
+                    "isSigner": false,
+                    "docs": [
+                        "The address of the recipient 2"
+                    ]
+                }
+            ],
+            "args": [],
+            "discriminant": {
+                "type": "u8",
+                "value": 19
+            }
+        }
+    ],
+    "accounts": [
+        {
+            "name": "Uninitialized",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "AssetV1",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": {
+                            "defined": "Key"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "updateAuthority",
+                        "type": {
+                            "defined": "UpdateAuthority"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "seq",
+                        "type": {
+                            "option": "u64"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "HashedAssetV1",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": {
+                            "defined": "Key"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "type": {
+                            "array": [
+                                "u8",
+                                32
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PluginHeaderV1",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": {
+                            "defined": "Key"
+                        }
+                    },
+                    {
+                        "name": "pluginRegistryOffset",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PluginRegistryV1",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": {
+                            "defined": "Key"
+                        }
+                    },
+                    {
+                        "name": "registry",
+                        "type": {
+                            "vec": {
+                                "defined": "RegistryRecord"
+                            }
+                        }
+                    },
+                    {
+                        "name": "externalPlugins",
+                        "type": {
+                            "vec": {
+                                "defined": "ExternalPluginRecord"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CollectionV1",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": {
+                            "defined": "Key"
+                        }
+                    },
+                    {
+                        "name": "updateAuthority",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "numMinted",
+                        "type": "u32"
+                    },
+                    {
+                        "name": "currentSize",
+                        "type": "u32"
+                    }
+                ]
+            }
+        }
+    ],
+    "types": [
+        {
+            "name": "PluginAuthorityPair",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    },
+                    {
+                        "name": "authority",
+                        "type": {
+                            "option": {
+                                "defined": "Authority"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Attribute",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": "string"
+                    },
+                    {
+                        "name": "value",
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Attributes",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "attributeList",
+                        "type": {
+                            "vec": {
+                                "defined": "Attribute"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "BurnDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "Edition",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "number",
+                        "type": "u32"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "FreezeDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "frozen",
+                        "type": "bool"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MasterEdition",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "maxSupply",
+                        "type": {
+                            "option": "u32"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": {
+                            "option": "string"
+                        }
+                    },
+                    {
+                        "name": "uri",
+                        "type": {
+                            "option": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PermanentBurnDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "PermanentFreezeDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "frozen",
+                        "type": "bool"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PermanentTransferDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "RegistryRecord",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    },
+                    {
+                        "name": "authority",
+                        "type": {
+                            "defined": "Authority"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ExternalPluginRecord",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": {
+                            "defined": "Authority"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "type": "u64"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Creator",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "address",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "percentage",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Royalties",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "basisPoints",
+                        "type": "u16"
+                    },
+                    {
+                        "name": "creators",
+                        "type": {
+                            "vec": {
+                                "defined": "Creator"
+                            }
+                        }
+                    },
+                    {
+                        "name": "ruleSet",
+                        "type": {
+                            "defined": "RuleSet"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "TransferDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "UpdateDelegate",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "additionalDelegates",
+                        "type": {
+                            "vec": "publicKey"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "AddPluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    },
+                    {
+                        "name": "initAuthority",
+                        "type": {
+                            "option": {
+                                "defined": "Authority"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "AddCollectionPluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    },
+                    {
+                        "name": "initAuthority",
+                        "type": {
+                            "option": {
+                                "defined": "Authority"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ApprovePluginAuthorityV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    },
+                    {
+                        "name": "newAuthority",
+                        "type": {
+                            "defined": "Authority"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ApproveCollectionPluginAuthorityV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    },
+                    {
+                        "name": "newAuthority",
+                        "type": {
+                            "defined": "Authority"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "BurnV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "compressionProof",
+                        "type": {
+                            "option": {
+                                "defined": "CompressionProof"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "BurnCollectionV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "compressionProof",
+                        "type": {
+                            "option": {
+                                "defined": "CompressionProof"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CompressV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": []
+            }
+        },
+        {
+            "name": "CreateV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "dataState",
+                        "type": {
+                            "defined": "DataState"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "plugins",
+                        "type": {
+                            "option": {
+                                "vec": {
+                                    "defined": "PluginAuthorityPair"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CreateCollectionV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "plugins",
+                        "type": {
+                            "option": {
+                                "vec": {
+                                    "defined": "PluginAuthorityPair"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "DecompressV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "compressionProof",
+                        "type": {
+                            "defined": "CompressionProof"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RemovePluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RemoveCollectionPluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RevokePluginAuthorityV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RevokeCollectionPluginAuthorityV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "pluginType",
+                        "type": {
+                            "defined": "PluginType"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "TransferV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "compressionProof",
+                        "type": {
+                            "option": {
+                                "defined": "CompressionProof"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "newName",
+                        "type": {
+                            "option": "string"
+                        }
+                    },
+                    {
+                        "name": "newUri",
+                        "type": {
+                            "option": "string"
+                        }
+                    },
+                    {
+                        "name": "newUpdateAuthority",
+                        "type": {
+                            "option": {
+                                "defined": "UpdateAuthority"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateCollectionV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "newName",
+                        "type": {
+                            "option": "string"
+                        }
+                    },
+                    {
+                        "name": "newUri",
+                        "type": {
+                            "option": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdatePluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateCollectionPluginV1Args",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CompressionProof",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "owner",
+                        "type": "publicKey"
+                    },
+                    {
+                        "name": "updateAuthority",
+                        "type": {
+                            "defined": "UpdateAuthority"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "uri",
+                        "type": "string"
+                    },
+                    {
+                        "name": "seq",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "plugins",
+                        "type": {
+                            "vec": {
+                                "defined": "HashablePluginSchema"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "HashablePluginSchema",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "index",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "authority",
+                        "type": {
+                            "defined": "Authority"
+                        }
+                    },
+                    {
+                        "name": "plugin",
+                        "type": {
+                            "defined": "Plugin"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "HashedAssetSchema",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "assetHash",
+                        "type": {
+                            "array": [
+                                "u8",
+                                32
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pluginHashes",
+                        "type": {
+                            "vec": {
+                                "array": [
+                                    "u8",
+                                    32
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Plugin",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "Royalties",
+                        "fields": [
+                            {
+                                "defined": "Royalties"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "FreezeDelegate",
+                        "fields": [
+                            {
+                                "defined": "FreezeDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "BurnDelegate",
+                        "fields": [
+                            {
+                                "defined": "BurnDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "TransferDelegate",
+                        "fields": [
+                            {
+                                "defined": "TransferDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "UpdateDelegate",
+                        "fields": [
+                            {
+                                "defined": "UpdateDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "PermanentFreezeDelegate",
+                        "fields": [
+                            {
+                                "defined": "PermanentFreezeDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Attributes",
+                        "fields": [
+                            {
+                                "defined": "Attributes"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "PermanentTransferDelegate",
+                        "fields": [
+                            {
+                                "defined": "PermanentTransferDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "PermanentBurnDelegate",
+                        "fields": [
+                            {
+                                "defined": "PermanentBurnDelegate"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Edition",
+                        "fields": [
+                            {
+                                "defined": "Edition"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "MasterEdition",
+                        "fields": [
+                            {
+                                "defined": "MasterEdition"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PluginType",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "Royalties"
+                    },
+                    {
+                        "name": "FreezeDelegate"
+                    },
+                    {
+                        "name": "BurnDelegate"
+                    },
+                    {
+                        "name": "TransferDelegate"
+                    },
+                    {
+                        "name": "UpdateDelegate"
+                    },
+                    {
+                        "name": "PermanentFreezeDelegate"
+                    },
+                    {
+                        "name": "Attributes"
+                    },
+                    {
+                        "name": "PermanentTransferDelegate"
+                    },
+                    {
+                        "name": "PermanentBurnDelegate"
+                    },
+                    {
+                        "name": "Edition"
+                    },
+                    {
+                        "name": "MasterEdition"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RuleSet",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "None"
+                    },
+                    {
+                        "name": "ProgramAllowList",
+                        "fields": [
+                            {
+                                "vec": "publicKey"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ProgramDenyList",
+                        "fields": [
+                            {
+                                "vec": "publicKey"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "DataState",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "AccountState"
+                    },
+                    {
+                        "name": "LedgerState"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Authority",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "None"
+                    },
+                    {
+                        "name": "Owner"
+                    },
+                    {
+                        "name": "UpdateAuthority"
+                    },
+                    {
+                        "name": "Address",
+                        "fields": [
+                            {
+                                "name": "address",
+                                "type": "publicKey"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "ExtraAccounts",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "None"
+                    },
+                    {
+                        "name": "SplHook",
+                        "fields": [
+                            {
+                                "name": "extra_account_metas",
+                                "type": "publicKey"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "MplHook",
+                        "fields": [
+                            {
+                                "name": "mint_pda",
+                                "type": {
+                                    "option": "publicKey"
+                                }
+                            },
+                            {
+                                "name": "collection_pda",
+                                "type": {
+                                    "option": "publicKey"
+                                }
+                            },
+                            {
+                                "name": "owner_pda",
+                                "type": {
+                                    "option": "publicKey"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Key",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "Uninitialized"
+                    },
+                    {
+                        "name": "AssetV1"
+                    },
+                    {
+                        "name": "HashedAssetV1"
+                    },
+                    {
+                        "name": "PluginHeaderV1"
+                    },
+                    {
+                        "name": "PluginRegistryV1"
+                    },
+                    {
+                        "name": "CollectionV1"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UpdateAuthority",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "None"
+                    },
+                    {
+                        "name": "Address",
+                        "fields": [
+                            "publicKey"
+                        ]
+                    },
+                    {
+                        "name": "Collection",
+                        "fields": [
+                            "publicKey"
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "errors": [
+        {
+            "code": 0,
+            "name": "InvalidSystemProgram",
+            "msg": "Invalid System Program"
+        },
+        {
+            "code": 1,
+            "name": "DeserializationError",
+            "msg": "Error deserializing account"
+        },
+        {
+            "code": 2,
+            "name": "SerializationError",
+            "msg": "Error serializing account"
+        },
+        {
+            "code": 3,
+            "name": "PluginsNotInitialized",
+            "msg": "Plugins not initialized"
+        },
+        {
+            "code": 4,
+            "name": "PluginNotFound",
+            "msg": "Plugin not found"
+        },
+        {
+            "code": 5,
+            "name": "NumericalOverflow",
+            "msg": "Numerical Overflow"
+        },
+        {
+            "code": 6,
+            "name": "IncorrectAccount",
+            "msg": "Incorrect account"
+        },
+        {
+            "code": 7,
+            "name": "IncorrectAssetHash",
+            "msg": "Incorrect asset hash"
+        },
+        {
+            "code": 8,
+            "name": "InvalidPlugin",
+            "msg": "Invalid Plugin"
+        },
+        {
+            "code": 9,
+            "name": "InvalidAuthority",
+            "msg": "Invalid Authority"
+        },
+        {
+            "code": 10,
+            "name": "AssetIsFrozen",
+            "msg": "Cannot transfer a frozen asset"
+        },
+        {
+            "code": 11,
+            "name": "MissingCompressionProof",
+            "msg": "Missing compression proof"
+        },
+        {
+            "code": 12,
+            "name": "CannotMigrateMasterWithSupply",
+            "msg": "Cannot migrate a master edition used for prints"
+        },
+        {
+            "code": 13,
+            "name": "CannotMigratePrints",
+            "msg": "Cannot migrate a print edition"
+        },
+        {
+            "code": 14,
+            "name": "CannotBurnCollection",
+            "msg": "Cannot burn a collection NFT"
+        },
+        {
+            "code": 15,
+            "name": "PluginAlreadyExists",
+            "msg": "Plugin already exists"
+        },
+        {
+            "code": 16,
+            "name": "NumericalOverflowError",
+            "msg": "Numerical overflow"
+        },
+        {
+            "code": 17,
+            "name": "AlreadyCompressed",
+            "msg": "Already compressed account"
+        },
+        {
+            "code": 18,
+            "name": "AlreadyDecompressed",
+            "msg": "Already decompressed account"
+        },
+        {
+            "code": 19,
+            "name": "InvalidCollection",
+            "msg": "Invalid Collection passed in"
+        },
+        {
+            "code": 20,
+            "name": "MissingUpdateAuthority",
+            "msg": "Missing update authority"
+        },
+        {
+            "code": 21,
+            "name": "MissingNewOwner",
+            "msg": "Missing new owner"
+        },
+        {
+            "code": 22,
+            "name": "MissingSystemProgram",
+            "msg": "Missing system program"
+        },
+        {
+            "code": 23,
+            "name": "NotAvailable",
+            "msg": "Feature not available"
+        },
+        {
+            "code": 24,
+            "name": "InvalidAsset",
+            "msg": "Invalid Asset passed in"
+        },
+        {
+            "code": 25,
+            "name": "MissingCollection",
+            "msg": "Missing collection"
+        },
+        {
+            "code": 26,
+            "name": "NoApprovals",
+            "msg": "Neither the asset or any plugins have approved this operation"
+        },
+        {
+            "code": 27,
+            "name": "CannotRedelegate",
+            "msg": "Plugin Manager cannot redelegate a delegated plugin without revoking first"
+        },
+        {
+            "code": 28,
+            "name": "InvalidPluginSetting",
+            "msg": "Invalid setting for plugin"
+        },
+        {
+            "code": 29,
+            "name": "ConflictingAuthority",
+            "msg": "Cannot specify both an update authority and collection on an asset"
+        },
+        {
+            "code": 30,
+            "name": "InvalidLogWrapperProgram",
+            "msg": "Invalid Log Wrapper Program"
+        }
+    ],
+    "metadata": {
+        "origin": "shank",
+        "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d",
+        "binaryVersion": "0.4.2",
+        "libVersion": "0.4.2"
+    }
+}

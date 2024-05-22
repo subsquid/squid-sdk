@@ -1,4 +1,4 @@
-import {event} from '../idl.support'
+import {event} from '../abi.support'
 import {SomeEvent as SomeEvent_} from './types'
 
 export type SomeEvent = SomeEvent_

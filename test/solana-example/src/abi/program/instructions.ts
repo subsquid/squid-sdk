@@ -1,5 +1,5 @@
 import {unit, struct, bool, u8, i8, u16, i16, u32, i32, f32, u64, i64, f64, u128, i128, binary, string, address, array, option, fixedArray} from '@subsquid/borsh'
-import {instruction} from '../idl.support'
+import {instruction} from '../abi.support'
 import {FooStruct, FooEnum} from './types'
 
 export type CauseError = undefined

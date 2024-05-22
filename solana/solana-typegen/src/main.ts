@@ -52,8 +52,8 @@ The generated facades are assumed to be used by "squids" indexing solana data.
             return
         }
 
-        dest.add('idl.support.ts', [__dirname, '../src/idl.support.ts'])
-        LOG.info(`saved ${dest.path('idl.support.ts')}`)
+        dest.add('abi.support.ts', [__dirname, '../src/abi.support.ts'])
+        LOG.info(`saved ${dest.path('abi.support.ts')}`)
 
         for (let spec of specs) {
             LOG.info(`processing ${spec.src}`)
@@ -72,7 +72,7 @@ The generated facades are assumed to be used by "squids" indexing solana data.
 
 async function read(spec: Spec, options?: {solanaRpcEndpoint?: string}): Promise<any> {
     if (spec.kind == 'address') {
-        return fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
+        return await fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
     } else if (spec.kind == 'url') {
         return await GET(spec.src)
     } else {
@@ -86,8 +86,8 @@ async function fetchFromBlockchain(address: Address, url?: string): Promise<any>
     try {
         let client = new RpcClient({url})
         return await fetchIdl(client, address)
-    } catch (e) {
-        throw new Error(`Failed to fetch program IDL from ${url}: ${e}`)
+    } catch (e: unknown) {
+        throw new Error(`Failed to fetch program IDL from ${url}: ${e instanceof Error ? e.message : e}`)
     }
 }
 
