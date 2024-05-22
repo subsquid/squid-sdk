@@ -31,6 +31,10 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   readonly #selector: Buffer
   private readonly slotsCount: number
 
+  public get sighash() {
+    return this.selector
+  }
+
   constructor(public selector: string, public readonly args: T, public readonly returnType?: R) {
     assert(selector.startsWith('0x'), 'selector must start with 0x')
     assert(selector.length === 10, 'selector must be 4 bytes long')
