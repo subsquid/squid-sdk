@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "change visibility of some fields",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

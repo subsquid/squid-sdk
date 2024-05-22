@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store-cached",
+      "comment": "Introduce TypeORM store with cache",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store-cached"
+}
