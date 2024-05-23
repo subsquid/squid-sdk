@@ -1,4 +1,4 @@
-import {Field, Primitive, Ti, Type, TypeKind} from '@subsquid/substrate-runtime/lib/metadata'
+import {Field, Primitive, Ti, Type, TypeKind, Variant} from '@subsquid/substrate-runtime/lib/metadata'
 import {normalizeMetadataTypes} from '@subsquid/substrate-runtime/lib/metadata/util'
 import {def, unexpectedCase} from '@subsquid/util-internal'
 import {
@@ -31,6 +31,7 @@ export interface AbiEvent {
 export class AbiDescription {
     constructor(private project: InkProject) {
         this.events()
+        this.event()
         this.constructors()
         this.messages()
     }
@@ -101,6 +102,28 @@ export class AbiDescription {
                 amountIndexed: e.args.reduce((val, e) => e.indexed ? val + 1 : val, 0),
                 signatureTopic: e.signature_topic as Bytes
             }
+        })
+    }
+
+    @def
+    event(): Ti {
+        let variants: Variant[] = this.project.spec.events.map((e, index) => {
+            return {
+                name: normalizeLabel(e.label),
+                index,
+                fields: e.args.map(arg => {
+                    return {
+                        name: normalizeLabel(arg.label),
+                        type: arg.type.type,
+                        docs: arg.docs
+                    }
+                })
+            }
+        })
+        return this.add({
+            kind: TypeKind.Variant,
+            variants,
+            path: ['Event']
         })
     }
 
