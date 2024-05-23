@@ -1,5 +1,5 @@
 import {Bytes, Runtime} from '@subsquid/substrate-runtime'
-import {array, closedEnum, externalEnum, GetType, number, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
+import {array, closedEnum, externalEnum, GetType, number, struct, unknown, bytes} from '@subsquid/substrate-runtime/lib/sts'
 import {Event} from '../interfaces/data'
 import {assertStorage} from '../types/util'
 
@@ -10,7 +10,8 @@ const EventItem = struct({
         ApplyExtrinsic: number(),
         Finalization: unknown()
     }),
-    event: externalEnum()
+    event: externalEnum(),
+    topics: array(bytes())
 })
 
 
@@ -31,6 +32,7 @@ export function decodeEvents(runtime: Runtime, eventsStorageValue: Bytes | undef
             index,
             name,
             args,
+            topics: it.topics,
             phase: it.phase.__kind
         }
         if (it.phase.__kind == 'ApplyExtrinsic') {

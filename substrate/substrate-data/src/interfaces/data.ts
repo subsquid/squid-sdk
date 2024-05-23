@@ -100,6 +100,7 @@ export interface Event {
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
+    topics: Bytes[]
     _evmLogAddress?: Bytes
     _evmLogTopics?: Bytes[]
     _contractAddress?: Bytes

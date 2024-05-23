@@ -144,6 +144,9 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
                 if (s.callAddress != null) {
                     event.callAddress = s.callAddress
                 }
+                if (s.topics != null) {
+                    event.topics = s.topics
+                }
                 event._evmLogAddress = s._evmLogAddress
                 event._evmLogTopics = s._evmLogTopics
                 event._contractAddress = s._contractAddress
