@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@subsquid/fuel-data": "^0.0.1",
+    "@subsquid/fuel-normalization": "^0.0.1",
     "@subsquid/util-internal": "^3.2.0"
   },
   "peerDependencies": {

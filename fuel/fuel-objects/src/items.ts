@@ -1,4 +1,4 @@
-import {ReceiptType, TransactionType} from '@subsquid/fuel-data/lib/data'
+import {ReceiptType, TransactionType} from '@subsquid/fuel-normalization'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {
     PartialOutput,

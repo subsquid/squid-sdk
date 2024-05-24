@@ -7,11 +7,11 @@ import {Contract} from './model'
 
 const dataSource = new DataSourceBuilder()
     .setGraphql({
-        url: 'https://beta-5.fuel.network/graphql',
+        url: 'https://testnet.fuel.network/v1/graphql',
         strideConcurrency: 2,
         strideSize: 50
     })
-    .setGateway('https://v2.archive.subsquid.io/network/fuel-stage-5')
+    .setGateway('https://v2.archive.subsquid.io/network/fuel-testnet')
     .setFields({
         receipt: {
             contract: true,

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-objects",
+      "comment": "add `fuel-normalization` to the dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-objects"
+}

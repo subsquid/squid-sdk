@@ -6,17 +6,20 @@ export interface BlockHeader {
     height: number
     daHeight: bigint
     transactionsRoot: Bytes
-    transactionsCount: bigint
-    messageReceiptRoot: Bytes
-    messageReceiptCount: bigint
+    transactionsCount: number
+    messageReceiptCount: number
     prevRoot: Bytes
     time: bigint
     applicationHash: Bytes
+    eventInboxRoot: Bytes
+    consensusParametersVersion: number
+    stateTransitionBytecodeVersion: number
+    messageOutboxRoot: Bytes
 }
 
 
 export interface Policies {
-    gasPrice?: bigint
+    tip?: bigint
     witnessLimit?: bigint
     maturity?: number
     maxFee?: bigint
@@ -40,6 +43,8 @@ export interface SuccessStatus {
     transactionId: Bytes
     time: bigint
     programState?: ProgramState
+    totalGas: bigint
+    totalFee: bigint
 }
 
 
@@ -55,13 +60,31 @@ export interface FailureStatus {
     time: bigint
     reason: string
     programState?: ProgramState
+    totalGas: bigint
+    totalFee: bigint
 }
 
 
 export type Status = SubmittedStatus | SuccessStatus | SqueezedOutStatus | FailureStatus
 
 
-export type TransactionType = 'Script' | 'Create' | 'Mint'
+export type TransactionType = 'Script' | 'Create' | 'Mint' | 'Upgrade' | 'Upload'
+
+
+export interface ConsensusParametersPurpose {
+    type: 'ConsensusParametersPurpose'
+    witnessIndex: number
+    checksum: Bytes
+}
+
+
+export interface StateTransitionPurpose {
+    type: 'StateTransitionPurpose'
+    root: Bytes
+}
+
+
+export type UpgradePurpose = ConsensusParametersPurpose | StateTransitionPurpose
 
 
 export interface Transaction {
@@ -74,18 +97,20 @@ export interface Transaction {
         balanceRoot: Bytes
         stateRoot: Bytes
         txPointer: string
-        contract: Bytes
+        contractId: Bytes
     }
     policies?: Policies
-    gasPrice?: bigint
     scriptGasLimit?: bigint
     maturity?: number
     mintAmount?: bigint
     mintAssetId?: Bytes
+    mintGasPrice?: bigint
     txPointer?: string
     isScript: boolean
     isCreate: boolean
     isMint: boolean
+    isUpgrade: boolean
+    isUpload: boolean
     type: TransactionType
     outputContract?: {
         inputIndex: number
@@ -97,11 +122,15 @@ export interface Transaction {
     status: Status
     script?: Bytes
     scriptData?: Bytes
-    bytecodeWitnessIndex?: number
-    bytecodeLength?: bigint
     salt?: Bytes
     storageSlots?: Bytes[]
     rawPayload?: Bytes
+    bytecodeWitnessIndex?: number
+    bytecodeRoot?: Bytes
+    subsectionIndex?: number
+    subsectionsNumber?: number
+    proofSet?: Bytes[]
+    upgradePurpose?: UpgradePurpose
 }
 
 
@@ -115,7 +144,6 @@ export interface InputCoin {
     assetId: Bytes
     txPointer: string
     witnessIndex: number
-    maturity: number
     predicateGasUsed: bigint
     predicate: Bytes
     predicateData: Bytes
@@ -130,7 +158,7 @@ export interface InputContract {
     balanceRoot: Bytes
     stateRoot: Bytes
     txPointer: string
-    contract: Bytes
+    contractId: Bytes
 }
 
 
@@ -200,11 +228,7 @@ export interface ContractCreated {
     type: 'ContractCreated'
     index: number
     transactionIndex: number
-    contract: {
-        id: Bytes
-        bytecode: Bytes
-        salt: Bytes
-    }
+    contract: Bytes
     stateRoot: Bytes
 }
 
@@ -221,6 +245,7 @@ export type ReceiptType = 'CALL' | 'RETURN' | 'RETURN_DATA' | 'PANIC' | 'REVERT'
 export interface Receipt {
     index: number
     transactionIndex: number
+    /** this field matches to `Receipt.id` field in GraphQL api */
     contract?: Bytes
     pc?: bigint
     is?: bigint

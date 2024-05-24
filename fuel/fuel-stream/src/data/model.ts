@@ -1,4 +1,4 @@
-import type * as data from '@subsquid/fuel-data/lib/data'
+import type * as data from '@subsquid/fuel-normalization'
 import type {
     BlockRequiredFields,
     ReceiptRequiredFields,

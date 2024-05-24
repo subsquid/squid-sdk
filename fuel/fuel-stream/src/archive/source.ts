@@ -38,11 +38,14 @@ export class FuelGateway {
                     daHeight: true,
                     transactionsRoot: true,
                     transactionsCount: true,
-                    messageReceiptRoot: true,
                     messageReceiptCount: true,
                     prevRoot: true,
                     time: true,
-                    applicationHash: true
+                    applicationHash: true,
+                    eventInboxRoot: true,
+                    consensusParametersVersion: true,
+                    stateTransitionBytecodeVersion: true,
+                    messageOutboxRoot: true
                 }
             }
         })

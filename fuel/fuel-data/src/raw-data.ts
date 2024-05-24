@@ -45,12 +45,15 @@ export const BlockHeader = object({
     height: STRING_NAT,
     daHeight: BIG_NAT,
     transactionsRoot: BYTES,
-    transactionsCount: BIG_NAT,
-    messageReceiptRoot: BYTES,
-    messageReceiptCount: BIG_NAT,
+    transactionsCount: STRING_NAT,
+    messageReceiptCount: STRING_NAT,
     prevRoot: BYTES,
     time: BIG_NAT,
     applicationHash: BYTES,
+    consensusParametersVersion: STRING_NAT,
+    stateTransitionBytecodeVersion: STRING_NAT,
+    eventInboxRoot: BYTES,
+    messageOutboxRoot: BYTES,
 })
 
 
@@ -67,40 +70,6 @@ export const GetBlockHeader = object({
 export type GetBlockHeader = GetSrcType<typeof GetBlockHeader>
 
 
-export const TransactionStatus = taggedUnion('__typename', {
-    SubmittedStatus: object({time: BIG_NAT}),
-    SuccessStatus: object({
-        transactionId: BYTES,
-        time: BIG_NAT,
-        programState: nullable(object({
-            returnType: oneOf({
-                return: constant('RETURN'),
-                returnData: constant('RETURN_DATA'),
-                revert: constant('REVERT'),
-            }),
-            data: BYTES,
-        })),
-    }),
-    SqueezedOutStatus: object({reason: STRING}),
-    FailureStatus: object({
-        transactionId: BYTES,
-        time: BIG_NAT,
-        reason: STRING,
-        programState: nullable(object({
-            returnType: oneOf({
-                RETURN: constant('RETURN'),
-                RETURN_DATA: constant('RETURN_DATA'),
-                REVERT: constant('REVERT'),
-            }),
-            data: BYTES,
-        })),
-    })
-})
-
-
-export type TransactionStatus = GetSrcType<typeof TransactionStatus>
-
-
 export const TransactionInput = taggedUnion('__typename', {
     InputCoin: object({
         utxoId: BYTES,
@@ -109,7 +78,6 @@ export const TransactionInput = taggedUnion('__typename', {
         assetId: BYTES,
         txPointer: STRING,
         witnessIndex: INT,
-        maturity: STRING_NAT,
         predicateGasUsed: BIG_NAT,
         predicate: BYTES,
         predicateData: BYTES,
@@ -119,14 +87,14 @@ export const TransactionInput = taggedUnion('__typename', {
         balanceRoot: BYTES,
         stateRoot: BYTES,
         txPointer: STRING,
-        contract: object({id: BYTES}),
+        contractId: BYTES,
     }),
     InputMessage: object({
         sender: BYTES,
         recipient: BYTES,
         amount: BIG_NAT,
         nonce: BYTES,
-        witnessIndex: INT,
+        witnessIndex: STRING_NAT,
         predicateGasUsed: BIG_NAT,
         data: BYTES,
         predicate: BYTES,
@@ -145,7 +113,7 @@ export const TransactionOutput = taggedUnion('__typename', {
         assetId: BYTES,
     }),
     ContractOutput: object({
-        inputIndex: INT,
+        inputIndex: STRING_NAT,
         balanceRoot: BYTES,
         stateRoot: BYTES,
     }),
@@ -160,11 +128,7 @@ export const TransactionOutput = taggedUnion('__typename', {
         assetId: BYTES,
     }),
     ContractCreated: object({
-        contract: object({
-            id: BYTES,
-            bytecode: BYTES,
-            salt: BYTES,
-        }),
+        contract: BYTES,
         stateRoot: BYTES,
     }),
 })
@@ -174,10 +138,10 @@ export type TransactionOutput = GetSrcType<typeof TransactionOutput>
 
 
 export const Receipt = object({
-    contract: nullable(object({id: BYTES})),
+    id: nullable(BYTES),
     pc: nullable(BIG_NAT),
     is: nullable(BIG_NAT),
-    to: nullable(object({id: BYTES})),
+    to: nullable(BYTES),
     toAddress: nullable(BYTES),
     amount: nullable(BIG_NAT),
     assetId: nullable(BYTES),
@@ -222,8 +186,48 @@ export const Receipt = object({
 export type Receipt = GetSrcType<typeof Receipt>
 
 
+export const TransactionStatus = taggedUnion('__typename', {
+    SubmittedStatus: object({time: BIG_NAT}),
+    SuccessStatus: object({
+        transactionId: BYTES,
+        time: BIG_NAT,
+        programState: nullable(object({
+            returnType: oneOf({
+                return: constant('RETURN'),
+                returnData: constant('RETURN_DATA'),
+                revert: constant('REVERT'),
+            }),
+            data: BYTES,
+        })),
+        receipts: array(Receipt),
+        totalGas: BIG_NAT,
+        totalFee: BIG_NAT,
+    }),
+    SqueezedOutStatus: object({reason: STRING}),
+    FailureStatus: object({
+        transactionId: BYTES,
+        time: BIG_NAT,
+        reason: STRING,
+        programState: nullable(object({
+            returnType: oneOf({
+                RETURN: constant('RETURN'),
+                RETURN_DATA: constant('RETURN_DATA'),
+                REVERT: constant('REVERT'),
+            }),
+            data: BYTES,
+        })),
+        receipts: array(Receipt),
+        totalGas: BIG_NAT,
+        totalFee: BIG_NAT,
+    })
+})
+
+
+export type TransactionStatus = GetSrcType<typeof TransactionStatus>
+
+
 export const Policies = object({
-    gasPrice: nullable(BIG_NAT),
+    tip: nullable(BIG_NAT),
     witnessLimit: nullable(BIG_NAT),
     maturity: nullable(STRING_NAT),
     maxFee: nullable(BIG_NAT),
@@ -233,45 +237,64 @@ export const Policies = object({
 export type Policies = GetSrcType<typeof Policies>
 
 
+export const UpgradePurpose = taggedUnion('__typename', {
+    ConsensusParametersPurpose: object({
+        witnessIndex: STRING_NAT,
+        checksum: BYTES,
+    }),
+    StateTransitionPurpose: object({
+        root: BYTES,
+    }),
+})
+
+
+export type UpgradePurpose = GetSrcType<typeof UpgradePurpose>
+
+
 export const Transaction = object({
     id: BYTES,
     inputAssetIds: nullable(array(BYTES)),
-    inputContracts: nullable(array(object({id: BYTES}))),
+    inputContracts: nullable(array(BYTES)),
     inputContract: nullable(object({
         utxoId: BYTES,
         balanceRoot: BYTES,
         stateRoot: BYTES,
         txPointer: STRING,
-        contract: object({id: BYTES})
+        contractId: BYTES
     })),
     policies: nullable(Policies),
-    gasPrice: nullable(BIG_NAT),
     scriptGasLimit: nullable(BIG_NAT),
     maturity: nullable(STRING_NAT),
     mintAmount: nullable(BIG_NAT),
     mintAssetId: nullable(BYTES),
+    mintGasPrice: nullable(BIG_NAT),
     txPointer: nullable(STRING),
     isScript: BOOLEAN,
     isCreate: BOOLEAN,
     isMint: BOOLEAN,
+    isUpgrade: BOOLEAN,
+    isUpload: BOOLEAN,
     inputs: option(array(TransactionInput)),
     outputs: option(array(TransactionOutput)),
     outputContract: nullable(object({
-        inputIndex: INT,
+        inputIndex: STRING_NAT,
         balanceRoot: BYTES,
         stateRoot: BYTES,
     })),
     witnesses: nullable(array(BYTES)),
     receiptsRoot: nullable(BYTES),
     status: TransactionStatus,
-    receipts: option(array(Receipt)),
     script: nullable(BYTES),
     scriptData: nullable(BYTES),
-    bytecodeWitnessIndex: nullable(INT),
-    bytecodeLength: nullable(BIG_NAT),
     salt: nullable(BYTES),
     storageSlots: nullable(array(BYTES)),
     rawPayload: nullable(BYTES),
+    bytecodeWitnessIndex: nullable(STRING_NAT),
+    bytecodeRoot: nullable(BYTES),
+    subsectionIndex: nullable(STRING_NAT),
+    subsectionsNumber: nullable(STRING_NAT),
+    proofSet: nullable(array(BYTES)),
+    upgradePurpose: nullable(UpgradePurpose),
 })
 
 
