@@ -177,7 +177,7 @@ export class TypeModuleOutput extends FileOutput {
 
         this.lazy(() => {
             this.printImports(this.borsh, '@subsquid/borsh')
-            this.printImports(this.support, '../idl.support')
+            this.printImports(this.support, '../abi.support')
             if (!isTypes) {
                 this.printImports(this.types, './types')
             }

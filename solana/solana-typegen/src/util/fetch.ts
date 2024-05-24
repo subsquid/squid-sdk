@@ -21,13 +21,16 @@ const idlLayout = struct({
 
 export async function fetchIdl(client: RpcClient, programAddress: Address): Promise<any> {
     let accountInfo = await client.call('getAccountInfo', [programAddress, {encoding: 'base64'}])
-    if (accountInfo?.value == null) return undefined
 
-    if (accountInfo.value.executable) {
+    if (accountInfo?.value?.executable) {
         const baseAddress = await getProgramDerivedAddress({programAddress, seeds: []}).then((r) => r[0])
         const address = await createAddressWithSeed({baseAddress, programAddress, seed: 'anchor:idl'})
 
         accountInfo = await client.call('getAccountInfo', [address, {encoding: 'base64'}])
+    }
+
+    if (accountInfo?.value == null) {
+        throw new Error(`IDL for program ${programAddress} not found`)
     }
 
     const src = new Src(Buffer.from(accountInfo.value.data[0], 'base64'))

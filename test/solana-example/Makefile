@@ -15,8 +15,7 @@ codegen:
 
 
 typegen:
-	@npx squid-solana-typegen ./src/idl whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc#whirlpool ./idl/*.json --clean
-
+	@npx squid-solana-typegen ./src/abi whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc#whirlpool ./idl/*.json
 
 up:
 	@docker compose up -d

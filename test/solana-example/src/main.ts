@@ -4,7 +4,7 @@ import {DataSourceBuilder, SolanaRpcClient} from '@subsquid/solana-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import * as tokenProgram from './abi/token-program'
-import * as whirlpool from './idl/whirlpool'
+import * as whirlpool from './abi/whirlpool'
 import {Exchange} from './model'
 
 // First we create a DataSource - component,

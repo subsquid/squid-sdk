@@ -1,5 +1,5 @@
 import {struct, address, u16, u128, i32, u8, u64, unit, bool} from '@subsquid/borsh'
-import {instruction} from '../idl.support'
+import {instruction} from '../abi.support'
 import {WhirlpoolBumps, OpenPositionBumps, OpenPositionWithMetadataBumps} from './types'
 
 export interface InitializeConfig {

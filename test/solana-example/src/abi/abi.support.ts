@@ -16,18 +16,37 @@ export function instruction<
     accounts: A,
     data: DataCodec
 ): DeriveInstruction<D, A, DataCodec> {
-    let ins = new Ins(accounts, data)
+    let ins = new Instruction(accounts, data)
     Object.assign(ins, d)
     return ins as any
 }
 
 
+export function event<
+    D extends Discriminator,
+    DataCodec extends Codec<any>
+>(
+    d: D,
+    data: DataCodec
+): DeriveEvent<D, DataCodec> {
+    let event = new Event(data)
+    Object.assign(event, d)
+    return event as any
+}
+
+
 type DeriveInstruction<D, A, DataCodec> = Simplify<
     RemoveUndefined<D> &
-    Ins<
+    Instruction<
         {[K in keyof A]: Base58Bytes},
         GetCodecType<DataCodec>
     >
+>
+
+
+type DeriveEvent<D, DataCodec> = Simplify<
+    RemoveUndefined<D> &
+    Event<GetCodecType<DataCodec>>
 >
 
 
@@ -41,7 +60,7 @@ type RemoveUndefined<T> = {
 }
 
 
-class Ins<A, D> {
+class Instruction<A, D> {
     constructor(
         private accounts: {[K in keyof A]: number},
         private data: Codec<D>
@@ -73,6 +92,59 @@ class Ins<A, D> {
             result[key] = accounts[this.accounts[key]]
         }
         return result
+    }
+
+    decodeData(data: Uint8Array): D {
+        let src = new Src(data)
+        this.assertDiscriminator(src)
+        return this.data.decode(src)
+    }
+
+    private _assertDiscriminator?: (src: Src) => void
+
+    private assertDiscriminator(src: Src): void {
+        if (this._assertDiscriminator == null) {
+            this._assertDiscriminator = this.createDiscriminatorAssertion()
+        }
+        this._assertDiscriminator(src)
+    }
+
+    private createDiscriminatorAssertion(): (src: Src) => void {
+        let self: Discriminator = this as any
+        if (self.d8 != null) {
+            let d = new Src(decodeHex(self.d8)).u64()
+            return src => {
+                assert(d === src.u64())
+            }
+        } else if (self.d4 != null) {
+            let d = new Src(decodeHex(self.d4)).u32()
+            return src => {
+                assert(d === src.u32())
+            }
+        } else if (self.d2 != null) {
+            let d = new Src(decodeHex(self.d2)).u16()
+            return src => {
+                assert(d === src.u16())
+            }
+        } else {
+            let d = new Src(decodeHex(self.d1)).u8()
+            return src => {
+                assert(d === src.u8())
+            }
+        }
+    }
+}
+
+
+class Event<D> {
+    constructor(
+        private data: Codec<D>
+    ) {}
+
+    decode(event: {
+        msg: Bytes
+    }): D {
+        return this.decodeData(decodeHex(event.msg))
     }
 
     decodeData(data: Uint8Array): D {

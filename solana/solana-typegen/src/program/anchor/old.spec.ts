@@ -14,6 +14,7 @@ import {
 } from '../description'
 import {Field, Type, TypeKind, Variant} from '../types'
 import * as crypto from 'crypto'
+import {Sink} from '@subsquid/borsh'
 
 // ref https://github.com/coral-xyz/anchor/blob/8ffb22d936f0f6468d8f00a1e8a3c24b07e5490e/ts/src/idl.ts
 
@@ -55,6 +56,15 @@ export type IdlInstruction = {
     docs?: string[]
     accounts: IdlAccountItem[]
     args: IdlField[]
+    /**
+     * Shank compatibility
+     */
+    discriminant?: IdlInstructionDiscriminant
+}
+
+export type IdlInstructionDiscriminant = {
+    type: 'u8' | 'u16' | 'u32'
+    value: number
 }
 
 export type IdlState = {
@@ -199,7 +209,7 @@ export function build(idl: Idl): Program {
                     type: fromType(a.type),
                 }
             }),
-            discriminator: makeInstructionDiscriminator('global', i.name),
+            discriminator: makeInstructionDiscriminator('global', i),
         }
     })
 
@@ -249,27 +259,28 @@ export function build(idl: Idl): Program {
                             type: fromType(a.type),
                         }
                     }),
-                    discriminator: makeInstructionDiscriminator('state', i.name),
+                    discriminator: makeInstructionDiscriminator('state', i),
                 }
             })
         )
     }
 
     const res: Program = {
+        programId: idl.metadata?.address,
         instructions,
         types,
         accounts:
             idl.accounts?.map((a): Account => {
                 return {
                     name: a.name,
-                    discriminator: makeAccountDiscriminator(a.name),
+                    discriminator: makeAccountDiscriminator(a),
                 }
             }) ?? [],
         events:
             idl.events?.map((e): Event => {
                 return {
                     name: e.name,
-                    discriminator: makeEventDiscriminator(e.name),
+                    discriminator: makeEventDiscriminator(e),
                 }
             }) ?? [],
         constants:
@@ -417,25 +428,48 @@ function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
     }
 }
 
+function makeDiscriminantDiscriminator(discriminant: IdlInstructionDiscriminant) {
+    let sink = new Sink()
+
+    switch (discriminant.type) {
+        case 'u8':
+            sink.u8(discriminant.value)
+            break
+        case 'u16':
+            sink.u16(discriminant.value)
+            break
+        case 'u32':
+            sink.u32(Number(discriminant.value))
+            break
+        default:
+            throw unexpectedCase(discriminant.type)
+    }
+
+    return toHex(sink.result())
+}
+
 // ref https://github.com/coral-xyz/anchor/blob/8ffb22d936f0f6468d8f00a1e8a3c24b07e5490e/ts/src/coder/borsh/instruction.ts#L94
-function makeInstructionDiscriminator(nameSpace: string, ixName: string) {
-    let name = toSnakeCase(ixName)
+function makeInstructionDiscriminator(nameSpace: string, ix: IdlInstruction) {
+    // make it shank compatible
+    if (ix.discriminant) return makeDiscriminantDiscriminator(ix.discriminant)
+
+    let name = toSnakeCase(ix.name)
     let preimage = `${nameSpace}:${name}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
     return toHex(hash.digest().subarray(0, 8))
 }
 
-function makeAccountDiscriminator(aName: string) {
-    let name = toCamelCase(aName)
+function makeAccountDiscriminator(a: {name: string}) {
+    let name = toCamelCase(a.name)
     let preimage = `account:${name[0].toUpperCase() + name.slice(1)}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
     return toHex(hash.digest().subarray(0, 8))
 }
 
-function makeEventDiscriminator(name: string) {
-    let preimage = `event:${name}`
+function makeEventDiscriminator(e: {name: string}) {
+    let preimage = `event:${e.name}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
     return toHex(hash.digest().subarray(0, 8))
