@@ -23,12 +23,15 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         ...project(fields.block, {
             daHeight: BIG_NAT,
             transactionsRoot: BYTES,
-            transactionsCount: BIG_NAT,
-            messageReceiptRoot: BYTES,
-            messageReceiptCount: BIG_NAT,
+            transactionsCount: NAT,
+            messageReceiptCount: NAT,
             applicationHash: BYTES,
             prevRoot: BYTES,
             time: BIG_NAT,
+            eventInboxRoot: BYTES,
+            consensusParametersVersion: NAT,
+            stateTransitionBytecodeVersion: NAT,
+            messageOutboxRoot: BYTES,
         })
     })
 
@@ -45,6 +48,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
                 }),
                 data: BYTES,
             })),
+            totalGas: BIG_NAT,
+            totalFee: BIG_NAT,
         }),
         SqueezedOutStatus: object({reason: STRING}),
         FailureStatus: object({
@@ -59,19 +64,30 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
                 }),
                 data: BYTES,
             })),
+            totalGas: BIG_NAT,
+            totalFee: BIG_NAT,
         })
+    })
+
+    let UpgradePurpose = taggedUnion('type', {
+        ConsensusParametersPurpose: object({
+            witnessIndex: NAT,
+            checksum: BYTES,
+        }),
+        StateTransitionPurpose: object({
+            root: BYTES,
+        }),
     })
 
     let Transaction = object({
         index: NAT,
         ...project(fields.transaction, {
-            bytecodeLength: option(BIG_NAT),
             bytecodeWitnessIndex: option(NAT),
-            gasPrice: option(BIG_NAT),
+            bytecodeRoot: option(BYTES),
             hash: BYTES,
             inputAssetIds: option(array(BYTES)),
             policies: option(object({
-                gasPrice: option(BIG_NAT),
+                tip: option(BIG_NAT),
                 witnessLimit: option(BIG_NAT),
                 maturity: option(NAT),
                 maxFee: option(BIG_NAT)
@@ -81,15 +97,18 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
                 balanceRoot: BYTES,
                 stateRoot: BYTES,
                 txPointer: STRING,
-                contract: BYTES
+                contractId: BYTES
             })),
             inputContracts: option(array(BYTES)),
             isCreate: BOOLEAN,
             isMint: BOOLEAN,
             isScript: BOOLEAN,
+            isUpgrade: BOOLEAN,
+            isUpload: BOOLEAN,
             maturity: option(NAT),
             mintAmount: option(BIG_NAT),
             mintAssetId: option(BYTES),
+            mintGasPrice: option(BIG_NAT),
             outputContract: option(object({
                 inputIndex: NAT,
                 balanceRoot: BYTES,
@@ -110,6 +129,10 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             }),
             witnesses: option(array(BYTES)),
             status: option(TransactionStatus),
+            subsectionIndex: option(NAT),
+            subsectionsNumber: option(NAT),
+            proofSet: option(array(BYTES)),
+            upgradePurpose: option(UpgradePurpose),
         })
     })
 
@@ -168,7 +191,6 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         ...project({
             amount: fields.input?.coinAmount,
             assetId: fields.input?.coinAssetId,
-            maturity: fields.input?.coinMaturity,
             owner: fields.input?.coinOwner,
             predicate: fields.input?.coinPredicate,
             predicateData: fields.input?.coinPredicateData,
@@ -196,7 +218,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         ...project({
             utxoId: fields.input?.contractUtxoId,
             balanceRoot: fields.input?.contractBalanceRoot,
-            contract: fields.input?.contractContract,
+            contractId: fields.input?.contractContractId,
             stateRoot: fields.input?.contractStateRoot,
             txPointer: fields.input?.contractTxPointer
         }, {
@@ -204,7 +226,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             balanceRoot: BYTES,
             stateRoot: BYTES,
             txPointer: STRING,
-            contract: BYTES,
+            contractId: BYTES,
         })
     })
 
@@ -303,11 +325,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             contract: fields.output?.contractCreatedContract,
             stateRoot: fields.output?.contractCreatedStateRoot
         }, {
-            contract: object({
-                id: BYTES,
-                bytecode: BYTES,
-                salt: BYTES
-            }),
+            contract: BYTES,
             stateRoot: BYTES
         })
     })

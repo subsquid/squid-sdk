@@ -96,7 +96,7 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<TransactionInp
             type,
             coinOwner,
             coinAssetId,
-            contractContract,
+            contractContractId,
             messageSender,
             messageRecipient,
             ...relations
@@ -105,7 +105,7 @@ function buildInputFilter(dataRequest: DataRequest): EntityFilter<TransactionInp
         filter.propIn('type', req.type)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.owner), coinOwner)
         filter.getIn(input => input.type == 'InputCoin' && assertNotNull(input.assetId), coinAssetId)
-        filter.getIn(input => input.type == 'InputContract' && assertNotNull(input.contract), contractContract)
+        filter.getIn(input => input.type == 'InputContract' && assertNotNull(input.contractId), contractContractId)
         filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.sender), messageSender)
         filter.getIn(input => input.type == 'InputMessage' && assertNotNull(input.recipient), messageRecipient)
         inputs.add(filter, relations)
