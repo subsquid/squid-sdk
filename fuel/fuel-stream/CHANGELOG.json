@@ -2,6 +2,26 @@
   "name": "@subsquid/fuel-stream",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/fuel-stream_v1.0.0",
+      "date": "Sat, 25 May 2024 07:09:59 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "update entities according to fuel testnet changes"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-normalization\" from `^0.0.1` to `1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-data\" from `^0.0.1` to `1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/fuel-stream_v0.0.3",
       "date": "Thu, 16 May 2024 06:00:34 GMT",

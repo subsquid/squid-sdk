@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-typegen_v0.1.0",
+      "date": "Sat, 25 May 2024 07:09:59 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make compatible with shank IDLs"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/solana-typegen_v0.0.2",
       "date": "Thu, 09 May 2024 17:37:03 GMT",

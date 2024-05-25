@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-objects
 
-This log was last generated on Thu, 16 May 2024 06:00:34 GMT and should not be manually modified.
+This log was last generated on Sat, 25 May 2024 07:09:59 GMT and should not be manually modified.
+
+## 0.0.4
+Sat, 25 May 2024 07:09:59 GMT
+
+### Patches
+
+- add `fuel-normalization` to the dependencies
 
 ## 0.0.3
 Thu, 16 May 2024 06:00:34 GMT
