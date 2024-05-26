@@ -1,7 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import type {EntityManager, EntityMetadata} from 'typeorm'
+import type {EntityManager, EntityMetadata, EntityTarget} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
-import {Entity, EntityClass} from './store'
+import {EntityLiteral} from '../store'
 
 
 export interface RowRef {
@@ -37,7 +37,7 @@ export interface ChangeRow {
 }
 
 
-export class ChangeTracker {
+export class ChangeWriter {
     private index = 0
 
     constructor(
@@ -48,22 +48,19 @@ export class ChangeTracker {
         this.statusSchema = this.escape(this.statusSchema)
     }
 
-    trackInsert(type: EntityClass<Entity>, entities: Entity[]): Promise<void> {
-        let meta = this.getEntityMetadata(type)
+    writeInsert(metadata: EntityMetadata, entities: EntityLiteral[]): Promise<void> {
         return this.writeChangeRows(entities.map(e => {
             return {
                 kind: 'insert',
-                table: meta.tableName,
+                table: metadata.tableName,
                 id: e.id
             }
         }))
     }
 
-    async trackUpsert(type: EntityClass<Entity>, entities: Entity[]): Promise<void> {
-        let meta = this.getEntityMetadata(type)
-
+    async writeUpsert(metadata: EntityMetadata, entities: EntityLiteral[]): Promise<void> {
         let touchedRows = await this.fetchEntities(
-            meta,
+            metadata,
             entities.map(e => e.id)
         ).then(
             entities => new Map(
@@ -76,35 +73,34 @@ export class ChangeTracker {
             if (fields) {
                 return {
                     kind: 'update',
-                    table: meta.tableName,
+                    table: metadata.tableName,
                     id: e.id,
                     fields
                 }
             } else {
                 return {
                     kind: 'insert',
-                    table: meta.tableName,
+                    table: metadata.tableName,
                     id: e.id,
                 }
             }
         }))
     }
 
-    async trackDelete(type: EntityClass<Entity>, ids: string[]): Promise<void> {
-        let meta = this.getEntityMetadata(type)
-        let deletedEntities = await this.fetchEntities(meta, ids)
+    async writeDelete(metadata: EntityMetadata, ids: string[]): Promise<void> {
+        let deletedEntities = await this.fetchEntities(metadata, ids)
         return this.writeChangeRows(deletedEntities.map(e => {
             let {id, ...fields} = e
             return {
                 kind: 'delete',
-                table: meta.tableName,
+                table: metadata.tableName,
                 id: id,
                 fields
             }
         }))
     }
 
-    private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<Entity[]> {
+    private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<EntityLiteral[]> {
         let entities = await this.em.query(
             `SELECT * FROM ${this.escape(meta.tableName)} WHERE id = ANY($1::text[])`,
             [ids]
@@ -133,7 +129,7 @@ export class ChangeTracker {
         return entities
     }
 
-    private writeChangeRows(changes: ChangeRecord[]): Promise<void> {
+    private async writeChangeRows(changes: ChangeRecord[]): Promise<void> {
         let height = new Array(changes.length)
         let index = new Array(changes.length)
         let change = new Array(changes.length)
@@ -149,11 +145,7 @@ export class ChangeTracker {
         sql += ' SELECT block_height, index, change::jsonb'
         sql += ' FROM unnest($1::int[], $2::int[], $3::text[]) AS i(block_height, index, change)'
 
-        return this.em.query(sql, [height, index, change]).then(() => {})
-    }
-
-    private getEntityMetadata(type: EntityClass<Entity>): EntityMetadata {
-        return this.em.connection.getMetadata(type)
+        await this.em.query(sql, [height, index, change])
     }
 
     private escape(name: string): string {

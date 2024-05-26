@@ -1,5 +1,5 @@
 import type {DataSource, EntityManager} from "typeorm"
-import type {IsolationLevel} from "./database"
+import type {IsolationLevel} from "../database"
 
 
 export interface Tx {

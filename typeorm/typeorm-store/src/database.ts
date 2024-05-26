@@ -1,10 +1,11 @@
 import {createOrmConfig} from '@subsquid/typeorm-config'
-import {assertNotNull, last, maybeLast} from '@subsquid/util-internal'
+import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
 import assert from 'assert'
 import {DataSource, EntityManager} from 'typeorm'
-import {ChangeTracker, rollbackBlock} from './hot'
+import {ChangeWriter, rollbackBlock} from './utils/changeWriter'
 import {DatabaseState, FinalTxInfo, HashAndHeight, HotTxInfo} from './interfaces'
 import {Store} from './store'
+import {sortMetadatasInCommitOrder} from './utils/commitOrder'
 
 
 export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
@@ -179,7 +180,7 @@ export class TypeormDatabase {
                     await this.performUpdates(
                         store => cb(store, i, i + 1),
                         em,
-                        new ChangeTracker(em, this.statusSchema, b.height)
+                        new ChangeWriter(em, this.statusSchema, b.height)
                     )
                 }
             }
@@ -230,7 +231,7 @@ export class TypeormDatabase {
     private async performUpdates(
         cb: (store: Store) => Promise<void>,
         em: EntityManager,
-        changeTracker?: ChangeTracker
+        changeTracker?: ChangeWriter
     ): Promise<void> {
         let running = true
 
@@ -239,11 +240,15 @@ export class TypeormDatabase {
                 assert(running, `too late to perform db updates, make sure you haven't forgot to await on db query`)
                 return em
             },
-            changeTracker
+            {
+                tracker: changeTracker,
+                commitOrder: this.getCommitOrder()
+            }
         )
 
         try {
             await cb(store)
+            await store.flush()
         } finally {
             running = false
         }
@@ -269,6 +274,13 @@ export class TypeormDatabase {
     private escapedSchema(): string {
         let con = assertNotNull(this.con)
         return con.driver.escape(this.statusSchema)
+    }
+
+    @def
+    private getCommitOrder() {
+        let con = this.con
+        assert(con != null, 'not connected')
+        return sortMetadatasInCommitOrder(con.entityMetadatas)
     }
 }
 
