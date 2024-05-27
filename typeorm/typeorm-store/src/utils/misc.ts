@@ -89,43 +89,21 @@ export function mergeRelations<E extends ObjectLiteral>(
     return mergedObject
 }
 
-export function traverseEntity({
-    metadata,
-    entity,
-    relationMask,
-    cb,
-}: {
-    metadata: EntityMetadata
-    entity: EntityLiteral
-    relationMask: FindOptionsRelations<any> | null
+export function traverseEntity(
+    metadata: EntityMetadata,
+    entity: EntityLiteral,
     cb: (e: EntityLiteral, metadata: EntityMetadata) => void
-}) {
-    if (relationMask != null) {
-        for (const relation of metadata.relations) {
-            const inverseRelationMask = relationMask[relation.propertyName]
-            if (!inverseRelationMask) continue
+) {
+    for (const relation of metadata.relations) {
+        const inverseEntity = relation.getEntityValue(entity)
+        if (inverseEntity == null) continue
 
-            const inverseEntity = relation.getEntityValue(entity)
-            if (inverseEntity == null) continue
-
-            if (relation.isOneToMany || relation.isManyToMany) {
-                if (!Array.isArray(inverseEntity)) continue
-                for (const ie of inverseEntity) {
-                    traverseEntity({
-                        metadata: relation.inverseEntityMetadata,
-                        entity: ie,
-                        relationMask: inverseRelationMask === true ? null : inverseRelationMask,
-                        cb,
-                    })
-                }
-            } else {
-                traverseEntity({
-                    metadata: relation.inverseEntityMetadata,
-                    entity: inverseEntity,
-                    relationMask: inverseRelationMask === true ? null : inverseRelationMask,
-                    cb,
-                })
+        if (relation.isOneToMany || relation.isManyToMany) {
+            for (const ie of inverseEntity) {
+                traverseEntity(relation.inverseEntityMetadata, ie, cb)
             }
+        } else {
+            traverseEntity(relation.inverseEntityMetadata, inverseEntity, cb)
         }
     }
 

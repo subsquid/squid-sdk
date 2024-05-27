@@ -147,6 +147,10 @@ export class StateManager {
         this.cacheMap.add(metadata, entity)
     }
 
+    settle(metadata: EntityMetadata, id: string) {
+        this.cacheMap.settle(metadata, id)
+    }
+
     isInserted(metadata: EntityMetadata, id: string) {
         return this.getState(metadata, id) === ChangeType.Insert
     }
@@ -159,18 +163,17 @@ export class StateManager {
         return this.getState(metadata, id) === ChangeType.Delete
     }
 
-    clear(): void {
-        this.logger?.debug(`clear states`)
-        this.stateMap.clear()
+    isExists(metadata: EntityMetadata, id: string) {
+        return this.cacheMap.has(metadata, id)
     }
 
     reset(): void {
-        this.clear()
-        this.logger?.debug(`reset cache`)
+        this.logger?.debug(`reset`)
+        this.stateMap.clear()
         this.cacheMap.clear()
     }
 
-    computeChangeSets() {
+    async performUpdate(cb: (cs: ChangeSets) => Promise<void>) {
         const changeSets: ChangeSets = {
             inserts: [],
             upserts: [],
@@ -239,7 +242,9 @@ export class StateManager {
             }
         }
 
-        return changeSets
+        await cb(changeSets)
+
+        this.stateMap.clear()
     }
 
     private extractExtraUpsert<E extends EntityLiteral>(metadata: EntityMetadata, entity: E) {

@@ -18,13 +18,13 @@ export class CacheMap {
         return this.getEntityCache(metadata)?.get(id)
     }
 
-    exist(metadata: EntityMetadata, id: string): boolean {
+    has(metadata: EntityMetadata, id: string): boolean {
         const cacheMap = this.getEntityCache(metadata)
         const cachedEntity = cacheMap.get(id)
         return !!cachedEntity?.value
     }
 
-    ensure(metadata: EntityMetadata, id: string): void {
+    settle(metadata: EntityMetadata, id: string): void {
         const cacheMap = this.getEntityCache(metadata)
 
         if (cacheMap.has(id)) return

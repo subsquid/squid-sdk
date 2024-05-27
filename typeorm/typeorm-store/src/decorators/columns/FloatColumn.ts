@@ -1,4 +1,4 @@
-import {floatTransformer} from '../../utils/transformers'
+import {floatTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
 

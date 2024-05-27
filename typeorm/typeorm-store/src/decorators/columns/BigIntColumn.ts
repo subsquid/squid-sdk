@@ -1,4 +1,4 @@
-import {bigintTransformer} from '../../utils/transformers'
+import {bigintTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
 

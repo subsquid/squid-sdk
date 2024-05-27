@@ -249,7 +249,7 @@ export class TypeormDatabase {
             await store.flush()
             if (this.resetMode === 'BATCH') store.reset()
         } finally {
-            store._close()
+            store['isClosed'] = true
         }
     }
 
