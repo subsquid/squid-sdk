@@ -1,4 +1,4 @@
-import {EntityMetadata} from 'typeorm'
+import {DataSource, EntityMetadata} from 'typeorm'
 import {RelationMetadata} from 'typeorm/metadata/RelationMetadata'
 
 enum NodeState {
@@ -7,9 +7,13 @@ enum NodeState {
     Visited,
 }
 
-export function sortMetadatasInCommitOrder(entities: EntityMetadata[]): EntityMetadata[] {
-    let states: Map<string, NodeState> = new Map(entities.map((e) => [e.name, NodeState.Unvisited]))
-    let commitOrder: EntityMetadata[] = []
+const COMMIT_ORDERS: WeakMap<DataSource, EntityMetadata[]> = new WeakMap()
+
+export function sortMetadatasInCommitOrder(connection: DataSource): EntityMetadata[] {
+    let commitOrder = COMMIT_ORDERS.get(connection)
+    if (commitOrder != null) return commitOrder
+
+    let states: Map<string, NodeState> = new Map()
 
     function visit(node: EntityMetadata) {
         if (states.get(node.name) !== NodeState.Unvisited) return
@@ -36,7 +40,7 @@ export function sortMetadatasInCommitOrder(entities: EntityMetadata[]): EntityMe
                         }
 
                         states.set(target.name, NodeState.Visited)
-                        commitOrder.push(target)
+                        commitOrder?.push(target)
                     }
                 }
             }
@@ -46,13 +50,21 @@ export function sortMetadatasInCommitOrder(entities: EntityMetadata[]): EntityMe
 
         if (nodeState !== NodeState.Visited) {
             states.set(node.name, NodeState.Visited)
-            commitOrder.push(node)
+            commitOrder?.push(node)
         }
     }
 
-    for (let node of entities) {
+    commitOrder = []
+
+    for (let node of connection.entityMetadatas) {
+        if (!states.has(node.name)) {
+            states.set(node.name, NodeState.Unvisited)
+        }
+
         visit(node)
     }
+
+    COMMIT_ORDERS.set(connection, commitOrder)
 
     return commitOrder
 }

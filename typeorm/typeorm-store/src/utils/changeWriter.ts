@@ -1,8 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import type {EntityManager, EntityMetadata, EntityTarget} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
-import {EntityLiteral} from '../store'
-
+import {EntityLiteral} from './misc'
 
 export interface RowRef {
     table: string
@@ -41,7 +40,7 @@ export class ChangeWriter {
     private index = 0
 
     constructor(
-        private em: EntityManager,
+        protected em: EntityManager,
         private statusSchema: string,
         private blockHeight: number
     ) {

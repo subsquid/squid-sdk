@@ -1,34 +1,20 @@
-import assert from 'assert'
-import {
-    EntityManager,
-    EntityMetadata,
-    FindOptionsOrder,
-    FindOptionsRelations,
-    FindOptionsWhere,
-    ObjectLiteral,
-} from 'typeorm'
+import {EntityManager, EntityMetadata, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from 'typeorm'
 import {EntityTarget} from 'typeorm/common/EntityTarget'
 import {ChangeWriter} from './utils/changeWriter'
-import {CacheMap} from './utils/cacheMap'
-import {ChangeTracker, ChangeType} from './utils/changeTracker'
+import {StateManager} from './utils/stateManager'
 import {createLogger, Logger} from '@subsquid/logger'
-import {createFuture, def, Future} from '@subsquid/util-internal'
-import {copy} from './utils/misc'
+import {createFuture, Future} from '@subsquid/util-internal'
+import {EntityLiteral, noNull, splitIntoBatches, traverseEntity} from './utils/misc'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
+import assert from 'assert'
 
 export {EntityTarget}
 
-export interface EntityLiteral extends ObjectLiteral {
-    id: string
-}
+export type FlushMode = 'AUTO' | 'BATCH' | 'ALWAYS'
 
-export type ChangeSet = {
-    metadata: EntityMetadata
-    inserts: EntityLiteral[]
-    upserts: EntityLiteral[]
-    deletes: string[]
-    extraUpserts: EntityLiteral[]
-}
+export type ResetMode = 'BATCH' | 'MANUAL' | 'FLUSH'
+
+export type CacheMode = 'ALL' | 'MANUAL'
 
 export interface GetOptions<E = any> {
     id: string
@@ -74,33 +60,54 @@ export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
     cache?: boolean
 }
 
+export interface StoreOptions {
+    em: EntityManager
+    state: StateManager
+    changes?: ChangeWriter
+    logger?: Logger
+    flushMode: FlushMode
+    resetMode: ResetMode
+    cacheMode: CacheMode
+}
+
 /**
  * Restricted version of TypeORM entity manager for squid data handlers.
  */
 export class Store {
-    protected commitOrder: EntityMetadata[]
-    protected tracker?: ChangeWriter
-    protected changes: ChangeTracker
-    protected cache: CacheMap
-    protected logger: Logger
+    protected em: EntityManager
+    protected state: StateManager
+    protected changes?: ChangeWriter
+    protected logger?: Logger
+
+    protected flushMode: FlushMode
+    protected resetMode: ResetMode
+    protected cacheMode: CacheMode
 
     protected pendingCommit?: Future<void>
+    protected isClosed = false
 
-    constructor(
-        protected em: () => EntityManager,
-        {
-            commitOrder,
-            tracker,
-        }: {
-            commitOrder: EntityMetadata[]
-            tracker?: ChangeWriter
-        }
-    ) {
-        this.logger = createLogger('sqd:typeorm-store')
-        this.commitOrder = commitOrder
-        this.tracker = tracker
-        this.cache = new CacheMap({logger: this.logger})
-        this.changes = new ChangeTracker({logger: this.logger})
+    constructor({em, changes, logger, state, flushMode, resetMode, cacheMode}: StoreOptions) {
+        this.em = em
+        this.changes = changes
+        this.logger = logger?.child('store')
+        this.state = state
+        this.flushMode = flushMode
+        this.resetMode = resetMode
+        this.cacheMode = cacheMode
+    }
+
+    /**
+     * @internal
+     */
+    get _em() {
+        return this.em
+    }
+
+    /**
+     * @internal
+     */
+    get _state() {
+        return this.state
     }
 
     /**
@@ -116,19 +123,15 @@ export class Store {
      * It always executes a primitive operation without cascades, relations, etc.
      */
     async upsert<E extends EntityLiteral>(e: E | E[]): Promise<void> {
-        await this.pendingCommit?.promise()
+        return await this.performWrite(async () => {
+            let entities = Array.isArray(e) ? e : [e]
+            if (entities.length == 0) return
 
-        let entities = Array.isArray(e) ? e : [e]
-        if (entities.length == 0) return
-
-        for (const entity of entities) {
-            const md = this.getEntityMetadata(entity.constructor)
-
-            const isNew = this.changes.isDeleted(md, entity.id)
-
-            this.changes.trackUpsert(md, entity.id)
-            this.cache.add(md, entity, isNew)
-        }
+            for (const entity of entities) {
+                const md = this.getEntityMetadata(entity.constructor)
+                this.state.upsert(md, entity)
+            }
+        })
     }
 
     private getFkSignature(fk: ColumnMetadata[], entity: any): bigint {
@@ -141,21 +144,23 @@ export class Store {
     }
 
     private async _upsert(metadata: EntityMetadata, entities: EntityLiteral[]): Promise<void> {
-        this.logger.debug(`upsert ${entities.length} ${metadata.name} entities`)
-        await this.tracker?.writeUpsert(metadata, entities)
+        this.logger?.debug(`upsert ${entities.length} ${metadata.name} entities`)
+        await this.changes?.writeUpsert(metadata, entities)
 
         let fk = metadata.columns.filter((c) => c.relationMetadata)
         if (fk.length == 0) return this.upsertMany(metadata.target, entities)
-        let currentSignature = this.getFkSignature(fk, entities[0])
+        let signatures = entities
+            .map((e) => ({entity: e, value: this.getFkSignature(fk, e)}))
+            .sort((a, b) => (a.value > b.value ? -1 : b.value > a.value ? 1 : 0))
+        let currentSignature = signatures[0].value
         let batch: EntityLiteral[] = []
-        for (let e of entities) {
-            let sig = this.getFkSignature(fk, e)
-            if (sig === currentSignature) {
-                batch.push(e)
+        for (let s of signatures) {
+            if (s.value === currentSignature) {
+                batch.push(s.entity)
             } else {
                 await this.upsertMany(metadata.target, batch)
-                currentSignature = sig
-                batch = [e]
+                currentSignature = s.value
+                batch = [s.entity]
             }
         }
         if (batch.length) {
@@ -165,7 +170,7 @@ export class Store {
 
     private async upsertMany(target: EntityTarget<any>, entities: EntityLiteral[]) {
         for (let b of splitIntoBatches(entities, 1000)) {
-            await this.em().upsert(target, b as any, ['id'])
+            await this.em.upsert(target, b as any, ['id'])
         }
     }
 
@@ -176,28 +181,26 @@ export class Store {
      * Executes a primitive INSERT operation without cascades, relations, etc.
      */
     async insert<E extends EntityLiteral>(e: E | E[]): Promise<void> {
-        await this.pendingCommit?.promise()
+        return await this.performWrite(async () => {
+            const entities = Array.isArray(e) ? e : [e]
+            if (entities.length == 0) return
 
-        const entities = Array.isArray(e) ? e : [e]
-        if (entities.length == 0) return
-
-        for (const entity of entities) {
-            const md = this.getEntityMetadata(entity.constructor)
-
-            this.changes.trackInsert(md, entity.id)
-            this.cache.add(md, entity, true)
-        }
+            for (const entity of entities) {
+                const md = this.getEntityMetadata(entity.constructor)
+                this.state.insert(md, entity)
+            }
+        })
     }
 
     private async _insert(metadata: EntityMetadata, entities: EntityLiteral[]) {
-        this.logger.debug(`insert ${entities.length} ${metadata.name} entities`)
-        await this.tracker?.writeInsert(metadata, entities)
+        this.logger?.debug(`insert ${entities.length} ${metadata.name} entities`)
+        await this.changes?.writeInsert(metadata, entities)
         await this.insertMany(metadata.target, entities)
     }
 
     private async insertMany(target: EntityTarget<any>, entities: EntityLiteral[]) {
         for (let b of splitIntoBatches(entities, 1000)) {
-            await this.em().insert(target, b)
+            await this.em.insert(target, b)
         }
     }
 
@@ -206,58 +209,59 @@ export class Store {
      *
      * Executes a primitive DELETE query without cascades, relations, etc.
      */
+    async delete<E extends EntityLiteral>(e: E | E[]): Promise<void>
+    async delete<E extends EntityLiteral>(target: EntityTarget<E>, id: string | string[]): Promise<void>
     async delete<E extends EntityLiteral>(e: E | E[] | EntityTarget<E>, id?: string | string[]): Promise<void> {
-        await this.pendingCommit?.promise()
+        return await this.performWrite(async () => {
+            if (id == null) {
+                const entities = Array.isArray(e) ? e : [e as E]
+                if (entities.length == 0) return
 
-        if (id == null) {
-            const entities = Array.isArray(e) ? e : [e as E]
-            if (entities.length == 0) return
+                for (const entity of entities) {
+                    const md = this.getEntityMetadata(entity.constructor)
 
-            for (const entity of entities) {
-                const md = this.getEntityMetadata(entity.constructor)
+                    this.state.delete(md, entity.id)
+                }
+            } else {
+                const ids = Array.isArray(id) ? id : [id]
+                if (ids.length == 0) return
 
-                this.changes.trackDelete(md, entity.id)
-                this.cache.delete(md, entity.id)
+                const md = this.getEntityMetadata(e as EntityTarget<E>)
+                for (const id of ids) {
+                    this.state.delete(md, id)
+                }
             }
-        } else {
-            const ids = Array.isArray(id) ? id : [id]
-            if (ids.length == 0) return
-
-            const md = this.getEntityMetadata(e as EntityTarget<E>)
-            for (const id of ids) {
-                this.changes.trackDelete(md, id)
-                this.cache.delete(md, id)
-            }
-        }
+        })
     }
 
     private async _delete(metadata: EntityMetadata, ids: string[]) {
-        this.logger.debug(`delete ${metadata.name} ${ids.length} entities`)
-        await this.tracker?.writeDelete(metadata, ids)
-        await this.em().delete(metadata.target, ids) // TODO: should be split by chunks too?
+        this.logger?.debug(`delete ${metadata.name} ${ids.length} entities`)
+        await this.changes?.writeDelete(metadata, ids)
+        await this.em.delete(metadata.target, ids) // TODO: should be split by chunks too?
     }
 
     async count<E extends EntityLiteral>(target: EntityTarget<E>, options?: FindManyOptions<E>): Promise<number> {
-        await this.commit()
-        return await this.em().count(target, options)
+        return await this.performRead(async () => {
+            return await this.em.count(target, options)
+        })
     }
 
     async countBy<E extends EntityLiteral>(
         target: EntityTarget<E>,
         where: FindOptionsWhere<E> | FindOptionsWhere<E>[]
     ): Promise<number> {
-        await this.commit()
-        return await this.em().countBy(target, where)
+        return await this.performRead(async () => {
+            return await this.em.countBy(target, where)
+        })
     }
 
     async find<E extends EntityLiteral>(target: EntityTarget<E>, options: FindManyOptions<E>): Promise<E[]> {
-        await this.commit()
-
-        const {cache, ...opts} = options
-        const res = await this.em().find(target, opts)
-        if (cache) this.cacheEntities(target, res, options?.relations)
-
-        return res
+        return await this.performRead(async () => {
+            const {cache, ...opts} = options
+            const res = await this.em.find(target, opts)
+            if (cache ?? this.cacheMode === 'ALL') this.persistEntities(target, res, options?.relations)
+            return res
+        })
     }
 
     async findBy<E extends EntityLiteral>(
@@ -265,25 +269,24 @@ export class Store {
         where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
         cache?: boolean
     ): Promise<E[]> {
-        await this.commit()
-
-        const res = await this.em().findBy(target, where)
-        if (cache) this.cacheEntities(target, res)
-
-        return res
+        return await this.performRead(async () => {
+            const res = await this.em.findBy(target, where)
+            if (cache ?? this.cacheMode === 'ALL') this.persistEntities(target, res)
+            return res
+        })
     }
 
     async findOne<E extends EntityLiteral>(
         target: EntityTarget<E>,
         options: FindOneOptions<E>
     ): Promise<E | undefined> {
-        await this.commit()
-
-        const {cache, ...opts} = options
-        const res = await this.em().findOne(target, opts).then(noNull)
-        if (res != null && cache) this.cacheEntities(target, res, options?.relations)
-
-        return res
+        return await this.performRead(async () => {
+            const {cache, ...opts} = options
+            const res = await this.em.findOne(target, opts).then(noNull)
+            if (res != null && (cache ?? this.cacheMode === 'ALL'))
+                this.persistEntities(target, res, options?.relations)
+            return res
+        })
     }
 
     async findOneBy<E extends EntityLiteral>(
@@ -291,22 +294,22 @@ export class Store {
         where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
         cache?: boolean
     ): Promise<E | undefined> {
-        await this.commit()
+        return await this.performRead(async () => {
+            const res = await this.em.findOneBy(target, where).then(noNull)
+            if (res != null && (cache ?? this.cacheMode === 'ALL')) this.persistEntities(target, res)
 
-        const res = await this.em().findOneBy(target, where).then(noNull)
-        if (res != null && cache) this.cacheEntities(target, res)
-
-        return res
+            return res
+        })
     }
 
     async findOneOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
-        await this.commit()
+        return await this.performRead(async () => {
+            const {cache, ...opts} = options
+            const res = await this.em.findOneOrFail(target, opts)
+            if (cache ?? this.cacheMode === 'ALL') this.persistEntities(target, res, options?.relations)
 
-        const {cache, ...opts} = options
-        const res = await this.em().findOneOrFail(target, opts)
-        if (cache) this.cacheEntities(target, res, options?.relations)
-
-        return res
+            return res
+        })
     }
 
     async findOneByOrFail<E extends EntityLiteral>(
@@ -314,26 +317,26 @@ export class Store {
         where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
         cache?: boolean
     ): Promise<E> {
-        await this.commit()
-
-        const res = await this.em().findOneByOrFail(target, where)
-        if (cache) this.cacheEntities(target, res)
-
-        return res
+        return await this.performRead(async () => {
+            const res = await this.em.findOneByOrFail(target, where)
+            if (cache || this.cacheMode === 'ALL') this.persistEntities(target, res)
+            return res
+        })
     }
 
-    async get<E extends EntityLiteral>(entityClass: EntityTarget<E>, id: string): Promise<E | undefined>
-    async get<E extends EntityLiteral>(entityClass: EntityTarget<E>, options: GetOptions<E>): Promise<E | undefined>
+    async get<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E | undefined>
+    async get<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E | undefined>
     async get<E extends EntityLiteral>(
-        entityClass: EntityTarget<E>,
+        target: EntityTarget<E>,
         idOrOptions: string | GetOptions<E>
     ): Promise<E | undefined> {
         const {id, relations} = parseGetOptions(idOrOptions)
 
-        let entity = this.getFromCache<E>(entityClass, id, relations)
-        if (entity !== undefined) return entity ?? undefined
+        const metadata = this.getEntityMetadata(target)
+        let entity = this.state.get<E>(metadata, id, relations)
+        if (entity !== undefined) return noNull(entity)
 
-        return await this.findOne(entityClass, {where: {id} as any, relations})
+        return await this.findOne(target, {where: {id} as any, relations, cache: true})
     }
 
     async getOrFail<E extends EntityLiteral>(entityClass: EntityTarget<E>, id: string): Promise<E>
@@ -353,107 +356,81 @@ export class Store {
         return e
     }
 
-    async commit(): Promise<void> {
+    reset(): void {
+        this.state.reset()
+    }
+
+    async flush(reset?: boolean): Promise<void> {
         await this.pendingCommit?.promise()
 
         this.pendingCommit = createFuture()
         try {
-            const changeSets = this.computeChangeSets()
+            const {upserts, inserts, deletes, extraUpserts} = this.state.computeChangeSets()
 
-            for (const {metadata, upserts} of changeSets) {
-                if (upserts.length === 0) continue
-                await this._upsert(metadata, upserts)
+            for (const {metadata, entities} of upserts) {
+                await this._upsert(metadata, entities)
             }
 
-            for (const {metadata, inserts} of changeSets) {
-                if (inserts.length === 0) continue
-                await this._insert(metadata, inserts)
+            for (const {metadata, entities} of inserts) {
+                await this._insert(metadata, entities)
             }
 
-            for (const {metadata, deletes} of [...changeSets].reverse()) {
-                if (deletes.length === 0) continue
-                await this._delete(metadata, deletes)
+            for (const {metadata, ids} of deletes) {
+                await this._delete(metadata, ids)
             }
 
-            for (const {metadata, extraUpserts} of changeSets) {
-                if (extraUpserts.length === 0) continue
-                await this._upsert(metadata, extraUpserts)
+            for (const {metadata, entities} of extraUpserts) {
+                await this._upsert(metadata, entities)
             }
+
+            this.state.clear()
         } finally {
             this.pendingCommit.resolve()
             this.pendingCommit = undefined
         }
-    }
 
-    clear(): void {
-        this.cache.clear()
-        this.changes.clear()
-    }
-
-    async flush(): Promise<void> {
-        await this.commit()
-        this.clear()
-    }
-
-    private getFromCache<E extends EntityLiteral>(
-        target: EntityTarget<E>,
-        id: string,
-        mask?: FindOptionsRelations<any>
-    ): E | null | undefined {
-        const metadata = this.getEntityMetadata(target)
-        const cached = this.cache.get<E>(metadata, id)
-
-        if (cached == null) {
-            return undefined
-        } else if (cached.value == null) {
-            return null
-        } else {
-            const entity = cached.value
-
-            const clonedEntity = metadata.create()
-
-            for (const column of metadata.nonVirtualColumns) {
-                const objectColumnValue = column.getEntityValue(entity)
-                if (objectColumnValue !== undefined) {
-                    column.setEntityValue(clonedEntity, copy(objectColumnValue))
-                }
-            }
-
-            if (mask != null) {
-                for (const relation of metadata.relations) {
-                    const inverseMask = mask[relation.propertyName]
-                    if (!inverseMask) continue
-
-                    const inverseEntityMock = relation.getEntityValue(entity)
-
-                    if (inverseEntityMock === undefined) {
-                        return undefined // relation is missing, but required
-                    } else if (inverseEntityMock === null) {
-                        relation.setEntityValue(clonedEntity, null)
-                    } else {
-                        const cachedInverseEntity = this.getFromCache(
-                            relation.inverseEntityMetadata.target,
-                            inverseEntityMock.id,
-                            typeof inverseMask === 'boolean' ? undefined : inverseMask
-                        )
-
-                        if (cachedInverseEntity === undefined) {
-                            return undefined // unable to build whole relation chain
-                        } else {
-                            relation.setEntityValue(clonedEntity, cachedInverseEntity)
-                        }
-                    }
-                }
-            }
-
-            return clonedEntity
+        if (this.resetMode === 'FLUSH' || reset) {
+            this.reset()
         }
     }
 
-    private cacheEntities<E extends EntityLiteral>(
+    /**
+     * @internal
+     */
+    _close() {
+        this.isClosed = true
+    }
+
+    private async performRead<T>(cb: () => Promise<T>): Promise<T> {
+        this.assetNotClosed()
+
+        if (this.flushMode === 'AUTO' || this.flushMode === 'ALWAYS') {
+            await this.flush()
+        }
+
+        return await cb()
+    }
+
+    private async performWrite(cb: () => Promise<void>): Promise<void> {
+        await this.pendingCommit?.promise()
+
+        this.assetNotClosed()
+
+        await cb()
+
+        if (this.flushMode === 'ALWAYS') {
+            await this.flush()
+        }
+    }
+
+    private assetNotClosed() {
+        assert(!this.isClosed, `too late to perform db updates, make sure you haven't forgot to await on db query`)
+    }
+
+    private persistEntities<E extends EntityLiteral>(
         target: EntityTarget<E>,
         e: E | E[],
-        mask?: FindOptionsRelations<any>
+        relationMask?: FindOptionsRelations<any>
     ) {
         const metadata = this.getEntityMetadata(target)
 
@@ -462,175 +439,16 @@ export class Store {
             traverseEntity({
                 metadata,
                 entity,
-                mask: mask || null,
-                cb: (e, md) => {
-                    this.cache.add(md, e)
-                },
+                relationMask: relationMask || null,
+                cb: (e, md) => this.state?.persist(md, e),
             })
         }
     }
 
-    private computeChangeSets() {
-        const changes = this.changes.values()
-
-        const changeSets: ChangeSet[] = []
-        for (const metadata of this.commitOrder) {
-            const entityChanges = changes.get(metadata)
-            if (entityChanges == null) continue
-
-            const changeSet = this.computeChangeSet(metadata, entityChanges)
-            changeSets.push(changeSet)
-        }
-
-        this.changes.clear()
-
-        return changeSets
-    }
-
-    private computeChangeSet(metadata: EntityMetadata, changes: Map<string, ChangeType>): ChangeSet {
-        const inserts: EntityLiteral[] = []
-        const upserts: EntityLiteral[] = []
-        const deletes: string[] = []
-        const extraUpserts: EntityLiteral[] = []
-
-        for (const [id, type] of changes) {
-            const cached = this.cache.get<EntityLiteral>(metadata, id)
-
-            switch (type) {
-                case ChangeType.Insert: {
-                    assert(cached?.value != null, `unable to insert entity ${metadata.name} ${id}`)
-
-                    inserts.push(cached.value)
-
-                    const extraUpsert = this.extractExtraUpsert(metadata, cached.value)
-                    if (extraUpsert != null) {
-                        extraUpserts.push(extraUpsert)
-                    }
-
-                    break
-                }
-                case ChangeType.Upsert: {
-                    assert(cached?.value != null, `unable to upsert entity ${metadata.name} ${id}`)
-
-                    upserts.push(cached.value)
-
-                    const extraUpsert = this.extractExtraUpsert(metadata, cached.value)
-                    if (extraUpsert != null) {
-                        extraUpserts.push(extraUpsert)
-                    }
-
-                    break
-                }
-                case ChangeType.Delete: {
-                    deletes.push(id)
-                    break
-                }
-            }
-        }
-
-        return {metadata, inserts, upserts, extraUpserts, deletes}
-    }
-
-    private extractExtraUpsert<E extends EntityLiteral>(metadata: EntityMetadata, entity: E) {
-        const commitOrderIndex = this.commitOrder.indexOf(metadata)
-
-        let extraUpsert: E | undefined
-        for (const relation of metadata.relations) {
-            if (relation.foreignKeys.length == 0) continue
-
-            const inverseEntity = relation.getEntityValue(entity)
-            if (inverseEntity == null) continue
-
-            const inverseMetadata = relation.inverseEntityMetadata
-            if (metadata === inverseMetadata && inverseEntity.id === entity.id) continue
-
-            const invCommitOrderIndex = this.commitOrder.indexOf(inverseMetadata)
-            if (invCommitOrderIndex < commitOrderIndex) continue
-
-            const isInverseInserted = this.changes.isInserted(inverseMetadata, inverseEntity.id)
-            if (!isInverseInserted) continue
-
-            if (extraUpsert == null) {
-                extraUpsert = metadata.create() as E
-                extraUpsert.id = entity.id
-                Object.assign(extraUpsert, entity)
-            }
-
-            relation.setEntityValue(entity, undefined)
-        }
-
-        return extraUpsert
-    }
-
     private getEntityMetadata(target: EntityTarget<any>) {
-        const em = this.em()
+        const em = this.em
         return em.connection.getMetadata(target)
     }
-
-    @def
-    private reverseCommitOrder() {
-        return [...this.commitOrder].reverse()
-    }
-}
-
-function traverseEntity({
-    metadata,
-    entity,
-    mask,
-    cb,
-}: {
-    metadata: EntityMetadata
-    entity: EntityLiteral | null
-    mask: FindOptionsRelations<any> | null
-    cb: (e: EntityLiteral, metadata: EntityMetadata) => void
-}) {
-    if (entity == null) return
-
-    if (mask != null) {
-        for (const relation of metadata.relations) {
-            const inverseMask = mask[relation.propertyName]
-            if (!inverseMask) continue
-
-            const inverseEntity = relation.getEntityValue(entity)
-            if (relation.isOneToMany || relation.isManyToMany) {
-                if (!Array.isArray(inverseEntity)) continue
-                for (const ie of inverseEntity) {
-                    traverseEntity({
-                        metadata: relation.inverseEntityMetadata,
-                        entity: ie,
-                        mask: inverseMask === true ? null : inverseMask,
-                        cb,
-                    })
-                }
-            } else {
-                traverseEntity({
-                    metadata: relation.inverseEntityMetadata,
-                    entity: inverseEntity,
-                    mask: inverseMask === true ? null : inverseMask,
-                    cb,
-                })
-            }
-        }
-    }
-
-    cb(entity, metadata)
-}
-
-function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
-    if (list.length <= maxBatchSize) {
-        yield list
-    } else {
-        let offset = 0
-        while (list.length - offset > maxBatchSize) {
-            yield list.slice(offset, offset + maxBatchSize)
-            offset += maxBatchSize
-        }
-        yield list.slice(offset)
-    }
-}
-
-function noNull<T>(val: null | undefined | T): T | undefined {
-    return val == null ? undefined : val
 }
 
 function parseGetOptions<E>(idOrOptions: string | GetOptions<E>): GetOptions<E> {

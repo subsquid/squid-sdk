@@ -26,7 +26,7 @@ export class Order {
     @ManyToOne(() => Item, {nullable: true})
     item!: Item
 
-    @Column({nullable: false})
+    @Column('int4')
     qty!: number
 }
 

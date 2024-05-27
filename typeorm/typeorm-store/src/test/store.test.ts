@@ -5,6 +5,7 @@ import {Store} from '../store'
 import {Item, Order} from './lib/model'
 import {getEntityManager, useDatabase} from './util'
 import {sortMetadatasInCommitOrder} from '../utils/commitOrder'
+import {StateManager} from '../utils/stateManager'
 
 
 describe("Store", function() {
@@ -153,10 +154,17 @@ describe("Store", function() {
 })
 
 
-export function createStore(): Promise<Store> {
-    return getEntityManager().then(
-        em => new Store(() => em, {commitOrder: sortMetadatasInCommitOrder(em.connection.entityMetadatas)})
-    )
+export async function createStore(): Promise<Store> {
+    const em = await getEntityManager()
+    return new Store({
+        em,
+        state: new StateManager({
+            commitOrder: sortMetadatasInCommitOrder(em.connection),
+        }),
+        cacheMode: 'ALL',
+        flushMode: 'AUTO',
+        resetMode: 'BATCH',
+    })
 }
 
 
