@@ -8,9 +8,10 @@ import {CacheMode, FlushMode, ResetMode, Store} from './store'
 import {createLogger} from '@subsquid/logger'
 import {StateManager} from './utils/stateManager'
 import {sortMetadatasInCommitOrder} from './utils/commitOrder'
+import {IsolationLevel} from './utils/tx'
 
 
-export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
+export {IsolationLevel}
 
 
 export interface TypeormDatabaseOptions {
@@ -23,7 +24,9 @@ export interface TypeormDatabaseOptions {
     projectDir?: string
 }
 
+
 const STATE_MANAGERS: WeakMap<DataSource, StateManager> = new WeakMap()
+
 
 export class TypeormDatabase {
     private statusSchema: string

@@ -1,5 +1,7 @@
 import type {DataSource, EntityManager} from "typeorm"
-import type {IsolationLevel} from "../database"
+
+
+export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
 
 
 export interface Tx {
