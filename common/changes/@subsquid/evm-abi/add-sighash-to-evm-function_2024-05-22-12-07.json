@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-abi",
+      "comment": "Add sighash field to EVM function class for compatibility",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-abi"
+}
