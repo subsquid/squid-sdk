@@ -148,10 +148,10 @@ export class Store {
         this.logger?.debug(`upsert ${entities.length} ${metadata.name} entities`)
         await this.changes?.writeUpsert(metadata, entities)
 
-        let fk = metadata.columns.filter((c) => c.relationMetadata)
+        let fk = metadata.columns.filter(c => c.relationMetadata)
         if (fk.length == 0) return this.upsertMany(metadata.target, entities)
         let signatures = entities
-            .map((e) => ({entity: e, value: this.getFkSignature(fk, e)}))
+            .map(e => ({entity: e, value: this.getFkSignature(fk, e)}))
             .sort((a, b) => (a.value > b.value ? -1 : b.value > a.value ? 1 : 0))
         let currentSignature = signatures[0].value
         let batch: EntityLiteral[] = []
@@ -365,7 +365,7 @@ export class Store {
                 }
             })
 
-            if (this.resetMode === 'FLUSH' || reset) {
+            if (reset ?? this.resetMode === 'FLUSH') {
                 this.reset()
             }
         } finally {

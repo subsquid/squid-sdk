@@ -58,7 +58,7 @@ export class TypeormDatabase {
         await this.con.initialize()
 
         try {
-            return await this.con.transaction('SERIALIZABLE', (em) => this.initTransaction(em))
+            return await this.con.transaction('SERIALIZABLE', em => this.initTransaction(em))
         } catch (e: any) {
             await this.con.destroy().catch(() => {}) // ignore error
             this.con = undefined
@@ -128,7 +128,7 @@ export class TypeormDatabase {
     }
 
     transact(info: FinalTxInfo, cb: (store: Store) => Promise<void>): Promise<void> {
-        return this.submit(async (em) => {
+        return this.submit(async em => {
             let state = await this.getState(em)
             let {prevHead: prev, nextHead: next} = info
 
@@ -160,7 +160,7 @@ export class TypeormDatabase {
         info: HotTxInfo,
         cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<void>
     ): Promise<void> {
-        return this.submit(async (em) => {
+        return this.submit(async em => {
             let state = await this.getState(em)
             let chain = [state, ...state.top]
 
@@ -168,7 +168,7 @@ export class TypeormDatabase {
             assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
 
             assert(
-                chain.find((b) => b.hash === info.baseHead.hash),
+                chain.find(b => b.hash === info.baseHead.hash),
                 RACE_MSG
             )
             if (info.newBlocks.length == 0) {
@@ -185,14 +185,18 @@ export class TypeormDatabase {
             if (info.newBlocks.length) {
                 let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
                 if (finalizedEnd > 0) {
-                    await this.performUpdates((store) => cb(store, 0, finalizedEnd), em)
+                    await this.performUpdates(store => cb(store, 0, finalizedEnd), em)
                 } else {
                     finalizedEnd = 0
                 }
                 for (let i = finalizedEnd; i < info.newBlocks.length; i++) {
                     let b = info.newBlocks[i]
                     await this.insertHotBlock(em, b)
-                    await this.performUpdates((store) => cb(store, i, i + 1), em, new ChangeWriter(em, this.statusSchema, b.height))
+                    await this.performUpdates(
+                        store => cb(store, i, i + 1),
+                        em,
+                        new ChangeWriter(em, this.statusSchema, b.height)
+                    )
                 }
             }
 
@@ -298,9 +302,7 @@ export class TypeormDatabase {
     }
 }
 
-
 const RACE_MSG = 'status table was updated by foreign process, make sure no other processor is running'
-
 
 function assertStateInvariants(state: DatabaseState): DatabaseState {
     let height = state.height
@@ -312,7 +314,6 @@ function assertStateInvariants(state: DatabaseState): DatabaseState {
 
     return state
 }
-
 
 function assertChainContinuity(base: HashAndHeight, chain: HashAndHeight[]) {
     let prev = base
