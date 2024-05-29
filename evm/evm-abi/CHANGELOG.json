@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-abi",
   "entries": [
     {
+      "version": "0.2.3",
+      "tag": "@subsquid/evm-abi_v0.2.3",
+      "date": "Wed, 29 May 2024 15:23:01 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Add sighash field to EVM function class for compatibility"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.2.1` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.2",
       "tag": "@subsquid/evm-abi_v0.2.2",
       "date": "Mon, 20 May 2024 19:49:38 GMT",

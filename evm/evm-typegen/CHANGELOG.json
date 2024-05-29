@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.1.3",
+      "tag": "@subsquid/evm-typegen_v4.1.3",
+      "date": "Wed, 29 May 2024 15:23:01 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.2.1` to `0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-abi\" from `^0.2.2` to `0.2.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.2",
       "tag": "@subsquid/evm-typegen_v4.1.2",
       "date": "Mon, 20 May 2024 19:49:38 GMT",

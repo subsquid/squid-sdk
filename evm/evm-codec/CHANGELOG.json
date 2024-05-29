@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-codec",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-codec_v0.3.0",
+      "date": "Wed, 29 May 2024 15:23:01 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add type field to evm codecs"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/evm-codec_v0.2.1",
       "date": "Mon, 20 May 2024 19:49:38 GMT",

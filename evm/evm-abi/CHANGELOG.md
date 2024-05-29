@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-abi
 
-This log was last generated on Mon, 20 May 2024 19:49:38 GMT and should not be manually modified.
+This log was last generated on Wed, 29 May 2024 15:23:01 GMT and should not be manually modified.
+
+## 0.2.3
+Wed, 29 May 2024 15:23:01 GMT
+
+### Patches
+
+- Add sighash field to EVM function class for compatibility
 
 ## 0.2.2
 Mon, 20 May 2024 19:49:38 GMT
