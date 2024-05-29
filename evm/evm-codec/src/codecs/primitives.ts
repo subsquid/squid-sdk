@@ -16,6 +16,7 @@ export const bool: Codec<boolean> = {
     return src.bool()
   },
   isDynamic: false,
+  baseType: 'bool',
 }
 
 export const uint8: Codec<Numberish, number> = {
@@ -26,6 +27,7 @@ export const uint8: Codec<Numberish, number> = {
     return src.u8()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int8: Codec<Numberish, number> = {
@@ -36,6 +38,7 @@ export const int8: Codec<Numberish, number> = {
     return src.i8()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const uint16: Codec<Numberish, number> = {
@@ -46,6 +49,7 @@ export const uint16: Codec<Numberish, number> = {
     return src.u16()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int16: Codec<Numberish, number> = {
@@ -56,6 +60,7 @@ export const int16: Codec<Numberish, number> = {
     return src.i16()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const uint32: Codec<Numberish, number> = {
@@ -66,6 +71,7 @@ export const uint32: Codec<Numberish, number> = {
     return src.u32()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int32: Codec<Numberish, number> = {
@@ -76,6 +82,7 @@ export const int32: Codec<Numberish, number> = {
     return src.i32()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const uint64: Codec<Numberish, bigint> = {
@@ -86,6 +93,7 @@ export const uint64: Codec<Numberish, bigint> = {
     return src.u64()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int64: Codec<Numberish, bigint> = {
@@ -96,6 +104,7 @@ export const int64: Codec<Numberish, bigint> = {
     return src.i64()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const uint128: Codec<Numberish, bigint> = {
@@ -106,6 +115,7 @@ export const uint128: Codec<Numberish, bigint> = {
     return src.u128()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int128: Codec<Numberish, bigint> = {
@@ -116,6 +126,7 @@ export const int128: Codec<Numberish, bigint> = {
     return src.i128()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const uint256: Codec<Numberish, bigint> = {
@@ -126,6 +137,7 @@ export const uint256: Codec<Numberish, bigint> = {
     return src.u256()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const int256: Codec<Numberish, bigint> = {
@@ -136,6 +148,7 @@ export const int256: Codec<Numberish, bigint> = {
     return src.i256()
   },
   isDynamic: false,
+  baseType: 'int',
 }
 
 export const string = <const>{
@@ -148,6 +161,7 @@ export const string = <const>{
     return src.string()
   },
   isDynamic: true,
+  baseType: 'string',
 }
 
 function toBuffer(val: Uint8Array | string): Uint8Array {
@@ -170,6 +184,7 @@ export const bytes: Codec<Uint8Array | string, string>  = <const>{
     return toHex(src.bytes())
   },
   isDynamic: true,
+  baseType: 'bytes',
 }
 
 const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
@@ -180,6 +195,7 @@ const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
     return toHex(src.staticBytes(size))
   },
   isDynamic: false,
+  baseType: 'bytes',
 })
 
 export const bytes0 = bytesN(0)
@@ -224,6 +240,7 @@ export const address: Codec<string> = {
     return src.address()
   },
   isDynamic: false,
+  baseType: 'address',
 }
 
 export const fixedSizeArray = <TIn, TOut>(item: Codec<TIn, TOut>, size: number): Codec<TIn[], TOut[]> => new FixedSizeArrayCodec(item, size)
