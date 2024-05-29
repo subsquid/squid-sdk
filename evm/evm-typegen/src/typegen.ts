@@ -30,7 +30,7 @@ export class Typegen {
   async generate() {
     this.out.line(`import * as p from '@subsquid/evm-codec'`)
     this.out.line(
-      `import { event, fun, indexed, ContractBase } from '@subsquid/evm-abi'`,
+      `import { event, fun, viewFun, indexed, ContractBase } from '@subsquid/evm-abi'`,
     )
     this.out.line(
       `import type { EventParams as EParams, FunctionArguments, FunctionReturn } from '@subsquid/evm-abi'`,
@@ -86,9 +86,9 @@ export class Typegen {
         if (f.outputs?.length > 1) {
           returnType = `{${this.toTypes(f.outputs)}}`
         }
-
+        const funType = f.stateMutability === 'view' || f.stateMutability === 'pure' ? 'viewFun' : 'fun'
         this.out.line(
-          `${this.getPropName(f)}: fun("${this.functionSelector(
+          `${this.getPropName(f)}: ${funType}("${this.functionSelector(
             f,
           )}", {${this.toTypes(f.inputs)}}, ${returnType}),`,
         )

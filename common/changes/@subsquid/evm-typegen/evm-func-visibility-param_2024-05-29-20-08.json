@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "Add function visibility field",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}

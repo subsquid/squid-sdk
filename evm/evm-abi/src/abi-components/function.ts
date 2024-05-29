@@ -35,7 +35,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return this.selector
   }
 
-  constructor(public selector: string, public readonly args: T, public readonly returnType?: R) {
+  constructor(public selector: string, public readonly args: T, public readonly returnType?: R, public isView = false) {
     assert(selector.startsWith('0x'), 'selector must start with 0x')
     assert(selector.length === 10, 'selector must be 4 bytes long')
     this.#selector = Buffer.from(selector.slice(2), 'hex')
@@ -98,4 +98,10 @@ export const fun = <const T extends Struct, const R extends Codec<any> | Struct 
   signature: string,
   args: T,
   returnType?: R,
-) => new AbiFunction<T, R>(signature, args, returnType)
+) => new AbiFunction<T, R>(signature, args, returnType, false)
+
+export const viewFun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
+  signature: string,
+  args: T,
+  returnType?: R,
+) => new AbiFunction<T, R>(signature, args, returnType, true)

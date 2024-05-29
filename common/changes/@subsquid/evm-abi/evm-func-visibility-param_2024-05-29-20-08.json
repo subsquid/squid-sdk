@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-abi",
+      "comment": "Add function visibility field",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-abi"
+}
