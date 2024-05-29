@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 29 May 2024 15:23:01 GMT and should not be manually modified.
+This log was last generated on Wed, 29 May 2024 20:42:12 GMT and should not be manually modified.
+
+## 4.1.4
+Wed, 29 May 2024 20:42:12 GMT
+
+### Patches
+
+- Add function visibility field
 
 ## 4.1.3
 Wed, 29 May 2024 15:23:01 GMT

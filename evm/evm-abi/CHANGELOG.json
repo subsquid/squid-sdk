@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-abi",
   "entries": [
     {
+      "version": "0.2.4",
+      "tag": "@subsquid/evm-abi_v0.2.4",
+      "date": "Wed, 29 May 2024 20:42:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Add function visibility field"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.3",
       "tag": "@subsquid/evm-abi_v0.2.3",
       "date": "Wed, 29 May 2024 15:23:01 GMT",
