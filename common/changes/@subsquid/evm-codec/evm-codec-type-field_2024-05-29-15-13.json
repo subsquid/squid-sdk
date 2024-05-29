@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "Add type field to evm codecs",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}

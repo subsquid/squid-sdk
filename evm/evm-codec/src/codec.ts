@@ -3,11 +3,14 @@ import type { Src } from './src'
 
 export const WORD_SIZE = 32
 
+export type BaseType = 'int' | 'address' | 'bool' | 'bytes' | 'string' | 'array' | 'struct'
+
 export interface Codec<TIn, TOut = TIn> {
   encode(sink: Sink, val: TIn): void
   decode(src: Src): TOut
   isDynamic: boolean
   slotsCount?: number
+  baseType: BaseType
 }
 
 export type Struct = {

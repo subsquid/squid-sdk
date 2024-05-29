@@ -4,7 +4,7 @@ import { Src } from '../src'
 
 export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
   public readonly isDynamic = true
-
+  public readonly baseType = 'array'
   constructor(public readonly item: Codec<TIn, TOut>) {}
 
   encode(sink: Sink, val: TIn[]) {
@@ -33,8 +33,10 @@ export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], 
 }
 
 export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
+  public readonly baseType = 'array'
   public isDynamic: boolean
   public slotsCount: number
+
   constructor(public readonly item: Codec<TIn, TOut>, public readonly size: number) {
     this.isDynamic = item.isDynamic && size > 0
     this.slotsCount = this.isDynamic ? 1 : size

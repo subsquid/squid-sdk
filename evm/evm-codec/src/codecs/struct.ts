@@ -11,6 +11,7 @@ function slotsCount(codecs: readonly Codec<any>[]) {
 }
 
 export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<T>, DecodedStruct<T>> {
+  public readonly baseType = 'struct'
   public readonly isDynamic: boolean
   public readonly slotsCount: number
   private readonly childrenSlotsCount: number
