@@ -100,6 +100,11 @@ export interface Event {
     phase: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
+    /**
+     * This field is not supported by all currently deployed archives.
+     * Requesting it may cause internal error.
+     */
+    topics: Bytes[]
     _evmLogAddress?: Bytes
     _evmLogTopics?: Bytes[]
     _contractAddress?: Bytes

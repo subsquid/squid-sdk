@@ -902,11 +902,11 @@
       "projectFolder": "test/types",
       "shouldPublish": false
     },
-//    {
-//      "packageName": "shibuya-erc20",
-//      "projectFolder": "test/shibuya-erc20",
-//      "shouldPublish": false
-//    },
+    {
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
+      "shouldPublish": false
+    },
     {
       "packageName": "shibuya-psp22",
       "projectFolder": "test/shibuya-psp22",

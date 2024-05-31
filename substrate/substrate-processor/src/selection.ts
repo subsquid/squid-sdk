@@ -39,6 +39,7 @@ export function getEventSelectionValidator() {
         args: FIELD,
         name: FIELD,
         phase: FIELD,
+        topics: FIELD,
     }
     return object(fields)
 }

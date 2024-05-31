@@ -262,6 +262,7 @@ export class Event {
     phase?: 'Initialization' | 'ApplyExtrinsic' | 'Finalization'
     extrinsicIndex?: number
     callAddress?: number[]
+    topics?: Bytes[]
     #block: BlockHeader
     #extrinsic?: Extrinsic
     #call?: Call

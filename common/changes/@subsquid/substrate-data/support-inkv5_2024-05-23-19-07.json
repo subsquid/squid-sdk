@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "decode event topics",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

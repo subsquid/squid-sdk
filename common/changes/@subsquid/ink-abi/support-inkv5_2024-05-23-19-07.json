@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-abi",
+      "comment": "add support for v5 metadata",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/ink-abi"
+}

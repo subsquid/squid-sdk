@@ -81,15 +81,21 @@ export class Typegen {
         this.out.line(`import {Abi, Bytes, encodeCall, decodeResult} from "@subsquid/ink-abi"`)
 
         this.out.line()
-        this.out.line(`export const metadata = ${JSON.stringify(this.metadata(), null, 2)}`)
+        this.out.line(`export const metadata = ${JSON.stringify(this.metadata(), null, 4)}`)
 
         this.out.line()
         this.out.line(`const _abi = new Abi(metadata)`)
 
         this.out.line()
-        this.out.block(`export function decodeEvent(bytes: Bytes): ${ifs.use(d.event())}`, () => {
-            this.out.line(`return _abi.decodeEvent(bytes)`)
-        })
+        if (this.project().version == 5) {
+            this.out.block(`export function decodeEvent(bytes: Bytes, topics: Bytes[]): ${ifs.use(d.event())}`, () => {
+                this.out.line(`return _abi.decodeEvent(bytes, topics)`)
+            })
+        } else {
+            this.out.block(`export function decodeEvent(bytes: Bytes): ${ifs.use(d.event())}`, () => {
+                this.out.line(`return _abi.decodeEvent(bytes)`)
+            })
+        }
 
         this.out.line()
         this.out.block(`export function decodeMessage(bytes: Bytes): ${ifs.use(d.messages())}`, () => {
