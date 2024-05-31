@@ -233,6 +233,20 @@ export class ArchiveLayout {
                     out = new GzipBuffer()
                 }
 
+                async function append(batch: HashAndHeight[]) {
+                    if (firstBlock == null) {
+                        firstBlock = peekHashAndHeight(batch[0])
+                    }
+
+                    lastBlock = peekHashAndHeight(last(batch))
+
+                    for (let b of batch) {
+                        out.write(JSON.stringify(b) + '\n')
+                    }
+
+                    await out.flush()
+                }
+
                 let buf: HashAndHeight[] = []
 
                 for await (let batch of args.blocks(nextBlock, prevHash)) {
@@ -241,21 +255,15 @@ export class ArchiveLayout {
                     buf.push(...batch)
 
                     for (let bb of pack(buf, args.writeBatchSize ?? 10)) {
-                        if (firstBlock == null) {
-                            firstBlock = peekHashAndHeight(bb[0])
-                        }
-
-                        lastBlock = peekHashAndHeight(last(bb))
-
-                        for (let b of bb) {
-                            out.write(JSON.stringify(b) + '\n')
-                        }
-
-                        await out.flush()
+                        append(bb)
                         if (out.getSize() > chunkSize) {
                             await save()
                         }
                     }
+                }
+
+                if (buf.length) {
+                    append(buf)
                 }
 
                 if (firstBlock) {
@@ -444,5 +452,4 @@ function* pack<T>(items: T[], size: number): Iterable<T[]> {
     }
 
     items.splice(0, offset)
-    yield items
 }
