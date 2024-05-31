@@ -19,6 +19,7 @@ export class FuelGateway {
 
     async getBlockHash(height: number): Promise<string | undefined> {
         let blocks = await this.client.query({
+            type: 'fuel',
             fromBlock: height,
             toBlock: height,
             includeAllBlocks: true

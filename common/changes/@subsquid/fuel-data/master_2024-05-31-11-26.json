@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-data",
+      "comment": "make receipts optional if not requested",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-data"
+}

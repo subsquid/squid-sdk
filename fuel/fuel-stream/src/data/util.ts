@@ -21,7 +21,7 @@ type MergeDefault<T, D> = Simplify<
 >
 
 
-type TrueFields<F> = keyof {
+export type TrueFields<F> = keyof {
     [K in keyof F as true extends F[K] ? K : never]: true
 }
 

@@ -199,7 +199,7 @@ export const TransactionStatus = taggedUnion('__typename', {
             }),
             data: BYTES,
         })),
-        receipts: array(Receipt),
+        receipts: option(array(Receipt)),
         totalGas: BIG_NAT,
         totalFee: BIG_NAT,
     }),
@@ -216,7 +216,7 @@ export const TransactionStatus = taggedUnion('__typename', {
             }),
             data: BYTES,
         })),
-        receipts: array(Receipt),
+        receipts: option(array(Receipt)),
         totalGas: BIG_NAT,
         totalFee: BIG_NAT,
     })
