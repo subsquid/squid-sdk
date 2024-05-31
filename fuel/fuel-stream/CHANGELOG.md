@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-stream
 
-This log was last generated on Sat, 25 May 2024 07:09:59 GMT and should not be manually modified.
+This log was last generated on Fri, 31 May 2024 11:43:17 GMT and should not be manually modified.
+
+## 1.0.1
+Fri, 31 May 2024 11:43:17 GMT
+
+### Patches
+
+- improve type inference for `Input` and `Output`
 
 ## 1.0.0
 Sat, 25 May 2024 07:09:59 GMT
