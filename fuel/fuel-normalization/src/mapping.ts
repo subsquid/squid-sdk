@@ -404,11 +404,11 @@ export function mapRawBlock(raw: raw.BlockData): Block {
         })
 
         if (tx.status.__typename == 'SuccessStatus') {
-            tx.status.receipts.forEach((receipt, receiptIndex) => {
+            tx.status.receipts?.forEach((receipt, receiptIndex) => {
                 receipts.push(mapRawReceipt(receipt, index, receiptIndex))
             })
         } else if (tx.status.__typename == 'FailureStatus') {
-            tx.status.receipts.forEach((receipt, receiptIndex) => {
+            tx.status.receipts?.forEach((receipt, receiptIndex) => {
                 receipts.push(mapRawReceipt(receipt, index, receiptIndex))
             })
         }

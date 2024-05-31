@@ -6,7 +6,7 @@ import type {
     OutputRequiredFields,
     TransactionRequiredFields
 } from './data-partial'
-import type {GetFields, Select, Selector, Simplify} from './util'
+import type {GetFields, Select, Selector, Simplify, TrueFields} from './util'
 
 
 /**
@@ -89,20 +89,80 @@ export type Receipt<F extends FieldSelection = {}> = Item<
 >
 
 
-export type Input<F extends FieldSelection = {}> = Item<
-    data.TransactionInput,
-    InputRequiredFields,
-    F,
-    'input'
+type RemovePrefix<Prefix extends string, T>
+    = T extends `${Prefix}${infer S}`
+        ? Uncapitalize<S>
+        : never
+
+
+export type InputCoin<F extends FieldSelection> = Simplify<
+    Pick<data.InputCoin, InputRequiredFields> &
+    {type: 'InputCoin'} &
+    Select<data.InputCoin, RemovePrefix<'coin', TrueFields<F['input']>>>
 >
 
 
-export type Output<F extends FieldSelection = {}> = Item<
-    data.TransactionOutput,
-    OutputRequiredFields,
-    F,
-    'output'
+export type InputContract<F extends FieldSelection> = Simplify<
+    Pick<data.InputContract, InputRequiredFields> &
+    {type: 'InputContract'} &
+    Select<data.InputContract, RemovePrefix<'contract', TrueFields<F['input']>>>
 >
+
+
+export type InputMessage<F extends FieldSelection> = Simplify<
+    Pick<data.InputMessage, InputRequiredFields> &
+    {type: 'InputMessage'} &
+    Select<data.InputCoin, RemovePrefix<'coin', TrueFields<F['input']>>>
+>
+
+
+export type Input<F extends FieldSelection = {}> =
+    InputCoin<F> |
+    InputContract<F> |
+    InputMessage<F>
+
+
+export type CoinOutput<F extends FieldSelection> = Simplify<
+    Pick<data.CoinOutput, OutputRequiredFields> &
+    {type: 'CoinOutput'} &
+    Select<data.CoinOutput, RemovePrefix<'coin', TrueFields<F['output']>>>
+>
+
+
+export type ChangeOutput<F extends FieldSelection> = Simplify<
+    Pick<data.ChangeOutput, OutputRequiredFields> &
+    {type: 'ChangeOutput'} &
+    Select<data.ChangeOutput, RemovePrefix<'change', TrueFields<F['output']>>>
+>
+
+
+export type ContractOutput<F extends FieldSelection> = Simplify<
+    Pick<data.ContractOutput, OutputRequiredFields> &
+    {type: 'ContractOutput'} &
+    Select<data.ContractOutput, RemovePrefix<'contract', TrueFields<F['output']>>>
+>
+
+
+export type VariableOutput<F extends FieldSelection> = Simplify<
+    Pick<data.VariableOutput, OutputRequiredFields> &
+    {type: 'VariableOutput'} &
+    Select<data.VariableOutput, RemovePrefix<'variable', TrueFields<F['output']>>>
+>
+
+
+export type ContractCreated<F extends FieldSelection> = Simplify<
+    Pick<data.ContractCreated, OutputRequiredFields> &
+    {type: 'ContractCreated'} &
+    Select<data.ContractCreated, RemovePrefix<'contractCreated', TrueFields<F['output']>>>
+>
+
+
+export type Output<F extends FieldSelection = {}> =
+    CoinOutput<F> |
+    ContractOutput<F> |
+    ChangeOutput<F> |
+    VariableOutput<F> |
+    ContractCreated<F>
 
 
 export interface Block<F extends FieldSelection = {}> {
