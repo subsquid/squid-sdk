@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-abi",
   "entries": [
     {
+      "version": "3.1.0",
+      "tag": "@subsquid/ink-abi_v3.1.0",
+      "date": "Sat, 01 Jun 2024 10:02:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for v5 metadata"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.3",
       "tag": "@subsquid/ink-abi_v3.0.3",
       "date": "Tue, 09 Apr 2024 17:45:37 GMT",

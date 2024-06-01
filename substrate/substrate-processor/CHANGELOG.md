@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+This log was last generated on Sat, 01 Jun 2024 10:02:43 GMT and should not be manually modified.
+
+## 8.4.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- add `event.topics` field
 
 ## 8.3.1
 Tue, 07 May 2024 07:40:43 GMT

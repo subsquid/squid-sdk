@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.1.0",
+      "tag": "@subsquid/substrate-data_v4.1.0",
+      "date": "Sat, 01 Jun 2024 10:02:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "decode event topics"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.4",
       "tag": "@subsquid/substrate-data_v4.0.4",
       "date": "Tue, 09 Apr 2024 17:45:37 GMT",

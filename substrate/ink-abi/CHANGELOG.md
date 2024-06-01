@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Sat, 01 Jun 2024 10:02:43 GMT and should not be manually modified.
+
+## 3.1.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- add support for v5 metadata
 
 ## 3.0.3
 Tue, 09 Apr 2024 17:45:37 GMT
