@@ -3,7 +3,7 @@ FROM ${node} AS node
 
 
 FROM node AS builder
-RUN apk add g++ make python3
+RUN apk add g++ make python3 py3-setuptools
 WORKDIR /squid
 ADD . .
 RUN node common/scripts/install-run-rush.js install
