@@ -15,12 +15,61 @@ export {IsolationLevel}
 
 
 export interface TypeormDatabaseOptions {
+
+    /**
+     * Support for storing the data on unfinalized / hot
+     * blocks and the related rollbacks.
+     * See {@link https://docs.subsquid.io/sdk/resources/basics/unfinalized-blocks/}
+     *
+     * @defaultValue true
+     */
     supportHotBlocks?: boolean
+
+    /**
+     * PostgreSQL ransaction isolation level
+     * See {@link https://www.postgresql.org/docs/current/transaction-iso.html}
+     *
+     * @defaultValue 'SERIALIZABLE'
+     */
     isolationLevel?: IsolationLevel
+
+    /**
+     * When the queries should be sent to the database?
+     *
+     * @defaultValue FlushMode.AUTO
+     */
     flushMode?: FlushMode
+
+    /**
+     * When the cache should be dropped?
+     *
+     * @defaultValue ResetMode.BATCH
+     */
     resetMode?: ResetMode
+
+    /**
+     * Which database reads should be cached?
+     *
+     * @defaultValue CacheMode.ALL
+     */
     cacheMode?: CacheMode
+
+    /**
+     * Name of the database schema that the processor
+     * will use to track its state (height and hash of
+     * the highest indexed block). Set this if you run
+     * more than one processor against the same DB.
+     *
+     * @defaultValue 'squid_processor'
+     */
     stateSchema?: string
+
+    /**
+     * Directory with model definitions (at lib/model)
+     * and migrations (at db/migrations).
+     *
+     * @defaultValue process.cwd()
+     */
     projectDir?: string
 }
 
@@ -42,9 +91,9 @@ export class TypeormDatabase {
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema || 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
-        this.resetMode = options?.resetMode || 'BATCH'
-        this.flushMode = options?.flushMode || 'AUTO'
-        this.cacheMode = options?.cacheMode || 'ALL'
+        this.resetMode = options?.resetMode || ResetMode.BATCH
+        this.flushMode = options?.flushMode || FlushMode.AUTO
+        this.cacheMode = options?.cacheMode || CacheMode.ALL
         this.supportsHotBlocks = options?.supportHotBlocks !== false
         this.projectDir = options?.projectDir || process.cwd()
     }
@@ -254,7 +303,7 @@ export class TypeormDatabase {
         try {
             await cb(store)
             await store.flush()
-            if (this.resetMode === 'BATCH') store.reset()
+            if (this.resetMode === ResetMode.BATCH) store.reset()
         } finally {
             store['isClosed'] = true
         }

@@ -17,11 +17,60 @@ import assert from 'assert'
 
 export {EntityTarget}
 
-export type FlushMode = 'AUTO' | 'BATCH' | 'ALWAYS'
+export const enum FlushMode {
 
-export type ResetMode = 'BATCH' | 'MANUAL' | 'FLUSH'
+    /**
+     * Send queries to the database transaction at every
+     * direct database read (all read methods besides
+     * .get()) and at the end of the batch.
+     */
+    AUTO,
 
-export type CacheMode = 'ALL' | 'MANUAL'
+    /**
+     * Send queries to the database transaction strictly
+     * at the end of the batch.
+     */
+    BATCH,
+
+    /**
+     * Send queries to the database transaction whenever
+     * the data is read or written (including .get(),
+     * .insert(), .upsert(), .delete())
+     */
+    ALWAYS
+}
+
+export const enum ResetMode {
+
+    /**
+     * Clear cache at the end of each batch or manually.
+     */
+    BATCH,
+
+    /**
+     * Clear cache only manually.
+     */
+    MANUAL,
+
+    /**
+     * Clear cache whenever any queries are sent to the
+     * database transaction.
+     */
+    FLUSH
+}
+
+export const enum CacheMode {
+
+    /**
+     * Data from all database reads is cached.
+     */
+    ALL,
+
+    /**
+     * Only the data from flagged database reads is cached.
+     */
+    MANUAL
+}
 
 export interface GetOptions<E = any> {
     id: string
@@ -258,7 +307,7 @@ export class Store {
         return await this.performRead(async () => {
             const {cache, ...opts} = options
             const res = await this.em.find(target, opts)
-            if (cache ?? this.cacheMode === 'ALL') {
+            if (cache ?? this.cacheMode === CacheMode.ALL) {
                 const metadata = this.getEntityMetadata(target)
                 for (const e of res) {
                     this.cacheEntity(metadata, e)
@@ -283,7 +332,7 @@ export class Store {
         return await this.performRead(async () => {
             const {cache, ...opts} = options
             const res = await this.em.findOne(target, opts).then(noNull)
-            if (cache ?? this.cacheMode === 'ALL') {
+            if (cache ?? this.cacheMode === CacheMode.ALL) {
                 const metadata = this.getEntityMetadata(target)
                 const idOrEntity = res || getIdFromWhere(options.where)
                 this.cacheEntity(metadata, idOrEntity)
@@ -365,7 +414,7 @@ export class Store {
                 }
             })
 
-            if (reset ?? this.resetMode === 'FLUSH') {
+            if (reset ?? this.resetMode === ResetMode.FLUSH) {
                 this.reset()
             }
         } finally {
@@ -376,7 +425,7 @@ export class Store {
 
     private async performRead<T>(cb: () => Promise<T>): Promise<T> {
         this.assertNotClosed()
-        if (this.flushMode === 'AUTO' || this.flushMode === 'ALWAYS') {
+        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.ALWAYS) {
             await this.flush()
         }
         return await cb()
@@ -386,7 +435,7 @@ export class Store {
         this.assertNotClosed()
         await this.pendingCommit?.promise()
         await cb()
-        if (this.flushMode === 'ALWAYS') {
+        if (this.flushMode === FlushMode.ALWAYS) {
             await this.flush()
         }
     }
