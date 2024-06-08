@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "8.4.0",
+  "version": "8.4.1",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
