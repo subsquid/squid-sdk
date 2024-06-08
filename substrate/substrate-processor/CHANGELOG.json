@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.4.1",
+      "tag": "@subsquid/substrate-processor_v8.4.1",
+      "date": "Sat, 08 Jun 2024 15:30:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix missing `event.topics` when datasource is archive"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.4.0",
       "tag": "@subsquid/substrate-processor_v8.4.0",
       "date": "Sat, 01 Jun 2024 10:02:43 GMT",
