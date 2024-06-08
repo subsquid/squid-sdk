@@ -15,6 +15,7 @@ const CONTRACT_ADDRESS = '0x6bf32873add0e3cbaa0d06010a7aeccd3e5d8db81c2f06a35142
 
 const processor = new SubstrateBatchProcessor()
     .setRpcEndpoint('https://rpc.shibuya.astar.network')
+    .setGateway('https://v2.archive.subsquid.io/network/shibuya-substrate')
     .setBlockRange({from: 6363940})
     .setFields({
         block: {
