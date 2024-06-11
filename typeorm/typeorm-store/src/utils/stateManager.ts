@@ -117,6 +117,7 @@ export class StateManager {
             case ChangeType.Delete:
                 this.setState(metadata, entity.id, ChangeType.Upsert)
                 this.cacheMap.add(metadata, entity, true)
+                break
             default:
                 throw unexpectedCase(prevType)
         }
