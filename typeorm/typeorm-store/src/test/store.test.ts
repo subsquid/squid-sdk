@@ -184,7 +184,7 @@ describe("Store", function() {
 
         describe(".insert()",  () => {
             it('should insert an entity', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
                 const metadata =  store._em.connection.getMetadata(Item)
                 const item = new Item('1', 'a')
 
@@ -196,7 +196,7 @@ describe("Store", function() {
             })
 
             it('should not insert an entity twice', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
                 const item = new Item('1', 'a')
 
                 await store.insert(item)
@@ -211,7 +211,7 @@ describe("Store", function() {
             })
 
             it('should insert a previously deleted entity', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
 
                 await store.delete(new Item('1', 'a'))
                 await store.insert(new Item('1', 'b'))
@@ -224,7 +224,7 @@ describe("Store", function() {
 
         describe(".upsert()",  () => {
             it('should upsert an entity', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
                 const metadata =  store._em.connection.getMetadata(Item)
                 const item = new Item('1', 'a')
 
@@ -237,7 +237,7 @@ describe("Store", function() {
             })
 
             it('should upsert an entity twice', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
 
                 await store.upsert(new Item('1', 'a'))
                 await store.upsert(new Item('1', 'b'))
@@ -248,7 +248,7 @@ describe("Store", function() {
             })
 
             it('should upsert a previously deleted entity', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
 
                 await store.delete(new Item('1', 'a'))
                 await store.upsert(new Item('1', 'b'))
@@ -261,7 +261,7 @@ describe("Store", function() {
 
         describe(".delete()", function () {
             it('should delete an entity', async () => {
-                let store = await createStore({ flushMode: FlushMode.BATCH })
+                let store = await createStore({ flushMode: FlushMode.COMMIT })
                 const metadata =  store._em.connection.getMetadata(Item)
 
                 const item = new Item('1', 'a')
@@ -277,7 +277,7 @@ describe("Store", function() {
             });
 
             it('should deleted an entity twice', async () => {
-                let store = await createStore({flushMode: FlushMode.BATCH})
+                let store = await createStore({flushMode: FlushMode.COMMIT})
                 const item = new Item('1', 'a')
 
                 await store.upsert(item)
@@ -303,7 +303,7 @@ describe("Store", function() {
 
 
         it('should get all child entities', async () => {
-            let store = await createStore({ flushMode: FlushMode.BATCH })
+            let store = await createStore({ flushMode: FlushMode.COMMIT })
 
             const parent = await store.get(Parent, {
               id: '1',
@@ -319,7 +319,7 @@ describe("Store", function() {
         });
 
         it('should re-fetch child after reset', async () => {
-            let store = await createStore({ flushMode: FlushMode.BATCH })
+            let store = await createStore({ flushMode: FlushMode.COMMIT })
             await store.get(Parent, {
                 id: '1',
                 relations: {
@@ -356,7 +356,7 @@ export async function createStore({ flushMode }: { flushMode?: FlushMode  } = {}
         }),
         cacheMode: CacheMode.ALL,
         flushMode: flushMode || FlushMode.AUTO,
-        resetMode: ResetMode.BATCH,
+        resetMode: ResetMode.COMMIT,
     })
 }
 

@@ -18,6 +18,12 @@ import assert from 'assert'
 export {EntityTarget}
 
 export const enum FlushMode {
+    /**
+     * Send queries to the database transaction whenever
+     * the data is read or written (including .get(),
+     * .insert(), .upsert(), .delete())
+     */
+    IMMEDIATE,
 
     /**
      * Send queries to the database transaction at every
@@ -27,36 +33,28 @@ export const enum FlushMode {
     AUTO,
 
     /**
-     * Send queries to the database transaction strictly
-     * at the end of the batch.
+     * Send queries to the database strictly
+     * on the transaction commit.
      */
-    BATCH,
-
-    /**
-     * Send queries to the database transaction whenever
-     * the data is read or written (including .get(),
-     * .insert(), .upsert(), .delete())
-     */
-    ALWAYS
+    COMMIT,
 }
 
 export const enum ResetMode {
+    /**
+     * Clear cache whenever any queries are sent to the
+     * database transaction.
+     */
+    FLUSH,
 
     /**
-     * Clear cache at the end of each batch or manually.
+     * Clear state on the transaction commit.
      */
-    BATCH,
+    COMMIT,
 
     /**
      * Clear cache only manually.
      */
     MANUAL,
-
-    /**
-     * Clear cache whenever any queries are sent to the
-     * database transaction.
-     */
-    FLUSH
 }
 
 export const enum CacheMode {
@@ -436,7 +434,7 @@ export class Store {
 
     private async performRead<T>(cb: () => Promise<T>): Promise<T> {
         this.assertNotClosed()
-        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.ALWAYS) {
+        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.IMMEDIATE) {
             await this.flush()
         }
         return await cb()
@@ -446,7 +444,7 @@ export class Store {
         this.assertNotClosed()
         await this.pendingCommit?.promise()
         await cb()
-        if (this.flushMode === FlushMode.ALWAYS) {
+        if (this.flushMode === FlushMode.IMMEDIATE) {
             await this.flush()
         }
     }

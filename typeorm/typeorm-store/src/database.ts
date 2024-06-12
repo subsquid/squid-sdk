@@ -91,7 +91,7 @@ export class TypeormDatabase {
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema || 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
-        this.resetMode = options?.resetMode || ResetMode.BATCH
+        this.resetMode = options?.resetMode || ResetMode.COMMIT
         this.flushMode = options?.flushMode || FlushMode.AUTO
         this.cacheMode = options?.cacheMode || CacheMode.ALL
         this.supportsHotBlocks = options?.supportHotBlocks !== false
@@ -303,7 +303,7 @@ export class TypeormDatabase {
         try {
             await cb(store)
             await store.flush()
-            if (this.resetMode === ResetMode.BATCH) store.reset()
+            if (this.resetMode === ResetMode.COMMIT) store.reset()
         } finally {
             store['isClosed'] = true
         }
