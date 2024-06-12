@@ -1,5 +1,7 @@
-import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
+import { Column as Column_, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from 'typeorm';
 
+export * from './child'
+export * from './parent'
 
 @Entity()
 export class Item {

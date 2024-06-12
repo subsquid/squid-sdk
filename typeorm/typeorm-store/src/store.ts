@@ -365,6 +365,10 @@ export class Store {
         return res
     }
 
+    /**
+     * Get an entity by its id and put it in the cache.
+     * Subsequent calls to .get() with the same id will return the entity from the memory cache.
+     */
     async get<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E | undefined>
     async get<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E | undefined>
     async get<E extends EntityLiteral>(
@@ -374,10 +378,17 @@ export class Store {
         const {id, relations} = parseGetOptions(idOrOptions)
         const metadata = this.getEntityMetadata(target)
         let entity = this.state.get<E>(metadata, id, relations)
-        if (entity !== undefined) return noNull(entity)
+        if (entity !== undefined) {
+            return noNull(entity)
+        }
+
         return await this.findOne(target, {where: {id} as any, relations, cache: true})
     }
 
+    /**
+     * Get an entity by its id and put it in the cache or throw an error.
+     * Subsequent calls to .getOrFail() with the same id will return the entity from the memory cache.
+     */
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E>
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E>
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, idOrOptions: string | GetOptions<E>): Promise<E> {
