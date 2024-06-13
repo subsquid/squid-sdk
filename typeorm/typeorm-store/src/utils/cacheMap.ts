@@ -1,6 +1,7 @@
 import {EntityMetadata} from 'typeorm'
-import {copy, EntityLiteral} from './misc'
+import {EntityLiteral} from './misc'
 import {Logger} from '@subsquid/logger'
+import clone from 'fast-copy'
 
 export class CachedEntity<E extends EntityLiteral = EntityLiteral> {
     constructor(public value: E | null = null) {}
@@ -63,7 +64,7 @@ export class CacheMap {
         for (const column of metadata.nonVirtualColumns) {
             const objectColumnValue = column.getEntityValue(entity)
             if (isNew || objectColumnValue !== undefined) {
-                column.setEntityValue(cachedEntity, copy(objectColumnValue ?? null))
+                column.setEntityValue(cachedEntity, clone(objectColumnValue ?? null))
             }
         }
 

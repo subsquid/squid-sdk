@@ -2,9 +2,9 @@ import {Logger} from '@subsquid/logger'
 import {EntityManager, EntityMetadata, FindOptionsRelations} from 'typeorm'
 import {CacheMap} from './cacheMap'
 import assert from 'assert'
-import {copy, EntityLiteral} from './misc'
-import {sortMetadatasInCommitOrder} from './commitOrder'
+import {EntityLiteral} from './misc'
 import {unexpectedCase} from '@subsquid/util-internal'
+import clone from 'fast-copy'
 
 export enum ChangeType {
     Insert = 'insert',
@@ -50,7 +50,7 @@ export class StateManager {
             for (const column of metadata.nonVirtualColumns) {
                 const objectColumnValue = column.getEntityValue(entity)
                 if (objectColumnValue !== undefined) {
-                    column.setEntityValue(clonedEntity, copy(objectColumnValue))
+                    column.setEntityValue(clonedEntity, clone(objectColumnValue))
                 }
             }
 
