@@ -198,9 +198,8 @@ export class StateManager {
                     case ChangeType.Insert: {
                         assert(cached?.value != null, `unable to insert entity ${metadata.name} ${id}`)
 
-                        inserts.push(cached.value)
-
-                        const extraUpsert = this.extractExtraUpsert(metadata, cached.value)
+                        const {entity, extraUpsert} = this.extractExtraUpsert(metadata, cached.value)
+                        inserts.push(entity)
                         if (extraUpsert != null) {
                             extraUpserts.push(extraUpsert)
                         }
@@ -210,9 +209,9 @@ export class StateManager {
                     case ChangeType.Upsert: {
                         assert(cached?.value != null, `unable to upsert entity ${metadata.name} ${id}`)
 
-                        upserts.push(cached.value)
-
-                        const extraUpsert = this.extractExtraUpsert(metadata, cached.value)
+                        
+                        const {entity, extraUpsert} = this.extractExtraUpsert(metadata, cached.value)
+                        upserts.push(entity)
                         if (extraUpsert != null) {
                             extraUpserts.push(extraUpsert)
                         }
@@ -268,15 +267,18 @@ export class StateManager {
             if (!isInverseInserted) continue
 
             if (extraUpsert == null) {
-                extraUpsert = metadata.create() as E
-                extraUpsert.id = entity.id
-                Object.assign(extraUpsert, entity)
+                extraUpsert = entity
+                entity = metadata.create() as E
+                Object.assign(entity, extraUpsert)
             }
 
             relation.setEntityValue(entity, undefined)
         }
 
-        return extraUpsert
+        return {
+            entity,
+            extraUpsert
+        }
     }
 
     private setState(metadata: EntityMetadata, id: string, type: ChangeType): this {
