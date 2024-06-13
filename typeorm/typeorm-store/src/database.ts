@@ -297,13 +297,13 @@ export class TypeormDatabase {
             changes: changeWriter,
             cacheMode: this.cacheMode,
             flushMode: this.flushMode,
-            resetMode: this.resetMode,
         })
 
         try {
             await cb(store)
-            await store.flush()
-            if (this.resetMode === ResetMode.COMMIT) store.reset()
+            await store.flush(
+              this.resetMode === ResetMode.FLUSH || this.resetMode === ResetMode.COMMIT
+            )
         } finally {
             store['isClosed'] = true
         }

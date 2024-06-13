@@ -120,7 +120,7 @@ export interface StoreOptions {
     changes?: ChangeWriter
     logger?: Logger
     flushMode: FlushMode
-    resetMode: ResetMode
+
     cacheMode: CacheMode
 }
 
@@ -134,19 +134,17 @@ export class Store {
     protected logger?: Logger
 
     protected flushMode: FlushMode
-    protected resetMode: ResetMode
     protected cacheMode: CacheMode
 
     protected pendingCommit?: Future<void>
     protected isClosed = false
 
-    constructor({em, changes, logger, state, flushMode, resetMode, cacheMode}: StoreOptions) {
+    constructor({em, changes, logger, state, flushMode, cacheMode}: StoreOptions) {
         this.em = em
         this.changes = changes
         this.logger = logger?.child('store')
         this.state = state
         this.flushMode = flushMode
-        this.resetMode = resetMode
         this.cacheMode = cacheMode
     }
 
@@ -423,7 +421,7 @@ export class Store {
                 }
             })
 
-            if (reset ?? this.resetMode === ResetMode.FLUSH) {
+            if (reset) {
                 this.reset()
             }
         } finally {
