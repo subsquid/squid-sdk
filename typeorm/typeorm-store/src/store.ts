@@ -18,6 +18,12 @@ import assert from 'assert'
 export {EntityTarget}
 
 export const enum FlushMode {
+    /**
+     * Send queries to the database transaction whenever
+     * the data is read or written (including .get(),
+     * .insert(), .upsert(), .delete())
+     */
+    IMMEDIATE,
 
     /**
      * Send queries to the database transaction at every
@@ -27,36 +33,28 @@ export const enum FlushMode {
     AUTO,
 
     /**
-     * Send queries to the database transaction strictly
-     * at the end of the batch.
+     * Send queries to the database strictly
+     * on the transaction commit.
      */
-    BATCH,
-
-    /**
-     * Send queries to the database transaction whenever
-     * the data is read or written (including .get(),
-     * .insert(), .upsert(), .delete())
-     */
-    ALWAYS
+    COMMIT,
 }
 
 export const enum ResetMode {
+    /**
+     * Clear cache whenever any queries are sent to the
+     * database transaction.
+     */
+    FLUSH,
 
     /**
-     * Clear cache at the end of each batch or manually.
+     * Clear state on the transaction commit.
      */
-    BATCH,
+    COMMIT,
 
     /**
      * Clear cache only manually.
      */
     MANUAL,
-
-    /**
-     * Clear cache whenever any queries are sent to the
-     * database transaction.
-     */
-    FLUSH
 }
 
 export const enum CacheMode {
@@ -122,7 +120,7 @@ export interface StoreOptions {
     changes?: ChangeWriter
     logger?: Logger
     flushMode: FlushMode
-    resetMode: ResetMode
+
     cacheMode: CacheMode
 }
 
@@ -136,19 +134,17 @@ export class Store {
     protected logger?: Logger
 
     protected flushMode: FlushMode
-    protected resetMode: ResetMode
     protected cacheMode: CacheMode
 
     protected pendingCommit?: Future<void>
     protected isClosed = false
 
-    constructor({em, changes, logger, state, flushMode, resetMode, cacheMode}: StoreOptions) {
+    constructor({em, changes, logger, state, flushMode, cacheMode}: StoreOptions) {
         this.em = em
         this.changes = changes
         this.logger = logger?.child('store')
         this.state = state
         this.flushMode = flushMode
-        this.resetMode = resetMode
         this.cacheMode = cacheMode
     }
 
@@ -365,6 +361,10 @@ export class Store {
         return res
     }
 
+    /**
+     * Get an entity by its id and put it in the cache.
+     * Subsequent calls to .get() with the same id will return the entity from the memory cache.
+     */
     async get<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E | undefined>
     async get<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E | undefined>
     async get<E extends EntityLiteral>(
@@ -374,10 +374,17 @@ export class Store {
         const {id, relations} = parseGetOptions(idOrOptions)
         const metadata = this.getEntityMetadata(target)
         let entity = this.state.get<E>(metadata, id, relations)
-        if (entity !== undefined) return noNull(entity)
+        if (entity !== undefined) {
+            return noNull(entity)
+        }
+
         return await this.findOne(target, {where: {id} as any, relations, cache: true})
     }
 
+    /**
+     * Get an entity by its id and put it in the cache or throw an error.
+     * Subsequent calls to .getOrFail() with the same id will return the entity from the memory cache.
+     */
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E>
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E>
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, idOrOptions: string | GetOptions<E>): Promise<E> {
@@ -414,7 +421,7 @@ export class Store {
                 }
             })
 
-            if (reset ?? this.resetMode === ResetMode.FLUSH) {
+            if (reset) {
                 this.reset()
             }
         } finally {
@@ -425,7 +432,7 @@ export class Store {
 
     private async performRead<T>(cb: () => Promise<T>): Promise<T> {
         this.assertNotClosed()
-        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.ALWAYS) {
+        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.IMMEDIATE) {
             await this.flush()
         }
         return await cb()
@@ -435,7 +442,7 @@ export class Store {
         this.assertNotClosed()
         await this.pendingCommit?.promise()
         await cb()
-        if (this.flushMode === FlushMode.ALWAYS) {
+        if (this.flushMode === FlushMode.IMMEDIATE) {
             await this.flush()
         }
     }

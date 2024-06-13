@@ -1,8 +1,8 @@
 test:
 	@echo POSTGRES
-	@npx mocha -r dotenv/config lib/test/*.test.js --exit --timeout 5000
+	@npx jest --runInBand --runTestsByPath lib/test/*.test.js --forceExit
 	@echo COCKROACH
-	@DB_PORT=27437 npx mocha -r dotenv/config lib/test/*.test.js --exit --timeout 5000
+	@DB_PORT=27437 npx jest --runInBand TestsByPath lib/test/*.test.js --forceExit
 
 
 up:

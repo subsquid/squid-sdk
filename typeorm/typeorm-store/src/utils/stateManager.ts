@@ -1,10 +1,9 @@
-import {Logger} from '@subsquid/logger'
-import {EntityManager, EntityMetadata, FindOptionsRelations} from 'typeorm'
-import {CacheMap} from './cacheMap'
-import assert from 'assert'
-import {copy, EntityLiteral} from './misc'
-import {sortMetadatasInCommitOrder} from './commitOrder'
-import {unexpectedCase} from '@subsquid/util-internal'
+import { Logger } from '@subsquid/logger';
+import { EntityMetadata, FindOptionsRelations } from 'typeorm';
+import { CacheMap } from './cacheMap';
+import assert from 'assert';
+import { copy, EntityLiteral } from './misc';
+import { unexpectedCase } from '@subsquid/util-internal';
 
 export enum ChangeType {
     Insert = 'insert',
@@ -162,6 +161,10 @@ export class StateManager {
 
     isDeleted(metadata: EntityMetadata, id: string) {
         return this.getState(metadata, id) === ChangeType.Delete
+    }
+
+    isNoop(metadata: EntityMetadata, id: string) {
+        return this.getState(metadata, id) === undefined
     }
 
     isExists(metadata: EntityMetadata, id: string) {

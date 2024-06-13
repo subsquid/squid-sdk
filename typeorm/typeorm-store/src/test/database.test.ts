@@ -1,4 +1,3 @@
-import expect from 'expect'
 import {TypeormDatabase} from '../database'
 import {Data} from './lib/model'
 import {getEntityManager, useDatabase} from './util'

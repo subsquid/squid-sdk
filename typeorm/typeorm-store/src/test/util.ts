@@ -1,15 +1,21 @@
 import {createOrmConfig} from '@subsquid/typeorm-config'
-import {assertNotNull} from '@subsquid/util-internal'
+import { assertNotNull } from '@subsquid/util-internal';
 import {Client as PgClient, ClientBase} from 'pg'
 import {DataSource, EntityManager} from 'typeorm'
+import process from 'process';
 
+function assertEnvVariable(name: string): string {
+    assertNotNull(process.env[name], `Environment variable ${name} is not set`)
+
+    return process.env[name]!
+}
 
 export const db_config = {
     host: 'localhost',
-    port: parseInt(assertNotNull(process.env.DB_PORT)),
-    user: assertNotNull(process.env.DB_USER),
-    password: assertNotNull(process.env.DB_PASS),
-    database: assertNotNull(process.env.DB_NAME)
+    port: parseInt(assertEnvVariable('DB_PORT')),
+    user: assertEnvVariable('DB_USER'),
+    password: assertEnvVariable('DB_PASS'),
+    database: assertEnvVariable('DB_NAME')
 }
 
 

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:12
+    image: postgres:14
     ports:
       - "${DB_PORT_PG}:5432"
     environment:
