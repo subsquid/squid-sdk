@@ -10,6 +10,7 @@ import {fromAnchor} from './program/anchor'
 import {fetchIdl, GET} from './util/fetch'
 import {RpcClient} from '@subsquid/rpc-client'
 import {address, Address, isAddress} from '@solana/addresses'
+import { getProgramIdl } from "@solanafm/explorer-kit-idls";
 
 const LOG = createLogger('sqd:solana-typegen')
 
@@ -72,13 +73,27 @@ The generated facades are assumed to be used by "squids" indexing solana data.
 
 async function read(spec: Spec, options?: {solanaRpcEndpoint?: string}): Promise<any> {
     if (spec.kind == 'address') {
-        return await fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
+        try {
+            return await fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
+          } catch (e: unknown) {
+            return await fetchIdlFromExplorer(address(spec.src));
+          }
     } else if (spec.kind == 'url') {
         return await GET(spec.src)
     } else {
         return JSON.parse(fs.readFileSync(spec.src, 'utf-8'))
     }
 }
+
+async function fetchIdlFromExplorer(address: Address): Promise<any> {
+    try {
+      let response = await getProgramIdl(address);
+      if (response) return response.idl
+    } catch (e: unknown) {
+      throw new Error( `Failed to fetch program IDL from Solana Explorer: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+
 
 async function fetchFromBlockchain(address: Address, url?: string): Promise<any> {
     url = url || 'https://api.mainnet-beta.solana.com'

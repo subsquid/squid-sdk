@@ -360,7 +360,10 @@ function fromType(type: IdlType): Type {
             type: fromType(type.option),
         }
     } else if ('coption' in type) {
-        throw new Error(`Type "coption" is not supported`)
+        return {
+            kind: TypeKind.Option,
+            type: fromType(type.coption),
+        }
     } else {
         throw unexpectedCase(JSON.stringify(type))
     }

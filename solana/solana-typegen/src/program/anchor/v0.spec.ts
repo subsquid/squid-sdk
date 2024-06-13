@@ -418,7 +418,10 @@ function fromType(type: IdlType): Type {
     } else if ('generic' in type) {
         throw new Error(`Generic types are not supported`)
     } else if ('coption' in type) {
-        throw new Error(`"coption" type is not supported`)
+        return {
+            kind: TypeKind.Option,
+            type: fromType(type.coption),
+        }
     } else {
         throw unexpectedCase(JSON.stringify(type))
     }
