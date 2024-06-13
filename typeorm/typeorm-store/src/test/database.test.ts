@@ -206,8 +206,8 @@ describe('TypeormDatabase', function() {
             ]
         }, async (store, block) => {
             expect(block).toEqual({height: 2, hash: 'c-2'})
-            expect(await store.find(Data)).toEqual([a1])
-            await store.remove(a1)
+            expect(await store.find(Data, {})).toEqual([a1])
+            await store.delete(a1)
         })
 
         expect(await em.find(Data)).toEqual([])

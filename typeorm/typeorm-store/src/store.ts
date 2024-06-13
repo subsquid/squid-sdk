@@ -1,19 +1,81 @@
-import assert from 'assert'
-import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from 'typeorm'
+import {
+    EntityManager,
+    EntityMetadata,
+    EntityNotFoundError,
+    FindOptionsOrder,
+    FindOptionsRelations,
+    FindOptionsWhere,
+} from 'typeorm'
 import {EntityTarget} from 'typeorm/common/EntityTarget'
+import {ChangeWriter} from './utils/changeWriter'
+import {StateManager} from './utils/stateManager'
+import {createLogger, Logger} from '@subsquid/logger'
+import {createFuture, Future} from '@subsquid/util-internal'
+import {EntityLiteral, noNull, splitIntoBatches, traverseEntity} from './utils/misc'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
-import {ChangeTracker} from './hot'
+import assert from 'assert'
 
+export {EntityTarget}
 
-export interface EntityClass<T> {
-    new (): T
+export const enum FlushMode {
+
+    /**
+     * Send queries to the database transaction at every
+     * direct database read (all read methods besides
+     * .get()) and at the end of the batch.
+     */
+    AUTO,
+
+    /**
+     * Send queries to the database transaction strictly
+     * at the end of the batch.
+     */
+    BATCH,
+
+    /**
+     * Send queries to the database transaction whenever
+     * the data is read or written (including .get(),
+     * .insert(), .upsert(), .delete())
+     */
+    ALWAYS
 }
 
+export const enum ResetMode {
 
-export interface Entity {
+    /**
+     * Clear cache at the end of each batch or manually.
+     */
+    BATCH,
+
+    /**
+     * Clear cache only manually.
+     */
+    MANUAL,
+
+    /**
+     * Clear cache whenever any queries are sent to the
+     * database transaction.
+     */
+    FLUSH
+}
+
+export const enum CacheMode {
+
+    /**
+     * Data from all database reads is cached.
+     */
+    ALL,
+
+    /**
+     * Only the data from flagged database reads is cached.
+     */
+    MANUAL
+}
+
+export interface GetOptions<E = any> {
     id: string
+    relations?: FindOptionsRelations<E>
 }
-
 
 /**
  * Defines a special criteria to find specific entity.
@@ -32,43 +94,77 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
      */
-    relations?: FindOptionsRelations<Entity>;
+    relations?: FindOptionsRelations<Entity>
     /**
      * Order, in which entities should be ordered.
      */
     order?: FindOptionsOrder<Entity>
-}
 
+    cache?: boolean
+}
 
 export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
     /**
      * Offset (paginated) where from entities should be taken.
      */
-    skip?: number;
+    skip?: number
     /**
      * Limit (paginated) - max number of entities should be taken.
      */
-    take?: number;
+    take?: number
+
+    cache?: boolean
 }
 
+export interface StoreOptions {
+    em: EntityManager
+    state: StateManager
+    changes?: ChangeWriter
+    logger?: Logger
+    flushMode: FlushMode
+    resetMode: ResetMode
+    cacheMode: CacheMode
+}
 
 /**
  * Restricted version of TypeORM entity manager for squid data handlers.
  */
 export class Store {
-    constructor(private em: () => EntityManager, private changes?: ChangeTracker) {}
+    protected em: EntityManager
+    protected state: StateManager
+    protected changes?: ChangeWriter
+    protected logger?: Logger
+
+    protected flushMode: FlushMode
+    protected resetMode: ResetMode
+    protected cacheMode: CacheMode
+
+    protected pendingCommit?: Future<void>
+    protected isClosed = false
+
+    constructor({em, changes, logger, state, flushMode, resetMode, cacheMode}: StoreOptions) {
+        this.em = em
+        this.changes = changes
+        this.logger = logger?.child('store')
+        this.state = state
+        this.flushMode = flushMode
+        this.resetMode = resetMode
+        this.cacheMode = cacheMode
+    }
+
+    get _em() {
+        return this.em
+    }
+
+    get _state() {
+        return this.state
+    }
 
     /**
      * Alias for {@link Store.upsert}
      */
-    save<E extends Entity>(entity: E): Promise<void>
-    save<E extends Entity>(entities: E[]): Promise<void>
-    save<E extends Entity>(e: E | E[]): Promise<void> {
-        if (Array.isArray(e)) { // please the compiler
-            return this.upsert(e)
-        } else {
-            return this.upsert(e)
-        }
+    async save<E extends EntityLiteral>(e: E | E[]): Promise<void> {
+        return this.upsert(e)
     }
 
     /**
@@ -76,59 +172,55 @@ export class Store {
      *
      * It always executes a primitive operation without cascades, relations, etc.
      */
-    upsert<E extends Entity>(entity: E): Promise<void>
-    upsert<E extends Entity>(entities: E[]): Promise<void>
-    async upsert<E extends Entity>(e: E | E[]): Promise<void> {
-        if (Array.isArray(e)) {
-            if (e.length == 0) return
-            let entityClass = e[0].constructor as EntityClass<E>
-            for (let i = 1; i < e.length; i++) {
-                assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
-            }
-            await this.changes?.trackUpsert(entityClass, e)
-            await this.saveMany(entityClass, e)
-        } else {
-            let entityClass = e.constructor as EntityClass<E>
-            await this.changes?.trackUpsert(entityClass, [e])
-            await this.em().upsert(entityClass, e as any, ['id'])
-        }
-    }
+    async upsert<E extends EntityLiteral>(e: E | E[]): Promise<void> {
+        return await this.performWrite(async () => {
+            let entities = Array.isArray(e) ? e : [e]
+            if (entities.length == 0) return
 
-    private async saveMany(entityClass: EntityClass<any>, entities: any[]): Promise<void> {
-        assert(entities.length > 0)
-        let em = this.em()
-        let metadata = em.connection.getMetadata(entityClass)
-        let fk = metadata.columns.filter(c => c.relationMetadata)
-        if (fk.length == 0) return this.upsertMany(em, entityClass, entities)
-        let currentSignature = this.getFkSignature(fk, entities[0])
-        let batch = []
-        for (let e of entities) {
-            let sig = this.getFkSignature(fk, e)
-            if (sig === currentSignature) {
-                batch.push(e)
-            } else {
-                await this.upsertMany(em, entityClass, batch)
-                currentSignature = sig
-                batch = [e]
+            for (const entity of entities) {
+                const md = this.getEntityMetadata(entity.constructor)
+                this.state.upsert(md, entity)
             }
-        }
-        if (batch.length) {
-            await this.upsertMany(em, entityClass, batch)
-        }
+        })
     }
 
     private getFkSignature(fk: ColumnMetadata[], entity: any): bigint {
         let sig = 0n
         for (let i = 0; i < fk.length; i++) {
             let bit = fk[i].getEntityValue(entity) === undefined ? 0n : 1n
-            sig |= (bit << BigInt(i))
+            sig |= bit << BigInt(i)
         }
         return sig
     }
 
-    private async upsertMany(em: EntityManager, entityClass: EntityClass<any>, entities: any[]): Promise<void> {
+    private async _upsert(metadata: EntityMetadata, entities: EntityLiteral[]): Promise<void> {
+        this.logger?.debug(`upsert ${entities.length} ${metadata.name} entities`)
+        await this.changes?.writeUpsert(metadata, entities)
+
+        let fk = metadata.columns.filter(c => c.relationMetadata)
+        if (fk.length == 0) return this.upsertMany(metadata.target, entities)
+        let signatures = entities
+            .map(e => ({entity: e, value: this.getFkSignature(fk, e)}))
+            .sort((a, b) => (a.value > b.value ? -1 : b.value > a.value ? 1 : 0))
+        let currentSignature = signatures[0].value
+        let batch: EntityLiteral[] = []
+        for (let s of signatures) {
+            if (s.value === currentSignature) {
+                batch.push(s.entity)
+            } else {
+                await this.upsertMany(metadata.target, batch)
+                currentSignature = s.value
+                batch = [s.entity]
+            }
+        }
+        if (batch.length) {
+            await this.upsertMany(metadata.target, batch)
+        }
+    }
+
+    private async upsertMany(target: EntityTarget<any>, entities: EntityLiteral[]) {
         for (let b of splitIntoBatches(entities, 1000)) {
-            await em.upsert(entityClass, b as any, ['id'])
+            await this.em.upsert(target, b as any, ['id'])
         }
     }
 
@@ -138,114 +230,243 @@ export class Store {
      *
      * Executes a primitive INSERT operation without cascades, relations, etc.
      */
-    insert<E extends Entity>(entity: E): Promise<void>
-    insert<E extends Entity>(entities: E[]): Promise<void>
-    async insert<E extends Entity>(e: E | E[]): Promise<void> {
-        if (Array.isArray(e)) {
-            if (e.length == 0) return
-            let entityClass = e[0].constructor as EntityClass<E>
-            for (let i = 1; i < e.length; i++) {
-                assert(entityClass === e[i].constructor, 'mass saving allowed only for entities of the same class')
+    async insert<E extends EntityLiteral>(e: E | E[]): Promise<void> {
+        return await this.performWrite(async () => {
+            const entities = Array.isArray(e) ? e : [e]
+            if (entities.length == 0) return
+
+            for (const entity of entities) {
+                const md = this.getEntityMetadata(entity.constructor)
+                this.state.insert(md, entity)
             }
-            await this.changes?.trackInsert(entityClass, e)
-            for (let b of splitIntoBatches(e, 1000)) {
-                await this.em().insert(entityClass, b as any)
-            }
-        } else {
-            let entityClass = e.constructor as EntityClass<E>
-            await this.changes?.trackInsert(entityClass, [e])
-            await this.em().insert(entityClass, e as any)
+        })
+    }
+
+    private async _insert(metadata: EntityMetadata, entities: EntityLiteral[]) {
+        this.logger?.debug(`insert ${entities.length} ${metadata.name} entities`)
+        await this.changes?.writeInsert(metadata, entities)
+        await this.insertMany(metadata.target, entities)
+    }
+
+    private async insertMany(target: EntityTarget<any>, entities: EntityLiteral[]) {
+        for (let b of splitIntoBatches(entities, 1000)) {
+            await this.em.insert(target, b)
         }
     }
 
     /**
      * Deletes a given entity or entities from the database.
      *
-     * Unlike {@link EntityManager.remove} executes a primitive DELETE query without cascades, relations, etc.
+     * Executes a primitive DELETE query without cascades, relations, etc.
      */
-    remove<E extends Entity>(entity: E): Promise<void>
-    remove<E extends Entity>(entities: E[]): Promise<void>
-    remove<E extends Entity>(entityClass: EntityClass<E>, id: string | string[]): Promise<void>
-    async remove<E extends Entity>(e: E | E[] | EntityClass<E>, id?: string | string[]): Promise<void>{
-        if (id == null) {
-            if (Array.isArray(e)) {
-                if (e.length == 0) return
-                let entityClass = e[0].constructor as EntityClass<E>
-                for (let i = 1; i < e.length; i++) {
-                    assert(entityClass === e[i].constructor, 'mass deletion allowed only for entities of the same class')
+    async delete<E extends EntityLiteral>(e: E | E[]): Promise<void>
+    async delete<E extends EntityLiteral>(target: EntityTarget<E>, id: string | string[]): Promise<void>
+    async delete<E extends EntityLiteral>(e: E | E[] | EntityTarget<E>, id?: string | string[]): Promise<void> {
+        return await this.performWrite(async () => {
+            if (id == null) {
+                const entities = Array.isArray(e) ? e : [e as E]
+                if (entities.length == 0) return
+
+                for (const entity of entities) {
+                    const md = this.getEntityMetadata(entity.constructor)
+
+                    this.state.delete(md, entity.id)
                 }
-                let ids = e.map(i => i.id)
-                await this.changes?.trackDelete(entityClass, ids)
-                await this.em().delete(entityClass, ids)
             } else {
-                let entity = e as E
-                let entityClass = entity.constructor as EntityClass<E>
-                await this.changes?.trackDelete(entityClass, [entity.id])
-                await this.em().delete(entityClass, entity.id)
+                const ids = Array.isArray(id) ? id : [id]
+                if (ids.length == 0) return
+
+                const md = this.getEntityMetadata(e as EntityTarget<E>)
+                for (const id of ids) {
+                    this.state.delete(md, id)
+                }
             }
-        } else {
-            let entityClass = e as EntityClass<E>
-            await this.changes?.trackDelete(entityClass, Array.isArray(id) ? id : [id])
-            await this.em().delete(entityClass, id)
+        })
+    }
+
+    private async _delete(metadata: EntityMetadata, ids: string[]) {
+        this.logger?.debug(`delete ${metadata.name} ${ids.length} entities`)
+        await this.changes?.writeDelete(metadata, ids)
+        await this.em.delete(metadata.target, ids) // NOTE: should be split by chunks too?
+    }
+
+    async count<E extends EntityLiteral>(target: EntityTarget<E>, options?: FindManyOptions<E>): Promise<number> {
+        return await this.performRead(async () => {
+            return await this.em.count(target, options)
+        })
+    }
+
+    async countBy<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        where: FindOptionsWhere<E> | FindOptionsWhere<E>[]
+    ): Promise<number> {
+        return await this.count(target, {where})
+    }
+
+    async find<E extends EntityLiteral>(target: EntityTarget<E>, options: FindManyOptions<E>): Promise<E[]> {
+        return await this.performRead(async () => {
+            const {cache, ...opts} = options
+            const res = await this.em.find(target, opts)
+            if (cache ?? this.cacheMode === CacheMode.ALL) {
+                const metadata = this.getEntityMetadata(target)
+                for (const e of res) {
+                    this.cacheEntity(metadata, e)
+                }
+            }
+            return res
+        })
+    }
+
+    async findBy<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
+        cache?: boolean
+    ): Promise<E[]> {
+        return await this.find(target, {where, cache})
+    }
+
+    async findOne<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        options: FindOneOptions<E>
+    ): Promise<E | undefined> {
+        return await this.performRead(async () => {
+            const {cache, ...opts} = options
+            const res = await this.em.findOne(target, opts).then(noNull)
+            if (cache ?? this.cacheMode === CacheMode.ALL) {
+                const metadata = this.getEntityMetadata(target)
+                const idOrEntity = res || getIdFromWhere(options.where)
+                this.cacheEntity(metadata, idOrEntity)
+            }
+            return res
+        })
+    }
+
+    async findOneBy<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
+        cache?: boolean
+    ): Promise<E | undefined> {
+        return await this.findOne(target, {where, cache})
+    }
+
+    async findOneOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
+        const res = await this.findOne(target, options)
+        if (res == null) throw new EntityNotFoundError(target, options.where)
+        return res
+    }
+
+    async findOneByOrFail<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
+        cache?: boolean
+    ): Promise<E> {
+        const res = await this.findOneBy(target, where, cache)
+        if (res == null) throw new EntityNotFoundError(target, where)
+        return res
+    }
+
+    async get<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E | undefined>
+    async get<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E | undefined>
+    async get<E extends EntityLiteral>(
+        target: EntityTarget<E>,
+        idOrOptions: string | GetOptions<E>
+    ): Promise<E | undefined> {
+        const {id, relations} = parseGetOptions(idOrOptions)
+        const metadata = this.getEntityMetadata(target)
+        let entity = this.state.get<E>(metadata, id, relations)
+        if (entity !== undefined) return noNull(entity)
+        return await this.findOne(target, {where: {id} as any, relations, cache: true})
+    }
+
+    async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E>
+    async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E>
+    async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, idOrOptions: string | GetOptions<E>): Promise<E> {
+        const options = parseGetOptions(idOrOptions)
+        let e = await this.get(target, options)
+        if (e == null) throw new EntityNotFoundError(target, options.id)
+        return e
+    }
+
+    reset(): void {
+        this.state.reset()
+    }
+
+    async flush(reset?: boolean): Promise<void> {
+        await this.pendingCommit?.promise()
+
+        this.pendingCommit = createFuture()
+        try {
+            await this.state.performUpdate(async ({upserts, inserts, deletes, extraUpserts}) => {
+                for (const {metadata, entities} of upserts) {
+                    await this._upsert(metadata, entities)
+                }
+
+                for (const {metadata, entities} of inserts) {
+                    await this._insert(metadata, entities)
+                }
+
+                for (const {metadata, ids} of deletes) {
+                    await this._delete(metadata, ids)
+                }
+
+                for (const {metadata, entities} of extraUpserts) {
+                    await this._upsert(metadata, entities)
+                }
+            })
+
+            if (reset ?? this.resetMode === ResetMode.FLUSH) {
+                this.reset()
+            }
+        } finally {
+            this.pendingCommit.resolve()
+            this.pendingCommit = undefined
         }
     }
 
-    async count<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<number> {
-        return this.em().count(entityClass, options)
-    }
-
-    async countBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<number> {
-        return this.em().countBy(entityClass, where)
-    }
-
-    async find<E extends Entity>(entityClass: EntityClass<E>, options?: FindManyOptions<E>): Promise<E[]> {
-        return this.em().find(entityClass, options)
-    }
-
-    async findBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E[]> {
-        return this.em().findBy(entityClass, where)
-    }
-
-    async findOne<E extends Entity>(entityClass: EntityClass<E>, options: FindOneOptions<E>): Promise<E | undefined> {
-        return this.em().findOne(entityClass, options).then(noNull)
-    }
-
-    async findOneBy<E extends Entity>(entityClass: EntityClass<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E | undefined> {
-        return this.em().findOneBy(entityClass, where).then(noNull)
-    }
-
-    async findOneOrFail<E extends Entity>(entityClass: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
-        return this.em().findOneOrFail(entityClass, options)
-    }
-
-    async findOneByOrFail<E extends Entity>(entityClass: EntityTarget<E>, where: FindOptionsWhere<E> | FindOptionsWhere<E>[]): Promise<E> {
-        return this.em().findOneByOrFail(entityClass, where)
-    }
-
-    get<E extends Entity>(entityClass: EntityClass<E>, optionsOrId: FindOneOptions<E> | string): Promise<E | undefined> {
-        if (typeof optionsOrId == 'string') {
-            return this.findOneBy(entityClass, {id: optionsOrId} as any)
-        } else {
-            return this.findOne(entityClass, optionsOrId)
+    private async performRead<T>(cb: () => Promise<T>): Promise<T> {
+        this.assertNotClosed()
+        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.ALWAYS) {
+            await this.flush()
         }
+        return await cb()
+    }
+
+    private async performWrite(cb: () => Promise<void>): Promise<void> {
+        this.assertNotClosed()
+        await this.pendingCommit?.promise()
+        await cb()
+        if (this.flushMode === FlushMode.ALWAYS) {
+            await this.flush()
+        }
+    }
+
+    private assertNotClosed() {
+        assert(!this.isClosed, `too late to perform db updates, make sure you haven't forgot to await on db query`)
+    }
+
+    private cacheEntity<E extends EntityLiteral>(metadata: EntityMetadata, entityOrId?: E | string) {
+        if (entityOrId == null) {
+            return
+        } else if (typeof entityOrId === 'string') {
+            this.state.settle(metadata, entityOrId)
+        } else {
+            traverseEntity(metadata, entityOrId, (e, md) => this.state.persist(md, e))
+        }
+    }
+
+    private getEntityMetadata(target: EntityTarget<any>) {
+        return this.em.connection.getMetadata(target)
     }
 }
 
-
-function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
-    if (list.length <= maxBatchSize) {
-        yield list
+function parseGetOptions<E>(idOrOptions: string | GetOptions<E>): GetOptions<E> {
+    if (typeof idOrOptions === 'string') {
+        return {id: idOrOptions}
     } else {
-        let offset = 0
-        while (list.length - offset > maxBatchSize) {
-            yield list.slice(offset, offset + maxBatchSize)
-            offset += maxBatchSize
-        }
-        yield list.slice(offset)
+        return idOrOptions
     }
 }
 
-
-function noNull<T>(val: null | undefined | T): T | undefined {
-    return val == null ? undefined : val
+function getIdFromWhere(where?: FindOptionsWhere<EntityLiteral>) {
+    return typeof where?.id === 'string' ? where.id : undefined
 }

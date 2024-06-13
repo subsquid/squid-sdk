@@ -1,3 +1,4 @@
+import {BigDecimal} from '@subsquid/big-decimal'
 import {ValueTransformer} from 'typeorm'
 
 export const bigintTransformer: ValueTransformer = {
@@ -18,23 +19,11 @@ export const floatTransformer: ValueTransformer = {
     },
 }
 
-const decimal = {
-    get BigDecimal(): any {
-        throw new Error('Package `@subsquid/big-decimal` is not installed')
-    },
-}
-
-try {
-    Object.defineProperty(decimal, 'BigDecimal', {
-        value: require('@subsquid/big-decimal').BigDecimal,
-    })
-} catch (e) {}
-
 export const bigdecimalTransformer: ValueTransformer = {
     to(x?: any) {
         return x?.toString()
     },
     from(s?: any): any | undefined {
-        return s == null ? undefined : decimal.BigDecimal(s)
+        return s == null ? undefined : BigDecimal(s)
     },
 }

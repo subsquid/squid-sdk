@@ -1,27 +1,29 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import expect from 'expect'
 import {Equal} from 'typeorm'
-import {Store} from '../store'
+import {Store, CacheMode, FlushMode, ResetMode} from '../store'
 import {Item, Order} from './lib/model'
 import {getEntityManager, useDatabase} from './util'
+import {sortMetadatasInCommitOrder} from '../utils/commitOrder'
+import {StateManager} from '../utils/stateManager'
 
 
 describe("Store", function() {
-    describe(".save()", function() {
+    describe(".upsert()", function() {
         useDatabase([
             `CREATE TABLE item (id text primary key , name text)`
         ])
 
         it("saving of a single entity", async function() {
             let store = await createStore()
-            await store.save(new Item('1', 'a'))
-            await expect(getItems()).resolves.toEqual([{id: '1', name: 'a'}])
+            await store.upsert(new Item('1', 'a'))
+            await expect(getItems(store)).resolves.toEqual([{id: '1', name: 'a'}])
         })
 
         it("saving of multiple entities", async function() {
             let store = await createStore()
-            await store.save([new Item('1', 'a'), new Item('2', 'b')])
-            await expect(getItems()).resolves.toEqual([
+            await store.upsert([new Item('1', 'a'), new Item('2', 'b')])
+            await expect(getItems(store)).resolves.toEqual([
                 {id: '1', name: 'a'},
                 {id: '2', name: 'b'}
             ])
@@ -33,18 +35,18 @@ describe("Store", function() {
             for (let i = 0; i < 20000; i++) {
                 items.push(new Item(''+i))
             }
-            await store.save(items)
+            await store.upsert(items)
             expect(await store.count(Item)).toEqual(items.length)
         })
 
         it("updates", async function() {
             let store = await createStore()
-            await store.save(new Item('1', 'a'))
-            await store.save([
+            await store.upsert(new Item('1', 'a'))
+            await store.upsert([
                 new Item('1', 'foo'),
                 new Item('2', 'b')
             ])
-            await expect(getItems()).resolves.toEqual([
+            await expect(getItems(store)).resolves.toEqual([
                 {id: '1', name: 'foo'},
                 {id: '2', name: 'b'}
             ])
@@ -61,29 +63,29 @@ describe("Store", function() {
 
         it("removal by passing an entity", async function() {
             let store = await createStore()
-            await store.remove(new Item('1'))
-            await expect(getItemIds()).resolves.toEqual(['2', '3'])
+            await store.delete(new Item('1'))
+            await expect(getItemIds(store)).resolves.toEqual(['2', '3'])
         })
 
         it("removal by passing an array of entities", async function() {
             let store = await createStore()
-            await store.remove([
+            await store.delete([
                 new Item('1'),
                 new Item('3')
             ])
-            await expect(getItemIds()).resolves.toEqual(['2'])
+            await expect(getItemIds(store)).resolves.toEqual(['2'])
         })
 
         it("removal by passing an id", async function() {
             let store = await createStore()
-            await store.remove(Item, '1')
-            await expect(getItemIds()).resolves.toEqual(['2', '3'])
+            await store.delete(Item, '1')
+            await expect(getItemIds(store)).resolves.toEqual(['2', '3'])
         })
 
         it("removal by passing an array of ids", async function() {
             let store = await createStore()
-            await store.remove(Item, ['1', '2'])
-            await expect(getItemIds()).resolves.toEqual(['3'])
+            await store.delete(Item, ['1', '2'])
+            await expect(getItemIds(store)).resolves.toEqual(['3'])
         })
     })
 
@@ -97,11 +99,11 @@ describe("Store", function() {
             `INSERT INTO "order" (id, item_id, qty) values ('2', '2', 3)`
         ])
 
-        it(".save() doesn't clear reference (single row update)", async function() {
+        it(".upsert() doesn't clear reference (single row update)", async function() {
             let store = await createStore()
             let order = assertNotNull(await store.get(Order, '1'))
             order.qty = 5
-            await store.save(order)
+            await store.upsert(order)
             let newOrder = await store.findOneOrFail(Order, {
                 where: {id: Equal('1')},
                 relations: {
@@ -112,7 +114,7 @@ describe("Store", function() {
             expect(newOrder.item.id).toEqual('1')
         })
 
-        it(".save() doesn't clear reference (multi row update)", async function() {
+        it(".upsert() doesn't clear reference (multi row update)", async function() {
             let store = await createStore()
             let orders = await store.find(Order, {order: {id: 'ASC'}})
             let items = await store.find(Item, {order: {id: 'ASC'}})
@@ -120,7 +122,7 @@ describe("Store", function() {
             orders[0].qty = 5
             orders[1].qty = 1
             orders[1].item = items[0]
-            await store.save(orders)
+            await store.upsert(orders)
 
             let newOrders = await store.find(Order, {
                 relations: {
@@ -152,19 +154,24 @@ describe("Store", function() {
 })
 
 
-export function createStore(): Promise<Store> {
-    return getEntityManager().then(
-        em => new Store(() => em)
-    )
+export async function createStore(): Promise<Store> {
+    const em = await getEntityManager()
+    return new Store({
+        em,
+        state: new StateManager({
+            commitOrder: sortMetadatasInCommitOrder(em.connection),
+        }),
+        cacheMode: CacheMode.ALL,
+        flushMode: FlushMode.AUTO,
+        resetMode: ResetMode.BATCH,
+    })
 }
 
 
-export async function getItems(): Promise<Item[]> {
-    let em = await getEntityManager()
-    return em.find(Item)
+export async function getItems(store: Store): Promise<Item[]> {
+    return store.find(Item, {where: {}})
 }
 
-
-export function getItemIds(): Promise<string[]> {
-    return getItems().then(items => items.map(it => it.id).sort())
+export function getItemIds(store: Store): Promise<string[]> {
+    return getItems(store).then((items) => items.map((it) => it.id).sort())
 }
