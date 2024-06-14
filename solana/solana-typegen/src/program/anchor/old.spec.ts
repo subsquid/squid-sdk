@@ -377,7 +377,7 @@ function fromType(type: IdlType): Type {
                 type: { kind: TypeKind.Primitive, primitive: 'unit' },
             },
             { name: 'Some', discriminator: d, type: fromType(type.coption) },
-            ].map((v, i) => fromEnumVariant(v, i)),
+            ],
         }
     } else {
         throw unexpectedCase(JSON.stringify(type))
