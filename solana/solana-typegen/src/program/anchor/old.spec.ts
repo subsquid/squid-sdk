@@ -154,6 +154,7 @@ export type IdlTypeOption = {
 }
 
 export type IdlTypeCOption = {
+    prefix: 'u8' | 'u16' | 'u32' | 'u64'
     coption: IdlType
 }
 
@@ -360,9 +361,23 @@ function fromType(type: IdlType): Type {
             type: fromType(type.option),
         }
     } else if ('coption' in type) {
+        if (type.prefix == 'u8' ) {
+            return {
+                kind: TypeKind.Option,
+                type: fromType(type.coption),
+            }
+        }
+        let d = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : 8;
         return {
-            kind: TypeKind.Option,
-            type: fromType(type.coption),
+            kind: TypeKind.Enum,
+            variants: [
+            {
+                name: 'None',
+                discriminator: d,
+                type: { kind: TypeKind.Primitive, primitive: 'unit' },
+            },
+            { name: 'Some', discriminator: d, type: fromType(type.coption) },
+            ].map((v, i) => fromEnumVariant(v, i)),
         }
     } else {
         throw unexpectedCase(JSON.stringify(type))
