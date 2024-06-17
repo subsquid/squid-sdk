@@ -73,13 +73,19 @@ The generated facades are assumed to be used by "squids" indexing solana data.
 
 async function read(spec: Spec, options?: {solanaRpcEndpoint?: string}): Promise<any> {
     if (spec.kind == 'address') {
-        try {
-            LOG.info(`fetching idl from blockchain for ${spec.src}`)
-            return await fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
-          } catch (e: unknown) {
-            LOG.info(`fetching idl from explorer for ${spec.src}`)
-            return await fetchIdlFromExplorer(address(spec.src));
-          }
+        const fetchFromBlockchainPromise = fetchFromBlockchain( address(spec.src), options?.solanaRpcEndpoint)
+        const fetchFromExplorerPromise = fetchIdlFromExplorer(address(spec.src));
+        const [blockchainResult, explorerResult] = await Promise.allSettled([fetchFromBlockchainPromise,fetchFromExplorerPromise])
+
+        if (blockchainResult.status === 'fulfilled') {
+            return blockchainResult.value;
+        } else if (explorerResult.status === 'fulfilled') {
+            return explorerResult.value;
+        } else {
+            LOG.error(`Failed to fetch IDL for ${spec.src}: Blockchain error: ${blockchainResult.reason}, Explorer error: ${explorerResult.reason}`);
+            throw new Error(`Failed to fetch IDL for ${spec.src}`);
+        }
+        
     } else if (spec.kind == 'url') {
         return await GET(spec.src)
     } else {
