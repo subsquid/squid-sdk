@@ -236,7 +236,7 @@ export class TypeModuleOutput extends FileOutput {
             case TypeKind.Enum:
                 this.borsh.add('sum')
                 let d = 1
-                if (type.variants[0].discriminator == 4) d = 4
+                if (type.variants[0].discriminator) d = type.variants[0].discriminator
                 this.line(start + `sum(${d}, {`)
                 this.indentation(() => {
                     for (let i = 0; i < type.variants.length; i++) {
