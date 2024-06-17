@@ -72,6 +72,7 @@ export interface Variant {
     name: string
     discriminator: number
     type: Type
+    d_len: number
 }
 
 export interface OptionType {
