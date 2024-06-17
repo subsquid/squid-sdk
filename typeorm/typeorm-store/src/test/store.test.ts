@@ -1,7 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import expect from 'expect'
 import {Equal} from 'typeorm'
-import {Store, CacheMode, FlushMode, ResetMode} from '../store'
+import {Store} from '../store'
 import {Item, Order} from './lib/model'
 import {getEntityManager, useDatabase} from './util'
 import {sortMetadatasInCommitOrder} from '../utils/commitOrder'
@@ -161,9 +161,9 @@ export async function createStore(): Promise<Store> {
         state: new StateManager({
             commitOrder: sortMetadatasInCommitOrder(em.connection),
         }),
-        cacheMode: CacheMode.ALL,
-        flushMode: FlushMode.AUTO,
-        resetMode: ResetMode.BATCH,
+        batchWriteOperations: true,
+        cacheEntitiesByDefault: true,
+        syncOnGet: true,
     })
 }
 

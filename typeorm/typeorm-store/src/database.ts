@@ -4,20 +4,17 @@ import assert from 'assert'
 import {DataSource, EntityManager} from 'typeorm'
 import {ChangeWriter, rollbackBlock} from './utils/changeWriter'
 import {DatabaseState, FinalTxInfo, HashAndHeight, HotTxInfo} from './interfaces'
-import {CacheMode, FlushMode, ResetMode, Store} from './store'
+import {Store} from './store'
 import {createLogger} from '@subsquid/logger'
 import {StateManager} from './utils/stateManager'
 import {sortMetadatasInCommitOrder} from './utils/commitOrder'
 import {IsolationLevel} from './utils/tx'
 
-
 export {IsolationLevel}
 
-
 export interface TypeormDatabaseOptions {
-
     /**
-     * Support for storing the data on unfinalized / hot
+     * Support for storing the data on unfinalized
      * blocks and the related rollbacks.
      * See {@link https://docs.subsquid.io/sdk/resources/basics/unfinalized-blocks/}
      *
@@ -26,7 +23,7 @@ export interface TypeormDatabaseOptions {
     supportHotBlocks?: boolean
 
     /**
-     * PostgreSQL ransaction isolation level
+     * PostgreSQL transaction isolation level
      * See {@link https://www.postgresql.org/docs/current/transaction-iso.html}
      *
      * @defaultValue 'SERIALIZABLE'
@@ -34,25 +31,25 @@ export interface TypeormDatabaseOptions {
     isolationLevel?: IsolationLevel
 
     /**
-     * When the queries should be sent to the database?
-     *
-     * @defaultValue FlushMode.AUTO
+     * @defaultValue true
      */
-    flushMode?: FlushMode
+    batchWriteOperations?: boolean
 
     /**
-     * When the cache should be dropped?
-     *
-     * @defaultValue ResetMode.BATCH
+     * @defaultValue true
      */
-    resetMode?: ResetMode
+    cacheEntitiesByDefault?: boolean
+
+    // FIXME: needs better name, means if we check db if entity is not found in the state
+    /**
+     * @defaultValue true
+     */
+    syncOnGet?: boolean
 
     /**
-     * Which database reads should be cached?
-     *
-     * @defaultValue CacheMode.ALL
+     * @defaultValue true
      */
-    cacheMode?: CacheMode
+    resetOnCommit?: boolean
 
     /**
      * Name of the database schema that the processor
@@ -73,27 +70,27 @@ export interface TypeormDatabaseOptions {
     projectDir?: string
 }
 
-
 const STATE_MANAGERS: WeakMap<DataSource, StateManager> = new WeakMap()
 
-
 export class TypeormDatabase {
-    private statusSchema: string
-    private isolationLevel: IsolationLevel
-    private flushMode: FlushMode
-    private resetMode: ResetMode
-    private cacheMode: CacheMode
-    private con?: DataSource
-    private projectDir: string
+    protected statusSchema: string
+    protected isolationLevel: IsolationLevel
+    protected batchWriteOperations: boolean
+    protected cacheEntitiesByDefault: boolean
+    protected syncOnGet: boolean
+    protected resetOnCommit: boolean
+    protected con?: DataSource
+    protected projectDir: string
 
     public readonly supportsHotBlocks: boolean
 
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema || 'squid_processor'
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
-        this.resetMode = options?.resetMode || ResetMode.BATCH
-        this.flushMode = options?.flushMode || FlushMode.AUTO
-        this.cacheMode = options?.cacheMode || CacheMode.ALL
+        this.batchWriteOperations = options?.batchWriteOperations ?? true
+        this.cacheEntitiesByDefault = options?.cacheEntitiesByDefault ?? true
+        this.syncOnGet = options?.syncOnGet ?? true
+        this.resetOnCommit = options?.resetOnCommit ?? true
         this.supportsHotBlocks = options?.supportHotBlocks !== false
         this.projectDir = options?.projectDir || process.cwd()
     }
@@ -107,7 +104,7 @@ export class TypeormDatabase {
         await this.con.initialize()
 
         try {
-            return await this.con.transaction('SERIALIZABLE', em => this.initTransaction(em))
+            return await this.con.transaction('SERIALIZABLE', (em) => this.initTransaction(em))
         } catch (e: any) {
             await this.con.destroy().catch(() => {}) // ignore error
             this.con = undefined
@@ -177,7 +174,7 @@ export class TypeormDatabase {
     }
 
     transact(info: FinalTxInfo, cb: (store: Store) => Promise<void>): Promise<void> {
-        return this.submit(async em => {
+        return this.submit(async (em) => {
             let state = await this.getState(em)
             let {prevHead: prev, nextHead: next} = info
 
@@ -209,7 +206,7 @@ export class TypeormDatabase {
         info: HotTxInfo,
         cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<void>
     ): Promise<void> {
-        return this.submit(async em => {
+        return this.submit(async (em) => {
             let state = await this.getState(em)
             let chain = [state, ...state.top]
 
@@ -217,7 +214,7 @@ export class TypeormDatabase {
             assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
 
             assert(
-                chain.find(b => b.hash === info.baseHead.hash),
+                chain.find((b) => b.hash === info.baseHead.hash),
                 RACE_MSG
             )
             if (info.newBlocks.length == 0) {
@@ -234,7 +231,7 @@ export class TypeormDatabase {
             if (info.newBlocks.length) {
                 let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
                 if (finalizedEnd > 0) {
-                    await this.performUpdates(store => cb(store, 0, finalizedEnd), em)
+                    await this.performUpdates((store) => cb(store, 0, finalizedEnd), em)
                 } else {
                     finalizedEnd = 0
                 }
@@ -242,7 +239,7 @@ export class TypeormDatabase {
                     let b = info.newBlocks[i]
                     await this.insertHotBlock(em, b)
                     await this.performUpdates(
-                        store => cb(store, i, i + 1),
+                        (store) => cb(store, i, i + 1),
                         em,
                         new ChangeWriter(em, this.statusSchema, b.height)
                     )
@@ -295,15 +292,14 @@ export class TypeormDatabase {
             state: this.getStateManager(),
             logger: this.getLogger(),
             changes: changeWriter,
-            cacheMode: this.cacheMode,
-            flushMode: this.flushMode,
-            resetMode: this.resetMode,
+            batchWriteOperations: this.batchWriteOperations,
+            syncOnGet: this.syncOnGet,
+            cacheEntitiesByDefault: this.cacheEntitiesByDefault,
         })
 
         try {
             await cb(store)
-            await store.flush()
-            if (this.resetMode === ResetMode.BATCH) store.reset()
+            await store.sync(this.resetOnCommit)
         } finally {
             store['isClosed'] = true
         }

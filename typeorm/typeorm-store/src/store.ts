@@ -9,68 +9,13 @@ import {
 import {EntityTarget} from 'typeorm/common/EntityTarget'
 import {ChangeWriter} from './utils/changeWriter'
 import {StateManager} from './utils/stateManager'
-import {createLogger, Logger} from '@subsquid/logger'
+import {Logger} from '@subsquid/logger'
 import {createFuture, Future} from '@subsquid/util-internal'
 import {EntityLiteral, noNull, splitIntoBatches, traverseEntity} from './utils/misc'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import assert from 'assert'
 
 export {EntityTarget}
-
-export const enum FlushMode {
-
-    /**
-     * Send queries to the database transaction at every
-     * direct database read (all read methods besides
-     * .get()) and at the end of the batch.
-     */
-    AUTO,
-
-    /**
-     * Send queries to the database transaction strictly
-     * at the end of the batch.
-     */
-    BATCH,
-
-    /**
-     * Send queries to the database transaction whenever
-     * the data is read or written (including .get(),
-     * .insert(), .upsert(), .delete())
-     */
-    ALWAYS
-}
-
-export const enum ResetMode {
-
-    /**
-     * Clear cache at the end of each batch or manually.
-     */
-    BATCH,
-
-    /**
-     * Clear cache only manually.
-     */
-    MANUAL,
-
-    /**
-     * Clear cache whenever any queries are sent to the
-     * database transaction.
-     */
-    FLUSH
-}
-
-export const enum CacheMode {
-
-    /**
-     * Data from all database reads is cached.
-     */
-    ALL,
-
-    /**
-     * Only the data from flagged database reads is cached.
-     */
-    MANUAL
-}
 
 export interface GetOptions<E = any> {
     id: string
@@ -121,9 +66,9 @@ export interface StoreOptions {
     state: StateManager
     changes?: ChangeWriter
     logger?: Logger
-    flushMode: FlushMode
-    resetMode: ResetMode
-    cacheMode: CacheMode
+    batchWriteOperations: boolean
+    cacheEntitiesByDefault: boolean
+    syncOnGet: boolean
 }
 
 /**
@@ -135,21 +80,21 @@ export class Store {
     protected changes?: ChangeWriter
     protected logger?: Logger
 
-    protected flushMode: FlushMode
-    protected resetMode: ResetMode
-    protected cacheMode: CacheMode
+    protected batchWriteOperations: boolean
+    protected cacheEntitiesByDefault: boolean
+    protected syncOnGet: boolean
 
     protected pendingCommit?: Future<void>
     protected isClosed = false
 
-    constructor({em, changes, logger, state, flushMode, resetMode, cacheMode}: StoreOptions) {
+    constructor({em, changes, logger, state, ...opts}: StoreOptions) {
         this.em = em
         this.changes = changes
         this.logger = logger?.child('store')
         this.state = state
-        this.flushMode = flushMode
-        this.resetMode = resetMode
-        this.cacheMode = cacheMode
+        this.batchWriteOperations = opts.batchWriteOperations
+        this.cacheEntitiesByDefault = opts.cacheEntitiesByDefault
+        this.syncOnGet = opts.syncOnGet
     }
 
     get _em() {
@@ -197,10 +142,10 @@ export class Store {
         this.logger?.debug(`upsert ${entities.length} ${metadata.name} entities`)
         await this.changes?.writeUpsert(metadata, entities)
 
-        let fk = metadata.columns.filter(c => c.relationMetadata)
+        let fk = metadata.columns.filter((c) => c.relationMetadata)
         if (fk.length == 0) return this.upsertMany(metadata.target, entities)
         let signatures = entities
-            .map(e => ({entity: e, value: this.getFkSignature(fk, e)}))
+            .map((e) => ({entity: e, value: this.getFkSignature(fk, e)}))
             .sort((a, b) => (a.value > b.value ? -1 : b.value > a.value ? 1 : 0))
         let currentSignature = signatures[0].value
         let batch: EntityLiteral[] = []
@@ -306,13 +251,15 @@ export class Store {
     async find<E extends EntityLiteral>(target: EntityTarget<E>, options: FindManyOptions<E>): Promise<E[]> {
         return await this.performRead(async () => {
             const {cache, ...opts} = options
+
             const res = await this.em.find(target, opts)
-            if (cache ?? this.cacheMode === CacheMode.ALL) {
+            if (cache ?? this.cacheEntitiesByDefault) {
                 const metadata = this.getEntityMetadata(target)
                 for (const e of res) {
                     this.cacheEntity(metadata, e)
                 }
             }
+
             return res
         })
     }
@@ -331,12 +278,14 @@ export class Store {
     ): Promise<E | undefined> {
         return await this.performRead(async () => {
             const {cache, ...opts} = options
+
             const res = await this.em.findOne(target, opts).then(noNull)
-            if (cache ?? this.cacheMode === CacheMode.ALL) {
+            if (cache ?? this.cacheEntitiesByDefault) {
                 const metadata = this.getEntityMetadata(target)
                 const idOrEntity = res || getIdFromWhere(options.where)
                 this.cacheEntity(metadata, idOrEntity)
             }
+
             return res
         })
     }
@@ -352,6 +301,7 @@ export class Store {
     async findOneOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
         const res = await this.findOne(target, options)
         if (res == null) throw new EntityNotFoundError(target, options.where)
+
         return res
     }
 
@@ -362,6 +312,7 @@ export class Store {
     ): Promise<E> {
         const res = await this.findOneBy(target, where, cache)
         if (res == null) throw new EntityNotFoundError(target, where)
+
         return res
     }
 
@@ -373,8 +324,10 @@ export class Store {
     ): Promise<E | undefined> {
         const {id, relations} = parseGetOptions(idOrOptions)
         const metadata = this.getEntityMetadata(target)
+
         let entity = this.state.get<E>(metadata, id, relations)
-        if (entity !== undefined) return noNull(entity)
+        if (entity !== undefined || !this.syncOnGet) return noNull(entity)
+
         return await this.findOne(target, {where: {id} as any, relations, cache: true})
     }
 
@@ -382,8 +335,10 @@ export class Store {
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: GetOptions<E>): Promise<E>
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, idOrOptions: string | GetOptions<E>): Promise<E> {
         const options = parseGetOptions(idOrOptions)
+
         let e = await this.get(target, options)
         if (e == null) throw new EntityNotFoundError(target, options.id)
+
         return e
     }
 
@@ -391,7 +346,7 @@ export class Store {
         this.state.reset()
     }
 
-    async flush(reset?: boolean): Promise<void> {
+    async sync(reset?: boolean): Promise<void> {
         await this.pendingCommit?.promise()
 
         this.pendingCommit = createFuture()
@@ -414,7 +369,7 @@ export class Store {
                 }
             })
 
-            if (reset ?? this.resetMode === ResetMode.FLUSH) {
+            if (reset) {
                 this.reset()
             }
         } finally {
@@ -425,9 +380,7 @@ export class Store {
 
     private async performRead<T>(cb: () => Promise<T>): Promise<T> {
         this.assertNotClosed()
-        if (this.flushMode === FlushMode.AUTO || this.flushMode === FlushMode.ALWAYS) {
-            await this.flush()
-        }
+        await this.sync()
         return await cb()
     }
 
@@ -435,8 +388,8 @@ export class Store {
         this.assertNotClosed()
         await this.pendingCommit?.promise()
         await cb()
-        if (this.flushMode === FlushMode.ALWAYS) {
-            await this.flush()
+        if (!this.batchWriteOperations) {
+            await this.sync()
         }
     }
 
