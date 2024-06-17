@@ -423,16 +423,20 @@ function fromType(type: IdlType): Type {
                 type: fromType(type.coption),
             }
         }
-        let d = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : 8;
+        let d_len = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0;
+        if (d_len === 0) throw unexpectedCase(type.prefix)
         return {
             kind: TypeKind.Enum,
             variants: [
             {
                 name: 'None',
-                discriminator: d,
+                discriminator: 0,
                 type: { kind: TypeKind.Primitive, primitive: 'unit' },
+                d_len: d_len,
             },
-            { name: 'Some', discriminator: d, type: fromType(type.coption) },
+            { name: 'Some', discriminator: 1, type: fromType(type.coption),
+                d_len: d_len,
+             },
             ],
         }
     } else if ('generic' in type) {
@@ -510,6 +514,7 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
 function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
     return {
         name: variant.name,
+        d_len: 1,
         discriminator: index,
         type: variant.fields?.length
             ? variant.fields?.every((f) => typeof f === 'object' && 'type' in f)
