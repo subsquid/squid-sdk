@@ -423,19 +423,20 @@ function fromType(type: IdlType): Type {
                 type: fromType(type.coption),
             }
         }
-        let d_len = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0;
-        if (d_len === 0) throw unexpectedCase(type.prefix)
+        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0;
+        if (discriminatorType === 0) throw unexpectedCase(type.prefix)
         return {
             kind: TypeKind.Enum,
+            discriminatorType: discriminatorType,
             variants: [
             {
                 name: 'None',
                 discriminator: 0,
                 type: { kind: TypeKind.Primitive, primitive: 'unit' },
-                d_len: d_len,
+               
             },
             { name: 'Some', discriminator: 1, type: fromType(type.coption),
-                d_len: d_len,
+               
              },
             ],
         }
@@ -455,6 +456,7 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                 type: {
                     kind: TypeKind.Enum,
                     variants: typeDef.type.variants.map((v, i) => fromEnumVariant(v, i)),
+                    discriminatorType: 1,
                 },
                 generics: typeDef.generics?.map((g): TypeDefGeneric => {
                     return g.kind === 'const'
@@ -514,7 +516,6 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
 function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
     return {
         name: variant.name,
-        d_len: 1,
         discriminator: index,
         type: variant.fields?.length
             ? variant.fields?.every((f) => typeof f === 'object' && 'type' in f)
