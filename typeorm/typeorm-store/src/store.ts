@@ -45,7 +45,7 @@ export interface FindOneOptions<Entity = any> {
      */
     order?: FindOptionsOrder<Entity>
 
-    cache?: boolean
+    cacheEntities?: boolean
 }
 
 export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
@@ -277,10 +277,10 @@ export class Store {
         options: FindOneOptions<E>
     ): Promise<E | undefined> {
         return await this.performRead(async () => {
-            const {cache, ...opts} = options
+            const {cacheEntities, ...opts} = options
 
             const res = await this.em.findOne(target, opts).then(noNull)
-            if (cache ?? this.cacheEntitiesByDefault) {
+            if (cacheEntities ?? this.cacheEntitiesByDefault) {
                 const metadata = this.getEntityMetadata(target)
                 const idOrEntity = res || getIdFromWhere(options.where)
                 this.cacheEntity(metadata, idOrEntity)
@@ -293,9 +293,9 @@ export class Store {
     async findOneBy<E extends EntityLiteral>(
         target: EntityTarget<E>,
         where: FindOptionsWhere<E> | FindOptionsWhere<E>[],
-        cache?: boolean
+        cacheEntities?: boolean
     ): Promise<E | undefined> {
-        return await this.findOne(target, {where, cache})
+        return await this.findOne(target, {where, cacheEntities})
     }
 
     async findOneOrFail<E extends EntityLiteral>(target: EntityTarget<E>, options: FindOneOptions<E>): Promise<E> {
@@ -328,7 +328,7 @@ export class Store {
         let entity = this.state.get<E>(metadata, id, relations)
         if (entity !== undefined || !this.syncOnGet) return noNull(entity)
 
-        return await this.findOne(target, {where: {id} as any, relations, cache: true})
+        return await this.findOne(target, {where: {id} as any, relations, cacheEntities: true})
     }
 
     async getOrFail<E extends EntityLiteral>(target: EntityTarget<E>, id: string): Promise<E>
