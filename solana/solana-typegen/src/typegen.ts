@@ -235,9 +235,7 @@ export class TypeModuleOutput extends FileOutput {
                 break
             case TypeKind.Enum:
                 this.borsh.add('sum')
-                let d = 1
-                if (type.discriminatorType) d = type.discriminatorType
-                this.line(start + `sum(${d}, {`)
+                this.line(start + `sum(${type.discriminatorType}, {`)
                 this.indentation(() => {
                     for (let i = 0; i < type.variants.length; i++) {
                         const v = type.variants[i]
