@@ -361,28 +361,25 @@ function fromType(type: IdlType): Type {
             type: fromType(type.option),
         }
     } else if ('coption' in type) {
-        if (type.prefix == 'u8' ) {
+        if (type.prefix == 'u8') {
             return {
                 kind: TypeKind.Option,
                 type: fromType(type.coption),
             }
         }
-       
-        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0;
+
+        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0
         if (discriminatorType === 0) throw unexpectedCase(type.prefix)
         return {
             kind: TypeKind.Enum,
             discriminatorType: discriminatorType,
             variants: [
-            {
-                name: 'None',
-                discriminator: 0,
-                type: { kind: TypeKind.Primitive, primitive: 'unit' },
-                
-            },
-            { name: 'Some', discriminator: 1, type: fromType(type.coption),
-               
-             },
+                {
+                    name: 'None',
+                    discriminator: 0,
+                    type: {kind: TypeKind.Primitive, primitive: 'unit'},
+                },
+                {name: 'Some', discriminator: 1, type: fromType(type.coption)},
             ],
         }
     } else {

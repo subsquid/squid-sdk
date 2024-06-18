@@ -29,9 +29,7 @@ export async function fetchIdl(client: RpcClient, programAddress: Address): Prom
         accountInfo = await client.call('getAccountInfo', [address, {encoding: 'base64'}])
     }
 
-    if (accountInfo?.value == null) {
-        throw new Error(`IDL for program ${programAddress} not found`)
-    }
+    if (accountInfo?.value == null) return undefined
 
     const src = new Src(Buffer.from(accountInfo.value.data[0], 'base64'))
     src.u64() // skip discriminator
