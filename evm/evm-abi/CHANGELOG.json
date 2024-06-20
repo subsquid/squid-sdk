@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-abi",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-abi_v0.3.0",
+      "date": "Thu, 20 Jun 2024 11:25:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Better function and event decoding error handling"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.4",
       "tag": "@subsquid/evm-abi_v0.2.4",
       "date": "Wed, 29 May 2024 20:42:12 GMT",

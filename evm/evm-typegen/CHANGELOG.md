@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Wed, 29 May 2024 20:42:12 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jun 2024 11:25:19 GMT and should not be manually modified.
+
+## 4.2.0
+Thu, 20 Jun 2024 11:25:19 GMT
+
+### Minor changes
+
+- Support newer evm-abi
 
 ## 4.1.4
 Wed, 29 May 2024 20:42:12 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-abi
 
-This log was last generated on Wed, 29 May 2024 20:42:12 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Jun 2024 11:25:19 GMT and should not be manually modified.
+
+## 0.3.0
+Thu, 20 Jun 2024 11:25:19 GMT
+
+### Minor changes
+
+- Better function and event decoding error handling
 
 ## 0.2.4
 Wed, 29 May 2024 20:42:12 GMT
