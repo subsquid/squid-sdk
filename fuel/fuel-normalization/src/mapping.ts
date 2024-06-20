@@ -392,7 +392,7 @@ export function mapRawBlock(raw: raw.BlockData): Block {
     let outputs: TransactionOutput[] = []
     let receipts: Receipt[] = []
 
-    raw.block.transactions.forEach((tx, index) => {
+    raw.block.transactions?.forEach((tx, index) => {
         transactions.push(mapRawTransaction(tx, index))
 
         tx.inputs?.forEach((input, inputIndex) => {

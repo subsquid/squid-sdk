@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-normalization",
+      "comment": "make block.transactions optional",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/fuel-normalization"
+}

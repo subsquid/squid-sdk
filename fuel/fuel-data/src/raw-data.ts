@@ -303,7 +303,7 @@ export type Transaction = GetSrcType<typeof Transaction>
 
 export const Block = object({
     header: BlockHeader,
-    transactions: array(Transaction),
+    transactions: option(array(Transaction)),
 })
 
 

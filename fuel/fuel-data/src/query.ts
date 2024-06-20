@@ -2,7 +2,7 @@ import {Output} from '@subsquid/util-internal-code-printer'
 import {DataRequest} from './raw-data';
 
 
-export function getLatesBlockQuery() {
+export function getLatestBlockQuery() {
     return `
         {
             chain {
