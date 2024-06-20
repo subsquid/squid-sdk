@@ -10,7 +10,7 @@ describe('Event', () => {
       eventName: 'Test',
       args: { a: 123n },
     })
-    const event = _event(topics[0], {
+    const event = _event(topics[0], "", {
       a: indexed(uint256),
       b: uint256,
     })
@@ -27,7 +27,7 @@ describe('Event', () => {
       eventName: 'Test',
       args: { a: 'xdxdxd', e: true },
     })
-    const event = _event(topics[0], {
+    const event = _event(topics[0], "", {
       a: indexed(string),
       b: string,
       c: bytes,

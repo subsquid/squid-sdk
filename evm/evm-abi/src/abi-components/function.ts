@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {type Codec, type Struct, type DecodedStruct, type EncodedStruct, Sink, Src} from '@subsquid/evm-codec'
-import {FunctionInvalidSignatureError} from '../errors'
+import {FunctionInvalidSignatureError, FunctionResultDecodeError, FunctionCalldataDecodeError} from '../errors'
 
 export interface CallRecord {
   input: string
@@ -20,13 +20,6 @@ export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunct
 
 export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
-export class UnexpectedFunctionError extends Error {
-  constructor(expectedSignature: string, gotSignature: string) {
-    super(`unexpected function signature. Expected: ${expectedSignature}, got: ${gotSignature}`)
-    this.name = 'UnexpectedFunctionError';
-  }
-}
-
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer
   private readonly slotsCount: number
@@ -35,7 +28,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return this.selector
   }
 
-  constructor(public selector: string, public readonly args: T, public readonly returnType?: R, public isView = false) {
+  constructor(public selector: string, public signature: string, public readonly args: T, public readonly returnType?: R, public isView = false) {
     assert(selector.startsWith('0x'), 'selector must start with 0x')
     assert(selector.length === 10, 'selector must be 4 bytes long')
     this.#selector = Buffer.from(selector.slice(2), 'hex')
@@ -44,7 +37,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   }
 
   is(calldata: string | CallRecord) {
-    return this.checkSighature(typeof calldata === 'string' ? calldata : calldata.input)
+    return this.checkSignature(typeof calldata === 'string' ? calldata : calldata.input)
   }
 
   encode(args: EncodedStruct<T>) {
@@ -58,13 +51,17 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   decode(calldata: string | CallRecord): DecodedStruct<T> {
     const input = typeof calldata === 'string' ? calldata : calldata.input
 
-    if (!this.checkSighature(input)) {
+    if (!this.checkSignature(input)) {
       throw new FunctionInvalidSignatureError({targetSig: this.selector, sig: input.slice(0, this.selector.length)})
     }
     const src = new Src(Buffer.from(input.slice(10), 'hex'))
     const result = {} as any
     for (let i in this.args) {
-      result[i] = this.args[i].decode(src)
+      try {
+        result[i] = this.args[i].decode(src)
+      } catch (e: any) {
+        throw new FunctionCalldataDecodeError(this.signature, i, e.message, input)
+      }
     }
     return result
   }
@@ -79,29 +76,39 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     }
     const src = new Src(Buffer.from(output.slice(2), 'hex'))
     if (this.isCodecs(this.returnType)) {
-      return this.returnType.decode(src) as any
+      try {
+        return this.returnType.decode(src) as any
+      } catch (e: any) {
+        throw new FunctionResultDecodeError(this.signature, '', e.message, output)
+      }
     }
     const result = {} as any
     for (let i in this.returnType) {
       const codec = this.returnType[i] as Codec<any>
-      result[i] = codec.decode(src)
+      try {
+        result[i] = codec.decode(src)
+      } catch (e: any) {
+        throw new FunctionResultDecodeError(this.signature, i, e.message, output)
+      }
     }
     return result
   }
 
-  private checkSighature(val: string) {
+  private checkSignature(val: string) {
     return val.startsWith(this.selector)
   }
 }
 
 export const fun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
+  selector: string,
   signature: string,
   args: T,
   returnType?: R,
-) => new AbiFunction<T, R>(signature, args, returnType, false)
+) => new AbiFunction<T, R>(selector, signature, args, returnType, false)
 
 export const viewFun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
+  selector: string,
   signature: string,
   args: T,
   returnType?: R,
-) => new AbiFunction<T, R>(signature, args, returnType, true)
+) => new AbiFunction<T, R>(selector, signature, args, returnType, true)

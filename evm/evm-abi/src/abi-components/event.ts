@@ -1,6 +1,11 @@
 import type { Simplify } from '../indexed'
 import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
-import {EventEmptyTopicsError, EventInvalidSignatureError, EventTopicCountMismatchError} from '../errors'
+import {
+  EventDecodingError,
+  EventEmptyTopicsError,
+  EventInvalidSignatureError,
+  EventTopicCountMismatchError
+} from '../errors'
 
 export interface EventRecord {
   topics: string[]
@@ -23,7 +28,7 @@ export class AbiEvent<const T extends EventArgs> {
   public readonly params: IndexedCodecs<T>
   private readonly topicCount: number
 
-  constructor(public readonly topic: string, args: T) {
+  constructor(public readonly topic: string, public readonly signature: string, args: T) {
     this.topicCount = 1
     this.params = {} as IndexedCodecs<T>
     for (const i in args) {
@@ -56,17 +61,21 @@ export class AbiEvent<const T extends EventArgs> {
     if (!this.checkSignature(rec)) {
       throw new EventInvalidSignatureError({targetSig: this.topic, sig: rec.topics[0]})
     }
-    
+
     const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
     const result = {} as any
     let topicCounter = 1
     for (let i in this.params) {
-      if (this.params[i].indexed) {
-        const topic = rec.topics[topicCounter++]
-        const topicSrc = new Src(Buffer.from(topic.slice(2), 'hex'))
-        result[i] = this.params[i].decode(topicSrc)
-      } else {
-        result[i] = this.params[i].decode(src)
+      try {
+        if (this.params[i].indexed) {
+          const topic = rec.topics[topicCounter++]
+          const topicSrc = new Src(Buffer.from(topic.slice(2), 'hex'))
+          result[i] = this.params[i].decode(topicSrc)
+        } else {
+          result[i] = this.params[i].decode(src)
+        }
+      } catch (e: any) {
+        throw new EventDecodingError(this.signature, i, rec.data, e.message)
       }
     }
     return result
@@ -81,4 +90,4 @@ export class AbiEvent<const T extends EventArgs> {
   }
 }
 
-export const event = <const T extends Struct>(topic: string, args: T) => new AbiEvent<T>(topic, args)
+export const event = <const T extends Struct>(topic: string, signature: string, args: T) => new AbiEvent<T>(topic, signature, args)

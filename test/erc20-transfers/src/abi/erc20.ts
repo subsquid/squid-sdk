@@ -1,22 +1,22 @@
 import * as p from '@subsquid/evm-codec'
-import { event, fun, indexed, ContractBase } from '@subsquid/evm-abi'
+import { event, fun, viewFun, indexed, ContractBase } from '@subsquid/evm-abi'
 import type { EventParams as EParams, FunctionArguments, FunctionReturn } from '@subsquid/evm-abi'
 
 export const events = {
-    Approval: event("0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925", {"owner": indexed(p.address), "spender": indexed(p.address), "value": p.uint256}),
-    Transfer: event("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", {"from": indexed(p.address), "to": indexed(p.address), "value": p.uint256}),
+    Approval: event("0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925", "Approval(address,address,uint256)", {"owner": indexed(p.address), "spender": indexed(p.address), "value": p.uint256}),
+    Transfer: event("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", "Transfer(address,address,uint256)", {"from": indexed(p.address), "to": indexed(p.address), "value": p.uint256}),
 }
 
 export const functions = {
-    name: fun("0x06fdde03", {}, p.string),
-    approve: fun("0x095ea7b3", {"_spender": p.address, "_value": p.uint256}, p.bool),
-    totalSupply: fun("0x18160ddd", {}, p.uint256),
-    transferFrom: fun("0x23b872dd", {"_from": p.address, "_to": p.address, "_value": p.uint256}, p.bool),
-    decimals: fun("0x313ce567", {}, p.uint8),
-    balanceOf: fun("0x70a08231", {"_owner": p.address}, p.uint256),
-    symbol: fun("0x95d89b41", {}, p.string),
-    transfer: fun("0xa9059cbb", {"_to": p.address, "_value": p.uint256}, p.bool),
-    allowance: fun("0xdd62ed3e", {"_owner": p.address, "_spender": p.address}, p.uint256),
+    name: viewFun("0x06fdde03", "name()", {}, p.string),
+    approve: fun("0x095ea7b3", "approve(address,uint256)", {"_spender": p.address, "_value": p.uint256}, p.bool),
+    totalSupply: viewFun("0x18160ddd", "totalSupply()", {}, p.uint256),
+    transferFrom: fun("0x23b872dd", "transferFrom(address,address,uint256)", {"_from": p.address, "_to": p.address, "_value": p.uint256}, p.bool),
+    decimals: viewFun("0x313ce567", "decimals()", {}, p.uint8),
+    balanceOf: viewFun("0x70a08231", "balanceOf(address)", {"_owner": p.address}, p.uint256),
+    symbol: viewFun("0x95d89b41", "symbol()", {}, p.string),
+    transfer: fun("0xa9059cbb", "transfer(address,uint256)", {"_to": p.address, "_value": p.uint256}, p.bool),
+    allowance: viewFun("0xdd62ed3e", "allowance(address,address)", {"_owner": p.address, "_spender": p.address}, p.uint256),
 }
 
 export class Contract extends ContractBase {

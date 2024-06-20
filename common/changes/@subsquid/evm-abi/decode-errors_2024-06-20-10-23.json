@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-abi",
+      "comment": "Better function and event decoding error handling",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-abi"
+}
