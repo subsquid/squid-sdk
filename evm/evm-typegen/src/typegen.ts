@@ -55,7 +55,7 @@ export class Typegen {
     this.out.block(`export const events =`, () => {
       for (let e of events) {
         this.out.line(
-          `${this.getPropName(e)}: event("${this.topic0(e)}", {${this.toTypes(
+          `${this.getPropName(e)}: event("${this.topic0(e)}", ${this.signature(e)}, {${this.toTypes(
             e.inputs,
           )}}),`,
         )
@@ -64,7 +64,7 @@ export class Typegen {
   }
 
   private topic0(e: AbiEvent): string {
-    return `0x${keccak256(this.sighash(e)).toString('hex')}`
+    return `0x${keccak256(this.signature(e)).toString('hex')}`
   }
 
   private toTypes(inputs: readonly AbiParameter[]): string {
@@ -90,14 +90,14 @@ export class Typegen {
         this.out.line(
           `${this.getPropName(f)}: ${funType}("${this.functionSelector(
             f,
-          )}", {${this.toTypes(f.inputs)}}, ${returnType}),`,
+          )}", ${this.signature(f)}, {${this.toTypes(f.inputs)}}, ${returnType}),`,
         )
       }
     })
   }
 
   private functionSelector(f: AbiFunction): string {
-    const sighash = this.sighash(f)
+    const sighash = this.signature(f)
     return `0x${keccak256(sighash).slice(0, 4).toString('hex')}`
   }
 
@@ -139,7 +139,7 @@ export class Typegen {
     )})${arrayBrackets}`
   }
 
-  private sighash(item: AbiEvent | AbiFunction): string {
+  private signature(item: AbiEvent | AbiFunction): string {
     return `${item.name}(${item.inputs
       .map((param) => this.cannonicalType(param))
       .join(',')})`
@@ -149,7 +149,7 @@ export class Typegen {
     if (this.getOverloads(item) == 1) {
       return item.name
     } else {
-      return `"${this.sighash(item)}"`
+      return `"${this.signature(item)}"`
     }
   }
 
@@ -157,7 +157,7 @@ export class Typegen {
     if (this.getOverloads(item) == 1) {
       return '.' + item.name
     } else {
-      return `["${this.sighash(item)}"]`
+      return `["${this.signature(item)}"]`
     }
   }
 
