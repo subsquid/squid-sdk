@@ -55,7 +55,7 @@ export class Typegen {
     this.out.block(`export const events =`, () => {
       for (let e of events) {
         this.out.line(
-          `${this.getPropName(e)}: event("${this.topic0(e)}", ${this.signature(e)}, {${this.toTypes(
+          `${this.getPropName(e)}: event("${this.topic0(e)}", "${this.signature(e)}", {${this.toTypes(
             e.inputs,
           )}}),`,
         )
@@ -90,7 +90,7 @@ export class Typegen {
         this.out.line(
           `${this.getPropName(f)}: ${funType}("${this.functionSelector(
             f,
-          )}", ${this.signature(f)}, {${this.toTypes(f.inputs)}}, ${returnType}),`,
+          )}", "${this.signature(f)}", {${this.toTypes(f.inputs)}}, ${returnType}),`,
         )
       }
     })
