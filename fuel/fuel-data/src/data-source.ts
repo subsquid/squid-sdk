@@ -2,9 +2,10 @@ import {HttpClient} from '@subsquid/http-client'
 import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest, SplitRequest} from '@subsquid/util-internal-range'
 import {DataValidationError, GetSrcType, Validator} from '@subsquid/util-internal-validation'
+import {wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest, GetBlockHeader, BlockHeader} from './raw-data'
-import {getLatesBlockQuery, getBlockHashQuery, getBlockHeaderQuery, getBlocksQuery} from './query'
+import {getLatestBlockQuery, getBlockHashQuery, getBlockHeaderQuery, getBlocksQuery} from './query'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
@@ -42,7 +43,7 @@ export class HttpDataSource {
     }
 
     async getFinalizedHeight(): Promise<number> {
-        let query = getLatesBlockQuery()
+        let query = getLatestBlockQuery()
         let response: LatestBlockHeight = await this.request(query, getResultValidator(LatestBlockHeight))
         let height = parseInt(response.chain.latestBlock.header.height)
         assert(Number.isSafeInteger(height))
@@ -80,7 +81,16 @@ export class HttpDataSource {
         let first = req.range.to - req.range.from + 1
         let after = req.range.from == 0 ? undefined : req.range.from - 1
         let query = getBlocksQuery(req.request, first, after)
-        let response: Blocks = await this.request(query, getResultValidator(Blocks))
+
+        let response = await this.retry(async () => {
+            let response: Blocks = await this.request(query, getResultValidator(Blocks))
+            let length = response.blocks.nodes.length
+            if (length != first) {
+                throw new BlocksConsistencyError(`Expected blocks length: ${first}, got ${length}`)
+            }
+            return response
+        })
+
         let blocks = response.blocks.nodes.map(block => {
             let height = parseInt(block.header.height)
             assert(Number.isSafeInteger(height))
@@ -99,5 +109,29 @@ export class HttpDataSource {
     ): Promise<T> {
         return this.client.graphqlRequest(query, {retryAttempts: Number.MAX_SAFE_INTEGER})
             .then(res => validateResult ? validateResult(res) : res)
+    }
+
+    private async retry<T>(request: () => Promise<T>): Promise<T> {
+        let retries = 0
+        let pause = 200
+        while (true) {
+            try {
+                return await request()
+            } catch(err: any) {
+                if (err instanceof BlocksConsistencyError && retries < 3) {
+                    retries += 1
+                    await wait(pause)
+                } else {
+                    throw err
+                }
+            }
+        }
+    }
+}
+
+
+export class BlocksConsistencyError extends Error {
+    get name(): string {
+        return 'BlocksConsistencyError'
     }
 }
