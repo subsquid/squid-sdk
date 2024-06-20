@@ -5,7 +5,7 @@ import { fun } from '../src'
 
 describe('Function', () => {
   it('encodes/decodes simple args', () => {
-    const simpleFunction = fun('0x12345678', {
+    const simpleFunction = fun('0x12345678', '', {
       foo: uint256,
       _1: int32,
       _2: bool,
@@ -32,7 +32,7 @@ describe('Function', () => {
       foo: uint256,
       bar: bytes4,
     })
-    const dynamicFunction = fun('0x423917ce', {
+    const dynamicFunction = fun('0x423917ce',  '',{
       arg1: array(uint256),
       arg2: fixedSizeArray(array(uint256), 10),
       arg3: struct({
@@ -106,7 +106,7 @@ describe('Function', () => {
 
   it('return simple type', () => {
     const simpleFunction = fun(
-      '0x12345678',
+      '0x12345678', '',
       {
         foo: uint256,
       },
@@ -125,7 +125,7 @@ describe('Function', () => {
       functionName: 'foo',
       result: [100n, 'hello'],
     })
-    const _fun = fun('0x12345678', {}, { _0: uint256, b: string })
+    const _fun = fun('0x12345678', '', {}, { _0: uint256, b: string })
     expect(_fun.decodeResult(data)).toStrictEqual({ _0: 100n, b: 'hello' })
   })
 })
