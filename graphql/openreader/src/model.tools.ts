@@ -137,8 +137,8 @@ export function validateModel(model: Model) {
 }
 
 
-const TYPE_NAME_REGEX = /^[A-Z][a-zA-Z0-9]*$/
-const PROP_NAME_REGEX = /^[a-z][a-zA-Z0-9]*$/
+const TYPE_NAME_REGEX = /^_?[A-Z][a-zA-Z0-9]*$/
+const PROP_NAME_REGEX = /^_?[a-z][a-zA-Z0-9]*$/
 
 
 export function validateNames(model: Model) {
