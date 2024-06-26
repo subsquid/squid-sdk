@@ -66,12 +66,14 @@ export interface Field {
 export interface EnumType {
     kind: TypeKind.Enum
     variants: Variant[]
+    discriminatorType: number
 }
 
 export interface Variant {
     name: string
     discriminator: number
     type: Type
+    
 }
 
 export interface OptionType {

@@ -246,6 +246,7 @@ export type IdlTypeOption = {
 }
 
 export type IdlTypeCOption = {
+    prefix: 'u8' | 'u16' | 'u32' | 'u64'
     coption: IdlType
 }
 
@@ -415,10 +416,29 @@ function fromType(type: IdlType): Type {
             kind: TypeKind.Option,
             type: fromType(type.option),
         }
+    } else if ('coption' in type) {
+        if (type.prefix == 'u8') {
+            return {
+                kind: TypeKind.Option,
+                type: fromType(type.coption),
+            }
+        }
+        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0
+        if (discriminatorType === 0) throw unexpectedCase(type.prefix)
+        return {
+            kind: TypeKind.Enum,
+            discriminatorType: discriminatorType,
+            variants: [
+                {
+                    name: 'None',
+                    discriminator: 0,
+                    type: {kind: TypeKind.Primitive, primitive: 'unit'},
+                },
+                {name: 'Some', discriminator: 1, type: fromType(type.coption)},
+            ],
+        }
     } else if ('generic' in type) {
         throw new Error(`Generic types are not supported`)
-    } else if ('coption' in type) {
-        throw new Error(`"coption" type is not supported`)
     } else {
         throw unexpectedCase(JSON.stringify(type))
     }
@@ -433,6 +453,7 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                 type: {
                     kind: TypeKind.Enum,
                     variants: typeDef.type.variants.map((v, i) => fromEnumVariant(v, i)),
+                    discriminatorType: 1,
                 },
                 generics: typeDef.generics?.map((g): TypeDefGeneric => {
                     return g.kind === 'const'

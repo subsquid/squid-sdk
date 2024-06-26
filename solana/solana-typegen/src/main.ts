@@ -10,6 +10,7 @@ import {fromAnchor} from './program/anchor'
 import {fetchIdl, GET} from './util/fetch'
 import {RpcClient} from '@subsquid/rpc-client'
 import {address, Address, isAddress} from '@solana/addresses'
+import {getProgramIdl} from '@solanafm/explorer-kit-idls'
 
 const LOG = createLogger('sqd:solana-typegen')
 
@@ -72,7 +73,26 @@ The generated facades are assumed to be used by "squids" indexing solana data.
 
 async function read(spec: Spec, options?: {solanaRpcEndpoint?: string}): Promise<any> {
     if (spec.kind == 'address') {
-        return await fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
+        const fetchFromBlockchainPromise = fetchFromBlockchain(address(spec.src), options?.solanaRpcEndpoint)
+        const fetchFromExplorerPromise = fetchIdlFromExplorer(address(spec.src))
+        const [blockchainResult, explorerResult] = await Promise.allSettled([
+            fetchFromBlockchainPromise,
+            fetchFromExplorerPromise,
+        ])
+
+        if (blockchainResult.status === 'rejected') {
+            throw new Error(`Failed to fetch IDL for ${spec.src} from blockchain: ${blockchainResult.reason}`)
+        } else if (blockchainResult.value) {
+            return blockchainResult.value
+        }
+
+        if (explorerResult.status === 'rejected') {
+            throw new Error(`Failed to fetch IDL for ${spec.src} from explorer: ${explorerResult.reason}`)
+        } else if (explorerResult.value) {
+            return explorerResult.value
+        }
+
+        throw new Error(`Failed to fetch IDL for ${spec.src}: IDL not found`)
     } else if (spec.kind == 'url') {
         return await GET(spec.src)
     } else {
@@ -80,15 +100,16 @@ async function read(spec: Spec, options?: {solanaRpcEndpoint?: string}): Promise
     }
 }
 
+async function fetchIdlFromExplorer(address: Address): Promise<any> {
+    let response = await getProgramIdl(address)
+    return response?.idl
+}
+
 async function fetchFromBlockchain(address: Address, url?: string): Promise<any> {
     url = url || 'https://api.mainnet-beta.solana.com'
 
-    try {
-        let client = new RpcClient({url})
-        return await fetchIdl(client, address)
-    } catch (e: unknown) {
-        throw new Error(`Failed to fetch program IDL from ${url}: ${e instanceof Error ? e.message : e}`)
-    }
+    let client = new RpcClient({url})
+    return await fetchIdl(client, address)
 }
 
 interface Spec {
