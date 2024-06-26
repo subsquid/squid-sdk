@@ -5,7 +5,6 @@ import {toCamelCase, toJsName} from '@subsquid/util-naming'
 import {Program} from './program/description'
 import {Primitive, Type, TypeKind} from './program/types'
 
-
 export class Typegen {
     private dest: OutDir
     private modules: Set<string> = new Set()
@@ -102,9 +101,9 @@ export class Typegen {
 
         for (let e of events) {
             const typeName = toTypeName(e.name)
-            out.types.add({name: typeName, alias: dedup(typeName)})
+            out.types.add({name: typeName, alias: dedupe(typeName)})
             out.line()
-            out.line(`export type ${typeName} = ${dedup(typeName)}`)
+            out.line(`export type ${typeName} = ${dedupe(typeName)}`)
 
             const varName = toDslName(e.name)
             out.line()
@@ -115,7 +114,7 @@ export class Typegen {
                     out.line(`d${(e.discriminator.length - 2) / 2}: '${e.discriminator}',`)
                 })
                 out.line(`},`)
-                out.line(dedup(varName) + `,`)
+                out.line(dedupe(varName) + `,`)
             })
             out.line(')')
         }
@@ -235,13 +234,12 @@ export class TypeModuleOutput extends FileOutput {
                 break
             case TypeKind.Enum:
                 this.borsh.add('sum')
-                this.line(start + `sum(1, {`)
+                this.line(start + `sum(${type.discriminatorType}, {`)
                 this.indentation(() => {
-                    for (let i = 0; i < type.variants.length; i++) {
-                        const v = type.variants[i]
+                    for (let v of type.variants) {
                         this.line(`${v.name}: {`)
                         this.indentation(() => {
-                            this.line(`discriminator: ${i},`)
+                            this.line(`discriminator: ${v.discriminator},`)
                             if (name) {
                                 this.line(`value: ${name}_${v.name},`)
                             } else {
@@ -343,7 +341,7 @@ function toPropName(value: string) {
     return toCamelCase(toJsName(value))
 }
 
-function dedup(value: string) {
+function dedupe(value: string) {
     return value + '_'
 }
 
