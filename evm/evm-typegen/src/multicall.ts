@@ -1,7 +1,7 @@
 import * as p from '@subsquid/evm-codec'
 import {fun, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
 
-const aggregate = fun('0x252dba42', "aggregate((address,bytes)[]", {
+const aggregate = fun('0x252dba42', "aggregate((address,bytes)[])", {
   calls: p.array(p.struct({
     target: p.address,
     callData: p.bytes
