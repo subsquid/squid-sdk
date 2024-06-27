@@ -29,8 +29,8 @@
     "commander": "^11.1.0"
   },
   "devDependencies": {
-    "abitype": "^1.0.0",
     "@types/node": "^18.18.14",
+    "abitype": "^1.0.4",
     "typescript": "~5.3.2"
   }
 }

@@ -345,8 +345,8 @@ dependencies:
     specifier: ^0.2.4
     version: 0.2.4
   abitype:
-    specifier: ^1.0.0
-    version: 1.0.0(typescript@5.3.3)
+    specifier: ^1.0.4
+    version: 1.0.4(typescript@5.3.3)
   ajv:
     specifier: ^8.12.0
     version: 8.12.0
@@ -6901,7 +6901,7 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-YiOzs6SFVxqAehJWjPYnYxxEFxga04TNVuoYdq1jEHxNBUlovHqbXQmRfGBYewAbTjDQ3FqZU0NT0Oc5eRyEBQ==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-hNmg8001/ssM/P3q6gv4VDtxtMX21eGjpdi0dMuR8xK3RTCuBSOUbgSDuHwEY2p0pRSdJ//QCwP4leE7lv07Aw==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:

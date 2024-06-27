@@ -5,16 +5,6 @@ import { getType } from './util/types'
 import type { Abi, AbiEvent, AbiFunction, AbiParameter } from 'abitype'
 import { FileOutput, OutDir } from '@subsquid/util-internal-code-printer'
 
-function areItemEqual(item1: AbiEvent | AbiFunction, item2: AbiEvent | AbiFunction): boolean {
-  if (item1.name !== item2.name || item1.inputs.length !== item2.inputs.length || item1.type !== item2.type) {
-    return false
-  }
-  return item1.inputs.every((input, idx) => {
-    const input2 = item2.inputs[idx]
-    return input.name === input2.name && input.type === input2.type
-  })
-}
-
 export class Typegen {
   private out: FileOutput
 
@@ -129,35 +119,39 @@ export class Typegen {
     })
   }
 
-  private cannonicalType(param: AbiParameter): string {
+  private canonicalType(param: AbiParameter): string {
     if (!param.type.startsWith('tuple')) {
       return param.type
     }
     const arrayBrackets = param.type.slice(5)
     return `(${(param as any).components.map((param: AbiParameter) =>
-      this.cannonicalType(param),
+      this.canonicalType(param),
     )})${arrayBrackets}`
   }
 
   private signature(item: AbiEvent | AbiFunction): string {
     return `${item.name}(${item.inputs
-      .map((param) => this.cannonicalType(param))
+      .map((param) => this.canonicalType(param))
       .join(',')})`
   }
 
   private getPropName(item: AbiEvent | AbiFunction): string {
     if (this.getOverloads(item) == 1) {
       return item.name
+    } else if (item.type === 'function') {
+      return `'${this.signature(item)}'`
     } else {
-      return `"${this.signature(item)}"`
+      return `'${item.name}(${item.inputs
+      .map((param) => this.canonicalType(param) + (param.indexed ? ` indexed` : ``))
+      .join(',')})'`
     }
   }
 
   private getPropNameGetter(item: AbiEvent | AbiFunction): string {
     if (this.getOverloads(item) == 1) {
       return '.' + item.name
-    } else {
-      return `["${this.signature(item)}"]`
+    } else{
+      return `[${this.getPropName(item)}]`
     }
   }
 
@@ -176,7 +170,7 @@ export class Typegen {
   private getOverloadIndex(item: AbiEvent | AbiFunction): number {
     const abi = [...this.getEvents(), ...this.getFunctions()]
     const overloads = abi.filter((x) => x.name === item.name)
-    return overloads.findIndex((x) => areItemEqual(x, item))
+    return overloads.findIndex((x) => x === item)
   }
 
   private toEventType(e: AbiEvent): string {
