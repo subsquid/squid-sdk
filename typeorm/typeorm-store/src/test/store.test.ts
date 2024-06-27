@@ -174,6 +174,34 @@ describe("Store", function() {
                 expect(spy.mock.calls.length).toEqual(1);
                 spy.mockReset()
             });
+
+            it('should call database only once', async () => {
+                let store = await createStore({
+                    flushMode: FlushMode.AUTO
+                })
+                const spy = jest.spyOn(store, 'findOne');
+
+                await expect(store.get(Item, '1')).resolves.toMatchObject({id: '1'})
+                expect(spy.mock.calls.length).toEqual(1);
+                await store.flush();
+
+                await expect(store.get(Item, '1')).resolves.toMatchObject({id: '1'})
+                expect(spy.mock.calls.length).toEqual(2);
+
+                spy.mockReset()
+            });
+
+            it('should call', async () => {
+                let store = await createStore({
+                    flushMode: FlushMode.COMMIT
+                })
+
+                await expect(getItems(store)).resolves.toMatchObject([{id: '1'}, {id: "2"}])
+                await store.insert(new Item('3', 'c'))
+                await expect(getItems(store)).resolves.toMatchObject([{id: "1"}, {id: "2"}])
+                await store.flush()
+                await expect(getItems(store)).resolves.toMatchObject([{id: "1"}, {id: "2"}, {id: "3"}])
+            });
         })
     })
 
@@ -290,6 +318,8 @@ describe("Store", function() {
 
                 await expect(getItems(store)).resolves.toEqual([])
             })
+
+
         })
     })
 

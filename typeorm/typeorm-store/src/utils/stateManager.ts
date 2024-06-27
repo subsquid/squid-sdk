@@ -292,7 +292,7 @@ export class StateManager {
         return this.getChanges(metadata).get(id)
     }
 
-    private getChanges(metadata: EntityMetadata): Map<string, ChangeType> {
+    getChanges(metadata: EntityMetadata): Map<string, ChangeType> {
         let map = this.stateMap.get(metadata)
         if (map == null) {
             map = new Map()

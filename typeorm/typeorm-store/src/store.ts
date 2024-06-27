@@ -301,10 +301,12 @@ export class Store {
 
     async find<E extends EntityLiteral>(target: EntityTarget<E>, options: FindManyOptions<E>): Promise<E[]> {
         return await this.performRead(async () => {
+            const metadata = this.getEntityMetadata(target)
+
             const {cache, ...opts} = options
             const res = await this.em.find(target, opts)
             if (cache ?? this.cacheMode === CacheMode.ALL) {
-                const metadata = this.getEntityMetadata(target)
+
                 for (const e of res) {
                     this.cacheEntity(metadata, e)
                 }
