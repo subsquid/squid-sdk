@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Thu, 20 Jun 2024 11:25:19 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+
+## 4.3.0
+Thu, 27 Jun 2024 09:24:39 GMT
+
+### Minor changes
+
+- fix event names collision on indexed parameter overload
 
 ## 4.2.0
 Thu, 20 Jun 2024 11:25:19 GMT

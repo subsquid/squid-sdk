@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.3.0",
+      "tag": "@subsquid/evm-typegen_v4.3.0",
+      "date": "Thu, 27 Jun 2024 09:24:39 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "fix event names collision on indexed parameter overload"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.0",
       "tag": "@subsquid/evm-typegen_v4.2.0",
       "date": "Thu, 20 Jun 2024 11:25:19 GMT",

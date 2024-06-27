@@ -2,6 +2,21 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-typegen_v0.2.0",
+      "date": "Thu, 27 Jun 2024 09:24:39 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `coption` type support"
+          },
+          {
+            "comment": "add solanafm explorer IDL lookup"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/solana-typegen_v0.1.0",
       "date": "Sat, 25 May 2024 07:09:59 GMT",

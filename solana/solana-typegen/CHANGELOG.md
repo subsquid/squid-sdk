@@ -1,6 +1,14 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Sat, 25 May 2024 07:09:59 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+
+## 0.2.0
+Thu, 27 Jun 2024 09:24:39 GMT
+
+### Minor changes
+
+- add `coption` type support
+- add solanafm explorer IDL lookup
 
 ## 0.1.0
 Sat, 25 May 2024 07:09:59 GMT
