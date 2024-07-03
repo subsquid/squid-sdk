@@ -9,6 +9,7 @@ import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
+import { FireblocksConnection } from './transport/FireblocksProvider'
 
 
 export interface RpcClientOptions {
@@ -59,9 +60,20 @@ export interface RpcClientOptions {
      * HTTP headers
      */
     headers?: HttpHeaders
-    log?: Logger | null
+    log?: Logger | null,
+    
+    fireblocksProviderConfig?: FireblocksProviderConfig
 }
 
+export interface FireblocksProviderConfig {
+    apiBaseUrl: string;
+    privateKey: string;
+    apiKey: string;
+    vaultAccountIds: number;
+    chainId: number;
+    logTransactionStatusChanges: boolean;
+  }
+  
 
 export interface CallOptions<R=any> {
     priority?: number
@@ -121,7 +133,7 @@ export class RpcClient {
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers, options.fireblocksProviderConfig)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
@@ -145,33 +157,39 @@ export class RpcClient {
         }
     }
 
-    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: HttpHeaders): Connection {
-        let protocol = new URL(url).protocol
-        switch(protocol) {
-            case 'ws:':
-            case 'wss:':
-                return new WsConnection({
-                    url,
-                    headers,
-                    onNotificationMessage: msg => this.onNotification(msg),
-                    onReset: reason => {
-                        if (this.closed) return
-                        for (let cb of this.resetListeners) {
-                            this.safeCallback(cb, reason)
-                        }
-                    },
-                    fixUnsafeIntegers
-                })
-            case 'http:':
-            case 'https:':
-                return new HttpConnection({
-                    url,
-                    headers,
-                    log: this.log,
-                    fixUnsafeIntegers
-                })
-            default:
-                throw new TypeError(`unsupported protocol: ${protocol}`)
+    private createConnection(url: string, fixUnsafeIntegers?: boolean, headers?: HttpHeaders, fireblocksProviderConfig?: FireblocksProviderConfig): Connection {        
+        if (url && url!= "https://dummyUrl") {
+            let protocol = new URL(url).protocol
+            switch(protocol) {
+                case 'ws:':
+                case 'wss:':
+                    return new WsConnection({
+                        url,
+                        headers,
+                        onNotificationMessage: msg => this.onNotification(msg),
+                        onReset: reason => {
+                            if (this.closed) return
+                            for (let cb of this.resetListeners) {
+                                this.safeCallback(cb, reason)
+                            }
+                        },
+                        fixUnsafeIntegers
+                    })
+                case 'http:':
+                case 'https:':
+                    return new HttpConnection({
+                        url,
+                        headers,
+                        log: this.log,
+                        fixUnsafeIntegers
+                    })
+                default:
+                    throw new TypeError(`unsupported protocol: ${protocol}`)
+            }  
+        } else if (fireblocksProviderConfig) {
+            return new FireblocksConnection(fireblocksProviderConfig)
+        } else {
+            throw new TypeError(`no rpc or fireblocks provider config was passed`)
         }
     }
 
@@ -558,10 +576,14 @@ function getCallPriority(req: Req): number {
 
 
 function trimCredentials(url: string): string {
-    let u = new URL(url)
-    u.password = ''
-    u.username = ''
-    return u.toString()
+  if (url) {
+    let u = new URL(url);
+    u.password = "";
+    u.username = "";
+    return u.toString();
+  } else {
+    return "";
+  }
 }
 
 
