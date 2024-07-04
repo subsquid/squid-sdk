@@ -69,7 +69,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
             connection: db,
             model: buildModel(buildSchema(parse(schema))),
             port: 0,
-            dialect: isCockroach() ? 'cockroach' : 'postgres',
+            dbType: isCockroach() ? 'cockroach' : 'postgres',
             subscriptions: true,
             subscriptionPollInterval: 500,
             maxRootFields: 10,

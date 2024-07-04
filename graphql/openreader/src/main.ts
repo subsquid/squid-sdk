@@ -4,7 +4,7 @@ import {nat, Url} from '@subsquid/util-internal-commander'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command, Option} from 'commander'
 import {Pool} from 'pg'
-import {Dialect} from './dialect'
+import {DbType} from './db'
 import {serve} from './server'
 import {loadModel} from './tools'
 
@@ -36,7 +36,7 @@ GraphQL server for postgres-compatible databases
     let opts = program.parse().opts() as {
         schema: string
         dbUrl: string
-        dbType: Dialect
+        dbType: DbType
         port: number
         maxRequestSize: number
         maxRootFields?: number
@@ -56,7 +56,7 @@ GraphQL server for postgres-compatible databases
 
     let server = await serve({
         model,
-        dialect: opts.dbType,
+        dbType: opts.dbType,
         connection,
         port: opts.port,
         log: LOG,

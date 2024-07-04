@@ -1,9 +1,301 @@
+# ---------------------------------------------------------
+# Counts --------------------------------------------------
+# ---------------------------------------------------------
 
-type Transfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
-    id: ID!
-    timestamp: BigInt! @index
-    from: String!
-    to: String!
-    amount: BigDecimal! @index
-    tags: [String!]
+# thegraph doesn't support count operations, but we need them to paginate results
+# This entity is a workaround to this issue, but it's still not enough, as we'd need counts for more complex queries
+type Count @entity {
+  id: ID!
+
+  orderTotal: Int!
+  orderParcel: Int!
+  orderEstate: Int!
+  orderWearable: Int!
+  orderENS: Int!
+  parcelTotal: Int!
+  estateTotal: Int!
+  wearableTotal: Int!
+  ensTotal: Int!
+  started: Int!
+  salesTotal: Int!
+  salesManaTotal: BigInt!
+  creatorEarningsManaTotal: BigInt!
+  daoEarningsManaTotal: BigInt!
+}
+
+# ---------------------------------------------------------
+# Orders --------------------------------------------------
+# ---------------------------------------------------------
+
+# thegraph doesn't support nested property searches, so we're doing promoting properties
+# we need from each NFT type to the Order, in order to search for them, prefixing them with search_[nft]_[prop]
+type Order @entity {
+  id: ID!
+  marketplaceAddress: String!
+  category: Category!
+  nft: NFT
+  nftAddress: String!
+  tokenId: BigInt!
+  txHash: String!
+  owner: String!
+  buyer: String
+  price: BigInt!
+  status: OrderStatus!
+  blockNumber: BigInt!
+  expiresAt: BigInt!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+# ---------------------------------------------------------
+# Bids ----------------------------------------------------
+# ---------------------------------------------------------
+
+type Bid @entity {
+  id: ID!
+  bidAddress: String!
+  category: Category!
+  nft: NFT
+  nftAddress: String!
+  tokenId: BigInt!
+  bidder: Bytes
+  seller: Bytes
+  price: BigInt!
+  fingerprint: Bytes
+  status: OrderStatus!
+  blockchainId: String!
+  blockNumber: BigInt!
+  expiresAt: BigInt!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type Wearable @entity {
+  id: ID!
+  owner: Account!
+  representationId: String!
+  collection: String!
+  name: String!
+  description: String!
+  category: WearableCategory!
+  rarity: WearableRarity!
+  bodyShapes: [WearableBodyShape!]
+  nft: NFT @derivedFrom(field: "wearable")
+}
+
+type ENS @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Account!
+  caller: String
+  beneficiary: String
+  labelHash: String
+  subdomain: String
+  createdAt: BigInt
+  nft: NFT @derivedFrom(field: "ens")
+}
+
+type Transfer @entity {
+  id: ID!
+  nftId: ID!
+  network: String! @index
+  block: Int! @index
+  # timestamp: DateTime! @index
+  timestamp: BigInt!
+  from: String! @index
+  to: String! @index
+  txHash: String! @index
+}
+
+type Data @entity {
+  id: ID!
+  parcel: Parcel
+  estate: Estate
+  version: String!
+  name: String
+  description: String
+  ipns: String
+}
+
+type NFT @entity {
+  id: ID!
+  tokenId: BigInt!
+  contractAddress: Bytes!
+  category: Category!
+  owner: Account!
+  tokenURI: String
+
+  orders: [Order!] @derivedFrom(field: "nft") # History of all orders. Should only ever be ONE open order. all others must be cancelled or sold
+  bids: [Bid!] @derivedFrom(field: "nft") # History of all bids.
+  activeOrder: Order
+
+  name: String
+  image: String
+
+  parcel: Parcel @unique
+  estate: Estate @unique
+  wearable: Wearable @unique
+  ens: ENS @unique
+
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  soldAt: BigInt
+  transferredAt: BigInt!
+  # analytics
+  sales: Int!
+  volume: BigInt!
+
+  # search indexes
+  searchOrderStatus: OrderStatus
+  searchOrderPrice: BigInt
+  searchOrderExpiresAt: BigInt
+  searchOrderCreatedAt: BigInt
+
+  searchIsLand: Boolean
+
+  searchText: String
+
+  searchParcelIsInBounds: Boolean
+  searchParcelX: BigInt
+  searchParcelY: BigInt
+  searchParcelEstateId: String
+  searchDistanceToPlaza: Int
+  searchAdjacentToRoad: Boolean
+
+  searchEstateSize: Int
+
+  searchIsWearableHead: Boolean
+  searchIsWearableAccessory: Boolean
+  searchWearableRarity: String # We're using String instead of WearableRarity here so we can later query this field via ()_in
+  searchWearableCategory: WearableCategory
+  searchWearableBodyShapes: [WearableBodyShape!]
+}
+
+type Parcel @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Account!
+  x: BigInt!
+  y: BigInt!
+  estate: Estate
+  data: Data
+  rawData: String
+  nft: NFT @derivedFrom(field: "parcel")
+}
+
+type Estate @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Account!
+  parcels: [Parcel!]! @derivedFrom(field: "estate")
+  parcelDistances: [Int!]
+  adjacentToRoadCount: Int
+  size: Int
+  data: Data
+  rawData: String
+  nft: NFT @derivedFrom(field: "estate")
+}
+
+# ---------------------------------------------------------
+# Account (user) -------------------------------------------
+# ---------------------------------------------------------
+
+type Account @entity {
+  id: ID! # ETH addr
+  address: String!
+  nfts: [NFT!] @derivedFrom(field: "owner")
+  # analytics
+  sales: Int!
+  purchases: Int!
+  spent: BigInt!
+  earned: BigInt!
+}
+
+# ---------------------------------------------------------
+# Enums ---------------------------------------------------
+# ---------------------------------------------------------
+
+enum Category {
+  parcel
+  estate
+  wearable
+  ens
+}
+
+enum OrderStatus {
+  open
+  sold
+  cancelled
+}
+
+enum WearableCategory {
+  eyebrows
+  eyes
+  facial_hair
+  hair
+  mouth
+  upper_body
+  lower_body
+  feet
+  earring
+  eyewear
+  hat
+  helmet
+  mask
+  tiara
+  top_head
+  skin
+}
+
+enum WearableRarity {
+  common
+  uncommon
+  rare
+  epic
+  legendary
+  mythic
+  unique
+  exotic
+}
+
+enum WearableBodyShape {
+  BaseFemale
+  BaseMale
+}
+
+# ---------------------------------------------------------
+# Sales ---------------------------------------------------
+# ---------------------------------------------------------
+
+# We only track sales from Decentraland's smart contracts
+
+enum SaleType {
+  bid
+  order
+}
+
+type Sale @entity {
+  id: ID!
+  type: SaleType!
+  buyer: String!
+  seller: String!
+  price: BigInt!
+  nft: NFT!
+  timestamp: BigInt!
+  txHash: String!
+
+  # search
+  searchTokenId: BigInt!
+  searchContractAddress: Bytes!
+  searchCategory: String!
+}
+
+# Data accumulated and condensed into day stats for all of the Marketplace activity
+type AnalyticsDayData @entity {
+  id: ID! # timestamp rounded to current day by dividing by 86400
+  date: Int!
+  sales: Int!
+  volume: BigInt!
+  creatorsEarnings: BigInt!
+  daoEarnings: BigInt!
 }

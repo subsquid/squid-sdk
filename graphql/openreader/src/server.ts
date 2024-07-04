@@ -12,17 +12,18 @@ import type {Pool} from 'pg'
 import {WebSocketServer} from 'ws'
 import {Context, OpenreaderContext} from './context'
 import {PoolOpenreaderContext} from './db'
-import type {Dialect} from './dialect'
+import type {DbType} from './db'
 import type {Model} from './model'
-import {SchemaBuilder} from './opencrud/schema'
 import {openreaderExecute, openreaderSubscribe} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
+import {Dialect, getSchemaBuilder} from './dialect'
 
 
 export interface ServerOptions {
     port: number | string
     model: Model
     connection: Pool
+    dbType?: DbType
     dialect?: Dialect
     graphiqlConsole?: boolean
     log?: Logger
@@ -46,13 +47,13 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         log
     } = options
 
-    let dialect = options.dialect ?? 'postgres'
+    let dbType = options.dbType ?? 'postgres'
 
-    let schema = new SchemaBuilder(options).build()
+    let schema = getSchemaBuilder(options).build()
 
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
-            dialect,
+            dbType,
             connection,
             subscriptionConnection,
             subscriptionPollInterval,

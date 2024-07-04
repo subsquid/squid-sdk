@@ -27,29 +27,21 @@ import {
     GraphQLFieldConfigMap,
     GraphQLInputFieldConfigMap
 } from 'graphql/type/definition'
-import {Context} from '../context'
-import {decodeRelayConnectionCursor, RelayConnectionRequest} from '../ir/connection'
-import {AnyFields} from '../ir/fields'
-import {getConnectionSize, getListSize, getObjectSize} from '../limit.size'
-import {Entity, Interface, JsonObject, Model, Prop} from '../model'
-import {getObject, getUniversalProperties} from '../model.tools'
-import {customScalars} from '../scalars'
-import {ConnectionQuery, CountQuery, EntityByIdQuery, ListQuery, Query} from '../sql/query'
-import {Limit} from '../util/limit'
-import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from '../util/resolve-tree'
-import {ensureArray, identity} from '../util/util'
+import {Context} from '../../context'
+import {decodeRelayConnectionCursor, RelayConnectionRequest} from '../../ir/connection'
+import {AnyFields} from '../../ir/fields'
+import {getConnectionSize, getListSize, getObjectSize} from '../../limit.size'
+import {Entity, Interface, JsonObject, Model, Prop} from '../../model'
+import {getObject, getUniversalProperties} from '../../model.tools'
+import {customScalars} from '../../scalars'
+import {ConnectionQuery, CountQuery, EntityByIdQuery, ListQuery, Query} from '../../sql/query'
+import {Limit} from '../../util/limit'
+import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from '../../util/resolve-tree'
+import {ensureArray, identity} from '../../util/util'
 import {getOrderByMapping, parseOrderBy} from './orderBy'
 import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {parseWhere} from './where'
-
-
-type GqlFieldMap = GraphQLFieldConfigMap<unknown, Context>
-
-
-export interface SchemaOptions {
-    model: Model
-    subscriptions?: boolean
-}
+import {GqlFieldMap, SchemaOptions} from '../common'
 
 
 export class SchemaBuilder {
@@ -414,7 +406,7 @@ export class SchemaBuilder {
             limit?.check(() => getListSize(model, typeName, fields, args.limit, args.where) + 1)
             return new ListQuery(
                 model,
-                context.openreader.dialect,
+                context.openreader.dbType,
                 typeName,
                 fields,
                 args
@@ -454,7 +446,7 @@ export class SchemaBuilder {
             limit?.check(() => getObjectSize(model, fields) + 1)
             return new EntityByIdQuery(
                 model,
-                context.openreader.dialect,
+                context.openreader.dbType,
                 entityName,
                 fields,
                 tree.args.id as string
@@ -496,7 +488,7 @@ export class SchemaBuilder {
                 context.openreader.responseSizeLimit?.check(() => getObjectSize(model, fields) + 1)
                 let query = new ListQuery(
                     model,
-                    context.openreader.dialect,
+                    context.openreader.dbType,
                     entityName,
                     fields,
                     {where: {op: 'eq', field: 'id', value: args.where.id}}
@@ -582,7 +574,7 @@ export class SchemaBuilder {
 
                 let result = await context.openreader.executeQuery(new ConnectionQuery(
                     model,
-                    context.openreader.dialect,
+                    context.openreader.dbType,
                     typeName,
                     req
                 ))
@@ -590,7 +582,7 @@ export class SchemaBuilder {
                 if (req.totalCount && result.totalCount == null) {
                     result.totalCount = await context.openreader.executeQuery(new CountQuery(
                         model,
-                        context.openreader.dialect,
+                        context.openreader.dbType,
                         typeName,
                         req.where
                     ))

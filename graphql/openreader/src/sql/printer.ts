@@ -1,6 +1,6 @@
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Dialect} from '../dialect'
+import {DbType} from '../db'
 import {OrderBy, SortOrder, SqlArguments, Where} from '../ir/args'
 import {FieldRequest, FieldsByEntity} from '../ir/fields'
 import {Model} from '../model'
@@ -19,7 +19,7 @@ export class EntitySqlPrinter {
 
     constructor(
         private model: Model,
-        private dialect: Dialect,
+        private dialect: DbType,
         public readonly entityName: string,
         private params: unknown[],
         private args: SqlArguments = {},
@@ -360,7 +360,7 @@ export class QueryableSqlPrinter {
 
     constructor(
         private model: Model,
-        private dialect: Dialect,
+        private dialect: DbType,
         private queryableName: string,
         private params: unknown[],
         private args: SqlArguments = {},

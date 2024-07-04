@@ -1,7 +1,7 @@
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
-import {Dialect} from "../dialect"
+import {DbType} from "../db"
 import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
 import {toColumn, toFkColumn, toTable} from "../util/util"
@@ -10,7 +10,7 @@ import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 export interface CursorCtx {
     model: Model
-    dialect: Dialect
+    dialect: DbType
     aliases: AliasSet
     join: JoinSet
 }

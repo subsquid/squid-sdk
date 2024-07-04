@@ -2,12 +2,12 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {GraphQLSchema} from 'graphql'
 import {ResolveTree} from 'graphql-parse-resolve-info'
-import {SqlArguments} from '../ir/args'
-import {AnyFields, FieldRequest, FieldsByEntity, OpaqueRequest} from '../ir/fields'
-import {Model} from '../model'
-import {getQueryableEntities} from '../model.tools'
-import {simplifyResolveTree} from '../util/resolve-tree'
-import {ensureArray} from '../util/util'
+import {SqlArguments} from '../../ir/args'
+import {AnyFields, FieldRequest, FieldsByEntity, OpaqueRequest} from '../../ir/fields'
+import {Model} from '../../model'
+import {getQueryableEntities} from '../../model.tools'
+import {simplifyResolveTree} from '../../util/resolve-tree'
+import {ensureArray} from '../../util/util'
 import {parseOrderBy} from './orderBy'
 import {parseWhere} from './where'
 
@@ -18,7 +18,6 @@ export function parseObjectTree(
     schema: GraphQLSchema,
     tree: ResolveTree
 ): FieldRequest[] {
-
     let requests: FieldRequest[] = []
     let requestedScalars: Record<string, true> = {}
     let object = model[typeName]

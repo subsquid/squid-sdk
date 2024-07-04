@@ -1,5 +1,6 @@
 import type {Logger} from '@subsquid/logger'
 import type {OpenreaderContext} from '@subsquid/openreader/lib/context'
+import {DbType} from '@subsquid/openreader/lib/db'
 import type {Dialect} from '@subsquid/openreader/lib/dialect'
 import type {Query} from '@subsquid/openreader/lib/sql/query'
 import {Subscription} from '@subsquid/openreader/lib/subscription'
@@ -19,7 +20,7 @@ export class TypeormOpenreaderContext implements OpenreaderContext {
     private queryCounter = 0
 
     constructor(
-        public readonly dialect: Dialect,
+        public readonly dbType: DbType,
         private connection: DataSource,
         subscriptionConnection?: DataSource,
         private subscriptionPollInterval: number = 1000,

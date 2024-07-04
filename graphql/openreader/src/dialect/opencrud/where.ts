@@ -1,7 +1,8 @@
 import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
-import {Where} from "../ir/args"
-import {ensureArray} from "../util/util"
+import {Where} from "../../ir/args"
+import {ensureArray} from "../../util/util"
+import {parseWhereKey, toCondition} from '../common'
 
 
 export function parseWhere(whereArg?: any): Where | undefined {
@@ -85,57 +86,3 @@ export function parseWhere(whereArg?: any): Where | undefined {
         return conjunction
     }
 }
-
-
-function toCondition(op: 'AND' | 'OR', operands: Where[]): Where | undefined {
-    switch(operands.length) {
-        case 0:
-            return undefined
-        case 1:
-            return operands[0]
-        default:
-            return {op, args: operands}
-    }
-}
-
-
-export function parseWhereKey(key: string): {op: Where['op'], field: string} {
-    let m = WHERE_KEY_REGEX.exec(key)
-    if (m) {
-        return {op: m[2] as Where['op'], field: m[1]}
-    } else {
-        return {op: 'REF', field: key}
-    }
-}
-
-
-const WHERE_KEY_REGEX = (() => {
-    let ops: Where['op'][] = [
-        "eq",
-        "not_eq",
-        "gt",
-        "gte",
-        "lt",
-        "lte",
-        "contains",
-        "not_contains",
-        "containsInsensitive",
-        "not_containsInsensitive",
-        "startsWith",
-        "not_startsWith",
-        "endsWith",
-        "not_endsWith",
-        "containsAll",
-        "containsAny",
-        "containsNone",
-        "jsonContains",
-        "jsonHasKey",
-        "isNull",
-        "some",
-        "every",
-        "none",
-        "in",
-        "not_in",
-    ]
-    return new RegExp(`^([^_]*)_(${ops.join('|')})$`)
-})()
