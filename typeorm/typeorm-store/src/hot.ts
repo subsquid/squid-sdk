@@ -2,6 +2,8 @@ import {assertNotNull} from '@subsquid/util-internal'
 import type {EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import {Entity, EntityClass} from './store'
+import { getDbType } from '@subsquid/typeorm-config';
+import { paramName, tableName } from './dialects';
 
 
 export interface RowRef {
@@ -42,10 +44,9 @@ export class ChangeTracker {
 
     constructor(
         private em: EntityManager,
-        private statusSchema: string,
+        private schemaName: string,
         private blockHeight: number
     ) {
-        this.statusSchema = this.escape(this.statusSchema)
     }
 
     trackInsert(type: EntityClass<Entity>, entities: Entity[]): Promise<void> {
@@ -105,7 +106,10 @@ export class ChangeTracker {
     }
 
     private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<Entity[]> {
-        let entities = await this.em.query(
+        let entities = getDbType() === 'sqlite' ? await this.em.query(
+            `SELECT * FROM ${this.escape(meta.tableName)} WHERE id IN(${new Array(ids.length).fill('?').join(',')})`,
+            ids
+        ) : await this.em.query(
             `SELECT * FROM ${this.escape(meta.tableName)} WHERE id = ANY($1::text[])`,
             [ids]
         )
@@ -133,7 +137,26 @@ export class ChangeTracker {
         return entities
     }
 
-    private writeChangeRows(changes: ChangeRecord[]): Promise<void> {
+    private async writeChangeRows(changes: ChangeRecord[]): Promise<void> {
+        if (getDbType() === 'sqlite') {
+            let sql = `INSERT INTO ${tableName('hot_change_log', this.schemaName)} ("block_height", "index", "change")`
+            sql += ` SELECT
+                json_extract(j.value, '$[0]') as "block_height", 
+                json_extract(j.value, '$[1]') as "index",
+                json_extract(j.value, '$[2]') as "change"
+            FROM json_each(?) j`
+
+            const params = new Array(changes.length);
+            for (let i = 0; i < changes.length; i++) {
+                params[i] = [this.blockHeight, ++this.index, JSON.stringify(changes[i])]
+            }
+
+            await this.em.query(sql, [JSON.stringify(params)])
+
+            return
+        }
+
+        let sql = `INSERT INTO ${tableName('hot_change_log', this.schemaName)} ("block_height", "index", "change")`
         let height = new Array(changes.length)
         let index = new Array(changes.length)
         let change = new Array(changes.length)
@@ -145,11 +168,10 @@ export class ChangeTracker {
             change[i] = JSON.stringify(changes[i])
         }
 
-        let sql = `INSERT INTO ${this.statusSchema}.hot_change_log (block_height, index, change)`
-        sql += ' SELECT block_height, index, change::jsonb'
-        sql += ' FROM unnest($1::int[], $2::int[], $3::text[]) AS i(block_height, index, change)'
+        sql += ' SELECT block_height, "index", change::jsonb'
+        sql += ' FROM unnest($1::int[], $2::int[], $3::text[]) AS i("block_height", "index", "change")'
 
-        return this.em.query(sql, [height, index, change]).then(() => {})
+        await this.em.query(sql, [height, index, change])
     }
 
     private getEntityMetadata(type: EntityClass<Entity>): EntityMetadata {
@@ -161,51 +183,61 @@ export class ChangeTracker {
     }
 }
 
+// We should deserialize the value before inserting it into the database.
+// SQLite does not support \\x, so we need to convert it to a buffer.
+function deserializeValue(value: any): any {
+    if (typeof value === 'string' && value.startsWith('\\x')) {
+        return Buffer.from(value.slice(2), 'hex')
+    }
+
+    return value
+}
+
 
 export async function rollbackBlock(
     statusSchema: string,
     em: EntityManager,
     blockHeight: number
 ): Promise<void> {
-    let schema = escape(em, statusSchema)
-
-    let changes: ChangeRow[] = await em.query(
-        `SELECT block_height, index, change FROM ${schema}.hot_change_log WHERE block_height = $1 ORDER BY index DESC`,
+    let changes: (ChangeRow & {change: string})[] = await em.query(
+        `SELECT block_height, "index", change FROM ${tableName('hot_change_log', statusSchema)} WHERE block_height = ${paramName(1)} ORDER BY "index" DESC`,
         [blockHeight]
     )
 
     for (let rec of changes) {
+        rec.change = typeof rec.change === 'string' ? JSON.parse(rec.change) : rec.change
+
         let {table, id} = rec.change
         table = escape(em, table)
         switch(rec.change.kind) {
             case 'insert':
-                await em.query(`DELETE FROM ${table} WHERE id = $1`, [id])
+                await em.query(`DELETE FROM ${table} WHERE id = ${paramName(1)}`, [id])
                 break
             case 'update': {
                 let setPairs = Object.keys(rec.change.fields).map((column, idx) => {
-                    return `${escape(em, column)} = $${idx + 1}`
+                    return `${escape(em, column)} = ${paramName(idx + 1)}`
                 })
                 if (setPairs.length) {
                     await em.query(
-                        `UPDATE ${table} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
-                        [...Object.values(rec.change.fields), id]
+                        `UPDATE ${table} SET ${setPairs.join(', ')} WHERE id = ${paramName(setPairs.length + 1)}`,
+                        [...Object.values(rec.change.fields).map(deserializeValue), id]
                     )
                 }
                 break
             }
             case 'delete': {
                 let columns = ['id', ...Object.keys(rec.change.fields)].map(col => escape(em, col))
-                let values = columns.map((col, idx) => `$${idx + 1}`)
+                let values = columns.map((col, idx) => paramName(idx + 1))
                 await em.query(
                     `INSERT INTO ${table} (${columns}) VALUES (${values.join(', ')})`,
-                    [id, ...Object.values(rec.change.fields)]
+                    [id, ...Object.values(rec.change.fields).map(deserializeValue)]
                 )
                 break
             }
         }
     }
 
-    await em.query(`DELETE FROM ${schema}.hot_block WHERE height = $1`, [blockHeight])
+    await em.query(`DELETE FROM ${tableName('hot_block', statusSchema)} WHERE height = ${paramName(1)}`, [blockHeight])
 }
 
 

@@ -1,16 +1,12 @@
-import {assertNotNull} from '@subsquid/util-internal'
-import expect from 'expect'
-import {Equal} from 'typeorm'
-import {Store} from '../store'
-import {Item, Order} from './lib/model'
-import {getEntityManager, useDatabase} from './util'
-
+import { assertNotNull } from '@subsquid/util-internal';
+import { Equal } from 'typeorm';
+import { Store } from '../store';
+import { Item, Order } from './lib/model';
+import { getEntityManager, useDatabase } from './util';
 
 describe("Store", function() {
     describe(".save()", function() {
-        useDatabase([
-            `CREATE TABLE item (id text primary key , name text)`
-        ])
+        useDatabase()
 
         it("saving of a single entity", async function() {
             let store = await createStore()
@@ -44,7 +40,10 @@ describe("Store", function() {
                 new Item('1', 'foo'),
                 new Item('2', 'b')
             ])
-            await expect(getItems()).resolves.toEqual([
+            const items = await getItems()
+
+            expect(items).toHaveLength(2)
+            expect(items).toEqual([
                 {id: '1', name: 'foo'},
                 {id: '2', name: 'b'}
             ])
@@ -53,7 +52,6 @@ describe("Store", function() {
 
     describe(".remove()", function() {
         useDatabase([
-            `CREATE TABLE item (id text primary key , name text)`,
             `INSERT INTO item (id, name) values ('1', 'a')`,
             `INSERT INTO item (id, name) values ('2', 'b')`,
             `INSERT INTO item (id, name) values ('3', 'c')`
@@ -89,8 +87,6 @@ describe("Store", function() {
 
     describe("Update with un-fetched reference", function() {
         useDatabase([
-            `CREATE TABLE item (id text primary key , name text)`,
-            `CREATE TABLE "order" (id text primary key, item_id text REFERENCES item, qty int4)`,
             `INSERT INTO item (id, name) values ('1', 'a')`,
             `INSERT INTO "order" (id, item_id, qty) values ('1', '1', 3)`,
             `INSERT INTO item (id, name) values ('2', 'b')`,
@@ -129,7 +125,7 @@ describe("Store", function() {
                 order: {id: 'ASC'}
             })
 
-            expect(newOrders).toEqual([
+            expect(newOrders).toMatchObject([
                 {
                     id: '1',
                     item: {

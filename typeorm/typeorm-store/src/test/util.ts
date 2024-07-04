@@ -1,51 +1,52 @@
-import {createOrmConfig} from '@subsquid/typeorm-config'
-import {assertNotNull} from '@subsquid/util-internal'
-import {Client as PgClient, ClientBase} from 'pg'
-import {DataSource, EntityManager} from 'typeorm'
+import { createOrmConfig, getDbType } from '@subsquid/typeorm-config';
+import { DataSource, EntityManager } from 'typeorm';
 
-
-export const db_config = {
-    host: 'localhost',
-    port: parseInt(assertNotNull(process.env.DB_PORT)),
-    user: assertNotNull(process.env.DB_USER),
-    password: assertNotNull(process.env.DB_PASS),
-    database: assertNotNull(process.env.DB_NAME)
-}
-
-
-async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {
-    let client = new PgClient(db_config)
-    await client.connect()
+async function withClient(block: (client: DataSource) => Promise<void>): Promise<undefined> {
+    let client = new DataSource({
+        ...createOrmConfig({ projectDir: __dirname }),
+        // logging: true
+    })
+    await client.initialize()
     try {
         await block(client)
     } finally {
-        await client.end()
+        await client.destroy()
+    }
+}
+
+const schemaName = process.env.DB_USER || 'public'
+
+export async function databaseDelete(client: DataSource): Promise<void> {
+        if (getDbType() === 'sqlite') {
+            await client.dropDatabase()
+            return
+        }
+
+        await client.query(`DROP SCHEMA IF EXISTS ${schemaName} CASCADE`)
+        await client.query(`DROP SCHEMA IF EXISTS squid_processor CASCADE`)
+        await client.query(`CREATE SCHEMA ${schemaName}`)
+}
+
+export async function databaseInit(client: DataSource, sql: string[]): Promise<void> {
+    await client.synchronize(true)
+
+    for (let i = 0; i < sql.length; i++) {
+        await client.query(sql[i])
     }
 }
 
 
-export function databaseInit(sql: string[]): Promise<void> {
-    return withClient(async client => {
-        for (let i = 0; i < sql.length; i++) {
-            await client.query(sql[i])
-        }
-    })
-}
-
-
-export function databaseDelete(): Promise<void> {
-    return withClient(async client => {
-        await client.query(`DROP SCHEMA IF EXISTS ${db_config.user} CASCADE`)
-        await client.query(`DROP SCHEMA IF EXISTS squid_processor CASCADE`)
-        await client.query(`CREATE SCHEMA ${db_config.user}`)
-    })
-}
-
-
-export function useDatabase(sql: string[]): void {
+export function useDatabase(sql: string[] = []): void {
     beforeEach(async () => {
-        await databaseDelete()
-        await databaseInit(sql)
+        try {
+            await withClient(async client => {
+                await databaseDelete(client)
+                await databaseInit(client, sql)
+            })
+        } catch (err) {
+            console.error(err)
+            throw err
+        }
     })
 }
 

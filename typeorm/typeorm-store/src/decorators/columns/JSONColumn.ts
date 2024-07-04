@@ -1,5 +1,6 @@
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type JSONColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +12,7 @@ export type JSONColumnOptions = Pick<
  * Column value is transformed to `unknown` type.
  */
 export function JSONColumn(options?: JSONColumnOptions): PropertyDecorator {
-    return Column('jsonb', options)
+    const { type, options: opts} = normalizedType('jsonb', options)
+
+    return Column(type, opts)
 }

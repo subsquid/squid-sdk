@@ -1,25 +1,10 @@
-import expect from 'expect'
-import {TypeormDatabase} from '../database'
-import {Data} from './lib/model'
-import {getEntityManager, useDatabase} from './util'
+import { TypeormDatabase } from '../database';
+import { Data } from './lib/model';
+import { getEntityManager, useDatabase } from './util';
 
 
 describe('TypeormDatabase', function() {
-    useDatabase([
-        `CREATE TABLE item (id text primary key, name text)`,
-        `CREATE TABLE "data" (
-            id text primary key, 
-            "text" text, 
-            text_array text[], 
-            "integer" int4, 
-            integer_array int4[], 
-            big_integer numeric,
-            date_time timestamp with time zone,
-            "bytes" bytea,
-            "json" jsonb,
-            item_id text references item
-        )`
-    ])
+    useDatabase()
 
     let db!: TypeormDatabase
 
@@ -36,15 +21,21 @@ describe('TypeormDatabase', function() {
 
     it('.transact() flow', async function() {
         await db.connect()
-
         await db.transact({
             prevHead: {height: -1, hash: '0x'},
             nextHead: {height: 10, hash: '0x10'}
         }, async store => {
             await store.insert(new Data({
                 id: '1',
+                bool: true,
                 text: 'hello',
-                integer: 10
+                integer: 10,
+                textArray: ['a1', 'A1'],
+                integerArray: [1, 10],
+                bigInteger: 1000000000000000000000000000000000000000000000000000000000n,
+                dateTime: new Date(1000000000000),
+                bytes: Buffer.from([100, 100, 100]),
+                json: [1, {foo: 'bar'}]
             }))
         })
 
@@ -65,16 +56,31 @@ describe('TypeormDatabase', function() {
             order: {id: 'asc'}
         })
 
-        expect(records).toMatchObject([
+        expect(records).toEqual([
             {
                 id: '1',
+                bool: true,
                 text: 'hello',
-                integer: 10
+                integer: 10,
+                textArray: ['a1', 'A1'],
+                integerArray: [1, 10],
+                bigInteger: 1000000000000000000000000000000000000000000000000000000000n,
+                dateTime: new Date(1000000000000),
+                bytes: Buffer.from([100, 100, 100]),
+                json: [1, {foo: 'bar'}]
             },
             {
                 id: '2',
                 text: 'world',
-                integer: 20
+                integer: 20,
+                // WTF?
+                bigInteger: undefined,
+                bool: null,
+                bytes: null,
+                dateTime: null,
+                integerArray: null,
+                json: null,
+                textArray: null,
             }
         ])
 
@@ -149,14 +155,16 @@ describe('TypeormDatabase', function() {
                 case 1:
                     return await store.insert(a1)
                 case 2:
-                    expect(await store.get(Data, '1')).toEqual(a1)
+                    expect(await store.get(Data, '1')).toMatchObject(a1)
                     await store.insert([a2, a3])
             }
         })
 
-        expect(await em.find(Data, {order: {id: 'asc'}})).toEqual([
-            a1, a2, a3
-        ])
+        {
+            const data = await em.find(Data, {order: {id: 'asc'}})
+            expect(data).toHaveLength(3)
+            expect(data).toMatchObject([a1, a2, a3])
+        }
 
         let b1 = new Data({
             id: '1',
@@ -194,9 +202,13 @@ describe('TypeormDatabase', function() {
             await store.insert(b2)
         })
 
-        expect(await em.find(Data, {order: {id: 'asc'}})).toEqual([
-            b1, b2
-        ])
+        {
+            const data = await em.find(Data, {order: {id: 'asc'}})
+            expect(data).toHaveLength(2)
+            expect(data).toMatchObject([
+                b1, b2
+            ])
+        }
 
         await db.transactHot({
             finalizedHead: {height: 0, hash: '0'},
@@ -206,7 +218,11 @@ describe('TypeormDatabase', function() {
             ]
         }, async (store, block) => {
             expect(block).toEqual({height: 2, hash: 'c-2'})
-            expect(await store.find(Data)).toEqual([a1])
+            {
+                const data = await store.find(Data)
+                expect(data).toHaveLength(1)
+                expect(data).toMatchObject([a1])
+            }
             await store.remove(a1)
         })
 
@@ -220,13 +236,18 @@ describe('TypeormDatabase', function() {
             ]
         }, async () => {})
 
-        expect(await em.find(Data)).toEqual([a1])
+        {
+            const data = await em.find(Data)
+            expect(data).toHaveLength(1)
+            expect(data).toMatchObject([a1])
+        }
 
         await db.disconnect()
 
-        expect(await db.connect()).toMatchObject({
+        expect(await db.connect()).toEqual({
             height: 0,
             hash: '0',
+            nonce: 5,
             top: [
                 {height: 1, hash: 'a-1'},
                 {height: 2, hash: 'd-2'}

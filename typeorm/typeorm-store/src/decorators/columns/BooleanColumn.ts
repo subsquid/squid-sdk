@@ -1,5 +1,6 @@
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type BooleanColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +12,7 @@ export type BooleanColumnOptions = Pick<
  * Column value is transformed to `boolean` type.
  */
 export function BooleanColumn(options?: BooleanColumnOptions): PropertyDecorator {
-    return Column('bool', options)
+    const { type, options: opts } = normalizedType('bool', options)
+
+    return Column(type, opts)
 }

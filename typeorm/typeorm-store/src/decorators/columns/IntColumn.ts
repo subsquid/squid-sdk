@@ -1,5 +1,6 @@
 import {Column} from './Column'
-import {ColumnCommonOptions, ColumnOptions} from './common'
+import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type IntColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +12,7 @@ export type IntColumnOptions = Pick<
  * Column value is transformed to `number` type.
  */
 export function IntColumn(options?: IntColumnOptions): PropertyDecorator {
-    return Column('int4', options)
+    const { type, options: opts} = normalizedType('int4', options)
+
+    return Column(type, opts)
 }

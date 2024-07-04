@@ -21,10 +21,14 @@
     "@subsquid/util-naming": "^1.3.0"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "better-sqlite3": "^11.1.2"
   },
   "peerDependenciesMeta": {
     "typeorm": {
+      "optional": true
+    },
+    "better-sqlite3": {
       "optional": true
     }
   },

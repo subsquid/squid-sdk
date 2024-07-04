@@ -2,21 +2,30 @@ import {createLogger} from '@subsquid/logger'
 import {isTsNode} from '@subsquid/util-internal-ts-node'
 import * as path from 'path'
 import * as process from 'process'
-import type {DataSourceOptions as OrmConfig} from 'typeorm'
+import type { DataSourceOptions as OrmConfig} from 'typeorm'
 import {createConnectionOptions} from './connectionOptions'
 import {SnakeNamingStrategy} from './namingStrategy'
 
-
 const log = createLogger('sqd:typeorm-config')
-
 
 export interface OrmOptions {
     projectDir?: string
 }
 
+export function getDbType() {
+    switch (process.env.DB_TYPE) {
+        case 'sqlite':
+        case 'better-sqlite3':
+            return 'sqlite'
+        case 'cockroach':
+        case 'cockroachdb':
+            return 'cockroachdb'
+        default:
+            return 'postgres'
+    }
+}
 
 export const MIGRATIONS_DIR = 'db/migrations'
-
 
 export function createOrmConfig(options?: OrmOptions): OrmConfig {
     let dir = path.resolve(options?.projectDir || process.cwd())
@@ -26,10 +35,27 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
         entities: [model],
         migrations: [migrationsDir + '/*.js']
     }
+
+    const namingStrategy = new SnakeNamingStrategy()
+
     log.debug(locations, 'typeorm locations')
-    return  {
-        type: 'postgres',
-        namingStrategy: new SnakeNamingStrategy(),
+
+    const type = getDbType()
+
+    if (type === 'sqlite') {
+        return {
+            type: 'better-sqlite3',
+            database: process.env.DB_URL || 'squid.db',
+            enableWAL: true,
+            namingStrategy,
+            ...locations,
+        }
+    }
+
+    return {
+        type,
+        timeTravelQueries: false,
+        namingStrategy,
         ...locations,
         ...createConnectionOptions()
     }

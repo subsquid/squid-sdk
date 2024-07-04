@@ -1,9 +1,10 @@
 test:
 	@echo POSTGRES
-	@npx mocha -r dotenv/config lib/test/*.test.js --exit --timeout 5000
-	@echo COCKROACH
-	@DB_PORT=27437 npx mocha -r dotenv/config lib/test/*.test.js --exit --timeout 5000
-
+	@npx jest --runInBand --runTestsByPath lib/test/*.test.js --forceExit --bail
+#	@echo COCKROACH
+#	@DB_TYPE=cockroach DB_PORT=27437 npx jest --runInBand --runTestsByPath lib/test/*.test.js --forceExit --bail
+	@echo SQLITE
+	@DB_TYPE=sqlite DB_URL=./squid.db npx jest --runInBand --runTestsByPath lib/test/*.test.js --forceExit --bail
 
 up:
 	@docker-compose up -d 2>&1

@@ -1,6 +1,7 @@
 import {bigintTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type BigIntColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment'>
 
@@ -11,5 +12,9 @@ export type BigIntColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 
  * Arrays are not supported.
  */
 export function BigIntColumn(options?: BigIntColumnOptions): PropertyDecorator {
-    return Column('numeric', {...options, transformer: bigintTransformer})
+    const { type, options: opts} = normalizedType('numeric',  {
+        ...options, transformer: bigintTransformer
+    })
+
+    return Column(type, opts)
 }

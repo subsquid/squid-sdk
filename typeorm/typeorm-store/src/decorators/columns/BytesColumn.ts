@@ -1,5 +1,6 @@
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type BytesColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +12,7 @@ export type BytesColumnOptions = Pick<
  * Column value is transformed to `Uint8Array` type.
  */
 export function BytesColumn(options?: BytesColumnOptions): PropertyDecorator {
-    return Column('bytea', options)
+    const { type, options: opts} = normalizedType('bytea', options)
+
+    return Column(type, opts)
 }
