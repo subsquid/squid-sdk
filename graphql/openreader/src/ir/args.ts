@@ -66,7 +66,9 @@ export type BinaryOp =
     'contains' | 'not_contains' |
     'containsInsensitive' | 'not_containsInsensitive' |
     'startsWith' | 'not_startsWith' |
+    'startsWithInsensitive' | 'not_startsWithInsensitive' |
     'endsWith' | 'not_endsWith' |
+    'endsWithInsensitive' | 'not_endsWithInsensitive' |
     'containsAll' |
     'containsAny' |
     'containsNone' |

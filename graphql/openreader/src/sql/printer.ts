@@ -92,6 +92,10 @@ export class EntitySqlPrinter {
     }
 
     private populateWhere(cursor: Cursor, where: Where, exps: string[]): void {
+        function printStr(value: string) {
+            return !!where.op?.endsWith?.('Insensitive') ? `lower(${value})` : value
+        }
+
         switch(where.op) {
             case "AND":
                 for (let cond of where.args) {
@@ -178,47 +182,46 @@ export class EntitySqlPrinter {
                 break
             }
             case "startsWith":
+            case "startsWithInsensitive":
                 if (this.dialect == "cockroach") {
                     let f = cursor.native(where.field)
                     let p = this.param(where.value) + "::text"
-                    exps.push(`${f} >= ${p}`)
-                    exps.push(`left(${f}, length(${p})) = ${p}`)
+                    exps.push(`${printStr(f)} >= ${printStr(p)}`)
+                    exps.push(`left(${printStr(f)}, length(${p})) = ${printStr(p)}`)
                 } else {
-                    exps.push(`starts_with(${cursor.native(where.field)}, ${this.param(where.value)})`)
+                    exps.push(`starts_with(${printStr(cursor.native(where.field))}, ${printStr(this.param(where.value))})`)
                 }
                 break
             case "not_startsWith":
+            case "not_startsWithInsensitive":
                 if (this.dialect == "cockroach") {
                     let f = cursor.native(where.field)
                     let p = this.param(where.value) + "::text"
-                    exps.push(`(${f} < ${p} OR left(${f}, length(${p})) != ${p})`)
+                    exps.push(`(${printStr(f)} < ${printStr(p)} OR left(${printStr(f)}, length(${printStr(p)})) != ${printStr(p)})`)
                 } else {
-                    exps.push(`NOT starts_with(${cursor.native(where.field)}, ${this.param(where.value)})`)
+                    exps.push(`NOT starts_with(${printStr(cursor.native(where.field))}, ${printStr(this.param(where.value))})`)
                 }
                 break
-            case "endsWith": {
+            case "endsWith": 
+            case "not_startsWithInsensitive": {
                 let f = cursor.native(where.field)
                 let p = this.param(where.value) + "::text"
-                exps.push(`right(${f}, length(${p})) = ${p}`)
+                exps.push(`right(${printStr(f)}, length(${p})) = ${printStr(p)}`)
                 break
             }
             case "not_endsWith": {
                 let f = cursor.native(where.field)
                 let p = this.param(where.value) + "::text"
-                exps.push(`right(${f}, length(${p})) != ${p}`)
+                exps.push(`right(${printStr(f)}, length(${p})) != ${printStr(p)}`)
                 break
             }
             case "contains":
-                exps.push(`position(${this.param(where.value)} in ${cursor.native(where.field)}) > 0`)
+            case "containsInsensitive":
+                exps.push(`position(${printStr(this.param(where.value))} in ${printStr(cursor.native(where.field))}) > 0`)
                 break
             case "not_contains":
-                exps.push(`position(${this.param(where.value)} in ${cursor.native(where.field)}) = 0`)
-                break
-            case "containsInsensitive":
-                exps.push(`position(lower(${this.param(where.value)}) in lower(${cursor.native(where.field)})) > 0`)
-                break
             case "not_containsInsensitive":
-                exps.push(`position(lower(${this.param(where.value)}) in lower(${cursor.native(where.field)})) = 0`)
+                exps.push(`position(${printStr(this.param(where.value))} in ${printStr(cursor.native(where.field))}) = 0`)
                 break
             case "every": {
                 let rel = cursor.prop(where.field)
@@ -446,3 +449,4 @@ export class QueryableSqlPrinter {
         return sql
     }
 }
+

@@ -2,7 +2,7 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Where} from '../../ir/args'
 import {ensureArray} from '../../util/util'
-import {parseWhereKey, toCondition} from '../common'
+import {toCondition} from '../common'
 
 export function parseWhere(whereArg?: any): Where | undefined {
     if (whereArg == null) return undefined
@@ -34,20 +34,47 @@ export function parseWhere(whereArg?: any): Where | undefined {
             case 'not_in':
                 conj.push({op, field, values: ensureArray(arg)})
                 break
-            case 'eq':
-            case 'not_eq':
+            case 'not':
+                conj.push({op: 'not_eq', field, value: arg})
+                break
             case 'gt':
             case 'gte':
             case 'lt':
             case 'lte':
             case 'contains':
             case 'not_contains':
-            case 'containsInsensitive':
-            case 'not_containsInsensitive':
-            case 'startsWith':
-            case 'not_startsWith':
-            case 'endsWith':
-            case 'not_endsWith':
+                conj.push({op, field, value: arg})
+                break
+            case 'contains_nocase':
+                conj.push({op: 'containsInsensitive', field, value: arg})
+                break
+            case 'not_contains_nocase':
+                conj.push({op: 'not_containsInsensitive', field, value: arg})
+                break
+            case 'starts_with':
+                conj.push({op: 'startsWith', field, value: arg})
+                break
+            case 'starts_with_nocase':
+                conj.push({op: 'startsWithInsensitive', field, value: arg})
+                break
+            case 'not_starts_with':
+                conj.push({op: 'not_startsWith', field, value: arg})
+                break
+            case 'not_starts_with_nocase':
+                conj.push({op: 'not_startsWithInsensitive', field, value: arg})
+                break
+            case 'ends_with':
+                conj.push({op: 'endsWith', field, value: arg})
+                break
+            case 'ends_with_nocase':
+                conj.push({op: 'endsWithInsensitive', field, value: arg})
+                break
+            case 'not_ends_with':
+                conj.push({op: 'not_endsWith', field, value: arg})
+                break
+            case 'not_ends_with_nocase':
+                conj.push({op: 'not_endsWithInsensitive', field, value: arg})
+                break
             case 'jsonHasKey':
             case 'jsonContains':
                 conj.push({op, field, value: arg})
@@ -92,3 +119,47 @@ export function parseWhere(whereArg?: any): Where | undefined {
         return conjunction
     }
 }
+
+export function parseWhereKey(key: string): {op: (typeof WHERE_OPS)[number] | 'REF'; field: string} {
+    let m = WHERE_KEY_REGEX.exec(key)
+    if (m) {
+        return {op: m[2] as (typeof WHERE_OPS)[number], field: m[1]}
+    } else {
+        return {op: 'REF', field: key}
+    }
+}
+
+const WHERE_OPS = [
+    'not',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'in',
+    'not_in',
+    'contains',
+    'contains_nocase',
+    'not_contains',
+    'not_contains_nocase',
+    'starts_with',
+    'starts_with_nocase',
+    'not_starts_with',
+    'not_starts_with_nocase',
+    'ends_with',
+    'ends_with_nocase',
+    'not_ends_with',
+    'not_ends_with_nocase',
+    'containsAll',
+    'containsAny',
+    'containsNone',
+    'jsonContains',
+    'jsonHasKey',
+    'isNull',
+    'some',
+    'every',
+    'none',
+] as const
+
+const WHERE_KEY_REGEX = (() => {
+    return new RegExp(`^([^_]*)_(${WHERE_OPS.join('|')})$`)
+})()

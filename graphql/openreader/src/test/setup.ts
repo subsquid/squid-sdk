@@ -74,7 +74,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
             subscriptionPollInterval: 500,
             maxRootFields: 10,
             // log: createLogger('sqd:openreader'),
-            ...options
+            ...options,
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })
