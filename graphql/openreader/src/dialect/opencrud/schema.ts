@@ -42,6 +42,7 @@ import {getOrderByMapping, parseOrderBy} from './orderBy'
 import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {parseWhere} from './where'
 import {GqlFieldMap, SchemaOptions} from '../common'
+import {Where} from '../../ir/args'
 
 
 export class SchemaBuilder {
@@ -395,7 +396,7 @@ export class SchemaBuilder {
 
     private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = toPlural(toCamelCase(typeName))
+        let queryName = this.normalizeEntityName(typeName).plural
         let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
         let argsType = this.listArguments(typeName)
 
@@ -435,7 +436,7 @@ export class SchemaBuilder {
 
     private installEntityById(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = `${toCamelCase(entityName)}ById`
+        let queryName = `${this.normalizeEntityName(entityName).singular}ById`
         let argsType = {
             id: {type: new GraphQLNonNull(GraphQLString)}
         }
@@ -476,7 +477,7 @@ export class SchemaBuilder {
     private installEntityByUniqueInput(entityName: string, query: GqlFieldMap): void {
         let model = this.model
 
-        query[`${toCamelCase(entityName)}ByUniqueInput`] = {
+        query[`${this.normalizeEntityName(entityName).singular}ByUniqueInput`] = {
             deprecationReason: `Use ${toCamelCase(entityName)}ById`,
             type: this.get(entityName),
             args: {
@@ -505,7 +506,7 @@ export class SchemaBuilder {
         let outputType = toPlural(typeName) + 'Connection'
         let edgeType = `${typeName}Edge`
 
-        query[`${toPlural(toCamelCase(typeName))}Connection`] = {
+        query[`${this.normalizeEntityName(typeName).plural}Connection`] = {
             type: new GraphQLNonNull(new GraphQLObjectType({
                 name: outputType,
                 fields: {
@@ -618,6 +619,21 @@ export class SchemaBuilder {
                 }
             })
         )
+    }
+
+    private normalizeEntityName(typeName: string) {
+        let model = this.model[typeName]
+
+        let singular = toCamelCase(typeName)
+
+        let plural: string
+        if (model.kind === 'entity' && model.plural != null) {
+            plural = toCamelCase(model.plural)
+        } else {
+            plural = toPlural(singular)
+        }
+
+        return {singular, plural}
     }
 }
 

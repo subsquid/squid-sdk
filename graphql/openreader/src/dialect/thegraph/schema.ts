@@ -1,5 +1,5 @@
 import {def, unexpectedCase} from '@subsquid/util-internal'
-import {toCamelCase, toPlural} from '@subsquid/util-naming'
+import {toCamelCase} from '@subsquid/util-naming'
 import assert from 'assert'
 import {
     GraphQLBoolean,
@@ -29,7 +29,7 @@ import {
 import {Context} from '../../context'
 import {getListSize, getObjectSize} from '../../limit.size'
 import {Entity, Interface, JsonObject, Model, Prop} from '../../model'
-import {getObject, getUniversalProperties} from '../../model.tools'
+import {getEntity, getObject, getUniversalProperties} from '../../model.tools'
 import {customScalars} from '../../scalars'
 import {EntityByIdQuery, ListQuery} from '../../sql/query'
 import {Limit} from '../../util/limit'
@@ -38,6 +38,7 @@ import {identity} from '../../util/util'
 import {getOrderByList, ORDER_DIRECTIONS} from './orderBy'
 import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {GqlFieldMap, SchemaOptions} from '../common'
+import {toPlural} from './locale'
 
 export class SchemaBuilder {
     private model: Model
@@ -225,9 +226,9 @@ export class SchemaBuilder {
                 let type = this.get(prop.type.name, GraphQLScalarType)
                 let listType = new GraphQLList(new GraphQLNonNull(type))
 
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[`${key}`] = {type}
-                fields[`${key}_not_eq`] = {type}
+                fields[`${key}_not`] = {type}
 
                 switch (prop.type.name) {
                     case 'ID':
@@ -245,20 +246,24 @@ export class SchemaBuilder {
                         fields[`${key}_not_in`] = {type: listType}
                         break
                     case 'JSON':
-                        fields[`${key}_jsonContains`] = {type}
-                        fields[`${key}_jsonHasKey`] = {type}
+                        fields[`${key}_json_contains`] = {type}
+                        fields[`${key}_json_has_key`] = {type}
                         break
                 }
 
                 if (prop.type.name == 'ID' || prop.type.name == 'String') {
                     fields[`${key}_contains`] = {type}
                     fields[`${key}_not_contains`] = {type}
-                    fields[`${key}_containsInsensitive`] = {type}
-                    fields[`${key}_not_containsInsensitive`] = {type}
-                    fields[`${key}_startsWith`] = {type}
-                    fields[`${key}_not_startsWith`] = {type}
-                    fields[`${key}_endsWith`] = {type}
-                    fields[`${key}_not_endsWith`] = {type}
+                    fields[`${key}_contains_nocase`] = {type}
+                    fields[`${key}_not_contains_nocase`] = {type}
+                    fields[`${key}_starts_with`] = {type}
+                    fields[`${key}_starts_with_nocase`] = {type}
+                    fields[`${key}_not_starts_with`] = {type}
+                    fields[`${key}_not_starts_with_nocase`] = {type}
+                    fields[`${key}_ends_with`] = {type}
+                    fields[`${key}_ends_with_nocase`] = {type}
+                    fields[`${key}_not_ends_with`] = {type}
+                    fields[`${key}_not_ends_with_nocase`] = {type}
                 }
 
                 break
@@ -266,37 +271,37 @@ export class SchemaBuilder {
             case 'enum': {
                 let type = this.get(prop.type.name, GraphQLEnumType)
                 let listType = new GraphQLList(new GraphQLNonNull(type))
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[`${key}`] = {type}
-                fields[`${key}_not_eq`] = {type}
+                fields[`${key}_not`] = {type}
                 fields[`${key}_in`] = {type: listType}
                 fields[`${key}_not_in`] = {type: listType}
                 break
-            } 
+            }
             case 'list':
                 fields[`${key}_isNull`] = {type: GraphQLBoolean}
                 if (prop.type.item.type.kind == 'scalar' || prop.type.item.type.kind == 'enum') {
                     let item = this.getPropType(prop.type.item)
                     let list = new GraphQLList(item)
-                    fields[`${key}_containsAll`] = {type: list}
-                    fields[`${key}_containsAny`] = {type: list}
-                    fields[`${key}_containsNone`] = {type: list}
+                    fields[`${key}_contains_all`] = {type: list}
+                    fields[`${key}_contains_any`] = {type: list}
+                    fields[`${key}_contains_none`] = {type: list}
                 }
                 break
             case 'object':
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 if (this.hasFilters(getObject(this.model, prop.type.name))) {
                     fields[key] = {type: this.getWhere(prop.type.name)}
                 }
                 break
             case 'union':
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
             case 'fk':
             case 'lookup':
-                fields[`${key}_isNull`] = {type: GraphQLBoolean}
-                fields[key] = {type: this.getWhere(prop.type.entity)}
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
+                fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
                 break
             case 'list-lookup': {
                 let where = this.getWhere(prop.type.entity)
@@ -393,7 +398,7 @@ export class SchemaBuilder {
 
     private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = toPlural(toCamelCase(typeName))
+        let queryName = this.normalizeQueryName(typeName).plural
         let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
         let argsType = this.listArguments(typeName)
 
@@ -427,7 +432,7 @@ export class SchemaBuilder {
 
     private installEntityQuery(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = toCamelCase(entityName)
+        let queryName = this.normalizeQueryName(entityName).singular
         let argsType = {
             id: {type: new GraphQLNonNull(GraphQLString)},
         }
@@ -457,6 +462,25 @@ export class SchemaBuilder {
                 return context.openreader.subscription(q)
             },
         }
+    }
+
+    private normalizeQueryName(typeName: string) {
+        let model = this.model[typeName]
+
+        let singular = toCamelCase(typeName)
+
+        let plural: string
+        if (model.kind === 'entity' && model.plural != null) {
+            plural = toCamelCase(model.plural)
+            assert(singular !== plural)
+        } else {
+            plural = toPlural(singular)
+            if (singular === plural) {
+                plural += '_collection'
+            }
+        }
+
+        return {singular, plural}
     }
 }
 

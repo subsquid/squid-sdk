@@ -152,6 +152,10 @@ export function validateNames(model: Model) {
             if (!TYPE_NAME_REGEX.test(name)) {
                 throw new Error(`Invalid ${item.kind} name: ${name}. It must match ${TYPE_NAME_REGEX}`)
             }
+
+            if (item.kind === 'entity' && item.plural != null && !TYPE_NAME_REGEX.test(item.plural)) {
+                throw new Error(`Invalid ${item.kind} plural name: ${name}. It must match ${TYPE_NAME_REGEX}`)
+            }
         }
         switch(item.kind) {
             case 'entity':

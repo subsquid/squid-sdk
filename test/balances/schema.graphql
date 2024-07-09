@@ -1,5 +1,9 @@
-            type Item @entity {
-                id: ID!
-                a: Int
-                b: Int
-            }
+
+type Transfer @entity @index(fields: ["from", "to"]) @index(fields: ["timestamp", "from", "to"]) {
+    id: ID!
+    timestamp: BigInt! @index
+    from: String!
+    to: String!
+    amount: BigDecimal! @index
+    tags: [String!]
+}

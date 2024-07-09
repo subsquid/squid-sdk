@@ -3,7 +3,7 @@ process: migrate
 
 
 serve:
-	@npx squid-graphql-server --dialect thegraph
+	@npx squid-graphql-server
 
 
 migrate:

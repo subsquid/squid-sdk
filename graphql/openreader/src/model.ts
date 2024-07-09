@@ -10,6 +10,7 @@ export interface Entity extends TypeMeta {
     interfaces?: Name[]
     indexes?: Index[]
     cardinality?: number
+    plural?: string
 }
 
 

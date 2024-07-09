@@ -24,7 +24,7 @@ import {customScalars} from './scalars'
 
 
 const baseSchema = buildASTSchema(parse(`
-    directive @entity on OBJECT
+    directive @entity(plural: String) on OBJECT
     directive @query on INTERFACE
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
@@ -80,10 +80,18 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
     let indexes: Index[] = type instanceof GraphQLObjectType ? checkEntityIndexes(type) : []
     let cardinality = checkEntityCardinality(type)
     let description = type.description || undefined
-
-    switch(kind) {
+    
+    switch (kind) {
         case 'entity':
-            model[type.name] = {kind, properties, description, interfaces, indexes, ...cardinality}
+            model[type.name] = {
+                kind,
+                properties,
+                description,
+                interfaces,
+                indexes,
+                ...cardinality,
+                ...handleEntityDirective(model, type),
+            }
             break
         case 'object':
             model[type.name] = {kind, properties, description, interfaces}
@@ -525,6 +533,23 @@ function isQueryableInterface(type: GraphQLOutputType): boolean {
 
 function unsupportedFieldTypeError(propName: string): Error {
     return new SchemaError(`Property ${propName} has unsupported type`)
+}
+
+
+function handleEntityDirective(model: Model, type: GraphQLObjectType | GraphQLInterfaceType) {
+    let directive = type.astNode?.directives?.find(d => d.name.value == 'entity')
+    if (directive == null) return
+
+    let pluralArgument = directive.arguments?.find(d => d.name.value === 'plural')
+    let plural: string | undefined
+    if (pluralArgument != null) {
+        assert(pluralArgument?.value.kind == 'StringValue')
+        plural = pluralArgument.value.value
+    }
+
+    return {
+        plural
+    }
 }
 
 

@@ -210,7 +210,7 @@ describe('lookup test', function () {
         it('supports where conditions', function () {
             return client.test(`
                 query {
-                    issues(where: {payment: {amount_gt: 1}}) {
+                    issues(where: {payment_: {amount_gt: 1}}) {
                         id
                     }
                 }

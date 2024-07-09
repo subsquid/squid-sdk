@@ -62,7 +62,7 @@ export class EntityCursor implements Cursor {
     }
 
     prop(field: string): Prop {
-        return assertNotNull(this.entity.properties[field])
+        return assertNotNull(this.entity.properties[field], `property ${field} is missing`)
     }
 
     output(field: string): string {
@@ -209,7 +209,7 @@ export class ObjectCursor implements Cursor {
     }
 
     prop(field: string): Prop {
-        return assertNotNull(this.object.properties[field])
+        return assertNotNull(this.object.properties[field], `property ${field} is missing`)
     }
 
     output(field: string): string {
