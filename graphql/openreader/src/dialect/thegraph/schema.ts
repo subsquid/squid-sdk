@@ -291,7 +291,7 @@ export class SchemaBuilder {
             case 'object':
                 fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 if (this.hasFilters(getObject(this.model, prop.type.name))) {
-                    fields[key] = {type: this.getWhere(prop.type.name)}
+                    fields[`${key}_`] = {type: this.getWhere(prop.type.name)}
                 }
                 break
             case 'union':

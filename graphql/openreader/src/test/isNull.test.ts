@@ -112,7 +112,7 @@ describe('isNull operator', function() {
         it("on nested json prop", function() {
             return client.test(`
                 query {
-                    entities(where: {json: {a_is_null: true}} orderBy: id, orderDirection: asc) {
+                    entities(where: {json_: {a_is_null: true}} orderBy: id, orderDirection: asc) {
                         id
                     }
                 }
