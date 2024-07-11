@@ -24,7 +24,7 @@ import {customScalars} from './scalars'
 
 
 const baseSchema = buildASTSchema(parse(`
-    directive @entity(plural: String) on OBJECT
+    directive @entity(queryName: String listQueryName: String) on OBJECT
     directive @query on INTERFACE
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
@@ -540,15 +540,23 @@ function handleEntityDirective(model: Model, type: GraphQLObjectType | GraphQLIn
     let directive = type.astNode?.directives?.find(d => d.name.value == 'entity')
     if (directive == null) return
 
-    let pluralArgument = directive.arguments?.find(d => d.name.value === 'plural')
-    let plural: string | undefined
-    if (pluralArgument != null) {
-        assert(pluralArgument?.value.kind == 'StringValue')
-        plural = pluralArgument.value.value
+    let queryNameArg = directive.arguments?.find(d => d.name.value === 'queryName')
+    let queryName: string | undefined
+    if (queryNameArg != null) {
+        assert(queryNameArg?.value.kind == 'StringValue')
+        queryName = queryNameArg.value.value
+    }
+
+    let listQueryNameArg = directive.arguments?.find(d => d.name.value === 'listQueryName')
+    let listQueryName: string | undefined
+    if (listQueryNameArg != null) {
+        assert(listQueryNameArg?.value.kind == 'StringValue')
+        listQueryName = listQueryNameArg.value.value
     }
 
     return {
-        plural
+        queryName,
+        listQueryName,
     }
 }
 

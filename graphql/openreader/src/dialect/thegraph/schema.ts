@@ -398,7 +398,9 @@ export class SchemaBuilder {
 
     private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = this.normalizeQueryName(typeName).plural
+
+        let entity = getEntity(model, typeName)
+        let queryName = entity.listQueryName || this.normalizeQueryName(typeName).plural
         let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
         let argsType = this.listArguments(typeName)
 
@@ -432,7 +434,9 @@ export class SchemaBuilder {
 
     private installEntityQuery(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = this.normalizeQueryName(entityName).singular
+
+        let entity = getEntity(model, entityName)
+        let queryName = entity.queryName || this.normalizeQueryName(entityName).singular
         let argsType = {
             id: {type: new GraphQLNonNull(GraphQLString)},
         }
@@ -465,19 +469,10 @@ export class SchemaBuilder {
     }
 
     private normalizeQueryName(typeName: string) {
-        let model = this.model[typeName]
-
         let singular = toCamelCase(typeName)
-
-        let plural: string
-        if (model.kind === 'entity' && model.plural != null) {
-            plural = toCamelCase(model.plural)
-            assert(singular !== plural)
-        } else {
-            plural = toPlural(singular)
-            if (singular === plural) {
-                plural += '_collection'
-            }
+        let plural = toPlural(singular)
+        if (singular === plural) {
+            plural += '_collection'
         }
 
         return {singular, plural}

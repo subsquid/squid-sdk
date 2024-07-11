@@ -32,7 +32,7 @@ import {decodeRelayConnectionCursor, RelayConnectionRequest} from '../../ir/conn
 import {AnyFields} from '../../ir/fields'
 import {getConnectionSize, getListSize, getObjectSize} from '../../limit.size'
 import {Entity, Interface, JsonObject, Model, Prop} from '../../model'
-import {getObject, getUniversalProperties} from '../../model.tools'
+import {getEntity, getObject, getUniversalProperties} from '../../model.tools'
 import {customScalars} from '../../scalars'
 import {ConnectionQuery, CountQuery, EntityByIdQuery, ListQuery, Query} from '../../sql/query'
 import {Limit} from '../../util/limit'
@@ -42,7 +42,6 @@ import {getOrderByMapping, parseOrderBy} from './orderBy'
 import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {parseWhere} from './where'
 import {GqlFieldMap, SchemaOptions} from '../common'
-import {Where} from '../../ir/args'
 
 
 export class SchemaBuilder {
@@ -370,7 +369,6 @@ export class SchemaBuilder {
                 case "entity":
                     this.installListQuery(name, query, subscription)
                     this.installEntityById(name, query, subscription)
-                    this.installEntityByUniqueInput(name, query)
                     this.installRelayConnection(name, query)
                     break
                 case 'interface':
@@ -396,7 +394,9 @@ export class SchemaBuilder {
 
     private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = this.normalizeEntityName(typeName).plural
+
+        let entity = getEntity(model, typeName)
+        let queryName = entity.listQueryName || this.normalizeEntityName(typeName).plural
         let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
         let argsType = this.listArguments(typeName)
 
@@ -436,7 +436,9 @@ export class SchemaBuilder {
 
     private installEntityById(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
-        let queryName = `${this.normalizeEntityName(entityName).singular}ById`
+
+        let entity = getEntity(model, entityName)
+        let queryName = entity.queryName || `${this.normalizeEntityName(entityName).singular}ById`
         let argsType = {
             id: {type: new GraphQLNonNull(GraphQLString)}
         }
@@ -470,33 +472,6 @@ export class SchemaBuilder {
             subscribe(source, args, context, info) {
                 let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
                 return context.openreader.subscription(q)
-            }
-        }
-    }
-
-    private installEntityByUniqueInput(entityName: string, query: GqlFieldMap): void {
-        let model = this.model
-
-        query[`${this.normalizeEntityName(entityName).singular}ByUniqueInput`] = {
-            deprecationReason: `Use ${toCamelCase(entityName)}ById`,
-            type: this.get(entityName),
-            args: {
-                where: {type: this.whereIdInput()}
-            },
-            async resolve(source, args, context, info) {
-                let tree = getResolveTree(info)
-                let fields = parseObjectTree(model, entityName, info.schema, tree)
-                context.openreader.responseSizeLimit?.check(() => getObjectSize(model, fields) + 1)
-                let query = new ListQuery(
-                    model,
-                    context.openreader.dbType,
-                    entityName,
-                    fields,
-                    {where: {op: 'eq', field: 'id', value: args.where.id}}
-                )
-                let result = await context.openreader.executeQuery(query)
-                assert(result.length < 2)
-                return result[0]
             }
         }
     }
@@ -622,16 +597,8 @@ export class SchemaBuilder {
     }
 
     private normalizeEntityName(typeName: string) {
-        let model = this.model[typeName]
-
         let singular = toCamelCase(typeName)
-
-        let plural: string
-        if (model.kind === 'entity' && model.plural != null) {
-            plural = toCamelCase(model.plural)
-        } else {
-            plural = toPlural(singular)
-        }
+        let plural = toPlural(singular)
 
         return {singular, plural}
     }
