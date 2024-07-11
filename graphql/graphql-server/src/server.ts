@@ -103,8 +103,14 @@ export class Server {
 
     @def
     private async schema(): Promise<GraphQLSchema> {
+        const schemaBuilder = await getSchemaBuilder({
+            model: this.model(),
+            subscriptions: this.options.subscriptions,
+            dialect: this.options.dialect,
+        })
+
         let schemas = [
-            getSchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions, dialect: this.options.dialect}).build()
+            schemaBuilder.build(),
         ]
 
         if (this.options.squidStatus !== false) {

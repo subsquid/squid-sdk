@@ -33,7 +33,7 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
-    subscriptionMaxResponseNodes?: number,
+    subscriptionMaxResponseNodes?: number
     cache?: KeyValueCache
 }
 
@@ -44,12 +44,13 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         subscriptionPollInterval,
         maxResponseNodes,
         subscriptionMaxResponseNodes,
-        log
+        log,
     } = options
 
     let dbType = options.dbType ?? 'postgres'
 
-    let schema = getSchemaBuilder(options).build()
+    let schemaBuilder = await getSchemaBuilder(options)
+    let schema = schemaBuilder.build()
 
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
@@ -70,23 +71,23 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         }
 
         return {
-            openreader
+            openreader,
         }
     }
 
     let disposals: Dispose[] = []
 
     return addServerCleanup(disposals, runApollo({
-        port: options.port,
-        schema,
-        context,
-        disposals,
-        subscriptions: options.subscriptions,
-        log: options.log,
-        graphiqlConsole: options.graphiqlConsole,
-        maxRequestSizeBytes: options.maxRequestSizeBytes,
-        maxRootFields: options.maxRootFields,
-        cache: options.cache,
+            port: options.port,
+            schema,
+            context,
+            disposals,
+            subscriptions: options.subscriptions,
+            log: options.log,
+            graphiqlConsole: options.graphiqlConsole,
+            maxRequestSizeBytes: options.maxRequestSizeBytes,
+            maxRootFields: options.maxRootFields,
+            cache: options.cache,
     }), options.log)
 }
 
@@ -118,7 +119,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
 
     let execute = (args: ExecutionArgs) => openreaderExecute(args, {
         maxRootFields: maxRootFields
-    })
+        })
 
     if (options.subscriptions) {
         let wsServer = new WebSocketServer({
