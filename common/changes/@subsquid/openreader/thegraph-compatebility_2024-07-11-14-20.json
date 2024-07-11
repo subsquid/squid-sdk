@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "introduce dialect system",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add `thegraph` dialect support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
