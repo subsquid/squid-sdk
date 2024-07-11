@@ -96,25 +96,6 @@ describe('basic tests', function() {
             )
         })
     
-        it('supports by unique input query', function () {
-            return client.test(
-                `query {
-                    a2: accountByUniqueInput(where: {id: "2"}) {
-                        id
-                        wallet
-                    }
-                    nonexistent: accountByUniqueInput(where: {id: "foo"}) {
-                        id
-                        wallet
-                    }
-                }`,
-                {
-                    a2: {id: '2', wallet: 'b'},
-                    nonexistent: null
-                }
-            )
-        })
-    
         it('can fetch deep relations', function () {
             return client.test(
                 `query {

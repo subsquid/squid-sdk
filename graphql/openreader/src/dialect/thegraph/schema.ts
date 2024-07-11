@@ -399,8 +399,8 @@ export class SchemaBuilder {
     private installListQuery(typeName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
 
-        let entity = getEntity(model, typeName)
-        let queryName = entity.listQueryName || this.normalizeQueryName(typeName).plural
+        let entity = model[typeName]
+        let queryName = (entity.kind === 'entity' && entity.listQueryName) || this.normalizeQueryName(typeName).plural
         let outputType = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(this.get(typeName))))
         let argsType = this.listArguments(typeName)
 
@@ -435,8 +435,8 @@ export class SchemaBuilder {
     private installEntityQuery(entityName: string, query: GqlFieldMap, subscription: GqlFieldMap): void {
         let model = this.model
 
-        let entity = getEntity(model, entityName)
-        let queryName = entity.queryName || this.normalizeQueryName(entityName).singular
+        let entity = model[entityName]
+        let queryName = (entity.kind === 'entity' && entity.queryName) || this.normalizeQueryName(entityName).singular
         let argsType = {
             id: {type: new GraphQLNonNull(GraphQLString)},
         }
