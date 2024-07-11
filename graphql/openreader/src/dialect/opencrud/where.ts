@@ -1,7 +1,8 @@
 import {unexpectedCase} from "@subsquid/util-internal"
 import assert from "assert"
-import {Where} from "../ir/args"
-import {ensureArray} from "../util/util"
+import {Where} from "../../ir/args"
+import {ensureArray} from "../../util/util"
+import {toCondition} from '../common'
 
 
 export function parseWhere(whereArg?: any): Where | undefined {
@@ -85,19 +86,6 @@ export function parseWhere(whereArg?: any): Where | undefined {
         return conjunction
     }
 }
-
-
-function toCondition(op: 'AND' | 'OR', operands: Where[]): Where | undefined {
-    switch(operands.length) {
-        case 0:
-            return undefined
-        case 1:
-            return operands[0]
-        default:
-            return {op, args: operands}
-    }
-}
-
 
 export function parseWhereKey(key: string): {op: Where['op'], field: string} {
     let m = WHERE_KEY_REGEX.exec(key)

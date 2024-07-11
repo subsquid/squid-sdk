@@ -1,6 +1,6 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import type {Dialect} from '../dialect'
+import type {DbType} from '../db'
 import type {SqlArguments, Where} from '../ir/args'
 import {
     decodeRelayConnectionCursor,
@@ -30,7 +30,7 @@ export class ListQuery implements Query<any[]> {
 
     constructor(
         model: Model,
-        dialect: Dialect,
+        dialect: DbType,
         typeName: string,
         private fields: AnyFields,
         args: SqlArguments
@@ -60,7 +60,7 @@ export class EntityByIdQuery {
 
     constructor(
         model: Model,
-        dialect: Dialect,
+        dialect: DbType,
         entityName: string,
         private fields: FieldRequest[],
         id: string
@@ -88,7 +88,7 @@ export class CountQuery implements Query<number> {
 
     constructor(
         model: Model,
-        dialect: Dialect,
+        dialect: DbType,
         typeName: string,
         where?: Where
     ) {
@@ -114,7 +114,7 @@ export class ConnectionQuery implements Query<RelayConnectionResponse> {
 
     constructor(
         model: Model,
-        dialect: Dialect,
+        dialect: DbType,
         typeName: string,
         req: RelayConnectionRequest<AnyFields>
     ) {

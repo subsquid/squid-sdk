@@ -3,13 +3,15 @@ import {addErrorContext} from '@subsquid/util-internal'
 import type {ClientBase, Pool} from 'pg'
 import {QueryResult} from 'pg'
 import {OpenreaderContext} from './context'
-import {Dialect} from './dialect'
 import {Query} from './sql/query'
 import {Subscription} from './subscription'
 import {LazyTransaction} from './util/lazy-transaction'
 
 
 let CTX_COUNTER = 0
+
+
+export type DbType = 'postgres' | 'cockroach'
 
 
 export class PoolOpenreaderContext implements OpenreaderContext {
@@ -20,7 +22,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     private queryCounter = 0
 
     constructor(
-        public readonly dialect: Dialect,
+        public readonly dbType: DbType,
         pool: Pool,
         subscriptionPool?: Pool,
         private subscriptionPollInterval: number = 1000,

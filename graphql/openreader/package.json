@@ -42,7 +42,8 @@
     "graphql-parse-resolve-info": "^4.14.0",
     "graphql-ws": "^5.14.2",
     "pg": "^8.11.3",
-    "ws": "^8.14.2"
+    "ws": "^8.14.2",
+    "inflected": "^2.1.0"
   },
   "peerDependencies": {
     "@subsquid/big-decimal": "^1.0.0"
@@ -63,6 +64,7 @@
     "expect": "^29.7.0",
     "gql-test-client": "^0.0.0",
     "mocha": "^10.2.0",
-    "typescript": "~5.3.2"
+    "typescript": "~5.3.2",
+    "@types/inflected": "^2.1.3"
   }
 }

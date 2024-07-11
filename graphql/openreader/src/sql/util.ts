@@ -1,7 +1,7 @@
-import type {Dialect} from "../dialect"
+import type {DbType} from "../db"
 
 
-export function escapeIdentifier(dialect: Dialect, name: string): string {
+export function escapeIdentifier(dialect: DbType, name: string): string {
     return `"${name.replace(/"/g, '""')}"`
 }
 

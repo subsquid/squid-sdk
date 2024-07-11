@@ -1,7 +1,8 @@
 import assert from "assert"
-import type { Model } from "../model"
-import { getUniversalProperties } from '../model.tools'
-import { OrderBy } from "../ir/args"
+import type { Model } from "../../model"
+import { getUniversalProperties } from '../../model.tools'
+import { OrderBy } from "../../ir/args"
+import {mergeOrderBy} from '../common'
 
 
 /**
@@ -79,22 +80,4 @@ export function parseOrderBy(model: Model, typeName: string, input: OpenCrudOrde
             return spec
         })
     )
-}
-
-
-export function mergeOrderBy(list: OrderBy[]): OrderBy {
-    let result: OrderBy = {}
-    list.forEach(item => {
-        for (let key in item) {
-            let current = result[key]
-            if (current == null) {
-                result[key] = item[key]
-            } else if (typeof current != 'string') {
-                let it = item[key]
-                assert(typeof it == 'object')
-                result[key] = mergeOrderBy([current, it])
-            }
-        }
-    })
-    return result
 }
