@@ -223,6 +223,9 @@ class BlockFilter {
             if (rel.transactionTokenBalances) {
                 include(this.include.tokenBalances, this.tokenBalancesByTx().get(ins.transactionIndex))
             }
+            if (rel.transactionInstructions) {
+                include(this.include.instructions, this.instructionsByTx().get(ins.transactionIndex))
+            }
         }
     }
 
