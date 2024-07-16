@@ -67,6 +67,7 @@ export interface InstructionRequestWhere {
 export interface InstructionRequestRelations {
     transaction?: boolean
     transactionTokenBalances?: boolean
+    transactionInstructions?: boolean
     logs?: boolean
     innerInstructions?: boolean
 }
