@@ -511,7 +511,7 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
 }
 
 
-function isSibling(call1: CallKey, call2: CallKey): boolean {
-    if (call1.extrinsicIndex != call2.extrinsicIndex) return false
-    return call1.address.length == call2.address.length
+function isSibling(a: CallKey, b: CallKey): boolean {
+    if (a.extrinsicIndex != b.extrinsicIndex) return false
+    return a.address.length == b.address.length
 }
