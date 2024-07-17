@@ -122,6 +122,7 @@ export type Call<F extends FieldSelection = {}> = Simplify<
         parentCall?: Call<F>
         getParentCall(): Call<F>
         subcalls: Call<F>[]
+        siblings: Call<F>[]
         events: Event<F>[]
     }
 >

@@ -155,6 +155,7 @@ export class Call {
     #extrinsic?: Extrinsic
     #parentCall?: Call
     #subcalls?: Call[]
+    #siblings?: Call[]
     #events?: Event[]
     #ethereumTransactTo?: Bytes
     #ethereumTransactSighash?: Bytes
@@ -217,6 +218,15 @@ export class Call {
 
     set subcalls(calls: Call[]) {
         this.#subcalls = calls
+    }
+
+    get siblings(): Call[] {
+        this.#siblings = this.#siblings || []
+        return this.#siblings
+    }
+
+    set siblings(calls: Call[]) {
+        this.#siblings = calls
     }
 
     get events(): Event[] {
@@ -405,6 +415,9 @@ export function setUpItems(block: Block): void {
                 rec.parentCall = prev
                 populateSubcalls(prev, rec)
             }
+            if (isSibling(prev, rec)) {
+                populateSiblings(prev, rec)
+            }
         }
     }
 
@@ -462,6 +475,15 @@ function populateSubcalls(parent: Call | undefined, child: Call): void {
 }
 
 
+function populateSiblings(prev: Call, call: Call) {
+    call.siblings.unshift(prev, ...prev.siblings)
+    for (let sibling of prev.siblings) {
+        sibling.siblings.unshift(call)
+    }
+    prev.siblings.unshift(call)
+}
+
+
 function callCompare(a: Call, b: Call) {
     return a.extrinsicIndex - b.extrinsicIndex || addressCompare(a.address, b.address)
 }
@@ -486,4 +508,10 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
         if (parent.address[i] != call.address[i]) return false
     }
     return true
+}
+
+
+function isSibling(call1: CallKey, call2: CallKey): boolean {
+    if (call1.extrinsicIndex != call2.extrinsicIndex) return false
+    return call1.address.length == call2.address.length
 }

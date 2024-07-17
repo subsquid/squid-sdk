@@ -31,6 +31,7 @@ export interface CallRelations {
     extrinsic?: boolean
     stack?: boolean
     events?: boolean
+    siblings?: boolean
 }
 
 

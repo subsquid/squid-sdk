@@ -152,6 +152,11 @@ function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel.extrinsic) {
                 include.addExtrinsic(call.extrinsic)
             }
+            if (rel.siblings) {
+                for (let sibling of call.siblings) {
+                    include.addCall(sibling)
+                }
+            }
         }
     }
 
@@ -175,6 +180,7 @@ function filterBlock(block: Block, dataRequest: DataRequest): void {
             call.extrinsic = undefined
         }
         call.subcalls = call.subcalls.filter(sub => include.calls.has(sub))
+        call.siblings = call.siblings.filter(sib => include.calls.has(sib))
         call.events = call.events.filter(event => include.events.has(event))
         return true
     })
