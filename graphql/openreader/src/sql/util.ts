@@ -1,4 +1,4 @@
-import type {DbType} from "../db"
+import type {DbType} from "../context"
 
 
 export function escapeIdentifier(dialect: DbType, name: string): string {

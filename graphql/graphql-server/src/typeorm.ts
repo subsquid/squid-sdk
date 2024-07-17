@@ -1,18 +1,14 @@
 import type {Logger} from '@subsquid/logger'
-import type {OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {DbType} from '@subsquid/openreader/lib/db'
-import type {Dialect} from '@subsquid/openreader/lib/dialect'
+import {DbType, OpenReaderContext} from '@subsquid/openreader/lib/context'
 import type {Query} from '@subsquid/openreader/lib/sql/query'
 import {Subscription} from '@subsquid/openreader/lib/subscription'
 import {LazyTransaction} from '@subsquid/openreader/lib/util/lazy-transaction'
 import {addErrorContext} from '@subsquid/util-internal'
 import type {DataSource, EntityManager} from 'typeorm'
 
-
 let CTX_COUNTER = 0
 
-
-export class TypeormOpenreaderContext implements OpenreaderContext {
+export class TypeormOpenreaderContext implements OpenReaderContext {
     public id = (CTX_COUNTER = (CTX_COUNTER + 1) % Number.MAX_SAFE_INTEGER)
     public log?: Logger
     private tx: LazyTransaction<EntityManager>
@@ -62,10 +58,7 @@ export class TypeormOpenreaderContext implements OpenreaderContext {
 
         let log = this.log?.child('sql', ctx)
 
-        log?.debug({
-            sql,
-            parameters
-        }, 'sql query')
+        log?.debug({ sql, parameters }, 'sql query')
 
         try {
             let rows = await em.query(sql, parameters).then(mapRecords)

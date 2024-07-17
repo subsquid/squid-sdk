@@ -1,7 +1,7 @@
 import {loadModel, resolveGraphqlSchema} from "@subsquid/openreader/lib/tools"
 import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
-import {Command} from "commander"
+import {Command, Option} from "commander"
 import fs from "fs"
 import {generateOrmModels} from "./codegen"
 import {generateFtsMigrations} from "./fts"
@@ -17,11 +17,14 @@ This tool doesn't have any option. It locates GraphQL schema according
 to squid's conventions and places the resulting models at src/model/generated
 and db migrations (if any) at db/migrations. 
     `.trim())
-
+    program.option('--out <STRING>', 'output directory', 'src/model')
+    program.option('--project-dir <STRING>', 'schema directory', )
     program.parse()
 
-    let model = loadModel(resolveGraphqlSchema())
-    let orm = new OutDir('src/model')
+    const { out, projectDir } = program.opts()
+
+    let model = loadModel(resolveGraphqlSchema(projectDir))
+    let orm = new OutDir(out)
     let generatedOrm = orm.child('generated')
 
     generatedOrm.del()

@@ -1,6 +1,5 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import type {DbType} from '../db'
 import type {SqlArguments, Where} from '../ir/args'
 import {
     decodeRelayConnectionCursor,
@@ -15,14 +14,35 @@ import type {Model} from '../model'
 import {toSafeInteger} from '../util/util'
 import {mapQueryableRows, mapRows} from './mapping'
 import {EntitySqlPrinter, QueryableSqlPrinter} from './printer'
+import { DbType } from '../context';
 
 
 export interface Query<T> {
     readonly sql: string
     readonly params: unknown[]
+    readonly fields?: AnyFields
     map(rows: any[][]): T
 }
 
+/**
+ * Some databases require to use special methods for queries like CREATE TABLE or INSERT INTO.
+ */
+export class RunQuery implements Query<any[]> {
+    constructor(public sql: string, public readonly params: unknown[] = []) {}
+
+    map(): any[] {
+        return []
+    }
+}
+
+
+export class RawQuery implements Query<any[]> {
+    constructor(public sql: string,  public readonly params: unknown[] = []) {}
+
+    map(rows: any[][]): any[] {
+        return rows
+    }
+}
 
 export class ListQuery implements Query<any[]> {
     public readonly sql: string
@@ -32,7 +52,7 @@ export class ListQuery implements Query<any[]> {
         model: Model,
         dialect: DbType,
         typeName: string,
-        private fields: AnyFields,
+        public readonly fields: AnyFields,
         args: SqlArguments
     ) {
         if (model[typeName].kind == 'entity') {
@@ -45,11 +65,9 @@ export class ListQuery implements Query<any[]> {
     }
 
     map(rows: any[][]): any[] {
-        if (Array.isArray(this.fields)) {
-            return mapRows(rows, this.fields)
-        } else {
-            return mapQueryableRows(rows, this.fields)
-        }
+        if (Array.isArray(this.fields)) return mapRows(rows, this.fields)
+
+        return mapQueryableRows(rows, this.fields)
     }
 }
 
@@ -62,7 +80,7 @@ export class EntityByIdQuery {
         model: Model,
         dialect: DbType,
         entityName: string,
-        private fields: FieldRequest[],
+        public fields: FieldRequest[],
         id: string
     ) {
         this.sql = new EntitySqlPrinter(

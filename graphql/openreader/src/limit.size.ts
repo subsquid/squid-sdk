@@ -88,10 +88,12 @@ function getCardinality(
             return Math.min(type.cardinality ?? Infinity, limit ?? Infinity, getWhereCardinality(where))
         case 'interface': {
             let whereCardinality = getWhereCardinality(where)
+
             let cardinality = 0
             for (let entity of getQueryableEntities(model, typeName)) {
                 cardinality += Math.min(getEntity(model, entity).cardinality ?? Infinity, whereCardinality)
             }
+
             return Math.min(cardinality, limit ?? Infinity)
         }
         default:
@@ -102,34 +104,34 @@ function getCardinality(
 
 function getWhereCardinality(where?: Where): number {
     if (where == null) return Infinity
+
     switch(where.op) {
         case 'AND': {
             let min = Infinity
             for (let co of where.args) {
                 min = Math.min(min, getWhereCardinality(co))
             }
+
             return min
         }
         case 'OR': {
             if (where.args.length == 0) return Infinity
+
             let max = 0
             for (let co of where.args) {
                 max = Math.max(max, getWhereCardinality(co))
             }
+
             return max
         }
         case 'eq':
-            if (where.field == 'id') {
-                return 1
-            } else {
-                return Infinity
-            }
+            if (where.field == 'id') return 1
+
+            return Infinity
         case 'in':
-            if (where.field == 'id') {
-                return where.values.length
-            } else {
-                return Infinity
-            }
+            if (where.field == 'id') return where.values.length
+
+            return Infinity
         default:
             return Infinity
     }
@@ -151,5 +153,6 @@ export function getConnectionSize(model: Model, typeName: string, req: RelayConn
     if (req.totalCount) {
         total += 1
     }
+
     return total
 }

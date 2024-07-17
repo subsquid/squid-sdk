@@ -2,9 +2,8 @@ import {KeyvAdapter} from '@apollo/utils.keyvadapter'
 import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
-import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {DbType, PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
-import {Dialect, getSchemaBuilder} from '@subsquid/openreader/lib/dialect'
+import { Context, getDefaultContext, OpenReaderContext } from '@subsquid/openreader/lib/context';
+import { Dialect, getSchemaBuilder } from '@subsquid/openreader/lib/dialect';
 import type {Model} from '@subsquid/openreader/lib/model'
 import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
 import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
@@ -23,6 +22,7 @@ import * as process from 'process'
 import type {DataSource} from 'typeorm'
 import {createCheckPlugin, RequestCheckFunction} from './check'
 import {TypeormOpenreaderContext} from './typeorm'
+import { getDbType } from '@subsquid/typeorm-config';
 
 
 export interface ServerOptions {
@@ -191,8 +191,8 @@ export class Server {
 
     @def
     private async context(): Promise<() => Context> {
-        let dbType = this.dbType()
-        let createOpenreader: () => OpenreaderContext
+        let dbType = getDbType()
+        let createOpenreader: () => OpenReaderContext
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
@@ -208,27 +208,23 @@ export class Server {
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => pool.end())
-            createOpenreader = () => {
-                return new PoolOpenreaderContext(
-                    dbType,
-                    pool,
-                    pool,
-                    this.options.subscriptionPollInterval,
-                    this.options.log
-                )
-            }
+
+            //FIXME as any
+            const ctx = await getDefaultContext(this.options as any)
+
+            createOpenreader = () => ctx
         }
         return () => {
             let openreader = createOpenreader()
 
-            if (this.options.maxResponseNodes) {
-                openreader.responseSizeLimit = new ResponseSizeLimit(this.options.maxResponseNodes)
-                openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(this.options.maxResponseNodes)
-            }
-
-            if (this.options.subscriptionMaxResponseNodes) {
-                openreader.subscriptionResponseSizeLimit = new ResponseSizeLimit(this.options.subscriptionMaxResponseNodes)
-            }
+            // if (this.options.maxResponseNodes) {
+            //     openreader.maxResponseNodes = new ResponseSizeLimit(this.options.maxResponseNodes)
+            //     openreader.subscriptionmaxResponseNodes = new ResponseSizeLimit(this.options.maxResponseNodes)
+            // }
+            //
+            // if (this.options.subscriptionMaxResponseNodes) {
+            //     openreader.subscriptionmaxResponseNodes = new ResponseSizeLimit(this.options.subscriptionMaxResponseNodes)
+            // }
 
             return {openreader}
         }
@@ -265,19 +261,6 @@ export class Server {
     @def
     private connectionPoolSize(): number {
         return envNat('GQL_DB_CONNECTION_POOL_SIZE') || 5
-    }
-
-    private dbType(): DbType {
-        let type = process.env.DB_TYPE
-        if (!type) return 'postgres'
-        switch(type) {
-            case 'cockroach':
-                return 'cockroach'
-            case 'postgres':
-                return 'postgres'
-            default:
-                throw new Error(`Unknown database type passed via DB_TYPE environment variable: ${type}`)
-        }
     }
 
     @def

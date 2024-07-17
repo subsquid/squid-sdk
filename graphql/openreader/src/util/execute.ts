@@ -80,6 +80,7 @@ async function *logSubscriptionResults(
         logResult('graphql subscription result', log, args, result)
         yield result
     }
+    console.log('ended')
     log.debug('graphql subscription ended')
 }
 

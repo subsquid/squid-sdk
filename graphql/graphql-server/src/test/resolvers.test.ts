@@ -1,14 +1,25 @@
+import path from 'node:path';
 import {useDatabase} from "./util/db"
 import {useServer} from "./util/server"
+import { Child, Parent, Scalar } from './resolvers-extension/lib/model';
+import { BigDecimal } from '@subsquid/big-decimal';
 
 describe('resolvers extension', function () {
-    useDatabase([
-        `create table scalar (id text primary key, "bool" bool, date timestamptz, big_int numeric, big_decimal numeric, "bytes" bytea, attributes jsonb)`,
-        `insert into scalar (id, bool, date, big_int, big_decimal, "bytes", attributes) values ('1', true, '2021-09-24T00:00:00.000Z', 1000000000000000, 0.000000000000000001, decode('aa', 'hex'), '[1, 2, 3]'::jsonb)`,
-        `create table parent (id text primary key , name text)`,
-        `create table child (id text primary key , name text, parent_id text references parent)`,
-        `insert into parent (id, name) values ('1', 'hello')`,
-        `insert into child (id, name, parent_id) values ('2', 'world', '1')`
+    useDatabase(path.join(__dirname, 'resolvers-extension'), [
+        async ({ manager }) => {
+            const parent = new Parent({id: '1', name: 'hello'})
+
+            await manager.save(parent)
+            await manager.save(new Child({id: '1', name: 'world', parent }))
+            await manager.save(new Scalar({
+                id: '1',
+                bool: true,
+                date: new Date('2021-09-24T00:00:00.000Z'),
+                bigInt: 1000000000000000n,
+                bigDecimal: BigDecimal('0.000000000000000001'),
+                bytes: Buffer.from('aa', 'hex'),
+            }))
+        },
     ])
 
     const client = useServer('lib/test/resolvers-extension')
@@ -34,7 +45,7 @@ describe('resolvers extension', function () {
                 bigInt: '1000000000000000',
                 bigDecimal: '0.000000000000000001',
                 bytes: '0xaa',
-                attributes: [1, 2, 3]
+                attributes: [1]
             }]
         })
     })

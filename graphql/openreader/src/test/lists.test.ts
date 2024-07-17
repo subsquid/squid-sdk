@@ -3,16 +3,16 @@ import {useDatabase, useServer} from "./setup"
 
 describe('lists', function () {
     useDatabase([
-        `create table lists (
+        (ctx) => `create table lists (
             id text primary key, 
-            int_array integer[], 
-            bigint_array numeric[],
-            bigdecimal_array numeric[], 
-            enum_array text[],
-            datetime_array timestamptz[],
-            bytes_array bytea[],
-            list_of_list_of_int jsonb, 
-            list_of_json_objects jsonb
+            ${ctx.intArrayColumn('int_array')}, 
+            ${ctx.numericArrayColumn('bigint_array')}, 
+            ${ctx.numericArrayColumn('bigdecimal_array')}, 
+            ${ctx.enumArrayColumn('enum_array')}, 
+            ${ctx.datetimeArrayColumn('datetime_array')}, 
+            ${ctx.bytesArrayColumn('bytes_array')}, 
+            ${ctx.jsonColumn('list_of_list_of_int')}, 
+            ${ctx.jsonColumn('list_of_json_objects')}
         )`,
         `insert into lists (id, int_array) values ('1', '{1, 2, 3}')`,
         `insert into lists (id, int_array) values ('2', '{4, 5, 6}')`,

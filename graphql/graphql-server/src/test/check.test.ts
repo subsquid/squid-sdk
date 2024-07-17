@@ -1,10 +1,9 @@
+import path from 'node:path';
 import {useDatabase} from "./util/db"
 import {useServer} from "./util/server"
 
 describe('check extension', function () {
-    useDatabase([
-        `create table account (id text primary key, balance integer)`
-    ])
+    useDatabase(path.join(__dirname, 'check-extension'))
 
     const client = useServer('lib/test/check-extension')
 

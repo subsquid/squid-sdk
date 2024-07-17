@@ -32,7 +32,7 @@ import {Entity, Interface, JsonObject, Model, Prop} from '../../model'
 import {getEntity, getObject, getUniversalProperties} from '../../model.tools'
 import {customScalars} from '../../scalars'
 import {EntityByIdQuery, ListQuery} from '../../sql/query'
-import {Limit} from '../../util/limit'
+import { Limit, ResponseSizeLimit } from '../../util/limit';
 import {getResolveTree} from '../../util/resolve-tree'
 import {identity} from '../../util/util'
 import {getOrderByList, ORDER_DIRECTIONS} from './orderBy'
@@ -416,7 +416,8 @@ export class SchemaBuilder {
             type: outputType,
             args: argsType,
             resolve(source, args, context, info) {
-                let q = createQuery(context, info, context.openreader.responseSizeLimit)
+                let limit = context.openreader.maxResponseNodes
+                let q = createQuery(context, info, limit ? new ResponseSizeLimit(limit) : undefined)
                 return context.openreader.executeQuery(q)
             },
         }
@@ -426,7 +427,8 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
+                let limit = context.openreader.subscriptionMaxResponseNodes
+                let q = createQuery(context, info, limit ? new ResponseSizeLimit(limit) : undefined)
                 return context.openreader.subscription(q)
             },
         }
@@ -445,6 +447,7 @@ export class SchemaBuilder {
             let tree = getResolveTree(info)
             let fields = parseObjectTree(model, entityName, info.schema, tree)
             limit?.check(() => getObjectSize(model, fields) + 1)
+
             return new EntityByIdQuery(model, context.openreader.dbType, entityName, fields, tree.args.id as string)
         }
 
@@ -452,7 +455,12 @@ export class SchemaBuilder {
             type: this.get(entityName),
             args: argsType,
             async resolve(source, args, context, info) {
-                let q = createQuery(context, info, context.openreader.responseSizeLimit)
+                let limit = context.openreader.maxResponseNodes
+                let q = createQuery(
+                    context,
+                    info,
+                    limit ? new ResponseSizeLimit(limit) : undefined
+                )
                 return context.openreader.executeQuery(q)
             },
         }
@@ -462,7 +470,12 @@ export class SchemaBuilder {
             args: argsType,
             resolve: identity,
             subscribe(source, args, context, info) {
-                let q = createQuery(context, info, context.openreader.subscriptionResponseSizeLimit)
+                let limit = context.openreader.subscriptionMaxResponseNodes
+                let q = createQuery(
+                    context,
+                    info,
+                    limit ? new ResponseSizeLimit(limit) : undefined
+                )
                 return context.openreader.subscription(q)
             },
         }

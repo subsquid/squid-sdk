@@ -3,14 +3,12 @@ import {runProgram} from '@subsquid/util-internal'
 import {nat, Url} from '@subsquid/util-internal-commander'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command, Option} from 'commander'
-import {Pool} from 'pg'
-import {DbType} from './db'
 import {serve} from './server'
 import {loadModel} from './tools'
-
+import { getDefaultContext } from './context';
+import { DbType } from './context/types';
 
 const LOG = createLogger('sqd:openreader')
-
 
 runProgram(async () => {
     let program = new Command()
@@ -22,7 +20,7 @@ GraphQL server for postgres-compatible databases
     program.requiredOption('-s, --schema <file>', 'a path to a file or folder with database description')
     program.requiredOption('-d, --db-url <url>', 'database connection string', Url(['postgres:']))
     program.addOption(
-        new Option('-t, --db-type <type>', 'database type').choices(['postgres', 'cockroach']).default('postgres')
+        new Option('-t, --db-type <type>', 'database type').choices(['postgres', 'cockroachdb', 'sqlite']).default('postgres')
     )
     program.option('-p, --port <number>', 'port to listen on', nat, 3000)
     program.option('--max-request-size <kb>', 'max request size in kilobytes', nat, 256)
@@ -49,20 +47,13 @@ GraphQL server for postgres-compatible databases
 
     let model = loadModel(opts.schema)
 
-    let connection = new Pool({
-        connectionString: opts.dbUrl,
-        statement_timeout: opts.sqlStatementTimeout || undefined
-    })
+    const context = await getDefaultContext(opts)
 
     let server = await serve({
         model,
-        dbType: opts.dbType,
-        connection,
+        context,
         port: opts.port,
         log: LOG,
-        maxRequestSizeBytes: opts.maxRequestSize * 1024,
-        maxRootFields: opts.maxRootFields,
-        maxResponseNodes: opts.maxResponseSize,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
         subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize

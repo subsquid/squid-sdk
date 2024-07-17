@@ -63,6 +63,7 @@ describe('response size limits', function() {
                     }
                 }
             `)
+
             expect(result).toMatchObject({
                 data: null,
                 errors: [

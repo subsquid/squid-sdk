@@ -1,7 +1,7 @@
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
-import {DbType} from "../db"
+import {DbType} from "../context"
 import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
 import {toColumn, toFkColumn, toTable} from "../util/util"
@@ -10,7 +10,7 @@ import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 export interface CursorCtx {
     model: Model
-    dialect: DbType
+    dbType: DbType
     aliases: AliasSet
     join: JoinSet
 }
@@ -45,7 +45,7 @@ export class EntityCursor implements Cursor {
     }
 
     private ident(name: string): string {
-        return escapeIdentifier(this.ctx.dialect, name)
+        return escapeIdentifier(this.ctx.dbType, name)
     }
 
     private column(field: string): string {
@@ -73,13 +73,24 @@ export class EntityCursor implements Cursor {
                 switch(prop.type.name) {
                     case "BigInt":
                     case "BigDecimal":
+                        if (this.ctx.dbType === "sqlite") {
+                            return col;
+                        }
+
                         return `(${col})::text`
                     case "Bytes":
+                        if (this.ctx.dbType === "sqlite") {
+                            return col;
+                        }
+
                         return `'0x' || encode(${col}, 'hex')`
                     case "DateTime":
-                        if (this.ctx.dialect == "cockroach") {
+                        if (this.ctx.dbType == "cockroachdb") {
                             return `experimental_strftime((${col}) at time zone 'UTC', '%Y-%m-%dT%H:%M:%S.%fZ')`
-                        } else {
+                        } else if (this.ctx.dbType === "sqlite") {
+                            return `strftime('%Y-%m-%dT%H:%M:%f000Z', ${col})`
+                        }
+                        else {
                             return `to_char((${col}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
                         }
                     default:
@@ -94,11 +105,15 @@ export class EntityCursor implements Cursor {
                         switch(itemType.name) {
                             case "BigInt":
                             case "BigDecimal":
+                                if (this.ctx.dbType === "sqlite") {
+                                    return col;
+                                }
+
                                 return `(${col})::text[]`
                             case "Bytes":
                                 return `array(select '0x' || encode(i, 'hex') from unnest(${col}) as i)`
                             case "DateTime":
-                                if (this.ctx.dialect == "cockroach") {
+                                if (this.ctx.dbType == "cockroachdb") {
                                     return `array(select experimental_strftime(i at time zone 'UTC', '%Y-%m-%dT%H:%M:%S.%fZ') from unnest(${col}) as i)`
                                 } else {
                                     return `array(select to_char(i at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') from unnest(${col}) as i)`

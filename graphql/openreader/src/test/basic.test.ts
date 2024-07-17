@@ -1,8 +1,8 @@
-import {Dialect} from '../dialect'
-import {useDatabase, useServer} from "./setup"
+import { Dialect } from '../dialect';
+import { useDatabase, useServer } from './setup';
 
 
-describe('basic tests', function() {
+describe('basic tests', function () {
     useDatabase([
         `create table account (id text primary key, wallet text, balance numeric)`,
         `create table historical_balance (id text primary key, account_id text references account(id), balance numeric)`,
@@ -15,9 +15,9 @@ describe('basic tests', function() {
         `insert into historical_balance (id, account_id, balance) values ('2-2', '2', 90)`,
         `insert into historical_balance (id, account_id, balance) values ('2-3', '2', 60)`,
         `insert into historical_balance (id, account_id, balance) values ('3-1', '3', 300)`,
-    ])
+    ]);
 
-    describe('opencrud', function() {
+    describe('opencrud', function () {
         const client = useServer(`
             interface HasBalance {
                 balance: Int!
@@ -41,9 +41,9 @@ describe('basic tests', function() {
                 "Balance"
                 balance: Int!
             }
-        `)
-    
-        it('can fetch all accounts', function() {
+        `);
+
+        it('can fetch all accounts', function () {
             return client.test(
                 `query {
                     accounts(orderBy: id_ASC) {
@@ -60,9 +60,9 @@ describe('basic tests', function() {
                         {id: '3', wallet: 'c', balance: 300, history: [{balance: 300}]},
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports filtering by id', function () {
             return client.test(
                 `query {
@@ -74,9 +74,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{id: '3', wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports by id query', function () {
             return client.test(
                 `query {
@@ -93,9 +93,9 @@ describe('basic tests', function() {
                     a3: {id: '3', wallet: 'c'},
                     nonexistent: null
                 }
-            )
-        })
-    
+            );
+        });
+
         it('can fetch deep relations', function () {
             return client.test(
                 `query {
@@ -132,9 +132,9 @@ describe('basic tests', function() {
                         }]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_some filter', function () {
             return client.test(
                 `query {
@@ -145,9 +145,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{id: '1'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_every filter', function () {
             return client.test(
                 `query {
@@ -158,9 +158,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{wallet: 'b'}, {wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_none filter', function () {
             return client.test(
                 `query {
@@ -171,9 +171,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql aliases', function () {
             return client.test(
                 `query {
@@ -198,9 +198,9 @@ describe('basic tests', function() {
                         payment2: [{balance: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql fragments', function () {
             return client.test(
                 `query {
@@ -227,9 +227,9 @@ describe('basic tests', function() {
                         history: [{balance: 20}, {balance: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql fragments on interfaces', function () {
             return client.test(
                 `query {
@@ -255,9 +255,9 @@ describe('basic tests', function() {
                         history: [{payment: 20}, {payment: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports sorting', function () {
             return client.test(
                 `query {
@@ -275,9 +275,9 @@ describe('basic tests', function() {
                         {balance: 300}
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports sorting by referenced entity field', function () {
             return client.test(
                 `query {
@@ -295,9 +295,9 @@ describe('basic tests', function() {
                         {balance: 300}
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports descriptions', function () {
             return client.test(`
                 query {
@@ -317,11 +317,11 @@ describe('basic tests', function() {
                         {description: 'Balance'},
                     ]
                 }
-            })
-        })
-    })
+            });
+        });
+    });
 
-    describe('thegraph', function() {
+    describe('thegraph', function () {
         const client = useServer(`
             interface HasBalance {
                 balance: Int!
@@ -345,9 +345,9 @@ describe('basic tests', function() {
                 "Balance"
                 balance: Int!
             }
-        `, {dialect: Dialect.TheGraph})
-    
-        it('can fetch all accounts', function() {
+        `, {dialect: Dialect.TheGraph});
+
+        it('can fetch all accounts', function () {
             return client.test(
                 `query {
                     accounts(orderBy: id, orderDirection: asc) {
@@ -364,9 +364,9 @@ describe('basic tests', function() {
                         {id: '3', wallet: 'c', balance: 300, history: [{balance: 300}]},
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports filtering by id', function () {
             return client.test(
                 `query {
@@ -378,9 +378,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{id: '3', wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports by id query', function () {
             return client.test(
                 `query {
@@ -397,9 +397,9 @@ describe('basic tests', function() {
                     a3: {id: '3', wallet: 'c'},
                     nonexistent: null
                 }
-            )
-        })
-    
+            );
+        });
+
         it('can fetch deep relations', function () {
             return client.test(
                 `query {
@@ -436,9 +436,9 @@ describe('basic tests', function() {
                         }]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_some filter', function () {
             return client.test(
                 `query {
@@ -449,9 +449,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{id: '1'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_every filter', function () {
             return client.test(
                 `query {
@@ -462,9 +462,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{wallet: 'b'}, {wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports *_none filter', function () {
             return client.test(
                 `query {
@@ -475,9 +475,9 @@ describe('basic tests', function() {
                 {
                     accounts: [{wallet: 'c'}]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql aliases', function () {
             return client.test(
                 `query {
@@ -502,9 +502,9 @@ describe('basic tests', function() {
                         payment2: [{balance: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql fragments', function () {
             return client.test(
                 `query {
@@ -531,9 +531,9 @@ describe('basic tests', function() {
                         history: [{balance: 20}, {balance: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports gql fragments on interfaces', function () {
             return client.test(
                 `query {
@@ -559,9 +559,9 @@ describe('basic tests', function() {
                         history: [{payment: 20}, {payment: 80}]
                     }]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports sorting', function () {
             return client.test(
                 `query {
@@ -579,9 +579,9 @@ describe('basic tests', function() {
                         {balance: 300}
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports sorting by referenced entity field', function () {
             return client.test(
                 `query {
@@ -599,9 +599,9 @@ describe('basic tests', function() {
                         {balance: 300}
                     ]
                 }
-            )
-        })
-    
+            );
+        });
+
         it('supports descriptions', function () {
             return client.test(`
                 query {
@@ -621,7 +621,7 @@ describe('basic tests', function() {
                         {description: 'Balance'},
                     ]
                 }
-            })
-        })
-    })
-})
+            });
+        });
+    });
+});

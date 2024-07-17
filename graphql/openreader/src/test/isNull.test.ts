@@ -5,7 +5,7 @@ import {useDatabase, useServer} from "./setup"
 describe('isNull operator', function() {
     useDatabase([
         `create table meta (id text primary key)`,
-        `create table entity (id text primary key, scalar text, json jsonb, meta_id text)`,
+        (ctx) => `create table entity (id text primary key, scalar text, ${ctx.jsonColumn('json')}, meta_id text)`,
         `insert into meta (id) values ('1')`,
         `insert into entity (id, json, meta_id) values ('1', '{"a": 1}', '1')`,
         `insert into entity (id, scalar, meta_id) values ('2', 'foo', '1')`,

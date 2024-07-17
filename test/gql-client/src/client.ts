@@ -28,16 +28,21 @@ export class Client {
         expect(response.response.body).toEqual(errorData)
     }
 
-    subscriptionTest<R>(
-        q: string,
-        test: (take: () => Promise<ExecutionResult<R>>) => Promise<void>
-    ): Promise<void> {
+    createWsClient() {
         let url = new URL(this.endpoint)
         url.protocol = 'ws'
-        let client = createClient({
+
+        return createClient({
             url: url.toString(),
             webSocketImpl: WebSocket
         })
+    }
+
+    async subscriptionTest<R>(
+        q: string,
+        test: (take: () => Promise<ExecutionResult<R>>) => Promise<void>
+    ): Promise<void> {
+        let client = this.createWsClient()
 
         return new Promise<void>((resolve, reject) => {
             let results: ExecutionResult<R>[] = []

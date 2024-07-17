@@ -3,7 +3,7 @@ import assert from 'assert'
 
 
 export class Limit {
-    constructor(private error: Error, private value: number) {
+    constructor(private error: Error, public value: number) {
         assert(this.value > 0)
     }
 

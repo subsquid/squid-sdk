@@ -41,15 +41,22 @@
     "graphql": "^15.8.0",
     "graphql-parse-resolve-info": "^4.14.0",
     "graphql-ws": "^5.14.2",
-    "pg": "^8.11.3",
     "ws": "^8.14.2",
     "inflected": "^2.1.0"
   },
   "peerDependencies": {
-    "@subsquid/big-decimal": "^1.0.0"
+    "@subsquid/big-decimal": "^1.0.0",
+    "pg": "^8.11.3",
+    "better-sqlite3": "^11.1.2"
   },
   "peerDependenciesMeta": {
     "@subsquid/big-decimal": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "better-sqlite3": {
       "optional": true
     }
   },
@@ -59,6 +66,7 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.18.14",
     "@types/pg": "^8.10.9",
+    "@types/better-sqlite3": "^7.1.0",
     "@types/ws": "^8.5.10",
     "dotenv": "^16.3.1",
     "expect": "^29.7.0",

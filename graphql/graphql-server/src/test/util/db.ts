@@ -1,55 +1,57 @@
-import {createConnectionOptions} from '@subsquid/typeorm-config/lib/connectionOptions'
-import {toPgClientConfig} from '@subsquid/typeorm-config/lib/pg'
-import {Client as PgClient, ClientBase} from 'pg'
+import { createOrmConfig, getDbType } from '@subsquid/typeorm-config';
+import { DataSource, EntityManager } from 'typeorm';
 
-
-export function isCockroach(): boolean {
-    return process.env.DB_TYPE == 'cockroach'
-}
-
-
-if (!process.env.DB_PORT) {
-    let port = isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
-    if (port) {
-        process.env.DB_PORT = port
-    }
-}
-
-
-const db_config =  toPgClientConfig(createConnectionOptions())
-
-
-async function withClient(block: (client: ClientBase) => Promise<void>): Promise<void> {
-    let client = new PgClient(db_config)
-    await client.connect()
+async function withClient(projectDir: string, block: (client: DataSource) => Promise<void>): Promise<undefined> {
+    let client = new DataSource({
+        ...createOrmConfig({ projectDir }),
+        logging: !!process.env.DB_LOG
+    })
+    await client.initialize()
     try {
         await block(client)
     } finally {
-        await client.end()
+        await client.destroy()
     }
 }
 
+const schemaName = process.env.DB_USER || 'public'
 
-export function databaseInit(sql: string[]): Promise<void> {
-    return withClient(async client => {
-        for (let i = 0; i < sql.length; i++) {
-            await client.query(sql[i])
+
+type InitSql = string | ((client: DataSource) => Promise<unknown>)
+
+export async function databaseDelete(client: DataSource): Promise<void> {
+    if (getDbType() === 'sqlite') {
+        await client.dropDatabase()
+        return
+    }
+
+    await client.query(`DROP SCHEMA IF EXISTS ${schemaName} CASCADE`)
+    await client.query(`DROP SCHEMA IF EXISTS squid_processor CASCADE`)
+    await client.query(`CREATE SCHEMA ${schemaName}`)
+}
+
+export async function databaseInit(client: DataSource, sql: InitSql[]): Promise<void> {
+    await client.synchronize(true)
+
+    for (let exec of sql) {
+        if(typeof exec === 'function') {
+            await exec(client)
+        } else {
+            await client.query(exec)
         }
-    })
+    }
 }
 
-
-export function databaseDelete(): Promise<void> {
-    return withClient(async client => {
-        await client.query(`DROP SCHEMA IF EXISTS root CASCADE`)
-        await client.query(`CREATE SCHEMA root`)
-    })
-}
-
-
-export function useDatabase(sql: string[]): void {
-    before(async () => {
-        await databaseDelete()
-        await databaseInit(sql)
+export function useDatabase(projectDir: string, sql: InitSql[] = []): void {
+    beforeEach(async () => {
+        try {
+            await withClient(projectDir,async client => {
+                await databaseDelete(client)
+                await databaseInit(client, sql)
+            })
+        } catch (err) {
+            console.error(err)
+            throw err
+        }
     })
 }

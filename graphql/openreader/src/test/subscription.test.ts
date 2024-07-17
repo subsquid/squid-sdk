@@ -24,8 +24,37 @@ describe("subscriptions", function() {
         }
     `)
 
-    it("entity list", function() {
-        return client.subscriptionTest(`
+    // it("should remove subscription if client disconnects", async (done) => {
+    //     const ws = client.createWsClient()
+    //
+    //     ws.subscribe({query: `subscription {
+    //         orders(where: {kind_eq: "list"}, orderBy: id_ASC) {
+    //             id
+    //             name
+    //         }
+    //     }`},  {
+    //         next(res: any) {
+    //             console.log('res', res)
+    //         },
+    //         error: () => {},
+    //         complete() {
+    //
+    //         }
+    //     })
+    //
+    //     ws.on('connected', async () => {
+    //         console.log('connected')
+    //         await wait(500);
+    //         ws.dispose()
+    //         console.log('terminated')
+    //         await wait(500);
+    //
+    //         done()
+    //     })
+    // })
+
+    it("entity list", async () => {
+        await client.subscriptionTest(`
             subscription {
                 orders(where: {kind_eq: "list"}, orderBy: id_ASC) {
                     id
@@ -47,10 +76,10 @@ describe("subscriptions", function() {
                     orders: [{id: '1', name: null, items: []}]
                 }
             })
-            await databaseExecute([`
-                update "order" set name = 'hello' where id in ('1', '2');
-                insert into item (id, "order_id", name) values ('1-1', '1', '123')
-            `])
+            await databaseExecute([
+                `update "order" set name = 'hello' where id in ('1', '2');`,
+                ` insert into item (id, "order_id", name) values ('1-1', '1', '123')`,
+            ])
             expect(await take()).toEqual({
                 data: {
                     orders: [
@@ -87,12 +116,10 @@ describe("subscriptions", function() {
                     }
                 }
             })
-            await databaseExecute([`
-                start transaction;
-                update "order" set name = 'foo' where id = '3';
-                insert into item (id, "order_id", name) values ('3-2', '3', 'world');
-                commit;
-            `])
+            await databaseExecute([
+                `update "order" set name = 'foo' where id = '3'`,
+                `insert into item (id, "order_id", name) values ('3-2', '3', 'world');`
+            ])
             expect(await take()).toEqual({
                 data: {
                     third: {

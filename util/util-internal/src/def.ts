@@ -2,7 +2,8 @@
  * Method decorator, which when applied caches the result of the first invocation and returns it
  * for all subsequent calls.
  */
-export function def(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
+export function
+def(proto: any, prop: string, d: PropertyDescriptor): PropertyDescriptor {
     let {value: fn, ...options} = d
     let is_ready = Symbol(prop + '_is_ready')
     let is_active = Symbol(prop + '_is_active')

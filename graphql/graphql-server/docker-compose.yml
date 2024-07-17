@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:12
     ports:
-      - "${DB_PORT_PG}:5432"
+      - "${DB_PORT}:5432"
     environment:
       POSTGRES_DB: defaultdb
       POSTGRES_USER: root

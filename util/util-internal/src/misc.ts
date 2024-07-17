@@ -4,9 +4,17 @@ import * as process from 'process'
 
 export function assertNotNull<T>(val: T | undefined | null, msg?: string): T {
     assert(val != null, msg)
+
     return val
 }
 
+export function assertEnvVariable<T = string>(key: string, transformer?: (val: string) => T): T {
+    const val = process.env[key]
+
+    assert(val != null, `Environment variable ${key} is not set`)
+
+    return transformer ? transformer(val) : val as T
+}
 
 export function unexpectedCase(val?: unknown): Error {
     return new Error(val ? `Unexpected case: ${val}` : `Unexpected case`)

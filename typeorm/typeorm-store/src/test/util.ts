@@ -4,7 +4,7 @@ import { DataSource, EntityManager } from 'typeorm';
 async function withClient(block: (client: DataSource) => Promise<void>): Promise<undefined> {
     let client = new DataSource({
         ...createOrmConfig({ projectDir: __dirname }),
-        // logging: true
+        logging: true
     })
     await client.initialize()
     try {

@@ -67,6 +67,8 @@
     }
   },
   "devDependencies": {
+    "@subsquid/typeorm-store": "^1.5.1",
+    "@subsquid/typeorm-codegen": "~2.0.1",
     "@types/express": "^4.17.21",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.18.14",
