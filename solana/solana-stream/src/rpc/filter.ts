@@ -174,6 +174,11 @@ class BlockFilter {
     }
 
     @def
+    private balancesByTx(): Map<number, Balance[]> {
+        return groupBy(this.block.balances, b => b.transactionIndex)
+    }
+
+    @def
     private tokenBalancesByTx(): Map<number, TokenBalance[]> {
         return groupBy(this.block.tokenBalances, b => b.transactionIndex)
     }
@@ -219,6 +224,9 @@ class BlockFilter {
             }
             if (rel.transaction) {
                 this.include.transactions.add(this.getTransaction(ins.transactionIndex))
+            }
+            if (rel.transactionBalances) {
+                include(this.include.balances, this.balancesByTx().get(ins.transactionIndex))
             }
             if (rel.transactionTokenBalances) {
                 include(this.include.tokenBalances, this.tokenBalancesByTx().get(ins.transactionIndex))

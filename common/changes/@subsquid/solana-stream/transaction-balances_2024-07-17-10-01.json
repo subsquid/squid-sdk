@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "allow to request all balances of transaction",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}
