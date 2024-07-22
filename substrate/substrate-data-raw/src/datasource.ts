@@ -66,19 +66,6 @@ export class RpcDataSource {
         }
     }
 
-    async getFinalizedHead(best: string): Promise<string> {
-        if (this.finalityConfirmation == null) {
-            return this.rpc.getFinalizedHead()
-        } else {
-            let header = await this.rpc.getBlockHeader(best)
-            assert(header)
-            let height = qty2Int(header.number) - this.finalityConfirmation
-            let hash = await this.rpc.getBlockHash(height)
-            assert(hash)
-            return hash
-        }
-    }
-
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<BlockData>> {
         assertRangeList(requests.map(req => req.range))
 
@@ -193,7 +180,27 @@ export class RpcDataSource {
         while (!isEnd()) {
             let head = await headSrc.call()
             if (head === prev) continue
-            let finalizedHead = await this.getFinalizedHead(head)
+            let finalizedHead: string
+            if (this.finalityConfirmation == null) {
+                finalizedHead = await this.rpc.getFinalizedHead()
+            } else {
+                let header: BlockHeader | null = null
+                let attempts = 0
+                while (attempts <= 5) {
+                    header = await this.rpc.getBlockHeader(head)
+                    if (header == null) {
+                        head = await this.rpc.getHead()
+                        attempts += 1
+                    } else {
+                        break
+                    }
+                }
+                assert(header, 'cannot determine head of the chain')
+                let height = qty2Int(header.number) - this.finalityConfirmation
+                let hash = await this.rpc.getBlockHash(height)
+                assert(hash)
+                finalizedHead = hash
+            }
             await this.handleNewHeads({
                 best: {hash: head},
                 finalized: {hash: finalizedHead}
