@@ -13,7 +13,8 @@ import {
     ref,
     SMALL_QTY,
     STRING,
-    Validator
+    Validator,
+    withDefault
 } from '@subsquid/util-internal-validation'
 import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
 import {project} from '../mapping/schema'
@@ -109,14 +110,14 @@ export type TransactionReceipt = GetSrcType<typeof TransactionReceipt>
 
 export const DebugFrame: Validator<DebugFrame> = object({
     type: STRING,
-    input: BYTES,
+    input: withDefault('0x', BYTES),
     calls: option(array(ref(() => DebugFrame)))
 })
 
 
 export interface DebugFrame {
     type: string
-    input: Bytes
+    input?: Bytes | null
     calls?: DebugFrame[] | null
 }
 
