@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "accept finalityConfirmation in `RpcDataSourceOptions`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

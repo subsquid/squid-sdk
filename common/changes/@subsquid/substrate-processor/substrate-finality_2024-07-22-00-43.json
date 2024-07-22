@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "allow to use finalityConfirmation if `chain_getFinalizedHead` is not an option",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

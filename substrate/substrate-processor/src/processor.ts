@@ -159,6 +159,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
+    private finalityConfirmation?: number
     private archive?: GatewaySettings
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
@@ -282,6 +283,18 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     setBlockRange(range?: Range): this {
         this.assertNotRunning()
         this.blockRange = range
+        return this
+    }
+
+    /**
+     * Distance from the head block behind which all blocks are considered to be finalized.
+     *
+     * By default, the processor will track finalized blocks via `chain_getFinalizedHead`.
+     * Configure it only if `chain_getFinalizedHead` doesn’t return the expected info.
+     */
+    setFinalityConfirmation(nBlocks: number): this {
+        this.assertNotRunning()
+        this.finalityConfirmation = nBlocks
         return this
     }
 
@@ -456,7 +469,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             rpc: this.getChainRpcClient(),
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
-            typesBundle: this.typesBundle
+            typesBundle: this.typesBundle,
+            finalityConfirmation: this.finalityConfirmation
         })
     }
 
@@ -586,6 +600,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 requests: this.getBatchRequests(),
                 archive: this.archive == null ? undefined : this.getArchiveDataSource(),
                 hotDataSource: this.rpcIngestSettings?.disabled ? undefined : this.getRpcDataSource(),
+                allBlocksAreFinal: this.finalityConfirmation === 0,
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log

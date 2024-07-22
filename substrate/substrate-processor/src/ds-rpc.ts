@@ -15,6 +15,7 @@ export interface RpcDataSourceOptions {
     headPollInterval?: number
     newHeadTimeout?: number
     typesBundle?: OldTypesBundle | OldSpecsBundle
+    finalityConfirmation?: number
 }
 
 
