@@ -37,7 +37,7 @@ export class Rpc {
         return this.call('chain_getBlockHash', [toQty(height)])
     }
 
-    getBlockHeader(blockHash: Hash): Promise<BlockHeader | null> {
+    getBlockHeader(blockHash?: Hash): Promise<BlockHeader | null> {
         return this.call('chain_getHeader', [blockHash])
     }
 

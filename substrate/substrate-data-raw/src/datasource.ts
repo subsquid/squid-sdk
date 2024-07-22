@@ -60,18 +60,9 @@ export class RpcDataSource {
             assert(header, 'finalized blocks must be always available')
             return qty2Int(header.number)
         } else {
-            let retries = 0
-            while (retries < 5) {
-                let head = await this.rpc.getHead()
-                let header = await this.rpc.getBlockHeader(head)
-                if (header == null) {
-                    this.log?.debug(`"${head}" block has no corresponding header. will retry`)
-                    retries += 1
-                    continue
-                }
-                return Math.max(0, qty2Int(header.number) - this.finalityConfirmation)
-            }
-            throw new Error('Cannot determine head of the chain')
+            let header = await this.rpc.getBlockHeader()
+            assert(header, 'the header of the latest block on the chain must be always available')
+            return Math.max(0, qty2Int(header.number) - this.finalityConfirmation)
         }
     }
 
