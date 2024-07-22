@@ -32,3 +32,5 @@ docker-compose.yml
 /ops/docker-publish.sh
 
 **/.DS_Store
+
+*.temp

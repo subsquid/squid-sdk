@@ -18,14 +18,32 @@ export interface S3FsOptions {
 }
 
 
+export interface S3FsMetrics {
+    ListObjectsV2: number,
+    PutObject: number,
+    DeleteObjects: number,
+    GetObject: number,
+}
+
+
 export class S3Fs implements Fs {
     public readonly client: S3Client
     private root: string
+    private static metrics: S3FsMetrics = {
+        ListObjectsV2: 0,
+        PutObject: 0,
+        DeleteObjects: 0,
+        GetObject: 0,
+    }
 
     constructor(options: S3FsOptions) {
         this.client = options.client
         this.root = Upath.normalizeTrim(options.root)
         splitPath(this.root)
+    }
+
+    static getMetrics(): S3FsMetrics {
+        return Object.assign({}, S3Fs.metrics)
     }
 
     abs(...path: string[]): string {
@@ -74,6 +92,7 @@ export class S3Fs implements Fs {
                     ContinuationToken
                 })
             )
+            S3Fs.metrics.ListObjectsV2++
 
             // process folder names
             if (res.CommonPrefixes) {
@@ -116,6 +135,7 @@ export class S3Fs implements Fs {
             Key,
             Body: content
         }))
+        S3Fs.metrics.PutObject++
     }
 
     async delete(path: string): Promise<void> {
@@ -129,6 +149,7 @@ export class S3Fs implements Fs {
                     ContinuationToken
                 })
             )
+            S3Fs.metrics.ListObjectsV2++
 
             if (list.Contents) {
                 let Objects: ObjectIdentifier[] = []
@@ -144,6 +165,7 @@ export class S3Fs implements Fs {
                         Objects
                     }
                 }))
+                S3Fs.metrics.DeleteObjects++
             }
 
             if (list.IsTruncated) {
@@ -160,6 +182,7 @@ export class S3Fs implements Fs {
             Bucket,
             Key
         }))
+        S3Fs.metrics.GetObject++
         assert(res.Body instanceof Readable)
         return res.Body
     }

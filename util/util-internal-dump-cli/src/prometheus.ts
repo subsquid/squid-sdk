@@ -2,6 +2,7 @@ import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
+import {S3Fs} from '@subsquid/util-internal-fs'
 
 
 export class PrometheusServer {
@@ -9,6 +10,7 @@ export class PrometheusServer {
     private chainHeightGauge: Gauge
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
+    private s3RequestsGauge: Gauge
 
     constructor(
         private port: number,
@@ -30,13 +32,13 @@ export class PrometheusServer {
                 }
                 this.set(chainHeight)
             }
-        });
+        })
 
         this.lastWrittenBlockGauge = new Gauge({
             name: 'sqd_dump_last_written_block',
             help: 'Last saved block',
             registers: [this.registry]
-        });
+        })
 
         this.rpcRequestsGauge = new Gauge({
             name: 'sqd_rpc_request_count',
@@ -56,7 +58,21 @@ export class PrometheusServer {
                     kind: 'failure'
                 }, metrics.connectionErrors)
             }
-        });
+        })
+
+        this.s3RequestsGauge = new Gauge({
+            name: 'sqd_s3_request_count',
+            help: 'Number of s3 requests made',
+            labelNames: ['kind'],
+            registers: [this.registry],
+            collect() {
+                for (const [kind, value] of Object.entries(S3Fs.getMetrics())) {
+                    this.set({
+                        kind: kind
+                    }, value)
+                }
+            }
+        })
 
         collectDefaultMetrics({register: this.registry})
     }

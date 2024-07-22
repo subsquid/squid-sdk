@@ -7738,12 +7738,13 @@ packages:
     dev: false
 
   file:projects/util-internal-ingest-cli.tgz:
-    resolution: {integrity: sha512-aUnjqkCZ1K036D1WsGDalurA8VO5LOChQxgqrTXNHZwIsNU92wERfGdHQ8IkfXDQ/n7TcL/MRd1fNjS6HzftWg==, tarball: file:projects/util-internal-ingest-cli.tgz}
+    resolution: {integrity: sha512-hF3MhECI+li0SPLDDdrnzoKUFnIcyO2gsIKEIkAkoZaqF/GJ1S2AIhqvIAR/aSU+bUJMWbzekN6pt/4MqDunlA==, tarball: file:projects/util-internal-ingest-cli.tgz}
     name: '@rush-temp/util-internal-ingest-cli'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.31
       commander: 11.1.0
+      prom-client: 14.2.0
       typescript: 5.3.3
     dev: false
 
