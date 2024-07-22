@@ -9,6 +9,7 @@ import {assertRange, isRange, Range} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {Writable} from 'stream'
 import {PrometheusServer} from './prometheus'
+import {EventEmitter} from 'events'
 
 
 export interface IngestOptions {
@@ -98,15 +99,22 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
     @def
     protected archive(): ArchiveLayout {
         let url = assertNotNull(this.options().rawArchive, 'archive is not specified')
-        let fs = createFs(url)
+        let fs = createFs(url, this.eventEmitter())
         return new ArchiveLayout(fs)
     }
 
     @def
+    protected eventEmitter(): EventEmitter {
+        return new EventEmitter()
+    }
+
+    @def
     protected prometheus() {
-        return new PrometheusServer(
-            this.options().metrics ?? 0
+        let server = new PrometheusServer(
+            this.options().metrics ?? 0,
         )
+        this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
+        return server
     }
 
     private async ingest(range: Range, writable: Writable): Promise<void> {

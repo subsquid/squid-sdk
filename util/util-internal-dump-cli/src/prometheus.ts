@@ -1,8 +1,7 @@
 import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
-import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
-import {S3Fs} from '@subsquid/util-internal-fs'
+import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
 
 
 export class PrometheusServer {
@@ -10,7 +9,7 @@ export class PrometheusServer {
     private chainHeightGauge: Gauge
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
-    private s3RequestsGauge: Gauge
+    private s3RequestsCounter: Counter
 
     constructor(
         private port: number,
@@ -60,18 +59,11 @@ export class PrometheusServer {
             }
         })
 
-        this.s3RequestsGauge = new Gauge({
+        this.s3RequestsCounter = new Counter({
             name: 'sqd_s3_request_count',
             help: 'Number of s3 requests made',
             labelNames: ['kind'],
             registers: [this.registry],
-            collect() {
-                for (const [kind, value] of Object.entries(S3Fs.getMetrics())) {
-                    this.set({
-                        kind: kind
-                    }, value)
-                }
-            }
         })
 
         collectDefaultMetrics({register: this.registry})
@@ -79,6 +71,10 @@ export class PrometheusServer {
 
     setLastWrittenBlock(block: number) {
         this.lastWrittenBlockGauge.set(block)
+    }
+
+    incS3Requests(kind: string, value?: number) {
+        this.s3RequestsCounter.inc({kind}, value)
     }
 
     serve(): Promise<ListeningServer> {

@@ -10,40 +10,26 @@ import assert from 'assert'
 import {Readable} from 'stream'
 import Upath from 'upath'
 import {Fs} from './interface'
+import {EventEmitter} from 'events'
 
 
 export interface S3FsOptions {
     root: string
     client: S3Client
-}
-
-
-export interface S3FsMetrics {
-    ListObjectsV2: number,
-    PutObject: number,
-    DeleteObjects: number,
-    GetObject: number,
+    eventEmitter?: EventEmitter
 }
 
 
 export class S3Fs implements Fs {
     public readonly client: S3Client
     private root: string
-    private static metrics: S3FsMetrics = {
-        ListObjectsV2: 0,
-        PutObject: 0,
-        DeleteObjects: 0,
-        GetObject: 0,
-    }
+    private eventEmitter?: EventEmitter
 
     constructor(options: S3FsOptions) {
         this.client = options.client
         this.root = Upath.normalizeTrim(options.root)
+        this.eventEmitter = options.eventEmitter
         splitPath(this.root)
-    }
-
-    static getMetrics(): S3FsMetrics {
-        return Object.assign({}, S3Fs.metrics)
     }
 
     abs(...path: string[]): string {
@@ -70,7 +56,8 @@ export class S3Fs implements Fs {
     cd(...path: string[]): S3Fs {
         return new S3Fs({
             client: this.client,
-            root: this.resolve(path)
+            root: this.resolve(path),
+            eventEmitter: this.eventEmitter
         })
     }
 
@@ -92,7 +79,7 @@ export class S3Fs implements Fs {
                     ContinuationToken
                 })
             )
-            S3Fs.metrics.ListObjectsV2++
+            this.eventEmitter?.emit('S3FsOperation', 'ListObjectsV2')
 
             // process folder names
             if (res.CommonPrefixes) {
@@ -135,7 +122,7 @@ export class S3Fs implements Fs {
             Key,
             Body: content
         }))
-        S3Fs.metrics.PutObject++
+        this.eventEmitter?.emit('S3FsOperation', 'PutObject')
     }
 
     async delete(path: string): Promise<void> {
@@ -149,7 +136,7 @@ export class S3Fs implements Fs {
                     ContinuationToken
                 })
             )
-            S3Fs.metrics.ListObjectsV2++
+            this.eventEmitter?.emit('S3FsOperation', 'ListObjectsV2')
 
             if (list.Contents) {
                 let Objects: ObjectIdentifier[] = []
@@ -165,7 +152,7 @@ export class S3Fs implements Fs {
                         Objects
                     }
                 }))
-                S3Fs.metrics.DeleteObjects++
+                this.eventEmitter?.emit('S3FsOperation', 'DeleteObjects')
             }
 
             if (list.IsTruncated) {
@@ -182,7 +169,7 @@ export class S3Fs implements Fs {
             Bucket,
             Key
         }))
-        S3Fs.metrics.GetObject++
+        this.eventEmitter?.emit('S3FsOperation', 'GetObject')
         assert(res.Body instanceof Readable)
         return res.Body
     }
