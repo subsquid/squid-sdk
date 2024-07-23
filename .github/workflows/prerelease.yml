@@ -24,6 +24,8 @@ jobs:
         run: node common/scripts/install-run-rush.js build
 
       - name: Publish npm packages
-        run: node common/scripts/install-run-rush.js publish --apply --version-policy npm --partial-prerelease --publish --tag beta --prerelease-name beta.${GITHUB_SHA::6}
+        run: |
+          commit_hash=$(git rev-parse HEAD)
+          node common/scripts/install-run-rush.js publish --apply --version-policy npm --partial-prerelease --publish --tag beta --prerelease-name beta.${commit_hash::6}
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
