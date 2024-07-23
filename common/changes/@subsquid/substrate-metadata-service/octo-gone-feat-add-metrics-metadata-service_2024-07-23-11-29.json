@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-metadata-service",
+      "comment": "add prometheus metrics",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-metadata-service"
+}

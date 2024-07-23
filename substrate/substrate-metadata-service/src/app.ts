@@ -1,6 +1,7 @@
 import {waitDrain} from '@subsquid/util-internal'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {HttpApp, ListeningServer} from '@subsquid/util-internal-http-server'
+import {EventEmitter} from 'events'
 import {promisify} from 'util'
 import {gunzip} from 'zlib'
 
@@ -8,8 +9,8 @@ import {gunzip} from 'zlib'
 export class App {
     private networks = new Map<string, Fs>
 
-    add(network: string, archive: string): void {
-        let fs = createFs(archive)
+    add(network: string, archive: string, eventEmitter?: EventEmitter): void {
+        let fs = createFs(archive, eventEmitter)
         this.networks.set(network, fs)
     }
 
