@@ -1,10 +1,9 @@
-import {sts, Block, Bytes, Option, Result, EventType} from '../support'
+import {sts, Block, Bytes, Option, Result, EventType, event, RuntimeCtx} from '../support'
 import * as v1020 from '../v1020'
 import * as v1050 from '../v1050'
 import * as v9130 from '../v9130'
 
-export const transfer =  {
-    name: 'Balances.Transfer',
+export const transfer = event('Balances.Transfer', {
     /**
      *  Transfer succeeded (from, to, value, fees).
      */
@@ -30,4 +29,4 @@ export const transfer =  {
             amount: sts.bigint(),
         })
     ),
-}
+})

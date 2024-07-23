@@ -102,8 +102,8 @@ export class Typegen {
 
             for (let [name, versions] of groupBy(palletItems, it => it.def.name)) {
                 out.line()
-                out.block(`export const ${toJsName(name)} = `, () => {
-                    out.line(`name: '${pallet}.${name}',`)
+                out.line(`export const ${toJsName(name)} = ${fix.toLowerCase()}('${pallet}.${name}', {`)
+                out.indentation(() => {
                     for (let it of versions) {
                         let useSts = file.useSts(it.runtime)
 
@@ -138,6 +138,7 @@ export class Typegen {
                         out.line('),')
                     }
                 })
+                out.line('})')
             }
 
             file.write()
@@ -153,7 +154,8 @@ export class Typegen {
 
             for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
                 out.line()
-                out.block(`export const ${toJsName(name)} = `, () => {
+                out.line(`export const ${toJsName(name)} = constant('${pallet}.${name}', {`)
+                out.indentation(() => {
                     for (let it of versions) {
                         let useSts = file.useSts(it.runtime)
 
@@ -166,6 +168,7 @@ export class Typegen {
                         out.line('),')
                     }
                 })
+                out.line(`})`)
             }
 
             file.write()
@@ -179,11 +182,14 @@ export class Typegen {
             let file = new ItemFile(this, pallet, 'Storage')
             let out = file.out
 
-            for (let [jsName, versions] of groupBy(palletItems, it => toJsName(splitQualifiedName(it.name)[1]))) {
+            for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
+                let jsName = toJsName(name)
+
                 let ifs: (() => void)[] = []
 
                 out.line()
-                out.block(`export const ${jsName} = `, () => {
+                out.line(`export const ${jsName} = storage('${pallet}.${name}', {`)
+                out.indentation(() => {
                     for (let it of versions) {
                         let ifName = upperCaseFirst(
                             toCamelCase(`${jsName}_${this.getVersionName(it.runtime)}`)
@@ -264,6 +270,7 @@ export class Typegen {
                         })
                     }
                 })
+                out.line('})')
 
                 for (let i of ifs) {
                     i()
@@ -438,7 +445,7 @@ class ItemFile {
             .child(getPalletDir(pallet))
             .file(type == 'Storage' ? 'storage.ts' : type.toLowerCase() + 's.ts')
 
-        this.out.line(`import {sts, Block, Bytes, Option, Result, ${type}Type, RuntimeCtx} from '../support'`)
+        this.out.line(`import {sts, Block, Bytes, Option, Result, ${type}Type, ${type.toLowerCase()}, RuntimeCtx} from '../support'`)
 
         this.out.lazy(() => {
             Array.from(this.imported)

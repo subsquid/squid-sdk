@@ -1,16 +1,13 @@
 import type {BitSequence, Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
-import {Result} from '@subsquid/substrate-runtime/lib/sts'
+import {Option, Result} from '@subsquid/substrate-runtime/lib/sts'
 import assert from 'assert'
 
 
-export {sts, Bytes, BitSequence, Result}
+export {sts, Bytes, BitSequence, Option, Result}
 
 
-export type Option<T> = sts.ValueCase<'Some', T> | {__kind: 'None'}
-
-
-interface RuntimeCtx {
+export interface RuntimeCtx {
     _runtime: Runtime
 }
 
@@ -34,6 +31,52 @@ interface Call {
     args: unknown
 }
 
+export interface VersionedType {
+    is(block: RuntimeCtx): boolean
+    isExists(block: RuntimeCtx): boolean
+}
+
+
+export class UnknownVersionError extends Error {
+    constructor(name: string) {
+        super(`Got unknown version for ${name}`)
+    }
+}
+
+
+export class VersionedItem<V extends Record<string, VersionedType>> {
+    at: (block: RuntimeCtx) => {[K in keyof V]: V[K] & {__version: K}}[keyof V]
+    isExists: (block: RuntimeCtx) => boolean
+
+    constructor(readonly name: string, protected versions: V) {
+        this.at = this.createGetVersion()
+        this.isExists = this.createIsExists()
+        for (let key in this.versions) {
+            Object.defineProperty(this.versions[key], '__version', {value: key})
+        }
+    }
+
+    private createGetVersion(): any {
+        let body = ''
+        for (let key in this.versions) {
+            let version = `this.versions['${key}']`
+            body += `if (${version}.is(block)) return ${version}\n`
+        }
+        body += `throw new UnknownVersionError(this.name)\n`
+        return new Function('block', body)
+    }
+
+    private createIsExists(): any {
+        let body = ''
+        for (let key in this.versions) {
+            let version = `this.versions['${key}']`
+            body += `if (${version}.isExists(block)) return true\n`
+        }
+        body += `return false`
+        return new Function('block', body)
+    }
+}
+
 
 export class EventType<T extends sts.Type> {
     constructor(public readonly name: QualifiedName, private type: T) {}
@@ -42,14 +85,26 @@ export class EventType<T extends sts.Type> {
         return block._runtime.events.checkType(this.name, this.type)
     }
 
-    is(event: Event): boolean {
-        return this.name == event.name && this.matches(event.block)
+    isExists(block: RuntimeCtx) {
+        return block._runtime.hasEvent(this.name)
+    }
+
+    is(block: RuntimeCtx): boolean
+    is(event: Event): boolean
+    is(blockOrEvent: RuntimeCtx | Event): boolean {
+        let [block, name] = 'block' in blockOrEvent ? [blockOrEvent.block, blockOrEvent.name] : [blockOrEvent, null]
+        return (name == null || this.name == name) && this.matches(block)
     }
 
     decode(event: Event): sts.GetType<T> {
         assert(this.is(event))
         return event.block._runtime.decodeJsonEventRecordArguments(event)
     }
+}
+
+
+export function event<V extends Record<string, EventType<any>>>(name: string, versions: V): VersionedItem<V> & V {
+    return Object.assign(new VersionedItem(name, versions), versions)
 }
 
 
@@ -60,8 +115,15 @@ export class CallType<T extends sts.Type> {
         return block._runtime.calls.checkType(this.name, this.type)
     }
 
-    is(call: Call): boolean {
-        return this.name == call.name && this.matches(call.block)
+    isExists(block: RuntimeCtx) {
+        return block._runtime.hasCall(this.name)
+    }
+
+    is(block: RuntimeCtx): boolean
+    is(call: Call): boolean
+    is(blockOrCall: RuntimeCtx | Call): boolean {
+        let [block, name] = 'block' in blockOrCall ? [blockOrCall.block, blockOrCall.name] : [blockOrCall, null]
+        return (name == null || this.name == name) && this.matches(block)
     }
 
     decode(call: Call): sts.GetType<T> {
@@ -71,8 +133,17 @@ export class CallType<T extends sts.Type> {
 }
 
 
+export function call<V extends Record<string, CallType<any>>>(name: string, versions: V): VersionedItem<V> & V {
+    return Object.assign(new VersionedItem(name, versions), versions)
+}
+
+
 export class ConstantType<T extends sts.Type> {
     constructor(private name: QualifiedName, private type: T) {}
+
+    isExists(block: RuntimeCtx) {
+        return block._runtime.hasConstant(this.name)
+    }
 
     is(block: RuntimeCtx): boolean {
         return block._runtime.checkConstantType(this.name, this.type)
@@ -85,6 +156,11 @@ export class ConstantType<T extends sts.Type> {
 }
 
 
+export function constant<V extends Record<string, ConstantType<any>>>(name: string, versions: V): VersionedItem<V> & V {
+    return Object.assign(new VersionedItem(name, versions), versions)
+}
+
+
 export class StorageType {
     constructor(
         private name: QualifiedName,
@@ -92,6 +168,10 @@ export class StorageType {
         private key: sts.Type[],
         private value: sts.Type
     ) {}
+
+    isExists(block: RuntimeCtx) {
+        return block._runtime.hasStorage(this.name)
+    }
 
     is(block: RuntimeCtx): boolean {
         return block._runtime.checkStorageType(this.name, this.modifier, this.key, this.value)
@@ -142,4 +222,9 @@ export class StorageType {
         assert(this.is(block))
         return block._runtime.getStorageFallback(this.name)
     }
+}
+
+
+export function storage<V extends Record<string, StorageType>>(name: string, versions: V): VersionedItem<V> & V {
+    return Object.assign(new VersionedItem(name, versions), versions)
 }

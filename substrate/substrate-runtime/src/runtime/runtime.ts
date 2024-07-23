@@ -424,6 +424,11 @@ export class Runtime {
         return this.checkType(def.type, ty)
     }
 
+    hasStorage(name: QualifiedName): boolean {
+        let qn = parseQualifiedName(name)
+        return !!this.description.storage[qn[0]]?.items[qn[1]]
+    }
+
     checkStorageType(
         name: QualifiedName,
         modifier: StorageItem['modifier'] | StorageItem['modifier'][],
