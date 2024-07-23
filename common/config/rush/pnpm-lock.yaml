@@ -7474,12 +7474,13 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-service.tgz:
-    resolution: {integrity: sha512-9bkeCg5yMplkGiuV1h2RmeCe2bz1l0lszH9uvQuLyBRvkXaZ/uk0yDi8Yv0/cVaszVTCEvC4oRqMlSqQuqjG/g==, tarball: file:projects/substrate-metadata-service.tgz}
+    resolution: {integrity: sha512-LNqDt83ScCT47oQPJCiWlwWSK7iFw38HK69lrA8w/WwGEM2JOSsVZqhe+u97i+ngF1QyNClrq0Kz0vGLtnhWsA==, tarball: file:projects/substrate-metadata-service.tgz}
     name: '@rush-temp/substrate-metadata-service'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.31
       commander: 11.1.0
+      prom-client: 14.2.0
       typescript: 5.3.3
     dev: false
 
