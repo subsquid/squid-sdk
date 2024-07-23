@@ -326,15 +326,18 @@ export class CallParser {
         while (this.eventPos >= 0) {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
-                if (event.name.startsWith('Migrations.')) {
-                    let index = assertNotNull(event.extrinsicIndex)
-                    let ex = this.extrinsics[index]
-                    assert(ex == null, 'extrinsic for a migration event is unexpected')
-                    this.skipExtrinsicEvents(index)
-                    continue
+                if (event.extrinsicIndex !== this.extrinsic.index) {
+                    if (event.name.startsWith('Migrations.')) {
+                        let index = assertNotNull(event.extrinsicIndex)
+                        // Besides `Migrations.*` events there can be more parachain-defined events,
+                        // so we skip all events related to the "phantom" extrinsic.
+                        this.skipExtrinsicEvents(index)
+                        continue
+                    } else {
+                        return
+                    }
                 }
 
-                if (event.extrinsicIndex !== this.extrinsic.index) return
                 this.eventPos -= 1
                 return event
             } else {
