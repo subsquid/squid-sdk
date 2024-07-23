@@ -13,12 +13,20 @@ export function parseWhere(whereArg?: any): Where | undefined {
         let arg = fields[key]
         let {field, op} = parseWhereKey(key)
         switch (op) {
-            case 'SELF':
-                conj.push({op: 'eq', field, value: arg})
+            case 'EQ':
+                if (arg === null) {
+                    conj.push({op: 'isNull', field, yes: true})
+                } else {
+                    conj.push({op: 'eq', field, value: arg})
+                }
                 break
             case '_': {
-                let where = parseWhere(arg)
-                where && conj.push({op: 'REF', field, where})
+                if (arg === null) {
+                    conj.push({op: 'isNull', field, yes: true})
+                } else {
+                    let where = parseWhere(arg)
+                    where && conj.push({op: 'REF', field, where})
+                }
                 break
             }
             case '_every': {
@@ -140,12 +148,12 @@ export function parseWhere(whereArg?: any): Where | undefined {
     }
 }
 
-export function parseWhereKey(key: string): {op: (typeof WHERE_OPS)[number] | 'SELF'; field: string} {
+export function parseWhereKey(key: string): {op: (typeof WHERE_OPS)[number] | 'EQ'; field: string} {
     let m = WHERE_KEY_REGEX.exec(key)
     if (m) {
         return {op: m[2] as (typeof WHERE_OPS)[number], field: m[1]}
     } else {
-        return {op: 'SELF', field: key}
+        return {op: 'EQ', field: key}
     }
 }
 
