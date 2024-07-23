@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data-raw",
+      "comment": "allow to use finalityConfirmation to determine finalized blocks",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data-raw"
+}

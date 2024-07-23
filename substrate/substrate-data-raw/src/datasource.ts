@@ -1,5 +1,5 @@
 import {Logger, LogLevel} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, SubscriptionHandle} from '@subsquid/rpc-client'
 import {AsyncQueue, ensureError, maybeLast, partitionBy, Throttler, wait} from '@subsquid/util-internal'
 import {
     assertIsValid,
@@ -7,7 +7,6 @@ import {
     BlockConsistencyError,
     BlockRef,
     ChainHeads,
-    DataConsistencyError,
     HashAndHeight,
     HotProcessor,
     HotState,
@@ -34,6 +33,7 @@ export interface RpcDataSourceOptions {
     rpc: RpcClient
     headPollInterval?: number
     newHeadTimeout?: number
+    finalityConfirmation?: number
     log?: Logger
 }
 
@@ -42,20 +42,28 @@ export class RpcDataSource {
     public readonly rpc: Rpc
     private headPollInterval: number
     private newHeadTimeout: number
+    private finalityConfirmation?: number
     private log?: Logger
 
     constructor(options: RpcDataSourceOptions) {
         this.rpc = new Rpc(options.rpc)
         this.headPollInterval = options.headPollInterval ?? 5000
         this.newHeadTimeout = options.newHeadTimeout ?? 0
+        this.finalityConfirmation = options.finalityConfirmation
         this.log = options.log
     }
 
     async getFinalizedHeight(): Promise<number> {
-        let head = await this.rpc.getFinalizedHead()
-        let header = await this.rpc.getBlockHeader(head)
-        assert(header, 'finalized blocks must be always available')
-        return qty2Int(header.number)
+        if (this.finalityConfirmation == null) {
+            let head = await this.rpc.getFinalizedHead()
+            let header = await this.rpc.getBlockHeader(head)
+            assert(header, 'finalized blocks must be always available')
+            return qty2Int(header.number)
+        } else {
+            let header = await this.rpc.getBlockHeader()
+            assert(header, 'the header of the latest block on the chain must be always available')
+            return Math.max(0, qty2Int(header.number) - this.finalityConfirmation)
+        }
     }
 
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<BlockData>> {
@@ -129,7 +137,7 @@ export class RpcDataSource {
                 for (let split of splitRangeByRequest(requests, {from, to: top})) {
                     for (let range of splitRange(10, split.range)) {
                         let blocks = await fetch.getHotSplit(
-                            from,
+                            range.from,
                             range.to === headBlock?.height ? headBlock : range.to,
                             split.request || {}
                         )
@@ -172,7 +180,25 @@ export class RpcDataSource {
         while (!isEnd()) {
             let head = await headSrc.call()
             if (head === prev) continue
-            let finalizedHead = await this.rpc.getFinalizedHead()
+
+            let finalizedHead: string | null = null
+            if (this.finalityConfirmation == null) {
+                finalizedHead = await this.rpc.getFinalizedHead()
+            } else {
+                let attempt = 0
+                while (attempt < 5) {
+                    let header = await this.rpc.getBlockHeader(head)
+                    if (header != null) {
+                        let finalizedHeight = qty2Int(header.number) - this.finalityConfirmation
+                        finalizedHead = await this.rpc.getBlockHash(finalizedHeight)
+                        if (finalizedHead != null) break
+                    }
+
+                    head = await this.rpc.getHead()
+                    attempt += 1
+                }
+                assert(finalizedHead != null, `failed to get finalized head after ${attempt} attempts`)
+            }
             await this.handleNewHeads({
                 best: {hash: head},
                 finalized: {hash: finalizedHead}
@@ -181,27 +207,31 @@ export class RpcDataSource {
     }
 
     private async subscription(cb: (heads: ChainHeads) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let finalityConfirmation = this.finalityConfirmation
         let queue = new AsyncQueue<number | Error>(1)
         let finalizedHeight = 0
         let prevHeight = 0
 
-        let finalizedHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
-            method: 'chain_subscribeFinalizedHeads',
-            unsubscribe: 'chain_unsubscribeFinalizedHeads',
-            notification: 'chain_finalizedHead',
-            onMessage(head: BlockHeader) {
-                try {
-                    let height = qty2Int(head.number)
-                    finalizedHeight = Math.max(finalizedHeight, height)
-                } catch(err: any) {
-                    close(err)
-                }
-            },
-            onError(err: Error) {
-                close(ensureError(err))
-            },
-            resubscribeOnConnectionLoss: true
-        })
+        let finalizedHeadsHandle: SubscriptionHandle | undefined
+        if (finalityConfirmation == null) {
+            finalizedHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
+                method: 'chain_subscribeFinalizedHeads',
+                unsubscribe: 'chain_unsubscribeFinalizedHeads',
+                notification: 'chain_finalizedHead',
+                onMessage(head: BlockHeader) {
+                    try {
+                        let height = qty2Int(head.number)
+                        finalizedHeight = Math.max(finalizedHeight, height)
+                    } catch(err: any) {
+                        close(err)
+                    }
+                },
+                onError(err: Error) {
+                    close(ensureError(err))
+                },
+                resubscribeOnConnectionLoss: true
+            })
+        }
 
         let newHeadsHandle = this.rpc.client.subscribe<BlockHeader>({
             method: 'chain_subscribeNewHeads',
@@ -212,6 +242,9 @@ export class RpcDataSource {
                     let height = qty2Int(head.number)
                     if (height >= prevHeight) {
                         prevHeight = height
+                        if (finalityConfirmation != null) {
+                            finalizedHeight = Math.max(0, height - finalityConfirmation)
+                        }
                         queue.forcePut(height)
                     }
                 } catch(err: any) {
@@ -226,7 +259,7 @@ export class RpcDataSource {
 
         function close(err?: Error) {
             newHeadsHandle.close()
-            finalizedHeadsHandle.close()
+            finalizedHeadsHandle?.close()
             if (err) {
                 queue.forcePut(err)
             }

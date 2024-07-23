@@ -12,6 +12,7 @@ export interface RpcDataSourceOptions {
     headPollInterval?: number
     newHeadTimeout?: number
     typesBundle?: OldTypesBundle | OldSpecsBundle
+    finalityConfirmation?: number
 }
 
 
@@ -23,7 +24,8 @@ export class RpcDataSource {
         this.rawDataSource = new raw.RpcDataSource({
             rpc: options.rpc,
             headPollInterval: options.headPollInterval,
-            newHeadTimeout: options.newHeadTimeout
+            newHeadTimeout: options.newHeadTimeout,
+            finalityConfirmation: options.finalityConfirmation
         })
         this.typesBundle = options.typesBundle
     }
