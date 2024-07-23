@@ -12,17 +12,18 @@ import type {Pool} from 'pg'
 import {WebSocketServer} from 'ws'
 import {Context, OpenreaderContext} from './context'
 import {PoolOpenreaderContext} from './db'
-import type {Dialect} from './dialect'
+import type {DbType} from './db'
 import type {Model} from './model'
-import {SchemaBuilder} from './opencrud/schema'
 import {openreaderExecute, openreaderSubscribe} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
+import {Dialect, getSchemaBuilder} from './dialect'
 
 
 export interface ServerOptions {
     port: number | string
     model: Model
     connection: Pool
+    dbType?: DbType
     dialect?: Dialect
     graphiqlConsole?: boolean
     log?: Logger
@@ -32,7 +33,7 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
-    subscriptionMaxResponseNodes?: number,
+    subscriptionMaxResponseNodes?: number
     cache?: KeyValueCache
 }
 
@@ -43,16 +44,17 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         subscriptionPollInterval,
         maxResponseNodes,
         subscriptionMaxResponseNodes,
-        log
+        log,
     } = options
 
-    let dialect = options.dialect ?? 'postgres'
+    let dbType = options.dbType ?? 'postgres'
 
-    let schema = new SchemaBuilder(options).build()
+    let schemaBuilder = await getSchemaBuilder(options)
+    let schema = schemaBuilder.build()
 
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
-            dialect,
+            dbType,
             connection,
             subscriptionConnection,
             subscriptionPollInterval,
@@ -69,23 +71,23 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         }
 
         return {
-            openreader
+            openreader,
         }
     }
 
     let disposals: Dispose[] = []
 
     return addServerCleanup(disposals, runApollo({
-        port: options.port,
-        schema,
-        context,
-        disposals,
-        subscriptions: options.subscriptions,
-        log: options.log,
-        graphiqlConsole: options.graphiqlConsole,
-        maxRequestSizeBytes: options.maxRequestSizeBytes,
-        maxRootFields: options.maxRootFields,
-        cache: options.cache,
+            port: options.port,
+            schema,
+            context,
+            disposals,
+            subscriptions: options.subscriptions,
+            log: options.log,
+            graphiqlConsole: options.graphiqlConsole,
+            maxRequestSizeBytes: options.maxRequestSizeBytes,
+            maxRootFields: options.maxRootFields,
+            cache: options.cache,
     }), options.log)
 }
 
@@ -117,7 +119,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
 
     let execute = (args: ExecutionArgs) => openreaderExecute(args, {
         maxRootFields: maxRootFields
-    })
+        })
 
     if (options.subscriptions) {
         let wsServer = new WebSocketServer({

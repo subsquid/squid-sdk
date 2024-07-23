@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-ingest-cli",
+      "comment": "add prometheus metrics",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-ingest-cli"
+}

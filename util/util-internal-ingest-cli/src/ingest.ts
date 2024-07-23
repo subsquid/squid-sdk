@@ -8,6 +8,8 @@ import {HttpApp, HttpContext, HttpError, waitForInterruption} from '@subsquid/ut
 import {assertRange, isRange, Range} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {Writable} from 'stream'
+import {PrometheusServer} from './prometheus'
+import {EventEmitter} from 'events'
 
 
 export interface IngestOptions {
@@ -19,6 +21,7 @@ export interface IngestOptions {
     endpointCapacity?: number
     endpointRateLimit?: number
     endpointMaxBatchCallSize?: number
+    metrics?: number
 }
 
 
@@ -55,6 +58,7 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         program.option('--first-block <number>', 'Height of the first block to ingest', nat)
         program.option('--last-block <number>', 'Height of the last block to ingest', nat)
         program.option('--service <port>', 'Run as HTTP data service', nat)
+        program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
     }
 
@@ -95,8 +99,22 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
     @def
     protected archive(): ArchiveLayout {
         let url = assertNotNull(this.options().rawArchive, 'archive is not specified')
-        let fs = createFs(url)
+        let fs = createFs(url, this.eventEmitter())
         return new ArchiveLayout(fs)
+    }
+
+    @def
+    protected eventEmitter(): EventEmitter {
+        return new EventEmitter()
+    }
+
+    @def
+    protected prometheus() {
+        let server = new PrometheusServer(
+            this.options().metrics ?? 0,
+        )
+        this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
+        return server
     }
 
     private async ingest(range: Range, writable: Writable): Promise<void> {
@@ -113,6 +131,7 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         let log = this.log().child('service')
         let app = new HttpApp()
         let self = this
+        let prometheus = this.prometheus()
 
         app.setMaxRequestBody(1024)
         app.setLogger(log)
@@ -137,6 +156,11 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
                 ctx.response.end()
             }
         })
+
+        if (this.options().metrics != null) {
+            let server = await prometheus.serve()
+            this.log().info(`prometheus metrics are available on port ${server.port}`)
+        }
 
         let server = await app.listen(port)
         log.info(

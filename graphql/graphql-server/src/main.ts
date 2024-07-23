@@ -6,6 +6,7 @@ import {registerTsNodeIfRequired} from '@subsquid/util-internal-ts-node'
 import assert from 'assert'
 import {Command, Option} from 'commander'
 import {DumbInMemoryCacheOptions, DumbRedisCacheOptions, Server} from './server'
+import {Dialect} from '@subsquid/openreader/lib/dialect'
 
 
 const LOG = createLogger('sqd:graphql-server')
@@ -26,6 +27,7 @@ runProgram(async () => {
     program.option('--dumb-cache-max-age <ms>', 'cache-control max-age in milliseconds', nat, 5000)
     program.option('--dumb-cache-ttl <ms>', 'in-memory cached item TTL in milliseconds', nat, 5000)
     program.option('--dumb-cache-size <mb>', 'max in-memory cache size in megabytes', nat, 50)
+    program.addOption(new Option('--dialect <type>').choices(Object.values(Dialect)))
 
     let opts = program.parse().opts() as {
         maxRequestSize: number
@@ -41,6 +43,7 @@ runProgram(async () => {
         subscriptionPollInterval: number
         subscriptionMaxResponseSize?: number
         tsNode?: boolean
+        dialect?: Dialect
     }
 
     await registerTsNodeIfRequired()

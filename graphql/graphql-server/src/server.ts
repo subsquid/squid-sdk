@@ -3,10 +3,9 @@ import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
-import {Dialect} from '@subsquid/openreader/lib/dialect'
+import {DbType, PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
+import {Dialect, getSchemaBuilder} from '@subsquid/openreader/lib/dialect'
 import type {Model} from '@subsquid/openreader/lib/model'
-import {SchemaBuilder} from '@subsquid/openreader/lib/opencrud/schema'
 import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
 import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
 import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
@@ -38,6 +37,7 @@ export interface ServerOptions {
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
+    dialect?: Dialect
 }
 
 
@@ -103,8 +103,14 @@ export class Server {
 
     @def
     private async schema(): Promise<GraphQLSchema> {
+        const schemaBuilder = await getSchemaBuilder({
+            model: this.model(),
+            subscriptions: this.options.subscriptions,
+            dialect: this.options.dialect,
+        })
+
         let schemas = [
-            new SchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions}).build()
+            schemaBuilder.build(),
         ]
 
         if (this.options.squidStatus !== false) {
@@ -185,14 +191,14 @@ export class Server {
 
     @def
     private async context(): Promise<() => Context> {
-        let dialect = this.dialect()
+        let dbType = this.dbType()
         let createOpenreader: () => OpenreaderContext
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
             createOpenreader = () => {
                 return new TypeormOpenreaderContext(
-                    dialect,
+                    dbType,
                     con,
                     con,
                     this.options.subscriptionPollInterval,
@@ -204,7 +210,7 @@ export class Server {
             this.disposals.push(() => pool.end())
             createOpenreader = () => {
                 return new PoolOpenreaderContext(
-                    dialect,
+                    dbType,
                     pool,
                     pool,
                     this.options.subscriptionPollInterval,
@@ -261,7 +267,7 @@ export class Server {
         return envNat('GQL_DB_CONNECTION_POOL_SIZE') || 5
     }
 
-    private dialect(): Dialect {
+    private dbType(): DbType {
         let type = process.env.DB_TYPE
         if (!type) return 'postgres'
         switch(type) {

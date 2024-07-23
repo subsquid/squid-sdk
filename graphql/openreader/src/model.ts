@@ -10,6 +10,8 @@ export interface Entity extends TypeMeta {
     interfaces?: Name[]
     indexes?: Index[]
     cardinality?: number
+    queryName?: string
+    listQueryName?: string
 }
 
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "add prometheus metrics for S3 file system handler",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

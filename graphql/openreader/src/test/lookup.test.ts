@@ -1,3 +1,4 @@
+import {Dialect} from '../dialect'
 import {isCockroach, useDatabase, useServer} from "./setup"
 
 describe('lookup test', function () {
@@ -13,105 +14,211 @@ describe('lookup test', function () {
         `insert into issue_cancellation (id, issue_id, height) values ('3', '3', 10)`,
     ])
 
-    const client = useServer(`
-        type Issue @entity {
-            id: ID!
-            payment: IssuePayment @derivedFrom(field: "issue")
-            cancellation: IssueCancellation @derivedFrom(field: "issue")
-        }
-        
-        type IssuePayment @entity {
-            id: ID!
-            issue: Issue! @unique
-            amount: Int!
-        }
-        
-        type IssueCancellation @entity {
-            id: ID!
-            issue: Issue! @unique
-            height: Int!
-        }
-    `)
-
-    it('fetches correctly', function () {
-        return client.test(`
-            query {
-                issues(orderBy: [id_ASC]) {
-                    id
-                    payment {
-                        amount
-                    }
-                    cancellation {
-                        height
-                        issue {
-                            cancellation {
-                                id
-                            }
-                        }
-                    }
-                }
+    describe('opencrud', function () {
+        const client = useServer(`
+            type Issue @entity {
+                id: ID!
+                payment: IssuePayment @derivedFrom(field: "issue")
+                cancellation: IssueCancellation @derivedFrom(field: "issue")
             }
-        `, {
-            issues: [
-                {
-                    id: '1',
-                    payment: {amount: 2},
-                    cancellation: null
-                },
-                {
-                    id: '2',
-                    payment: {amount: 1},
-                    cancellation: null
-                },
-                {
-                    id: '3',
-                    payment: null,
-                    cancellation: {
-                        height: 10,
-                        issue: {
-                            cancellation: {
-                                id: '3'
+            
+            type IssuePayment @entity {
+                id: ID!
+                issue: Issue! @unique
+                amount: Int!
+            }
+            
+            type IssueCancellation @entity {
+                id: ID!
+                issue: Issue! @unique
+                height: Int!
+            }
+        `)
+    
+        it('fetches correctly', function () {
+            return client.test(`
+                query {
+                    issues(orderBy: [id_ASC]) {
+                        id
+                        payment {
+                            amount
+                        }
+                        cancellation {
+                            height
+                            issue {
+                                cancellation {
+                                    id
+                                }
                             }
                         }
                     }
                 }
-            ]
+            `, {
+                issues: [
+                    {
+                        id: '1',
+                        payment: {amount: 2},
+                        cancellation: null
+                    },
+                    {
+                        id: '2',
+                        payment: {amount: 1},
+                        cancellation: null
+                    },
+                    {
+                        id: '3',
+                        payment: null,
+                        cancellation: {
+                            height: 10,
+                            issue: {
+                                cancellation: {
+                                    id: '3'
+                                }
+                            }
+                        }
+                    }
+                ]
+            })
         })
-    })
-
-    it('supports sorting on lookup fields', function () {
-        return client.test(`
-            query {
-                issues(orderBy: [payment_amount_ASC]) {
-                    id
+    
+        it('supports sorting on lookup fields', function () {
+            return client.test(`
+                query {
+                    issues(orderBy: [payment_amount_ASC]) {
+                        id
+                    }
                 }
-            }
-        `, {
-            issues: isCockroach()
-                ? [
-                    {id: '3'},
-                    {id: '2'},
+            `, {
+                issues: isCockroach()
+                    ? [
+                        {id: '3'},
+                        {id: '2'},
+                        {id: '1'}
+                    ]
+                    : [
+                        {id: '2'},
+                        {id: '1'},
+                        {id: '3'}
+                    ]
+            })
+        })
+    
+        it('supports where conditions', function () {
+            return client.test(`
+                query {
+                    issues(where: {payment: {amount_gt: 1}}) {
+                        id
+                    }
+                }
+            `, {
+                issues: [
                     {id: '1'}
                 ]
-                : [
-                    {id: '2'},
-                    {id: '1'},
-                    {id: '3'}
-                ]
+            })
         })
     })
 
-    it('supports where conditions', function () {
-        return client.test(`
-            query {
-                issues(where: {payment: {amount_gt: 1}}) {
-                    id
-                }
+    describe('thegraph', function () {
+        const client = useServer(`
+            type Issue @entity {
+                id: ID!
+                payment: IssuePayment @derivedFrom(field: "issue")
+                cancellation: IssueCancellation @derivedFrom(field: "issue")
             }
-        `, {
-            issues: [
-                {id: '1'}
-            ]
+            
+            type IssuePayment @entity {
+                id: ID!
+                issue: Issue! @unique
+                amount: Int!
+            }
+            
+            type IssueCancellation @entity {
+                id: ID!
+                issue: Issue! @unique
+                height: Int!
+            }
+        `, {dialect: Dialect.TheGraph})
+    
+        it('fetches correctly', function () {
+            return client.test(`
+                query {
+                    issues(orderBy: id, orderDirection: asc) {
+                        id
+                        payment {
+                            amount
+                        }
+                        cancellation {
+                            height
+                            issue {
+                                cancellation {
+                                    id
+                                }
+                            }
+                        }
+                    }
+                }
+            `, {
+                issues: [
+                    {
+                        id: '1',
+                        payment: {amount: 2},
+                        cancellation: null
+                    },
+                    {
+                        id: '2',
+                        payment: {amount: 1},
+                        cancellation: null
+                    },
+                    {
+                        id: '3',
+                        payment: null,
+                        cancellation: {
+                            height: 10,
+                            issue: {
+                                cancellation: {
+                                    id: '3'
+                                }
+                            }
+                        }
+                    }
+                ]
+            })
+        })
+    
+        it('supports sorting on lookup fields', function () {
+            return client.test(`
+                query {
+                    issues(orderBy: payment__amount, orderDirection: asc) {
+                        id
+                    }
+                }
+            `, {
+                issues: isCockroach()
+                    ? [
+                        {id: '3'},
+                        {id: '2'},
+                        {id: '1'}
+                    ]
+                    : [
+                        {id: '2'},
+                        {id: '1'},
+                        {id: '3'}
+                    ]
+            })
+        })
+    
+        it('supports where conditions', function () {
+            return client.test(`
+                query {
+                    issues(where: {payment_: {amount_gt: 1}}) {
+                        id
+                    }
+                }
+            `, {
+                issues: [
+                    {id: '1'}
+                ]
+            })
         })
     })
 })

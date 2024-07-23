@@ -19,6 +19,7 @@ common/autoinstallers/*/.npmrc
 
 # IDE
 .idea
+.vscode
 
 # Built js libs
 /*/*/lib

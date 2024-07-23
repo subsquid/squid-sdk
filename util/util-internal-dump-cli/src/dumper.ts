@@ -8,6 +8,7 @@ import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
 import {PrometheusServer} from './prometheus'
+import {EventEmitter} from 'events'
 
 
 export interface DumperOptions {
@@ -93,7 +94,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
     @def
     protected destination(): Fs {
         let dest = assertNotNull(this.options().dest)
-        return createFs(dest)
+        return createFs(dest, this.eventEmitter())
     }
 
     @def
@@ -119,13 +120,20 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
     }
 
     @def
+    protected eventEmitter(): EventEmitter {
+        return new EventEmitter()
+    }
+
+    @def
     protected prometheus() {
-        return new PrometheusServer(
+        let server = new PrometheusServer(
             this.options().metrics ?? 0,
             () => this.getFinalizedHeight(),
             this.rpc(),
             this.log().child('prometheus')
         )
+        this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
+        return server
     }
 
     private async *ingest(from?: number, prevHash?: string): AsyncIterable<B[]> {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "add dialect system support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
