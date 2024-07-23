@@ -180,26 +180,24 @@ export class RpcDataSource {
         while (!isEnd()) {
             let head = await headSrc.call()
             if (head === prev) continue
-            let finalizedHead: string
+
+            let finalizedHead: string | null = null
             if (this.finalityConfirmation == null) {
                 finalizedHead = await this.rpc.getFinalizedHead()
             } else {
-                let header: BlockHeader | null = null
-                let attempts = 0
-                while (attempts <= 5) {
-                    header = await this.rpc.getBlockHeader(head)
-                    if (header == null) {
-                        head = await this.rpc.getHead()
-                        attempts += 1
-                    } else {
-                        break
+                let attempt = 0
+                while (attempt < 5) {
+                    let header = await this.rpc.getBlockHeader(head)
+                    if (header != null) {
+                        let finalizedHeight = qty2Int(header.number) - this.finalityConfirmation
+                        finalizedHead = await this.rpc.getBlockHash(finalizedHeight)
+                        if (finalizedHead != null) break
                     }
+
+                    head = await this.rpc.getHead()
+                    attempt += 1
                 }
-                assert(header, 'cannot determine head of the chain')
-                let height = qty2Int(header.number) - this.finalityConfirmation
-                let hash = await this.rpc.getBlockHash(height)
-                assert(hash)
-                finalizedHead = hash
+                assert(finalizedHead != null, `failed to get finalized head after ${attempt} attempts`)
             }
             await this.handleNewHeads({
                 best: {hash: head},
