@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: master
+          ref: beta
           fetch-depth: 0
         
       - name: Configure git user
