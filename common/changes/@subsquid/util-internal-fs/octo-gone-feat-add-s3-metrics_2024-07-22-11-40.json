@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/util-internal-fs",
       "comment": "add metrics for S3 file system handler",
-      "type": "patch"
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/util-internal-fs"
