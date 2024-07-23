@@ -326,11 +326,30 @@ export class CallParser {
         while (this.eventPos >= 0) {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
+                if (event.name.startsWith('Migrations.')) {
+                    let index = assertNotNull(event.extrinsicIndex)
+                    let ex = this.extrinsics[index]
+                    assert(ex == null, 'extrinsic for a migration event is unexpected')
+                    this.skipExtrinsicEvents(index)
+                    continue
+                }
+
                 if (event.extrinsicIndex !== this.extrinsic.index) return
                 this.eventPos -= 1
                 return event
             } else {
                 this.eventPos -= 1
+            }
+        }
+    }
+
+    private skipExtrinsicEvents(extrinsicIndex: number) {
+        while (true) {
+            let event = this.events[this.eventPos]
+            if (event.extrinsicIndex == extrinsicIndex) {
+                this.eventPos -= 1
+            } else {
+                break
             }
         }
     }
