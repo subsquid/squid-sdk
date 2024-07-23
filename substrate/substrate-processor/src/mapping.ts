@@ -405,6 +405,10 @@ export function setUpItems(block: Block): void {
                 rec.parentCall = prev
                 populateSubcalls(prev, rec)
             }
+            if (prev.parentCall && isSubcall(prev.parentCall, rec)) {
+                rec.parentCall = prev.parentCall
+                populateSubcalls(prev.parentCall, rec)
+            }
         }
     }
 
@@ -456,7 +460,7 @@ function bisectCalls(calls: Call[], extrinsicIndex: number, callAddress: number[
 
 function populateSubcalls(parent: Call | undefined, child: Call): void {
     while (parent) {
-        parent.subcalls.push(child)
+        parent.subcalls.unshift(child)
         parent = parent.parentCall
     }
 }
