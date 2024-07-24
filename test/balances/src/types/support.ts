@@ -301,7 +301,7 @@ export type StorageMethods<
             ? {}
             : {
                     getAll(...args: Extra): Promise<V[]>
-                    getMany(...args: [...Extra, keys: K[]]): Promise<V[]>
+                    getMany(...args: [...Extra, keys: (K extends [any] ? K[0] : K)[]]): Promise<V[]>
                 } & (D extends false
                     ? {}
                     : {
