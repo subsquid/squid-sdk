@@ -400,14 +400,16 @@ export function setUpItems(block: Block): void {
         }
 
         if (i < block.calls.length - 1) {
-            let prev = block.calls[i + 1]
-            if (isSubcall(prev, rec)) {
-                rec.parentCall = prev
-                populateSubcalls(prev, rec)
-            }
-            if (prev.parentCall && isSubcall(prev.parentCall, rec)) {
-                rec.parentCall = prev.parentCall
-                populateSubcalls(prev.parentCall, rec)
+            let prev: Call | undefined = block.calls[i + 1]
+            if (prev.extrinsicIndex == rec.extrinsicIndex) {
+                while (prev != null) {
+                    if (isSubcall(prev, rec)) {
+                        rec.parentCall = prev
+                        populateSubcalls(prev, rec)
+                        break
+                    }
+                    prev = prev.parentCall
+                }
             }
         }
     }
@@ -490,4 +492,9 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
         if (parent.address[i] != call.address[i]) return false
     }
     return true
+}
+
+
+function traverseCalls(prev: Call, call: Call) {
+
 }
