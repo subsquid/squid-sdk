@@ -216,6 +216,8 @@ export class Typegen {
                             out.blockComment(it.def.docs)
                             out.block(`export interface ${ifName} `, () => {
                                 out.line(`is(block: RuntimeCtx): boolean`)
+                                out.line(`isExists(block: RuntimeCtx): boolean`)
+                                out.line(`at(block: Block): GetStorageAtBlockType<${ifName}>`)
 
                                 let value = useIfs(it.def.value)
                                 let keys = it.def.keys.map(ti => useIfs(ti))
@@ -445,7 +447,12 @@ class ItemFile {
             .child(getPalletDir(pallet))
             .file(type == 'Storage' ? 'storage.ts' : type.toLowerCase() + 's.ts')
 
-        this.out.line(`import {sts, Block, Bytes, Option, Result, ${type}Type, ${type.toLowerCase()}, RuntimeCtx} from '../support'`)
+        let imports = ['sts', 'Block', 'Bytes', 'Option', 'Result', `${type}Type`, `${type.toLowerCase()}`, 'RuntimeCtx' ]
+        if (type === 'Storage') {
+            imports.push('GetStorageAtBlockType')
+        }
+
+        this.out.line(`import {${imports.join(', ')}} from '../support'`)
 
         this.out.lazy(() => {
             Array.from(this.imported)

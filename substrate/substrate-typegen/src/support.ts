@@ -7,6 +7,11 @@ import assert from 'assert'
 export {sts, Bytes, BitSequence, Option, Result}
 
 
+type Simplify<T> = {
+    [K in keyof T]: T[K]
+} & {}
+
+
 export interface RuntimeCtx {
     _runtime: Runtime
 }
@@ -31,12 +36,6 @@ interface Call {
     args: unknown
 }
 
-export interface VersionedType<T = unknown> {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: RuntimeCtx): T
-}
-
 
 export class UnknownVersionError extends Error {
     constructor(name: string) {
@@ -45,23 +44,34 @@ export class UnknownVersionError extends Error {
 }
 
 
+export interface VersionedType<T = unknown> {
+    is(block: RuntimeCtx): boolean
+    isExists(block: RuntimeCtx): boolean
+    at(block: RuntimeCtx): T
+}
+
+
 export class VersionedItem<V extends Record<string, VersionedType>> {
-    at: <T>(block: RuntimeCtx, cb: (...args: {[K in keyof V]: [event: V[K] extends VersionedType<infer R> ? R : never, version: K]}[keyof V]) => T) => T
+    at: <T>(
+        block: RuntimeCtx,
+        cb: (
+            ...args: Simplify<
+                {[K in keyof V]: [event: V[K] extends VersionedType<infer R> ? R : never, version: K]}[keyof V]
+            >
+        ) => T
+    ) => T
     isExists: (block: RuntimeCtx) => boolean
 
     constructor(readonly name: string, protected versions: V) {
         this.at = this.createGetVersion()
         this.isExists = this.createIsExists()
-        for (let key in this.versions) {
-            Object.defineProperty(this.versions[key], '__version', {value: key})
-        }
     }
 
     private createGetVersion(): any {
         let body = ''
         for (let key in this.versions) {
             let version = `this.versions['${key}']`
-            body += `if (${version}.is(block)) return ${version}\n`
+            body += `if (${version}.is(block)) return ${version}.at(block)\n`
         }
         body += `throw new UnknownVersionError(this.name)\n`
         return new Function('block', body)
@@ -228,6 +238,51 @@ export function constant<V extends Record<string, ConstantType<any>>>(name: stri
     return Object.assign(new VersionedItem(name, versions), versions)
 }
 
+type A = Partial<Simplify<Pick<
+StorageType,
+| 'get'
+| 'getAll'
+| 'getDefault'
+| 'getKeys'
+| 'getKeysPaged'
+| 'getMany'
+| 'getPairs'
+| 'getPairsPaged'
+| 'getRawKeys'
+>>>
+
+
+export type GetStorageAtBlockType<
+    S extends Partial<
+        Pick<
+            StorageType,
+            | 'get'
+            | 'getAll'
+            | 'getDefault'
+            | 'getKeys'
+            | 'getKeysPaged'
+            | 'getMany'
+            | 'getPairs'
+            | 'getPairsPaged'
+            | 'getRawKeys'
+        >
+    >
+> = Simplify<
+    (S['get'] extends {(...args: [any, ...infer A]): infer R} ? {get(...args: A): R} : {}) &
+    (S['getAll'] extends {(...args: [any]): infer R} ? {getAll(): R} : {}) &
+    (S['getMany'] extends {(keys: infer A): infer R} ? {getMany(keys: A): R} : {}) &
+    (S['getKeys'] extends {(...args: [any, ...infer A]): infer R} ? {getKeys(...args: A): R} : {}) &
+    (S['getKeysPaged'] extends {(...args: [number, any, ...infer A]): infer R}
+        ? {getKeysPaged(pageSize: number, ...args: A): R}
+        : {}) &
+    (S['getRawKeys'] extends {(...args: [any, ...infer A]): infer R} ? {getRawKeys(...args: A): R} : {}) &
+    (S['getPairs'] extends {(...args: [any, ...infer A]): infer R} ? {getPairs(...args: A): R} : {}) &
+    (S['getPairsPaged'] extends {(...args: [number, any, ...infer A]): infer R}
+        ? {getPairsPaged(pageSize: number, ...args: A): R}
+        : {}) &
+    (S['getDefault'] extends {(...args: [any, ...infer A]): infer R} ? {getDefault(...args: A): R} : {})
+>
+
 
 export class StorageAtBlockType {
     constructor(private storage: StorageType, private block: Block) {}
@@ -236,7 +291,7 @@ export class StorageAtBlockType {
         return this.storage.isExists(this.block)
     }
 
-    get( ...key: any[]): Promise<any> {
+    get(...key: any[]): Promise<any> {
         return this.storage.get(this.block, ...key)
     }
 
@@ -282,7 +337,7 @@ export class StorageType {
         private value: sts.Type
     ) {}
 
-    isExists(block: RuntimeCtx) {
+    isExists(block: RuntimeCtx): boolean {
         return block._runtime.hasStorage(this.name)
     }
 
@@ -342,6 +397,6 @@ export class StorageType {
 }
 
 
-export function storage<V extends Record<string, StorageType>>(name: string, versions: V): VersionedItem<V> & V {
+export function storage<V extends Record<string, VersionedType>>(name: string, versions: V): VersionedItem<V> & V {
     return Object.assign(new VersionedItem(name, versions), versions)
 }
