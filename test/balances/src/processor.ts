@@ -26,22 +26,18 @@ processor.run(new TypeormDatabase(), async ctx => {
 
     for (let block of ctx.blocks) {
         for (let event of block.events) {
-            let rec: {from: Bytes, to: Bytes, amount: bigint}
-
-            let transferType = events.balances.transfer.at(block.header)
-
-            switch (transferType.__version) {
-                case 'v1020':
-                case 'v1050': {
-                    let [from, to, amount] = transferType.decode(event)
-                    rec = {from, to, amount}
-                    break
+            let rec = events.balances.transfer.at(block.header, (e, v) => {
+                switch (v) {
+                    case 'v1020':
+                    case 'v1050': {
+                        let [from, to, amount] = e.decode(event)
+                        return {from, to, amount}
+                    }
+                    case 'v9130': {
+                        return e.decode(event)
+                    }
                 }
-                case 'v9130': {
-                    rec = transferType.decode(event)
-                    break
-                }
-            }
+            })
 
             transfers.push(new Transfer({
                 id: event.id,

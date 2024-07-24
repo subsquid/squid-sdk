@@ -31,9 +31,10 @@ interface Call {
     args: unknown
 }
 
-export interface VersionedType {
+export interface VersionedType<T = unknown> {
     is(block: RuntimeCtx): boolean
     isExists(block: RuntimeCtx): boolean
+    at(block: RuntimeCtx): T
 }
 
 
@@ -45,7 +46,7 @@ export class UnknownVersionError extends Error {
 
 
 export class VersionedItem<V extends Record<string, VersionedType>> {
-    at: (block: RuntimeCtx) => {[K in keyof V]: V[K] & {__version: K}}[keyof V]
+    at: <T>(block: RuntimeCtx, cb: (...args: {[K in keyof V]: [event: V[K] extends VersionedType<infer R> ? R : never, version: K]}[keyof V]) => T) => T
     isExists: (block: RuntimeCtx) => boolean
 
     constructor(readonly name: string, protected versions: V) {
@@ -78,6 +79,19 @@ export class VersionedItem<V extends Record<string, VersionedType>> {
 }
 
 
+export class EventAtBlockType<T extends sts.Type> {
+    constructor(private event: EventType<T>, private block: RuntimeCtx) {}
+
+    isExists(): boolean {
+        return this.event.isExists(this.block)
+    }
+
+    decode(event: Omit<Event, 'block'>): sts.GetType<T> {
+        return this.event.decode(this.block, event)
+    }
+}
+
+
 export class EventType<T extends sts.Type> {
     constructor(public readonly name: QualifiedName, private type: T) {}
 
@@ -85,7 +99,7 @@ export class EventType<T extends sts.Type> {
         return block._runtime.events.checkType(this.name, this.type)
     }
 
-    isExists(block: RuntimeCtx) {
+    isExists(block: RuntimeCtx): boolean {
         return block._runtime.hasEvent(this.name)
     }
 
@@ -96,15 +110,40 @@ export class EventType<T extends sts.Type> {
         return (name == null || this.name == name) && this.matches(block)
     }
 
-    decode(event: Event): sts.GetType<T> {
-        assert(this.is(event))
-        return event.block._runtime.decodeJsonEventRecordArguments(event)
+    decode(block: RuntimeCtx, event: Omit<Event, 'block'>): sts.GetType<T>
+    decode(event: Event): sts.GetType<T>
+    decode(blockOrEvent: RuntimeCtx | Event, event?: Omit<Event, 'block'>) {
+        if ('block' in blockOrEvent) {
+            assert(this.is(blockOrEvent))
+            return blockOrEvent.block._runtime.decodeJsonEventRecordArguments(blockOrEvent)
+        } else {
+            assert(this.is(blockOrEvent))
+            assert(event != null)
+            return blockOrEvent._runtime.decodeJsonEventRecordArguments(event)
+        }
+    }
+
+    at(block: RuntimeCtx): EventAtBlockType<T> {
+        return new EventAtBlockType(this, block)
     }
 }
 
 
 export function event<V extends Record<string, EventType<any>>>(name: string, versions: V): VersionedItem<V> & V {
     return Object.assign(new VersionedItem(name, versions), versions)
+}
+
+
+export class CallAtBlockType<T extends sts.Type> {
+    constructor(private call: CallType<T>, private block: RuntimeCtx) {}
+
+    isExists(): boolean {
+        return this.call.isExists(this.block)
+    }
+
+    decode(call: Omit<Call, 'block'>): sts.GetType<T> {
+        return this.call.decode(this.block, call)
+    }
 }
 
 
@@ -126,15 +165,40 @@ export class CallType<T extends sts.Type> {
         return (name == null || this.name == name) && this.matches(block)
     }
 
-    decode(call: Call): sts.GetType<T> {
-        assert(this.is(call))
-        return call.block._runtime.decodeJsonCallRecordArguments(call)
+    decode(block: RuntimeCtx, call: Omit<Call, 'block'>): sts.GetType<T>
+    decode(call: Call): sts.GetType<T>
+    decode(blockOrCall: RuntimeCtx | Call, call?: Omit<Call, 'block'>) {
+        if ('block' in blockOrCall) {
+            assert(this.is(blockOrCall))
+            return blockOrCall.block._runtime.decodeJsonCallRecordArguments(blockOrCall)
+        } else {
+            assert(this.is(blockOrCall))
+            assert(call != null)
+            return blockOrCall._runtime.decodeJsonCallRecordArguments(call)
+        }
+    }
+
+    at(block: RuntimeCtx): CallAtBlockType<T> {
+        return new CallAtBlockType(this, block)
     }
 }
 
 
 export function call<V extends Record<string, CallType<any>>>(name: string, versions: V): VersionedItem<V> & V {
     return Object.assign(new VersionedItem(name, versions), versions)
+}
+
+
+export class ConstantAtBlockType<T extends sts.Type> {
+    constructor(private constant: ConstantType<T>, private block: RuntimeCtx) {}
+
+    isExists(): boolean {
+        return this.constant.isExists(this.block)
+    }
+
+    get(): sts.GetType<T> {
+        return this.constant.get(this.block)
+    }
 }
 
 
@@ -153,11 +217,60 @@ export class ConstantType<T extends sts.Type> {
         assert(this.is(block))
         return block._runtime.getConstant(this.name)
     }
+
+    at(block: RuntimeCtx): ConstantAtBlockType<T> {
+        return new ConstantAtBlockType(this, block)
+    }
 }
 
 
 export function constant<V extends Record<string, ConstantType<any>>>(name: string, versions: V): VersionedItem<V> & V {
     return Object.assign(new VersionedItem(name, versions), versions)
+}
+
+
+export class StorageAtBlockType {
+    constructor(private storage: StorageType, private block: Block) {}
+
+    isExists(): boolean {
+        return this.storage.isExists(this.block)
+    }
+
+    get( ...key: any[]): Promise<any> {
+        return this.storage.get(this.block, ...key)
+    }
+
+    getAll(): Promise<any[]> {
+        return this.storage.getAll(this.block)
+    }
+
+    getMany(keys: any[]): Promise<any[]> {
+        return this.storage.getMany(this.block, keys)
+    }
+
+    getKeys(...args: any[]): Promise<any[]> {
+        return this.storage.getKeys(this.block, ...args)
+    }
+
+    getRawKeys(...args: any[]): Promise<Bytes[]> {
+        return this.storage.getRawKeys(this.block, ...args)
+    }
+
+    getKeysPaged(pageSize: number, ...args: any[]): AsyncIterable<any[]> {
+        return this.storage.getKeysPaged(pageSize, this.block, ...args)
+    }
+
+    getPairs(...args: any[]): Promise<[key: any, value: any][]> {
+        return this.storage.getPairs(this.block, ...args)
+    }
+
+    getPairsPaged(pageSize: number, ...args: any[]): AsyncIterable<[key: any, value: any][]> {
+        return this.storage.getPairsPaged(pageSize, this.block, ...args)
+    }
+
+    getDefault(): any {
+        return this.storage.getDefault(this.block)
+    }
 }
 
 
@@ -221,6 +334,10 @@ export class StorageType {
         assert(this.modifier == 'Default')
         assert(this.is(block))
         return block._runtime.getStorageFallback(this.name)
+    }
+
+    at(block: Block): StorageAtBlockType {
+        return new StorageAtBlockType(this, block)
     }
 }
 
