@@ -291,24 +291,28 @@ export type StorageMethods<
     Extra extends any[] = []
 > = Simplify<
     {
-        get(...args: [...Extra, ...K]): M extends 'Required' ? V : V | undefined
+        get(...args: [...Extra, ...K]): Promise<M extends 'Required' ? V : V | undefined>
     } & (M extends 'Default'
-            ? {
-                  getDefault(...args: Extra): V
-              }
-            : {}) &
+        ? {
+                getDefault(...args: Extra): V
+            }
+        : {}) &
         ([] extends K
             ? {}
             : {
-                  getAll(...args: Extra): V[]
-                  getMany(...args: [...Extra, keys: K[]]): sts.GetType<V>[]
-              } & (D extends false
-                  ? {}
-                  : {
-                        getKeys: EnumerateKeys<K, K extends [any] ? K[0][] : K[], Extra>
-                        getKeysPaged: EnumerateKeys<K, K extends [any] ? K[0][] : K[], [pageSize: number, ...Extra]>
-                        getPairs: EnumerateKeys<K, [key: K, value: V], Extra>
-                        getPairsPaged: EnumerateKeys<K, [key: K, value: V], [pageSize: number, ...Extra]>
+                    getAll(...args: Extra): Promise<V[]>
+                    getMany(...args: [...Extra, keys: K[]]): Promise<V[]>
+                } & (D extends false
+                    ? {}
+                    : {
+                        getKeys: EnumerateKeys<K, Promise<(K extends [any] ? K[0] : K)[]>, Extra>
+                        getKeysPaged: EnumerateKeys<
+                            K,
+                            AsyncIterable<(K extends [any] ? K[0] : K)[]>,
+                            [pageSize: number, ...Extra]
+                        >
+                        getPairs: EnumerateKeys<K, Promise<[key: K, value: V][]>, Extra>
+                        getPairsPaged: EnumerateKeys<K, AsyncIterable<[key: K, value: V][]>, [pageSize: number, ...Extra]>
                     }))
 >
 
@@ -317,10 +321,12 @@ export type GetStorageType<
     K extends any[],
     V,
     M extends 'Required' | 'Optional' | 'Default',
-    D extends boolean,
-> = Pick<StorageType, 'name' | 'is'> & {
-    at(block: Block): StorageMethods<K, V, M, D>
-} & StorageMethods<K, V, M, D, [block: Block]>
+    D extends boolean
+> = Simplify<
+    Pick<StorageType, 'name' | 'is'> & {
+        at(block: Block): StorageMethods<K, V, M, D>
+    } & StorageMethods<K, V, M, D, [block: Block]>
+>
 
 
 export class StorageType {

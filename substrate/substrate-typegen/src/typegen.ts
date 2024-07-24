@@ -201,62 +201,16 @@ export class Typegen {
                         )
 
                         ifs.push(() => {
+                            let value = useIfs(it.def.value)
+                            
+                            let keys = it.def.keys.map(ti => useIfs(ti))
+                            let args = keys.length == 1
+                                ? [`key: ${keys[0]}`]
+                                : keys.map((exp, idx) => `key${idx+1}: ${exp}`)
+
                             out.line()
                             out.blockComment(it.def.docs)
-                            out.block(`export interface ${ifName} `, () => {
-                                out.line(`is(block: RuntimeCtx): boolean`)
-                                out.line(`at(block: Block): GetStorageAtBlockType<${ifName}>`)
-
-                                let value = useIfs(it.def.value)
-                                let keys = it.def.keys.map(ti => useIfs(ti))
-
-                                let args = keys.length == 1
-                                    ? [`key: ${keys[0]}`]
-                                    : keys.map((exp, idx) => `key${idx+1}: ${exp}`)
-
-                                let fullKey = keys.length == 1 ? keys[0] : `[${keys.join(', ')}]`
-
-                                let ret = it.def.modifier == 'Required' ? value : `(${value} | undefined)`
-
-                                let kv = `[k: ${fullKey}, v: ${ret}]`
-
-                                function* enumeratePartialApps(leading?: string): Iterable<string> {
-                                    let list: string[] = []
-                                    if (leading) {
-                                        list.push(leading)
-                                    }
-                                    list.push('block: Block')
-                                    yield list.join(', ')
-                                    for (let arg of args) {
-                                        list.push(arg)
-                                        yield list.join(', ')
-                                    }
-                                }
-
-                                if (it.def.modifier == 'Default') {
-                                    out.line(`getDefault(block: Block): ${value}`)
-                                }
-
-                                out.line(`get(${['block: Block'].concat(args).join(', ')}): Promise<${ret}>`)
-
-                                if (args.length > 0) {
-                                    out.line(`getMany(block: Block, keys: ${fullKey}[]): Promise<${ret}[]>`)
-                                    if (isStorageKeyDecodable(it.def)) {
-                                        for (let args of enumeratePartialApps()) {
-                                            out.line(`getKeys(${args}): Promise<${fullKey}[]>`)
-                                        }
-                                        for (let args of enumeratePartialApps('pageSize: number')) {
-                                            out.line(`getKeysPaged(${args}): AsyncIterable<${fullKey}[]>`)
-                                        }
-                                        for (let args of enumeratePartialApps()) {
-                                            out.line(`getPairs(${args}): Promise<${kv}[]>`)
-                                        }
-                                        for (let args of enumeratePartialApps('pageSize: number')) {
-                                            out.line(`getPairsPaged(${args}): AsyncIterable<${kv}[]>`)
-                                        }
-                                    }
-                                }
-                            })
+                            out.line(`export type ${ifName} = GetStorageType<[${args.join(`, `)}], ${value}, '${it.def.modifier}', ${isStorageKeyDecodable(it.def)}>`)
                         })
                     }
                 })
@@ -437,7 +391,7 @@ class ItemFile {
 
         let imports = ['sts', 'Block', 'Bytes', 'Option', 'Result', `${type}Type`, `${type.toLowerCase()}`, 'RuntimeCtx' ]
         if (type === 'Storage') {
-            imports.push('GetStorageAtBlockType')
+            imports.push('GetStorageType')
         }
 
         this.out.line(`import {${imports.join(', ')}} from '../support'`)

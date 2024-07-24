@@ -1,4 +1,4 @@
-import {sts, Block, Bytes, Option, Result, StorageType, storage, RuntimeCtx, GetStorageAtBlockType} from '../support'
+import {sts, Block, Bytes, Option, Result, StorageType, storage, RuntimeCtx, GetStorageType} from '../support'
 import * as v1020 from '../v1020'
 import * as v1050 from '../v1050'
 import * as v9050 from '../v9050'
@@ -16,13 +16,7 @@ export const totalIssuance = storage('Balances.TotalIssuance', {
 /**
  *  The total units issued in the system.
  */
-export interface TotalIssuanceV1020  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<TotalIssuanceV1020>
-    getDefault(block: Block): v1020.Balance
-    get(block: Block): Promise<(v1020.Balance | undefined)>
-}
+export type TotalIssuanceV1020 = GetStorageType<[], v1020.Balance, 'Default', true>
 
 export const vesting = storage('Balances.Vesting', {
     /**
@@ -34,13 +28,7 @@ export const vesting = storage('Balances.Vesting', {
 /**
  *  Information regarding the vesting of a given account.
  */
-export interface VestingV1020  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<VestingV1020>
-    get(block: Block, key: v1020.AccountId): Promise<(v1020.VestingSchedule | undefined)>
-    getMany(block: Block, keys: v1020.AccountId[]): Promise<(v1020.VestingSchedule | undefined)[]>
-}
+export type VestingV1020 = GetStorageType<[key: v1020.AccountId], v1020.VestingSchedule, 'Optional', false>
 
 export const freeBalance = storage('Balances.FreeBalance', {
     /**
@@ -72,14 +60,7 @@ export const freeBalance = storage('Balances.FreeBalance', {
  *  `system::AccountNonce` is also deleted if `ReservedBalance` is also zero (it also gets
  *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.
  */
-export interface FreeBalanceV1020  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<FreeBalanceV1020>
-    getDefault(block: Block): v1020.Balance
-    get(block: Block, key: v1020.AccountId): Promise<(v1020.Balance | undefined)>
-    getMany(block: Block, keys: v1020.AccountId[]): Promise<(v1020.Balance | undefined)[]>
-}
+export type FreeBalanceV1020 = GetStorageType<[key: v1020.AccountId], v1020.Balance, 'Default', false>
 
 export const reservedBalance = storage('Balances.ReservedBalance', {
     /**
@@ -111,14 +92,7 @@ export const reservedBalance = storage('Balances.ReservedBalance', {
  *  `system::AccountNonce` is also deleted if `FreeBalance` is also zero (it also gets
  *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.)
  */
-export interface ReservedBalanceV1020  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<ReservedBalanceV1020>
-    getDefault(block: Block): v1020.Balance
-    get(block: Block, key: v1020.AccountId): Promise<(v1020.Balance | undefined)>
-    getMany(block: Block, keys: v1020.AccountId[]): Promise<(v1020.Balance | undefined)[]>
-}
+export type ReservedBalanceV1020 = GetStorageType<[key: v1020.AccountId], v1020.Balance, 'Default', false>
 
 export const locks = storage('Balances.Locks', {
     /**
@@ -135,27 +109,13 @@ export const locks = storage('Balances.Locks', {
 /**
  *  Any liquidity locks on some account balances.
  */
-export interface LocksV1020  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<LocksV1020>
-    getDefault(block: Block): v1020.BalanceLock[]
-    get(block: Block, key: v1020.AccountId): Promise<(v1020.BalanceLock[] | undefined)>
-    getMany(block: Block, keys: v1020.AccountId[]): Promise<(v1020.BalanceLock[] | undefined)[]>
-}
+export type LocksV1020 = GetStorageType<[key: v1020.AccountId], v1020.BalanceLock[], 'Default', false>
 
 /**
  *  Any liquidity locks on some account balances.
  *  NOTE: Should only be accessed when setting, changing and freeing a lock.
  */
-export interface LocksV1050  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<LocksV1050>
-    getDefault(block: Block): v1050.BalanceLock[]
-    get(block: Block, key: v1050.AccountId): Promise<(v1050.BalanceLock[] | undefined)>
-    getMany(block: Block, keys: v1050.AccountId[]): Promise<(v1050.BalanceLock[] | undefined)[]>
-}
+export type LocksV1050 = GetStorageType<[key: v1050.AccountId], v1050.BalanceLock[], 'Default', false>
 
 export const account = storage('Balances.Account', {
     /**
@@ -204,14 +164,7 @@ export const account = storage('Balances.Account', {
  * 
  *  NOTE: This is only used in the case that this module is used to store balances.
  */
-export interface AccountV1050  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<AccountV1050>
-    getDefault(block: Block): v1050.AccountData
-    get(block: Block, key: v1050.AccountId): Promise<(v1050.AccountData | undefined)>
-    getMany(block: Block, keys: v1050.AccountId[]): Promise<(v1050.AccountData | undefined)[]>
-}
+export type AccountV1050 = GetStorageType<[key: v1050.AccountId], v1050.AccountData, 'Default', false>
 
 /**
  *  The Balances pallet example of storing the balance of an account.
@@ -239,22 +192,7 @@ export interface AccountV1050  {
  *  `Balances` pallet, which uses a `StorageMap` to store balances data only.
  *  NOTE: This is only used in the case that this pallet is used to store balances.
  */
-export interface AccountV9420  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<AccountV9420>
-    getDefault(block: Block): v9420.AccountData
-    get(block: Block, key: v9420.AccountId32): Promise<(v9420.AccountData | undefined)>
-    getMany(block: Block, keys: v9420.AccountId32[]): Promise<(v9420.AccountData | undefined)[]>
-    getKeys(block: Block): Promise<v9420.AccountId32[]>
-    getKeys(block: Block, key: v9420.AccountId32): Promise<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<v9420.AccountId32[]>
-    getPairs(block: Block): Promise<[k: v9420.AccountId32, v: (v9420.AccountData | undefined)][]>
-    getPairs(block: Block, key: v9420.AccountId32): Promise<[k: v9420.AccountId32, v: (v9420.AccountData | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v9420.AccountId32, v: (v9420.AccountData | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<[k: v9420.AccountId32, v: (v9420.AccountData | undefined)][]>
-}
+export type AccountV9420 = GetStorageType<[key: v9420.AccountId32], v9420.AccountData, 'Default', true>
 
 export const storageVersion = storage('Balances.StorageVersion', {
     /**
@@ -276,26 +214,14 @@ export const storageVersion = storage('Balances.StorageVersion', {
  * 
  *  This is set to v2.0.0 for new networks.
  */
-export interface StorageVersionV1050  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<StorageVersionV1050>
-    getDefault(block: Block): v1050.Releases
-    get(block: Block): Promise<(v1050.Releases | undefined)>
-}
+export type StorageVersionV1050 = GetStorageType<[], v1050.Releases, 'Default', true>
 
 /**
  *  Storage version of the pallet.
  * 
  *  This is set to v2.0.0 for new networks.
  */
-export interface StorageVersionV9111  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<StorageVersionV9111>
-    getDefault(block: Block): v9111.Releases
-    get(block: Block): Promise<(v9111.Releases | undefined)>
-}
+export type StorageVersionV9111 = GetStorageType<[], v9111.Releases, 'Default', true>
 
 export const reserves = storage('Balances.Reserves', {
     /**
@@ -307,22 +233,7 @@ export const reserves = storage('Balances.Reserves', {
 /**
  *  Named reserves on some account balances.
  */
-export interface ReservesV9050  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<ReservesV9050>
-    getDefault(block: Block): v9050.ReserveData[]
-    get(block: Block, key: v9050.AccountId): Promise<(v9050.ReserveData[] | undefined)>
-    getMany(block: Block, keys: v9050.AccountId[]): Promise<(v9050.ReserveData[] | undefined)[]>
-    getKeys(block: Block): Promise<v9050.AccountId[]>
-    getKeys(block: Block, key: v9050.AccountId): Promise<v9050.AccountId[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v9050.AccountId[]>
-    getKeysPaged(pageSize: number, block: Block, key: v9050.AccountId): AsyncIterable<v9050.AccountId[]>
-    getPairs(block: Block): Promise<[k: v9050.AccountId, v: (v9050.ReserveData[] | undefined)][]>
-    getPairs(block: Block, key: v9050.AccountId): Promise<[k: v9050.AccountId, v: (v9050.ReserveData[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v9050.AccountId, v: (v9050.ReserveData[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v9050.AccountId): AsyncIterable<[k: v9050.AccountId, v: (v9050.ReserveData[] | undefined)][]>
-}
+export type ReservesV9050 = GetStorageType<[key: v9050.AccountId], v9050.ReserveData[], 'Default', true>
 
 export const inactiveIssuance = storage('Balances.InactiveIssuance', {
     /**
@@ -334,13 +245,7 @@ export const inactiveIssuance = storage('Balances.InactiveIssuance', {
 /**
  *  The total units of outstanding deactivated balance in the system.
  */
-export interface InactiveIssuanceV9340  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<InactiveIssuanceV9340>
-    getDefault(block: Block): bigint
-    get(block: Block): Promise<(bigint | undefined)>
-}
+export type InactiveIssuanceV9340 = GetStorageType<[], bigint, 'Default', true>
 
 export const holds = storage('Balances.Holds', {
     /**
@@ -356,42 +261,12 @@ export const holds = storage('Balances.Holds', {
 /**
  *  Holds on account balances.
  */
-export interface HoldsV9420  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<HoldsV9420>
-    getDefault(block: Block): v9420.IdAmount[]
-    get(block: Block, key: v9420.AccountId32): Promise<(v9420.IdAmount[] | undefined)>
-    getMany(block: Block, keys: v9420.AccountId32[]): Promise<(v9420.IdAmount[] | undefined)[]>
-    getKeys(block: Block): Promise<v9420.AccountId32[]>
-    getKeys(block: Block, key: v9420.AccountId32): Promise<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<v9420.AccountId32[]>
-    getPairs(block: Block): Promise<[k: v9420.AccountId32, v: (v9420.IdAmount[] | undefined)][]>
-    getPairs(block: Block, key: v9420.AccountId32): Promise<[k: v9420.AccountId32, v: (v9420.IdAmount[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v9420.AccountId32, v: (v9420.IdAmount[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<[k: v9420.AccountId32, v: (v9420.IdAmount[] | undefined)][]>
-}
+export type HoldsV9420 = GetStorageType<[key: v9420.AccountId32], v9420.IdAmount[], 'Default', true>
 
 /**
  *  Holds on account balances.
  */
-export interface HoldsV1001000  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<HoldsV1001000>
-    getDefault(block: Block): v1001000.IdAmount[]
-    get(block: Block, key: v1001000.AccountId32): Promise<(v1001000.IdAmount[] | undefined)>
-    getMany(block: Block, keys: v1001000.AccountId32[]): Promise<(v1001000.IdAmount[] | undefined)[]>
-    getKeys(block: Block): Promise<v1001000.AccountId32[]>
-    getKeys(block: Block, key: v1001000.AccountId32): Promise<v1001000.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v1001000.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block, key: v1001000.AccountId32): AsyncIterable<v1001000.AccountId32[]>
-    getPairs(block: Block): Promise<[k: v1001000.AccountId32, v: (v1001000.IdAmount[] | undefined)][]>
-    getPairs(block: Block, key: v1001000.AccountId32): Promise<[k: v1001000.AccountId32, v: (v1001000.IdAmount[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v1001000.AccountId32, v: (v1001000.IdAmount[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v1001000.AccountId32): AsyncIterable<[k: v1001000.AccountId32, v: (v1001000.IdAmount[] | undefined)][]>
-}
+export type HoldsV1001000 = GetStorageType<[key: v1001000.AccountId32], v1001000.IdAmount[], 'Default', true>
 
 export const freezes = storage('Balances.Freezes', {
     /**
@@ -407,39 +282,9 @@ export const freezes = storage('Balances.Freezes', {
 /**
  *  Freeze locks on account balances.
  */
-export interface FreezesV9420  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<FreezesV9420>
-    getDefault(block: Block): v9420.Type_544[]
-    get(block: Block, key: v9420.AccountId32): Promise<(v9420.Type_544[] | undefined)>
-    getMany(block: Block, keys: v9420.AccountId32[]): Promise<(v9420.Type_544[] | undefined)[]>
-    getKeys(block: Block): Promise<v9420.AccountId32[]>
-    getKeys(block: Block, key: v9420.AccountId32): Promise<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v9420.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<v9420.AccountId32[]>
-    getPairs(block: Block): Promise<[k: v9420.AccountId32, v: (v9420.Type_544[] | undefined)][]>
-    getPairs(block: Block, key: v9420.AccountId32): Promise<[k: v9420.AccountId32, v: (v9420.Type_544[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v9420.AccountId32, v: (v9420.Type_544[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v9420.AccountId32): AsyncIterable<[k: v9420.AccountId32, v: (v9420.Type_544[] | undefined)][]>
-}
+export type FreezesV9420 = GetStorageType<[key: v9420.AccountId32], v9420.Type_544[], 'Default', true>
 
 /**
  *  Freeze locks on account balances.
  */
-export interface FreezesV1001000  {
-    is(block: RuntimeCtx): boolean
-    isExists(block: RuntimeCtx): boolean
-    at(block: Block): GetStorageAtBlockType<FreezesV1001000>
-    getDefault(block: Block): v1001000.Type_566[]
-    get(block: Block, key: v1001000.AccountId32): Promise<(v1001000.Type_566[] | undefined)>
-    getMany(block: Block, keys: v1001000.AccountId32[]): Promise<(v1001000.Type_566[] | undefined)[]>
-    getKeys(block: Block): Promise<v1001000.AccountId32[]>
-    getKeys(block: Block, key: v1001000.AccountId32): Promise<v1001000.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v1001000.AccountId32[]>
-    getKeysPaged(pageSize: number, block: Block, key: v1001000.AccountId32): AsyncIterable<v1001000.AccountId32[]>
-    getPairs(block: Block): Promise<[k: v1001000.AccountId32, v: (v1001000.Type_566[] | undefined)][]>
-    getPairs(block: Block, key: v1001000.AccountId32): Promise<[k: v1001000.AccountId32, v: (v1001000.Type_566[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v1001000.AccountId32, v: (v1001000.Type_566[] | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v1001000.AccountId32): AsyncIterable<[k: v1001000.AccountId32, v: (v1001000.Type_566[] | undefined)][]>
-}
+export type FreezesV1001000 = GetStorageType<[key: v1001000.AccountId32], v1001000.Type_566[], 'Default', true>

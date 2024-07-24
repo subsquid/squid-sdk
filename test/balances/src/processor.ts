@@ -1,7 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from '@subsquid/ss58'
 import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
-import {Bytes} from '@subsquid/substrate-runtime'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
 import {events} from './types'

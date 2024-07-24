@@ -35,13 +35,10 @@ export const transfer = call('Balances.transfer', {
      * 
      *  # </weight>
      */
-    v1020: new CallType(
-        'Balances.transfer',
-        sts.struct({
-            dest: v1020.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1020: sts.struct({
+        dest: v1020.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Transfer some liquid free balance to another account.
      * 
@@ -68,13 +65,10 @@ export const transfer = call('Balances.transfer', {
      * 
      *  # </weight>
      */
-    v1050: new CallType(
-        'Balances.transfer',
-        sts.struct({
-            dest: v1050.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1050: sts.struct({
+        dest: v1050.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Transfer some liquid free balance to another account.
      * 
@@ -104,13 +98,10 @@ export const transfer = call('Balances.transfer', {
      *  - Origin account is already in memory, so no DB operations for them.
      *  # </weight>
      */
-    v2028: new CallType(
-        'Balances.transfer',
-        sts.struct({
-            dest: v2028.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v2028: sts.struct({
+        dest: v2028.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      * Transfer some liquid free balance to another account.
      * 
@@ -141,13 +132,10 @@ export const transfer = call('Balances.transfer', {
      * - Origin account is already in memory, so no DB operations for them.
      * # </weight>
      */
-    v9111: new CallType(
-        'Balances.transfer',
-        sts.struct({
-            dest: v9111.MultiAddress,
-            value: sts.bigint(),
-        })
-    ),
+    v9111: sts.struct({
+        dest: v9111.MultiAddress,
+        value: sts.bigint(),
+    }),
 })
 
 export const setBalance = call('Balances.set_balance', {
@@ -166,14 +154,11 @@ export const setBalance = call('Balances.set_balance', {
      *  - Contains a limited number of reads and writes.
      *  # </weight>
      */
-    v1020: new CallType(
-        'Balances.set_balance',
-        sts.struct({
-            who: v1020.LookupSource,
-            newFree: sts.bigint(),
-            newReserved: sts.bigint(),
-        })
-    ),
+    v1020: sts.struct({
+        who: v1020.LookupSource,
+        newFree: sts.bigint(),
+        newReserved: sts.bigint(),
+    }),
     /**
      *  Set the balances of a given account.
      * 
@@ -189,14 +174,11 @@ export const setBalance = call('Balances.set_balance', {
      *  - Contains a limited number of reads and writes.
      *  # </weight>
      */
-    v1050: new CallType(
-        'Balances.set_balance',
-        sts.struct({
-            who: v1050.LookupSource,
-            newFree: sts.bigint(),
-            newReserved: sts.bigint(),
-        })
-    ),
+    v1050: sts.struct({
+        who: v1050.LookupSource,
+        newFree: sts.bigint(),
+        newReserved: sts.bigint(),
+    }),
     /**
      *  Set the balances of a given account.
      * 
@@ -217,14 +199,11 @@ export const setBalance = call('Balances.set_balance', {
      *  - DB Weight: 1 Read, 1 Write to `who`
      *  # </weight>
      */
-    v2028: new CallType(
-        'Balances.set_balance',
-        sts.struct({
-            who: v2028.LookupSource,
-            newFree: sts.bigint(),
-            newReserved: sts.bigint(),
-        })
-    ),
+    v2028: sts.struct({
+        who: v2028.LookupSource,
+        newFree: sts.bigint(),
+        newReserved: sts.bigint(),
+    }),
     /**
      * Set the balances of a given account.
      * 
@@ -245,14 +224,11 @@ export const setBalance = call('Balances.set_balance', {
      * - DB Weight: 1 Read, 1 Write to `who`
      * # </weight>
      */
-    v9111: new CallType(
-        'Balances.set_balance',
-        sts.struct({
-            who: v9111.MultiAddress,
-            newFree: sts.bigint(),
-            newReserved: sts.bigint(),
-        })
-    ),
+    v9111: sts.struct({
+        who: v9111.MultiAddress,
+        newFree: sts.bigint(),
+        newReserved: sts.bigint(),
+    }),
 })
 
 export const forceTransfer = call('Balances.force_transfer', {
@@ -260,26 +236,20 @@ export const forceTransfer = call('Balances.force_transfer', {
      *  Exactly as `transfer`, except the origin must be root and the source account may be
      *  specified.
      */
-    v1020: new CallType(
-        'Balances.force_transfer',
-        sts.struct({
-            source: v1020.LookupSource,
-            dest: v1020.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1020: sts.struct({
+        source: v1020.LookupSource,
+        dest: v1020.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Exactly as `transfer`, except the origin must be root and the source account may be
      *  specified.
      */
-    v1050: new CallType(
-        'Balances.force_transfer',
-        sts.struct({
-            source: v1050.LookupSource,
-            dest: v1050.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1050: sts.struct({
+        source: v1050.LookupSource,
+        dest: v1050.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Exactly as `transfer`, except the origin must be root and the source account may be
      *  specified.
@@ -288,14 +258,11 @@ export const forceTransfer = call('Balances.force_transfer', {
      *    not assumed to be in the overlay.
      *  # </weight>
      */
-    v2028: new CallType(
-        'Balances.force_transfer',
-        sts.struct({
-            source: v2028.LookupSource,
-            dest: v2028.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v2028: sts.struct({
+        source: v2028.LookupSource,
+        dest: v2028.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      * Exactly as `transfer`, except the origin must be root and the source account may be
      * specified.
@@ -304,14 +271,11 @@ export const forceTransfer = call('Balances.force_transfer', {
      *   assumed to be in the overlay.
      * # </weight>
      */
-    v9111: new CallType(
-        'Balances.force_transfer',
-        sts.struct({
-            source: v9111.MultiAddress,
-            dest: v9111.MultiAddress,
-            value: sts.bigint(),
-        })
-    ),
+    v9111: sts.struct({
+        source: v9111.MultiAddress,
+        dest: v9111.MultiAddress,
+        value: sts.bigint(),
+    }),
 })
 
 export const transferKeepAlive = call('Balances.transfer_keep_alive', {
@@ -323,13 +287,10 @@ export const transferKeepAlive = call('Balances.transfer_keep_alive', {
      * 
      *  [`transfer`]: struct.Module.html#method.transfer
      */
-    v1020: new CallType(
-        'Balances.transfer_keep_alive',
-        sts.struct({
-            dest: v1020.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1020: sts.struct({
+        dest: v1020.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Same as the [`transfer`] call, but with a check that the transfer will not kill the
      *  origin account.
@@ -338,13 +299,10 @@ export const transferKeepAlive = call('Balances.transfer_keep_alive', {
      * 
      *  [`transfer`]: struct.Module.html#method.transfer
      */
-    v1050: new CallType(
-        'Balances.transfer_keep_alive',
-        sts.struct({
-            dest: v1050.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v1050: sts.struct({
+        dest: v1050.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      *  Same as the [`transfer`] call, but with a check that the transfer will not kill the
      *  origin account.
@@ -358,13 +316,10 @@ export const transferKeepAlive = call('Balances.transfer_keep_alive', {
      *  - DB Weight: 1 Read and 1 Write to dest (sender is in overlay already)
      *  #</weight>
      */
-    v2028: new CallType(
-        'Balances.transfer_keep_alive',
-        sts.struct({
-            dest: v2028.LookupSource,
-            value: sts.bigint(),
-        })
-    ),
+    v2028: sts.struct({
+        dest: v2028.LookupSource,
+        value: sts.bigint(),
+    }),
     /**
      * Same as the [`transfer`] call, but with a check that the transfer will not kill the
      * origin account.
@@ -378,13 +333,10 @@ export const transferKeepAlive = call('Balances.transfer_keep_alive', {
      * - DB Weight: 1 Read and 1 Write to dest (sender is in overlay already)
      * #</weight>
      */
-    v9111: new CallType(
-        'Balances.transfer_keep_alive',
-        sts.struct({
-            dest: v9111.MultiAddress,
-            value: sts.bigint(),
-        })
-    ),
+    v9111: sts.struct({
+        dest: v9111.MultiAddress,
+        value: sts.bigint(),
+    }),
 })
 
 export const transferAll = call('Balances.transfer_all', {
@@ -408,13 +360,10 @@ export const transferAll = call('Balances.transfer_all', {
      *  - O(1). Just like transfer, but reading the user's transferable balance first.
      *    #</weight>
      */
-    v9050: new CallType(
-        'Balances.transfer_all',
-        sts.struct({
-            dest: v9050.LookupSource,
-            keepAlive: sts.boolean(),
-        })
-    ),
+    v9050: sts.struct({
+        dest: v9050.LookupSource,
+        keepAlive: sts.boolean(),
+    }),
     /**
      * Transfer the entire transferable balance from the caller account.
      * 
@@ -434,13 +383,10 @@ export const transferAll = call('Balances.transfer_all', {
      * - O(1). Just like transfer, but reading the user's transferable balance first.
      *   #</weight>
      */
-    v9111: new CallType(
-        'Balances.transfer_all',
-        sts.struct({
-            dest: v9111.MultiAddress,
-            keepAlive: sts.boolean(),
-        })
-    ),
+    v9111: sts.struct({
+        dest: v9111.MultiAddress,
+        keepAlive: sts.boolean(),
+    }),
 })
 
 export const forceUnreserve = call('Balances.force_unreserve', {
@@ -449,13 +395,10 @@ export const forceUnreserve = call('Balances.force_unreserve', {
      * 
      * Can only be called by ROOT.
      */
-    v9111: new CallType(
-        'Balances.force_unreserve',
-        sts.struct({
-            who: v9111.MultiAddress,
-            amount: sts.bigint(),
-        })
-    ),
+    v9111: sts.struct({
+        who: v9111.MultiAddress,
+        amount: sts.bigint(),
+    }),
 })
 
 export const transferAllowDeath = call('Balances.transfer_allow_death', {
@@ -468,13 +411,10 @@ export const transferAllowDeath = call('Balances.transfer_allow_death', {
      * 
      * The dispatch origin for this call must be `Signed` by the transactor.
      */
-    v9420: new CallType(
-        'Balances.transfer_allow_death',
-        sts.struct({
-            dest: v9420.MultiAddress,
-            value: sts.bigint(),
-        })
-    ),
+    v9420: sts.struct({
+        dest: v9420.MultiAddress,
+        value: sts.bigint(),
+    }),
 })
 
 export const setBalanceDeprecated = call('Balances.set_balance_deprecated', {
@@ -486,14 +426,11 @@ export const setBalanceDeprecated = call('Balances.set_balance_deprecated', {
      * 
      * WARNING: This call is DEPRECATED! Use `force_set_balance` instead.
      */
-    v9420: new CallType(
-        'Balances.set_balance_deprecated',
-        sts.struct({
-            who: v9420.MultiAddress,
-            newFree: sts.bigint(),
-            oldReserved: sts.bigint(),
-        })
-    ),
+    v9420: sts.struct({
+        who: v9420.MultiAddress,
+        newFree: sts.bigint(),
+        oldReserved: sts.bigint(),
+    }),
 })
 
 export const upgradeAccounts = call('Balances.upgrade_accounts', {
@@ -507,12 +444,9 @@ export const upgradeAccounts = call('Balances.upgrade_accounts', {
      * be upgraded. (We let some not have to be upgraded just in order to allow for the
      * possibililty of churn).
      */
-    v9420: new CallType(
-        'Balances.upgrade_accounts',
-        sts.struct({
-            who: sts.array(() => v9420.AccountId32),
-        })
-    ),
+    v9420: sts.struct({
+        who: sts.array(() => v9420.AccountId32),
+    }),
 })
 
 export const forceSetBalance = call('Balances.force_set_balance', {
@@ -521,24 +455,18 @@ export const forceSetBalance = call('Balances.force_set_balance', {
      * 
      * The dispatch origin for this call is `root`.
      */
-    v9420: new CallType(
-        'Balances.force_set_balance',
-        sts.struct({
-            who: v9420.MultiAddress,
-            newFree: sts.bigint(),
-        })
-    ),
+    v9420: sts.struct({
+        who: v9420.MultiAddress,
+        newFree: sts.bigint(),
+    }),
 })
 
 export const forceAdjustTotalIssuance = call('Balances.force_adjust_total_issuance', {
     /**
      * See [`Pallet::force_adjust_total_issuance`].
      */
-    v1002000: new CallType(
-        'Balances.force_adjust_total_issuance',
-        sts.struct({
-            direction: v1002000.AdjustmentDirection,
-            delta: sts.bigint(),
-        })
-    ),
+    v1002000: sts.struct({
+        direction: v1002000.AdjustmentDirection,
+        delta: sts.bigint(),
+    }),
 })
