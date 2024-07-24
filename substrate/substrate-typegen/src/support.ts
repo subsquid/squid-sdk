@@ -59,7 +59,7 @@ export class VersionedItem<V extends Record<string, VersionedType>> {
     constructor(
         readonly name: string,
         protected versions: V,
-        protected isExists: (block: RuntimeCtx, name: string) => boolean,
+        readonly isExists: (block: RuntimeCtx, name: string) => boolean,
         protected NoVersionError: new (...args: any[]) => Error = UnknownVersionError
     ) {}
 

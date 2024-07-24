@@ -3,7 +3,7 @@ import * as ss58 from '@subsquid/ss58'
 import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
-import {events} from './types'
+import {events, storage} from './types'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -37,6 +37,14 @@ processor.run(new TypeormDatabase(), async ctx => {
                     }
                 }
             })
+
+            /**
+             * Just a demo
+             */
+            // let balances = await storage.balances.account.at(block.header, async (s) => {
+            //     let [from, to] = await s.getMany([[rec.from], [rec.to]])
+            //     return {from: from.free, to: to.free}
+            // })
 
             transfers.push(new Transfer({
                 id: event.id,
