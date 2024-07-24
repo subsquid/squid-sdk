@@ -493,8 +493,3 @@ function isSubcall(parent: CallKey, call: CallKey): boolean {
     }
     return true
 }
-
-
-function traverseCalls(prev: Call, call: Call) {
-
-}
