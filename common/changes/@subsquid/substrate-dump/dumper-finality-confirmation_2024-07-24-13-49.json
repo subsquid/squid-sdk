@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-dump",
+      "comment": "allow to configure finalityConfirmation",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-dump"
+}

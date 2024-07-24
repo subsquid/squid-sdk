@@ -13,6 +13,7 @@ import {MetadataWriter} from './metadata'
 
 interface Options extends DumperOptions {
     withTrace?: boolean | string
+    finalityConfirmation?: number
 }
 
 
@@ -20,13 +21,15 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
     protected setUpProgram(program: Command) {
         program.description('RPC data archiving tool for substrate based chains')
         program.option('--with-trace [targets]', 'Fetch block trace')
+        program.option('--finality-confirmation', 'Finality offset from the head of the chain')
     }
 
     @def
     private getDataSource(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.rpc(),
-            headPollInterval: 10_000
+            headPollInterval: 10_000,
+            finalityConfirmation: this.options().finalityConfirmation
         })
     }
 
