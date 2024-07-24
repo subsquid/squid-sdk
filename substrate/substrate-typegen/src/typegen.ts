@@ -108,34 +108,28 @@ export class Typegen {
                         let useSts = file.useSts(it.runtime)
 
                         out.blockComment(it.def.docs)
-                        out.line(`${this.getVersionName(it.runtime)}: new ${fix}Type(`)
-                        out.indentation(() => {
-                            out.line(`'${pallet}.${name}',`)
-                            if (it.def.fields.length == 0 || it.def.fields[0].name == null) {
-                                if (it.def.fields.length == 1) {
-                                    out.line(
-                                        useSts(it.def.fields[0].type)
-                                    )
-                                } else {
-                                    let list = it.def.fields.map(f => useSts(f.type)).join(', ')
-                                    if (list) {
-                                        out.line(`sts.tuple([${list}])`)
-                                    } else {
-                                        out.line('sts.unit()')
-                                    }
-                                }
+                        let versionName = this.getVersionName(it.runtime)
+                        if (it.def.fields.length == 0 || it.def.fields[0].name == null) {
+                            if (it.def.fields.length == 1) {
+                                out.line(`${versionName}: ${useSts(it.def.fields[0].type)},` )
                             } else {
-                                out.line('sts.struct({')
-                                out.indentation(() => {
-                                    for (let f of it.def.fields) {
-                                        out.blockComment(f.docs)
-                                        out.line(`${f.name}: ${useSts(f.type)},`)
-                                    }
-                                })
-                                out.line('})')
+                                let list = it.def.fields.map(f => useSts(f.type)).join(', ')
+                                if (list) {
+                                    out.line(`${versionName}: sts.tuple([${list}]),`)
+                                } else {
+                                    out.line(`${versionName}: sts.unit(),`)
+                                }
                             }
-                        })
-                        out.line('),')
+                        } else {
+                            out.line(`${versionName}: sts.struct({`)
+                            out.indentation(() => {
+                                for (let f of it.def.fields) {
+                                    out.blockComment(f.docs)
+                                    out.line(`${f.name}: ${useSts(f.type)},`)
+                                }
+                            })
+                            out.line('}),')
+                        }
                     }
                 })
                 out.line('})')
@@ -160,12 +154,7 @@ export class Typegen {
                         let useSts = file.useSts(it.runtime)
 
                         out.blockComment(it.def.docs)
-                        out.line(`${this.getVersionName(it.runtime)}: new ConstantType(`)
-                        out.indentation(() => {
-                            out.line(`'${it.name}',`)
-                            out.line(useSts(it.def.type))
-                        })
-                        out.line('),')
+                        out.line(`${this.getVersionName(it.runtime)}: ${useSts(it.def.type)},`)
                     }
                 })
                 out.line(`})`)
@@ -216,7 +205,6 @@ export class Typegen {
                             out.blockComment(it.def.docs)
                             out.block(`export interface ${ifName} `, () => {
                                 out.line(`is(block: RuntimeCtx): boolean`)
-                                out.line(`isExists(block: RuntimeCtx): boolean`)
                                 out.line(`at(block: Block): GetStorageAtBlockType<${ifName}>`)
 
                                 let value = useIfs(it.def.value)
