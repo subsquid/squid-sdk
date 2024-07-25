@@ -301,14 +301,14 @@ export type StorageMethods<
             ? {}
             : {
                     getAll(...args: Extra): Promise<V[]>
-                    getMany(...args: [...Extra, keys: (K extends [any] ? K[0] : K)[]]): Promise<V[]>
+                    getMany(...args: [...Extra, keys: (K extends readonly [any] ? K[0] : K)[]]): Promise<V[]>
                 } & (D extends false
                     ? {}
                     : {
-                        getKeys: EnumerateKeys<K, Promise<(K extends [any] ? K[0] : K)[]>, Extra>
+                        getKeys: EnumerateKeys<K, Promise<(K extends readonly [any] ? K[0] : K)[]>, Extra>
                         getKeysPaged: EnumerateKeys<
                             K,
-                            AsyncIterable<(K extends [any] ? K[0] : K)[]>,
+                            AsyncIterable<(K extends readonly [any] ? K[0] : K)[]>,
                             [pageSize: number, ...Extra]
                         >
                         getPairs: EnumerateKeys<K, Promise<[key: K, value: V][]>, Extra>
@@ -392,6 +392,31 @@ export class StorageType {
     }
 }
 
-export function storage<V extends Record<string, VersionedType>>(name: string, versions: V): VersionedItem<V> & V {
-    return Object.assign(new VersionedItem(name, versions, (b, n) => b._runtime.hasStorage(n)), versions)
+
+export type StorageOptions<
+    K extends sts.Type[],
+    V extends sts.Type,
+    M extends 'Required' | 'Optional' | 'Default',
+    D extends boolean
+> = [key: K, value: V, modifier: M, isKeysDecodable: D]
+
+
+export type VersionedStorage<
+    T extends Record<string, StorageOptions<any, any, any, any>>,
+    R extends Record<string, VersionedType> = {
+        [K in keyof T]: GetStorageType<sts.GetTupleType<T[K][0]>, sts.GetType<T[K][1]>, T[K][2], T[K][3]>
+    }
+> = Simplify<VersionedItem<R> & R>
+
+
+export function storage<V extends Record<string, StorageOptions<any, any, any, any>>>(
+    name: string,
+     versions: V
+): VersionedStorage<V> {
+    let items: any = {}
+    for (let key in versions) {
+        let version = versions[key]
+        items[key] = new StorageType(name, version[2], version[0], version[1])
+    }
+    return Object.assign(new VersionedItem(name, items, (b, n) => b._runtime.hasStorage(n)), items)
 }

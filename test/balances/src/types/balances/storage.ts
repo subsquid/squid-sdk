@@ -10,7 +10,7 @@ export const totalIssuance = storage('Balances.TotalIssuance', {
     /**
      *  The total units issued in the system.
      */
-    v1020: new StorageType('Balances.TotalIssuance', 'Default', [], v1020.Balance) as TotalIssuanceV1020,
+    v1020: [[], v1020.Balance, 'Default', true] as const,
 })
 
 /**
@@ -22,7 +22,7 @@ export const vesting = storage('Balances.Vesting', {
     /**
      *  Information regarding the vesting of a given account.
      */
-    v1020: new StorageType('Balances.Vesting', 'Optional', [v1020.AccountId], v1020.VestingSchedule) as VestingV1020,
+    v1020: [[v1020.AccountId], v1020.VestingSchedule, 'Optional', false] as const,
 })
 
 /**
@@ -44,7 +44,7 @@ export const freeBalance = storage('Balances.FreeBalance', {
      *  `system::AccountNonce` is also deleted if `ReservedBalance` is also zero (it also gets
      *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.
      */
-    v1020: new StorageType('Balances.FreeBalance', 'Default', [v1020.AccountId], v1020.Balance) as FreeBalanceV1020,
+    v1020: [[v1020.AccountId], v1020.Balance, 'Default', false] as const,
 })
 
 /**
@@ -76,7 +76,7 @@ export const reservedBalance = storage('Balances.ReservedBalance', {
      *  `system::AccountNonce` is also deleted if `FreeBalance` is also zero (it also gets
      *  collapsed to zero if it ever becomes less than `ExistentialDeposit`.)
      */
-    v1020: new StorageType('Balances.ReservedBalance', 'Default', [v1020.AccountId], v1020.Balance) as ReservedBalanceV1020,
+    v1020: [[v1020.AccountId], v1020.Balance, 'Default', false] as const,
 })
 
 /**
@@ -98,12 +98,12 @@ export const locks = storage('Balances.Locks', {
     /**
      *  Any liquidity locks on some account balances.
      */
-    v1020: new StorageType('Balances.Locks', 'Default', [v1020.AccountId], sts.array(() => v1020.BalanceLock)) as LocksV1020,
+    v1020: [[v1020.AccountId], sts.array(() => v1020.BalanceLock), 'Default', false] as const,
     /**
      *  Any liquidity locks on some account balances.
      *  NOTE: Should only be accessed when setting, changing and freeing a lock.
      */
-    v1050: new StorageType('Balances.Locks', 'Default', [v1050.AccountId], sts.array(() => v1050.BalanceLock)) as LocksV1050,
+    v1050: [[v1050.AccountId], sts.array(() => v1050.BalanceLock), 'Default', false] as const,
 })
 
 /**
@@ -126,7 +126,7 @@ export const account = storage('Balances.Account', {
      * 
      *  NOTE: This is only used in the case that this module is used to store balances.
      */
-    v1050: new StorageType('Balances.Account', 'Default', [v1050.AccountId], v1050.AccountData) as AccountV1050,
+    v1050: [[v1050.AccountId], v1050.AccountData, 'Default', false] as const,
     /**
      *  The Balances pallet example of storing the balance of an account.
      * 
@@ -153,7 +153,7 @@ export const account = storage('Balances.Account', {
      *  `Balances` pallet, which uses a `StorageMap` to store balances data only.
      *  NOTE: This is only used in the case that this pallet is used to store balances.
      */
-    v9420: new StorageType('Balances.Account', 'Default', [v9420.AccountId32], v9420.AccountData) as AccountV9420,
+    v9420: [[v9420.AccountId32], v9420.AccountData, 'Default', true] as const,
 })
 
 /**
@@ -200,13 +200,13 @@ export const storageVersion = storage('Balances.StorageVersion', {
      * 
      *  This is set to v2.0.0 for new networks.
      */
-    v1050: new StorageType('Balances.StorageVersion', 'Default', [], v1050.Releases) as StorageVersionV1050,
+    v1050: [[], v1050.Releases, 'Default', true] as const,
     /**
      *  Storage version of the pallet.
      * 
      *  This is set to v2.0.0 for new networks.
      */
-    v9111: new StorageType('Balances.StorageVersion', 'Default', [], v9111.Releases) as StorageVersionV9111,
+    v9111: [[], v9111.Releases, 'Default', true] as const,
 })
 
 /**
@@ -227,7 +227,7 @@ export const reserves = storage('Balances.Reserves', {
     /**
      *  Named reserves on some account balances.
      */
-    v9050: new StorageType('Balances.Reserves', 'Default', [v9050.AccountId], sts.array(() => v9050.ReserveData)) as ReservesV9050,
+    v9050: [[v9050.AccountId], sts.array(() => v9050.ReserveData), 'Default', true] as const,
 })
 
 /**
@@ -239,7 +239,7 @@ export const inactiveIssuance = storage('Balances.InactiveIssuance', {
     /**
      *  The total units of outstanding deactivated balance in the system.
      */
-    v9340: new StorageType('Balances.InactiveIssuance', 'Default', [], sts.bigint()) as InactiveIssuanceV9340,
+    v9340: [[], sts.bigint(), 'Default', true] as const,
 })
 
 /**
@@ -251,11 +251,11 @@ export const holds = storage('Balances.Holds', {
     /**
      *  Holds on account balances.
      */
-    v9420: new StorageType('Balances.Holds', 'Default', [v9420.AccountId32], sts.array(() => v9420.IdAmount)) as HoldsV9420,
+    v9420: [[v9420.AccountId32], sts.array(() => v9420.IdAmount), 'Default', true] as const,
     /**
      *  Holds on account balances.
      */
-    v1001000: new StorageType('Balances.Holds', 'Default', [v1001000.AccountId32], sts.array(() => v1001000.IdAmount)) as HoldsV1001000,
+    v1001000: [[v1001000.AccountId32], sts.array(() => v1001000.IdAmount), 'Default', true] as const,
 })
 
 /**
@@ -272,11 +272,11 @@ export const freezes = storage('Balances.Freezes', {
     /**
      *  Freeze locks on account balances.
      */
-    v9420: new StorageType('Balances.Freezes', 'Default', [v9420.AccountId32], sts.array(() => v9420.Type_544)) as FreezesV9420,
+    v9420: [[v9420.AccountId32], sts.array(() => v9420.Type_544), 'Default', true] as const,
     /**
      *  Freeze locks on account balances.
      */
-    v1001000: new StorageType('Balances.Freezes', 'Default', [v1001000.AccountId32], sts.array(() => v1001000.Type_566)) as FreezesV1001000,
+    v1001000: [[v1001000.AccountId32], sts.array(() => v1001000.Type_566), 'Default', true] as const,
 })
 
 /**

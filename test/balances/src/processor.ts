@@ -41,7 +41,7 @@ processor.run(new TypeormDatabase(), async ctx => {
             /**
              * Just a demo
              */
-            // let balances = await storage.balances.account.at(block.header, async (s, v) => {
+            // let balances = await storage.balances.account.at(block.header, async (s, _) => {
             //     let [from, to] = await s.getMany([rec.from, rec.to])
             //     return {from: from.free, to: to.free}
             // })

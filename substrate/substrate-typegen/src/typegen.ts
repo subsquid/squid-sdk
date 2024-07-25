@@ -192,12 +192,12 @@ export class Typegen {
 
                         out.blockComment(it.def.docs)
                         out.line(
-                            `${this.getVersionName(it.runtime)}: new StorageType(` +
-                            `'${it.name}', ` +
-                            `'${it.def.modifier}', ` +
+                            `${this.getVersionName(it.runtime)}: [` +
                             `[${keyListExp}], ` +
-                            `${valueExp}` +
-                            `) as ${ifName},`
+                            `${valueExp}, ` +
+                            `'${it.def.modifier}', ` +
+                            `${isStorageKeyDecodable(it.def)}` +
+                            `] as const,`
                         )
 
                         ifs.push(() => {

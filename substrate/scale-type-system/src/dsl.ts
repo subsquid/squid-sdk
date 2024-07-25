@@ -18,11 +18,11 @@ import {
     UnknownType
 } from './types/primitives'
 import {GetStructType, StructType} from './types/struct'
-import {TupleType} from './types/tuple'
+import {TupleType, GetTupleType} from './types/tuple'
 import {UnionType} from './types/union'
 
 
-export {GetType, ExternalEnum, ValueCase}
+export {GetType, ExternalEnum, ValueCase, GetEnumType, GetTupleType, GetStructType}
 
 
 const numberType = new NumberType()

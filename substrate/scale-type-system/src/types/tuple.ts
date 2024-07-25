@@ -5,9 +5,7 @@ import {BaseType, ScaleType, Type, TypeChecker} from '../type-checker'
 import {GetType} from '../type-util'
 
 
-export type GetTupleType<T> = {
-    [I in keyof T]: GetType<T[I]>
-}
+export type GetTupleType<T> = T extends readonly [infer A, ...infer R] ? [GetType<A>, ...GetTupleType<R>] : []
 
 
 export class TupleType<T extends readonly Type[]> extends BaseType<GetTupleType<T>> {
