@@ -62,7 +62,10 @@ export class Abi {
             throw new Error(`Unable to find event with index ${idx}`);
         }
 
-        return this.scaleCodec.decode(event.type, src)
+        return {
+            __type: event.name,
+            ...this.scaleCodec.decode(event.type, src)
+        }
     }
 
     decodeEventV5(data: Uint8Array | Bytes, topics: Bytes[]) {
@@ -70,7 +73,10 @@ export class Abi {
         if (topic) {
             let event = this.events.find(e => e.signatureTopic == topic)
             if (event) {
-                return this.scaleCodec.decodeBinary(event.type, data)
+                return {
+                    __type: event.name,
+                    ...this.scaleCodec.decodeBinary(event.type, data)
+                }
             }
         }
 
@@ -86,7 +92,10 @@ export class Abi {
 
         if (potentialEvents.length == 1) {
             let event = potentialEvents[0]
-            return this.scaleCodec.decodeBinary(event.type, data)
+            return {
+                __type: event.name,
+                ...this.scaleCodec.decodeBinary(event.type, data)
+            }
         }
 
         throw new Error('Unable to determine event')

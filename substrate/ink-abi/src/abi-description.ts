@@ -22,6 +22,7 @@ export interface SelectorsMap {
 
 
 export interface AbiEvent {
+    name: string
     type: Ti
     amountIndexed: number
     signatureTopic?: Bytes
@@ -98,6 +99,7 @@ export class AbiDescription {
             })
 
             return {
+                name: normalizeLabel(e.label),
                 type: ti,
                 amountIndexed: e.args.reduce((val, e) => e.indexed ? val + 1 : val, 0),
                 signatureTopic: e.signature_topic as Bytes
