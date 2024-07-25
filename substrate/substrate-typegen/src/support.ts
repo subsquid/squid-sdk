@@ -68,15 +68,15 @@ export class VersionedItem<V extends Record<string, VersionedType>> {
     }
 
     at<T>(block: RuntimeCtx, cb: (this: this, ...args: GetVersionedItemEntries<V>) => T): T {
-        this.at = this.createVersionDispatch()
+        this.at = this.createMatchVersion()
         return this.at(block, cb)
     }
 
-    private createVersionDispatch(): any {
+    private createMatchVersion(): any {
         let body = ''
         for (let key in this.versions) {
             let version = `this.versions['${key}']`
-            body += `if (${version}.is(block)) return cb.call(this, version.at(block), '${key}'))\n`
+            body += `if (${version}.is(block)) return cb.call(this, ${version}.at(block), '${key}')\n`
         }
         body += `throw new this.NoVersionError(this.name)\n`
         return new Function('block', 'cb', body)
@@ -136,7 +136,9 @@ export type VersionedEvent<
 
 export function event<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedEvent<V> {
     let items: any = {}
-    for (let key in versions) items[key] = new EventType(name, versions[key])
+    for (let prop in versions) {
+        items[prop] = new EventType(name, versions[prop])
+    }
     return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasEvent(name)), items)
 }
 
@@ -193,7 +195,9 @@ export type VersionedCall<
 
 export function call<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedCall<V> {
     let items: any = {}
-    for (let key in versions) items[key] = new EventType(name, versions[key])
+    for (let prop in versions) {
+        items[prop] = new EventType(name, versions[prop])
+    }
     return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasCall(name)), items)
 }
 
@@ -235,7 +239,9 @@ export type VersionedConstant<
 
 export function constant<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedConstant<V> {
     let items: any = {}
-    for (let key in versions) items[key] = new ConstantType(name, versions[key])
+    for (let prop in versions) {
+        items[prop] = new ConstantType(name, versions[prop])
+    }
     return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasConstant(name)), items)
 }
 
@@ -292,31 +298,33 @@ export type StorageMethods<
     V,
     M extends 'Required' | 'Optional' | 'Default',
     D extends boolean,
-    Extra extends any[] = []
+    Extra extends any[] = [],
+    ReturnValue = M extends 'Required' ? V : V | undefined,
+    Key = K extends readonly [any] ? K[0] : K
 > = Simplify<
     {
-        get(...args: [...Extra, ...K]): Promise<M extends 'Required' ? V : V | undefined>
+        get(...args: [...Extra, ...K]): Promise<ReturnValue>
     } & (M extends 'Default'
         ? {
-                getDefault(...args: Extra): V
-            }
+              getDefault(...args: Extra): V
+          }
         : {}) &
         ([] extends K
             ? {}
             : {
-                    getAll(...args: Extra): Promise<V[]>
-                    getMany(...args: [...Extra, keys: (K extends readonly [any] ? K[0] : K)[]]): Promise<V[]>
-                } & (D extends false
-                    ? {}
-                    : {
-                        getKeys: EnumerateKeys<K, Promise<(K extends readonly [any] ? K[0] : K)[]>, Extra>
-                        getKeysPaged: EnumerateKeys<
+                  getAll(...args: Extra): Promise<V[]>
+                  getMany(...args: [...Extra, keys: Key[]]): Promise<ReturnValue[]>
+              } & (D extends false
+                  ? {}
+                  : {
+                        getKeys: EnumerateKeys<K, Promise<Key[]>, Extra>
+                        getKeysPaged: EnumerateKeys<K, AsyncIterable<Key[]>, [pageSize: number, ...Extra]>
+                        getPairs: EnumerateKeys<K, Promise<[key: K, value: V][]>, Extra>
+                        getPairsPaged: EnumerateKeys<
                             K,
-                            AsyncIterable<(K extends readonly [any] ? K[0] : K)[]>,
+                            AsyncIterable<[key: K, value: V][]>,
                             [pageSize: number, ...Extra]
                         >
-                        getPairs: EnumerateKeys<K, Promise<[key: K, value: V][]>, Extra>
-                        getPairsPaged: EnumerateKeys<K, AsyncIterable<[key: K, value: V][]>, [pageSize: number, ...Extra]>
                     }))
 >
 
@@ -402,13 +410,13 @@ export type StorageOptions<
     V extends sts.Type,
     M extends 'Required' | 'Optional' | 'Default',
     D extends boolean
-> = [key: K, value: V, modifier: M, isKeysDecodable: D]
+> = {key: K, value: V, modifier: M, isKeyDecodable: D}
 
 
 export type VersionedStorage<
     T extends Record<string, StorageOptions<any, any, any, any>>,
     R extends Record<string, VersionedType> = {
-        [K in keyof T]: GetStorageType<sts.GetTupleType<T[K][0]>, sts.GetType<T[K][1]>, T[K][2], T[K][3]>
+        [K in keyof T]: GetStorageType<sts.GetTupleType<T[K]['key']>, sts.GetType<T[K]['value']>, T[K]['modifier'], T[K]['isKeyDecodable']>
     }
 > = Simplify<VersionedItem<R> & R>
 
@@ -418,9 +426,9 @@ export function storage<V extends Record<string, StorageOptions<any, any, any, a
      versions: V
 ): VersionedStorage<V> {
     let items: any = {}
-    for (let key in versions) {
-        let version = versions[key]
-        items[key] = new StorageType(name, version[2], version[0], version[1])
+    for (let prop in versions) {
+        let {modifier, key, value} = versions[prop]
+        items[prop] = new StorageType(name, modifier, key, value)
     }
     return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasStorage(name), items))
 }

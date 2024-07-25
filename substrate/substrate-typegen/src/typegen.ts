@@ -192,12 +192,12 @@ export class Typegen {
 
                         out.blockComment(it.def.docs)
                         out.line(
-                            `${this.getVersionName(it.runtime)}: [` +
-                            `[${keyListExp}], ` +
-                            `${valueExp}, ` +
-                            `'${it.def.modifier}', ` +
-                            `${isStorageKeyDecodable(it.def)}` +
-                            `] as const,`
+                            `${this.getVersionName(it.runtime)}: {` +
+                            `key: [${keyListExp}], ` +
+                            `value: ${valueExp}, ` +
+                            `modifier: '${it.def.modifier}', ` +
+                            `isKeyDecodable: ${isStorageKeyDecodable(it.def)}` +
+                            `} as const,`
                         )
 
                         ifs.push(() => {
