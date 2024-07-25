@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/fuel-ingest",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Data fetcher and normalizer for Fuel",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -22,7 +22,7 @@
     "@subsquid/fuel-data": "^1.1.0",
     "@subsquid/fuel-normalization": "^1.1.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-ingest-cli": "^0.0.3",
+    "@subsquid/util-internal-ingest-cli": "^0.1.0",
     "@subsquid/util-internal-json": "^1.2.3"
   },
   "devDependencies": {
