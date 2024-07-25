@@ -45,6 +45,7 @@ export class Typegen {
     }
 
     private sts = new Map<Runtime, Sts>()
+    private palletModules = new Map<string, Set<string>>
 
     public readonly dir: OutDir
 
@@ -58,6 +59,7 @@ export class Typegen {
         this.generateEnums('calls')
         this.generateStorage()
         this.generateConsts()
+        this.generatePalletModules()
 
         let index = this.dir.file('index.ts')
 
@@ -99,6 +101,8 @@ export class Typegen {
         for (let [pallet, palletItems] of groupBy(items, it => it.def.pallet)) {
             let file = new ItemFile(this, pallet, fix)
             let out = file.out
+
+            this.getPalletModule(pallet).add(file.name)
 
             for (let [name, versions] of groupBy(palletItems, it => it.def.name)) {
                 out.line()
@@ -146,6 +150,8 @@ export class Typegen {
             let file = new ItemFile(this, pallet, 'Constant')
             let out = file.out
 
+            this.getPalletModule(pallet).add(file.name)
+
             for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
                 out.line()
                 out.line(`export const ${toJsName(name)} = constant('${pallet}.${name}', {`)
@@ -170,6 +176,8 @@ export class Typegen {
         for (let [pallet, palletItems] of groupBy(items, it => splitQualifiedName(it.name)[0])) {
             let file = new ItemFile(this, pallet, 'Storage')
             let out = file.out
+
+            this.getPalletModule(pallet).add(file.name)
 
             for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
                 let jsName = toJsName(name)
@@ -222,6 +230,19 @@ export class Typegen {
             }
 
             file.write()
+        }
+    }
+
+    private generatePalletModules() {
+        for (let [pallet, modules] of this.palletModules) {
+            let out = this.dir.child(getPalletDir(pallet)).file('index.ts')
+
+            for (let module of modules) {
+                let moduleName = module.slice(0, module.length - 3) // remove '.ts'
+                out.line(`export * as ${moduleName} from './${moduleName}'`)
+            }
+
+            out.write()
         }
     }
 
@@ -373,21 +394,32 @@ export class Typegen {
         this.sts.set(runtime, sts)
         return sts
     }
+
+    getPalletModule(pallet: string) {
+        let module = this.palletModules.get(pallet)
+        if (module == null) {
+            module = new Set()
+            this.palletModules.set(pallet, module)
+        }
+        return module
+    }
 }
 
 
 class ItemFile {
     private imported = new Set<Runtime>()
-    public readonly out: FileOutput
+    readonly out: FileOutput
+    readonly name: string
 
     constructor(
         private typegen: Typegen,
         pallet: string,
         type: 'Event' | 'Call' | 'Constant' | 'Storage'
     ) {
+        this.name = type == 'Storage' ? 'storage.ts' : type.toLowerCase() + 's.ts'
         this.out = this.typegen.dir
             .child(getPalletDir(pallet))
-            .file(type == 'Storage' ? 'storage.ts' : type.toLowerCase() + 's.ts')
+            .file(this.name)
 
         let imports = ['sts', 'Block', 'Bytes', 'Option', 'Result', `${type}Type`, `${type.toLowerCase()}`, 'RuntimeCtx' ]
         if (type === 'Storage') {

@@ -3,7 +3,7 @@ import * as ss58 from '@subsquid/ss58'
 import {SubstrateBatchProcessor} from '@subsquid/substrate-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {Transfer} from './model'
-import {events, storage} from './types'
+import * as balances from './types/balances'
 
 
 const processor = new SubstrateBatchProcessor()
@@ -16,7 +16,7 @@ const processor = new SubstrateBatchProcessor()
     })
     .setBlockRange({from: 19_666_100})
     .addEvent({
-        name: [events.balances.transfer.name]
+        name: [balances.events.transfer.name]
     })
 
 
@@ -25,7 +25,7 @@ processor.run(new TypeormDatabase(), async ctx => {
 
     for (let block of ctx.blocks) {
         for (let event of block.events) {
-            let rec = events.balances.transfer.at(block.header, function (e, v) {
+            let rec = balances.events.transfer.at(block.header, function (e, v) {
                 switch (v) {
                     case 'v1020':
                     case 'v1050': {
@@ -41,7 +41,7 @@ processor.run(new TypeormDatabase(), async ctx => {
             /**
              * Just a demo
              */
-            // let balances = await storage.balances.account.at(block.header, async (s, _) => {
+            // let data = await balances.storage.account.at(block.header, async (s, _) => {
             //     let d = s.getDefault()
             //     let [from, to] = await s.getMany([rec.from, rec.to])
             //     return {from: from?.free ?? d.free, to: to?.free ?? d.free}
