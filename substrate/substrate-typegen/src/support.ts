@@ -56,14 +56,18 @@ export type GetVersionedItemEntries<V extends Record<string, VersionedType>> = S
 
 
 export class VersionedItem<V extends Record<string, VersionedType>> {
+    isExists: (block: RuntimeCtx) => boolean
+
     constructor(
         readonly name: string,
         protected versions: V,
-        readonly isExists: (block: RuntimeCtx, name: string) => boolean,
+        isExists: (this: VersionedItem<V>, block: RuntimeCtx) => boolean,
         protected NoVersionError: new (...args: any[]) => Error = UnknownVersionError
-    ) {}
+    ) {
+        this.isExists = isExists.bind(this)
+    }
 
-    at<T>(block: RuntimeCtx, cb: (this: ThisType<this>, ...args: GetVersionedItemEntries<V>) => T): T {
+    at<T>(block: RuntimeCtx, cb: (this: this, ...args: GetVersionedItemEntries<V>) => T): T {
         this.at = this.createVersionDispatch()
         return this.at(block, cb)
     }
@@ -133,7 +137,7 @@ export type VersionedEvent<
 export function event<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedEvent<V> {
     let items: any = {}
     for (let key in versions) items[key] = new EventType(name, versions[key])
-    return Object.assign(new VersionedItem(name, items, (b, n) => b._runtime.hasEvent(n)), items)
+    return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasEvent(name)), items)
 }
 
 
@@ -190,7 +194,7 @@ export type VersionedCall<
 export function call<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedCall<V> {
     let items: any = {}
     for (let key in versions) items[key] = new EventType(name, versions[key])
-    return Object.assign(new VersionedItem(name, items, (b, n) => b._runtime.hasCall(n)), items)
+    return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasCall(name)), items)
 }
 
 
@@ -232,7 +236,7 @@ export type VersionedConstant<
 export function constant<V extends Record<string, sts.Type>>(name: string, versions: V): VersionedConstant<V> {
     let items: any = {}
     for (let key in versions) items[key] = new ConstantType(name, versions[key])
-    return Object.assign(new VersionedItem(name, items, (b, n) => b._runtime.hasConstant(n)), items)
+    return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasConstant(name)), items)
 }
 
 
@@ -418,5 +422,5 @@ export function storage<V extends Record<string, StorageOptions<any, any, any, a
         let version = versions[key]
         items[key] = new StorageType(name, version[2], version[0], version[1])
     }
-    return Object.assign(new VersionedItem(name, items, (b, n) => b._runtime.hasStorage(n)), items)
+    return Object.assign(new VersionedItem(name, items, (b) => b._runtime.hasStorage(name), items))
 }

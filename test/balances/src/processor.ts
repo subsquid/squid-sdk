@@ -25,7 +25,7 @@ processor.run(new TypeormDatabase(), async ctx => {
 
     for (let block of ctx.blocks) {
         for (let event of block.events) {
-            let rec = events.balances.transfer.at(block.header, (e, v) => {
+            let rec = events.balances.transfer.at(block.header, function (e, v) {
                 switch (v) {
                     case 'v1020':
                     case 'v1050': {
