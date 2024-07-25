@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "export more utility types",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}

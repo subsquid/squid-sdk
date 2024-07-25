@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "add `.hasStorage()` method",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}

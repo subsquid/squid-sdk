@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "add `.at()` method on generated classes",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/substrate-typegen",
+      "comment": "add `index.ts` to pallet modules",
+      "type": "minor"
+    },
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}
