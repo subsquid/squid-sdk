@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-abi",
+      "comment": "return `__type` field back to decoded events",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-abi"
+}
