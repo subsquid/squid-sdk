@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-dump",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/fuel-dump_v0.0.4",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.3.0` to `0.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/fuel-dump_v0.0.3",
       "date": "Sat, 25 May 2024 07:09:59 GMT",

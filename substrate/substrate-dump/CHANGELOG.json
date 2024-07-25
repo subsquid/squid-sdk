@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@subsquid/substrate-dump_v0.5.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to configure finalityConfirmation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.5` to `1.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.3.0` to `0.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.3",
       "tag": "@subsquid/substrate-dump_v0.4.3",
       "date": "Wed, 15 May 2024 10:11:41 GMT",

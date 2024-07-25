@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.19.2",
+      "tag": "@subsquid/evm-processor_v1.19.2",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "make `DebugFrame.input` optional and add default value"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.19.1",
       "tag": "@subsquid/evm-processor_v1.19.1",
       "date": "Wed, 15 May 2024 10:11:41 GMT",

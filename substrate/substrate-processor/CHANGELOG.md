@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sat, 08 Jun 2024 15:30:51 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 8.5.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- allow to use finalityConfirmation if `chain_getFinalizedHead` is not an option
+
+### Patches
+
+- fix subcalls relation
 
 ## 8.4.1
 Sat, 08 Jun 2024 15:30:51 GMT

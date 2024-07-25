@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 4.7.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- add dialect system support
 
 ## 4.6.0
 Tue, 07 May 2024 07:40:43 GMT

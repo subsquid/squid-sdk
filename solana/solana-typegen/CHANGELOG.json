@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/solana-typegen_v0.2.1",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.0.1` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/solana-typegen_v0.2.0",
       "date": "Thu, 27 Jun 2024 09:24:39 GMT",

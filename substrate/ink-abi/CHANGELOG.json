@@ -2,6 +2,18 @@
   "name": "@subsquid/ink-abi",
   "entries": [
     {
+      "version": "3.1.1",
+      "tag": "@subsquid/ink-abi_v3.1.1",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "return `__type` field back to decoded events"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.0",
       "tag": "@subsquid/ink-abi_v3.1.0",
       "date": "Sat, 01 Jun 2024 10:02:43 GMT",

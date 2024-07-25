@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 15 May 2024 10:11:41 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 1.19.2
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Patches
+
+- make `DebugFrame.input` optional and add default value
 
 ## 1.19.1
 Wed, 15 May 2024 10:11:41 GMT

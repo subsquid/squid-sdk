@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-metadata-service",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/substrate-metadata-service_v0.2.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add prometheus metrics"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.2` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/substrate-metadata-service_v0.1.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

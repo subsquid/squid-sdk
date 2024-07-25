@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-fs",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-fs_v0.2.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add metrics for S3 file system handler"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/util-internal-fs_v0.1.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

@@ -2,6 +2,26 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "5.0.0",
+      "tag": "@subsquid/openreader_v5.0.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "introduce dialect system"
+          },
+          {
+            "comment": "remove `ByUniqueInput` queries"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `thegraph` dialect support"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.6.0",
       "tag": "@subsquid/openreader_v4.6.0",
       "date": "Tue, 07 May 2024 07:40:43 GMT",

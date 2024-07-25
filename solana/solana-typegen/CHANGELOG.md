@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 0.2.1
+Thu, 25 Jul 2024 11:48:18 GMT
+
+_Version update only_
 
 ## 0.2.0
 Thu, 27 Jun 2024 09:24:39 GMT

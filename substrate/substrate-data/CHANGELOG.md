@@ -1,6 +1,17 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Sat, 01 Jun 2024 10:02:43 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 4.2.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- accept finalityConfirmation in `RpcDataSourceOptions`
+
+### Patches
+
+- ignore events from `Migrations` pallet while parsing calls
 
 ## 4.1.0
 Sat, 01 Jun 2024 10:02:43 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data-raw
 
-This log was last generated on Wed, 15 May 2024 13:21:08 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 1.2.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- allow to use finalityConfirmation to determine finalized blocks
 
 ## 1.1.5
 Wed, 15 May 2024 13:21:08 GMT

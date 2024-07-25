@@ -2,6 +2,26 @@
   "name": "@subsquid/util-internal-ingest-cli",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-ingest-cli_v0.1.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add prometheus metrics"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^0.4.0` to `0.4.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.2` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/util-internal-ingest-cli_v0.0.3",
       "date": "Wed, 15 May 2024 10:11:41 GMT",

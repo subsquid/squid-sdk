@@ -2,6 +2,28 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@subsquid/substrate-data_v4.2.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "ignore events from `Migrations` pallet while parsing calls"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "accept finalityConfirmation in `RpcDataSourceOptions`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.5` to `1.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.0",
       "tag": "@subsquid/substrate-data_v4.1.0",
       "date": "Sat, 01 Jun 2024 10:02:43 GMT",

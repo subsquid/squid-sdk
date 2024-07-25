@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/substrate-data-raw_v1.2.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to use finalityConfirmation to determine finalized blocks"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.5",
       "tag": "@subsquid/substrate-data-raw_v1.1.5",
       "date": "Wed, 15 May 2024 13:21:08 GMT",

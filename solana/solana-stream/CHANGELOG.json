@@ -2,6 +2,21 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-stream_v0.1.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to request all instructions of transaction"
+          },
+          {
+            "comment": "allow to request all balances of transaction"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/solana-stream_v0.0.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",

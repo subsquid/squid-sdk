@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-ingest",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/solana-ingest_v0.0.4",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.0.3` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/solana-ingest_v0.0.3",
       "date": "Wed, 15 May 2024 10:11:41 GMT",
