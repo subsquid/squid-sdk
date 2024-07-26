@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Fri, 26 Jul 2024 09:41:08 GMT and should not be manually modified.
+
+## 3.1.2
+Fri, 26 Jul 2024 09:41:08 GMT
+
+### Patches
+
+- rename `__type` to `__kind` for decoded events
 
 ## 3.1.1
 Thu, 25 Jul 2024 11:48:18 GMT
