@@ -179,7 +179,7 @@ export class Typegen {
 
             this.getPalletModule(pallet).add(file.name)
 
-            for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
+            for (let [name, versions] of groupBy(palletItems, it => toJsName(splitQualifiedName(it.name)[1]))) {
                 let jsName = toJsName(name)
 
                 let ifs: (() => void)[] = []
