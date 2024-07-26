@@ -106,7 +106,7 @@ export class Typegen {
 
             for (let [name, versions] of groupBy(palletItems, it => it.def.name)) {
                 out.line()
-                out.line(`export const ${toJsName(name)} = ${fix.toLowerCase()}('${pallet}.${name}', {`)
+                out.line(`export const ${toJsName(name)} = ${fix.toLowerCase()}_('${pallet}.${name}', {`)
                 out.indentation(() => {
                     for (let it of versions) {
                         let useSts = file.useSts(it.runtime)
@@ -154,7 +154,7 @@ export class Typegen {
 
             for (let [name, versions] of groupBy(palletItems, it => splitQualifiedName(it.name)[1])) {
                 out.line()
-                out.line(`export const ${toJsName(name)} = constant('${pallet}.${name}', {`)
+                out.line(`export const ${toJsName(name)} = constant_('${pallet}.${name}', {`)
                 out.indentation(() => {
                     for (let it of versions) {
                         let useSts = file.useSts(it.runtime)
@@ -185,7 +185,7 @@ export class Typegen {
                 let ifs: (() => void)[] = []
 
                 out.line()
-                out.line(`export const ${jsName} = storage('${pallet}.${name}', {`)
+                out.line(`export const ${jsName} = storage_('${pallet}.${name}', {`)
                 out.indentation(() => {
                     for (let it of versions) {
                         let ifName = upperCaseFirst(
@@ -421,7 +421,7 @@ class ItemFile {
             .child(getPalletDir(pallet))
             .file(this.name)
 
-        let imports = ['sts', 'Block', 'Bytes', 'Option', 'Result', `${type}Type`, `${type.toLowerCase()}`, 'RuntimeCtx' ]
+        let imports = ['sts', 'Block', 'Bytes', 'Option', 'Result', `${type}Type`, `${type.toLowerCase()} as ${type.toLowerCase()}_`, 'RuntimeCtx' ]
         if (type === 'Storage') {
             imports.push('GetStorageType')
         }

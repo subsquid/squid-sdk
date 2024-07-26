@@ -1,8 +1,8 @@
-import {sts, Block, Bytes, Option, Result, StorageType, storage, RuntimeCtx, GetStorageType} from '../support'
+import {sts, Block, Bytes, Option, Result, StorageType, storage as storage_, RuntimeCtx, GetStorageType} from '../support'
 import * as v1050 from '../v1050'
 import * as v9420 from '../v9420'
 
-export const account = storage('Balances.Account', {
+export const account = storage_('Balances.Account', {
     /**
      *  The balance of an account.
      * 
