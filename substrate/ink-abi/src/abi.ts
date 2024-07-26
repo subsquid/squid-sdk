@@ -63,7 +63,7 @@ export class Abi {
         }
 
         return {
-            __type: event.name,
+            __kind: event.name,
             ...this.scaleCodec.decode(event.type, src)
         }
     }
@@ -74,7 +74,7 @@ export class Abi {
             let event = this.events.find(e => e.signatureTopic == topic)
             if (event) {
                 return {
-                    __type: event.name,
+                    __kind: event.name,
                     ...this.scaleCodec.decodeBinary(event.type, data)
                 }
             }
@@ -93,7 +93,7 @@ export class Abi {
         if (potentialEvents.length == 1) {
             let event = potentialEvents[0]
             return {
-                __type: event.name,
+                __kind: event.name,
                 ...this.scaleCodec.decodeBinary(event.type, data)
             }
         }
