@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ink-abi",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "Ink! ABI tools for squid framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
