@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-abi",
+      "comment": "rename `__type` to `__kind` for decoded events",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-abi"
+}
