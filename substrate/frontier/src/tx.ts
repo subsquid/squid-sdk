@@ -89,7 +89,7 @@ export function getTransaction(ethereumTransact: Call): Transaction {
 }
 
 
-function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction {
+export function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction {
     const tx = ethers.Transaction.from({
         to: getTo(raw.action),
         nonce: Number(normalizeU256(raw.nonce)),
@@ -111,14 +111,14 @@ function normalizeLegacyTransaction(raw: ILegacyTransaction): LegacyTransaction 
         value: tx.value,
         r: assertNotNull(tx.signature?.r),
         s: assertNotNull(tx.signature?.s),
-        v: BigInt(assertNotNull(tx.signature?.networkV)),
+        v: BigInt(assertNotNull(tx.signature?.networkV ?? tx.signature?.v)),
         gasPrice: assertNotNull(tx.gasPrice),
         type: TransactionType.Legacy
     }
 }
 
 
-function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transaction {
+export function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transaction {
     const tx = ethers.Transaction.from({
         to: getTo(raw.action),
         chainId: Number(raw.chainId),
@@ -157,7 +157,7 @@ function normalizeEIP1559Transaction(raw: IEIP1559Transaction): EIP1559Transacti
 }
 
 
-function normalizeEIP2930Transaction(raw: IEIP2930Transaction): EIP2930Transaction {
+export function normalizeEIP2930Transaction(raw: IEIP2930Transaction): EIP2930Transaction {
     const tx = ethers.Transaction.from({
         type: TransactionType.EIP2930,
         to: getTo(raw.action),
