@@ -11,8 +11,8 @@ const EvmLogType: sts.Type<EvmLog> = sts.struct({
 })
 
 
-export const EvmLogEventLegacy = new EventType(EvmLogType)
-export const EvmLogEventLatest = new EventType(sts.struct({log: EvmLogType}))
+const EvmLogEventLegacy = new EventType(EvmLogType)
+const EvmLogEventLatest = new EventType(sts.struct({log: EvmLogType}))
 
 
 export interface EvmLog {
