@@ -9,14 +9,17 @@
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "!src/*.test.*"
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "mocha ./lib/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "^3.2.0",
+    "mocha": "^10.7.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^2.0.0",

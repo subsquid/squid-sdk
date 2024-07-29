@@ -22,7 +22,7 @@ export interface Call {
 
 
 export class EventType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(readonly type: T) {}
 
     is(event: Event): boolean {
         return event.block._runtime.events.checkType(event.name, this.type)
@@ -36,7 +36,7 @@ export class EventType<T extends sts.Type> {
 
 
 export class CallType<T extends sts.Type> {
-    constructor(private type: T) {}
+    constructor(readonly type: T) {}
 
     is(call: Call): boolean {
         return call.block._runtime.calls.checkType(call.name, this.type)
