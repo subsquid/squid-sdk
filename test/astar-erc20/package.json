@@ -7,7 +7,7 @@
     "evm-typegen": "npx squid-evm-typegen --input src/erc20.json --output src/erc20.ts"
   },
   "dependencies": {
-    "@subsquid/frontier": "^4.0.3",
+    "@subsquid/frontier": "^4.0.4",
     "@subsquid/graphql-server": "^4.7.0",
     "@subsquid/substrate-runtime": "^2.0.0",
     "@subsquid/substrate-processor": "^8.5.0",
