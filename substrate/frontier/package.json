@@ -9,6 +9,7 @@
   },
   "files": [
     "lib",
+    "!lib/*.test.*",
     "src",
     "!src/*.test.*"
   ],
