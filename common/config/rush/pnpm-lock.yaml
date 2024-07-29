@@ -2627,6 +2627,13 @@ packages:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: false
 
+  /@types/expect@24.3.0:
+    resolution: {integrity: sha512-aq5Z+YFBz5o2b6Sp1jigx5nsmoZMK5Ceurjwy6PZmRv7dEi1jLtkARfvB1ME+OXJUG+7TZUDcv3WoCr/aor6dQ==}
+    deprecated: This is a stub types definition. expect provides its own type definitions, so you do not need this installed.
+    dependencies:
+      expect: 29.7.0
+    dev: false
+
   /@types/express-serve-static-core@4.17.31:
     resolution: {integrity: sha512-DxMhY+NAsTwMMFHBTtJFNp5qiHKJ7TeqOo23zVEM9alT1Ml27Q3xcTH0xwxn7Q0BbMcVEJOs/7aQtUWupUQN3Q==}
     dependencies:
@@ -7023,10 +7030,11 @@ packages:
     dev: false
 
   file:projects/frontier.tgz:
-    resolution: {integrity: sha512-HbreuS98qCs1JNo3LxZVb6wFzNyACWz1HbrSMbh3UoJiZw7FdC8N2ss4ta1LsfOgjF47G2JYlKB1R6Mf3xFAhQ==, tarball: file:projects/frontier.tgz}
+    resolution: {integrity: sha512-1KsRO68Wyjd8J1Cqx0XSI2JE0WX/GeDaP2IBvFDcTlRfDKUEP6Y9B7n0z9+b5H0xzMI2eChZiApW8NGDHn7SXw==, tarball: file:projects/frontier.tgz}
     name: '@rush-temp/frontier'
     version: 0.0.0
     dependencies:
+      '@types/expect': 24.3.0
       '@types/mocha': 10.0.7
       '@types/node': 18.19.31
       ethers: 6.13.2
