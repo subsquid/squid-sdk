@@ -1,6 +1,13 @@
 # Change Log - @subsquid/frontier
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Mon, 29 Jul 2024 13:44:25 GMT and should not be manually modified.
+
+## 4.0.4
+Mon, 29 Jul 2024 13:44:25 GMT
+
+### Patches
+
+- correctly handle transactions with `signature.v` < 35
 
 ## 4.0.3
 Tue, 09 Apr 2024 17:45:37 GMT
