@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/frontier",
+      "comment": "correctly handle transactions with `signature.v` < 35",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/frontier"
+}
