@@ -7,7 +7,7 @@ node_modules/
 # Tooling logs
 *.log
 
-# Our temprorary files (e.g. ad-hoc scripts)
+# Our temporary files (e.g. ad-hoc scripts)
 *.temp.*
 *.temp
 
