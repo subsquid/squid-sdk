@@ -231,7 +231,7 @@ export interface BigDecimal {
      * If the value of this BigDecimal number in normal notation has more digits to the right of the decimal point than is specified by dp,
      * the return value will be rounded to dp decimal places using rounding mode BigDecimal.RM.
      *
-     * If the value of this BigDecimal number in normal notation has fewer fraction digits then is specified by dp, the return value will be appended with zeros accordingly.
+     * If the value of this BigDecimal number in normal notation has fewer fraction digits than is specified by dp, the return value will be appended with zeros accordingly.
      *
      * Unlike Number.prototype.toFixed, which returns exponential notation if a number is greater or equal to 1021, this method will always return normal notation.
      *
