@@ -25,9 +25,10 @@ export class RpcApi implements ExploreApi {
         }
     }
 
-    async getVersionRecords(fromBlock?: number): Promise<SpecVersionRecord[]> {
+    async getVersionRecords(fromBlock?: number, toBlock?: number): Promise<SpecVersionRecord[]> {
+        let height = await this.getHeight()
         let firstBlock = fromBlock || 0
-        let lastBlock = await this.getHeight()
+        let lastBlock = toBlock == null ? height : Math.min(toBlock, height)
         return findSpecVersions({
             firstBlock,
             lastBlock,

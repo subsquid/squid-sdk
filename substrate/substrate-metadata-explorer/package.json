@@ -26,6 +26,7 @@
     "@subsquid/util-internal-commander": "^1.4.0",
     "@subsquid/util-internal-hex": "^1.2.2",
     "@subsquid/util-internal-read-lines": "^1.2.2",
+    "@subsquid/util-internal-range": "^0.3.0",
     "commander": "^11.1.0"
   },
   "devDependencies": {

@@ -2,17 +2,18 @@ import {Logger} from '@subsquid/logger'
 import {last} from '@subsquid/util-internal'
 import {Out} from './out'
 import {SpecVersion, SpecVersionRecord} from './specVersion'
+import {Range} from '@subsquid/util-internal-range'
 
 
 export interface ExploreApi {
-    getVersionRecords(fromBlock?: number): Promise<SpecVersionRecord[]>
+    getVersionRecords(fromBlock?: number, toBlock?: number): Promise<SpecVersionRecord[]>
     getVersionRecord(blockNumber: number): Promise<SpecVersionRecord | undefined>
     getSingleVersionRecord(): Promise<SpecVersionRecord | undefined>
     getVersion(rec: SpecVersionRecord): Promise<SpecVersion>
 }
 
 
-export async function explore(api: ExploreApi, out: Out, log?: Logger): Promise<void> {
+export async function explore(api: ExploreApi, out: Out, log?: Logger, range?: Range): Promise<void> {
     let knownVersions = out.knownVersions()
     if (knownVersions.length > 0) {
         log?.info('output file already has explored versions')
@@ -40,12 +41,14 @@ export async function explore(api: ExploreApi, out: Out, log?: Logger): Promise<
             out.write(knownVersions)
         }
         let lastKnown = last(knownVersions)
-        log?.info(`exploring chain from block ${lastKnown.blockNumber}`)
-        newVersions = (await api.getVersionRecords(lastKnown.blockNumber)).slice(1)
+        let from = Math.max(lastKnown.blockNumber, range?.from || 0)
+        log?.info(`exploring chain from block ${from}`)
+        newVersions = (await api.getVersionRecords(from, range?.to)).slice(1)
         log?.info(`${newVersions.length} new version${newVersions.length == 1 ? '' : 's'} found`)
     } else if (knownVersions.length == 0) {
-        log?.info(`exploring chain from block 0`)
-        newVersions = await api.getVersionRecords()
+        let from = range?.from || 0
+        log?.info(`exploring chain from block ${from}`)
+        newVersions = await api.getVersionRecords(from, range?.to)
         log?.info(`${newVersions.length} version${newVersions.length == 1 ? '' : 's'} found`)
     } else {
         // Let's assume it is an exploration of local dev runtime.
