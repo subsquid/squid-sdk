@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "add Fireblocks web3 provider support ",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}

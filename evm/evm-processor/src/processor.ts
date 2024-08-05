@@ -1,6 +1,6 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {FireblocksProviderConfig, RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
@@ -180,6 +180,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private archive?: GatewaySettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
+    private fireblocksProviderConfig?: FireblocksProviderConfig 
     private running = false
 
     /**
@@ -207,7 +208,24 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         }
         return this
     }
-
+    
+    setFireblocksRpcProvider(fireblocksProviderConfig: FireblocksProviderConfig): this {
+        this.assertNotRunning()
+        this.rpcEndpoint = {
+            url: 'https://dummyUrl',
+            maxBatchCallSize: 5
+        }
+        this.fireblocksProviderConfig = {
+            apiBaseUrl: fireblocksProviderConfig.apiBaseUrl,
+            privateKey: fireblocksProviderConfig.privateKey,
+            apiKey: fireblocksProviderConfig.apiKey,
+            vaultAccountIds: fireblocksProviderConfig.vaultAccountIds,
+            chainId: fireblocksProviderConfig.chainId,
+            logTransactionStatusChanges: fireblocksProviderConfig.logTransactionStatusChanges
+        }
+        return this
+    }
+    
     /**
      * Set chain RPC endpoint
      *
@@ -437,7 +455,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             capacity: this.rpcEndpoint.capacity ?? 10,
             rateLimit: this.rpcEndpoint.rateLimit,
             retryAttempts: Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url}),
+            fireblocksProviderConfig: this.fireblocksProviderConfig
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
