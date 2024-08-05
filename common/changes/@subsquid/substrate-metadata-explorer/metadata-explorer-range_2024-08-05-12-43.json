@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-metadata-explorer",
-      "comment": "add `--from` and `--to` options to specify a certain block range",
+      "comment": "add `--fromBlock` and `--toBlock` options to specify a certain block range",
       "type": "minor"
     }
   ],

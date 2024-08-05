@@ -25,14 +25,14 @@ output file will be augmented with newly discovered versions.
     program.usage('substrate-metadata-explorer --rpc <url> --out <file>')
     program.requiredOption('--rpc <url>', 'chain rpc endpoint', Url(['http:', 'https:', 'ws:', 'wss:']))
     program.requiredOption('--out <file>', 'output file')
-    program.option('--from <block>', 'from block', nat, 0)
-    program.option('--to <block>', 'to block', nat)
+    program.option('--fromBlock <number>', 'start block', nat, 0)
+    program.option('--toBlock <number>', 'end block', nat)
 
     let options = program.parse().opts() as {
         out: string
         rpc: string
-        from: number
-        to?: number
+        fromBlock: number
+        toBlock?: number
     }
 
     let out = new Out(options.out)
@@ -50,8 +50,8 @@ output file will be augmented with newly discovered versions.
     )
 
     let range = {
-        from: options.from,
-        to: options.to,
+        from: options.fromBlock,
+        to: options.toBlock,
     }
 
     await explore(api, out, log, range)
