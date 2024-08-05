@@ -1,12 +1,21 @@
-import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
+import {
+    Entity,
+    ManyToOne,
+    PrimaryColumn,
+    JSONColumn,
+    IntColumn,
+    DateTimeColumn,
+    BytesColumn,
+    BigIntColumn, StringColumn, BooleanColumn
+} from '../../decorators';
 
 
-@Entity()
+@Entity('item')
 export class Item {
     @PrimaryColumn()
     id!: string
 
-    @Column()
+    @StringColumn( { nullable: true })
     name?: string
 
     constructor(id?: string, name?: string) {
@@ -17,8 +26,7 @@ export class Item {
     }
 }
 
-
-@Entity()
+@Entity('order')
 export class Order {
     @PrimaryColumn()
     id!: string
@@ -26,44 +34,46 @@ export class Order {
     @ManyToOne(() => Item, {nullable: true})
     item!: Item
 
-    @Column({nullable: false})
+    @IntColumn({nullable: false})
     qty!: number
 }
 
-
-@Entity()
+@Entity('data')
 export class Data {
-    constructor(props?: Partial<Data>) {
-        Object.assign(this, props)
-    }
-
     @PrimaryColumn()
     id!: string
 
-    @Column('text')
+    @BooleanColumn( { nullable: true })
+    bool?: boolean | null
+
+    @StringColumn( { nullable: true })
     text?: string | null
 
-    @Column('text', {array: true})
+    @StringColumn({array: true, nullable: true})
     textArray?: string[] | null
 
-    @Column('int4')
+    @IntColumn({nullable: true})
     integer?: number | null
 
-    @Column('int4', {array: true})
+    @IntColumn({array: true, nullable: true})
     integerArray?: number[] | null
 
-    @Column('numeric', {transformer: {from: (s?: string) => s == null ? null : BigInt(s), to: (val?: bigint) => val?.toString()}})
+    @BigIntColumn({nullable: true})
     bigInteger?: bigint | null
 
-    @Column('timestamp with time zone')
+    @DateTimeColumn({nullable: true})
     dateTime?: Date | null
 
-    @Column('bytea')
+    @BytesColumn({nullable: true})
     bytes?: Uint8Array | null
 
-    @Column_("jsonb", {nullable: true})
+    @JSONColumn({nullable: true})
     json?: unknown | null
 
-    @ManyToOne(() => Item)
+    @ManyToOne(() => Item, {nullable: true})
     item?: Item | null
+
+    constructor(props?: Partial<Data>) {
+        Object.assign(this, props)
+    }
 }

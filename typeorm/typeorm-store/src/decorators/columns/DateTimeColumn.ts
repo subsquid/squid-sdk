@@ -1,5 +1,7 @@
-import {Column} from './Column'
-import {ColumnCommonOptions} from './common'
+import { Column } from './Column';
+import { ColumnCommonOptions } from './common';
+import { normalizedType } from '../../dialects';
+import { getDbType } from '@subsquid/typeorm-config';
 
 export type DateTimeColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +13,8 @@ export type DateTimeColumnOptions = Pick<
  * Column value is transformed to `Date` type.
  */
 export function DateTimeColumn(options?: DateTimeColumnOptions): PropertyDecorator {
-    return Column('timestamp with time zone', options)
+    const { type, options: opts } = normalizedType('timestamp with time zone', options)
+
+    return Column(type, opts)
 }
+

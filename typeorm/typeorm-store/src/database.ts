@@ -1,10 +1,11 @@
-import {createOrmConfig} from '@subsquid/typeorm-config'
+import { createOrmConfig, getDbType } from '@subsquid/typeorm-config';
 import {assertNotNull, last, maybeLast} from '@subsquid/util-internal'
 import assert from 'assert'
 import {DataSource, EntityManager} from 'typeorm'
 import {ChangeTracker, rollbackBlock} from './hot'
 import {DatabaseState, FinalTxInfo, HashAndHeight, HotTxInfo} from './interfaces'
 import {Store} from './store'
+import { paramName, normalizedType, tableName } from './dialects';
 
 
 export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
@@ -55,63 +56,76 @@ export class TypeormDatabase {
     }
 
     private async initTransaction(em: EntityManager): Promise<DatabaseState> {
-        let schema = this.escapedSchema()
+        if(getDbType() !== 'sqlite') {
+            await em.query(
+                `CREATE SCHEMA IF NOT EXISTS ${this.escapedSchema()}`
+            )
+        }
+
+        const statusTable = tableName('status', this.escapedSchema())
+        const hotBlockTable = tableName('hot_block', this.escapedSchema())
 
         await em.query(
-            `CREATE SCHEMA IF NOT EXISTS ${schema}`
-        )
-        await em.query(
-            `CREATE TABLE IF NOT EXISTS ${schema}.status (` +
-            `id int4 primary key, ` +
-            `height int4 not null, ` +
+            `CREATE TABLE IF NOT EXISTS ${statusTable} (` +
+            `id ${normalizedType('int4').type} primary key, ` +
+            `height ${normalizedType('int4').type} not null, ` +
             `hash text DEFAULT '0x', ` +
-            `nonce int4 DEFAULT 0`+
-            `)`
-        )
-        await em.query( // for databases created by prev version of typeorm store
-            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS hash text DEFAULT '0x'`
-        )
-        await em.query( // for databases created by prev version of typeorm store
-            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
-        )
-        await em.query(
-            `CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int4 primary key, hash text not null)`
-        )
-        await em.query(
-            `CREATE TABLE IF NOT EXISTS ${schema}.hot_change_log (` +
-            `block_height int4 not null references ${schema}.hot_block on delete cascade, ` +
-            `index int4 not null, ` +
-            `change jsonb not null, ` +
-            `PRIMARY KEY (block_height, index)` +
+            `nonce ${normalizedType('int4').type} DEFAULT 0`+
             `)`
         )
 
+        if(getDbType() !== 'sqlite') {
+            await em.query( // for databases created by prev version of typeorm store
+                `ALTER TABLE ${statusTable} ADD COLUMN IF NOT EXISTS hash text DEFAULT '0x'`
+            )
+            await em.query( // for databases created by prev version of typeorm store
+                `ALTER TABLE ${statusTable} ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
+            )
+        }
+
+        await em.query(
+            `CREATE TABLE IF NOT EXISTS ${hotBlockTable} (height ${normalizedType('int4').type} primary key, hash text not null)`
+        )
+
+
+        await em.query(
+            `CREATE TABLE IF NOT EXISTS ${tableName('hot_change_log', this.escapedSchema())} (` +
+            `"block_height" ${normalizedType('int4').type}   not null references ${hotBlockTable}(height) on delete cascade,` +
+            `"index"        ${normalizedType('int4').type}   not null, ` +
+            // We can't use normalizedType here, because it produces internal 'simple-json',
+            // which isn't working with raw queries
+            `"change"       ${getDbType() === 'sqlite' ? 'text' : 'jsonb'}  not null, ` +
+
+            `PRIMARY KEY ("block_height", "index")` +
+            `)`
+        )
         let status: (HashAndHeight & {nonce: number})[] = await em.query(
-            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+            `SELECT height, hash, nonce FROM ${statusTable} WHERE id = 0`
         )
         if (status.length == 0) {
-            await em.query(`INSERT INTO ${schema}.status (id, height, hash) VALUES (0, -1, '0x')`)
+            await em.query(`INSERT INTO ${statusTable} (id, height, hash) VALUES (0, -1, '0x')`)
             status.push({height: -1, hash: '0x', nonce: 0})
         }
 
         let top: HashAndHeight[] = await em.query(
-            `SELECT height, hash FROM ${schema}.hot_block ORDER BY height`
+            `SELECT height, hash FROM ${hotBlockTable} ORDER BY height`
         )
 
         return assertStateInvariants({...status[0], top})
     }
 
     private async getState(em: EntityManager): Promise<DatabaseState> {
-        let schema = this.escapedSchema()
+        const statusTable = tableName('status', this.escapedSchema())
+        const hotBlockTable = tableName('hot_block', this.escapedSchema())
 
         let status: (HashAndHeight & {nonce: number})[] = await em.query(
-            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+            `SELECT height, hash, nonce FROM ${statusTable} WHERE id = 0`
         )
 
         assert(status.length == 1)
 
         let top: HashAndHeight[] = await em.query(
-            `SELECT hash, height FROM ${schema}.hot_block ORDER BY height`
+            `SELECT hash, height FROM ${hotBlockTable} ORDER BY height`
         )
 
         return assertStateInvariants({...status[0], top})
@@ -129,7 +143,7 @@ export class TypeormDatabase {
 
             for (let i = state.top.length - 1; i >= 0; i--) {
                 let block = state.top[i]
-                await rollbackBlock(this.statusSchema, em, block.height)
+                await rollbackBlock(this.escapedSchema(), em, block.height)
             }
 
             await this.performUpdates(cb, em)
@@ -163,7 +177,7 @@ export class TypeormDatabase {
             let rollbackPos = info.baseHead.height + 1 - chain[0].height
 
             for (let i = chain.length - 1; i >= rollbackPos; i--) {
-                await rollbackBlock(this.statusSchema, em, chain[i].height)
+                await rollbackBlock(this.escapedSchema(), em, chain[i].height)
             }
 
             if (info.newBlocks.length) {
@@ -179,7 +193,7 @@ export class TypeormDatabase {
                     await this.performUpdates(
                         store => cb(store, i, i + 1),
                         em,
-                        new ChangeTracker(em, this.statusSchema, b.height)
+                        new ChangeTracker(em, this.escapedSchema(), b.height)
                     )
                 }
             }
@@ -194,27 +208,32 @@ export class TypeormDatabase {
         })
     }
 
-    private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
-        return em.query(
-            `DELETE FROM ${this.escapedSchema()}.hot_block WHERE height <= $1`,
+    private async deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
+        await em.query(
+            `DELETE FROM ${tableName('hot_block', this.escapedSchema())} WHERE height <= ${paramName(1)}`,
             [finalizedHeight]
         )
     }
 
     private insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
         return em.query(
-            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
+            `INSERT INTO ${tableName('hot_block', this.escapedSchema())} (height, hash) VALUES (${paramName(1)}, ${paramName(2)})`,
             [block.height, block.hash]
         )
     }
 
     private async updateStatus(em: EntityManager, nonce: number, next: HashAndHeight): Promise<void> {
-        let schema = this.escapedSchema()
-
         let result: [data: any[], rowsChanged: number] = await em.query(
-            `UPDATE ${schema}.status SET height = $1, hash = $2, nonce = nonce + 1 WHERE id = 0 AND nonce = $3`,
+            `UPDATE ${tableName('status', this.escapedSchema())} SET
+                height = ${paramName(1)},
+                hash = ${paramName(2)}, 
+                nonce = nonce + 1
+             WHERE id = 0 AND nonce = ${paramName(3)}`,
             [next.height, next.hash, nonce]
         )
+
+        // Will never happen in cockroachdb or (???) sqlite
+        if(getDbType() === 'sqlite' || getDbType() === 'cockroachdb') return
 
         let rowsChanged = result[1]
 
@@ -267,7 +286,8 @@ export class TypeormDatabase {
     }
 
     private escapedSchema(): string {
-        let con = assertNotNull(this.con)
+        let con = assertNotNull(this.con, "")
+
         return con.driver.escape(this.statusSchema)
     }
 }

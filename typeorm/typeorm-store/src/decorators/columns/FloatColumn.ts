@@ -1,6 +1,7 @@
 import {floatTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type FloatColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment'>
 
@@ -11,5 +12,10 @@ export type FloatColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | '
  * Arrays are not supported.
  */
 export function FloatColumn(options?: FloatColumnOptions): PropertyDecorator {
-    return Column('numeric', {...options, transformer: floatTransformer})
+    const  { type, options: opts } = normalizedType('numeric',  {
+        ...options,
+        transformer: floatTransformer
+    })
+
+    return Column(type, opts)
 }

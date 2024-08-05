@@ -1,5 +1,6 @@
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
+import { normalizedType } from '../../dialects';
 
 export type StringColumnOptions = Pick<
     ColumnCommonOptions,
@@ -11,5 +12,7 @@ export type StringColumnOptions = Pick<
  * Column value is transformed to `string` type.
  */
 export function StringColumn(options?: StringColumnOptions): PropertyDecorator {
-    return Column('text', options)
+    const { type, options: opts} = normalizedType('text', options)
+
+    return Column(type, opts)
 }

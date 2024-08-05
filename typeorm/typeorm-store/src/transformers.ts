@@ -38,3 +38,10 @@ export const bigdecimalTransformer: ValueTransformer = {
         return s == null ? undefined : decimal.BigDecimal(s)
     },
 }
+
+export const sqliteIntArrayTransformer: ValueTransformer = {
+    to: (x: any) => x?.join(','),
+    from: (s: string) => {
+        return Array.isArray(s) ? s.map(Number) : s;
+    },
+}
