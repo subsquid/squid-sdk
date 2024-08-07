@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "make 524 error retryable",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
