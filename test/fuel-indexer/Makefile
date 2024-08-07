@@ -15,11 +15,11 @@ codegen:
 
 
 up:
-	@docker-compose up -d
+	@docker compose up -d
 
 
 down:
-	@docker-compose down -v
+	@docker compose down -v
 
 
 .PHONY: process start codegen migration migrate up down
