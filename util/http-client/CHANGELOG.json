@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.5.0",
+      "tag": "@subsquid/http-client_v1.5.0",
+      "date": "Wed, 07 Aug 2024 15:52:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make 524 error retryable"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "tag": "@subsquid/http-client_v1.4.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",
