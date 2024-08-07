@@ -6,7 +6,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.4.0",
+    "@subsquid/http-client": "^1.5.0",
     "graphql-ws": "^5.14.2",
     "expect": "^29.7.0",
     "ws": "^8.14.2"

@@ -6,7 +6,7 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "@subsquid/http-client": "^1.4.0",
+    "@subsquid/http-client": "^1.5.0",
     "@subsquid/rpc-client": "^4.9.0",
     "@subsquid/scale-codec": "^4.0.1",
     "@subsquid/substrate-metadata-explorer": "^3.2.0",
