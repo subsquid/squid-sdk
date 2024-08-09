@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Fri, 09 Aug 2024 13:17:49 GMT and should not be manually modified.
+
+## 1.20.0
+Fri, 09 Aug 2024 13:17:49 GMT
+
+### Minor changes
+
+- always uppercase DebugFrame type field
 
 ## 1.19.2
 Thu, 25 Jul 2024 11:48:18 GMT

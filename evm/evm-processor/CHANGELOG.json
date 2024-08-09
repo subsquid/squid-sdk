@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.20.0",
+      "tag": "@subsquid/evm-processor_v1.20.0",
+      "date": "Fri, 09 Aug 2024 13:17:49 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "always uppercase DebugFrame type field"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.19.2",
       "tag": "@subsquid/evm-processor_v1.19.2",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",
