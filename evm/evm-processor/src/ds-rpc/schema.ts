@@ -2,6 +2,7 @@ import {weakMemo} from '@subsquid/util-internal'
 import {
     array,
     BYTES,
+    cast,
     NAT,
     object,
     option,
@@ -11,6 +12,7 @@ import {
     SMALL_QTY,
     STRING,
     taggedUnion,
+    ValidationFailure,
     Validator,
     withDefault
 } from '@subsquid/util-internal-validation'
@@ -26,6 +28,7 @@ import {
 } from '../mapping/schema'
 import {MappingRequest} from './request'
 import {DebugStateDiffResult, TraceStateDiff} from './rpc-data'
+import {print} from '@subsquid/util-internal-validation/lib/util'
 
 // Here we must be careful to include all fields,
 // that can potentially be used in item filters
@@ -152,20 +155,56 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
         })
     })
 
-    Frame = taggedUnion('type', {
-        CALL: Call,
-        CALLCODE: Call,
-        STATICCALL: Call,
-        DELEGATECALL: Call,
-        INVALID: Call,
-        CREATE: Create,
-        CREATE2: Create,
-        SELFDESTRUCT: Suicide,
-        STOP: object({})
-    })
+    let tagField = 'type'
+
+    function getVariant(object: any) {
+        if (typeof object != 'object' || !object) return new ValidationFailure(object, `{value} is not an object`)
+        let tag = cast(STRING, object[tagField]).toUpperCase()
+        object[tagField] = tag
+        switch (tag) {
+            case 'CALL':
+            case 'CALLCODE':
+            case 'STATICCALL':
+            case 'DELEGATECALL':
+            case 'INVALID':
+                return Call
+            case 'CREATE':
+            case 'CREATE2':
+                return Create
+            case 'SELFDESTRUCT':
+                return Suicide
+            case 'STOP':
+                return object({})
+        }
+        let failure = new ValidationFailure(tag, `got {value}, but expected one of ["CALL","CALLCODE","STATICCALL","DELEGATECALL","INVALID","CREATE","CREATE2","SELFDESTRUCT","STOP"]`)
+        failure.path.push(tagField)
+        return failure
+    }
+
+    Frame = {
+        cast(value: any) {
+            let variant = getVariant(value)
+            if (variant instanceof ValidationFailure) return variant
+            let result = variant.cast(value)
+            if (result instanceof ValidationFailure) return result
+            result[tagField] = value[tagField]
+            return result
+        },
+        validate(value) {
+            let variant = getVariant(value)
+            if (variant instanceof ValidationFailure) return variant
+            return variant.validate(value)
+        },
+        phantom() {
+            throw new Error()
+        }
+    }
 
     return Frame
 }
+
+
+
 
 
 export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugStopFrame
