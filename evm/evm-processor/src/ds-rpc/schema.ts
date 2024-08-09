@@ -28,7 +28,6 @@ import {
 } from '../mapping/schema'
 import {MappingRequest} from './request'
 import {DebugStateDiffResult, TraceStateDiff} from './rpc-data'
-import {print} from '@subsquid/util-internal-validation/lib/util'
 
 // Here we must be careful to include all fields,
 // that can potentially be used in item filters
