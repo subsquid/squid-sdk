@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "comment": "Added starknet support, Subsquid Network Gateway ingest",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/starknet-stream"
+}

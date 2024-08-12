@@ -936,6 +936,35 @@
       "packageName": "astar-erc20",
       "projectFolder": "test/astar-erc20",
       "shouldPublish": false
+    },
+    {
+      "packageName": "@subsquid/starknet-data",
+      "projectFolder": "starknet/starknet-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-objects",
+      "projectFolder": "starknet/starknet-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-normalization",
+      "projectFolder": "starknet/starknet-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "projectFolder": "starknet/starknet-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "starknet-indexer",
+      "projectFolder": "test/starknet-indexer",
+      "shouldPublish": false
     }
   ]
 }
