@@ -93,6 +93,7 @@ export class Event {
         this.eventIndex = e.eventIndex
         this.transactionIndex = e.transactionIndex
         this.#block = block
+        Object.assign(this, e)
     }
 
     get block(): BlockHeader {

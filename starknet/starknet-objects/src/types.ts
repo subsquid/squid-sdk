@@ -17,6 +17,6 @@ export type Event<F extends FieldSelection = {}> = base.Event<F> & {
 
 export interface Block<F extends FieldSelection = {}> {
     header: BlockHeader<F>
-    transactions?: Transaction<F>[]
-    events?: Event<F>[]
+    transactions: Transaction<F>[]
+    events: Event<F>[]
 }
