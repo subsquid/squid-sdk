@@ -147,7 +147,8 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         let requests = mergeRangeRequests(this.requests, (a, b) => {
             return {
                 includeAllBlocks: a.includeAllBlocks || b.includeAllBlocks,
-                transactions: concat(a.transactions, b.transactions)
+                transactions: concat(a.transactions, b.transactions),
+                events: concat(a.events, b.events)
             }
         })
 
