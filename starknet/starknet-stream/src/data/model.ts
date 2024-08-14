@@ -10,23 +10,17 @@ export type FELT = string
 
 
 export interface FieldSelection {
-    block?: Selector<keyof data.BlockHeader>
-    transaction?: Selector<keyof data.Transaction>
-    event?: Selector<keyof data.Event>
+    block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
+    transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
+    event?: Selector<Exclude<keyof data.Event, EventRequiredFields> | 'keys'>
 }
 
 export const DEFAULT_FIELDS = {
     block: {
-        number: true,
-        hash: true
+        timestamp: true
     },
-    transaction: {
-        transactionIndex: true
-    },
-    event: {
-        transactionIndex: true,
-        eventIndex: true
-    }
+    transaction: {},
+    event: {}
 } as const
 
 type Item<
@@ -55,7 +49,7 @@ export type Transaction<F extends FieldSelection = {}> = Item<
 
 export type Event<F extends FieldSelection = {}> = Item<
     data.Event,
-    EventRequiredFields,
+    EventRequiredFields | 'key0' | 'key1' | 'key2' | 'key3' | 'restKeys',
     F,
     'event'
 >

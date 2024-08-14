@@ -24,8 +24,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     let BlockHeader = object({
         number: NAT,
         hash: FELT,
-        parentHash: FELT,
         ...project(fields.block, {
+            parentHash: FELT,
             status: STRING,
             newRoot: FELT,
             timestamp: NAT,
@@ -37,10 +37,10 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     })
 
     let Transaction = object({
-        blockNumber: NAT,
         transactionIndex: NAT,
-        transactionHash: FELT,
         ...project(fields.transaction, {
+            blockNumber: option(NAT),
+            transactionHash: option(FELT),
             contractAddress: option(FELT),
             entryPointSelector: option(FELT),
             calldata: option(array(FELT)),
@@ -63,11 +63,11 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     })
 
     let Event = object({
-        blockNumber: NAT,
         transactionIndex: NAT,
         eventIndex: NAT,
-        fromAddress: FELT,
         ...project(fields.event, {
+            blockNumber: option(NAT),
+            fromAddress: option(FELT),
             key0: option(FELT),
             key1: option(FELT),
             key2: option(FELT),

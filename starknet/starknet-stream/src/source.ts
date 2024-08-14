@@ -10,11 +10,11 @@ import {
 import {Block, FieldSelection} from './data/model'
 import {
     DataRequest,
+    EventRequest,
     TransactionRequest
 } from './data/data-request'
 import {def, last} from '@subsquid/util-internal'
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {createLogger} from '@subsquid/logger'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import assert from 'assert'
 import {getFields} from './fields'
@@ -22,8 +22,6 @@ import {PartialBlock} from './data/data-partial'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {StarknetGateway} from './archive/source'
 
-// TODO: logger?
-let logger = createLogger('starknet-stream')
 
 export interface GatewaySettings {
     /**
@@ -120,6 +118,15 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         let {range, ...req} = options
         this.add(range, {
             transactions: [req]
+        })
+        return this
+    }
+
+    addEvent(options: EventRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add(range, {
+            events: [req]
         })
         return this
     }
