@@ -127,7 +127,7 @@ function getTransactionType(raw: raw.Transaction) {
     } else if (raw.isUpload) {
         return 'Upload'
     } else {
-        throw unexpectedCase()
+        return undefined
     }
 }
 
