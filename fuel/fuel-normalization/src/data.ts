@@ -111,7 +111,7 @@ export interface Transaction {
     isMint: boolean
     isUpgrade: boolean
     isUpload: boolean
-    type: TransactionType
+    type?: TransactionType
     outputContract?: {
         inputIndex: number
         balanceRoot: Bytes
