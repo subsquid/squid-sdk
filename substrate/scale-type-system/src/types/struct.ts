@@ -24,6 +24,7 @@ export class StructType<F extends Record<string, Type>> extends BaseType<GetStru
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         if (ty.kind != TypeKind.Composite) return false
         if (ty.fields.length == 0 || ty.fields[0].name == null) return false
+        if (ty.fields.length !== Object.keys(this.fields()).length) return false
 
         let fields = new Map(ty.fields.map(f => [f.name, f.type]))
 
