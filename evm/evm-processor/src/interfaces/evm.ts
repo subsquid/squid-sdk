@@ -61,6 +61,17 @@ export interface _EvmTxReceipt {
     contractAddress?: Bytes32
     type: number
     status: number
+    /**
+     * Next fields are not supported by all currently deployed archives.
+     * Requesting them may cause internal error.
+     */
+    l1Fee: bigint
+    l1FeeScalar?: number
+    l1GasPrice: bigint
+    l1GasUsed: bigint
+    l1BlobBaseFee?: bigint
+    l1BlobBaseFeeScalar?: number
+    l1BaseFeeScalar?: number
 }
 
 
