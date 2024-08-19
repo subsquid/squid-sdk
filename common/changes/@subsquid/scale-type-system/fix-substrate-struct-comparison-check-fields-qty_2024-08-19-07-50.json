@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "Add substrate structs fields quantity comparison to fix matching false positive.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}
