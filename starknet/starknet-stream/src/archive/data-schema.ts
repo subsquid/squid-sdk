@@ -25,14 +25,11 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         number: NAT,
         hash: FELT,
         ...project(fields.block, {
-            parentHash: FELT,
-            status: STRING,
-            newRoot: FELT,
+            parentHash: option(FELT),
+            status: option(STRING),
+            newRoot: option(FELT),
             timestamp: NAT,
-            sequencerAddress: FELT,
-            starknetVersion: STRING,
-            l1GasPriceInFri: FELT,
-            l1GasPriceInWei: FELT
+            sequencerAddress: option(FELT)
         })
     })
 

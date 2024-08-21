@@ -85,13 +85,6 @@ const Transaction = object({
 })
 type Transaction = GetSrcType<typeof Transaction>
 
-// const WriterTransaction = object({
-//     ...Transaction,
-//     transaction_index: INT,
-//     block_number: INT
-// })
-// type WriterTransaction = GetSrcType<typeof WriterTransaction>
-
 const Receipt = object({
     transaction_hash: Hash32,
     actual_fee: ActualFee,
@@ -119,13 +112,6 @@ const Event = object({
 })
 type Event = GetSrcType<typeof Event>
 
-// const WriterEvent = object({
-//     ...Event,
-//     transaction_index: INT,
-//     event_index: INT
-// })
-// type WriterEvent = GetSrcType<typeof WriterEvent>
-
 const Block = object({
     block_number: INT,
     block_hash: Hash32,
@@ -140,15 +126,6 @@ const Block = object({
     events: nullable(array(Event))
 })
 type Block = GetSrcType<typeof Block>
-
-// const WriterBlock = object({
-//     ...Block,
-//     number: INT,
-//     hash: Hash32,
-//     writer_txs: array(WriterTransaction),
-//     writer_events: array(WriterEvent)
-// })
-// type WriterBlock = GetSrcType<typeof WriterBlock>
 
 const EventPage = object({
     events: array(Event),
@@ -168,11 +145,8 @@ export {
     EventContent,
     ExecutionResources,
     Transaction,
-    //WriterTransaction,
     Receipt,
     Event,
-    //WriterEvent,
     Block,
-    //WriterBlock,
     EventPage
 }

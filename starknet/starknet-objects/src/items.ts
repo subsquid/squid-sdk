@@ -78,7 +78,7 @@ export class Transaction implements PartialTransaction {
     }
 }
 
-export class Event {
+export class Event implements PartialEvent {
     id: string
     eventIndex: number
     transactionIndex: number
@@ -110,7 +110,7 @@ export class Event {
 
     getTransaction(): Transaction {
         if (this.#transaction == null) {
-            throw new Error(`Transaction is not set on transaction input`)
+            throw new Error(`Transaction is not set on event ${this.id}`)
         } else {
             return this.#transaction
         }

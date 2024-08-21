@@ -1,4 +1,3 @@
-import {BlockHeader} from '@subsquid/starknet-normalization'
 import {assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'

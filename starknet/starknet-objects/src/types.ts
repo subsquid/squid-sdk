@@ -6,6 +6,7 @@ export type BlockHeader<F extends FieldSelection = {}> = base.BlockHeader<F>
 export type Transaction<F extends FieldSelection = {}> = base.Transaction<F> & {
     id: string
     block: BlockHeader<F>
+    events: Event<F>[]
 }
 
 export type Event<F extends FieldSelection = {}> = base.Event<F> & {

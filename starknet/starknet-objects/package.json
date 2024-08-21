@@ -16,7 +16,6 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/starknet-data": "^0.0.0",
     "@subsquid/starknet-normalization": "^0.0.0",
     "@subsquid/util-internal": "^3.2.0"
   },
