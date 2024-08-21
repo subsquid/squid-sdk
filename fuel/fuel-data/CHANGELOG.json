@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-data",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/fuel-data_v1.1.1",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/fuel-data_v1.1.0",
       "date": "Thu, 20 Jun 2024 10:05:58 GMT",

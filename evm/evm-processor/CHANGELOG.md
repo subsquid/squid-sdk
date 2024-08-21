@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 09 Aug 2024 13:17:49 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+
+## 1.21.0
+Wed, 21 Aug 2024 09:10:53 GMT
+
+### Minor changes
+
+- extend transaction with 'l1'-prefixed fields
 
 ## 1.20.0
 Fri, 09 Aug 2024 13:17:49 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-validation
 
-This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+
+## 0.6.0
+Wed, 21 Aug 2024 09:10:53 GMT
+
+### Minor changes
+
+- add `STRING_FLOAT` primitive
 
 ## 0.5.0
 Tue, 07 May 2024 07:40:43 GMT

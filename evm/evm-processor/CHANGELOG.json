@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.21.0",
+      "tag": "@subsquid/evm-processor_v1.21.0",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extend transaction with 'l1'-prefixed fields"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.20.0",
       "tag": "@subsquid/evm-processor_v1.20.0",
       "date": "Fri, 09 Aug 2024 13:17:49 GMT",

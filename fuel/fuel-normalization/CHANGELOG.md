@@ -1,6 +1,11 @@
 # Change Log - @subsquid/fuel-normalization
 
-This log was last generated on Fri, 16 Aug 2024 12:58:34 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+
+## 1.2.1
+Wed, 21 Aug 2024 09:10:53 GMT
+
+_Version update only_
 
 ## 1.2.0
 Fri, 16 Aug 2024 12:58:34 GMT
