@@ -115,7 +115,14 @@ const TX_RECEIPT_FIELDS: {[K in keyof _EvmTxReceipt]: true} = {
     effectiveGasPrice: true,
     contractAddress: true,
     type: true,
-    status: true
+    status: true,
+    l1Fee: true,
+    l1FeeScalar: true,
+    l1GasPrice: true,
+    l1GasUsed: true,
+    l1BaseFeeScalar: true,
+    l1BlobBaseFee: true,
+    l1BlobBaseFeeScalar: true,
 }
 
 

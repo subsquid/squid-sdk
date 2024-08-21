@@ -8,6 +8,7 @@ import {
     QTY,
     SMALL_QTY,
     STRING,
+    STRING_FLOAT,
     taggedUnion,
     withDefault,
     withSentinel
@@ -77,6 +78,13 @@ export function getTxReceiptProps(fields: FieldSelection['transaction'], forArch
         contractAddress: option(BYTES),
         type: withSentinel('Receipt.type', -1, natural),
         status: withSentinel('Receipt.status', -1, natural),
+        l1Fee: option(QTY),
+        l1FeeScalar: option(STRING_FLOAT),
+        l1GasPrice: option(QTY),
+        l1GasUsed: option(QTY),
+        l1BlobBaseFee: option(QTY),
+        l1BlobBaseFeeScalar: option(natural),
+        l1BaseFeeScalar: option(natural),
     })
 }
 

@@ -158,6 +158,29 @@ export const STRING_NAT: Validator<number, string> = {
 }
 
 
+export const STRING_FLOAT: Validator<number, string> = {
+    cast(value: unknown): number | ValidationFailure {
+        if (typeof value == 'string') {
+            let val = parseFloat(value)
+            if (Number.isNaN(val)) {
+                return new ValidationFailure(value, `{value} is not a number`)
+            } else {
+                return val
+            }
+        } else {
+            return new ValidationFailure(value, '{value} is not a string float number')
+        }
+    },
+    validate(value: unknown): ValidationFailure | undefined {
+        let i = this.cast(value)
+        if (i instanceof ValidationFailure) return i
+    },
+    phantom(): string {
+        return '0'
+    }
+}
+
+
 /**
  * Hex encoded binary string or natural number
  */
