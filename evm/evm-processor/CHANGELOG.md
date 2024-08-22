@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+This log was last generated on Thu, 22 Aug 2024 09:03:21 GMT and should not be manually modified.
+
+## 1.21.1
+Thu, 22 Aug 2024 09:03:21 GMT
+
+### Patches
+
+- traces: allow suicide calls to zero address
 
 ## 1.21.0
 Wed, 21 Aug 2024 09:10:53 GMT
