@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "made splitSize configurable which is used to specify the batch size while making batch calls to RPC",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}
