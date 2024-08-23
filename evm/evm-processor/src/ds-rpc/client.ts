@@ -44,6 +44,7 @@ export interface EvmRpcDataSourceOptions {
     useDebugApiForStateDiffs?: boolean
     debugTraceTimeout?: string
     log?: Logger
+    splitSize?: number
 }
 
 
@@ -56,6 +57,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private useDebugApiForStateDiffs?: boolean
     private debugTraceTimeout?: string
     private log?: Logger
+    private splitSize: number
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.log = options.log
@@ -66,6 +68,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
         this.debugTraceTimeout = options.debugTraceTimeout
+        this.splitSize = options.splitSize || 10;
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -85,7 +88,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
             getFinalizedHeight: () => this.getFinalizedHeight(),
             getSplit: req => this._getColdSplit(req),
             requests: mapRangeRequestList(requests, req => this.toMappingRequest(req)),
-            splitSize: 10,
+            splitSize: this.splitSize,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
             stopOnHead,
             headPollInterval: this.headPollInterval

@@ -80,6 +80,10 @@ export interface RpcDataIngestionSettings {
      * Disable RPC data ingestion entirely
      */
     disabled?: boolean
+    /**
+     * Split size for batch requests
+     */
+    splitSize?: number;
 }
 
 
@@ -466,6 +470,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             debugTraceTimeout: this.rpcIngestSettings?.debugTraceTimeout,
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
+            splitSize: this.rpcIngestSettings?.splitSize,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }
