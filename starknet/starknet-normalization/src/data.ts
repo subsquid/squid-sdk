@@ -8,15 +8,11 @@ export interface BlockHeader {
     newRoot: FELT
     timestamp: number
     sequencerAddress: FELT
-    starknetVersion: string
-    l1GasPriceInFri: FELT
-    l1GasPriceInWei: FELT
 }
 
 export type TransactionType = 'INVOKE' | 'DECLARE' | 'DEPLOY_ACCOUNT' | 'DEPLOY'
 
 export interface Transaction {
-    blockNumber: number
     transactionIndex: number
     transactionHash: FELT
     contractAddress?: FELT
@@ -35,7 +31,6 @@ export interface Transaction {
 }
 
 export interface Event {
-    blockNumber: number
     transactionIndex: number
     eventIndex: number
     fromAddress: FELT
@@ -45,5 +40,4 @@ export interface Event {
     key3?: FELT
     restKeys?: FELT[]
     data: FELT[]
-    keysSize: number
 }

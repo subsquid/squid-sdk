@@ -12,7 +12,7 @@ export type FELT = string
 export interface FieldSelection {
     block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
     transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
-    event?: Selector<Exclude<keyof data.Event, EventRequiredFields> | 'keys'>
+    event?: Selector<Exclude<keyof data.Event, EventRequiredFields | 'key0' | 'key1' | 'key2' | 'key3' | 'restKeys'> | 'keys'>
 }
 
 export const DEFAULT_FIELDS = {

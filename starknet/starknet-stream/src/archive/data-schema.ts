@@ -16,8 +16,6 @@ import {FieldSelection} from '../data/model'
 import {Selector} from '../data/util'
 
 
-
-// TODO: should i add separate FELT validator
 let FELT = BYTES
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {
