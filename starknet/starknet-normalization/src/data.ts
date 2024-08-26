@@ -34,10 +34,6 @@ export interface Event {
     transactionIndex: number
     eventIndex: number
     fromAddress: FELT
-    key0?: FELT
-    key1?: FELT
-    key2?: FELT
-    key3?: FELT
-    restKeys?: FELT[]
+    keys: FELT[]
     data: FELT[]
 }
