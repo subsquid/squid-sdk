@@ -44,7 +44,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
                 INVOKE: constant('INVOKE'),
                 DECLARE: constant('DECLARE'),
                 DEPLOY_ACCOUNT: constant('DEPLOY_ACCOUNT'),
-                DEPLOY: constant('DEPLOY')
+                DEPLOY: constant('DEPLOY'),
+                L1_HANDLER: constant('L1_HANDLER')
             }),
             senderAddress: option(FELT),
             version: STRING,

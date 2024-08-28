@@ -10,7 +10,7 @@ export interface BlockHeader {
     sequencerAddress: FELT
 }
 
-export type TransactionType = 'INVOKE' | 'DECLARE' | 'DEPLOY_ACCOUNT' | 'DEPLOY'
+export type TransactionType = 'INVOKE' | 'DECLARE' | 'DEPLOY_ACCOUNT' | 'DEPLOY' | 'L1_HANDLER'
 
 export interface Transaction {
     transactionIndex: number
