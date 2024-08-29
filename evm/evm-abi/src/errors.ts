@@ -4,7 +4,7 @@ export class DecodingError extends Error {
 
 export class EventTopicCountMismatchError extends DecodingError {
     constructor({count, targetCount}: {count: number; targetCount: number}) {
-        super(`Topic count mismatch. Expected ${count} topics, but received ${targetCount}.`)
+        super(`Topic count mismatch. Expected ${targetCount} topics, but received ${count}.`)
     }
 }
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-abi",
+      "comment": "fix topics count mismatch error message",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-abi"
+}
