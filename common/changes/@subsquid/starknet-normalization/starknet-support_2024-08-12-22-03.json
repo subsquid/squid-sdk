@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-normalization",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/starknet-normalization"
+}
