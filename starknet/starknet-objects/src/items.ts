@@ -89,7 +89,7 @@ export class Event implements PartialEvent {
         block: BlockHeader,
         e: PartialEvent
     ) {
-        this.id = formatId(block, e.eventIndex)
+        this.id = formatId(block, e.transactionIndex, e.eventIndex)
         this.eventIndex = e.eventIndex
         this.transactionIndex = e.transactionIndex
         this.#block = block
