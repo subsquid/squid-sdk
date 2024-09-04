@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-data
 
-This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+This log was last generated on Wed, 04 Sep 2024 13:19:03 GMT and should not be manually modified.
+
+## 1.1.2
+Wed, 04 Sep 2024 13:19:03 GMT
+
+### Patches
+
+- make BlockConsistencyError non critical
 
 ## 1.1.1
 Wed, 21 Aug 2024 09:10:53 GMT
