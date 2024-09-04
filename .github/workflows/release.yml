@@ -7,7 +7,7 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
         with:
           ref: release/arrowsquid
           fetch-depth: 0
@@ -17,6 +17,14 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
 
+      - name: Write npm credentials
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> common/config/rush/.npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> common/config/rush/.npmrc-publish
+          cd common/config/rush && npm whoami
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
 
@@ -25,5 +33,3 @@ jobs:
 
       - name: Publish npm packages
         run: node common/scripts/install-run-rush.js publish --include-all --version-policy npm --target-branch release/arrowsquid --publish --tag latest
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
