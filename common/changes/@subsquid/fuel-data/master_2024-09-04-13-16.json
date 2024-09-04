@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-data",
+      "comment": "make BlockConsistencyError non critical",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-data"
+}
