@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "extend thegraph fk filter with `_in` condition",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
