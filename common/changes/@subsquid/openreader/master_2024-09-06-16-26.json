@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "extend `thegraph` dialect fk filter with more conditions",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

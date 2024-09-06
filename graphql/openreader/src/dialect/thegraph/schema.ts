@@ -299,18 +299,44 @@ export class SchemaBuilder {
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
             case 'fk':
-            case 'lookup':
+                // TODO: needs to be changed in case if we support non-string ids
+                let type = GraphQLString
+                let listType = new GraphQLList(new GraphQLNonNull(type))
+
+                fields[`${key}`] = {type}
+                fields[`${key}_not`] = {type}
+                fields[`${key}_gt`] = {type}
+                fields[`${key}_gte`] = {type}
+                fields[`${key}_lt`] = {type}
+                fields[`${key}_lte`] = {type}
+                fields[`${key}_in`] = {type: listType}
+                fields[`${key}_not_in`] = {type: listType}
+                fields[`${key}_contains`] = {type}
+                fields[`${key}_not_contains`] = {type}
+                fields[`${key}_contains_nocase`] = {type}
+                fields[`${key}_not_contains_nocase`] = {type}
+                fields[`${key}_starts_with`] = {type}
+                fields[`${key}_starts_with_nocase`] = {type}
+                fields[`${key}_not_starts_with`] = {type}
+                fields[`${key}_not_starts_with_nocase`] = {type}
+                fields[`${key}_ends_with`] = {type}
+                fields[`${key}_ends_with_nocase`] = {type}
+                fields[`${key}_not_ends_with`] = {type}
+                fields[`${key}_not_ends_with_nocase`] = {type}
                 fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
-                fields[`${key}_in`] = {type: new GraphQLList(new GraphQLNonNull(GraphQLString))}
                 break
-            case 'list-lookup': {
+            case 'lookup': {
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
+                fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
+                break
+            }
+            case 'list-lookup':
                 let where = this.getWhere(prop.type.entity)
                 fields[`${key}_every`] = {type: where}
                 fields[`${key}_some`] = {type: where}
                 fields[`${key}_none`] = {type: where}
                 break
-            }
         }
     }
 
