@@ -302,6 +302,7 @@ export class SchemaBuilder {
             case 'lookup':
                 fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
+                fields[`${key}_in`] = {type: new GraphQLList(new GraphQLNonNull(GraphQLString))}
                 break
             case 'list-lookup': {
                 let where = this.getWhere(prop.type.entity)
