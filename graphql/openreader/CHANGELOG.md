@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Fri, 06 Sep 2024 16:04:52 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 06 Sep 2024 16:04:52 GMT
+
+### Minor changes
+
+- extend thegraph fk filter with `_in` condition
 
 ## 5.0.0
 Thu, 25 Jul 2024 11:48:18 GMT

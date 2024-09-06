@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@subsquid/openreader_v5.1.0",
+      "date": "Fri, 06 Sep 2024 16:04:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extend thegraph fk filter with `_in` condition"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.0",
       "tag": "@subsquid/openreader_v5.0.0",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",
