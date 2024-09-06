@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Fri, 06 Sep 2024 16:04:52 GMT and should not be manually modified.
+This log was last generated on Fri, 06 Sep 2024 16:29:32 GMT and should not be manually modified.
+
+## 5.1.1
+Fri, 06 Sep 2024 16:29:32 GMT
+
+### Patches
+
+- extend `thegraph` dialect fk filter with more conditions
 
 ## 5.1.0
 Fri, 06 Sep 2024 16:04:52 GMT

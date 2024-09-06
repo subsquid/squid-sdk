@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "5.1.1",
+      "tag": "@subsquid/openreader_v5.1.1",
+      "date": "Fri, 06 Sep 2024 16:29:32 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend `thegraph` dialect fk filter with more conditions"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.1.0",
       "tag": "@subsquid/openreader_v5.1.0",
       "date": "Fri, 06 Sep 2024 16:04:52 GMT",
