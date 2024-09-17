@@ -1,8 +1,11 @@
-import {HttpClient, HttpTimeoutError} from '@subsquid/http-client'
-import type {Logger} from '@subsquid/logger'
-import {wait, withErrorContext} from '@subsquid/util-internal'
+import { HttpClient, HttpTimeoutError } from '@subsquid/http-client'
+import type { Logger } from '@subsquid/logger'
+import { concurrentWriter, wait, withErrorContext } from '@subsquid/util-internal'
+import { splitLines } from '@subsquid/util-internal-archive-layout'
 import assert from 'assert'
-
+import { pipeline } from 'node:stream/promises'
+import zlib from 'node:zlib'
+import { Transform, TransformCallback } from 'stream'
 
 export interface ArchiveQuery {
     fromBlock: number
@@ -74,7 +77,58 @@ export class ArchiveClient {
                 httpTimeout: this.queryTimeout
             }).catch(withErrorContext({
                 archiveQuery: query
-            }))
+            })).then(body => {
+                // TODO: move the conversion to the server
+                let blocks = (body as string).trimEnd().split('\n').map(line => JSON.parse(line))
+                return blocks
+            })
+
+        })
+    }
+
+    stream<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<AsyncIterable<B[]>> {
+        return this.retry(async () => {
+            return this.http.request('POST', this.getRouterUrl(`stream`), {
+                json: query,
+                retryAttempts: 0,
+                httpTimeout: this.queryTimeout,
+                stream: true,
+            }).catch(withErrorContext({
+                archiveQuery: query
+            })).then(res => {
+                // Stream of JSON lines. For some reason it's already ungziped
+                let stream = res.body as NodeJS.ReadableStream
+                return concurrentWriter(1, async write => {
+                    let blocks: B[] = []
+                    let buffer_size = 0
+                    await pipeline(
+                        stream,
+                        async function* (chunks) {
+                            for await (let chunk of chunks) {
+                                yield chunk as Buffer
+                            }
+                        },
+                        // zlib.createGunzip(),
+                        async dataChunks => {
+                            for await (let lines of splitLines(dataChunks)) {
+                                for (let line of lines) {
+                                    buffer_size += line.length
+                                    let block: B = JSON.parse(line)
+                                    blocks.push(block)
+                                    if (buffer_size > 10 * 1024 * 1024) {
+                                        await write(blocks)
+                                        blocks = []
+                                        buffer_size = 0
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    if (blocks.length) {
+                        await write(blocks)
+                    }
+                })
+            })
         })
     }
 
@@ -83,7 +137,7 @@ export class ArchiveClient {
         while (true) {
             try {
                 return await request()
-            } catch(err: any) {
+            } catch (err: any) {
                 if (this.http.isRetryableError(err)) {
                     let pause = this.retrySchedule[Math.min(retries, this.retrySchedule.length - 1)]
                     if (this.log?.isWarn()) {

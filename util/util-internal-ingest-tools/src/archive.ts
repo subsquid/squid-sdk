@@ -36,21 +36,23 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
                     if (stopOnHead) return
                     top = await height.call()
                 }
-                let blocks = await client.query<B>({
+                let stream = await client.stream<B>({
                     fromBlock: beg,
                     toBlock: req.range.to,
                     ...req.request
                 })
-                assert(blocks.length > 0, 'boundary blocks are expected to be included')
-                let lastBlock = last(blocks).header.number
-                assert(lastBlock >= beg)
-                beg = lastBlock + 1
-                if (beg > top) {
-                    top = await height.get()
-                }
-                yield {
-                    blocks,
-                    isHead: beg > top
+                for await (let blocks of stream) {
+                    assert(blocks.length > 0, 'boundary blocks are expected to be included')
+                    let lastBlock = last(blocks).header.number
+                    assert(lastBlock >= beg)
+                    beg = lastBlock + 1
+                    if (beg > top) {
+                        top = await height.get()
+                    }
+                    yield {
+                        blocks,
+                        isHead: beg > top
+                    }
                 }
             }
         }

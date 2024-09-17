@@ -331,6 +331,7 @@ export class HttpClient {
         if (error instanceof HttpResponse) {
             switch(error.status) {
                 case 429:
+                case 500:
                 case 502:
                 case 503:
                 case 504:

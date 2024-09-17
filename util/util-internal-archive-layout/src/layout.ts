@@ -324,7 +324,7 @@ export class ArchiveLayout {
     }
 }
 
-async function* splitLines(chunks: AsyncIterable<Buffer>) {
+export async function* splitLines(chunks: AsyncIterable<Buffer>) {
     let splitter = new LineSplitter()
     for await (let chunk of chunks) {
         let lines = splitter.push(chunk)
