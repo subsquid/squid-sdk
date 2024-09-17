@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/graphql-server",
-      "comment": "introduce graphql request object in request checks",
+      "comment": "add request object to check plugin context",
       "type": "minor"
     }
   ],
