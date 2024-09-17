@@ -1,6 +1,6 @@
 import {Model} from '@subsquid/openreader/lib/model'
 import {assertNotNull} from '@subsquid/util-internal'
-import {PluginDefinition} from 'apollo-server-core'
+import {PluginDefinition, VariableValues} from 'apollo-server-core'
 import {GraphQLSchema, OperationDefinitionNode} from 'graphql'
 
 
@@ -23,6 +23,7 @@ export interface RequestCheckContext {
     http: HttpRequest
     operation: OperationDefinitionNode
     operationName: string | null
+    variables?: VariableValues
     schema: GraphQLSchema
     context: Record<string, any>
     model: Model
@@ -43,6 +44,7 @@ export function createCheckPlugin(requestCheck: RequestCheckFunction, model: Mod
                         http: assertNotNull(ctx.request.http),
                         operation: ctx.operation,
                         operationName: ctx.operationName,
+                        variables: ctx.request.variables,
                         schema: ctx.schema,
                         context: ctx.context,
                         model
