@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 22 Aug 2024 09:03:21 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Sep 2024 15:57:10 GMT and should not be manually modified.
+
+## 1.21.2
+Fri, 20 Sep 2024 15:57:10 GMT
+
+### Patches
+
+- change type of `debugState.nonce` to `NAT`
 
 ## 1.21.1
 Thu, 22 Aug 2024 09:03:21 GMT

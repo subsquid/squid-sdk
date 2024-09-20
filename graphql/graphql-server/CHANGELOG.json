@@ -2,6 +2,18 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.9.0",
+      "tag": "@subsquid/graphql-server_v4.9.0",
+      "date": "Fri, 20 Sep 2024 15:57:10 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use unfinalized height in processor status resolver"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.8.0",
       "tag": "@subsquid/graphql-server_v4.8.0",
       "date": "Tue, 17 Sep 2024 15:46:44 GMT",
