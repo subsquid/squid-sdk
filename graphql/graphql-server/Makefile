@@ -1,14 +1,14 @@
 test:
-	npx mocha -r dotenv/config ./lib/test/*.test.js --exit
+	npx mocha -r dotenv/config ./lib/test/*.test.js --exit --timeout 20000
 
 test-cockroach:
 	@DB_TYPE=cockroach make test
 
 up:
-	@docker-compose up -d 2>&1
+	@docker compose up -d 2>&1
 
 down:
-	@docker-compose down 2>&1
+	@docker compose down 2>&1
 
 logs:
 	@docker logs "$$(basename $$(pwd))_db_1" -f

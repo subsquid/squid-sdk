@@ -1,5 +1,5 @@
 import {weakMemo} from '@subsquid/util-internal'
-import {array, BYTES, NAT, object, option, STRING, taggedUnion} from '@subsquid/util-internal-validation'
+import {array, BYTES, NAT, object, option, STRING, taggedUnion, withDefault} from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../interfaces/data'
 import {
     getBlockHeaderProps,
@@ -17,7 +17,7 @@ export const getBlockValidator = weakMemo((fields: FieldSelection) => {
     let Transaction = object({
         hash: fields.transaction?.hash ? BYTES : undefined,
         ...getTxProps(fields.transaction, true),
-        sighash: fields.transaction?.sighash ? BYTES : undefined,
+        sighash: fields.transaction?.sighash ? withDefault('0x', BYTES) : undefined,
         ...getTxReceiptProps(fields.transaction, true)
     })
 

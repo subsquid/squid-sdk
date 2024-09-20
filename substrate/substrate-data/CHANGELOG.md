@@ -1,6 +1,61 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 4.2.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- accept finalityConfirmation in `RpcDataSourceOptions`
+
+### Patches
+
+- ignore events from `Migrations` pallet while parsing calls
+
+## 4.1.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- decode event topics
+
+## 4.0.4
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
+
+## 4.0.3
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Patches
+
+- fix incorrect handling of `Utility.force_batch` call with failed items
+
+## 4.0.2
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 4.0.1
+Thu, 04 Jan 2024 17:31:35 GMT
+
+### Patches
+
+- fix genesis block fetch error by allowing `null` event storage values
+- fix: sometimes block validator is not set
+
+## 4.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`
+- overhaul hot block ingestion
+
+### Patches
+
+- update dependencies
 
 ## 3.0.1
 Thu, 19 Oct 2023 08:58:05 GMT

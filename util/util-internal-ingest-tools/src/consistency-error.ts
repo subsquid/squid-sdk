@@ -9,8 +9,12 @@ export class DataConsistencyError extends Error {
 
 
 export class BlockConsistencyError extends DataConsistencyError {
-    constructor(ref: BlockRef) {
-        super(`Failed to fetch block ${getBlockName(ref)}, perhaps chain node navigated to another branch.`)
+    constructor(ref: BlockRef, errorMsg?: string) {
+        let msg = `Failed to fetch block ${getBlockName(ref)}`
+        if (errorMsg) {
+            msg += ': ' + errorMsg
+        }
+        super(msg)
     }
 }
 

@@ -1,6 +1,59 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Fri, 06 Sep 2024 16:29:32 GMT and should not be manually modified.
+
+## 5.1.1
+Fri, 06 Sep 2024 16:29:32 GMT
+
+### Patches
+
+- extend `thegraph` dialect fk filter with more conditions
+
+## 5.1.0
+Fri, 06 Sep 2024 16:04:52 GMT
+
+### Minor changes
+
+- extend thegraph fk filter with `_in` condition
+
+## 5.0.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Breaking changes
+
+- introduce dialect system
+- remove `ByUniqueInput` queries
+
+### Minor changes
+
+- add `thegraph` dialect support
+
+## 4.6.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Minor changes
+
+- add ASC_NULLS_LAST and DESC_NULLS_FIRST for graphql sorting
+
+## 4.5.1
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 4.5.0
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Minor changes
+
+- implement query log
+- enhance graphql error log
+
+## 4.4.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 4.4.1
 Thu, 28 Sep 2023 20:58:19 GMT

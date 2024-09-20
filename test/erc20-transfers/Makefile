@@ -19,15 +19,19 @@ codegen:
 
 
 typegen:
-	@npx squid-evm-typegen src/abi erc20.json
+	@npx squid-evm-typegen src/abi erc20.json erc721.json
 
 
 up:
-	@docker-compose up -d
+	@docker compose up -d
 
 
 down:
-	@docker-compose down -v
+	@docker compose down -v
+
+
+test: typegen
+	@npm run build
 
 
 .PHONY: process serve migrate migration codegen typegen up down

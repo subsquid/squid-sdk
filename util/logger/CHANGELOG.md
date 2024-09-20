@@ -1,6 +1,20 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+
+## 1.3.3
+Thu, 29 Feb 2024 15:27:11 GMT
+
+### Patches
+
+- fix README typos
+
+## 1.3.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.3.1
 Thu, 28 Sep 2023 20:58:19 GMT

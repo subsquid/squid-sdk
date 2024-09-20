@@ -3,15 +3,15 @@ import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
-import {Dialect} from '@subsquid/openreader/lib/dialect'
+import {DbType, PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
+import {Dialect, getSchemaBuilder} from '@subsquid/openreader/lib/dialect'
 import type {Model} from '@subsquid/openreader/lib/model'
-import {SchemaBuilder} from '@subsquid/openreader/lib/opencrud/schema'
 import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
 import {loadModel, resolveGraphqlSchema} from '@subsquid/openreader/lib/tools'
 import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
+import {isTsNode} from '@subsquid/util-internal-ts-node'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
@@ -37,6 +37,7 @@ export interface ServerOptions {
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
+    dialect?: Dialect
 }
 
 
@@ -102,8 +103,14 @@ export class Server {
 
     @def
     private async schema(): Promise<GraphQLSchema> {
+        const schemaBuilder = await getSchemaBuilder({
+            model: this.model(),
+            subscriptions: this.options.subscriptions,
+            dialect: this.options.dialect,
+        })
+
         let schemas = [
-            new SchemaBuilder({model: this.model(), subscriptions: this.options.subscriptions}).build()
+            schemaBuilder.build(),
         ]
 
         if (this.options.squidStatus !== false) {
@@ -155,7 +162,7 @@ export class Server {
 
     @def
     private async customResolvers(): Promise<GraphQLSchema | undefined> {
-        let loc = this.module('lib/server-extension/resolvers')
+        let loc = this.module('server-extension/resolvers')
         if (loc == null) return undefined
         let {loadCustomResolvers} = await import('./resolvers')
         return loadCustomResolvers(loc)
@@ -163,7 +170,7 @@ export class Server {
 
     @def
     private customCheck(): RequestCheckFunction | undefined {
-        let loc = this.module('lib/server-extension/check')
+        let loc = this.module('server-extension/check')
         if (loc == null) return undefined
         let mod = require(loc)
         if (typeof mod.requestCheck != 'function') {
@@ -173,7 +180,8 @@ export class Server {
     }
 
     private module(name: string): string | undefined {
-        let loc = this.path(name)
+        let dir = isTsNode() ? 'src' : 'lib'
+        let loc = this.path(`${dir}/${name}`)
         try {
             return require.resolve(loc)
         } catch(e: any) {
@@ -183,19 +191,31 @@ export class Server {
 
     @def
     private async context(): Promise<() => Context> {
-        let dialect = this.dialect()
+        let dbType = this.dbType()
         let createOpenreader: () => OpenreaderContext
         if (await this.customResolvers()) {
             let con = await this.createTypeormConnection({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => con.destroy())
             createOpenreader = () => {
-                return new TypeormOpenreaderContext(dialect, con, con, this.options.subscriptionPollInterval)
+                return new TypeormOpenreaderContext(
+                    dbType,
+                    con,
+                    con,
+                    this.options.subscriptionPollInterval,
+                    this.options.log
+                )
             }
         } else {
             let pool = await this.createPgPool({sqlStatementTimeout: this.options.sqlStatementTimeout})
             this.disposals.push(() => pool.end())
             createOpenreader = () => {
-                return new PoolOpenreaderContext(dialect, pool, pool, this.options.subscriptionPollInterval)
+                return new PoolOpenreaderContext(
+                    dbType,
+                    pool,
+                    pool,
+                    this.options.subscriptionPollInterval,
+                    this.options.log
+                )
             }
         }
         return () => {
@@ -232,17 +252,13 @@ export class Server {
 
     private async createPgPool(options?: ConnectionOptions): Promise<Pool> {
         let {createConnectionOptions} = await import('@subsquid/typeorm-config/lib/connectionOptions')
+        let {toPgClientConfig} = await import('@subsquid/typeorm-config/lib/pg')
         let params = createConnectionOptions()
         return new Pool({
-            host: params.host,
-            port: params.port,
-            database: params.database,
-            user: params.username,
-            password: params.password,
+            ...toPgClientConfig(params),
             statement_timeout: options?.sqlStatementTimeout || undefined,
             max: this.connectionPoolSize(),
             min: this.connectionPoolSize(),
-            ssl: params.ssl
         })
     }
 
@@ -251,7 +267,7 @@ export class Server {
         return envNat('GQL_DB_CONNECTION_POOL_SIZE') || 5
     }
 
-    private dialect(): Dialect {
+    private dbType(): DbType {
         let type = process.env.DB_TYPE
         if (!type) return 'postgres'
         switch(type) {

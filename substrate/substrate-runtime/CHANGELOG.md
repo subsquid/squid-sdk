@@ -1,6 +1,27 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+
+## 2.0.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Breaking changes
+
+- map storage by pallet name instead of prefix
+
+## 1.0.3
+Sat, 06 Jan 2024 13:28:46 GMT
+
+### Patches
+
+- support Avail Goldberg metadata
+
+## 1.0.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.0.1
 Thu, 19 Oct 2023 08:58:05 GMT

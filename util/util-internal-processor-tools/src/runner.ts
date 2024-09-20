@@ -1,5 +1,5 @@
 import type {Logger} from '@subsquid/logger'
-import {assertNotNull, def, last, maybeLast} from '@subsquid/util-internal'
+import {assertNotNull, def, last, maybeLast, wait} from '@subsquid/util-internal'
 import {applyRangeBound, rangeEnd, RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Database, HashAndHeight, HotDatabaseState} from './database'
@@ -60,8 +60,10 @@ export class Runner<R, S> {
                 state = await this.processFinalizedBlocks({
                     state,
                     src: archive,
-                    shouldStopOnHead: !!hot && this.config.database.supportsHotBlocks
-                })
+                    shouldStopOnHead: !!hot
+                }).finally(
+                    this.chainHeightUpdateLoop(archive)
+                )
                 if (this.getLeftRequests(state).length == 0) return
             }
         }
@@ -77,7 +79,9 @@ export class Runner<R, S> {
                 state,
                 src: hot,
                 shouldStopOnHead: this.config.database.supportsHotBlocks && !this.config.allBlocksAreFinal
-            })
+            }).finally(
+                this.chainHeightUpdateLoop(hot)
+            )
             if (this.getLeftRequests(state).length == 0) return
         }
 
@@ -106,7 +110,9 @@ export class Runner<R, S> {
             state = nextState
         }
 
-        return this.processHotBlocks(state)
+        return this.processHotBlocks(state).finally(
+            this.chainHeightUpdateLoop(hot)
+        )
     }
 
     private async assertWeAreOnTheSameChain(src: DataSource<unknown, unknown>, state: HashAndHeight): Promise<void> {
@@ -186,7 +192,7 @@ export class Runner<R, S> {
     }
 
     private async processHotBlocks(state: HotDatabaseState): Promise<void> {
-        assert(this.config.database.supportsHotBlocks === true)
+        assert(this.config.database.supportsHotBlocks)
         let db = this.config.database
         let ds = assertNotNull(this.config.hotDataSource)
         let lastHead = maybeLast(state.top) || state
@@ -195,34 +201,71 @@ export class Runner<R, S> {
             state,
             async upd => {
                 let newHead = maybeLast(upd.blocks)?.header || upd.baseHead
+
                 if (upd.baseHead.hash !== lastHead.hash) {
                     this.log.info(`navigating a fork between ${formatHead(lastHead)} to ${formatHead(newHead)} with a common base ${formatHead(upd.baseHead)}`)
                 }
 
                 this.log.debug({hotUpdate: upd})
 
+                let info = {
+                    finalizedHead: upd.finalizedHead,
+                    baseHead: upd.baseHead,
+                    newBlocks: upd.blocks.map(b => b.header)
+                }
+
                 await this.withProgressMetrics(upd.blocks, () => {
-                    return db.transactHot({
-                        finalizedHead: upd.finalizedHead,
-                        baseHead: upd.baseHead,
-                        newBlocks: upd.blocks.map(b => b.header)
-                    }, (store, ref) => {
-                        let idx = ref.height - upd.baseHead.height - 1
-                        let block = upd.blocks[idx]
-
-                        assert.strictEqual(block.header.hash, ref.hash)
-                        assert.strictEqual(block.header.height, ref.height)
-
-                        return this.config.process(store, {
-                            blocks: [block],
-                            isHead: newHead.height === ref.height
+                    if (db.transactHot2) {
+                        return db.transactHot2(info, (store, blockSliceStart, blockSliceEnd) => {
+                            return this.config.process(store, {
+                                blocks: upd.blocks.slice(blockSliceStart, blockSliceEnd),
+                                isHead: blockSliceEnd === upd.blocks.length
+                            })
                         })
-                    })
+                    } else {
+                        return db.transactHot(info, (store, ref) => {
+                            let idx = ref.height - upd.baseHead.height - 1
+                            let block = upd.blocks[idx]
+
+                            assert.strictEqual(block.header.hash, ref.hash)
+                            assert.strictEqual(block.header.height, ref.height)
+
+                            return this.config.process(store, {
+                                blocks: [block],
+                                isHead: newHead.height === ref.height
+                            })
+                        })
+                    }
                 })
 
                 lastHead = newHead
             }
         )
+    }
+
+    private chainHeightUpdateLoop(src: DataSource<unknown, unknown>): () => void {
+        let abort = new AbortController()
+
+        let loop = async () => {
+            while (!abort.signal.aborted) {
+                await wait(20_000, abort.signal)
+                let newHeight = await src.getFinalizedHeight().catch(err => {
+                    if (!abort.signal.aborted) {
+                        this.log.error(err, 'failed to check chain height')
+                    }
+                    return this.metrics.getChainHeight()
+                })
+                this.metrics.setChainHeight(newHeight)
+            }
+        }
+
+        loop().catch(err => {
+            if (!abort.signal.aborted) {
+                this.log.error(err, 'chain height metric update loop failed')
+            }
+        })
+
+        return () => abort.abort()
     }
 
     private async withProgressMetrics<R>(blocks: Block[], handler: () => R): Promise<R> {

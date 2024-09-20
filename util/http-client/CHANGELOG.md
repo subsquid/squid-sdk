@@ -1,6 +1,28 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Wed, 07 Aug 2024 15:52:38 GMT and should not be manually modified.
+
+## 1.5.0
+Wed, 07 Aug 2024 15:52:38 GMT
+
+### Minor changes
+
+- make 524 error retryable
+
+## 1.4.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- expose `FetchResponse` type
+
+## 1.3.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
+- update dependencies
 
 ## 1.3.1
 Thu, 28 Sep 2023 20:58:19 GMT

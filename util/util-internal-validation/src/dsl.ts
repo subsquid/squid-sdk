@@ -1,5 +1,6 @@
 import {ArrayValidator} from './composite/array'
 import {ConstantValidator} from './composite/constant'
+import {Default} from './composite/default'
 import {GetKeyTaggedUnionCast, GetKeyTaggedUnionSrc, KeyTaggedUnionValidator} from './composite/key-tagged-union'
 import {NullableValidator} from './composite/nullable'
 import {GetPropsCast, GetPropsSrc, ObjectValidator} from './composite/object'
@@ -9,6 +10,7 @@ import {RecordValidator} from './composite/record'
 import {RefValidator} from './composite/ref'
 import {Sentinel} from './composite/sentinel'
 import {GetTaggedUnionCast, GetTaggedUnionSrc, TaggedUnion} from './composite/tagged-union'
+import {TupleValidator} from './composite/tuple'
 import {DataValidationError, ValidationFailure} from './error'
 import {GetCastType, GetSrcType, Validator} from './interface'
 
@@ -53,6 +55,14 @@ export function keyTaggedUnion<U extends Record<string, Validator<any>>>(
 }
 
 
+export function tuple<T extends Validator<any>>(t: T): Validator<[GetCastType<T>], [GetSrcType<T>]>
+export function tuple<T1 extends Validator<any>, T2 extends Validator<any>>(t1: T1, t2: T2): Validator<[GetCastType<T1>, GetCastType<T2>], [GetSrcType<T1>, GetSrcType<T2>]>
+export function tuple<T1 extends Validator<any>, T2 extends Validator<any>, T3 extends Validator<any>>(t1: T1, t2: T2, t3: T3): Validator<[GetCastType<T1>, GetCastType<T2>, GetCastType<T3>], [GetSrcType<T1>, GetSrcType<T2>, GetSrcType<T3>]>
+export function tuple(...tuple: Validator<any>[]): Validator<any[]> {
+    return new TupleValidator(tuple)
+}
+
+
 export function array<V extends Validator<any>>(item: V): Validator<GetCastType<V>[], GetSrcType<V>[]> {
     return new ArrayValidator(item)
 }
@@ -80,6 +90,14 @@ export function withSentinel<V extends Validator<any>>(
     validator: V
 ): Validator<GetCastType<V>, GetSrcType<V> | undefined | null> {
     return new Sentinel(label, value, validator)
+}
+
+
+export function withDefault<V extends Validator<any>>(
+    value: GetCastType<V>,
+    validator: V
+): Validator<GetCastType<V>, GetSrcType<V> | undefined | null> {
+    return new Default(value, validator)
 }
 
 

@@ -1,4 +1,6 @@
 export * from './async'
 export * from './def'
+export * from './io'
 export * from './misc'
 export * from './throttler'
+export * from './types'

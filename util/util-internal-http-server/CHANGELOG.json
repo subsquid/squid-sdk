@@ -2,6 +2,35 @@
   "name": "@subsquid/util-internal-http-server",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/util-internal-http-server_v2.0.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove unused import statement"
+          }
+        ],
+        "major": [
+          {
+            "comment": "new app framework"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.2",
+      "tag": "@subsquid/util-internal-http-server_v1.2.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.1",
       "tag": "@subsquid/util-internal-http-server_v1.2.1",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

@@ -1,0 +1,77 @@
+{
+  "name": "@subsquid/fuel-data",
+  "entries": [
+    {
+      "version": "1.1.2",
+      "tag": "@subsquid/fuel-data_v1.1.2",
+      "date": "Wed, 04 Sep 2024 13:19:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "make BlockConsistencyError non critical"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.1",
+      "tag": "@subsquid/fuel-data_v1.1.1",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/fuel-data_v1.1.0",
+      "date": "Thu, 20 Jun 2024 10:05:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "validate blocks consistency and retry query if invalid"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.1",
+      "tag": "@subsquid/fuel-data_v1.0.1",
+      "date": "Fri, 31 May 2024 11:43:17 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "make receipts optional if not requested"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/fuel-data_v1.0.0",
+      "date": "Sat, 25 May 2024 07:09:59 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "update data schema according to fuel testnet changes"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/fuel-data_v0.0.1",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.4.0` to `0.5.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

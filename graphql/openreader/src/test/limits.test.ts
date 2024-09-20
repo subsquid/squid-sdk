@@ -1,5 +1,6 @@
 import expect from 'expect'
 import {useDatabase, useServer} from './setup'
+import {Dialect} from '../dialect'
 
 
 describe('response size limits', function() {
@@ -12,7 +13,7 @@ describe('response size limits', function() {
         `create table item3 (id text primary key, order_id text, name text)`,
     ])
 
-    const client = useServer(`
+    let schema = `
         type Order1 @entity {
             id: ID!
             items: [Item1!]! @derivedFrom(field: "order")
@@ -45,119 +46,239 @@ describe('response size limits', function() {
             order: Order3!
             name: String @byteWeight(value: 10.0)
         }
-    `, {
+    `
+    let opts = {
         maxResponseNodes: 50,
         maxRootFields: 3
-    })
+    }
 
-    it('unlimited requests fail', async function() {
-        let result = await client.query(`
-            query {
-                order1s {
-                    id
-                }
-            }
-        `)
-        expect(result).toMatchObject({
-            data: null,
-            errors: [
-                expect.objectContaining({message: 'response might exceed the size limit', path: ['order1s']})
-            ]
-        })
-    })
+    describe(Dialect.OpenCrud, function() {
+        const client = useServer(schema, opts)
 
-    it('limited requests work', function() {
-        return client.test(`
-            query {
-                order1s(limit: 10) {
-                    items(limit: 2) {
+        it('unlimited requests fail', async function() {
+            let result = await client.query(`
+                query {
+                    order1s {
                         id
                     }
                 }
-            }
-        `, {
-            order1s: []
+            `)
+            expect(result).toMatchObject({
+                data: null,
+                errors: [
+                    expect.objectContaining({message: 'response might exceed the size limit', path: ['order1s']})
+                ]
+            })
+        })
+
+        it('limited requests work', function() {
+            return client.test(`
+                query {
+                    order1s(limit: 10) {
+                        items(limit: 2) {
+                            id
+                        }
+                    }
+                }
+            `, {
+                order1s: []
+            })
+        })
+
+        it('entity level cardinalities are respected', function() {
+            return client.test(`
+                query {
+                    order2s {
+                        id
+                    }
+                }
+            `, {
+                order2s: []
+            })
+        })
+
+        it('item cardinalities are respected', function() {
+            return client.test(`
+                query {
+                    order3s(limit: 1) {
+                        items { id }
+                    }
+                }
+            `, {
+                order3s: []
+            })
+        })
+
+        it('@byteWeight annotations are respected', async function() {
+            let result = await client.query(`
+                query {
+                    order3s(limit: 1) {
+                        items(limit: 8) { name }
+                    }
+                }
+            `)
+            expect(result).toEqual({
+                data: null,
+                errors: [
+                    expect.objectContaining({
+                        message: 'response might exceed the size limit',
+                        path: ['order3s']
+                    })
+                ]
+            })
+            await client.test(`
+                query {
+                    order3s(limit: 1) {
+                        items(limit: 4) { name }
+                    }
+                }
+            `, {
+                order3s: []
+            })
+        })
+
+        it('id_in conditions are understood', function() {
+            return client.test(`
+                query {
+                    order1s(where: {id_in: ["1", "2", "3"]}) {
+                        id
+                    }
+                }
+            `, {
+                order1s: []
+            })
+        })
+
+        it('root query fields limit', async function() {
+            return client.httpErrorTest(`
+                query {
+                    a: order1ById(id: "1") { id }
+                    b: order1ById(id: "1") { id }
+                    c: order1ById(id: "1") { id }
+                    d: order1ById(id: "1") { id }
+                }
+            `, {
+                errors: [
+                    expect.objectContaining({
+                        message: 'only 3 root fields allowed, but got 4'
+                    })
+                ]
+            })
         })
     })
 
-    it('entity level cardinalities are respected', function() {
-        return client.test(`
-            query {
-                order2s {
-                    id
-                }
-            }
-        `, {
-            order2s: []
-        })
-    })
+    describe(Dialect.TheGraph, function() {
+        const client = useServer(schema, {...opts, dialect: Dialect.TheGraph})
 
-    it('item cardinalities are respected', function() {
-        return client.test(`
-            query {
-                order3s(limit: 1) {
-                    items { id }
+        it('unlimited requests fail', async function() {
+            let result = await client.query(`
+                query {
+                    order1s {
+                        id
+                    }
                 }
-            }
-        `, {
-            order3s: []
+            `)
+            expect(result).toMatchObject({
+                data: null,
+                errors: [
+                    expect.objectContaining({message: 'response might exceed the size limit', path: ['order1s']})
+                ]
+            })
         })
-    })
 
-    it('@byteWeight annotations are respected', async function() {
-        let result = await client.query(`
-            query {
-                order3s(limit: 1) {
-                    items(limit: 8) { name }
+        it('limited requests work', function() {
+            return client.test(`
+                query {
+                    order1s(first: 10) {
+                        items(first: 2) {
+                            id
+                        }
+                    }
                 }
-            }
-        `)
-        expect(result).toEqual({
-            data: null,
-            errors: [
-                expect.objectContaining({
-                    message: 'response might exceed the size limit',
-                    path: ['order3s']
-                })
-            ]
+            `, {
+                order1s: []
+            })
         })
-        await client.test(`
-            query {
-                order3s(limit: 1) {
-                    items(limit: 4) { name }
-                }
-            }
-        `, {
-            order3s: []
-        })
-    })
 
-    it('id_in conditions are understood', function() {
-        return client.test(`
-            query {
-                order1s(where: {id_in: ["1", "2", "3"]}) {
-                    id
+        it('entity level cardinalities are respected', function() {
+            return client.test(`
+                query {
+                    order2s {
+                        id
+                    }
                 }
-            }
-        `, {
-            order1s: []
+            `, {
+                order2s: []
+            })
         })
-    })
 
-    it('root query fields limit', async function() {
-        return client.httpErrorTest(`
-            query {
-                a: order1ById(id: "1") { id }
-                b: order1ById(id: "1") { id }
-                c: order1ById(id: "1") { id }
-                d: order1ById(id: "1") { id }
-            }
-        `, {
-            errors: [
-                expect.objectContaining({
-                    message: 'only 3 root query fields allowed, but got 4'
-                })
-            ]
+        it('item cardinalities are respected', function() {
+            return client.test(`
+                query {
+                    order3s(first: 1) {
+                        items { id }
+                    }
+                }
+            `, {
+                order3s: []
+            })
+        })
+
+        it('@byteWeight annotations are respected', async function() {
+            let result = await client.query(`
+                query {
+                    order3s(first: 1) {
+                        items(first: 8) { name }
+                    }
+                }
+            `)
+            expect(result).toEqual({
+                data: null,
+                errors: [
+                    expect.objectContaining({
+                        message: 'response might exceed the size limit',
+                        path: ['order3s']
+                    })
+                ]
+            })
+            await client.test(`
+                query {
+                    order3s(first: 1) {
+                        items(first: 4) { name }
+                    }
+                }
+            `, {
+                order3s: []
+            })
+        })
+
+        it('id_in conditions are understood', function() {
+            return client.test(`
+                query {
+                    order1s(where: {id_in: ["1", "2", "3"]}) {
+                        id
+                    }
+                }
+            `, {
+                order1s: []
+            })
+        })
+
+        it('root query fields limit', async function() {
+            return client.httpErrorTest(`
+                query {
+                    a: order1(id: "1") { id }
+                    b: order1(id: "1") { id }
+                    c: order1(id: "1") { id }
+                    d: order1(id: "1") { id }
+                }
+            `, {
+                errors: [
+                    expect.objectContaining({
+                        message: 'only 3 root fields allowed, but got 4'
+                    })
+                ]
+            })
         })
     })
 })

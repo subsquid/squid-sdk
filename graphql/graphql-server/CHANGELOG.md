@@ -1,6 +1,52 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 4.7.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- add dialect system support
+
+## 4.6.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Minor changes
+
+- add ASC_NULLS_LAST and DESC_NULLS_FIRST for graphql sorting
+
+## 4.5.1
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 4.5.0
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Minor changes
+
+- support loading sever extensions via `ts-node`
+- implement query log
+- enhance graphql error log
+
+### Patches
+
+- fix class-validator@14 regression: an unknown value was passed to the validate function
+
+## 4.4.0
+Thu, 14 Dec 2023 11:16:15 GMT
+
+### Minor changes
+
+- introduce `DB_URL`, `DB_SSL_CA(_FILE)`, `DB_SSL_CERT(_FILE)`, `DB_SSL_KEY(_FILE)` env variables
+
+## 4.3.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 4.3.1
 Thu, 28 Sep 2023 20:58:19 GMT

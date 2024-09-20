@@ -21,8 +21,17 @@ export interface SelectorsMap {
 }
 
 
+export interface AbiEvent {
+    name: string
+    type: Ti
+    amountIndexed: number
+    signatureTopic?: Bytes
+}
+
+
 export class AbiDescription {
     constructor(private project: InkProject) {
+        this.events()
         this.event()
         this.constructors()
         this.messages()
@@ -72,6 +81,29 @@ export class AbiDescription {
                     docs: msg.docs
                 }
             })
+        })
+    }
+
+    @def
+    events(): AbiEvent[] {
+        return this.project.spec.events.map(e => {
+            let ti = this.add({
+                kind: TypeKind.Composite,
+                fields: e.args.map(arg => {
+                    return {
+                        name: normalizeLabel(arg.label),
+                        type: arg.type.type,
+                        docs: arg.docs
+                    }
+                })
+            })
+
+            return {
+                name: normalizeLabel(e.label),
+                type: ti,
+                amountIndexed: e.args.reduce((val, e) => e.indexed ? val + 1 : val, 0),
+                signatureTopic: e.signature_topic as Bytes
+            }
         })
     }
 

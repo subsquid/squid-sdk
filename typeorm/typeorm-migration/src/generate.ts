@@ -1,6 +1,7 @@
 import {createOrmConfig, MIGRATIONS_DIR} from "@subsquid/typeorm-config"
 import {runProgram} from "@subsquid/util-internal"
 import {OutDir} from "@subsquid/util-internal-code-printer"
+import {registerTsNodeIfRequired} from '@subsquid/util-internal-ts-node'
 import {program} from "commander"
 import * as dotenv from "dotenv"
 import {DataSource} from "typeorm"
@@ -15,6 +16,8 @@ runProgram(async () => {
     let {name} = program.parse().opts() as {name: string}
 
     dotenv.config()
+
+    await registerTsNodeIfRequired()
 
     let connection = new DataSource({
         ...createOrmConfig(),

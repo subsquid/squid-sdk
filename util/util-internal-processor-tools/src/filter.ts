@@ -77,6 +77,15 @@ export class FilterBuilder<T> {
         return this
     }
 
+    matchAny<P>(test: (obj: T, value: P) => boolean, values?: P[]): this {
+        if (values == null) return this
+        if (values.length == 0) {
+            this.never = true
+        }
+        this.filters.push(new MatchAnyFilter(test, values))
+        return this
+    }
+
     isNever(): boolean {
         return this.never
     }
@@ -138,6 +147,21 @@ class GetEqFilter<T, P> implements Filter<T> {
 
     match(obj: T): boolean {
         return this.get(obj) === this.value
+    }
+}
+
+
+class MatchAnyFilter<T, P> implements Filter<T> {
+    constructor(
+        public readonly test: (obj: T, value: P) => boolean,
+        public readonly values: P[]
+    ) {}
+
+    match(obj: T): boolean {
+        for (let i = 0; i < this.values.length; i++) {
+            if (this.test(obj, this.values[i])) return true
+        }
+        return false
     }
 }
 

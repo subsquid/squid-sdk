@@ -22,7 +22,10 @@ export async function loadCustomResolvers(mod: string): Promise<GraphQLSchema> {
     return buildSchema({
         resolvers: [mod],
         scalarsMap,
-        container: resolverData => new CustomResolversContainer(resolverData)
+        container: resolverData => new CustomResolversContainer(resolverData),
+        validate: {
+            forbidUnknownValues: false
+        }
     })
 }
 

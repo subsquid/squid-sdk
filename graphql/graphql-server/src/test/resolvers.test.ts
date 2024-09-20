@@ -84,4 +84,18 @@ describe('resolvers extension', function () {
             ]
         })
     })
+
+    it('ping-pong', function() {
+        return client.test(`
+            query {
+                ping(msg: {message: "hello"}) {
+                    message
+                }
+            }
+        `, {
+            ping: {
+                message: 'hello'
+            }
+        })
+    })
 })

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/commands",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Command launcher for squids, replaces npm scripts and make(1)",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -19,9 +19,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.3.1",
-    "@subsquid/util-internal": "^2.5.2",
-    "@subsquid/util-internal-config": "^2.2.1",
+    "@subsquid/logger": "^1.3.3",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-config": "^2.2.2",
     "glob": "^10.3.10",
     "supports-color": "^8.1.1"
   },

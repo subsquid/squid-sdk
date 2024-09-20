@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {assertNotNull} from "@subsquid/util-internal"
 import {ListeningServer} from "@subsquid/util-internal-http-server"
 import {Client} from "gql-test-client"
@@ -68,11 +69,12 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
             connection: db,
             model: buildModel(buildSchema(parse(schema))),
             port: 0,
-            dialect: isCockroach() ? 'cockroach' : 'postgres',
+            dbType: isCockroach() ? 'cockroach' : 'postgres',
             subscriptions: true,
             subscriptionPollInterval: 500,
             maxRootFields: 10,
-            ...options
+            // log: createLogger('sqd:openreader'),
+            ...options,
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })

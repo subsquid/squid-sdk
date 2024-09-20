@@ -1,14 +1,32 @@
-ARG node=node:16-alpine
+ARG node=node:20-alpine
 FROM ${node} AS node
 
 
 FROM node AS builder
-RUN apk add g++ make python3
+RUN apk add g++ make python3 py3-setuptools
 WORKDIR /squid
 ADD . .
 RUN node common/scripts/install-run-rush.js install
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
+
+
+FROM builder AS solana-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-dump
+
+
+FROM node AS solana-dump
+COPY --from=solana-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-dump/bin/run.js"]
+
+
+FROM builder AS solana-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-ingest
+
+
+FROM node AS solana-ingest
+COPY --from=solana-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-ingest/bin/run.js"]
 
 
 FROM builder AS substrate-dump-builder
@@ -60,8 +78,19 @@ FROM builder AS chain-status-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
 
 
-FROM node AS chain-status-service
-COPY --from=chain-status-service-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/util/chain-status-service/lib/main.js"]
-CMD ["/squid/util/chain-status-service/config.json"]
-EXPOSE 3000
+FROM builder AS fuel-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump
+
+
+FROM node AS fuel-dump
+COPY --from=fuel-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/fuel/fuel-dump/bin/run.js"]
+
+
+FROM builder AS fuel-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-ingest
+
+
+FROM node AS fuel-ingest
+COPY --from=fuel-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/fuel/fuel-ingest/bin/run.js"]

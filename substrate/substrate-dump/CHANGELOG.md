@@ -1,6 +1,58 @@
 # Change Log - @subsquid/substrate-dump
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 0.5.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- allow to configure finalityConfirmation
+
+## 0.4.3
+Wed, 15 May 2024 10:11:41 GMT
+
+_Version update only_
+
+## 0.4.2
+Tue, 07 May 2024 07:40:43 GMT
+
+_Version update only_
+
+## 0.4.1
+Wed, 17 Apr 2024 12:46:35 GMT
+
+_Version update only_
+
+## 0.4.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- use new dumper CLI framework
+
+## 0.3.2
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 0.3.1
+Thu, 04 Jan 2024 17:31:35 GMT
+
+### Patches
+
+- fix genesis block fetch error by allowing `null` event storage values
+
+## 0.3.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- upgrade `@subsquid/*` dependencies
+
+### Patches
+
+- update dependencies
 
 ## 0.2.1
 Thu, 19 Oct 2023 08:58:05 GMT

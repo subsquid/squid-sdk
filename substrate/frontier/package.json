@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/frontier",
-  "version": "4.0.1",
+  "version": "4.0.4",
   "description": "A set of tools to decode EVM transactions and logs coming from Frontier pallets",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -9,23 +9,30 @@
   },
   "files": [
     "lib",
-    "src"
+    "!lib/*.test.*",
+    "src",
+    "!src/*.test.*"
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "mocha ./lib/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^2.5.2"
+    "@subsquid/util-internal": "^3.2.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.1",
+    "@subsquid/substrate-runtime": "^2.0.0",
     "ethers": "^6.9.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^1.0.1",
+    "@subsquid/substrate-runtime": "^2.0.0",
     "@types/node": "^18.18.14",
+    "@types/mocha": "^10.0.7",
+    "@types/expect": "^24.3.0",
+    "ethers": "^6.9.0",
+    "mocha": "^10.7.0",
     "typescript": "~5.3.2",
-    "ethers": "^6.9.0"
+    "expect": "^29.7.0"
   }
 }

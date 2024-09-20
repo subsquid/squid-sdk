@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.107.4",
+  "rushVersion": "5.133.3",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=16.13.1 <19.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <21.0.0",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -290,7 +290,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid",
+     "url": "https://github.com/subsquid/squid"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -336,37 +336,6 @@
      */
     "postRushBuild": []
   },
-
-  /**
-   * Installation variants allow you to maintain a parallel set of configuration files that can be
-   * used to build the entire monorepo with an alternate set of dependencies.  For example, suppose
-   * you upgrade all your projects to use a new release of an important framework, but during a transition period
-   * you intend to maintain compatibility with the old release.  In this situation, you probably want your
-   * CI validation to build the entire repo twice: once with the old release, and once with the new release.
-   *
-   * Rush "installation variants" correspond to sets of config files located under this folder:
-   *
-   *   common/config/rush/variants/<variant_name>
-   *
-   * The variant folder can contain an alternate common-versions.json file.  Its "preferredVersions" field can be used
-   * to select older versions of dependencies (within a loose SemVer range specified in your package.json files).
-   * To install a variant, run "rush install --variant <variant_name>".
-   *
-   * For more details and instructions, see this article:  https://rushjs.io/pages/advanced/installation_variants/
-   */
-  "variants": [
-    // {
-    //   /**
-    //    * The folder name for this variant.
-    //    */
-    //   "variantName": "old-sdk",
-    //
-    //   /**
-    //    * An informative description
-    //    */
-    //   "description": "Build this repo using the previous release of the SDK"
-    // }
-  ],
 
   /**
    * Rush can collect anonymous telemetry about everyday developer activity such as
@@ -457,6 +426,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-codec",
+      "projectFolder": "evm/evm-codec",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-abi",
+      "projectFolder": "evm/evm-abi",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,
@@ -495,6 +476,66 @@
       "packageName": "ops-xcm-typegen",
       "projectFolder": "ops/xcm-typegen",
       "shouldPublish": false
+    },
+    {
+      "packageName": "@subsquid/batch-processor",
+      "projectFolder": "processor/batch-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/borsh",
+      "projectFolder": "solana/borsh",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-dump",
+      "projectFolder": "solana/solana-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "projectFolder": "solana/solana-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "projectFolder": "solana/solana-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-objects",
+      "projectFolder": "solana/solana-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "projectFolder": "solana/solana-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-rpc-data",
+      "projectFolder": "solana/solana-rpc-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-stream",
+      "projectFolder": "solana/solana-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "projectFolder": "solana/solana-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/frontier",
@@ -611,6 +652,42 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/fuel-data",
+      "projectFolder": "fuel/fuel-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-objects",
+      "projectFolder": "fuel/fuel-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-normalization",
+      "projectFolder": "fuel/fuel-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-dump",
+      "projectFolder": "fuel/fuel-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-ingest",
+      "projectFolder": "fuel/fuel-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/fuel-stream",
+      "projectFolder": "fuel/fuel-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,
@@ -641,12 +718,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "chain-status-service",
-      "projectFolder": "util/chain-status-service",
-      "shouldPublish": true,
-      "versionPolicyName": "docker"
-    },
-    {
       "packageName": "@subsquid/commands",
       "projectFolder": "util/commands",
       "shouldPublish": true,
@@ -663,6 +734,11 @@
       "projectFolder": "util/logger",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "raw-archive-validator",
+      "projectFolder": "util/raw-archive-validator",
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/rpc-client",
@@ -719,6 +795,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "projectFolder": "util/util-internal-dump-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
       "shouldPublish": true,
@@ -737,14 +819,32 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-ingest-cli",
+      "projectFolder": "util/util-internal-ingest-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-ingest-tools",
       "projectFolder": "util/util-internal-ingest-tools",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-ts-node",
+      "projectFolder": "util/util-internal-ts-node",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-json",
       "projectFolder": "util/util-internal-json",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-json-fix-unsafe-integers",
+      "projectFolder": "util/util-internal-json-fix-unsafe-integers",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -769,6 +869,12 @@
     {
       "packageName": "@subsquid/util-internal-read-lines",
       "projectFolder": "util/util-internal-read-lines",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-squid-id",
+      "projectFolder": "util/util-internal-squid-id",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -802,6 +908,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "borsh-bench",
+      "projectFolder": "test/borsh-bench",
+      "shouldPublish": false
+    },
+    {
       "packageName": "data-test",
       "projectFolder": "test/data",
       "shouldPublish": false
@@ -821,14 +932,24 @@
       "projectFolder": "test/types",
       "shouldPublish": false
     },
-//    {
-//      "packageName": "shibuya-erc20",
-//      "projectFolder": "test/shibuya-erc20",
-//      "shouldPublish": false
-//    },
+    {
+      "packageName": "shibuya-erc20",
+      "projectFolder": "test/shibuya-erc20",
+      "shouldPublish": false
+    },
     {
       "packageName": "shibuya-psp22",
       "projectFolder": "test/shibuya-psp22",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "solana-example",
+      "projectFolder": "test/solana-example",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "fuel-indexer",
+      "projectFolder": "test/fuel-indexer",
       "shouldPublish": false
     },
 //    {
@@ -849,6 +970,35 @@
     {
       "packageName": "tron-usdt",
       "projectFolder": "test/tron-usdt",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@subsquid/starknet-data",
+      "projectFolder": "starknet/starknet-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-objects",
+      "projectFolder": "starknet/starknet-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-normalization",
+      "projectFolder": "starknet/starknet-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "projectFolder": "starknet/starknet-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "starknet-indexer",
+      "projectFolder": "test/starknet-indexer",
       "shouldPublish": false
     }
   ]

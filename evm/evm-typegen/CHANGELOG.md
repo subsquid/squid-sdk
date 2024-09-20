@@ -1,6 +1,79 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+
+## 4.3.0
+Thu, 27 Jun 2024 09:24:39 GMT
+
+### Minor changes
+
+- fix event names collision on indexed parameter overload
+
+## 4.2.0
+Thu, 20 Jun 2024 11:25:19 GMT
+
+### Minor changes
+
+- Support newer evm-abi
+
+## 4.1.4
+Wed, 29 May 2024 20:42:12 GMT
+
+### Patches
+
+- Add function visibility field
+
+## 4.1.3
+Wed, 29 May 2024 15:23:01 GMT
+
+_Version update only_
+
+## 4.1.2
+Mon, 20 May 2024 19:49:38 GMT
+
+### Patches
+
+- improve multicall typing
+
+## 4.1.1
+Mon, 13 May 2024 06:39:01 GMT
+
+### Patches
+
+- Fix multicall function argument types
+
+## 4.1.0
+Fri, 10 May 2024 10:23:43 GMT
+
+### Minor changes
+
+- Migrate multicall to new codec
+
+## 4.0.1
+Wed, 08 May 2024 19:54:43 GMT
+
+_Version update only_
+
+## 4.0.0
+Tue, 07 May 2024 07:40:43 GMT
+
+### Breaking changes
+
+- Migrate typegen to new codec; Drop dependency to ethers.js
+
+## 3.3.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add `.is()` methods to support classes
+
+## 3.2.4
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 3.2.3
 Thu, 28 Sep 2023 20:58:19 GMT

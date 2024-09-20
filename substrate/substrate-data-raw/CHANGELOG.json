@@ -2,6 +2,170 @@
   "name": "@subsquid/substrate-data-raw",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/substrate-data-raw_v1.2.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to use finalityConfirmation to determine finalized blocks"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.5",
+      "tag": "@subsquid/substrate-data-raw_v1.1.5",
+      "date": "Wed, 15 May 2024 13:21:08 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "ignore blocks lying before or at last ingested finalized head (correct the prev patch)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.3` to `1.1.4`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.4",
+      "tag": "@subsquid/substrate-data-raw_v1.1.4",
+      "date": "Wed, 15 May 2024 12:47:01 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "hot data ingestion: ignore blocks lying below finalized head"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.2` to `1.1.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.3",
+      "tag": "@subsquid/substrate-data-raw_v1.1.3",
+      "date": "Thu, 09 May 2024 10:22:17 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix \".getFinalizedBlockHeight() method is not available\" error"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.2",
+      "tag": "@subsquid/substrate-data-raw_v1.1.2",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.1",
+      "tag": "@subsquid/substrate-data-raw_v1.1.1",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.1.0` to `^0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.2` to `^1.3.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/substrate-data-raw_v1.1.0",
+      "date": "Thu, 04 Jan 2024 17:31:35 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow `block.events` to be null"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.1",
+      "tag": "@subsquid/substrate-data-raw_v1.0.1",
+      "date": "Fri, 01 Dec 2023 17:09:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "`util-timeout` is a main dependency not a peer dependency"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/substrate-data-raw_v1.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "major": [
+          {
+            "comment": "overhaul hot block ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-timeout\" from `^2.3.1` to `^2.3.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/substrate-data-raw_v0.1.0",
       "date": "Thu, 19 Oct 2023 08:58:05 GMT",

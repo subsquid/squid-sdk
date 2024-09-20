@@ -52,6 +52,10 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     let src = cast(getBlockValidator(req), rpcBlock)
 
     let {number, hash, parentHash, transactions, ...headerProps} = src.block
+    if (headerProps.timestamp) {
+        headerProps.timestamp = headerProps.timestamp * 1000 // convert to ms
+    }
+
     let header = new BlockHeader(number, hash, parentHash)
     Object.assign(header, headerProps)
 
@@ -69,6 +73,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
                 let {transactionIndex, ...props} = stx
                 Object.assign(tx, props)
                 assert(transactionIndex === i)
+                if (tx.input != null) {
+                    tx.sighash = tx.input.slice(0, 10)
+                }
             }
             block.transactions.push(tx)
         }
@@ -77,9 +84,12 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     if (req.receipts) {
         let receipts = assertNotNull(src.receipts)
         for (let i = 0; i < receipts.length; i++) {
-            let {transactionIndex, logs, ...props} = receipts[i]
-            assert(transactionIndex === i)
-            Object.assign(block.transactions[i], props)
+            let {transactionIndex, transactionHash, logs, ...props} = receipts[i]
+            
+            let transaction = block.transactions[i]
+            assert(transactionHash === transaction.hash)
+            Object.assign(transaction, props)
+
             if (req.logList) {
                 for (let log of assertNotNull(logs)) {
                     block.logs.push(makeLog(header, log))
@@ -110,7 +120,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
             }
             if (rep.stateDiff) {
                 for (let diff of mapReplayStateDiff(header, transactionIndex, rep.stateDiff)) {
-                    block.stateDiffs.push(diff)
+                    if (diff.kind != '=') {
+                        block.stateDiffs.push(diff)
+                    }
                 }
             }
         }
@@ -119,7 +131,9 @@ function tryMapBlock(rpcBlock: RpcBlock, req: MappingRequest): Block {
     if (src.debugFrames) {
         assert(block.traces.length == 0)
         for (let i = 0; i < src.debugFrames.length; i++) {
-            for (let trace of mapDebugFrame(header, i, src.debugFrames[i], req.fields)) {
+            let frame = src.debugFrames[i]
+            if (frame == null) continue
+            for (let trace of mapDebugFrame(header, i, frame, req.fields)) {
                 block.traces.push(trace)
             }
         }
@@ -173,6 +187,9 @@ function makeTraceRecordFromReplayFrame(
             throw unexpectedCase(type)
     }
     Object.assign(trace, props)
+    if (trace.type == 'call' && trace.action?.input != null) {
+        trace.action.sighash = trace.action.input.slice(0, 10)
+    }
     return trace
 }
 
@@ -230,7 +247,7 @@ function* mapDebugFrame(
     debugFrameResult: {result: DebugFrame},
     fields: FieldSelection | undefined
 ): Iterable<Trace> {
-    if (debugFrameResult.result.type == 'STOP' || debugFrameResult.result.type == 'INVALID') {
+    if (debugFrameResult.result.type == 'STOP') {
         assert(!debugFrameResult.result.calls?.length)
         return
     }
@@ -275,7 +292,8 @@ function* mapDebugFrame(
             case 'CALL':
             case 'CALLCODE':
             case 'DELEGATECALL':
-            case 'STATICCALL': {
+            case 'STATICCALL':
+            case 'INVALID': {
                 trace = new TraceCall(header, transactionIndex, traceAddress)
                 let action: Partial<EvmTraceCallAction> = {}
                 let hasAction = false
@@ -336,7 +354,7 @@ function* mapDebugFrame(
                 break
             }
             default:
-                throw unexpectedCase()
+                throw unexpectedCase(frame.type)
         }
         if (projection.subtraces) {
             trace.subtraces = subtraces
@@ -368,8 +386,9 @@ function* traverseDebugFrame(frame: DebugFrame, traceAddress: number[]): Iterabl
 function* mapDebugStateDiff(
     header: BlockHeader,
     transactionIndex: number,
-    debugDiffResult: GetCastType<typeof DebugStateDiffResult>
+    debugDiffResult: GetCastType<typeof DebugStateDiffResult> | undefined | null
 ): Iterable<StateDiff> {
+    if (debugDiffResult == null) return
     let {pre, post} = debugDiffResult.result
     for (let address in pre) {
         let prev = pre[address]

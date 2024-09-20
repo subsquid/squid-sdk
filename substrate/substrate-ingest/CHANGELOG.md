@@ -1,6 +1,49 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 3.6.4
+Thu, 25 Jul 2024 11:48:18 GMT
+
+_Version update only_
+
+## 3.6.3
+Wed, 15 May 2024 10:11:41 GMT
+
+_Version update only_
+
+## 3.6.2
+Wed, 17 Apr 2024 12:46:35 GMT
+
+_Version update only_
+
+## 3.6.1
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
+
+## 3.6.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- use new ingest CLI framework
+
+## 3.5.1
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 3.5.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- upgrade `@subsquid/*` dependencies
+
+### Patches
+
+- update dependencies
 
 ## 3.4.5
 Thu, 19 Oct 2023 08:58:05 GMT

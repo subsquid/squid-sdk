@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Field, ObjectType, Query, Resolver} from "type-graphql"
+import {Arg, Field, InputType, ObjectType, Query, Resolver} from 'type-graphql'
 import {EntityManager} from "typeorm"
 import {Json} from "../../../../index"
 import {Scalar} from "../model"
@@ -42,5 +42,28 @@ export class ScalarResolver {
                 id: 'ASC'
             }
         })
+    }
+}
+
+
+@InputType()
+export class PingInput {
+    @Field(() => String, {nullable: false})
+    message!: string
+}
+
+
+@ObjectType({simpleResolvers: true})
+export class PongOutput {
+    @Field(() => String, {nullable: false})
+    message!: string
+}
+
+
+@Resolver()
+export class PingPong {
+    @Query(() => PongOutput)
+    ping(@Arg('msg', () => PingInput) msg: PingInput): PongOutput {
+        return msg
     }
 }

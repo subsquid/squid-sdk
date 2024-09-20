@@ -1,5 +1,18 @@
 import {FieldSelection} from '../interfaces/data'
-import {array, BYTES, NAT, object, option, QTY, SMALL_QTY, STRING, taggedUnion, withSentinel} from '@subsquid/util-internal-validation'
+import {
+    array,
+    BYTES,
+    NAT,
+    object,
+    option,
+    QTY,
+    SMALL_QTY,
+    STRING,
+    STRING_FLOAT,
+    taggedUnion,
+    withDefault,
+    withSentinel
+} from '@subsquid/util-internal-validation'
 
 
 export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
@@ -20,12 +33,13 @@ export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive:
             difficulty: withSentinel('BlockHeader.difficulty', -1n, QTY),
             totalDifficulty: withSentinel('BlockHeader.totalDifficulty', -1n, QTY),
             extraData: withSentinel('BlockHeader.extraData', '0x', BYTES),
-            size: withSentinel('BlockHeader.size', -1, SMALL_QTY),
+            size: withSentinel('BlockHeader.size', -1, natural),
             gasLimit: withSentinel('BlockHeader.gasLimit', -1n, QTY),
             gasUsed: withSentinel('BlockHeader.gasUsed', -1n, QTY),
             baseFeePerGas: withSentinel('BlockHeader.baseFeePerGas', -1n, QTY),
-            timestamp: withSentinel('BlockHeader.timestamp', 0, natural)
-        })
+            timestamp: withSentinel('BlockHeader.timestamp', 0, natural),
+            l1BlockNumber: withDefault(0, natural),
+    })
     }
 }
 
@@ -43,7 +57,7 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
             maxFeePerGas: option(QTY),
             maxPriorityFeePerGas: option(QTY),
             input: BYTES,
-            nonce: withSentinel('Transaction.nonce', -1, NAT),
+            nonce: withSentinel('Transaction.nonce', -1, natural),
             value: withSentinel('Transaction.value', -1n, QTY),
             v: withSentinel('Transaction.v', -1n, QTY),
             r: withSentinel('Transaction.r', '0x', BYTES),
@@ -64,6 +78,13 @@ export function getTxReceiptProps(fields: FieldSelection['transaction'], forArch
         contractAddress: option(BYTES),
         type: withSentinel('Receipt.type', -1, natural),
         status: withSentinel('Receipt.status', -1, natural),
+        l1Fee: option(QTY),
+        l1FeeScalar: option(STRING_FLOAT),
+        l1GasPrice: option(QTY),
+        l1GasUsed: option(QTY),
+        l1BlobBaseFee: option(QTY),
+        l1BlobBaseFeeScalar: option(natural),
+        l1BaseFeeScalar: option(natural),
     })
 }
 
@@ -112,8 +133,8 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         address: fields?.createResultAddress
     }, {
         gasUsed: QTY,
-        code: BYTES,
-        address: BYTES
+        code: withDefault('0x', BYTES),
+        address: withDefault('0x0000000000000000000000000000000000000000', BYTES)
     })
 
     let TraceCreate = object({
@@ -124,7 +145,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
 
     let traceCallAction = project({
         callType: fields?.callCallType,
-        from: fields?.callFrom,
+        from: forArchive ? fields?.callFrom : true,
         to: forArchive ? fields?.callTo : true,
         value: fields?.callValue,
         gas: fields?.callGas,
@@ -137,7 +158,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         value: option(QTY),
         gas: QTY,
         input: BYTES,
-        sighash: BYTES
+        sighash: withDefault('0x', BYTES)
     })
 
     let traceCallResult = project({
@@ -145,7 +166,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         output: fields?.callResultOutput
     }, {
         gasUsed: QTY,
-        output: BYTES
+        output: withDefault('0x', BYTES)
     })
 
     let TraceCall = object({

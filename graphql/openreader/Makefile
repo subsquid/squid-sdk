@@ -7,11 +7,11 @@ test-cockroach:
 
 
 up:
-	@docker-compose up -d 2>&1
+	@docker compose up -d 2>&1
 
 
 down:
-	@docker-compose down -v 2>&1
+	@docker compose down -v 2>&1
 
 
 logs:

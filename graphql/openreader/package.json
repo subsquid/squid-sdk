@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "4.4.1",
+  "version": "5.1.1",
   "description": "GraphQL server for postgres-compatible databases",
   "keywords": [
     "graphql",
@@ -27,12 +27,12 @@
   "dependencies": {
     "@graphql-tools/merge": "^9.0.1",
     "@subsquid/graphiql-console": "^0.3.0",
-    "@subsquid/logger": "^1.3.1",
-    "@subsquid/util-internal": "^2.5.2",
-    "@subsquid/util-internal-commander": "^1.3.1",
-    "@subsquid/util-internal-hex": "^1.2.1",
-    "@subsquid/util-internal-http-server": "^1.2.1",
-    "@subsquid/util-naming": "^1.2.1",
+    "@subsquid/logger": "^1.3.3",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/util-internal-hex": "^1.2.2",
+    "@subsquid/util-internal-http-server": "^2.0.0",
+    "@subsquid/util-naming": "^1.3.0",
     "apollo-server-core": "^3.13.0",
     "apollo-server-express": "^3.13.0",
     "commander": "^11.1.0",
@@ -42,7 +42,8 @@
     "graphql-parse-resolve-info": "^4.14.0",
     "graphql-ws": "^5.14.2",
     "pg": "^8.11.3",
-    "ws": "^8.14.2"
+    "ws": "^8.14.2",
+    "inflected": "^2.1.0"
   },
   "peerDependencies": {
     "@subsquid/big-decimal": "^1.0.0"
@@ -63,6 +64,7 @@
     "expect": "^29.7.0",
     "gql-test-client": "^0.0.0",
     "mocha": "^10.2.0",
-    "typescript": "~5.3.2"
+    "typescript": "~5.3.2",
+    "@types/inflected": "^2.1.3"
   }
 }

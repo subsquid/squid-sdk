@@ -2,6 +2,7 @@ import {weakMemo} from '@subsquid/util-internal'
 import {
     array,
     BYTES,
+    cast,
     NAT,
     object,
     option,
@@ -11,7 +12,9 @@ import {
     SMALL_QTY,
     STRING,
     taggedUnion,
-    Validator
+    ValidationFailure,
+    Validator,
+    withDefault
 } from '@subsquid/util-internal-validation'
 import {Bytes, Bytes20} from '../interfaces/base'
 import {FieldSelection} from '../interfaces/data'
@@ -56,6 +59,7 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
 
     let Receipt = object({
         transactionIndex: SMALL_QTY,
+        transactionHash: BYTES,
         ...getTxReceiptProps(req.fields.transaction, false),
         logs: req.logList ? array(Log) : undefined
     })
@@ -80,10 +84,10 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
             trace: option(array(TraceFrame)),
             stateDiff: option(record(BYTES, TraceStateDiff))
         }))),
-        debugFrames: option(array(object({
+        debugFrames: option(array(option(object({
             result: DebugFrame
-        }))),
-        debugStateDiffs: option(array(DebugStateDiffResult))
+        })))),
+        debugStateDiffs: option(array(option(DebugStateDiffResult)))
     })
 })
 
@@ -91,11 +95,13 @@ export const getBlockValidator = weakMemo((req: MappingRequest) => {
 function getDebugFrameValidator(fields: FieldSelection['trace']) {
     let Frame: Validator<DebugFrame, unknown>
 
-    let base = project(fields, {
-        error: option(STRING),
-        revertReason: option(STRING),
-        calls: option(array(ref(() => Frame)))
-    })
+    let base = {
+        calls: option(array(ref(() => Frame))),
+        ...project(fields, {
+            error: option(STRING),
+            revertReason: option(STRING),
+        })
+    }
 
     let Create = object({
         ...base,
@@ -112,29 +118,33 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
             gas: QTY,
             input: BYTES,
             gasUsed: QTY,
-            output: BYTES,
-            to: BYTES
+            output: withDefault('0x', BYTES),
+            to: withDefault('0x0000000000000000000000000000000000000000', BYTES)
         })
     })
 
     let Call = object({
         ...base,
-        to: BYTES,
+        to: withDefault('0x0000000000000000000000000000000000000000', BYTES),
         input: BYTES,
         ...project({
             from: fields?.callFrom,
             value: fields?.callValue,
             gas: fields?.callGas,
+            output: fields?.callResultOutput,
+            gasUsed: fields?.callResultGasUsed
         }, {
             from: BYTES,
             value: option(QTY),
-            gas: QTY,
+            gas: withDefault(0n, QTY),
+            gasUsed: withDefault(0n, QTY),
+            output: withDefault('0x', BYTES)
         })
     })
 
     let Suicide = object({
         ...base,
-        to: BYTES,
+        to: withDefault('0x0000000000000000000000000000000000000000', BYTES),
         ...project({
             from: fields?.suicideAddress,
             value: fields?.suicideBalance
@@ -144,23 +154,59 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
         })
     })
 
-    Frame = taggedUnion('type', {
-        CALL: Call,
-        CALLCODE: Call,
-        STATICCALL: Call,
-        DELEGATECALL: Call,
-        CREATE: Create,
-        CREATE2: Create,
-        SELFDESTRUCT: Suicide,
-        INVALID: object({}),
-        STOP: object({})
-    })
+    let tagField = 'type'
+
+    function getVariant(object: any) {
+        if (typeof object != 'object' || !object) return new ValidationFailure(object, `{value} is not an object`)
+        let tag = cast(STRING, object[tagField]).toUpperCase()
+        object[tagField] = tag
+        switch (tag) {
+            case 'CALL':
+            case 'CALLCODE':
+            case 'STATICCALL':
+            case 'DELEGATECALL':
+            case 'INVALID':
+                return Call
+            case 'CREATE':
+            case 'CREATE2':
+                return Create
+            case 'SELFDESTRUCT':
+                return Suicide
+            case 'STOP':
+                return object({})
+        }
+        let failure = new ValidationFailure(tag, `got {value}, but expected one of ["CALL","CALLCODE","STATICCALL","DELEGATECALL","INVALID","CREATE","CREATE2","SELFDESTRUCT","STOP"]`)
+        failure.path.push(tagField)
+        return failure
+    }
+
+    Frame = {
+        cast(value: any) {
+            let variant = getVariant(value)
+            if (variant instanceof ValidationFailure) return variant
+            let result = variant.cast(value)
+            if (result instanceof ValidationFailure) return result
+            result[tagField] = value[tagField]
+            return result
+        },
+        validate(value) {
+            let variant = getVariant(value)
+            if (variant instanceof ValidationFailure) return variant
+            return variant.validate(value)
+        },
+        phantom() {
+            throw new Error()
+        }
+    }
 
     return Frame
 }
 
 
-export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugInvalidFrame
+
+
+
+export type DebugFrame = DebugCreateFrame | DebugCallFrame | DebugSuicideFrame | DebugStopFrame
 
 
 interface DebugCreateFrame extends DebugFrameBase {
@@ -170,7 +216,7 @@ interface DebugCreateFrame extends DebugFrameBase {
 
 
 interface DebugCallFrame extends DebugFrameBase {
-    type:  'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL'
+    type:  'CALL' | 'CALLCODE' | 'STATICCALL' | 'DELEGATECALL' | 'INVALID'
     to: Bytes20
     input: Bytes
 }
@@ -182,8 +228,8 @@ interface DebugSuicideFrame extends DebugFrameBase {
 }
 
 
-interface DebugInvalidFrame extends DebugFrameBase {
-    type: 'INVALID' | 'STOP'
+interface DebugStopFrame extends DebugFrameBase {
+    type: 'STOP'
 }
 
 

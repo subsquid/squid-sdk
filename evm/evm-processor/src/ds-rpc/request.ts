@@ -53,6 +53,11 @@ function logsRequested(req?: DataRequest): boolean {
             if (tx.logs) return true
         }
     }
+    if (req.traces) {
+        for (let trace of req.traces) {
+            if (trace.transactionLogs) return true
+        }
+    }
     return false
 }
 
@@ -63,6 +68,11 @@ function tracesRequested(req?: DataRequest): boolean {
     if (req.transactions) {
         for (let tx of req.transactions) {
             if (tx.traces) return true
+        }
+    }
+    if (req.logs) {
+        for (let log of req.logs) {
+            if (log.transactionTraces) return true
         }
     }
     return false
@@ -105,7 +115,14 @@ const TX_RECEIPT_FIELDS: {[K in keyof _EvmTxReceipt]: true} = {
     effectiveGasPrice: true,
     contractAddress: true,
     type: true,
-    status: true
+    status: true,
+    l1Fee: true,
+    l1FeeScalar: true,
+    l1GasPrice: true,
+    l1GasUsed: true,
+    l1BaseFeeScalar: true,
+    l1BlobBaseFee: true,
+    l1BlobBaseFeeScalar: true,
 }
 
 

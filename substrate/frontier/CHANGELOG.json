@@ -2,6 +2,56 @@
   "name": "@subsquid/frontier",
   "entries": [
     {
+      "version": "4.0.4",
+      "tag": "@subsquid/frontier_v4.0.4",
+      "date": "Mon, 29 Jul 2024 13:44:25 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "correctly handle transactions with `signature.v` < 35"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.3",
+      "tag": "@subsquid/frontier_v4.0.3",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.0.2",
+      "tag": "@subsquid/frontier_v4.0.2",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.0.1",
       "tag": "@subsquid/frontier_v4.0.1",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

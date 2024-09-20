@@ -2,6 +2,298 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.5.1",
+      "tag": "@subsquid/substrate-processor_v8.5.1",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.5.0",
+      "tag": "@subsquid/substrate-processor_v8.5.0",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix subcalls relation"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "allow to use finalityConfirmation if `chain_getFinalizedHead` is not an option"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.1.0` to `4.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.5` to `1.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.4.1",
+      "tag": "@subsquid/substrate-processor_v8.4.1",
+      "date": "Sat, 08 Jun 2024 15:30:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix missing `event.topics` when datasource is archive"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.4.0",
+      "tag": "@subsquid/substrate-processor_v8.4.0",
+      "date": "Sat, 01 Jun 2024 10:02:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `event.topics` field"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.4` to `4.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.3.1",
+      "tag": "@subsquid/substrate-processor_v8.3.1",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.4.0` to `0.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.3.0",
+      "tag": "@subsquid/substrate-processor_v8.3.0",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Allow to configure RPC HTTP headers"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.7.0` to `4.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.3` to `4.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.2.2",
+      "tag": "@subsquid/substrate-processor_v8.2.2",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.3.2` to `^1.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.6.0` to `^4.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.2` to `^4.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.1` to `^1.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.2` to `^1.2.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.0.2` to `^4.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.3.0` to `^0.4.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.2.1",
+      "tag": "@subsquid/substrate-processor_v8.2.1",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.2` to `^1.3.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^4.0.1` to `^4.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.0` to `^0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.0` to `^1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.0.1` to `^4.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.2.0",
+      "tag": "@subsquid/substrate-processor_v8.2.0",
+      "date": "Wed, 21 Feb 2024 19:22:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add field selection schema validation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `~0.2.0` to `~0.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.1.1",
+      "tag": "@subsquid/substrate-processor_v8.1.1",
+      "date": "Mon, 01 Jan 2024 14:37:34 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix archive error when limiting item request by block range"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.1.0",
+      "tag": "@subsquid/substrate-processor_v8.1.0",
+      "date": "Wed, 20 Dec 2023 07:15:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": " rename `.setArchive()` to `.setGateway()`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.0.0",
+      "tag": "@subsquid/substrate-processor_v8.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "update dependencies"
+          },
+          {
+            "comment": "add `Chain.client` alias for compatibility with `evm-typegen` (closes #212)"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "support chain head tracking via RPC subscription"
+          },
+          {
+            "comment": "deprecate `.setDataSource()` in favour of separate `.setArchive()` and `.setRpcEndpoint()` methods"
+          },
+          {
+            "comment": "introduce `.setRpcDataIngestionSettings()` and deprecate `.setChainPollInterval()`, `.useArchiveOnly()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.3.1` to `^1.3.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.4.2` to `^4.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data\" from `^3.0.1` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-data-raw\" from `^0.1.0` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^0.0.2` to `^1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^3.1.0` to `^4.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "7.2.1",
       "tag": "@subsquid/substrate-processor_v7.2.1",
       "date": "Thu, 19 Oct 2023 08:58:05 GMT",

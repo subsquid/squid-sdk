@@ -1,6 +1,49 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Sat, 14 Oct 2023 22:24:52 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+
+## 4.1.1
+Wed, 17 Apr 2024 12:46:35 GMT
+
+### Patches
+
+- factor out `getOrGenerateSquidId()` function into a separate package
+
+## 4.1.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Minor changes
+
+- introduce `Database.transactHot2()` protocol to process finalized blocks faster within hot processing context
+- refresh chain height metric once in 20 seconds
+
+## 4.0.2
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 4.0.1
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Patches
+
+- always switch to RPC after reaching the archive head (even for databases that don't support hot blocks)
+
+## 4.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- migrate to callback based hot data ingestion
+- remove ingest tools
+
+### Minor changes
+
+- add item filtering tools
+
+### Patches
+
+- update dependencies
 
 ## 3.1.0
 Sat, 14 Oct 2023 22:24:52 GMT

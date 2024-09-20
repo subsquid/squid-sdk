@@ -1,6 +1,25 @@
 # Change Log - @subsquid/typeorm-migration
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+
+## 1.3.0
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Minor changes
+
+- support `ts-node`
+
+## 1.2.4
+Thu, 14 Dec 2023 11:16:15 GMT
+
+_Version update only_
+
+## 1.2.3
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.2.2
 Thu, 28 Sep 2023 20:58:19 GMT

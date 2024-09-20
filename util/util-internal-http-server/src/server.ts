@@ -1,7 +1,7 @@
-import assert from "assert"
-import * as http from "http"
-import {RequestListener} from "http"
-import stoppable from "stoppable"
+import assert from 'assert'
+import * as http from 'http'
+import {RequestListener} from 'http'
+import stoppable from 'stoppable'
 
 
 export interface ListeningServer {
@@ -10,74 +10,18 @@ export interface ListeningServer {
 }
 
 
-export interface HttpRequest extends http.IncomingMessage {
-    method: string
-    url: string
+export interface HttpServerOptions {
+    port?: number | string
+    socketTimeout?: number
 }
 
 
-export class HttpContext {
-    private _url?: URL
-
-    constructor(
-        public readonly request: HttpRequest,
-        public readonly response: http.ServerResponse
-    ) {
-    }
-
-    get url(): URL {
-        if (this._url == null) {
-            this._url = new URL(this.request.url, `http://localhost/`)
-        }
-        return this._url
-    }
-
-    send(status: number, body?: string | Uint8Array | object, contentType?: string): void {
-        body = body || http.STATUS_CODES[status] || ''
-        if (typeof body == 'object' && !(body instanceof Uint8Array)) {
-            body = JSON.stringify(body)
-            contentType = contentType || 'application/json'
-        }
-        let len: number
-        if (typeof body == 'string') {
-            contentType = contentType || 'text/plain'
-            contentType += '; charset=UTF-8'
-            len = Buffer.byteLength(body)
-        } else {
-            len = body.length
-        }
-        this.response.writeHead(status, {
-            'content-type': contentType,
-            'content-length': len
-        }).end(body)
-    }
-}
-
-
-export interface RequestHandler {
-    (ctx: HttpContext): Promise<void>
-}
-
-
-export function createHttpServer(handler: RequestHandler, port?: number | string): Promise<ListeningServer> {
-    return createNodeHttpServer(async (req, res) => {
-        let ctx = new HttpContext(req as HttpRequest, res)
-        try {
-            await handler(ctx)
-        } catch(err: any) {
-            if (res.headersSent) {
-                res.destroy()
-            } else {
-                ctx.send(500, err.stack)
-            }
-        }
-    }, port)
-}
-
-
-export function createNodeHttpServer(handler: RequestListener, port?: number | string): Promise<ListeningServer> {
+export function createHttpServer(handler: RequestListener, options?: HttpServerOptions): Promise<ListeningServer> {
     let server = http.createServer(handler)
-    return listen(server, port)
+    if (options?.socketTimeout) {
+        server.timeout = options.socketTimeout
+    }
+    return listen(server, options?.port)
 }
 
 

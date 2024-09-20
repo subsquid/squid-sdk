@@ -13,7 +13,8 @@ import {
     ref,
     SMALL_QTY,
     STRING,
-    Validator
+    Validator,
+    withDefault
 } from '@subsquid/util-internal-validation'
 import {Bytes, Bytes20, Bytes32, Qty} from '../interfaces/base'
 import {project} from '../mapping/schema'
@@ -27,6 +28,7 @@ export interface DataRequest {
     stateDiffs?: boolean
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    debugTraceTimeout?: string
 }
 
 
@@ -37,9 +39,10 @@ export interface Block {
     receipts?: TransactionReceipt[]
     logs?: Log[]
     traceReplays?: TraceTransactionReplay[]
-    debugFrames?: DebugFrameResult[]
-    debugStateDiffs?: DebugStateDiffResult[]
+    debugFrames?: (DebugFrameResult | undefined | null)[]
+    debugStateDiffs?: (DebugStateDiffResult | undefined | null)[]
     _isInvalid?: boolean
+    _errorMessage?: string
 }
 
 
@@ -97,6 +100,7 @@ export const TransactionReceipt = object({
     blockNumber: SMALL_QTY,
     blockHash: BYTES,
     transactionIndex: SMALL_QTY,
+    transactionHash: BYTES,
     logs: array(Log)
 })
 
@@ -106,20 +110,21 @@ export type TransactionReceipt = GetSrcType<typeof TransactionReceipt>
 
 export const DebugFrame: Validator<DebugFrame> = object({
     type: STRING,
-    input: BYTES,
+    input: withDefault('0x', BYTES),
     calls: option(array(ref(() => DebugFrame)))
 })
 
 
 export interface DebugFrame {
     type: string
-    input: Bytes
+    input?: Bytes | null
     calls?: DebugFrame[] | null
 }
 
 
 export const DebugFrameResult = object({
-    result: DebugFrame
+    result: DebugFrame,
+    txHash: option(BYTES)
 })
 
 
@@ -147,7 +152,8 @@ export type DebugStateDiff = GetSrcType<typeof DebugStateDiff>
 
 
 export const DebugStateDiffResult = object({
-    result: DebugStateDiff
+    result: DebugStateDiff,
+    txHash: option(BYTES)
 })
 
 

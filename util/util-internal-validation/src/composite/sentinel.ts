@@ -17,7 +17,7 @@ try {
 function warn(label: string): void {
     if (LOG == null || SUPPRESSED_LABELS[label]) return
     SUPPRESSED_LABELS[label] = true
-    LOG.error(
+    LOG.warn(
         `Sentinel value was used in place of ${label}. ` +
         `This message will be printed only once. ` +
         `To suppress it entirely set SQD_ALLOW_SENTINEL=${label} env variable. ` +

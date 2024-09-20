@@ -12,18 +12,18 @@ import type {Pool} from 'pg'
 import {WebSocketServer} from 'ws'
 import {Context, OpenreaderContext} from './context'
 import {PoolOpenreaderContext} from './db'
-import type {Dialect} from './dialect'
+import type {DbType} from './db'
 import type {Model} from './model'
-import {SchemaBuilder} from './opencrud/schema'
-import {logGraphQLError} from './util/error-handling'
-import {executeWithLimit} from './util/execute'
+import {openreaderExecute, openreaderSubscribe} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
+import {Dialect, getSchemaBuilder} from './dialect'
 
 
 export interface ServerOptions {
     port: number | string
     model: Model
     connection: Pool
+    dbType?: DbType
     dialect?: Dialect
     graphiqlConsole?: boolean
     log?: Logger
@@ -33,22 +33,32 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
-    subscriptionMaxResponseNodes?: number,
+    subscriptionMaxResponseNodes?: number
     cache?: KeyValueCache
 }
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
-    let {connection, subscriptionConnection, subscriptionPollInterval, maxResponseNodes, subscriptionMaxResponseNodes} = options
-    let dialect = options.dialect ?? 'postgres'
+    let {
+        connection,
+        subscriptionConnection,
+        subscriptionPollInterval,
+        maxResponseNodes,
+        subscriptionMaxResponseNodes,
+        log,
+    } = options
 
-    let schema = new SchemaBuilder(options).build()
+    let dbType = options.dbType ?? 'postgres'
+
+    let schemaBuilder = await getSchemaBuilder(options)
+    let schema = schemaBuilder.build()
 
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
-            dialect,
+            dbType,
             connection,
             subscriptionConnection,
-            subscriptionPollInterval
+            subscriptionPollInterval,
+            log
         )
 
         if (maxResponseNodes) {
@@ -61,23 +71,23 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         }
 
         return {
-            openreader
+            openreader,
         }
     }
 
     let disposals: Dispose[] = []
 
     return addServerCleanup(disposals, runApollo({
-        port: options.port,
-        schema,
-        context,
-        disposals,
-        subscriptions: options.subscriptions,
-        log: options.log,
-        graphiqlConsole: options.graphiqlConsole,
-        maxRequestSizeBytes: options.maxRequestSizeBytes,
-        maxRootFields: options.maxRootFields,
-        cache: options.cache,
+            port: options.port,
+            schema,
+            context,
+            disposals,
+            subscriptions: options.subscriptions,
+            log: options.log,
+            graphiqlConsole: options.graphiqlConsole,
+            maxRequestSizeBytes: options.maxRequestSizeBytes,
+            maxRootFields: options.maxRootFields,
+            cache: options.cache,
     }), options.log)
 }
 
@@ -104,12 +114,12 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     const {disposals, context, schema, log, maxRootFields} = options
 
     let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
-    let app = express()
+    let app: express.Application = express()
     let server = http.createServer(app)
 
-    const execute = maxRootFields
-            ? (args: ExecutionArgs) => executeWithLimit(maxRootFields, args)
-            : undefined
+    let execute = (args: ExecutionArgs) => openreaderExecute(args, {
+        maxRootFields: maxRootFields
+        })
 
     if (options.subscriptions) {
         let wsServer = new WebSocketServer({
@@ -122,14 +132,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                 schema,
                 context,
                 execute,
-                onError(ctx, message, errors) {
-                    if (log) {
-                        // FIXME: we don't want to log client errors
-                        for (let err of errors) {
-                            logGraphQLError(log, err)
-                        }
-                    }
-                },
+                subscribe: openreaderSubscribe,
                 onNext(_ctx, _message, args, result) {
                     args.contextValue.openreader.close()
                     return result
@@ -147,7 +150,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         cache: options.cache,
         stopOnTerminationSignals: false,
         allowBatchedHttpRequests: false,
-        executor: execute && (async req => {
+        executor: async req => {
             return execute({
                 schema,
                 document: req.document,
@@ -156,7 +159,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                 variableValues: req.request.variables,
                 operationName: req.operationName
             })
-        }),
+        },
         plugins: [
             ...options.plugins || [],
             {
@@ -164,13 +167,6 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                     return {
                         willSendResponse(req: any) {
                             return req.context.openreader.close()
-                        },
-                        async didEncounterErrors(req) {
-                            if (req.operation && log) {
-                                for (let err of req.errors) {
-                                    logGraphQLError(log, err)
-                                }
-                            }
                         }
                     }
                 }
@@ -186,7 +182,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
     disposals.push(() => apollo.stop())
 
     apollo.applyMiddleware({
-        app,
+        app: app as any, // @types/express version mismatch. We don't want to pin it just because of this line.
         bodyParserConfig: {
             limit: maxRequestSizeBytes
         }

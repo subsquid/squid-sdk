@@ -66,7 +66,9 @@ export type BinaryOp =
     'contains' | 'not_contains' |
     'containsInsensitive' | 'not_containsInsensitive' |
     'startsWith' | 'not_startsWith' |
+    'startsWithInsensitive' | 'not_startsWithInsensitive' |
     'endsWith' | 'not_endsWith' |
+    'endsWithInsensitive' | 'not_endsWithInsensitive' |
     'containsAll' |
     'containsAny' |
     'containsNone' |
@@ -82,4 +84,4 @@ export interface OrderBy {
 }
 
 
-export type SortOrder = 'ASC' | 'DESC' | 'ASC NULLS FIRST' | 'DESC NULLS LAST'
+export type SortOrder = 'ASC' | 'DESC' | 'ASC NULLS FIRST' | 'ASC NULLS LAST' | 'DESC NULLS FIRST' | 'DESC NULLS LAST'

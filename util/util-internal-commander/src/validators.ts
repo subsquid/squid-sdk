@@ -15,6 +15,13 @@ export function positiveInt(s: string): number {
 }
 
 
+export function positiveReal(s: string) {
+    let x = Number(s)
+    if (isNaN(x) || x <= 0) throw new InvalidArgumentError('Not a positive real number')
+    return x
+}
+
+
 export function Url(protocols?: string[]): (s: string) => string {
     return function(s: string) {
         let url: URL

@@ -1,6 +1,39 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Fri, 26 Jul 2024 09:41:08 GMT and should not be manually modified.
+
+## 3.1.2
+Fri, 26 Jul 2024 09:41:08 GMT
+
+### Patches
+
+- rename `__type` to `__kind` for decoded events
+
+## 3.1.1
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Patches
+
+- return `__type` field back to decoded events
+
+## 3.1.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- add support for v5 metadata
+
+## 3.0.3
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
+
+## 3.0.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 3.0.1
 Thu, 28 Sep 2023 20:58:19 GMT

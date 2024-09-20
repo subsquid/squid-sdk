@@ -35,13 +35,13 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         index.line(`export * from "./${toCamelCase(name)}.model"`)
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry(name)
-        imports.useTypeorm('Entity', 'Column', 'PrimaryColumn')
+        imports.useTypeormStore('Entity', 'Column', 'PrimaryColumn')
         out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
-            imports.useTypeorm('Index')
+            imports.useTypeormStore('Index')
             out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
         out.line('@Entity_()')
@@ -59,34 +59,11 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         if (key === 'id') {
                             out.line('@PrimaryColumn_()')
                         } else {
+                            const decorator = getDecorator(prop.type.name)
+                            imports.useTypeormStore(decorator)
+
                             addIndexAnnotation(entity, key, imports, out)
-                            switch (prop.type.name) {
-                                case 'BigInt':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigintTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                case 'BigDecimal':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.bigdecimalTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                case 'Float':
-                                    imports.useMarshal()
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {transformer: marshal.floatTransformer, nullable: ${prop.nullable}})`
-                                    )
-                                    break
-                                default:
-                                    out.line(
-                                        `@Column_("${getDbType(prop.type.name)}", {nullable: ${
-                                            prop.nullable
-                                        }})`
-                                    )
-                                    break
-                            }
+                            out.line(`@${decorator}_({nullable: ${prop.nullable}})`)
                         }
                         break
                     case 'enum':
@@ -100,14 +77,14 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         break
                     case 'fk':
                         if (getFieldIndex(entity, key)?.unique) {
-                            imports.useTypeorm('OneToOne', 'Index', 'JoinColumn')
+                            imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
                                 `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
-                            imports.useTypeorm('ManyToOne', 'Index')
+                            imports.useTypeormStore('ManyToOne', 'Index')
                             if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
                                 out.line(`@Index_()`)
                             }
@@ -118,9 +95,13 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         }
                         break
                     case 'lookup':
+                        imports.useTypeormStore('OneToOne')
+                        out.line(
+                            `@OneToOne_(() => ${prop.type.entity}, e => e.${prop.type.field})`
+                        )
                         break
                     case 'list-lookup':
-                        imports.useTypeorm('OneToMany')
+                        imports.useTypeormStore('OneToMany')
                         out.line(
                             `@OneToMany_(() => ${prop.type.entity}, e => e.${prop.type.field})`
                         )
@@ -144,8 +125,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                                 if (scalar == 'BigInt' || scalar == 'BigDecimal') {
                                     throw new Error(`Property ${name}.${key} has unsupported type: can't generate code for native ${scalar} arrays.`)
                                 }
+
+                                const decorator = getDecorator(scalar)
+                                imports.useTypeormStore(decorator)
+
                                 out.line(
-                                    `@Column_("${getDbType(scalar)}", {array: true, nullable: ${prop.nullable}})`
+                                    `@${decorator}_({array: true, nullable: ${prop.nullable}})`
                                 )
                                 break
                             }
@@ -178,34 +163,33 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                     default:
                         throw unexpectedCase((prop.type as any).kind)
                 }
-                if (prop.type.kind != 'lookup') {
-                    out.line(`${key}!: ${getPropJsType(imports, 'entity', prop)}`)
-                }
+                out.line(`${key}!: ${getPropJsType(imports, 'entity', prop)}`)
             }
         })
         out.write()
     }
 
-    function getDbType(scalar: string): string {
+    function getDecorator(scalar: string): string {
         switch(scalar) {
             case 'ID':
             case 'String':
-                return 'text'
+                return 'StringColumn'
             case 'Int':
-                return 'int4'
+                return 'IntColumn'
             case 'Float':
-                return 'numeric'
+                return 'FloatColumn'
             case 'Boolean':
-                return 'bool'
+                return 'BooleanColumn'
             case 'DateTime':
-                return 'timestamp with time zone'
+                return 'DateTimeColumn'
             case 'BigInt':
+                return 'BigIntColumn'
             case 'BigDecimal':
-                return 'numeric'
+                return 'BigDecimalColumn'
             case 'Bytes':
-                return 'bytea'
+                return 'BytesColumn'
             case 'JSON':
-                return 'jsonb'
+                return 'JSONColumn'
             default:
                 throw unexpectedCase(scalar)
         }
@@ -495,7 +479,7 @@ function collectVariants(model: Model): Set<string> {
 function addIndexAnnotation(entity: Entity, field: string, imports: ImportRegistry, out: Output): void {
     let index = getFieldIndex(entity, field)
     if (index == null) return
-    imports.useTypeorm('Index')
+    imports.useTypeormStore('Index')
     if (index.unique) {
         out.line(`@Index_({unique: true})`)
     } else {
@@ -531,7 +515,7 @@ class ImportRegistry {
 
     constructor(private owner: string) {}
 
-    useTypeorm(...names: string[]): void {
+    useTypeormStore(...names: string[]): void {
         names.forEach((name) => this.typeorm.add(name))
     }
 
@@ -565,7 +549,7 @@ class ImportRegistry {
             const importList = Array.from(this.typeorm).map(
                 (name) => name + ' as ' + name + '_'
             )
-            out.line(`import {${importList.join(', ')}} from "typeorm"`)
+            out.line(`import {${importList.join(', ')}} from "@subsquid/typeorm-store"`)
         }
         if (this.marshal) {
             out.line(`import * as marshal from "./marshal"`)

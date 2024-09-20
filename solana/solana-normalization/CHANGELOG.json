@@ -1,0 +1,47 @@
+{
+  "name": "@subsquid/solana-normalization",
+  "entries": [
+    {
+      "version": "0.0.2",
+      "tag": "@subsquid/solana-normalization_v0.0.2",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/solana-normalization_v0.0.1",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.4.0` to `0.5.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/solana-normalization_v0.0.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Batch, Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Chain} from './chain'
 import {SubstrateArchive} from './ds-archive'
@@ -30,6 +31,7 @@ import {
     GearMessageQueuedRequest,
     GearUserMessageSentRequest
 } from './interfaces/data-request'
+import {getFieldSelectionValidator} from './selection'
 
 
 export interface RpcEndpointSettings {
@@ -53,6 +55,10 @@ export interface RpcEndpointSettings {
      * Maximum number of requests in a single batch call
      */
     maxBatchCallSize?: number
+    /**
+     * HTTP headers
+     */
+    headers?: Record<string, string>
 }
 
 
@@ -76,9 +82,9 @@ export interface RpcDataIngestionSettings {
 }
 
 
-export interface ArchiveSettings {
+export interface GatewaySettings {
     /**
-     * Subsquid archive URL
+     * Subsquid Network Gateway url
      */
     url: string
     /**
@@ -86,6 +92,12 @@ export interface ArchiveSettings {
      */
     requestTimeout?: number
 }
+
+
+/**
+ * @deprecated
+ */
+export type ArchiveSettings = GatewaySettings
 
 
 /**
@@ -147,7 +159,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: ArchiveSettings
+    private finalityConfirmation?: number
+    private archive?: GatewaySettings
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -155,15 +168,22 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private running = false
 
     /**
-     * Set Subsquid Archive endpoint.
+     * @deprecated Use {@link .setGateway()}
+     */
+    setArchive(url: string | GatewaySettings): this {
+        return this.setGateway(url)
+    }
+
+    /**
+     * Set Subsquid Network Gateway endpoint (ex Archive).
      *
-     * Subsquid Archive allows to get data from finalized blocks up to
+     * Subsquid Network allows to get data from finalized blocks up to
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * processor.setArchive('https://v2.archive.subsquid.io/network/kusama')
+     * processor.setGateway('https://v2.archive.subsquid.io/network/kusama')
      */
-    setArchive(url: string | ArchiveSettings): this {
+    setGateway(url: string | GatewaySettings): this {
         this.assertNotRunning()
         if (typeof url == 'string') {
             this.archive = {url}
@@ -205,13 +225,13 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      *     chain: 'https://kusama-rpc.polkadot.io'
      * })
      *
-     * @deprecated Use separate {@link .setArchive()} and {@link .setRpcEndpoint()} methods
+     * @deprecated Use separate {@link .setGateway()} and {@link .setRpcEndpoint()} methods
      * to specify data sources.
      */
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         if (src.archive) {
-            this.setArchive(src.archive)
+            this.setGateway(src.archive)
         } else {
             this.archive = undefined
         }
@@ -267,11 +287,24 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
+     * Distance from the head block behind which all blocks are considered to be finalized.
+     *
+     * By default, the processor will track finalized blocks via `chain_getFinalizedHead`.
+     * Configure it only if `chain_getFinalizedHead` doesn’t return the expected info.
+     */
+    setFinalityConfirmation(nBlocks: number): this {
+        this.assertNotRunning()
+        this.finalityConfirmation = nBlocks
+        return this
+    }
+
+    /**
      * Configure a set of fetched fields
      */
     setFields<T extends FieldSelection>(fields: T): SubstrateBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 
@@ -298,49 +331,56 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
 
     addEvent(options: EventRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({events: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({events: [req]}, range)
         return this
     }
 
     addCall(options: CallRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({calls: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({calls: [req]}, range)
         return this
     }
 
     addEvmLog(options: EvmLogRequest & BlockRange): this {
         this.assertNotRunning()
+        let {range, address, ...req} = options
         this.add({evmLogs: [{
-            ...options,
-            address: options.address?.map(s => s.toLowerCase())
-        }]}, options.range)
+            ...req,
+            address: address?.map(s => s.toLowerCase())
+        }]}, range)
         return this
     }
 
     addEthereumTransaction(options: EthereumTransactRequest & BlockRange): this {
         this.assertNotRunning()
+        let {range, to, ...req} = options
         this.add({ethereumTransactions: [{
-            ...options,
-            to: options.to?.map(s => s.toLowerCase())
-        }]}, options.range)
+            ...req,
+            to: to?.map(s => s.toLowerCase())
+        }]}, range)
         return this
     }
 
     addContractsContractEmitted(options: ContractsContractEmittedRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({contractsEvents: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({contractsEvents: [req]}, range)
         return this
     }
 
     addGearMessageQueued(options: GearMessageQueuedRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({gearMessagesQueued: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({gearMessagesQueued: [req]}, range)
         return this
     }
 
     addGearUserMessageSent(options: GearUserMessageSentRequest & BlockRange): this {
         this.assertNotRunning()
-        this.add({gearUserMessagesSent: [options]}, options.range)
+        let {range, ...req} = options
+        this.add({gearUserMessagesSent: [req]}, range)
         return this
     }
 
@@ -411,6 +451,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         }
         let client = new RpcClient({
             url: this.rpcEndpoint.url,
+            headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
             requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
@@ -428,7 +469,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             rpc: this.getChainRpcClient(),
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
-            typesBundle: this.typesBundle
+            typesBundle: this.typesBundle,
+            finalityConfirmation: this.finalityConfirmation
         })
     }
 
@@ -558,6 +600,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 requests: this.getBatchRequests(),
                 archive: this.archive == null ? undefined : this.getArchiveDataSource(),
                 hotDataSource: this.rpcIngestSettings?.disabled ? undefined : this.getRpcDataSource(),
+                allBlocksAreFinal: this.finalityConfirmation === 0,
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.prometheus,
                 log

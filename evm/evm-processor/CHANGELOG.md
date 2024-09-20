@@ -1,6 +1,195 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 20 Oct 2023 17:49:18 GMT and should not be manually modified.
+This log was last generated on Thu, 22 Aug 2024 09:03:21 GMT and should not be manually modified.
+
+## 1.21.1
+Thu, 22 Aug 2024 09:03:21 GMT
+
+### Patches
+
+- traces: allow suicide calls to zero address
+
+## 1.21.0
+Wed, 21 Aug 2024 09:10:53 GMT
+
+### Minor changes
+
+- extend transaction with 'l1'-prefixed fields
+
+## 1.20.0
+Fri, 09 Aug 2024 13:17:49 GMT
+
+### Minor changes
+
+- always uppercase DebugFrame type field
+
+## 1.19.2
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Patches
+
+- make `DebugFrame.input` optional and add default value
+
+## 1.19.1
+Wed, 15 May 2024 10:11:41 GMT
+
+### Patches
+
+- ignore case in RPC error message parsing
+
+## 1.19.0
+Sun, 12 May 2024 13:49:00 GMT
+
+### Minor changes
+
+- handle "query returned more than N results" errors for logs requests, add fallback to fetching by receipts
+
+### Patches
+
+- match transactions and receipts by hash instead of index
+
+## 1.18.1
+Tue, 07 May 2024 07:40:43 GMT
+
+_Version update only_
+
+## 1.18.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- Allow to configure RPC HTTP headers
+
+## 1.17.1
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 1.17.0
+Thu, 29 Feb 2024 15:27:11 GMT
+
+### Minor changes
+
+- fix debug trace validation for failed `CREATE` case and make `EvmTraceCreateResult.address` non-optional again
+
+### Patches
+
+- Handle Avalanche RPC inconsistency issues
+
+## 1.16.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
+- update evm trace schema definition
+
+## 1.15.0
+Sat, 17 Feb 2024 17:47:08 GMT
+
+### Minor changes
+
+- extend `.addTrace()` with `callFrom` filter
+
+## 1.14.1
+Wed, 14 Feb 2024 20:01:22 GMT
+
+_Version update only_
+
+## 1.14.0
+Tue, 23 Jan 2024 16:47:41 GMT
+
+### Minor changes
+
+- add transaction items to log and trace requests
+
+## 1.13.0
+Thu, 11 Jan 2024 18:08:14 GMT
+
+### Minor changes
+
+- add `l1BlockNumber` to block fields
+
+## 1.12.2
+Tue, 09 Jan 2024 20:23:26 GMT
+
+### Patches
+
+- do not output '=' state diffs when ingesting data from RPC
+
+## 1.12.1
+Tue, 09 Jan 2024 15:50:08 GMT
+
+### Patches
+
+- fix call trace parent-child relation setup
+
+## 1.12.0
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Minor changes
+
+- warn when debug trace is missing from transaction instead of hard error
+- handle `INVALID` debug frame like a regular call
+
+## 1.11.1
+Fri, 29 Dec 2023 18:36:04 GMT
+
+### Patches
+
+- allow `null` sighash in archive call trace
+
+## 1.11.0
+Thu, 28 Dec 2023 19:59:01 GMT
+
+### Minor changes
+
+- support `debugTraceTimeout` RPC data ingestion option
+
+### Patches
+
+- allow empty `sighash` from archive
+- report block fetch consistency errors in a mode detailed manner
+
+## 1.10.2
+Tue, 26 Dec 2023 16:11:36 GMT
+
+### Patches
+
+- fix: `sighash` is not set when ingesting data from RPC
+- don't forget to filter state diffs when ingesting from RPC
+
+## 1.10.1
+Sun, 24 Dec 2023 20:05:50 GMT
+
+### Patches
+
+- allow missing `.gas`, `.gasUsed` fields in debug call trace
+
+## 1.10.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+- rename `.setArchive()` to `.setGateway()`
+
+### Patches
+
+- block timestamp should be in `ms`
+- fix `BlockHeader.size` validation
+
+## 1.9.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Minor changes
+
+- introduce RPC data filtering
+- support chain head tracking via RPC subscription
+- improve hot block data ingestion speed via batch processing
+
+### Patches
+
+- update dependencies
 
 ## 1.8.5
 Fri, 20 Oct 2023 17:49:18 GMT

@@ -1,10 +1,14 @@
-import {assertNotNull, weakMemo} from '@subsquid/util-internal'
+import {assertNotNull, groupBy, weakMemo} from '@subsquid/util-internal'
 import {EntityFilter, FilterBuilder} from '@subsquid/util-internal-processor-tools'
 import {Block, Log, StateDiff, Trace, Transaction} from '../mapping/entities'
 import {DataRequest} from '../interfaces/data-request'
 
 
-function buildLogFilter(dataRequest: DataRequest): EntityFilter<Log, {transaction?: boolean}> {
+function buildLogFilter(dataRequest: DataRequest): EntityFilter<Log, {
+    transaction?: boolean,
+    transactionLogs?: boolean,
+    transactionTraces?: boolean
+}> {
     let items = new EntityFilter()
     for (let req of dataRequest.logs || []) {
         let {address, topic0, topic1, topic2, topic3, ...relations} = req
@@ -40,6 +44,7 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
 
 function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
     transaction?: boolean
+    transactionLogs?: boolean
     subtraces?: boolean
     parents?: boolean
 }> {
@@ -49,6 +54,7 @@ function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
             type,
             createFrom,
             callTo,
+            callFrom,
             callSighash,
             suicideRefundAddress,
             rewardAuthor,
@@ -58,6 +64,7 @@ function buildTraceFilter(dataRequest: DataRequest): EntityFilter<Trace, {
         filter.propIn('type', type as Trace['type'][])
         filter.getIn(trace => trace.type === 'create' && assertNotNull(trace.action?.from), createFrom)
         filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.to), callTo)
+        filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.from), callFrom)
         filter.getIn(trace => trace.type === 'call' && assertNotNull(trace.action?.sighash), callSighash)
         filter.getIn(trace => trace.type === 'suicide' && assertNotNull(trace.action?.refundAddress), suicideRefundAddress)
         filter.getIn(trace => trace.type === 'reward' && assertNotNull(trace.action?.author), rewardAuthor)
@@ -130,8 +137,11 @@ class IncludeSet {
 export function filterBlock(block: Block, dataRequest: DataRequest): void {
     let items = getItemFilter(dataRequest)
 
-    let include = new IncludeSet()
+    let logsByTransaction = groupBy(block.logs, log => log.transactionIndex)
+    let tracesByTransaction = groupBy(block.traces, trace => trace.transactionIndex)
 
+    let include = new IncludeSet()
+    
     if (items.logs.present()) {
         for (let log of block.logs) {
             let rel = items.logs.match(log)
@@ -139,6 +149,18 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             include.addLog(log)
             if (rel.transaction) {
                 include.addTransaction(log.transaction)
+            }
+            if (rel.transactionLogs) {
+                let logs = logsByTransaction.get(log.transactionIndex) ?? []
+                for (let sibling of logs) {
+                    include.addLog(sibling)
+                }
+            }
+            if (rel.transactionTraces) {
+                let traces = tracesByTransaction.get(log.transactionIndex) ?? []
+                for (let trace of traces) {
+                    include.addTrace(trace)
+                }
             }
         }
     }
@@ -182,6 +204,12 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel.transaction) {
                 include.addTransaction(trace.transaction)
             }
+            if (rel.transactionLogs) {
+                let logs = logsByTransaction.get(trace.transactionIndex) ?? []
+                for (let log of logs) {
+                    include.addLog(log)
+                }
+            }
         }
     }
 
@@ -221,6 +249,14 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             trace.parent = undefined
         }
         trace.children = trace.children.filter(it => include.traces.has(it))
+        return true
+    })
+
+    block.stateDiffs = block.stateDiffs.filter(diff => {
+        if (!include.stateDiffs.has(diff)) return false
+        if (diff.transaction && !include.transactions.has(diff.transaction)) {
+            diff.transaction = undefined
+        }
         return true
     })
 }

@@ -1,10 +1,9 @@
-import {isHex} from '@subsquid/util-internal-hex'
-import assert from 'assert'
-
-
 export function getShortHash(hash: string): string {
-    assert(isHex(hash))
-    return hash.slice(2, 8)
+    if (hash.startsWith('0x')) {
+        return hash.slice(2, 8)
+    } else {
+        return hash.slice(0, 5)
+    }
 }
 
 

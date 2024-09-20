@@ -2,6 +2,66 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "3.2.0",
+      "tag": "@subsquid/util-internal_v3.2.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `bisect()`"
+          },
+          {
+            "comment": "add prefetch option to `Throttler`"
+          },
+          {
+            "comment": "add `Simplify<T>` type"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.1.0",
+      "tag": "@subsquid/util-internal_v3.1.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix handling of destroyed/errored streams in `waitDrain()`"
+          },
+          {
+            "comment": "fix unhandled promise rejection crash in `concurrentMap()`"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `concurrentWriter()` function"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.0",
+      "tag": "@subsquid/util-internal_v3.0.0",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "major": [
+          {
+            "comment": "rework `AsyncQueue`"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add `weakMemo()`, `partitionBy()`, `safeCall()` functions"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.5.2",
       "tag": "@subsquid/util-internal_v2.5.2",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

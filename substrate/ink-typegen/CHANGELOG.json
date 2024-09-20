@@ -2,6 +2,76 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "3.1.0",
+      "tag": "@subsquid/ink-typegen_v3.1.0",
+      "date": "Sat, 01 Jun 2024 10:02:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make typegen compatible with ink! v5"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^3.0.3` to `3.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.4",
+      "tag": "@subsquid/ink-typegen_v3.0.4",
+      "date": "Tue, 09 Apr 2024 17:45:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^3.0.2` to `3.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-typegen\" from `^8.0.2` to `8.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.3` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "3.0.3",
+      "tag": "@subsquid/ink-typegen_v3.0.3",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/ink-abi\" from `^3.0.1` to `^3.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-typegen\" from `^8.0.1` to `^8.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-code-printer\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^1.0.1` to `^1.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.0.2",
       "tag": "@subsquid/ink-typegen_v3.0.2",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

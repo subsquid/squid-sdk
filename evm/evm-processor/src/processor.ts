@@ -5,12 +5,14 @@ import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
+import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
+import {getFieldSelectionValidator} from './mapping/selection'
 
 
 export interface RpcEndpointSettings {
@@ -34,6 +36,10 @@ export interface RpcEndpointSettings {
      * Maximum number of requests in a single batch call
      */
     maxBatchCallSize?: number
+    /**
+     * HTTP headers
+     */
+    headers?: Record<string, string>
 }
 
 
@@ -53,6 +59,12 @@ export interface RpcDataIngestionSettings {
      */
     useDebugApiForStateDiffs?: boolean
     /**
+     * Pass `timeout` parameter to [debug trace config](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-debug#traceconfig)
+     *
+     * E.g. `debugTraceTimeout: "20s"`
+     */
+    debugTraceTimeout?: string
+    /**
      * Poll interval for new blocks in `ms`
      *
      * Poll mechanism is used to get new blocks via HTTP connection.
@@ -71,9 +83,9 @@ export interface RpcDataIngestionSettings {
 }
 
 
-export interface ArchiveSettings {
+export interface GatewaySettings {
     /**
-     * Subsquid archive URL
+     * Subsquid Network Gateway url
      */
     url: string
     /**
@@ -81,6 +93,12 @@ export interface ArchiveSettings {
      */
     requestTimeout?: number
 }
+
+
+/**
+ * @deprecated
+ */
+export type ArchiveSettings = GatewaySettings
 
 
 /**
@@ -94,7 +112,7 @@ interface ArchiveDataSource {
     /**
      * Subsquid evm archive endpoint URL
      */
-    archive: string | ArchiveSettings
+    archive: string | GatewaySettings
     /**
      * Chain node RPC endpoint URL
      */
@@ -159,21 +177,28 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private archive?: ArchiveSettings
+    private archive?: GatewaySettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
 
     /**
-     * Set Subsquid Archive endpoint.
+     * @deprecated Use {@link .setGateway()}
+     */
+    setArchive(url: string | GatewaySettings): this {
+        return this.setGateway(url)
+    }
+
+    /**
+     * Set Subsquid Network Gateway endpoint (ex Archive).
      *
-     * Subsquid Archive allows to get data from finalized blocks up to
+     * Subsquid Network allows to get data from finalized blocks up to
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * processor.setArchive('https://v2.archive.subsquid.io/network/ethereum-mainnet')
+     * processor.setGateway('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
-    setArchive(url: string | ArchiveSettings): this {
+    setGateway(url: string | GatewaySettings): this {
         this.assertNotRunning()
         if (typeof url == 'string') {
             this.archive = {url}
@@ -215,13 +240,13 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      *     chain: 'https://eth-mainnet.public.blastapi.io'
      * })
      *
-     * @deprecated Use separate {@link .setArchive()} and {@link .setRpcEndpoint()} methods
+     * @deprecated Use separate {@link .setGateway()} and {@link .setRpcEndpoint()} methods
      * to specify data sources.
      */
     setDataSource(src: DataSource): this {
         this.assertNotRunning()
         if (src.archive) {
-            this.setArchive(src.archive)
+            this.setGateway(src.archive)
         } else {
             this.archive = undefined
         }
@@ -295,7 +320,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      */
     setFields<T extends FieldSelection>(fields: T): EvmBatchProcessor<T> {
         this.assertNotRunning()
-        this.fields = fields
+        let validator = getFieldSelectionValidator()
+        this.fields = cast(validator, fields)
         return this as any
     }
 
@@ -405,6 +431,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         }
         let client = new RpcClient({
             url: this.rpcEndpoint.url,
+            headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
             requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
@@ -436,6 +463,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             finalityConfirmation: this.finalityConfirmation,
             preferTraceApi: this.rpcIngestSettings?.preferTraceApi,
             useDebugApiForStateDiffs: this.rpcIngestSettings?.useDebugApiForStateDiffs,
+            debugTraceTimeout: this.rpcIngestSettings?.debugTraceTimeout,
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})

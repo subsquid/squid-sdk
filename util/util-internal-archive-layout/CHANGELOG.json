@@ -2,6 +2,122 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "0.4.1",
+      "tag": "@subsquid/util-internal-archive-layout_v0.4.1",
+      "date": "Thu, 25 Jul 2024 11:48:18 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.2` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.2` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.4.0",
+      "tag": "@subsquid/util-internal-archive-layout_v0.4.0",
+      "date": "Wed, 15 May 2024 10:11:41 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Write raw blocks in fix-sized batches to fix reproducilbility issues."
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/util-internal-archive-layout_v0.3.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "export `RawBlock` type"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.1.0` to `3.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/util-internal-archive-layout_v0.2.0",
+      "date": "Sun, 17 Mar 2024 23:20:20 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `ArchiveLayout.getRawBlocks()`"
+          },
+          {
+            "comment": "add `.topDirSize` option"
+          },
+          {
+            "comment": "relax short block hash regex"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "fix: `ArchiveLayout.append()` should not try to extend passed block range when it is already completed"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.0.0` to `^3.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.2.0` to `^0.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.2",
+      "tag": "@subsquid/util-internal-archive-layout_v0.1.2",
+      "date": "Thu, 29 Feb 2024 15:27:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.1.0` to `^0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "@subsquid/util-internal-archive-layout_v0.1.1",
+      "date": "Fri, 01 Dec 2023 16:55:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update dependencies"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^2.5.2` to `^3.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.1` to `^1.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-range\" from `^0.0.1` to `^0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.1` to `^0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.1.1` to `^0.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/util-internal-archive-layout_v0.1.0",
       "date": "Thu, 28 Sep 2023 20:58:19 GMT",

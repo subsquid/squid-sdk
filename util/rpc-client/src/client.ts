@@ -4,7 +4,7 @@ import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/uti
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
-import {Connection, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
+import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
@@ -12,13 +12,53 @@ import {WsConnection} from './transport/ws'
 
 
 export interface RpcClientOptions {
+    /**
+     * RPC endpoint URL (either http(s) or ws(s))
+     */
     url: string
-    maxBatchCallSize?: number
+    /**
+     * Maximum number of ongoing concurrent requests
+     *
+     * Batch call is counted as a single request.
+     */
     capacity?: number
-    requestTimeout?: number
+    /**
+     * Maximum number of calls per second
+     *
+     * Batch call items are counted towards the limit.
+     */
     rateLimit?: number
+    /**
+     * Request timeout in `ms`
+     */
+    requestTimeout?: number
+    /**
+     * When set, every call (by default) will be retried specified number of times after connection error.
+     */
     retryAttempts?: number
+    /**
+     * Retry pauses in `ms.
+     *
+     * First value will be used for a first retry pause,
+     * second - for a second, etc.
+     *
+     * For all further retry attempts the last pause value will be used.
+     *
+     * Default is `[10, 100, 500, 2000, 10000, 20000]`
+     */
     retrySchedule?: number[]
+    /**
+     * Maximum number of requests in a single batch call
+     */
+    maxBatchCallSize?: number
+    /**
+     * Convert unsafe integers to strings in incoming JSON messages
+     */
+    fixUnsafeIntegers?: boolean
+    /**
+     * HTTP headers
+     */
+    headers?: HttpHeaders
     log?: Logger | null
 }
 
@@ -74,13 +114,14 @@ export class RpcClient {
     private requestsServed = 0
     private notificationsReceived = 0
     private backoffEpoch = 0
+    private backoffTime?: number
     private notificationListeners: ((msg: RpcNotification) => void)[] = []
     private resetListeners: ((reason: Error) => void)[] = []
     private closed = false
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
-        this.con = this.createConnection(options.url)
+        this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
         this.requestTimeout = options.requestTimeout ?? 0
@@ -92,32 +133,43 @@ export class RpcClient {
             : options.log || createLogger('sqd:rpc-client', {rpcUrl: this.url})
 
         if (options.rateLimit) {
-            assert(Number.isSafeInteger(options.rateLimit))
-            assert(options.rateLimit > 1)
-            this.rate = new RateMeter()
+            assert(options.rateLimit > 0)
+            let window = 10
+            let slotTime = 100
+            if (options.rateLimit < 1) {
+                slotTime = Math.ceil(1000 / (options.rateLimit * window))
+            }
+            this.rate = new RateMeter(window, slotTime)
             this.rateLimit = options.rateLimit
             this.maxBatchCallSize = Math.min(this.maxBatchCallSize, Math.max(1, Math.floor(this.rateLimit / 5)))
         }
     }
 
-    private createConnection(url: string): Connection {
+    private createConnection(url: string, fixUnsafeIntegers: boolean, headers?: HttpHeaders): Connection {
         let protocol = new URL(url).protocol
         switch(protocol) {
             case 'ws:':
             case 'wss:':
                 return new WsConnection({
                     url,
+                    headers,
                     onNotificationMessage: msg => this.onNotification(msg),
                     onReset: reason => {
                         if (this.closed) return
                         for (let cb of this.resetListeners) {
                             this.safeCallback(cb, reason)
                         }
-                    }
+                    },
+                    fixUnsafeIntegers
                 })
             case 'http:':
             case 'https:':
-                return new HttpConnection(url, this.log)
+                return new HttpConnection({
+                    url,
+                    headers,
+                    log: this.log,
+                    fixUnsafeIntegers
+                })
             default:
                 throw new TypeError(`unsupported protocol: ${protocol}`)
         }
@@ -207,7 +259,7 @@ export class RpcClient {
                 resolve,
                 reject,
                 validateResult: options?.validateResult,
-                validateError: options?.validateError
+                validateError: options?.validateError,
             })
         })
     }
@@ -270,29 +322,13 @@ export class RpcClient {
         Promise.resolve().then(() => this.performScheduling())
     }
 
-    private delayScheduling(): void {
-        this.schedulingScheduled = true
-        setTimeout(() => this.performScheduling(), 100)
-    }
-
     private performScheduling(): void {
         this.waitForConnection().then(() => {
-            if (this.closed) return
-            this.schedulingScheduled = false
             if (this.rate) {
-                let now = Date.now()
-                let rate = this.rate.getRate(now)
-                let rateCapacity = this.rateLimit - rate
-                while (this.capacity > 0 && this.queue.peek()) {
-                    let req = this.queue.peek()!
-                    let size = Array.isArray(req.call) ? req.call.length : 1
-                    rateCapacity -= size
-                    if (rateCapacity < 0) return this.delayScheduling()
-                    this.rate.inc(size, now)
-                    this.queue.pop()
-                    this.send(req)
-                }
+                this.performRateLimitedScheduling(this.rate)
             } else {
+                if (this.closed) return
+                this.schedulingScheduled = false
                 while (this.capacity > 0 && this.queue.peek()) {
                     this.send(this.queue.pop()!)
                 }
@@ -300,6 +336,28 @@ export class RpcClient {
         }, err => {
             this.close(err)
         })
+    }
+
+    private performRateLimitedScheduling(rateMeter: RateMeter): void {
+        if (this.closed) return
+        this.schedulingScheduled = false
+
+        let now = Date.now()
+        let rate = rateMeter.getRate(now)
+        let rateCapacity = this.rateLimit - rate
+
+        while (this.capacity > 0 && this.queue.peek()) {
+            if (rateCapacity <= 0) {
+                this.schedulingScheduled = true
+                setTimeout(() => this.performScheduling(), rateMeter.slotTime)
+                return
+            }
+            let req = this.queue.pop()!
+            let size = Array.isArray(req.call) ? req.call.length : 1
+            rateCapacity -= size
+            rateMeter.inc(size, now)
+            this.send(req)
+        }
     }
 
     private send(req: Req): void {
@@ -339,7 +397,7 @@ export class RpcClient {
                     req.reject(err)
                 }
                 if (this.backoffEpoch == backoffEpoch) {
-                    this.backoff(err)
+                    this.backoff(err, req)
                 }
             } else {
                 req.reject(err)
@@ -352,8 +410,12 @@ export class RpcClient {
 
     private async waitForConnection(): Promise<void> {
         while (true) {
-            if (this.getBackoffPause()) {
-                await wait(this.getBackoffPause())
+            if (this.backoffTime != null) {
+                let pause = Math.max(this.backoffTime - Date.now(), 0)
+                this.backoffTime = undefined
+                if (pause > 0) {
+                    await wait(pause)
+                }
             }
             if (this.closed) return
             try {
@@ -369,18 +431,32 @@ export class RpcClient {
         }
     }
 
-    private backoff(reason: Error): void {
-        this.log?.warn({reason: reason.toString()}, 'connection failure')
+    private backoff(reason: Error, req?: Req): void {
         this.backoffEpoch += 1
         this.connectionErrorsInRow += 1
         this.connectionErrors += 1
-        this.log?.warn(`will pause new requests for ${this.getBackoffPause()}ms`)
-    }
 
-    private getBackoffPause(): number {
-        if (this.connectionErrorsInRow == 0) return 0
-        let idx = Math.min(this.connectionErrorsInRow, this.retrySchedule.length) - 1
-        return this.retrySchedule[idx]
+        let backoffPause = this.retrySchedule[
+            Math.min(this.connectionErrorsInRow, this.retrySchedule.length) - 1
+        ]
+
+        this.backoffTime = Date.now() + backoffPause
+
+        if (this.log?.isWarn()) {
+            let httpResponseBody = undefined
+            if (reason instanceof HttpError &&
+                reason.response.body &&
+                !reason.response.headers.get('content-type')?.includes('text/html')
+            ) {
+                httpResponseBody = reason.response.body
+            }
+            this.log.warn({
+                reason: reason.toString(),
+                httpResponseBody,
+                rpcCall: req?.call
+            }, 'connection failure')
+            this.log.warn(`will pause new requests for ${backoffPause}ms`)
+        }
     }
 
     private receiveResult(
@@ -411,9 +487,11 @@ export class RpcClient {
             }
         } catch(err: any) {
             throw addErrorContext(err, {
+                rpcUrl: this.url,
                 rpcId: call.id,
                 rpcMethod: call.method,
-                rpcParams: call.params
+                rpcParams: call.params,
+                rpcResponse: res
             })
         }
     }

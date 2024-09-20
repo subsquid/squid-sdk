@@ -1,5 +1,5 @@
 process: migrate
-	@node -r dotenv/config lib/processor.js
+	@npx node -r dotenv/config lib/processor.js
 
 
 serve:
@@ -23,11 +23,11 @@ typegen:
 
 
 up:
-	@docker-compose up -d
+	@docker compose up -d
 
 
 down:
-	@docker-compose down -v
+	@docker compose down -v
 
 
 .PHONY: process serve start codegen migration migrate up down

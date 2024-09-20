@@ -1,9 +1,9 @@
-import assert from "assert"
-import basex from "base-x"
-import blake2b from "blake2b"
-const base58 = basex('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz')
+import assert from 'assert'
+import base58 from 'bs58'
+import blake2b from 'blake2b'
 const HASH_PREFIX = Buffer.from('SS58PRE')
 const HASH_BUF = Buffer.alloc(64)
+
 
 /**
  * Decoded SS58 address

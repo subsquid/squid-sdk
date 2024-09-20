@@ -1,6 +1,25 @@
 # Change Log - @subsquid/ink-typegen
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Sat, 01 Jun 2024 10:02:43 GMT and should not be manually modified.
+
+## 3.1.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- make typegen compatible with ink! v5
+
+## 3.0.4
+Tue, 09 Apr 2024 17:45:37 GMT
+
+_Version update only_
+
+## 3.0.3
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 3.0.2
 Thu, 28 Sep 2023 20:58:19 GMT

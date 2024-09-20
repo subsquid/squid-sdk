@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/ss58-codec",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "SS58 address format encoder/decoder",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,8 +17,8 @@
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "base-x": "^4.0.0",
-    "blake2b": "^2.1.4"
+    "blake2b": "^2.1.4",
+    "bs58": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

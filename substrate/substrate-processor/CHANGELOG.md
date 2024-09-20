@@ -1,6 +1,97 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Thu, 19 Oct 2023 08:58:05 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+
+## 8.5.1
+Wed, 21 Aug 2024 09:10:53 GMT
+
+_Version update only_
+
+## 8.5.0
+Thu, 25 Jul 2024 11:48:18 GMT
+
+### Minor changes
+
+- allow to use finalityConfirmation if `chain_getFinalizedHead` is not an option
+
+### Patches
+
+- fix subcalls relation
+
+## 8.4.1
+Sat, 08 Jun 2024 15:30:51 GMT
+
+### Patches
+
+- fix missing `event.topics` when datasource is archive
+
+## 8.4.0
+Sat, 01 Jun 2024 10:02:43 GMT
+
+### Minor changes
+
+- add `event.topics` field
+
+## 8.3.1
+Tue, 07 May 2024 07:40:43 GMT
+
+_Version update only_
+
+## 8.3.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Minor changes
+
+- Allow to configure RPC HTTP headers
+
+## 8.2.2
+Sun, 17 Mar 2024 23:20:20 GMT
+
+_Version update only_
+
+## 8.2.1
+Thu, 29 Feb 2024 15:27:11 GMT
+
+_Version update only_
+
+## 8.2.0
+Wed, 21 Feb 2024 19:22:05 GMT
+
+### Minor changes
+
+- add field selection schema validation
+
+## 8.1.1
+Mon, 01 Jan 2024 14:37:34 GMT
+
+### Patches
+
+- fix archive error when limiting item request by block range
+
+## 8.1.0
+Wed, 20 Dec 2023 07:15:52 GMT
+
+### Minor changes
+
+-  rename `.setArchive()` to `.setGateway()`
+
+## 8.0.0
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Breaking changes
+
+- gear: `Gear.MessageEnqueued` was renamed to `Gear.MessageQueued`
+
+### Minor changes
+
+- support chain head tracking via RPC subscription
+- deprecate `.setDataSource()` in favour of separate `.setArchive()` and `.setRpcEndpoint()` methods
+- introduce `.setRpcDataIngestionSettings()` and deprecate `.setChainPollInterval()`, `.useArchiveOnly()`
+
+### Patches
+
+- update dependencies
+- add `Chain.client` alias for compatibility with `evm-typegen` (closes #212)
 
 ## 7.2.1
 Thu, 19 Oct 2023 08:58:05 GMT

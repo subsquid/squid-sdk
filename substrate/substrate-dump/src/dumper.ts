@@ -1,5 +1,3 @@
-import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
 import {
     BlockData,
     DataRequest,
@@ -7,160 +5,76 @@ import {
     runtimeVersionEquals,
     RuntimeVersionId
 } from '@subsquid/substrate-data-raw'
-import {assertNotNull, def, last, Throttler} from '@subsquid/util-internal'
-import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
-import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
-import {createFs, Fs} from '@subsquid/util-internal-fs'
-import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
+import {assertNotNull, def} from '@subsquid/util-internal'
+import {Command, Dumper, DumperOptions, getShortHash, Range} from '@subsquid/util-internal-dump-cli'
 import assert from 'assert'
 import {MetadataWriter} from './metadata'
-import {PrometheusServer} from './prometheus'
 
 
-export interface DumperOptions {
-    endpoint: string
-    endpointCapacity?: number
-    endpointRateLimit?: number
-    endpointMaxBatchCallSize?: number
-    dest?: string
-    firstBlock?: number
-    lastBlock?: number
+interface Options extends DumperOptions {
     withTrace?: boolean | string
-    chunkSize: number
-    metrics?: number
+    finalityConfirmation?: number
 }
 
 
-export class Dumper {
-    constructor(private options: DumperOptions) {}
-
-    @def
-    log(): Logger {
-        return createLogger('sqd:substrate-dump')
+export class SubstrateDumper extends Dumper<BlockData, Options> {
+    protected setUpProgram(program: Command) {
+        program.description('RPC data archiving tool for substrate based chains')
+        program.option('--with-trace [targets]', 'Fetch block trace')
+        program.option('--finality-confirmation', 'Finality offset from the head of the chain')
     }
 
     @def
-    range(): Range {
-        let range: Range = {from: 0}
-        if (this.options.firstBlock) {
-            range.from = this.options.firstBlock
-        }
-        if (this.options.lastBlock != null) {
-            range.to = this.options.lastBlock
-            if (range.from > range.to) {
-                throw new ErrorMessage(`invalid requested block range ${printRange(range)} : first-block > last-block`)
-            }
-        }
-        return range
-    }
-
-    @def
-    fs(): Fs {
-        let dest = assertNotNull(this.options.dest)
-        return createFs(dest)
-    }
-
-    @def
-    rpc(): RpcClient {
-        return new RpcClient({
-            url: this.options.endpoint,
-            capacity: this.getEndpointCapacity(),
-            maxBatchCallSize: this.options.endpointMaxBatchCallSize,
-            rateLimit: this.options.endpointRateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER
-        })
-    }
-
-    getEndpointCapacity(): number {
-        return this.options.endpointCapacity || 10
-    }
-
-    @def
-    src(): RpcDataSource {
+    private getDataSource(): RpcDataSource {
         return new RpcDataSource({
             rpc: this.rpc(),
-            headPollInterval: 10_000
+            headPollInterval: 10_000,
+            finalityConfirmation: this.options().finalityConfirmation
         })
     }
 
-    @def
-    prometheus() {
-        return new PrometheusServer(this.options.metrics ?? 0, this.rpc())
+    protected getFinalizedHeight(): Promise<number> {
+        return this.getDataSource().getFinalizedHeight()
     }
 
-    ingest(range: Range): AsyncIterable<{blocks: BlockData[], isHead: boolean}> {
+    protected getBlocks(range: Range): AsyncIterable<BlockData[]> {
+        let batches = this.getBlockBatches(range)
+        if (this.options().dest == null) {
+            batches = this.addMetadata(batches)
+        } else {
+            batches = this.saveMetadata(batches)
+        }
+        return batches
+    }
+
+    private async *getBlockBatches(range: Range): AsyncIterable<BlockData[]> {
+        let {withTrace} = this.options()
+
         let request: DataRequest = {
             runtimeVersion: true,
             extrinsics: true,
             events: true,
-            trace: typeof this.options.withTrace == 'string'
-                ? this.options.withTrace
-                : this.options.withTrace ? '' : undefined
+            trace: typeof withTrace == 'string'
+                ? withTrace
+                : withTrace ? '' : undefined
         }
 
-        return this.src().getFinalizedBlocks([{
+        for await (let batch of this.getDataSource().getFinalizedBlocks([{
             range,
             request
-        }])
-    }
-
-    private async *process(from?: number, prevHash?: string): AsyncIterable<BlockData[]> {
-        let range = from == null ? this.range() : {
-            from,
-            to: this.range().to
-        }
-        assertRange(range)
-
-        let height = new Throttler(() => this.src().getFinalizedHeight(), 60_000)
-        let chainHeight = await height.get()
-
-        let progress = new Progress({
-            initialValue: this.range().from,
-            targetValue: Math.min(chainHeight, rangeEnd(range)),
-            currentValue: range.from
-        })
-
-        let status = new Throttler(async () => {
-            this.log().info(
-                `last block: ${progress.getCurrentValue()}, ` +
-                `rate: ${Math.round(progress.speed())} blocks/sec, ` +
-                `eta: ${printTimeInterval(progress.eta())}`
-            )
-        }, 5000)
-
-        for await (let batch of this.ingest(range)) {
-            if (batch.blocks[0].height === from && prevHash) {
-                let parentHash = getShortHash(batch.blocks[0].block.block.header.parentHash)
-                if (parentHash !== prevHash) {
-                    throw new ErrorMessage(
-                        `Block ${batch.blocks[0].height}#${getShortHash(batch.blocks[0].hash)} ` +
-                        `is not a child of already archived block ${from}#${parentHash}`
-                    )
-                }
-            }
-
+        }])) {
             yield batch.blocks
-
-            progress.setCurrentValue(last(batch.blocks).height)
-            if (chainHeight < rangeEnd(range)) {
-                chainHeight = Math.min(await height.get(), rangeEnd(range))
-                progress.setTargetValue(chainHeight)
-            } else {
-                progress.setTargetValue(rangeEnd(range))
-            }
-
-            await status.get()
         }
     }
 
-    private async *addMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+    private async* addMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
         let prevRuntimeVersion: RuntimeVersionId | undefined
         for await (let batch of batches) {
             for (let block of batch) {
                 if (prevRuntimeVersion && runtimeVersionEquals(prevRuntimeVersion, assertNotNull(block.runtimeVersion))) {
 
                 } else {
-                    block.metadata = await this.src().rpc.getMetadata(block.hash)
+                    block.metadata = await this.getDataSource().rpc.getMetadata(block.hash)
                     prevRuntimeVersion = block.runtimeVersion
                 }
             }
@@ -168,8 +82,8 @@ export class Dumper {
         }
     }
 
-    private async *saveMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
-        let writer = new MetadataWriter(this.fs().cd('metadata'))
+    private async* saveMetadata(batches: AsyncIterable<BlockData[]>): AsyncIterable<BlockData[]> {
+        let writer = new MetadataWriter(this.destination().cd('metadata'))
         let prevRuntimeVersion: RuntimeVersionId | undefined
         for await (let batch of batches) {
             for (let block of batch) {
@@ -185,7 +99,7 @@ export class Dumper {
                         blockHeight: block.height,
                         blockHash: getShortHash(block.hash)
                     }, async () => {
-                        let metadata = await this.src().rpc.getMetadata(block.hash)
+                        let metadata = await this.getDataSource().rpc.getMetadata(block.hash)
                         assert(metadata, 'finalized blocks are supposed to be always available')
                         return metadata
                     })
@@ -196,36 +110,7 @@ export class Dumper {
         }
     }
 
-    async dump(): Promise<void> {
-        let prometheus = this.prometheus()
-
-        if (this.options.metrics != null) {
-            let promServer = await prometheus.serve()
-            this.log().info(`prometheus metrics are available on port ${promServer.port}`)
-        }
-
-        if (this.options.dest == null) {
-            for await (let bb of this.addMetadata(this.process())) {
-                for (let block of bb) {
-                    process.stdout.write(JSON.stringify(block) + '\n')
-                }
-                prometheus.setLastWrittenBlock(last(bb).height)
-            }
-        } else {
-            let archive = new ArchiveLayout(this.fs())
-            await archive.appendRawBlocks({
-                blocks: (nextBlock, prevHash) => this.saveMetadata(this.process(nextBlock, prevHash)),
-                range: this.range(),
-                chunkSize: this.options.chunkSize * 1024 * 1024,
-                onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
-            })
-        }
-    }
-}
-
-
-export class ErrorMessage extends Error {
-    constructor(msg: string) {
-        super(msg)
+    protected getPrevBlockHash(block: BlockData): string {
+        return block.block.block.header.parentHash
     }
 }

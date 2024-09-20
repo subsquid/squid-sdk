@@ -1,7 +1,7 @@
 import {assertNotNull, unexpectedCase} from "@subsquid/util-internal"
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
-import {Dialect} from "../dialect"
+import {DbType} from "../db"
 import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
 import {toColumn, toFkColumn, toTable} from "../util/util"
@@ -10,7 +10,7 @@ import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 export interface CursorCtx {
     model: Model
-    dialect: Dialect
+    dialect: DbType
     aliases: AliasSet
     join: JoinSet
 }
@@ -62,7 +62,7 @@ export class EntityCursor implements Cursor {
     }
 
     prop(field: string): Prop {
-        return assertNotNull(this.entity.properties[field])
+        return assertNotNull(this.entity.properties[field], `property ${field} is missing`)
     }
 
     output(field: string): string {
@@ -209,7 +209,7 @@ export class ObjectCursor implements Cursor {
     }
 
     prop(field: string): Prop {
-        return assertNotNull(this.object.properties[field])
+        return assertNotNull(this.object.properties[field], `property ${field} is missing`)
     }
 
     output(field: string): string {

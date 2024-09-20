@@ -1,27 +1,36 @@
 import * as ss58 from "@subsquid/ss58"
-import {DataHandlerContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
+import {
+    DataHandlerContext,
+    SubstrateBatchProcessor,
+    SubstrateBatchProcessorFields
+} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import * as erc20 from "./erc20"
 import {Owner, Transfer} from "./model"
 
 
-const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070ba51dd7e2c72'
+const CONTRACT_ADDRESS = '0x6bf32873add0e3cbaa0d06010a7aeccd3e5d8db81c2f06a351428974995e7504'
 
 
 const processor = new SubstrateBatchProcessor()
-    .setDataSource({
-        archive: "https://shibuya.archive.subsquid.io/graphql"
-    })
-    .addContractsContractEmitted(CONTRACT_ADDRESS, {
-        data: {
-            event: {args: true}
+    .setRpcEndpoint('https://rpc.shibuya.astar.network')
+    .setGateway('https://v2.archive.subsquid.io/network/shibuya-substrate')
+    .setBlockRange({from: 6363940})
+    .setFields({
+        block: {
+            timestamp: true
+        },
+        event: {
+            topics: true,
+            name: true,
+            args: true
         }
-    } as const)
+    })
+    .addContractsContractEmitted({contractAddress: [CONTRACT_ADDRESS]})
 
 
-type Item = BatchProcessorItem<typeof processor>
-type Ctx = DataHandlerContext<Store, Item>
+type Ctx = DataHandlerContext<Store, SubstrateBatchProcessorFields<typeof processor>>
 
 
 processor.run(new TypeormDatabase(), async ctx => {
@@ -90,17 +99,17 @@ interface TransferRecord {
 function extractTransferRecords(ctx: Ctx): TransferRecord[] {
     let records: TransferRecord[] = []
     for (let block of ctx.blocks) {
-        for (let item of block.items) {
-            if (item.name == 'Contracts.ContractEmitted' && item.event.args.contract == CONTRACT_ADDRESS) {
-                let event = erc20.decodeEvent(item.event.args.data)
-                if (event.__kind == 'Transfer') {
+        for (let event of block.events) {
+            if (event.name == 'Contracts.ContractEmitted' && event.args.contract == CONTRACT_ADDRESS) {
+                let decoded = erc20.decodeEvent(event.args.data, event.topics)
+                if (decoded.__kind == 'Transfer') {
                     records.push({
-                        id: item.event.id,
-                        from: event.from && ss58.codec(5).encode(event.from),
-                        to: event.to && ss58.codec(5).encode(event.to),
-                        amount: event.value,
+                        id: event.id,
+                        from: decoded.from && ss58.codec(5).encode(decoded.from),
+                        to: decoded.to && ss58.codec(5).encode(decoded.to),
+                        amount: decoded.value,
                         block: block.header.height,
-                        timestamp: new Date(block.header.timestamp)
+                        timestamp: new Date(block.header.timestamp!)
                     })
                 }
             }

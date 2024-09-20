@@ -11,7 +11,7 @@ jobs:
     name: tag npm packages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Write npm credentials
         run: |
@@ -20,5 +20,9 @@ jobs:
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-      - name: Add tags
-        run: ./ops/npm-tag.sh ${{ inputs.tag }}
+      - name: Add tag
+        run: |
+          echo "Tagging as $TAG"
+          ops/npm-tag.sh "$TAG"
+        env:
+          TAG: ${{ inputs.tag }}

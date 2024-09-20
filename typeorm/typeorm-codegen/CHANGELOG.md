@@ -1,6 +1,36 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+
+## 2.0.2
+Thu, 25 Jul 2024 11:48:18 GMT
+
+_Version update only_
+
+## 2.0.1
+Thu, 09 May 2024 14:50:57 GMT
+
+### Patches
+
+- add support for `JSONColumn` decorator
+
+## 2.0.0
+Tue, 09 Apr 2024 17:45:37 GMT
+
+### Breaking changes
+
+- use decorators from typeorm-store package
+
+### Minor changes
+
+- make OneToOne relations bi-directional
+
+## 1.3.3
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.3.2
 Thu, 28 Sep 2023 20:58:19 GMT

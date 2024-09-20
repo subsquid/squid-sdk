@@ -1,3 +1,4 @@
+import {Dialect} from '../dialect'
 import {useDatabase, useServer} from "./setup"
 
 
@@ -12,7 +13,7 @@ describe('isNull operator', function() {
         `insert into entity (id, scalar, json, meta_id) values ('4', 'foo', '{}', '1')`,
     ])
 
-    const client = useServer(`
+    const schema = `
         type Meta @entity {
             id: ID!
         }
@@ -27,53 +28,109 @@ describe('isNull operator', function() {
         type JsonObject {
             a: Int
         }
-    `)
+    `
 
-    it("on scalar", function() {
-        return client.test(`
-            query {
-                entities(where: {scalar_isNull: true}) {
-                    id
+    describe(Dialect.OpenCrud, function() {
+        const client = useServer(schema)
+    
+        it("on scalar", function() {
+            return client.test(`
+                query {
+                    entities(where: {scalar_isNull: true}) {
+                        id
+                    }
                 }
-            }
-        `, {
-            entities: [{id: '1'}]
+            `, {
+                entities: [{id: '1'}]
+            })
+        })
+    
+        it("on json", function() {
+            return client.test(`
+                query {
+                    entities(where: {json_isNull: true}) {
+                        id
+                    }
+                }
+            `, {
+                entities: [{id: '2'}]
+            })
+        })
+    
+        it("on nested json prop", function() {
+            return client.test(`
+                query {
+                    entities(where: {json: {a_isNull: true}} orderBy: id_ASC) {
+                        id
+                    }
+                }
+            `, {
+                entities: [{id: '2'}, {id: '4'}]
+            })
+        })
+    
+        it("on fk", function() {
+            return client.test(`
+                query {
+                    entities(where: {meta_isNull: true}) {
+                        id
+                    }
+                }
+            `, {
+                entities: [{id: '3'}]
+            })
         })
     })
 
-    it("on json", function() {
-        return client.test(`
-            query {
-                entities(where: {json_isNull: true}) {
-                    id
+    describe(Dialect.TheGraph, function() {
+        const client = useServer(schema, {dialect: Dialect.TheGraph})
+    
+        it("on scalar", function() {
+            return client.test(`
+                query {
+                    entities(where: {scalar_is_null: true}) {
+                        id
+                    }
                 }
-            }
-        `, {
-            entities: [{id: '2'}]
+            `, {
+                entities: [{id: '1'}]
+            })
         })
-    })
-
-    it("on nested json prop", function() {
-        return client.test(`
-            query {
-                entities(where: {json: {a_isNull: true}} orderBy: id_ASC) {
-                    id
+    
+        it("on json", function() {
+            return client.test(`
+                query {
+                    entities(where: {json_is_null: true}) {
+                        id
+                    }
                 }
-            }
-        `, {
-            entities: [{id: '2'}, {id: '4'}]
+            `, {
+                entities: [{id: '2'}]
+            })
         })
-    })
-
-    it("on fk", function() {
-        return client.test(`
-            query {
-                entities(where: {meta_isNull: true}) {
-                    id
+    
+        it("on nested json prop", function() {
+            return client.test(`
+                query {
+                    entities(where: {json_: {a_is_null: true}} orderBy: id, orderDirection: asc) {
+                        id
+                    }
                 }
-            }
-        `, {
-            entities: [{id: '3'}]
+            `, {
+                entities: [{id: '2'}, {id: '4'}]
+            })
+        })
+    
+        it("on fk", function() {
+            return client.test(`
+                query {
+                    entities(where: {meta_is_null: true}) {
+                        id
+                    }
+                }
+            `, {
+                entities: [{id: '3'}]
+            })
         })
     })
 })

@@ -42,6 +42,7 @@ export interface EvmRpcDataSourceOptions {
     headPollInterval?: number
     preferTraceApi?: boolean
     useDebugApiForStateDiffs?: boolean
+    debugTraceTimeout?: string
     log?: Logger
 }
 
@@ -53,16 +54,18 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private newHeadTimeout: number
     private preferTraceApi?: boolean
     private useDebugApiForStateDiffs?: boolean
+    private debugTraceTimeout?: string
     private log?: Logger
 
     constructor(options: EvmRpcDataSourceOptions) {
-        this.rpc = new Rpc(options.rpc)
+        this.log = options.log
+        this.rpc = new Rpc(options.rpc, this.log)
         this.finalityConfirmation = options.finalityConfirmation
         this.headPollInterval = options.headPollInterval || 5_000
         this.newHeadTimeout = options.newHeadTimeout || 0
         this.preferTraceApi = options.preferTraceApi
         this.useDebugApiForStateDiffs = options.useDebugApiForStateDiffs
-        this.log = options.log
+        this.debugTraceTimeout = options.debugTraceTimeout
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -80,7 +83,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     ): AsyncIterable<Batch<Block>> {
         return coldIngest({
             getFinalizedHeight: () => this.getFinalizedHeight(),
-            getSplit: req => this._getSplit(req),
+            getSplit: req => this._getColdSplit(req),
             requests: mapRangeRequestList(requests, req => this.toMappingRequest(req)),
             splitSize: 10,
             concurrency: Math.min(5, this.rpc.client.getConcurrency()),
@@ -89,9 +92,14 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         })
     }
 
-    private async _getSplit(req: SplitRequest<MappingRequest>): Promise<Block[]> {
+    private async _getColdSplit(req: SplitRequest<MappingRequest>): Promise<Block[]> {
         let rpc = this.rpc.withPriority(req.range.from)
-        let blocks = await rpc.getColdSplit(req)
+        let blocks = await rpc.getColdSplit(req).catch(err => {
+            if (isDataConsistencyError(err)) {
+                err.message += '. Perhaps finality confirmation was not large enough'
+            }
+            throw err
+        })
         return blocks.map(b => mapBlock(b, req.request))
     }
 
@@ -99,6 +107,7 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
         let r = toMappingRequest(req)
         r.preferTraceApi = this.preferTraceApi
         r.useDebugApiForStateDiffs = this.useDebugApiForStateDiffs
+        r.debugTraceTimeout = this.debugTraceTimeout
         return r
     }
 

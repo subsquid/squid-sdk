@@ -1,0 +1,122 @@
+{
+  "name": "@subsquid/evm-abi",
+  "entries": [
+    {
+      "version": "0.3.1",
+      "tag": "@subsquid/evm-abi_v0.3.1",
+      "date": "Wed, 04 Sep 2024 13:19:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix topics count mismatch error message"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-abi_v0.3.0",
+      "date": "Thu, 20 Jun 2024 11:25:19 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Better function and event decoding error handling"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.4",
+      "tag": "@subsquid/evm-abi_v0.2.4",
+      "date": "Wed, 29 May 2024 20:42:12 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Add function visibility field"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.3",
+      "tag": "@subsquid/evm-abi_v0.2.3",
+      "date": "Wed, 29 May 2024 15:23:01 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Add sighash field to EVM function class for compatibility"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.2.1` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.2",
+      "tag": "@subsquid/evm-abi_v0.2.2",
+      "date": "Mon, 20 May 2024 19:49:38 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Check event topic when decoding"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.2.0` to `0.2.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.1",
+      "tag": "@subsquid/evm-abi_v0.2.1",
+      "date": "Fri, 10 May 2024 10:23:43 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-abi_v0.2.0",
+      "date": "Wed, 08 May 2024 19:54:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "update evm codec types"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-codec\" from `^0.0.0` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-abi_v0.1.0",
+      "date": "Tue, 07 May 2024 07:40:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Added types for event arguments, function parameters and return values"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/evm-abi_v0.0.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {}
+    }
+  ]
+}

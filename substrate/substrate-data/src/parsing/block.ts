@@ -108,6 +108,7 @@ class BlockParser {
     @def
     events(): Event[] {
         assert('events' in this.src, 'event data is not provided')
+        if (this.src.events == null) return []
         return decodeEvents(this.runtime, this.src.events)
     }
 
@@ -152,7 +153,7 @@ class BlockParser {
         if (this.runtime.hasEvent('TransactionPayment.TransactionFeePaid')) {
             setExtrinsicFeesFromPaidEvent(this.runtime, this.extrinsics(), this.events())
         } else if (supportsFeeCalc(this.runtime)) {
-            assert('feeMultiplier' in this.src, 'fee multiplier value is not provided')
+            assert(this.src.feeMultiplier != null, 'fee multiplier value is not provided')
             let extrinsics = this.extrinsics()
             let rawExtrinsics = assertNotNull(this.src.block.block.extrinsics)
             setExtrinsicFeesFromCalc(

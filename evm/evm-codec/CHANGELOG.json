@@ -1,0 +1,62 @@
+{
+  "name": "@subsquid/evm-codec",
+  "entries": [
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-codec_v0.3.0",
+      "date": "Wed, 29 May 2024 15:23:01 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add type field to evm codecs"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.1",
+      "tag": "@subsquid/evm-codec_v0.2.1",
+      "date": "Mon, 20 May 2024 19:49:38 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Add checks for some corrupted string and bytes data; Fix bigint to number conversion issue"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-codec_v0.2.0",
+      "date": "Fri, 10 May 2024 10:23:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Codec for bytes will accept 0x-padded hex strings and return strings instead of Buffer"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-codec_v0.1.0",
+      "date": "Wed, 08 May 2024 19:54:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to use both number and bigint as int type codecs input"
+          },
+          {
+            "comment": "add missing int type codecs"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/evm-codec_v0.0.0",
+      "date": "Wed, 17 Apr 2024 12:46:35 GMT",
+      "comments": {}
+    }
+  ]
+}

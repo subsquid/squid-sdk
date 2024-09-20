@@ -1,6 +1,24 @@
 # Change Log - @subsquid/util-internal-http-server
 
-This log was last generated on Thu, 28 Sep 2023 20:58:19 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+
+## 2.0.0
+Sun, 17 Mar 2024 23:20:20 GMT
+
+### Breaking changes
+
+- new app framework
+
+### Patches
+
+- remove unused import statement
+
+## 1.2.2
+Fri, 01 Dec 2023 16:55:51 GMT
+
+### Patches
+
+- update dependencies
 
 ## 1.2.1
 Thu, 28 Sep 2023 20:58:19 GMT
