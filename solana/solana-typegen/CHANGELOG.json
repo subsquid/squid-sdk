@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/solana-typegen_v0.3.0",
+      "date": "Mon, 23 Sep 2024 17:53:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add alias types support"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/solana-typegen_v0.2.1",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",
