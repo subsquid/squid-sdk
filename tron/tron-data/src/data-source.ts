@@ -37,7 +37,7 @@ export class HttpDataSource {
         this.headPollInterval = options.headPollInterval ?? 1000
         this.strideSize = options.strideSize || 10
         this.strideConcurrency = options.strideConcurrency || 2
-        this.finalityConfirmation = 20
+        this.finalityConfirmation = 0
     }
 
     getBlockHeader(height: number) {
