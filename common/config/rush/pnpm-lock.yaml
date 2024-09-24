@@ -227,6 +227,9 @@ dependencies:
   '@rush-temp/tron-normalization':
     specifier: file:./projects/tron-normalization.tgz
     version: file:projects/tron-normalization.tgz
+  '@rush-temp/tron-objects':
+    specifier: file:./projects/tron-objects.tgz
+    version: file:projects/tron-objects.tgz
   '@rush-temp/tron-stream':
     specifier: file:./projects/tron-stream.tgz
     version: file:projects/tron-stream.tgz
@@ -7906,6 +7909,15 @@ packages:
       typescript: 5.3.2
     dev: false
 
+  file:projects/tron-objects.tgz:
+    resolution: {integrity: sha512-6rqyj1YmfMIli3yV9cUb7q3RZ+2HlJE3qNFCqeFDCONYFeEL1ZbnENgpVuw4PIkiw3WXSP/ZKQ5O3BNYBapCmQ==, tarball: file:projects/tron-objects.tgz}
+    name: '@rush-temp/tron-objects'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.3.2
+    dev: false
+
   file:projects/tron-stream.tgz:
     resolution: {integrity: sha512-aOQDmcSsbMo84b3AUzjqjumVq7WLmfuP/+ouWThViyOxZo3jnMn25kLwhgts7I1iUjE85aQsCpwLe/NRggAIxg==, tarball: file:projects/tron-stream.tgz}
     name: '@rush-temp/tron-stream'
@@ -7916,7 +7928,7 @@ packages:
     dev: false
 
   file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-HFWa/F00GcWBxAr96yjNylEsws0jvqvNzfLy4En8BtjhmZKZAUiD0IMwOaP8ZUz6PkMR/dgdOuvcELKctGj+ZA==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-Dz6cLv5n8AvqP9CXDgC02fncVXbi/A74Gp2wap+ORNqntP0pHSBMtlkfxKDsOSXEcoIS4GlFRe+AF/BaHoWlVw==, tarball: file:projects/tron-usdt.tgz}
     id: file:projects/tron-usdt.tgz
     name: '@rush-temp/tron-usdt'
     version: 0.0.0

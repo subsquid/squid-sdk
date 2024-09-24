@@ -1,3 +1,2 @@
-export {assertNotNull} from '@subsquid/util-internal'
+export * from './data/model'
 export * from './source'
-// export * from './interfaces/data'

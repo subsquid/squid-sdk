@@ -18,7 +18,7 @@ import {
     HttpDataSource as RawHttpDataSource
 } from '@subsquid/tron-data'
 import assert from 'assert'
-import {HttpDataSource} from './http'
+import {HttpDataSource} from './http/source'
 import {TronGateway} from './gateway/source'
 import {Block, FieldSelection} from './data/model'
 import {getFields} from './data/fields'
@@ -390,7 +390,10 @@ class TronDataSource implements DataSource<PartialBlock> {
     }
 
     private createHttpDataSource(settings: HttpApiSettings): HttpDataSource {
-        let client = new HttpClient({baseUrl: settings.url})
+        let client = new HttpClient({
+            baseUrl: settings.url,
+            retryAttempts: Number.MAX_SAFE_INTEGER
+        })
         let dataSource = new RawHttpDataSource({
             httpApi: new HttpApi(client),
             strideConcurrency: settings.strideConcurrency,

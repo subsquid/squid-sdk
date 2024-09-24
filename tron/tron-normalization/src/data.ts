@@ -54,6 +54,14 @@ export interface Transaction {
     netFee?: number
     originEnergyUsage?: number
     energyPenaltyTotal?: number
+    _transferContractOwner?: string
+    _transferContractTo?: string
+    _transferAssetContractOwner?: string
+    _transferAssetContractTo?: string
+    _transferAssetContractAsset?: string
+    _triggerSmartContractOwner?: string
+    _triggerSmartContractContract?: string
+    _triggerSmartContractSighash?: string
 }
 
 
@@ -78,7 +86,7 @@ export interface InternalTransaction {
 
 export interface Block {
     header: BlockHeader,
-    logs?: Log[]
-    transactions?: Transaction[]
-    internalTransactions?: InternalTransaction[]
+    logs: Log[]
+    transactions: Transaction[]
+    internalTransactions: InternalTransaction[]
 }

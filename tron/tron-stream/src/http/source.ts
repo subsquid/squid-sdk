@@ -5,9 +5,9 @@ import {
     HttpDataSource as RawHttpDataSource
 } from '@subsquid/tron-data'
 import {mapBlock} from '@subsquid/tron-normalization'
-import {DataRequest} from './data/data-request'
-import {PartialBlock} from './data/data-partial'
-// import {filterBlockBatch} from './filter'
+import {DataRequest} from '../data/data-request'
+import {PartialBlock} from '../data/data-partial'
+import {filterBlockBatch} from './filter'
 
 
 export class HttpDataSource {
@@ -35,7 +35,7 @@ export class HttpDataSource {
             stopOnHead
         )) {
             let blocks = batch.blocks.map(mapBlock)
-            // filterBlockBatch(requests, blocks)
+            filterBlockBatch(requests, blocks)
             yield blocks
         }
     }
@@ -44,7 +44,17 @@ export class HttpDataSource {
 
 function toRawDataRequest(req: DataRequest): RawDataRequest {
     return {
-        transactions: false,
-        transactionsInfo: false
+        transactions: !!req.transactions?.length ||
+            !!req.logs?.length ||
+            !!req.internalTransactions?.length ||
+            !!req.transferTransactions?.length ||
+            !!req.transferAssetTransactions?.length ||
+            !!req.triggerSmartContractTransactions?.length,
+        transactionsInfo: !!req.logs?.length ||
+            !!req.internalTransactions?.length ||
+            !!req.transactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
+            !!req.transferTransactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
+            !!req.transferAssetTransactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
+            !!req.triggerSmartContractTransactions?.some(req => req.include?.internalTransactions || req.include?.logs)
     }
 }
