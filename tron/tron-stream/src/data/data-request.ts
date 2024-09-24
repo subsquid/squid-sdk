@@ -14,11 +14,11 @@ export interface DataRequest {
 
 
 export interface LogRequestWhere {
-    address?: string[]
-    topic0?: string[]
-    topic1?: string[]
-    topic2?: string[]
-    topic3?: string[]
+    address?: Bytes[]
+    topic0?: Bytes[]
+    topic1?: Bytes[]
+    topic2?: Bytes[]
+    topic3?: Bytes[]
 }
 
 
@@ -51,8 +51,8 @@ export interface TransactionRequest {
 
 
 export interface TransferTransactionRequestWhere {
-    owner?: string[]
-    to?: string[]
+    owner?: Bytes[]
+    to?: Bytes[]
 }
 
 
@@ -69,8 +69,8 @@ export interface TransferTransactionRequest {
 
 
 export interface TransferAssetTransactionRequestWhere {
-    owner?: string[]
-    to?: string[]
+    owner?: Bytes[]
+    to?: Bytes[]
     asset?: string[]
 }
 
@@ -88,9 +88,9 @@ export interface TransferAssetTransactionRequest {
 
 
 export interface TriggerSmartContractTransactionRequestWhere {
-    owner?: string[]
-    contract?: string[]
-    sighash?: string[]
+    owner?: Bytes[]
+    contract?: Bytes[]
+    sighash?: Bytes[]
 }
 
 
@@ -107,8 +107,8 @@ export interface TriggerSmartContractTransactionRequest {
 
 
 export interface InternalTransactionRequestWhere {
-    caller?: string[]
-    transferTo?: string[]
+    caller?: Bytes[]
+    transferTo?: Bytes[]
 }
 
 

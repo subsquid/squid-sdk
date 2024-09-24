@@ -35,7 +35,10 @@ export const DEFAULT_FIELDS = {
         data: true,
         topics: true
     },
-    internalTransaction: {}
+    internalTransaction: {
+        callerAddress: true,
+        transferToAddress: true
+    }
 } as const
 
 

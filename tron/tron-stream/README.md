@@ -1,3 +1,4 @@
-# @subsquid/tron-processor
+# @subsquid/tron-stream
 
-Data fetcher and mappings executor for tron chains.
+Tron block data source, that allows to request and fetch block data from both Subsquid Network 
+and traditional HTTP API endpoint.

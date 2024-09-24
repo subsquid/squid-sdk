@@ -1,3 +1,3 @@
 # @subsquid/tron-ingest
 
-Data fetcher for tron based chains.
+Data ingestion tool for tron based chains.
