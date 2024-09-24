@@ -1,58 +1,39 @@
-export interface BlockHeader {
-    height: number
-    hash: string
-    parentHash: string
-    txTrieRoot: string
-    version?: number
-    timestamp: number
-    witnessAddress: string
-    witnessSignature?: string
-}
-
-
 export interface Log {
-    logIndex: number
-    transactionHash: string
     address: string
     data: string
     topics: string[]
 }
 
 
-export interface TransactionResult {
-    contractRet?: string
+export interface Contract {
+    parameter: {
+        value: any
+        type_url: string
+    }
+    type: string
+    Permission_id?: number
 }
 
 
-export interface Transaction {
-    hash: string
-    ret?: TransactionResult[]
-    signature?: string[]
-    type: string
-    parameter: any
-    permissionId?: number
-    refBlockBytes?: string
-    refBlockHash?: string
-    feeLimit?: number
+export interface TransactionRawData {
+    contract: Contract[]
+    ref_block_bytes?: string
+    ref_block_hash?: string
     expiration?: number
+    fee_limit?: number
     timestamp?: number
-    rawDataHex: string
-    fee?: number
-    contractResult?: string
-    contractAddress?: string
-    resMessage?: string
-    withdrawAmount?: number
-    unfreezeAmount?: number
-    withdrawExpireAmount?: number
-    cancelUnfreezeV2Amount?: Record<string, number>
+}
+
+
+export interface TransactionReceipt {
     result?: string
-    energyFee?: number
-    energyUsage?: number
-    energyUsageTotal?: number
-    netUsage?: number
-    netFee?: number
-    originEnergyUsage?: number
-    energyPenaltyTotal?: number
+    energy_fee?: number
+    energy_usage?: number
+    energy_usage_total?: number
+    net_usage?: number
+    net_fee?: number
+    origin_energy_usage?: number
+    energy_penalty_total?: number
 }
 
 
@@ -63,10 +44,9 @@ export interface CallValueInfo {
 
 
 export interface InternalTransaction {
-    transactionHash: string
     hash: string
-    callerAddress: string
-    transferToAddress?: string
+    caller_address: string
+    transferTo_address?: string
     callValueInfo: CallValueInfo[]
     note: string
     rejected?: boolean
@@ -74,9 +54,65 @@ export interface InternalTransaction {
 }
 
 
+export interface TransactionInfo {
+    id: string
+    fee?: number
+    blockNumber: number
+    blockTimeStamp: number
+    contractResult: string[]
+    contract_address?: string
+    receipt: TransactionReceipt
+    log?: Log[]
+    result?: string
+    resMessage?: string
+    withdraw_amount?: number
+    unfreeze_amount?: number
+    internal_transactions?: InternalTransaction[]
+    withdraw_expire_amount?: number
+    cancel_unfreezeV2_amount?: Record<string, number>
+}
+
+
+export interface TransactionResult {
+    contractRet?: string
+}
+
+
+export interface Transaction {
+    ret?: TransactionResult[]
+    signature?: string[]
+    txID: string
+    raw_data: TransactionRawData
+    raw_data_hex: string
+}
+
+
+export interface BlockRawData {
+    number?: number
+    txTrieRoot: string
+    witness_address: string
+    parentHash: string
+    version?: number
+    timestamp?: number
+}
+
+
+export interface BlockHeader {
+    raw_data: BlockRawData
+    witness_signature?: string
+}
+
+
 export interface Block {
-    header: BlockHeader,
-    logs?: Log[]
+    blockID: string
+    block_header: BlockHeader
     transactions?: Transaction[]
-    internalTransactions?: InternalTransaction[]
+}
+
+
+export interface BlockData {
+    height: number
+    hash: string
+    block: Block
+    transactionsInfo?: TransactionInfo[]
 }

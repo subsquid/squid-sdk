@@ -1,6 +1,6 @@
-import * as raw from '@subsquid/tron-data-raw'
-import {Block, BlockHeader, InternalTransaction, Log, Transaction} from '@subsquid/tron-data'
+import * as raw from '@subsquid/tron-data'
 import assert from 'assert'
+import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './data'
 
 
 function mapBlockHeader(src: raw.Block): BlockHeader {
@@ -17,12 +17,13 @@ function mapBlockHeader(src: raw.Block): BlockHeader {
 }
 
 
-function mapTransaction(src: raw.Transaction, info?: raw.TransactionInfo): Transaction {
+function mapTransaction(src: raw.Transaction, transactionIndex: number, info?: raw.TransactionInfo): Transaction {
     assert(src.raw_data.contract.length == 1)
     if (info) assert(info.contractResult.length == 1)
     let contract = src.raw_data.contract[0]
     return {
         hash: src.txID,
+        transactionIndex,
         ret: src.ret,
         signature: src.signature,
         type: contract.type,
@@ -54,20 +55,25 @@ function mapTransaction(src: raw.Transaction, info?: raw.TransactionInfo): Trans
 }
 
 
-function mapLog(src: raw.Log, logIndex: number, transactionHash: string): Log {
+function mapLog(src: raw.Log, transactionIndex: number, logIndex: number): Log {
     return {
+        transactionIndex,
+        logIndex,
         address: src.address,
         data: src.data,
         topics: src.topics,
-        logIndex,
-        transactionHash,
     }
 }
 
 
-function mapInternalTransaction(src: raw.InternalTransaction, transactionHash: string): InternalTransaction {
+function mapInternalTransaction(
+    src: raw.InternalTransaction,
+    transactionIndex: number,
+    internalTransactionIndex: number
+): InternalTransaction {
     return {
-        transactionHash,
+        transactionIndex,
+        internalTransactionIndex,
         hash: src.hash,
         callerAddress: src.caller_address,
         transferToAddress: src.transferTo_address,
@@ -88,28 +94,27 @@ export function mapBlock(src: raw.BlockData): Block {
     }
 
     let infoById: Record<string, raw.TransactionInfo> = {}
-    for (let info of src.transactionsInfo) {
+    for (let info of src.transactionsInfo || []) {
         infoById[info.id] = info
     }
 
-    let logIndex = 0
-    for (let rawTx of src.block.transactions || []) {
+    src.block.transactions?.forEach((rawTx, index) => {
         let info = infoById[rawTx.txID]
-        let tx = mapTransaction(rawTx, info)
+        let tx = mapTransaction(rawTx, index, info)
         block.transactions?.push(tx)
 
-        if (!info) continue
+        if (!info) return
 
-        for (let rawLog of info.log || []) {
-            let log = mapLog(rawLog, logIndex++, rawTx.txID)
+        info.log?.forEach((rawLog, logIndex) => {
+            let log = mapLog(rawLog, index, logIndex)
             block.logs?.push(log)
-        }
+        })
 
-        for (let rawInternalTx of info.internal_transactions || []) {
-            let internalTx = mapInternalTransaction(rawInternalTx, rawTx.txID)
+        info.internal_transactions?.forEach((rawInternalTx, internalTxIndex) => {
+            let internalTx = mapInternalTransaction(rawInternalTx, index, internalTxIndex)
             block.internalTransactions?.push(internalTx)
-        }
-    }
+        })
+    })
 
     return block
 }

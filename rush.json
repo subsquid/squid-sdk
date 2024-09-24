@@ -628,12 +628,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/tron-data-raw",
-      "projectFolder": "tron/tron-data-raw",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/tron-dump",
       "projectFolder": "tron/tron-dump",
       "shouldPublish": true,
@@ -646,8 +640,14 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/tron-processor",
-      "projectFolder": "tron/tron-processor",
+      "packageName": "@subsquid/tron-normalization",
+      "projectFolder": "tron/tron-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/tron-stream",
+      "projectFolder": "tron/tron-stream",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

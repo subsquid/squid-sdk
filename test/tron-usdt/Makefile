@@ -1,9 +1,5 @@
 process: migrate
-	@node -r dotenv/config lib/processor.js
-
-
-serve:
-	@npx squid-graphql-server
+	@npx node -r dotenv/config lib/main.js
 
 
 migrate:
@@ -22,12 +18,16 @@ typegen:
 	@npx squid-evm-typegen src/abi erc20.json
 
 
+serve:
+	@npx squid-graphql-server
+
+
 up:
-	@docker-compose up -d
+	@docker compose up -d
 
 
 down:
-	@docker-compose down -v
+	@docker compose down -v
 
 
-.PHONY: process serve migrate migration codegen typegen up down
+.PHONY: process migrate migration codegen typegen serve up down
