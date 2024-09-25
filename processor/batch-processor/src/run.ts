@@ -1,15 +1,14 @@
 import {createLogger} from '@subsquid/logger'
-import {last, runProgram, Throttler} from '@subsquid/util-internal'
+import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
 import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
 import * as prom from 'prom-client'
-import {Database, HashAndHeight} from './database'
+import {Database, HashAndHeight, HotDatabaseState, HotTxInfo} from './database'
 import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
-
+import assert from 'assert'
 
 const log = createLogger('sqd:batch-processor')
-
 
 export interface DataHandlerContext<Block, Store> {
     /**
@@ -26,11 +25,9 @@ export interface DataHandlerContext<Block, Store> {
     isHead: boolean
 }
 
-
 interface BlockBase {
     header: HashAndHeight
 }
-
 
 /**
  * Run data processing.
@@ -51,13 +48,15 @@ export function run<Block extends BlockBase, Store>(
     db: Database<Store>,
     dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>
 ): void {
-    runProgram(() => {
-        return new Processor(src, db, dataHandler).run()
-    }, err => {
-        log.fatal(err)
-    })
+    runProgram(
+        () => {
+            return new Processor(src, db, dataHandler).run()
+        },
+        (err) => {
+            log.fatal(err)
+        }
+    )
 }
-
 
 class Processor<B extends BlockBase, S> {
     private metrics = new Metrics()
@@ -70,11 +69,11 @@ class Processor<B extends BlockBase, S> {
         private db: Database<S>,
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
     ) {
-        this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
+        this.chainHeight = new Throttler(() => this.src.getHeight(), 30_000)
     }
 
     async run(): Promise<void> {
-        let state = await this.db.connect()
+        let state = await this.getDatabaseState()
         if (state.height >= 0) {
             log.info(`last processed final block was ${state.height}`)
         }
@@ -82,10 +81,11 @@ class Processor<B extends BlockBase, S> {
         await this.assertWeAreOnTheSameChain(state)
         await this.initMetrics(state)
 
-        for await (let blocks of this.src.getBlockStream(state.height + 1)) {
-            if (blocks.length > 0) {
-                state = await this.processBatch(state, blocks)
-            }
+        for await (let {blocks, finalizedHead} of this.src.getBlockStream({
+            range: {from: state.height + 1},
+            supportHotBlocks: this.db.supportsHotBlocks,
+        })) {
+            state = await this.processBatch(state, finalizedHead, blocks)
         }
 
         this.reportFinalStatus()
@@ -95,13 +95,11 @@ class Processor<B extends BlockBase, S> {
         if (state.height < 0) return
         let hash = await this.src.getBlockHash(state.height)
         if (state.hash === hash) return
-        throw new Error(
-            `already indexed block ${formatHead(state)} was not found on chain`
-        )
+        throw new Error(`already indexed block ${formatHead(state)} was not found on chain`)
     }
 
     private async initMetrics(state: HashAndHeight): Promise<void> {
-        await this.updateProgressMetrics(await this.chainHeight.get(), state)
+        this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
         if (port == null) return
         prom.collectDefaultMetrics()
@@ -118,12 +116,13 @@ class Processor<B extends BlockBase, S> {
         if (this.src.getBlocksCountInRange) {
             left = this.src.getBlocksCountInRange({
                 from: this.metrics.getLastProcessedBlock() + 1,
-                to: this.metrics.getChainHeight()
+                to: this.metrics.getChainHeight(),
             })
-            processed = this.src.getBlocksCountInRange({
-                from: 0,
-                to: this.metrics.getChainHeight()
-            }) - left
+            processed =
+                this.src.getBlocksCountInRange({
+                    from: 0,
+                    to: this.metrics.getChainHeight(),
+                }) - left
         } else {
             left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
             processed = this.metrics.getLastProcessedBlock()
@@ -131,43 +130,94 @@ class Processor<B extends BlockBase, S> {
         this.metrics.updateProgress(processed, left, time)
     }
 
-    private async processBatch(prevHead: HashAndHeight, blocks: B[]): Promise<HashAndHeight> {
-        let chainHeight = await this.chainHeight.get()
-
-        let nextHead = {
-            hash: last(blocks).header.hash,
-            height: last(blocks).header.height
-        }
-
-        let isOnTop = nextHead.height >= chainHeight
-
+    private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
         let mappingStartTime = process.hrtime.bigint()
 
-        await this.db.transact({
-            prevHead,
-            nextHead,
-            isOnTop
-        }, store => {
-            return this.handler({
-                store,
-                blocks,
-                isHead: isOnTop
-            })
-        })
+        let firstBlock = blocks[0].header
+        let lastBlock = last(blocks).header
+
+        let top: HashAndHeight[] = []
+        for (let b of prevState.top) {
+            if (b.height > finalizedHead.height) {
+                top.push(b)
+            }
+        }
+
+        let nextState: HotDatabaseState = {
+            hash: finalizedHead.hash,
+            height: finalizedHead.height,
+            top,
+        }
+
+        let isOnTop = lastBlock.height >= finalizedHead.height
+        if (finalizedHead.height >= lastBlock.height) {
+            await this.db.transact(
+                {
+                    prevHead: prevState,
+                    nextHead: nextState,
+                    isOnTop,
+                },
+                (store) => {
+                    return this.handler({
+                        store,
+                        blocks,
+                        isHead: isOnTop,
+                    })
+                }
+            )
+        } else {
+            assert(this.db.supportsHotBlocks)
+
+            let newHead = lastBlock
+            let prevHead = maybeLast(prevState.top) || prevState
+
+            let baseHead = 
+
+            if (baseHead.hash !== prevHead.hash) {
+                log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(newHead)} with a common base ${formatHead(baseHead)}`)
+            }
+
+            let info: HotTxInfo = {
+                finalizedHead,
+                baseHead: prevState,
+                newBlocks: blocks.map(b => b.header),
+            }
+            if (this.db.transactHot2) {
+                await this.db.transactHot2(
+                    info,
+                    (store, blockSliceStart, blockSliceEnd) => {
+                        return this.handler({
+                            store,
+                            blocks: blocks.slice(blockSliceStart, blockSliceEnd),
+                            isHead: blockSliceEnd === blocks.length,
+                        })
+                    }
+                )
+            } else {
+                await this.db.transactHot(info, (store, ref) => {
+                    let idx = ref.height - prevState.height - 1
+                    let block = blocks[idx]
+
+                    assert.strictEqual(block.header.hash, ref.hash)
+                    assert.strictEqual(block.header.height, ref.height)
+
+                    return this.handler({
+                        store,
+                        blocks: [block],
+                        isHead: nextState.height === ref.height,
+                    })
+                })
+            }
+        }
 
         let mappingEndTime = process.hrtime.bigint()
 
-        this.updateProgressMetrics(chainHeight, nextHead, mappingEndTime)
-        this.metrics.registerBatch(
-            blocks.length,
-            getItemsCount(blocks),
-            mappingStartTime,
-            mappingEndTime
-        )
+        this.updateProgressMetrics(finalizedHead.height, nextState, mappingEndTime)
+        this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
 
         this.reportStatus()
 
-        return nextHead
+        return nextState
     }
 
     private reportStatus(): void {
@@ -194,4 +244,15 @@ class Processor<B extends BlockBase, S> {
             log.info(this.metrics.getStatusLine())
         }
     }
+
+    private async getDatabaseState(): Promise<HotDatabaseState> {
+        if (this.db.supportsHotBlocks) {
+            return await this.db.connect()
+        } else {
+            return await this.db.connect().then(head => {
+                return {...head, top: []}
+            })
+        }
+    }
 }
+
