@@ -2,6 +2,7 @@ import {run} from '@subsquid/batch-processor'
 import {augmentBlock} from '@subsquid/tron-objects'
 import {DataSourceBuilder} from '@subsquid/tron-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
+import assert from 'assert'
 import * as erc20 from './abi/erc20'
 import {Transfer} from './model'
 
@@ -36,9 +37,12 @@ run(dataSource, database, async ctx => {
     for (let block of blocks) {
         for (let log of block.logs) {
             if (log.address == CONTRACT && log.topics[0] === TOPIC0) {
-                log.topics = log.topics.map(t => '0x' + t)
-                log.data = '0x' + log.data
-                let {from, to, value} = erc20.events.Transfer.decode(log)
+                assert(log.data)
+                let event = {
+                    topics: log.topics.map(t => '0x' + t),
+                    data: '0x' + log.data
+                }
+                let {from, to, value} = erc20.events.Transfer.decode(event)
                 let tx = log.getTransaction()
 
                 transfers.push(new Transfer({

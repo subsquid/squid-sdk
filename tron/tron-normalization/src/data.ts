@@ -14,7 +14,7 @@ export interface Log {
     transactionIndex: number
     logIndex: number
     address: string
-    data: string
+    data?: string
     topics: string[]
 }
 
@@ -34,26 +34,26 @@ export interface Transaction {
     permissionId?: number
     refBlockBytes?: string
     refBlockHash?: string
-    feeLimit?: number
+    feeLimit?: bigint
     expiration?: number
     timestamp?: number
     rawDataHex: string
-    fee?: number
+    fee?: bigint
     contractResult?: string
     contractAddress?: string
     resMessage?: string
-    withdrawAmount?: number
-    unfreezeAmount?: number
-    withdrawExpireAmount?: number
-    cancelUnfreezeV2Amount?: Record<string, number>
+    withdrawAmount?: bigint
+    unfreezeAmount?: bigint
+    withdrawExpireAmount?: bigint
+    cancelUnfreezeV2Amount?: Record<string, bigint>
     result?: string
-    energyFee?: number
-    energyUsage?: number
-    energyUsageTotal?: number
-    netUsage?: number
-    netFee?: number
-    originEnergyUsage?: number
-    energyPenaltyTotal?: number
+    energyFee?: bigint
+    energyUsage?: bigint
+    energyUsageTotal?: bigint
+    netUsage?: bigint
+    netFee?: bigint
+    originEnergyUsage?: bigint
+    energyPenaltyTotal?: bigint
     _transferContractOwner?: string
     _transferContractTo?: string
     _transferAssetContractOwner?: string
@@ -66,7 +66,7 @@ export interface Transaction {
 
 
 export interface CallValueInfo {
-    callValue?: number
+    callValue?: bigint
     tokenId?: string
 }
 

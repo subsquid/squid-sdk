@@ -5,7 +5,7 @@ import type {
     InternalTransactionRequiredFields,
     TransactionRequiredFields
 } from './data-partial'
-import type {GetFields, Select, Selector, Simplify} from './util'
+import type {GetFields, Select, Selector, Simplify, ExcludeUnderscored} from './util'
 
 
 /**
@@ -16,7 +16,7 @@ export type Bytes = string
 
 export interface FieldSelection {
     block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
-    transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
+    transaction?: Selector<ExcludeUnderscored<Exclude<keyof data.Transaction, TransactionRequiredFields>>>
     log?: Selector<Exclude<keyof data.Log, LogRequiredFields>>
     internalTransaction?: Selector<Exclude<keyof data.InternalTransaction, InternalTransactionRequiredFields>>
 }

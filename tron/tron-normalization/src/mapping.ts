@@ -1,7 +1,7 @@
 import * as raw from '@subsquid/tron-data'
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Block, BlockHeader, InternalTransaction, Log, Transaction} from './data'
+import {Block, BlockHeader, CallValueInfo, InternalTransaction, Log, Transaction} from './data'
 
 
 function toSighash(val?: string) {
@@ -41,26 +41,56 @@ function mapTransaction(src: raw.Transaction, transactionIndex: number, info?: r
         permissionId: contract.Permission_id,
         refBlockBytes: src.raw_data.ref_block_bytes,
         refBlockHash: src.raw_data.ref_block_hash,
-        feeLimit: src.raw_data.fee_limit,
         expiration: src.raw_data.expiration,
         timestamp: src.raw_data.timestamp,
         rawDataHex: src.raw_data_hex,
-        fee: info?.fee,
         contractResult: info?.contractResult?.[0],
         contractAddress: info?.contract_address,
         resMessage: info?.resMessage,
-        withdrawAmount: info?.withdraw_amount,
-        unfreezeAmount: info?.unfreeze_amount,
-        withdrawExpireAmount: info?.withdraw_expire_amount,
-        cancelUnfreezeV2Amount: info?.cancel_unfreezeV2_amount,
         result: info?.receipt.result,
-        energyFee: info?.receipt.energy_fee,
-        energyUsage: info?.receipt.energy_usage,
-        energyUsageTotal: info?.receipt.energy_usage_total,
-        netUsage: info?.receipt.net_usage,
-        netFee: info?.receipt.net_fee,
-        originEnergyUsage: info?.receipt.origin_energy_usage,
-        energyPenaltyTotal: info?.receipt.energy_penalty_total,
+    }
+
+    if (src.raw_data.fee_limit) {
+        tx.feeLimit = BigInt(src.raw_data.fee_limit)
+    }
+    if (info?.fee) {
+        tx.fee = BigInt(info.fee)
+    }
+    if (info?.withdraw_amount) {
+        tx.withdrawAmount = BigInt(info.withdraw_amount)
+    }
+    if (info?.unfreeze_amount) {
+        tx.unfreezeAmount = BigInt(info.unfreeze_amount)
+    }
+    if (info?.withdraw_expire_amount) {
+        tx.withdrawExpireAmount = BigInt(info.withdraw_expire_amount)
+    }
+    if (info?.receipt.energy_fee) {
+        tx.energyFee = BigInt(info.receipt.energy_fee)
+    }
+    if (info?.receipt.energy_usage) {
+        tx.energyUsage = BigInt(info.receipt.energy_usage)
+    }
+    if (info?.receipt.energy_usage_total) {
+        tx.energyUsageTotal = BigInt(info.receipt.energy_usage_total)
+    }
+    if (info?.receipt.net_usage) {
+        tx.netUsage = BigInt(info.receipt.net_usage)
+    }
+    if (info?.receipt.net_fee) {
+        tx.netFee = BigInt(info.receipt.net_fee)
+    }
+    if (info?.receipt.origin_energy_usage) {
+        tx.originEnergyUsage = BigInt(info.receipt.origin_energy_usage)
+    }
+    if (info?.receipt.energy_penalty_total) {
+        tx.energyPenaltyTotal = BigInt(info.receipt.energy_penalty_total)
+    }
+    if (info?.cancel_unfreezeV2_amount) {
+        tx.cancelUnfreezeV2Amount = {}
+        for (let key in info.cancel_unfreezeV2_amount) {
+            tx.cancelUnfreezeV2Amount[key] = BigInt(info.cancel_unfreezeV2_amount[key])
+        }
     }
 
     if (tx.type == 'TransferContract') {
@@ -96,13 +126,24 @@ function mapInternalTransaction(
     transactionIndex: number,
     internalTransactionIndex: number
 ): InternalTransaction {
+    let callValueInfo = src.callValueInfo.map(info => {
+        let val: CallValueInfo = {}
+        if (info.tokenId) {
+            val.tokenId = info.tokenId
+        }
+        if (info.callValue) {
+            val.callValue = BigInt(info.callValue)
+        }
+        return val
+    })
+
     return {
         transactionIndex,
         internalTransactionIndex,
         hash: src.hash,
         callerAddress: src.caller_address,
         transferToAddress: src.transferTo_address,
-        callValueInfo: src.callValueInfo,
+        callValueInfo,
         note: src.note,
         extra: src.extra,
         rejected: src.rejected,

@@ -3,15 +3,13 @@ import {
     array,
     BIG_NAT,
     BOOLEAN,
-    BYTES,
     NAT,
     INT,
     object,
     option,
     STRING,
-    taggedUnion,
-    oneOf,
-    constant
+    ANY,
+    record
 } from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../data/model'
 import {Selector} from '../data/util'
@@ -31,37 +29,41 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         })
     })
 
+    let TransactionResult = array(object({
+        contractRet: option(STRING)
+    }))
+
     let Transaction = object({
         transactionIndex: NAT,
         ...project(fields.transaction, {
-            hash: BOOLEAN,
-            ret: BOOLEAN,
-            signature: BOOLEAN,
-            type: BOOLEAN,
-            parameter: BOOLEAN,
-            permissionId: BOOLEAN,
-            refBlockBytes: BOOLEAN,
-            refBlockHash: BOOLEAN,
-            feeLimit: BOOLEAN,
-            expiration: BOOLEAN,
-            timestamp: BOOLEAN,
-            rawDataHex: BOOLEAN,
-            fee: BOOLEAN,
-            contractResult: BOOLEAN,
-            contractAddress: BOOLEAN,
-            resMessage: BOOLEAN,
-            withdrawAmount: BOOLEAN,
-            unfreezeAmount: BOOLEAN,
-            withdrawExpireAmount: BOOLEAN,
-            cancelUnfreezeV2Amount: BOOLEAN,
-            result: BOOLEAN,
-            energyFee: BOOLEAN,
-            energyUsage: BOOLEAN,
-            energyUsageTotal: BOOLEAN,
-            netUsage: BOOLEAN,
-            netFee: BOOLEAN,
-            originEnergyUsage: BOOLEAN,
-            energyPenaltyTotal: BOOLEAN,
+            hash: STRING,
+            ret: option(TransactionResult),
+            signature: option(array(STRING)),
+            type: STRING,
+            parameter: ANY,
+            permissionId: option(NAT),
+            refBlockBytes: option(STRING),
+            refBlockHash: option(STRING),
+            feeLimit: option(BIG_NAT),
+            expiration: option(NAT),
+            timestamp: option(NAT),
+            rawDataHex: STRING,
+            fee: option(BIG_NAT),
+            contractResult: option(STRING),
+            contractAddress: option(STRING),
+            resMessage: option(STRING),
+            withdrawAmount: option(BIG_NAT),
+            unfreezeAmount: option(BIG_NAT),
+            withdrawExpireAmount: option(BIG_NAT),
+            cancelUnfreezeV2Amount: option(record(STRING, BIG_NAT)),
+            result: option(STRING),
+            energyFee: option(BIG_NAT),
+            energyUsage: option(BIG_NAT),
+            energyUsageTotal: option(BIG_NAT),
+            netUsage: option(BIG_NAT),
+            netFee: option(BIG_NAT),
+            originEnergyUsage: option(BIG_NAT),
+            energyPenaltyTotal: option(BIG_NAT),
         })
     })
 
@@ -69,23 +71,28 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         transactionIndex: NAT,
         logIndex: NAT,
         ...project(fields.log, {
-            address: BOOLEAN,
-            data: BOOLEAN,
-            topics: BOOLEAN,
+            address: STRING,
+            data: option(STRING),
+            topics: array(STRING),
         })
+    })
+
+    let CallValueInfo = object({
+        callValue: option(BIG_NAT),
+        tokenId: option(STRING)
     })
 
     let InternalTransaction = object({
         transactionIndex: NAT,
         internalTransactionIndex: NAT,
         ...project(fields.internalTransaction, {
-            hash: BOOLEAN,
-            callerAddress: BOOLEAN,
-            transferToAddress: BOOLEAN,
-            callValueInfo: BOOLEAN,
-            note: BOOLEAN,
-            rejected: BOOLEAN,
-            extra: BOOLEAN,
+            hash: STRING,
+            callerAddress: STRING,
+            transferToAddress: option(STRING),
+            callValueInfo: array(CallValueInfo),
+            note: STRING,
+            rejected: option(BOOLEAN),
+            extra: option(STRING),
         })
     })
 

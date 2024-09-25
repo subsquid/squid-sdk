@@ -58,11 +58,17 @@ export class TronGateway {
         stopOnHead?: boolean
     ): AsyncIterable<PartialBlock[]> {
         let archiveRequests = mapRangeRequestList(requests, req => {
-            let {fields, ...items} = req
+            let {fields, includeAllBlocks, ...items} = req
+            let archiveItems: any = {}
+            let key: keyof typeof items
+            for (key in items) {
+                archiveItems[key] = items[key]?.map(it => ({...it.where, ...it.include}))
+            }
             return {
                 type: 'tron',
                 fields,
-                ...items
+                includeAllBlocks,
+                ...archiveItems
             }
         })
 
