@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/graphql-server",
-  "version": "4.7.0",
+  "version": "4.9.0",
   "description": "GraphQL server for squid project",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

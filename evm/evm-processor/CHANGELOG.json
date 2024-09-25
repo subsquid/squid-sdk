@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.21.2",
+      "tag": "@subsquid/evm-processor_v1.21.2",
+      "date": "Fri, 20 Sep 2024 15:57:10 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change type of `debugState.nonce` to `NAT`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.21.1",
       "tag": "@subsquid/evm-processor_v1.21.1",
       "date": "Thu, 22 Aug 2024 09:03:21 GMT",

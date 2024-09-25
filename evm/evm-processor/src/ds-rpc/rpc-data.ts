@@ -134,7 +134,7 @@ export type DebugFrameResult = GetSrcType<typeof DebugFrameResult>
 export const DebugStateMap = object({
     balance: option(QTY),
     code: option(BYTES),
-    nonce: option(SMALL_QTY),
+    nonce: option(NAT),
     storage: option(record(BYTES, BYTES))
 })
 
