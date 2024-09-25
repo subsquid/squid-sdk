@@ -99,7 +99,7 @@ class Processor<B extends BlockBase, S> {
     }
 
     private async initMetrics(state: HashAndHeight): Promise<void> {
-        this.updateProgressMetrics(await this.chainHeight.get(), state)
+        await this.updateProgressMetrics(state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
         if (port == null) return
         prom.collectDefaultMetrics()
@@ -108,7 +108,9 @@ class Processor<B extends BlockBase, S> {
         log.info(`prometheus metrics are served on port ${server.port}`)
     }
 
-    private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
+    private async updateProgressMetrics(state: HashAndHeight, time?: bigint): Promise<void> {
+        let chainHeight = await this.chainHeight.get()
+
         this.metrics.setChainHeight(chainHeight)
         this.metrics.setLastProcessedBlock(state.height)
         let left: number
@@ -133,48 +135,71 @@ class Processor<B extends BlockBase, S> {
     private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
         let mappingStartTime = process.hrtime.bigint()
 
+        assert(prevState.height < finalizedHead.height || prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash)
+        
         let firstBlock = blocks[0].header
         let lastBlock = last(blocks).header
-
-        let top: HashAndHeight[] = []
-        for (let b of prevState.top) {
-            if (b.height > finalizedHead.height) {
-                top.push(b)
-            }
-        }
 
         let nextState: HotDatabaseState = {
             hash: finalizedHead.hash,
             height: finalizedHead.height,
-            top,
+            top: [],
         }
-
-        let isOnTop = lastBlock.height >= finalizedHead.height
-        if (finalizedHead.height >= lastBlock.height) {
+        if (prevState.top.length && lastBlock.height <= finalizedHead.height) {
             await this.db.transact(
                 {
                     prevHead: prevState,
                     nextHead: nextState,
-                    isOnTop,
                 },
                 (store) => {
                     return this.handler({
                         store,
                         blocks,
-                        isHead: isOnTop,
+                        isHead: lastBlock.height === finalizedHead.height,
                     })
                 }
             )
         } else {
             assert(this.db.supportsHotBlocks)
 
-            let newHead = lastBlock
-            let prevHead = maybeLast(prevState.top) || prevState
+            for (let b of prevState.top) {
+                if (b.height >= firstBlock.height) {
+                    assert(b.height > finalizedHead.height)
+                    continue
+                }
 
-            let baseHead = 
+                if (b.height === finalizedHead.height) {
+                    assert(b.hash === firstBlock.hash)
+                    continue
+                }
+
+                if (b.height < finalizedHead.height) {
+                    continue
+                }
+
+                nextState.top.push(b)
+            }
+
+            let baseHead = maybeLast(nextState.top) || prevState
+
+            for (let {header: b} of blocks) {
+                if (b.height === finalizedHead.height) {
+                    assert(b.hash === firstBlock.hash)
+                    continue
+                }
+
+                if (b.height < finalizedHead.height) {
+                    continue
+                }
+
+                nextState.top.push(b)
+            }
+
+            let prevHead = maybeLast(prevState.top) || prevState
+            let nextHead = maybeLast(nextState.top) || nextState
 
             if (baseHead.hash !== prevHead.hash) {
-                log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(newHead)} with a common base ${formatHead(baseHead)}`)
+                log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(nextHead)} with a common base ${formatHead(baseHead)}`)
             }
 
             let info: HotTxInfo = {
@@ -212,7 +237,7 @@ class Processor<B extends BlockBase, S> {
 
         let mappingEndTime = process.hrtime.bigint()
 
-        this.updateProgressMetrics(finalizedHead.height, nextState, mappingEndTime)
+        await this.updateProgressMetrics(nextState, mappingEndTime)
         this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
 
         this.reportStatus()

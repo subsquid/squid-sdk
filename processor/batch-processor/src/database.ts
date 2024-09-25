@@ -8,7 +8,6 @@ export type Database<S> = FinalDatabase<S> | HotDatabase<S>
 export interface FinalTxInfo {
     prevHead: HashAndHeight
     nextHead: HashAndHeight
-    isOnTop: boolean
 }
 
 
