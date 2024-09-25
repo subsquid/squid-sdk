@@ -74,10 +74,6 @@ COPY --from=tron-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/tron/tron-ingest/bin/run.js"]
 
 
-FROM builder AS chain-status-service-builder
-RUN node common/scripts/install-run-rush.js deploy --project chain-status-service
-
-
 FROM builder AS fuel-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump
 
