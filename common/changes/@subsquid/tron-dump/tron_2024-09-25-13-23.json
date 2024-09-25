@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-dump",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/tron-dump"
+}
