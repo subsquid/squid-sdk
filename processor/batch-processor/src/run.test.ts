@@ -4,6 +4,11 @@ import {BlockBase, Processor, FinalizedHeadBelowStateError, DatabaseNotSupportHo
 import assert from 'assert'
 import {DataSource} from './datasource'
 import {FiniteRange, getSize} from '@subsquid/util-internal-range'
+import expect from 'expect'
+import {Mock, MockedObject, MockInstance, ModuleMocker} from 'jest-mock'
+import {AsyncFunc} from 'mocha'
+
+const mock = new ModuleMocker(global)
 
 class MockDataSource implements DataSource<BlockBase> {
     private queue = new AsyncQueue<{finalizedHead: HashAndHeight; blocks: BlockBase[]}>(1)
@@ -101,37 +106,37 @@ async function waitFor(cb: () => boolean, interval?: number) {
     })
 }
 
-async function waitForCallExact(fn: jest.Mock, times: number) {
+async function waitForCallExact(fn: MockInstance<any>, times: number) {
     await waitFor(() => fn.mock.calls.length >= times)
     expect(fn).toHaveBeenCalledTimes(times)
 }
 
-async function waitForResultExact(fn: jest.Mock, times: number) {
+async function waitForResultExact(fn: MockInstance<any>, times: number) {
     await waitFor(() => fn.mock.results.length >= times)
     expect(fn).toHaveReturnedTimes(times)
 }
 
 describe('processor', () => {
-    let ds: jest.MockedObjectDeep<MockDataSource>
-    let db: jest.MockedObjectDeep<MockDataBase>
-    let p: jest.MockedObjectDeep<Processor<BlockBase, unknown>>
+    let ds: MockedObject<MockDataSource>
+    let db: MockedObject<MockDataBase>
+    let p: MockedObject<Processor<BlockBase, unknown>>
 
     let batchHandler = async () => {}
 
     afterEach(() => {
-        jest.resetAllMocks()
+        mock.resetAllMocks()
         ds?.close()
     })
 
     describe('common', () => {
         beforeEach(async () => {
-            db = jest.mocked(new MockDataBase())
-            ds = jest.mocked(new MockDataSource())
-            p = jest.mocked(new Processor(ds, db, batchHandler))
+            db = mock.mocked(new MockDataBase())
+            ds = mock.mocked(new MockDataSource())
+            p = mock.mocked(new Processor(ds, db, batchHandler))
 
-            jest.spyOn(ds, 'getBlockStream')
-            jest.spyOn(db, 'transact')
-            jest.spyOn(p, 'run')
+            mock.spyOn(ds, 'getBlockStream')
+            mock.spyOn(db, 'transact')
+            mock.spyOn(p, 'run')
 
             p.run().catch(() => {})
 
@@ -227,13 +232,13 @@ describe('processor', () => {
 
     describe('without hot blocks support', () => {
         beforeEach(async () => {
-            db = jest.mocked(new MockDataBase({supportsHotBlocks: false}))
-            ds = jest.mocked(new MockDataSource())
-            p = jest.mocked(new Processor(ds, db, batchHandler))
+            db = mock.mocked(new MockDataBase({supportsHotBlocks: false}))
+            ds = mock.mocked(new MockDataSource())
+            p = mock.mocked(new Processor(ds, db, batchHandler))
 
-            jest.spyOn(ds, 'getBlockStream')
-            jest.spyOn(db, 'transact')
-            jest.spyOn(p, 'run')
+            mock.spyOn(ds, 'getBlockStream')
+            mock.spyOn(db, 'transact')
+            mock.spyOn(p, 'run')
 
             p.run().catch(() => {})
 
@@ -331,14 +336,14 @@ describe('processor', () => {
 
     describe('with hot blocks support', () => {
         beforeEach(async () => {
-            db = jest.mocked(new MockDataBase({supportsHotBlocks: true}))
-            ds = jest.mocked(new MockDataSource())
-            p = jest.mocked(new Processor(ds, db, batchHandler))
+            db = mock.mocked(new MockDataBase({supportsHotBlocks: true}))
+            ds = mock.mocked(new MockDataSource())
+            p = mock.mocked(new Processor(ds, db, batchHandler))
 
-            jest.spyOn(ds, 'getBlockStream')
-            jest.spyOn(db, 'transact')
-            jest.spyOn(db, 'transactHot2')
-            jest.spyOn(p, 'run')
+            mock.spyOn(ds, 'getBlockStream')
+            mock.spyOn(db, 'transact')
+            mock.spyOn(db, 'transactHot2')
+            mock.spyOn(p, 'run')
 
             p.run().catch(console.error)
 
