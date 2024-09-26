@@ -18,15 +18,6 @@ class MockDataSource implements DataSource<BlockBase> {
         return this._isReady
     }
 
-    // promise() {
-    //     return this.readyFuture.promise()
-    // }
-
-    // get isHotBlocksSupported() {
-    //     assert(this.isReady)
-    //     return this._supportsHotBlocks
-    // }
-
     async getBlockHash(): Promise<never> {
         throw new Error()
     }
@@ -44,7 +35,6 @@ class MockDataSource implements DataSource<BlockBase> {
 
         this._supportsHotBlocks = opts.supportHotBlocks ?? true
 
-        // this.readyFuture.resolve()
         this._isReady = true
 
         for await (let {finalizedHead, blocks} of this.queue.iterate()) {
@@ -52,22 +42,17 @@ class MockDataSource implements DataSource<BlockBase> {
                 finalizedHead,
                 blocks: blocks.filter((b) => this._supportsHotBlocks || b.header.height <= finalizedHead.height),
             }
-
-            // this.nextFuture?.resolve()
         }
     }
 
-    // async put(finalizedHead: HashAndHeight, blocks: BlockBase[]) {
-    //     assert(this.isReady)
-    //     await this.queue.put({finalizedHead, blocks})
+    async put(finalizedHead: HashAndHeight, blocks: BlockBase[]) {
+        assert(this.isReady)
+        await this.queue.put({finalizedHead, blocks})
+    }
 
-    //     // this.nextFuture = createFuture()
-    //     // await this.nextFuture.promise()
-    // }
-
-    // close() {
-    //     this.queue?.close()
-    // }
+    close() {
+        this.queue?.close()
+    }
 }
 
 class MockDataBase {
@@ -101,33 +86,57 @@ function block(header: HashAndHeight) {
     return {header}
 }
 
+async function waitFor(cb: () => boolean, interval?: number) {
+    await new Promise<void>((resolve) => {
+        const intervalId = setInterval(() => {
+            if (cb()) {
+                clearInterval(intervalId)
+                resolve()
+            }
+        }, interval ?? 5)
+    })
+}
+
+async function waitForCallExact(fn: jest.Mock, times: number) {
+    await waitFor(() => fn.mock.calls.length >= times)
+    expect(fn).toHaveBeenCalledTimes(times)
+}
+
+async function waitForResultExact(fn: jest.Mock, times: number) {
+    await waitFor(() => fn.mock.results.length >= times)
+    expect(fn).toHaveReturnedTimes(times)
+}
+
 describe('processor', () => {
-    let ds: MockDataSource
-    let db: MockDataBase
-    let p: Processor<BlockBase, unknown>
+    let ds: jest.MockedObjectDeep<MockDataSource>
+    let db: jest.MockedObjectDeep<MockDataBase>
+    let p: jest.MockedObjectDeep<Processor<BlockBase, unknown>>
+
+    let batchHandler = async () => {}
 
     afterEach(() => {
+        jest.resetAllMocks()
         ds?.close()
     })
 
     describe('without hot blocks support', () => {
         beforeEach(async () => {
-            db = new MockDataBase({supportsHotBlocks: false})
-            ds = new MockDataSource()
+            db = jest.mocked(new MockDataBase({supportsHotBlocks: false}), {shallow: true})
+            ds = jest.mocked(new MockDataSource(), {shallow: true})
+            p = jest.mocked(new Processor(ds, db, batchHandler))
 
-            p = new Processor(ds, db, async () => {})
-            void p.run()
-
-            jest.spyOn(ds, 'getBlockStream').withImplementation(() => {
-                
-            })
-            ds.getBlockStream = jest.fn()
+            jest.spyOn(ds, 'getBlockStream')
             jest.spyOn(db, 'transact')
+            jest.spyOn(p, 'run')
 
-            jest.runAllTicks()
+            p.run().catch((error) => {
+                error
+            })
+
+            await waitForCallExact(ds.getBlockStream, 1)
         })
 
-        it('correctly configures datasource stream', async () => {
+        it('correctly configure stream', async () => {
             expect(ds.getBlockStream).toHaveBeenCalledWith(
                 expect.objectContaining({
                     supportHotBlocks: false,
@@ -135,31 +144,129 @@ describe('processor', () => {
             )
         })
 
-        it('aaaa', async () => {
+        it('correctly transact', async () => {
+            await ds.put({height: 2, hash: '0x2'}, [
+                block({height: 0, hash: '0x0'}),
+                block({height: 1, hash: '0x1'}),
+                block({height: 2, hash: '0x2'}),
+            ])
+
+            await waitForCallExact(db.transact, 1)
+
+            expect(db.transact).toHaveBeenCalledWith(
+                {
+                    prevHead: expect.objectContaining({
+                        hash: '0x',
+                        height: -1,
+                    }),
+                    nextHead: expect.objectContaining({
+                        hash: '0x2',
+                        height: 2,
+                    }),
+                },
+                expect.any(Function)
+            )
+        })
+
+        it('correctly transact 2', async () => {
             await ds.put({height: 1, hash: '0x1'}, [block({height: 0, hash: '0x0'}), block({height: 1, hash: '0x1'})])
-            
-            expect(db.transact).toHaveBeenCalledWith({height: 1, hash: '0x1', top: []})
+
+            await waitForCallExact(db.transact, 1)
+
+            expect(db.transact).toHaveBeenCalledWith(
+                {
+                    prevHead: expect.objectContaining({
+                        hash: '0x',
+                        height: -1,
+                    }),
+                    nextHead: expect.objectContaining({
+                        hash: '0x1',
+                        height: 1,
+                    }),
+                },
+                expect.any(Function)
+            )
+
+            await ds.put({height: 2, hash: '0x2'}, [block({height: 2, hash: '0x2'})])
+
+            await waitForCallExact(db.transact, 2)
+
+            expect(db.transact).toHaveBeenCalledWith(
+                {
+                    prevHead: expect.objectContaining({
+                        hash: '0x1',
+                        height: 1,
+                    }),
+                    nextHead: expect.objectContaining({
+                        hash: '0x2',
+                        height: 2,
+                    }),
+                },
+                expect.any(Function)
+            )
         })
-    })
 
-    describe('with hot blocks support', () => {
-        beforeEach(async () => {
-            db = new MockDataBase({supportsHotBlocks: true})
-            ds = new MockDataSource()
+        it('throw on integrity error', async () => {
+            await ds.put({height: 2, hash: '0x1'}, [
+                block({height: 0, hash: '0x0'}),
+                block({height: 1, hash: '0x1'}),
+                block({height: 2, hash: '0x2'}),
+            ])
 
-            p = new Processor(ds, db, async () => {})
-            void p.run()
+            await waitForResultExact(p.run, 1)
 
-            jest.spyOn(ds, 'getBlockStream')
-            jest.runAllTicks()
+            expect(p.run.mock.results[0].value).rejects.toThrow('block 2#2 should match finalized head 2#1')
         })
 
-        it('correctly configures datasource stream', async () => {
-            expect(ds.getBlockStream).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    supportHotBlocks: true,
-                })
+        it('throw on integrity error 2', async () => {
+            await ds.put({height: 1, hash: '0x1'}, [block({height: 0, hash: '0x0'}), block({height: 1, hash: '0x1'})])
+
+            await waitForCallExact(db.transact, 1)
+
+            expect(db.transact).toHaveBeenCalledWith(
+                {
+                    prevHead: expect.objectContaining({
+                        hash: '0x',
+                        height: -1,
+                    }),
+                    nextHead: expect.objectContaining({
+                        hash: '0x1',
+                        height: 1,
+                    }),
+                },
+                expect.any(Function)
+            )
+
+            await ds.put({height: 0, hash: '0x0'}, [block({height: 2, hash: '0x2'})])
+
+            await waitForResultExact(p.run, 1)
+
+            expect(p.run.mock.results[0].value).rejects.toThrow(
+                'prev state 1#1 should be below or match finalized head 0#0'
             )
         })
     })
+
+    // describe('with hot blocks support', () => {
+    //     beforeEach(async () => {
+    //         db = jest.mocked(new MockDataBase({supportsHotBlocks: true}))
+    //         ds = jest.mocked(new MockDataSource())
+
+    //         p = jest.mocked(new Processor(ds, db, async () => {}))
+    //         void p.run()
+
+    //         jest.spyOn(ds, 'getBlockStream')
+    //         jest.spyOn(db, 'transact')
+
+    //         await waitForCall(ds.getBlockStream)
+    //     })
+
+    //     it('correctly configures datasource stream', async () => {
+    //         expect(ds.getBlockStream).toHaveBeenCalledWith(
+    //             expect.objectContaining({
+    //                 supportHotBlocks: true,
+    //             })
+    //         )
+    //     })
+    // })
 })

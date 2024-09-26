@@ -64,6 +64,16 @@ export class Processor<B extends BlockBase, S> {
     private statusReportTimer?: any
     private hasStatusNews = false
 
+    /**
+     * Constructs a new instance of the Processor class.
+     *
+     * @param src - data source to ingest data from
+     * 
+     * @param db - database is responsible for providing storage API to data handler
+     * and persisting mapping progress and status
+     * 
+     * @param dataHandler - The data handler, see {@link DataHandlerContext} for an API available to the handler.
+     */
     constructor(
         private src: DataSource<B>,
         private db: Database<S>,
@@ -142,17 +152,20 @@ export class Processor<B extends BlockBase, S> {
     }
 
     private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
-        assert(prevState.height < finalizedHead.height || prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash)
+        assert(
+            (prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash) ||
+                prevState.height < finalizedHead.height,
+            `prev state ${formatHead(prevState)} should be below or match finalized head ${formatHead(finalizedHead)}`
+        )        
         
         let prevHead = maybeLast(prevState.top) || prevState
-
         let top: HashAndHeight[] = []
 
         for (let block of prevState.top) {
             if (block.height >= blocks[0].header.height) break
             if (block.height < finalizedHead.height) continue
             if (block.height === finalizedHead.height) {
-                assert(block.hash === finalizedHead.hash)
+                assert(block.hash === finalizedHead.hash, `block ${formatHead(block)} should match finalized head ${formatHead(finalizedHead)}`)
                 continue
             }
 
@@ -162,11 +175,11 @@ export class Processor<B extends BlockBase, S> {
         let baseHead = maybeLast(top) || prevState
 
         let nextHead: HashAndHeight
-        if (last(blocks).header.height > finalizedHead.height) {
+        if (last(blocks).header.height >= finalizedHead.height) {
             for (let {header: block} of blocks) {
                 if (block.height < finalizedHead.height) continue
                 if (block.height === finalizedHead.height) {
-                    assert(block.hash === finalizedHead.hash)
+                    assert(block.hash === finalizedHead.hash, `block ${formatHead(block)} should match finalized head ${formatHead(finalizedHead)}`)
                     continue
                 }
         
@@ -183,7 +196,7 @@ export class Processor<B extends BlockBase, S> {
         }
 
         let nextState: HotDatabaseState
-        if (baseHead.height === prevState.height && nextHead.height <= finalizedHead.height) {
+        if (top.length === 0 && baseHead.height === prevState.height && nextHead.height <= finalizedHead.height) {
             await this.db.transact(
                 {
                     prevHead,
@@ -204,7 +217,7 @@ export class Processor<B extends BlockBase, S> {
                 top: [],
             }
         } else {
-            assert(this.db.supportsHotBlocks)
+            assert(this.db.supportsHotBlocks, 'database does not support hot blocks')
 
             let info: HotTxInfo = {
                 finalizedHead,
