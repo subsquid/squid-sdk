@@ -10,7 +10,9 @@
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "**/*.test.js",
+    "**/*.test.ts"
   ],
   "main": "lib/index.js",
   "scripts": {

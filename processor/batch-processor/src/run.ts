@@ -8,7 +8,9 @@ import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
 import assert from 'assert'
 
+
 const log = createLogger('sqd:batch-processor')
+
 
 export interface DataHandlerContext<Block, Store> {
     /**
@@ -25,9 +27,11 @@ export interface DataHandlerContext<Block, Store> {
     isHead: boolean
 }
 
+
 export interface BlockBase {
     header: HashAndHeight
 }
+
 
 /**
  * Run data processing.
@@ -57,6 +61,7 @@ export function run<Block extends BlockBase, Store>(
         }
     )
 }
+
 
 export class Processor<B extends BlockBase, S> {
     private metrics = new Metrics()
@@ -101,7 +106,7 @@ export class Processor<B extends BlockBase, S> {
 
             let mappingEndTime = process.hrtime.bigint()
 
-            await this.updateProgressMetrics(state, mappingEndTime)
+            await this.updateProgressMetrics(maybeLast(state.top) || state, mappingEndTime)
             this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
     
             this.reportStatus()
@@ -114,7 +119,7 @@ export class Processor<B extends BlockBase, S> {
         if (state.height < 0) return
         let hash = await this.src.getBlockHash(state.height)
         if (state.hash === hash) return
-        throw new Error(`already indexed block ${formatHead(state)} was not found on chain`)
+        throw new AlreadyIndexedBlockNotFoundError(state)
     }
 
     private async initMetrics(state: HashAndHeight): Promise<void> {
@@ -152,34 +157,51 @@ export class Processor<B extends BlockBase, S> {
     }
 
     private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
-        assert(
-            (prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash) ||
-                prevState.height < finalizedHead.height,
-            `prev state ${formatHead(prevState)} should be below or match finalized head ${formatHead(finalizedHead)}`
-        )        
+        if (prevState.height > finalizedHead.height) {
+            throw new FinalizedHeadBelowStateError(finalizedHead, prevState)
+        }
+
+        if (prevState.height === finalizedHead.height && prevState.hash !== finalizedHead.hash) {
+            throw new Error()
+        }
+
+        if (prevState.height > blocks[0].header.height) {
+            throw new Error()
+        }
+
+        if (prevState.height === blocks[0].header.height && prevState.hash !== blocks[0].header.hash) {
+            throw new Error()
+        }
         
-        let prevHead = maybeLast(prevState.top) || prevState
+        let prevHead: HashAndHeight = maybeLast(prevState.top) || prevState
         let top: HashAndHeight[] = []
 
+        let baseHead: HashAndHeight = prevState
         for (let block of prevState.top) {
-            if (block.height >= blocks[0].header.height) break
+            if (block.height >= blocks[0].header.height) {
+                break
+            }
+            baseHead = block
+
             if (block.height < finalizedHead.height) continue
             if (block.height === finalizedHead.height) {
-                assert(block.hash === finalizedHead.hash, `block ${formatHead(block)} should match finalized head ${formatHead(finalizedHead)}`)
+                if (block.hash !== finalizedHead.hash) {
+                    throw new Error()
+                }
                 continue
             }
 
             top.push(block)
         }
 
-        let baseHead = maybeLast(top) || prevState
-
         let nextHead: HashAndHeight
         if (last(blocks).header.height >= finalizedHead.height) {
             for (let {header: block} of blocks) {
                 if (block.height < finalizedHead.height) continue
                 if (block.height === finalizedHead.height) {
-                    assert(block.hash === finalizedHead.hash, `block ${formatHead(block)} should match finalized head ${formatHead(finalizedHead)}`)
+                    if (block.hash !== finalizedHead.hash) {
+                        throw new Error()
+                    }
                     continue
                 }
         
@@ -190,7 +212,6 @@ export class Processor<B extends BlockBase, S> {
         } else {
             nextHead = last(blocks).header
         }
-
         if (baseHead.hash !== prevHead.hash) {
             log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(nextHead)} with a common base ${formatHead(baseHead)}`)
         }
@@ -217,7 +238,9 @@ export class Processor<B extends BlockBase, S> {
                 top: [],
             }
         } else {
-            assert(this.db.supportsHotBlocks, 'database does not support hot blocks')
+            if (!this.db.supportsHotBlocks) {
+                throw new DatabaseNotSupportHotBlocksError()
+            }
 
             let info: HotTxInfo = {
                 finalizedHead,
@@ -252,14 +275,16 @@ export class Processor<B extends BlockBase, S> {
             }
 
             nextState = {
-                height: nextHead.height,
-                hash: nextHead.hash,
+                height: finalizedHead.height,
+                hash: finalizedHead.hash,
                 top,
             }
         }
 
         return nextState
-    }    private reportStatus(): void {
+    }
+    
+    private reportStatus(): void {
         if (this.statusReportTimer == null) {
             log.info(this.metrics.getStatusLine())
             this.statusReportTimer = setTimeout(() => {
@@ -292,5 +317,28 @@ export class Processor<B extends BlockBase, S> {
                 return {...head, top: []}
             })
         }
+    }
+}
+
+
+export class DatabaseNotSupportHotBlocksError extends Error {
+    constructor() {
+        super('database does not support hot blocks')
+    }
+}
+
+
+export class AlreadyIndexedBlockNotFoundError extends Error {
+    constructor(block: HashAndHeight) {
+        super(`already indexed block ${formatHead(block)} was not found on chain`)
+    }
+}
+
+
+export class FinalizedHeadBelowStateError extends Error {
+    constructor(finalizedHead: HashAndHeight, state: HashAndHeight) {
+        super(
+            `finalized head ${formatHead(finalizedHead)} can not be below state ${formatHead(state)}`
+        )
     }
 }
