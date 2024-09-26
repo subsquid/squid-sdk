@@ -25,7 +25,7 @@ export interface DataHandlerContext<Block, Store> {
     isHead: boolean
 }
 
-interface BlockBase {
+export interface BlockBase {
     header: HashAndHeight
 }
 
@@ -58,7 +58,7 @@ export function run<Block extends BlockBase, Store>(
     )
 }
 
-class Processor<B extends BlockBase, S> {
+export class Processor<B extends BlockBase, S> {
     private metrics = new Metrics()
     private chainHeight: Throttler<number>
     private statusReportTimer?: any
@@ -69,7 +69,7 @@ class Processor<B extends BlockBase, S> {
         private db: Database<S>,
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
     ) {
-        this.chainHeight = new Throttler(() => this.src.getHeight(), 30_000)
+        this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
 
     async run(): Promise<void> {
@@ -85,7 +85,16 @@ class Processor<B extends BlockBase, S> {
             range: {from: state.height + 1},
             supportHotBlocks: this.db.supportsHotBlocks,
         })) {
+            let mappingStartTime = process.hrtime.bigint()
+
             state = await this.processBatch(state, finalizedHead, blocks)
+
+            let mappingEndTime = process.hrtime.bigint()
+
+            await this.updateProgressMetrics(state, mappingEndTime)
+            this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
+    
+            this.reportStatus()
         }
 
         this.reportFinalStatus()
@@ -133,78 +142,73 @@ class Processor<B extends BlockBase, S> {
     }
 
     private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
-        let mappingStartTime = process.hrtime.bigint()
-
         assert(prevState.height < finalizedHead.height || prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash)
         
-        let firstBlock = blocks[0].header
-        let lastBlock = last(blocks).header
+        let prevHead = maybeLast(prevState.top) || prevState
 
-        let nextState: HotDatabaseState = {
-            hash: finalizedHead.hash,
-            height: finalizedHead.height,
-            top: [],
+        let top: HashAndHeight[] = []
+
+        for (let block of prevState.top) {
+            if (block.height >= blocks[0].header.height) break
+            if (block.height < finalizedHead.height) continue
+            if (block.height === finalizedHead.height) {
+                assert(block.hash === finalizedHead.hash)
+                continue
+            }
+
+            top.push(block)
         }
-        if (prevState.top.length && lastBlock.height <= finalizedHead.height) {
+
+        let baseHead = maybeLast(top) || prevState
+
+        let nextHead: HashAndHeight
+        if (last(blocks).header.height > finalizedHead.height) {
+            for (let {header: block} of blocks) {
+                if (block.height < finalizedHead.height) continue
+                if (block.height === finalizedHead.height) {
+                    assert(block.hash === finalizedHead.hash)
+                    continue
+                }
+        
+                top.push(block)
+            }
+
+            nextHead = maybeLast(top) || finalizedHead
+        } else {
+            nextHead = last(blocks).header
+        }
+
+        if (baseHead.hash !== prevHead.hash) {
+            log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(nextHead)} with a common base ${formatHead(baseHead)}`)
+        }
+
+        let nextState: HotDatabaseState
+        if (baseHead.height === prevState.height && nextHead.height <= finalizedHead.height) {
             await this.db.transact(
                 {
-                    prevHead: prevState,
-                    nextHead: nextState,
+                    prevHead,
+                    nextHead,
                 },
                 (store) => {
                     return this.handler({
                         store,
                         blocks,
-                        isHead: lastBlock.height === finalizedHead.height,
+                        isHead: nextHead.height === finalizedHead.height,
                     })
                 }
             )
+
+            nextState = {
+                height: nextHead.height,
+                hash: nextHead.hash,
+                top: [],
+            }
         } else {
             assert(this.db.supportsHotBlocks)
 
-            for (let b of prevState.top) {
-                if (b.height >= firstBlock.height) {
-                    assert(b.height > finalizedHead.height)
-                    continue
-                }
-
-                if (b.height === finalizedHead.height) {
-                    assert(b.hash === firstBlock.hash)
-                    continue
-                }
-
-                if (b.height < finalizedHead.height) {
-                    continue
-                }
-
-                nextState.top.push(b)
-            }
-
-            let baseHead = maybeLast(nextState.top) || prevState
-
-            for (let {header: b} of blocks) {
-                if (b.height === finalizedHead.height) {
-                    assert(b.hash === firstBlock.hash)
-                    continue
-                }
-
-                if (b.height < finalizedHead.height) {
-                    continue
-                }
-
-                nextState.top.push(b)
-            }
-
-            let prevHead = maybeLast(prevState.top) || prevState
-            let nextHead = maybeLast(nextState.top) || nextState
-
-            if (baseHead.hash !== prevHead.hash) {
-                log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(nextHead)} with a common base ${formatHead(baseHead)}`)
-            }
-
             let info: HotTxInfo = {
                 finalizedHead,
-                baseHead: prevState,
+                baseHead,
                 newBlocks: blocks.map(b => b.header),
             }
             if (this.db.transactHot2) {
@@ -233,19 +237,16 @@ class Processor<B extends BlockBase, S> {
                     })
                 })
             }
+
+            nextState = {
+                height: nextHead.height,
+                hash: nextHead.hash,
+                top,
+            }
         }
 
-        let mappingEndTime = process.hrtime.bigint()
-
-        await this.updateProgressMetrics(nextState, mappingEndTime)
-        this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
-
-        this.reportStatus()
-
         return nextState
-    }
-
-    private reportStatus(): void {
+    }    private reportStatus(): void {
         if (this.statusReportTimer == null) {
             log.info(this.metrics.getStatusLine())
             this.statusReportTimer = setTimeout(() => {
@@ -280,4 +281,3 @@ class Processor<B extends BlockBase, S> {
         }
     }
 }
-
