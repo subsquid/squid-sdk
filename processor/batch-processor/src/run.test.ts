@@ -138,7 +138,7 @@ describe('processor', () => {
             mock.spyOn(db, 'transact')
             mock.spyOn(p, 'run')
 
-            p.run().catch(() => {})
+            p.run().catch(console.error)
 
             await waitForCallExact(ds.getBlockStream, 1)
         })
@@ -240,7 +240,7 @@ describe('processor', () => {
             mock.spyOn(db, 'transact')
             mock.spyOn(p, 'run')
 
-            p.run().catch(() => {})
+            p.run().catch(console.error)
 
             await waitForCallExact(ds.getBlockStream, 1)
         })

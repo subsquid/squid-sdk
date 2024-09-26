@@ -11,8 +11,7 @@
   "files": [
     "lib",
     "src",
-    "**/*.test.js",
-    "**/*.test.ts"
+    "**/*.test.*"
   ],
   "main": "lib/index.js",
   "scripts": {
