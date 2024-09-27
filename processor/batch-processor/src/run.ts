@@ -7,6 +7,7 @@ import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
 import assert from 'assert'
+import {AlreadyIndexedBlockNotFoundError, FinalizedHeadBelowStateError, DatabaseNotSupportHotBlocksError} from './errors'
 
 
 const log = createLogger('sqd:batch-processor')
@@ -317,28 +318,5 @@ export class Processor<B extends BlockBase, S> {
                 return {...head, top: []}
             })
         }
-    }
-}
-
-
-export class DatabaseNotSupportHotBlocksError extends Error {
-    constructor() {
-        super('database does not support hot blocks')
-    }
-}
-
-
-export class AlreadyIndexedBlockNotFoundError extends Error {
-    constructor(block: HashAndHeight) {
-        super(`already indexed block ${formatHead(block)} was not found on chain`)
-    }
-}
-
-
-export class FinalizedHeadBelowStateError extends Error {
-    constructor(finalizedHead: HashAndHeight, state: HashAndHeight) {
-        super(
-            `finalized head ${formatHead(finalizedHead)} can not be below state ${formatHead(state)}`
-        )
     }
 }

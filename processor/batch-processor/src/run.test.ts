@@ -1,27 +1,17 @@
 import {AsyncQueue} from '@subsquid/util-internal'
-import {FinalTxInfo, HashAndHeight, HotDatabaseState, HotTxInfo} from './database'
-import {BlockBase, Processor, FinalizedHeadBelowStateError, DatabaseNotSupportHotBlocksError} from './run'
-import assert from 'assert'
-import {DataSource} from './datasource'
 import {FiniteRange, getSize} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import expect from 'expect'
-import {Mock, MockedObject, MockInstance, ModuleMocker} from 'jest-mock'
-import {AsyncFunc} from 'mocha'
+import {MockedObject, MockInstance, ModuleMocker} from 'jest-mock'
+import {FinalTxInfo, HashAndHeight, HotDatabaseState, HotTxInfo} from './database'
+import {DataSource} from './datasource'
+import {DatabaseNotSupportHotBlocksError, FinalizedHeadBelowStateError} from './errors'
+import {BlockBase, Processor} from './run'
 
 const mock = new ModuleMocker(global)
 
 class MockDataSource implements DataSource<BlockBase> {
-    private queue = new AsyncQueue<{finalizedHead: HashAndHeight; blocks: BlockBase[]}>(1)
-    private _supportsHotBlocks = true
-
-    // private readyFuture = createFuture<void>()
-    // private nextFuture: Future<void> | undefined
-
-    private _isReady: boolean = false
-
-    get isReady() {
-        return this._isReady
-    }
+    private queue: AsyncQueue<{finalizedHead: HashAndHeight; blocks: BlockBase[]}> | undefined
 
     async getBlockHash(): Promise<never> {
         throw new Error()
@@ -35,12 +25,10 @@ class MockDataSource implements DataSource<BlockBase> {
         return getSize([{from: 0}], range)
     }
 
-    async *getBlockStream(opts: {supportHotBlocks?: boolean} = {}) {
-        assert(!this.isReady)
+    async *getBlockStream() {
+        assert(this.queue == null)
 
-        this._supportsHotBlocks = opts.supportHotBlocks ?? true
-
-        this._isReady = true
+        this.queue = new AsyncQueue(1)
 
         for await (let {finalizedHead, blocks} of this.queue.iterate()) {
             yield {
@@ -51,12 +39,13 @@ class MockDataSource implements DataSource<BlockBase> {
     }
 
     async put(finalizedHead: HashAndHeight, blocks: BlockBase[]) {
-        assert(this.isReady)
+        assert(this.queue != null)
         await this.queue.put({finalizedHead, blocks})
     }
 
     close() {
         this.queue?.close()
+        this.queue = undefined
     }
 }
 
