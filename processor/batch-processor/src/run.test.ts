@@ -1,11 +1,11 @@
 import {AsyncQueue} from '@subsquid/util-internal'
 import {FiniteRange, getSize} from '@subsquid/util-internal-range'
-import assert from 'assert'
+import assert, {AssertionError} from 'assert'
 import expect from 'expect'
 import {MockedObject, MockInstance, ModuleMocker} from 'jest-mock'
 import {FinalTxInfo, HashAndHeight, HotDatabaseState, HotTxInfo} from './database'
 import {DataSource} from './datasource'
-import {DatabaseNotSupportHotBlocksError, FinalizedHeadBelowStateError} from './errors'
+import {FinalizedHeadBelowStateError} from './errors'
 import {BlockBase, Processor} from './run'
 
 const mock = new ModuleMocker(global)
@@ -124,20 +124,13 @@ describe('processor', () => {
             p = mock.mocked(new Processor(ds, db, batchHandler))
 
             mock.spyOn(ds, 'getBlockStream')
-            mock.spyOn(db, 'transact')
             mock.spyOn(p, 'run')
 
-            p.run().catch(console.error)
+            p.run().catch(() => {})
 
             await waitForCallExact(ds.getBlockStream, 1)
-        })
 
-        it('throw on integrity error', async () => {
-            await ds.put(header('0x1', 2), [block('0x0', 0), block('0x1', 1), block('0x2', 2)])
-
-            await waitForResultExact(p.run, 1)
-
-            expect(p.run.mock.results[0].value).rejects.toThrow(new Error())
+            mock.spyOn(db, 'transact')
         })
 
         it('throw on consistency error', async () => {
@@ -226,12 +219,13 @@ describe('processor', () => {
             p = mock.mocked(new Processor(ds, db, batchHandler))
 
             mock.spyOn(ds, 'getBlockStream')
-            mock.spyOn(db, 'transact')
             mock.spyOn(p, 'run')
 
-            p.run().catch(console.error)
+            p.run().catch(() => {})
 
             await waitForCallExact(ds.getBlockStream, 1)
+
+            mock.spyOn(db, 'transact')
         })
 
         it('configure stream', async () => {
@@ -319,7 +313,7 @@ describe('processor', () => {
 
             await waitForResultExact(p.run, 1)
 
-            expect(p.run.mock.results[0].value).rejects.toThrow(new DatabaseNotSupportHotBlocksError())
+            expect(p.run.mock.results[0].value).rejects.toThrow(AssertionError)
         })
     })
 
@@ -330,13 +324,14 @@ describe('processor', () => {
             p = mock.mocked(new Processor(ds, db, batchHandler))
 
             mock.spyOn(ds, 'getBlockStream')
-            mock.spyOn(db, 'transact')
-            mock.spyOn(db, 'transactHot2')
             mock.spyOn(p, 'run')
 
-            p.run().catch(console.error)
+            p.run().catch(() => {})
 
             await waitForCallExact(ds.getBlockStream, 1)
+
+            mock.spyOn(db, 'transact')
+            mock.spyOn(db, 'transactHot2')
         })
 
         it('configure stream', async () => {
@@ -484,10 +479,7 @@ describe('processor', () => {
                 {
                     baseHead: expect.objectContaining(header('0x1', 1)),
                     finalizedHead: expect.objectContaining(header('0x1', 1)),
-                    newBlocks: [
-                        expect.objectContaining(header('0x2a', 2)),
-                        expect.objectContaining(header('0x3a', 3)),
-                    ],
+                    newBlocks: [expect.objectContaining(header('0x2a', 2)), expect.objectContaining(header('0x3a', 3))],
                 },
                 expect.any(Function)
             )

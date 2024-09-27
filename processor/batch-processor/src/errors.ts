@@ -1,12 +1,6 @@
 import {HashAndHeight} from './database'
 import {formatHead} from './util'
 
-export class DatabaseNotSupportHotBlocksError extends Error {
-    constructor() {
-        super('database does not support hot blocks')
-    }
-}
-
 export class AlreadyIndexedBlockNotFoundError extends Error {
     constructor(block: HashAndHeight) {
         super(`already indexed block ${formatHead(block)} was not found on chain`)

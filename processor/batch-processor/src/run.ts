@@ -7,7 +7,7 @@ import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
 import assert from 'assert'
-import {AlreadyIndexedBlockNotFoundError, FinalizedHeadBelowStateError, DatabaseNotSupportHotBlocksError} from './errors'
+import {AlreadyIndexedBlockNotFoundError, FinalizedHeadBelowStateError} from './errors'
 
 
 const log = createLogger('sqd:batch-processor')
@@ -90,6 +90,20 @@ export class Processor<B extends BlockBase, S> {
 
     async run(): Promise<void> {
         let state = await this.getDatabaseState()
+
+        // remove all hot block to start from the finalized head
+        state = {...state, top: []}
+        if (this.db.supportsHotBlocks) {
+            await this.db.transactHot(
+                {
+                    finalizedHead: state,
+                    baseHead: state,
+                    newBlocks: [],
+                },
+                async () => {}
+            )
+        }
+
         if (state.height >= 0) {
             log.info(`last processed final block was ${state.height}`)
         }
@@ -173,52 +187,35 @@ export class Processor<B extends BlockBase, S> {
         if (prevState.height === blocks[0].header.height && prevState.hash !== blocks[0].header.hash) {
             throw new Error()
         }
-        
-        let prevHead: HashAndHeight = maybeLast(prevState.top) || prevState
-        let top: HashAndHeight[] = []
 
-        let baseHead: HashAndHeight = prevState
+        let lastBlock = last(blocks).header
+        let nextState: HotDatabaseState =
+            lastBlock.height < finalizedHead.height
+                ? toDatabaseState(lastBlock)
+                : toDatabaseState(finalizedHead)
+        
+        let baseHead = prevState as HashAndHeight
         for (let block of prevState.top) {
-            if (block.height >= blocks[0].header.height) {
-                break
-            }
+            if (block.height > blocks[0].header.height) break
+            if (block.height === blocks[0].header.height && block.hash !== blocks[0].header.hash) break
             baseHead = block
-
-            if (block.height < finalizedHead.height) continue
-            if (block.height === finalizedHead.height) {
-                if (block.hash !== finalizedHead.hash) {
-                    throw new Error()
-                }
-                continue
-            }
-
-            top.push(block)
+            if (block.height <= nextState.height) continue
+            nextState.top.push(block)
         }
 
-        let nextHead: HashAndHeight
-        if (last(blocks).header.height >= finalizedHead.height) {
-            for (let {header: block} of blocks) {
-                if (block.height < finalizedHead.height) continue
-                if (block.height === finalizedHead.height) {
-                    if (block.hash !== finalizedHead.hash) {
-                        throw new Error()
-                    }
-                    continue
-                }
-        
-                top.push(block)
-            }
-
-            nextHead = maybeLast(top) || finalizedHead
-        } else {
-            nextHead = last(blocks).header
+        for (let {header: block} of blocks) {
+            if (block.height <= finalizedHead.height) continue
+            nextState.top.push(block)
         }
+
+        let prevHead = maybeLast(prevState.top) || prevState
+        let nextHead = maybeLast(nextState.top) || nextState
+
         if (baseHead.hash !== prevHead.hash) {
             log.info(`navigating a fork between ${formatHead(prevHead)} to ${formatHead(nextHead)} with a common base ${formatHead(baseHead)}`)
         }
 
-        let nextState: HotDatabaseState
-        if (top.length === 0 && baseHead.height === prevState.height && nextHead.height <= finalizedHead.height) {
+        if (nextHead.height === nextState.height && prevHead.height === prevState.height) {
             await this.db.transact(
                 {
                     prevHead,
@@ -232,16 +229,8 @@ export class Processor<B extends BlockBase, S> {
                     })
                 }
             )
-
-            nextState = {
-                height: nextHead.height,
-                hash: nextHead.hash,
-                top: [],
-            }
         } else {
-            if (!this.db.supportsHotBlocks) {
-                throw new DatabaseNotSupportHotBlocksError()
-            }
+            assert(this.db.supportsHotBlocks, 'database does not support hot blocks')
 
             let info: HotTxInfo = {
                 finalizedHead,
@@ -270,15 +259,9 @@ export class Processor<B extends BlockBase, S> {
                     return this.handler({
                         store,
                         blocks: [block],
-                        isHead: nextState.height === ref.height,
+                        isHead: nextHead.height === ref.height,
                     })
                 })
-            }
-
-            nextState = {
-                height: finalizedHead.height,
-                hash: finalizedHead.hash,
-                top,
             }
         }
 
@@ -318,5 +301,13 @@ export class Processor<B extends BlockBase, S> {
                 return {...head, top: []}
             })
         }
+    }
+}
+
+function toDatabaseState(block: HashAndHeight): HotDatabaseState {
+    return {
+        height: block.height,
+        hash: block.hash,
+        top: [],
     }
 }
