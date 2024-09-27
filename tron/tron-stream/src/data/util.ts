@@ -8,11 +8,6 @@ export type ExcludeUndefined<T> = {
 } & {}
 
 
-export type ExcludeUnderscored<Fields extends string> = keyof {
-    [P in Fields as P extends `_${string}` ? never : P]: P
-}
-
-
 export type GetFields<
     FieldSelectionType,
     Defaults extends FieldSelectionType,

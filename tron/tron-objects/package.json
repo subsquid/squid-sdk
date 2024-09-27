@@ -16,7 +16,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-processor-tools": "^4.1.1"
   },
   "peerDependencies": {
     "@subsquid/tron-stream": "^0.0.0"

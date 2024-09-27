@@ -1,16 +1,6 @@
 import * as raw from '@subsquid/tron-data'
-import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Block, BlockHeader, CallValueInfo, InternalTransaction, Log, Transaction} from './data'
-
-
-function toSighash(val?: string) {
-    if (val && val.length >= 8) {
-        return val.slice(0, 8)
-    } else {
-        return undefined
-    }
-}
 
 
 function mapBlockHeader(src: raw.Block): BlockHeader {
@@ -91,19 +81,6 @@ function mapTransaction(src: raw.Transaction, transactionIndex: number, info?: r
         for (let key in info.cancel_unfreezeV2_amount) {
             tx.cancelUnfreezeV2Amount[key] = BigInt(info.cancel_unfreezeV2_amount[key])
         }
-    }
-
-    if (tx.type == 'TransferContract') {
-        tx._transferContractTo = assertNotNull(tx.parameter.value.to_address)
-        tx._transferContractOwner = assertNotNull(tx.parameter.value.owner_address)
-    } else if (tx.type == 'TransferAssetContract') {
-        tx._transferAssetContractAsset = assertNotNull(tx.parameter.value.asset_name)
-        tx._transferAssetContractOwner = assertNotNull(tx.parameter.value.owner_address)
-        tx._transferAssetContractTo = assertNotNull(tx.parameter.value.to_address)
-    } else if (tx.type == 'TriggerSmartContract') {
-        tx._triggerSmartContractContract = assertNotNull(tx.parameter.value.contract_address)
-        tx._triggerSmartContractOwner = assertNotNull(tx.parameter.value.owner_address)
-        tx._triggerSmartContractSighash = toSighash(tx.parameter.value.data)
     }
 
     return tx

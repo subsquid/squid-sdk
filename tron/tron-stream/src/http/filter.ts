@@ -62,8 +62,8 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
         let where = req.where || {}
         let filter = new FilterBuilder<Transaction>()
         filter.propIn('type', ['TransferContract'])
-        filter.propIn('_transferContractTo', where.to)
-        filter.propIn('_transferContractOwner', where.owner)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.to_address), where.to)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.owner_address), where.owner)
         transactions.add(filter, req.include ?? {})
     })
 
@@ -71,9 +71,9 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
         let where = req.where || {}
         let filter = new FilterBuilder<Transaction>()
         filter.propIn('type', ['TransferAssetContract'])
-        filter.propIn('_transferAssetContractAsset', where.asset)
-        filter.propIn('_transferAssetContractOwner', where.owner)
-        filter.propIn('_transferAssetContractTo', where.to)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.asset_name), where.asset)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.owner_address), where.owner)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.to_address), where.to)
         transactions.add(filter, req.include ?? {})
     })
 
@@ -81,9 +81,9 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
         let where = req.where || {}
         let filter = new FilterBuilder<Transaction>()
         filter.propIn('type', ['TriggerSmartContract'])
-        filter.propIn('_triggerSmartContractContract', where.contract)
-        filter.propIn('_triggerSmartContractOwner', where.owner)
-        filter.propIn('_triggerSmartContractSighash', where.sighash)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.contract_address), where.contract)
+        filter.getIn(tx => assertNotNull(tx.parameter.value.owner_address), where.owner)
+        filter.getIn(tx => toSighash(tx.parameter.value.data), where.sighash)
         transactions.add(filter, req.include ?? {})
     })
 
@@ -185,3 +185,10 @@ export function filterBlockBatch(requests: RangeRequest<DataRequest>[], blocks: 
 
 
 const NO_DATA_REQUEST: DataRequest = {}
+
+
+function toSighash(val?: string) {
+    if (val && val.length >= 8) {
+        return val.slice(0, 8)
+    }
+}

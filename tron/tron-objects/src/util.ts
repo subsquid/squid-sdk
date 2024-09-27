@@ -1,15 +1,9 @@
-export interface HashAndHeight {
-    hash: string
-    height: number
-}
+import * as tools from '@subsquid/util-internal-processor-tools'
 
 
-export function formatId(block: HashAndHeight, ...address: number[]): string {
-    let no = block.height.toString().padStart(12, '0')
-    let hash = block.hash.slice(16, 21)
-    let id = `${no}-${hash}`
-    for (let index of address) {
-        id += '-' + index.toString().padStart(6, '0')
-    }
-    return id
+export function formatId(block: tools.HashAndHeight, ...address: number[]): string {
+    // skip first 8 bytes containing block number
+    let hash = block.hash.slice(16)
+    let height = block.height
+    return tools.formatId({height, hash}, ...address)
 }

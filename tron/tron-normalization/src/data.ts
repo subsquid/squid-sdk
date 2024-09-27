@@ -54,14 +54,6 @@ export interface Transaction {
     netFee?: bigint
     originEnergyUsage?: bigint
     energyPenaltyTotal?: bigint
-    _transferContractOwner?: string
-    _transferContractTo?: string
-    _transferAssetContractOwner?: string
-    _transferAssetContractTo?: string
-    _transferAssetContractAsset?: string
-    _triggerSmartContractOwner?: string
-    _triggerSmartContractContract?: string
-    _triggerSmartContractSighash?: string
 }
 
 
