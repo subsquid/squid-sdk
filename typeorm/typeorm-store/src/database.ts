@@ -2,8 +2,8 @@ import {createOrmConfig} from '@subsquid/typeorm-config'
 import {assertNotNull, last, maybeLast} from '@subsquid/util-internal'
 import assert from 'assert'
 import {DataSource, EntityManager} from 'typeorm'
-import {ChangeTracker, rollbackBlock} from './hot'
-import {DatabaseState, FinalTxInfo, HashAndHeight, HotTxInfo} from './interfaces'
+import {ChangeTracker} from './hot'
+import {DatabaseState, HashAndHeight} from './interfaces'
 import {Store} from './store'
 
 
@@ -48,6 +48,10 @@ export class TypeormDatabase {
             this.con = undefined
             throw e
         }
+    }
+
+    async transaction(cb: (tx: Transaction) => Promise<void>): Promise<void> {
+        return this.submit(em => cb(new Transaction(em, this.statusSchema)))
     }
 
     async disconnect(): Promise<void> {
@@ -101,154 +105,6 @@ export class TypeormDatabase {
         return assertStateInvariants({...status[0], top})
     }
 
-    private async getState(em: EntityManager): Promise<DatabaseState> {
-        let schema = this.escapedSchema()
-
-        let status: (HashAndHeight & {nonce: number})[] = await em.query(
-            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
-        )
-
-        assert(status.length == 1)
-
-        let top: HashAndHeight[] = await em.query(
-            `SELECT hash, height FROM ${schema}.hot_block ORDER BY height`
-        )
-
-        return assertStateInvariants({...status[0], top})
-    }
-
-    transact(info: FinalTxInfo, cb: (store: Store) => Promise<void>): Promise<void> {
-        return this.submit(async em => {
-            let state = await this.getState(em)
-            let {prevHead: prev, nextHead: next} = info
-
-            assert(state.hash === info.prevHead.hash, RACE_MSG)
-            assert(state.height === prev.height)
-            assert(prev.height < next.height)
-            assert(prev.hash != next.hash)
-
-            for (let i = state.top.length - 1; i >= 0; i--) {
-                let block = state.top[i]
-                await rollbackBlock(this.statusSchema, em, block.height)
-            }
-
-            await this.performUpdates(cb, em)
-
-            await this.updateStatus(em, state.nonce, next)
-        })
-    }
-
-    transactHot(info: HotTxInfo, cb: (store: Store, block: HashAndHeight) => Promise<void>): Promise<void> {
-        return this.transactHot2(info, async (store, sliceBeg, sliceEnd) => {
-            for (let i = sliceBeg; i < sliceEnd; i++) {
-                await cb(store, info.newBlocks[i])
-            }
-        })
-    }
-
-    transactHot2(info: HotTxInfo, cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<void>): Promise<void> {
-        return this.submit(async em => {
-            let state = await this.getState(em)
-            let chain = [state, ...state.top]
-
-            assertChainContinuity(info.baseHead, info.newBlocks)
-            assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
-
-            assert(chain.find(b => b.hash === info.baseHead.hash), RACE_MSG)
-            if (info.newBlocks.length == 0) {
-                assert(last(chain).hash === info.baseHead.hash, RACE_MSG)
-            }
-            assert(chain[0].height <= info.finalizedHead.height, RACE_MSG)
-
-            let rollbackPos = info.baseHead.height + 1 - chain[0].height
-
-            for (let i = chain.length - 1; i >= rollbackPos; i--) {
-                await rollbackBlock(this.statusSchema, em, chain[i].height)
-            }
-
-            if (info.newBlocks.length) {
-                let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
-                if (finalizedEnd > 0) {
-                    await this.performUpdates(store => cb(store, 0, finalizedEnd), em)
-                } else {
-                    finalizedEnd = 0
-                }
-                for (let i = finalizedEnd; i < info.newBlocks.length; i++) {
-                    let b = info.newBlocks[i]
-                    await this.insertHotBlock(em, b)
-                    await this.performUpdates(
-                        store => cb(store, i, i + 1),
-                        em,
-                        new ChangeTracker(em, this.statusSchema, b.height)
-                    )
-                }
-            }
-
-            chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
-
-            let finalizedHeadPos = info.finalizedHead.height - chain[0].height
-            assert(chain[finalizedHeadPos].hash === info.finalizedHead.hash)
-            await this.deleteHotBlocks(em, info.finalizedHead.height)
-
-            await this.updateStatus(em, state.nonce, info.finalizedHead)
-        })
-    }
-
-    private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
-        return em.query(
-            `DELETE FROM ${this.escapedSchema()}.hot_block WHERE height <= $1`,
-            [finalizedHeight]
-        )
-    }
-
-    private insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
-        return em.query(
-            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
-            [block.height, block.hash]
-        )
-    }
-
-    private async updateStatus(em: EntityManager, nonce: number, next: HashAndHeight): Promise<void> {
-        let schema = this.escapedSchema()
-
-        let result: [data: any[], rowsChanged: number] = await em.query(
-            `UPDATE ${schema}.status SET height = $1, hash = $2, nonce = nonce + 1 WHERE id = 0 AND nonce = $3`,
-            [next.height, next.hash, nonce]
-        )
-
-        let rowsChanged = result[1]
-
-        // Will never happen if isolation level is SERIALIZABLE or REPEATABLE_READ,
-        // but occasionally people use multiprocessor setups and READ_COMMITTED.
-        assert.strictEqual(
-            rowsChanged,
-            1,
-            RACE_MSG
-        )
-    }
-
-    private async performUpdates(
-        cb: (store: Store) => Promise<void>,
-        em: EntityManager,
-        changeTracker?: ChangeTracker
-    ): Promise<void> {
-        let running = true
-
-        let store = new Store(
-            () => {
-                assert(running, `too late to perform db updates, make sure you haven't forgot to await on db query`)
-                return em
-            },
-            changeTracker
-        )
-
-        try {
-            await cb(store)
-        } finally {
-            running = false
-        }
-    }
-
     private async submit(tx: (em: EntityManager) => Promise<void>): Promise<void> {
         let retries = 3
         while (true) {
@@ -268,6 +124,96 @@ export class TypeormDatabase {
 
     private escapedSchema(): string {
         let con = assertNotNull(this.con)
+        return con.driver.escape(this.statusSchema)
+    }
+}
+
+
+export class Transaction {
+    private hotHeight?: number 
+
+    constructor(
+        private em: EntityManager,
+        private statusSchema: string
+    ) {}
+
+    async getState(): Promise<DatabaseState> {
+        let schema = this.escapedSchema()
+
+        let status: (HashAndHeight & {nonce: number})[] = await this.em.query(
+            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+        )
+
+        assert(status.length == 1)
+
+        let top: HashAndHeight[] = await this.em.query(
+            `SELECT hash, height FROM ${schema}.hot_block ORDER BY height`
+        )
+
+        return assertStateInvariants({...status[0], top})
+    }
+
+    async performUpdates(
+        cb: (store: Store) => Promise<void>,
+        
+    ): Promise<void> {
+        let running = true
+
+        let store = new Store(
+            () => {
+                assert(running, `too late to perform db updates, make sure you haven't forgot to await on db query`)
+                return this.em
+            },
+            this.hotHeight != null ? new ChangeTracker(this.em, this.statusSchema, this.hotHeight) : undefined
+        )
+
+        try {
+            await cb(store)
+        } finally {
+            running = false
+        }
+    }
+
+    async updateStatus(next: HashAndHeight): Promise<void> {
+        let schema = this.escapedSchema()
+
+        let result: [data: any[], rowsChanged: number] = await this.em.query(
+            `UPDATE ${schema}.status SET height = $1, hash = $2, nonce = nonce + 1 WHERE id = 0`,
+            [next.height, next.hash]
+        )
+
+        let rowsChanged = result[1]
+
+        // Will never happen if isolation level is SERIALIZABLE or REPEATABLE_READ,
+        // but occasionally people use multiprocessor setups and READ_COMMITTED.
+        assert.strictEqual(
+            rowsChanged,
+            1,
+            RACE_MSG
+        )
+    }
+
+    finalizeHotBlocks(finalizedHeight: number): Promise<void> {
+        if (this.hotHeight != null && finalizedHeight >= this.hotHeight) {
+            this.hotHeight = undefined
+        }
+        return this.em.query(
+            `DELETE FROM ${this.escapedSchema()}.hot_block WHERE height <= $1`,
+            [finalizedHeight]
+        )
+    }
+
+    insertHotBlock(block: HashAndHeight): Promise<void> {
+        assert(this.hotHeight == null || this.hotHeight < block.height)
+        this.hotHeight = block.height
+        return this.em.query(
+            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
+            [block.height, block.hash]
+        )
+    }
+
+    private escapedSchema(): string {
+        let con = assertNotNull(this.em.connection)
         return con.driver.escape(this.statusSchema)
     }
 }

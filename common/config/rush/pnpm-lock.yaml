@@ -422,6 +422,9 @@ dependencies:
   inflected:
     specifier: ^2.1.0
     version: 2.1.0
+  jest-mock:
+    specifier: ^29.7.0
+    version: 29.7.0
   jsonc-parser:
     specifier: ^3.2.0
     version: 3.2.1
@@ -4320,7 +4323,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 5.0.1
+      minimatch: 5.1.6
       once: 1.4.0
     dev: false
 
@@ -4792,6 +4795,15 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       stack-utils: 2.0.6
+    dev: false
+
+  /jest-mock@29.7.0:
+    resolution: {integrity: sha512-ITOMZn+UkYS4ZFh83xYAOzWStloNzJFO2s8DWrE4lhtGD+AorgnbkiKERe4wQVBydIGPx059g6riW5Btp6Llnw==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    dependencies:
+      '@jest/types': 29.6.3
+      '@types/node': 18.19.31
+      jest-util: 29.7.0
     dev: false
 
   /jest-util@29.7.0:
@@ -6404,7 +6416,7 @@ packages:
     hasBin: true
     dependencies:
       cac: 6.7.14
-      debug: 4.3.4(supports-color@8.1.1)
+      debug: 4.3.6(supports-color@8.1.1)
       pathe: 1.1.2
       picocolors: 1.0.0
       vite: 5.2.8(@types/node@18.19.31)
@@ -6763,7 +6775,7 @@ packages:
       require-directory: 2.1.1
       string-width: 4.2.3
       y18n: 5.0.8
-      yargs-parser: 20.2.4
+      yargs-parser: 20.2.9
     dev: false
 
   /yargs@17.7.2:
@@ -6795,7 +6807,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-qhAMy/DFPrCpinLOT2fnzDVRAMWn67xrcUxG5eWPMnEc2QKfVq9siVxpMiGxR9FTAb4AjT6nBKPassMlemxQzg==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-Q75rSiKVt7+lB1VI9A8yTp/WlfwNQlpuGXC9l3nrBUH2omWuWAywApV8WXcngz8uJFWaipyMag4cCZHOrB3bgA==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -6829,7 +6841,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-CvS81OcWOKDXxNSUAbxV2wcLA3MXH3VtFh91V7/AQP+xd05K0ZwKt3/H1gaC0k6L/gGBStFs4YVeakB+F9/BlA==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-oNrNDSdTh02TrJwlhnlonVqbLPYi0Js7OXm4U/f0qoJL6Ok9254rZkPiuYtt6LLs0ihYS36S0Q1tucd9AVQi4A==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -6862,11 +6874,15 @@ packages:
     dev: false
 
   file:projects/batch-processor.tgz:
-    resolution: {integrity: sha512-TAxeOSaoBNBY0QO5/WLaX2dkZkJ2svupQO0Sz/f1H0nsvJKbfD5hXloeFHCRPIO7mk9iHKVC1SPHJXOLiuwYjg==, tarball: file:projects/batch-processor.tgz}
+    resolution: {integrity: sha512-Rvkii3qrSO1RMr1KFWMneJNP0AFTV8l+MVMYCVNsANTVIgqBHwUZThc9w+2dfVLehx6Dy5u4l51e7bAEYJ4AkA==, tarball: file:projects/batch-processor.tgz}
     name: '@rush-temp/batch-processor'
     version: 0.0.0
     dependencies:
+      '@types/mocha': 10.0.7
       '@types/node': 18.19.31
+      expect: 29.7.0
+      jest-mock: 29.7.0
+      mocha: 10.7.0
       prom-client: 14.2.0
       typescript: 5.3.3
     dev: false
@@ -6918,7 +6934,7 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-xoCokPcTQYTZ/qHk8/UubXFCEuO29JjHQeZPslOEoBUwOKSOJ+GrMYlxFy9qHfZ/9XKkECMiFG/0d/XfkhE46Q==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-GML4fT32wi8EUKBS/zKLAdOfxSZuoeBtNcPKreOHIECdO239B18bfitnHLnQ+DC55e7IdJVkYVnlPFQM4UNJFA==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
@@ -6932,7 +6948,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-62EnfPOM9cYlFN4BbmQ+26gUhGCX4o5LcMSavw1z1j8480ivglqGgYETQAEvgCiWrjhQjglio/zBU4ozTQDt6g==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-c4UEe5BPf277mZ3uKmegHW0f5fhUWtrlMSkA726p3iZZ81Tw3l10IM3C3QvdRNIXHK4Mfq/SY7nuZETTZ6XI5g==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7025,7 +7041,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-pObjOrskTjST8EjI4qGNapi6523dAOuSUN/p1o0ZapaZpB1szlgKCEfIR93udvnbXE6sg+3irceAg0Zgxm+wIA==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-jylrb9tvCuHQmVDuBLgsBID8BI3EN07kVNyrPT3ec/+mj8qdq7p3TmoM48GcZsxOh/lj3ohQCndZmI96YAwjEA==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -7034,7 +7050,7 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-jSEff4oIGLLksIta9sjbhjQCRuQ/SyvZDFTANmhjB2HEW12e0i67wSeIEKDVMAMWFpPjFnt4dFmC4kNPby9LNA==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-q67HPWSMd7DZZJ2inxkeD/Uzl36qqSBHCyUGodGxd5nAnc+LTzqGqCwM/8fvgrwT4oFB7t8Ajvo0iRqwtG1eaA==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
@@ -7065,7 +7081,7 @@ packages:
     dev: false
 
   file:projects/fuel-data.tgz:
-    resolution: {integrity: sha512-R6rgcDhYmRY2LVeBzYMG8ZGHYA1eIOYeO2yVsTTzJL9bnhzp1zWxyR5aJz2LvATYpVlS9e6QRo4WXkzxeOdERA==, tarball: file:projects/fuel-data.tgz}
+    resolution: {integrity: sha512-13q5ePpMIkHITHoFDnywC24oa3tNaz5Hnnd0iEW4ovS5sykX8RsWGqKcklUFbYxJHBOAZwddh+C6SlaFv850WA==, tarball: file:projects/fuel-data.tgz}
     name: '@rush-temp/fuel-data'
     version: 0.0.0
     dependencies:
@@ -7074,7 +7090,7 @@ packages:
     dev: false
 
   file:projects/fuel-dump.tgz:
-    resolution: {integrity: sha512-jfbsQQBFI0rAc+02kEguPdLfrJ6FRUcVMGYet00YI6Kg9/YG5sEQ09FYdbHN1GgJbp0tjql7AoaKtcWBPK6rWA==, tarball: file:projects/fuel-dump.tgz}
+    resolution: {integrity: sha512-5fOR+g7DAcpN55dolVQWo04+jEt2wJH9a1YonPiPykxQU0iNMmBPo0oUfL5ajw1PBLFZi8bURdgQxsq9pddj+g==, tarball: file:projects/fuel-dump.tgz}
     name: '@rush-temp/fuel-dump'
     version: 0.0.0
     dependencies:
@@ -7083,7 +7099,7 @@ packages:
     dev: false
 
   file:projects/fuel-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-bib5zXIPFMGE1whL0HjMQeOPgTpnlWFpNAtD+lZrNkxLcdBw9PFmavna8eeHHx2hEPi+vqQRJRs0yEWGOeUiSg==, tarball: file:projects/fuel-indexer.tgz}
+    resolution: {integrity: sha512-r5iPJgs+VFkdCIEVxbJ5f+tIe1UxlBaGusTjzQqM3kB58eYv36WaD4bYVZ82nhgDZDLwZHGxiGQ87ZfWazOsxA==, tarball: file:projects/fuel-indexer.tgz}
     id: file:projects/fuel-indexer.tgz
     name: '@rush-temp/fuel-indexer'
     version: 0.0.0
@@ -7114,7 +7130,7 @@ packages:
     dev: false
 
   file:projects/fuel-ingest.tgz:
-    resolution: {integrity: sha512-zt2d471zI1ovf7cwe1+gnO72kpQBBNTl0DCvlB3NUvXUKCDS7od3W+7NPXN1Dvc+uvUcLUByWbt6S1sZb7LB5w==, tarball: file:projects/fuel-ingest.tgz}
+    resolution: {integrity: sha512-xtHmZ+TFqJKgmZAl5E3BH5IiUpwgJxp60rPmlG/mWk1n4tc9/rZWffgSl8f8OhrahBVM6FkTGIYa4shf5U/DGA==, tarball: file:projects/fuel-ingest.tgz}
     name: '@rush-temp/fuel-ingest'
     version: 0.0.0
     dependencies:
@@ -7123,7 +7139,7 @@ packages:
     dev: false
 
   file:projects/fuel-normalization.tgz:
-    resolution: {integrity: sha512-ChJlsH4aYTKWWyGvLh5B4C99iPY2aC20xAMkTawQAAMvrre01Qrr0Y+psQAHpV5qvDmVduR6FId4ZaDDt7yU0Q==, tarball: file:projects/fuel-normalization.tgz}
+    resolution: {integrity: sha512-+LKN4KTqtJ6snwth2eMXqUake7lFN+wDq2HmUt34wi89tT0SwpzEz2VUAscvPwB70oi48/9awQHeTj3+UBXzzA==, tarball: file:projects/fuel-normalization.tgz}
     name: '@rush-temp/fuel-normalization'
     version: 0.0.0
     dependencies:
@@ -7132,7 +7148,7 @@ packages:
     dev: false
 
   file:projects/fuel-objects.tgz:
-    resolution: {integrity: sha512-EXFNr/MrI2hswUOF6kcaLc8dagLs+epNIcs/s3F6f9IS2aV0+VtiYKTi6ZI2m3eguRVr3lTmjUA2mfotG38zGA==, tarball: file:projects/fuel-objects.tgz}
+    resolution: {integrity: sha512-qs6z3oz4OMNJRT/x/GLyM9MmZsE558LhXLEyQ2OyZTgQgaCx0c/2dtu0gLLgsvzc4WRRXWF8EupXFjrVVAy4kw==, tarball: file:projects/fuel-objects.tgz}
     name: '@rush-temp/fuel-objects'
     version: 0.0.0
     dependencies:
@@ -7141,7 +7157,7 @@ packages:
     dev: false
 
   file:projects/fuel-stream.tgz:
-    resolution: {integrity: sha512-zBkxNOnUJGxIsCtWIMRoElTYi2rG5E3nDVYo8WfoZ6FIFF9BxhWEIgQkbMhmv+Gw/qAqAUY5COTbikIIdVFqaw==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-6tdOdTsPoMcS1wER2WE/TL/UZbyiOGEisjnX7VWSX+gyk+bWQnj4WVYbg3ERgwxUiudSUzFpPrMaqyiXRydz/Q==, tarball: file:projects/fuel-stream.tgz}
     name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:
@@ -7150,7 +7166,7 @@ packages:
     dev: false
 
   file:projects/gql-test-client.tgz(graphql@15.8.0):
-    resolution: {integrity: sha512-B7Jy2uV20XDpA41iqkpdr1WgCQXQFrubPvCMWIs/KU9M/k9tZKT/EMJo/o4B/sDAn0jDN0A6igyXjInSDd8d+g==, tarball: file:projects/gql-test-client.tgz}
+    resolution: {integrity: sha512-kBeUZRq792YwZh0yplUaAp6dOP+GyPg3RwiPXrAUjA4RW6o6/FE4AIU0YQjxIozZC2l/OuvYt5zOunrvrlwo4A==, tarball: file:projects/gql-test-client.tgz}
     id: file:projects/gql-test-client.tgz
     name: '@rush-temp/gql-test-client'
     version: 0.0.0
@@ -7168,7 +7184,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-fHUdtFViYI7neueNdzFFcNmmii4P5Ke6eXMyGQ3dZMOlSDuu3AAtBhuXk48VcwefamKe5HBEDoZvWJqJDFosVQ==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-Nhnng9ml4JvDoN2mpGlj7lyg9jZsJ1W/1GpApBfwdj23yDt+5e+fYeiOxZ7EAueiMAnb8Qek0amYJEhRNdIWfA==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -7331,7 +7347,7 @@ packages:
     dev: false
 
   file:projects/rpc-client.tgz:
-    resolution: {integrity: sha512-GEWqVRas3lM/oh9aZDA8TzmOf/GFXkWzbFP1V5VJjJAcWAM2JhYpnyJA1Cz0pyeC/mYm3B+kmVCMtqfrMiMrmA==, tarball: file:projects/rpc-client.tgz}
+    resolution: {integrity: sha512-WygOkwBS3dwxo9LZbje6wvJB0ij34Z4j6oMO88haaR5P3fiUIk4oa3mnY4NXPjeigUuTtBylJDFfEqqchvnNcg==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
     version: 0.0.0
     dependencies:
@@ -7360,7 +7376,7 @@ packages:
     dev: false
 
   file:projects/shibuya-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-0FH43B3YccihEze0/HLKO8ouullLX9xXyGP7nd7MpYvMP2urlASC0eIybFGJ36T5aN1d1KAQsi0yhSxu+ozqfA==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-Oow1Jpfp4BPl7DVGf8e+6GEWXXyHuVADS1DcozmjfiUPyIzXSBjBE6Jrq2+2ZYQ5iMKsO4vwxmA0gpXNNufGQg==, tarball: file:projects/shibuya-erc20.tgz}
     id: file:projects/shibuya-erc20.tgz
     name: '@rush-temp/shibuya-erc20'
     version: 0.0.0
@@ -7391,7 +7407,7 @@ packages:
     dev: false
 
   file:projects/shibuya-psp22.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-H44OZ7vDYQCko011K5G4HkdiqgB1caNebXkbrAMvOPd0SB9JQheqcdfOWNkKSpyuzQH1AMtsVn4Y3/uE+uV6tQ==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-O3HBBx34t3V0fdGLE8nYUPtEBuuLWiW7FsVyD0Nk+Po5C8O6uAcHtVUECBx6BUpiH3/UelRYQPccGpJkuSXJ/A==, tarball: file:projects/shibuya-psp22.tgz}
     id: file:projects/shibuya-psp22.tgz
     name: '@rush-temp/shibuya-psp22'
     version: 0.0.0
@@ -7422,7 +7438,7 @@ packages:
     dev: false
 
   file:projects/solana-dump.tgz:
-    resolution: {integrity: sha512-krF6YgAypgJAFO5curbFEQ+sEJR4+/AaEP8LsX4vCZTgmPU0ox/h46d85v2eDEg6YKLEKu241rpg5noL93N4NQ==, tarball: file:projects/solana-dump.tgz}
+    resolution: {integrity: sha512-fRPHdT5/yjs+HqmslEshxjbb7KaZOWCCiLVNp2cEc1Wk0jAe00Q6oDONuyEyEdBx3mz7CikUaADQOGKaEhGnfQ==, tarball: file:projects/solana-dump.tgz}
     name: '@rush-temp/solana-dump'
     version: 0.0.0
     dependencies:
@@ -7431,7 +7447,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-15OiGKFVC5QnNqzbvmYx99M2tK411x2WGeiingcT3dBMKU0Bb7RIfreipUJVp6B5QmZuFR7gdzuiG5Xq9rvfBQ==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-5e3bzLFu0mGF9zRw94zbfDcx8RMmkykHXJHxGUsdHD5+Bxyh6P5G1Ngw7s+MkE493okuEtQUe7XR+plQzrlkwQ==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -7462,7 +7478,7 @@ packages:
     dev: false
 
   file:projects/solana-ingest.tgz:
-    resolution: {integrity: sha512-22AknFQNEKKdNPGX2nyOT4QMlsDZZY0l35hv2zcZcJJGdesIpXIhP8jPnWP8WlT1VfOa2lbPdJhyGJc0iivIPQ==, tarball: file:projects/solana-ingest.tgz}
+    resolution: {integrity: sha512-e34HMmFQddG321srOClsZlYf3+IZd+R0wryaE9R13qj4ZI7AqDdtVJGOi/yI3Dwt9uM2PXZHhhyGiFhcVk5QRw==, tarball: file:projects/solana-ingest.tgz}
     name: '@rush-temp/solana-ingest'
     version: 0.0.0
     dependencies:
@@ -7471,7 +7487,7 @@ packages:
     dev: false
 
   file:projects/solana-normalization.tgz:
-    resolution: {integrity: sha512-ObVBm0VBh00kfxfADJIxuoThMETB5IH5TX0C8jRCXVzzlaBDKRdaYoDJFsG/e2wpJU7kLA+K0XBc/YWmgR7upQ==, tarball: file:projects/solana-normalization.tgz}
+    resolution: {integrity: sha512-B/RXmfNAfDD+1dV6cajSjhIMZTltg3j0MYMDYl07CemEgguSrtAY7KGZv4SJnJRsT3KiVfDv6fcZe4LQyE4OHQ==, tarball: file:projects/solana-normalization.tgz}
     name: '@rush-temp/solana-normalization'
     version: 0.0.0
     dependencies:
@@ -7480,7 +7496,7 @@ packages:
     dev: false
 
   file:projects/solana-objects.tgz:
-    resolution: {integrity: sha512-AqYvHHmiQzUbWvEDHjDqOLc61mHe/P360uLPB47ZGwz5iChxLoTxuSQG/vsjdBZH0YR95rPD0SFd5S32m+CYng==, tarball: file:projects/solana-objects.tgz}
+    resolution: {integrity: sha512-EbBumHIIoo1LlcrDCsM0bsRkSxVYdC1DCRWZJPZAZXVZV8KEATGHPN4QXFEW8B7n6RfG+XISvz9NBJ4Aht57sQ==, tarball: file:projects/solana-objects.tgz}
     name: '@rush-temp/solana-objects'
     version: 0.0.0
     dependencies:
@@ -7489,7 +7505,7 @@ packages:
     dev: false
 
   file:projects/solana-rpc-data.tgz:
-    resolution: {integrity: sha512-IetjLETh+K8JNEyv/yxDUvcfh5t0tEs1RfoLd/2ZvRiOg0Ill/znIPZA7cpesuGgq+pJJ04y8EXtw9jvZaIDfg==, tarball: file:projects/solana-rpc-data.tgz}
+    resolution: {integrity: sha512-JmUm+AE9d7v2bEmrnv5UiaygYFERFI9DoDYTBj4SBqVOMTmYU693tGH+7Q2YCVBzoTxCQqs37+N3ow4zl3t92Q==, tarball: file:projects/solana-rpc-data.tgz}
     name: '@rush-temp/solana-rpc-data'
     version: 0.0.0
     dependencies:
@@ -7498,7 +7514,7 @@ packages:
     dev: false
 
   file:projects/solana-rpc.tgz:
-    resolution: {integrity: sha512-CN9vdm93+KvUHHWcE6z7vncNiNEFuStIHtNP2QaYHZFMxdwrfAijpYL0IfiDhPXnq9IkmErWGjp3R6HSPmjsDA==, tarball: file:projects/solana-rpc.tgz}
+    resolution: {integrity: sha512-PsE6Ep3v++Gu/5J7HQqvS4b5eMcRDS8FbqNx9rNx2/jNp7zdcoFhMQznzJkhS3pQyduzDRZSCQPfRqwH9QbVrg==, tarball: file:projects/solana-rpc.tgz}
     name: '@rush-temp/solana-rpc'
     version: 0.0.0
     dependencies:
@@ -7507,7 +7523,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-SzNCRS13EYu9+oiR/D0Jwbh/deVsVMtJ5h2AzefPkCf8Acw4JuEfcJy20usgXpBpg6gxQWBOHgCuZkTDw6fPeg==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-i2nugdfdDnjm2SMvKpdkZrJv3+qE4gZ2VXN6v9gR5uAGQvWpILAIFab3TZMBPPHJ9eslAUlQSH73iRa4cUGp7g==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -7517,7 +7533,7 @@ packages:
     dev: false
 
   file:projects/solana-typegen.tgz:
-    resolution: {integrity: sha512-LHOMHxXA2loQoYngY2qsgXLmPiSl8flkFgI5wU0kvhfTADmQzaBgSYF+GFevuxc2jBB1zCD5nY1qmOvKuBPa5A==, tarball: file:projects/solana-typegen.tgz}
+    resolution: {integrity: sha512-rn4j3oQ5q3siFEBoj5TlZfv9cMgi+RezKe4Vhg4qqzYzApk1Dh3tkGZHSFB6fwmKavRvrbIXiEThw8fYRyvxBw==, tarball: file:projects/solana-typegen.tgz}
     name: '@rush-temp/solana-typegen'
     version: 0.0.0
     dependencies:
@@ -7555,7 +7571,7 @@ packages:
     dev: false
 
   file:projects/starknet-data.tgz:
-    resolution: {integrity: sha512-l+dO3+WdOflGCcGrkxqGEk2eXLHcO9s58EfbKJ4Z7gZPoktcaManNRlmr8SQrtWJhJDiWprt7KGrlyjTUrfIyg==, tarball: file:projects/starknet-data.tgz}
+    resolution: {integrity: sha512-GtbwabaG0f3Beox3vLjuB3dU8pMdL4JQde49wQkVPh3W8WEKyqaEaVtiuQllWkcr+rIzKxQm8JKv/xznco45Ew==, tarball: file:projects/starknet-data.tgz}
     name: '@rush-temp/starknet-data'
     version: 0.0.0
     dependencies:
@@ -7564,7 +7580,7 @@ packages:
     dev: false
 
   file:projects/starknet-indexer.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-HwbQ3VrsYWaYtRY4oPQSiBX97Ax8Iv+bRLHDFuh2Ih1tLJ7teZSYMiAN4gbG2kKCaS/hE9JRJkCc4fm/zVf1Vg==, tarball: file:projects/starknet-indexer.tgz}
+    resolution: {integrity: sha512-eQIvcEp+/m9Ay0TGwJwxD4RXla5XrErbUi9WNFWO8QfaJbDlum3Mu43eewKKK60AyRT0GNe9H+QokIscJnw2IQ==, tarball: file:projects/starknet-indexer.tgz}
     id: file:projects/starknet-indexer.tgz
     name: '@rush-temp/starknet-indexer'
     version: 0.0.0
@@ -7595,7 +7611,7 @@ packages:
     dev: false
 
   file:projects/starknet-normalization.tgz:
-    resolution: {integrity: sha512-LUriHdbQWItCwdC2GqHYItErIVkoS/BOrUMZ6RE46YAMDmzZrhdhjQOjJajBFRn5pG1oJKOroXhDxyAgKdEI/g==, tarball: file:projects/starknet-normalization.tgz}
+    resolution: {integrity: sha512-wm6O6l/hFQfuhDelzrKjzqiQ9+BSGUnvmpWB4Yz/GpPp/9ZN61+qfQNBkO4LBNUfVcV1rkenOM6JyDdgeRjmtw==, tarball: file:projects/starknet-normalization.tgz}
     name: '@rush-temp/starknet-normalization'
     version: 0.0.0
     dependencies:
@@ -7604,7 +7620,7 @@ packages:
     dev: false
 
   file:projects/starknet-objects.tgz:
-    resolution: {integrity: sha512-kFxJTgIYsWp8KusNQ+lzV/byGMP2ubvOT1TX2iccxffhJ/JS9cPi+QkknLMgjlPIWjpDBJn1eJHOenDTPl0uOA==, tarball: file:projects/starknet-objects.tgz}
+    resolution: {integrity: sha512-ZCZXypn796m9wbFWpPMTKUBMJ6CV6n3yjFPaoQwF5JtzHfh4uox8uo5ZaImxWHur56d0/AQzg3bcJOj/eWbNKQ==, tarball: file:projects/starknet-objects.tgz}
     name: '@rush-temp/starknet-objects'
     version: 0.0.0
     dependencies:
@@ -7613,7 +7629,7 @@ packages:
     dev: false
 
   file:projects/starknet-stream.tgz:
-    resolution: {integrity: sha512-S7LeUS7gAracqrFSw5h6YFtAuldh+ZTfQY9IWoYOcKgg0q0tBX5lXQhUcYqwkmYsDoWS+zJHq19souTpORhDUQ==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-DLAF/bmfWnkpnAkn4OwaWBpSJmuVBs24d2+FN2jIg1uJGSDTjPtLSDsDUjA5Wmd4WXicpuiTMEsYhC7YQ+pjNQ==, tarball: file:projects/starknet-stream.tgz}
     name: '@rush-temp/starknet-stream'
     version: 0.0.0
     dependencies:
@@ -7659,7 +7675,7 @@ packages:
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
-    resolution: {integrity: sha512-6Qn7o/sNxyVxutsXg2Ox37YbQXYUnIeTjC+D8OCvwk1ezIasScMt41G0xjDXc3Ny1ja53nWmNkwmqFNfPUY7rw==, tarball: file:projects/substrate-metadata-explorer.tgz}
+    resolution: {integrity: sha512-9UWJPjZP2acT1PxMR2KiOWqqg0nezaljeU79wKZENrOtDJng05J7EmikO3xktPQsAKn8SPCRbcPVFNgEa9/DbA==, tarball: file:projects/substrate-metadata-explorer.tgz}
     name: '@rush-temp/substrate-metadata-explorer'
     version: 0.0.0
     dependencies:
@@ -7680,7 +7696,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-gCf4Xh+UUQkBXH4y/zIUQzFraxfksZfaEX8wCBbCcVeLhOlcXo6jN7jyMcDtIM5sZT5NL1SXZJ7DpBfehY60UQ==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-Rl8JODfGW8U/XQRnQzcAat/8099qJ05wcs3r2Fw0BkBOFlhcFxSLbrONB0NdGKqV8LN354jZf8pBmghBAdiRkA==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
@@ -7702,7 +7718,7 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-l7rKLczeqnDnbP69psTyzN9TMBZWBvAT9Ug2N1cPT3ZwoUeTzV67EbvYfghmUnYnSbGqO6t5OhsM8zZq7wD11Q==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-aKsgOjE06duzkSRSu48yYDiYtEy5osu42m2G59aBMqSU4izfs+Tzf4aGWC6ERiKiLsE+6+mUHmgcWSk6MVSXWg==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
@@ -7712,7 +7728,7 @@ packages:
     dev: false
 
   file:projects/typeorm-codegen.tgz:
-    resolution: {integrity: sha512-E1FrRt4x5x6eXMVAJlCagmPMMEFpVnD3fOCEV2aDDnwu3BnrE3b8oTDJQ34PYApTICbW21Qb3RJmpj1qhMk2zQ==, tarball: file:projects/typeorm-codegen.tgz}
+    resolution: {integrity: sha512-JlSRhz9UZUq5J3HqOe2O7R98/cr13fnPny+YEwUDNxZcTKzB1JDN7FSz6PGZR6PrbNvS7RtgmBUefJKtPlELqA==, tarball: file:projects/typeorm-codegen.tgz}
     name: '@rush-temp/typeorm-codegen'
     version: 0.0.0
     dependencies:
@@ -7827,7 +7843,7 @@ packages:
     dev: false
 
   file:projects/util-internal-archive-client.tgz:
-    resolution: {integrity: sha512-kMWWCiAZvetlvlVlRIuZIMQfwkdMbm1/B0Mn7rswBsvviNZdens+q8qborhvNBez02e1cQ4L94ct1NWyyaheNQ==, tarball: file:projects/util-internal-archive-client.tgz}
+    resolution: {integrity: sha512-IhDK1HqZ+5XTXiK4/PG3KyU/BuSLdabwQJ+X+aI5Kv3OWVaveSJJyq9cqapZ5ivQR79GqwmoueNOHJdj03q3Ew==, tarball: file:projects/util-internal-archive-client.tgz}
     name: '@rush-temp/util-internal-archive-client'
     version: 0.0.0
     dependencies:

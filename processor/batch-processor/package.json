@@ -10,11 +10,13 @@
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "**/*.test.*"
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "mocha -r dotenv/config ./lib/*.test.js --exit --timeout 10000"
   },
   "dependencies": {
     "@subsquid/logger": "^1.3.3",
@@ -25,7 +27,11 @@
     "prom-client": "^14.2.0"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.6",
     "@types/node": "^18.18.14",
-    "typescript": "~5.3.2"
+    "mocha": "^10.2.0",
+    "expect": "^29.7.0",
+    "typescript": "~5.3.2",
+    "jest-mock": "^29.7.0"
   }
 }
