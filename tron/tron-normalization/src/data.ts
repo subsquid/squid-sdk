@@ -15,7 +15,7 @@ export interface Log {
     logIndex: number
     address: string
     data?: string
-    topics: string[]
+    topics?: string[]
 }
 
 
@@ -36,7 +36,7 @@ export interface Transaction {
     refBlockHash?: string
     feeLimit?: bigint
     expiration?: number
-    timestamp?: number
+    timestamp?: bigint
     rawDataHex: string
     fee?: bigint
     contractResult?: string

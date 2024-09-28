@@ -36,7 +36,7 @@ run(dataSource, database, async ctx => {
 
     for (let block of blocks) {
         for (let log of block.logs) {
-            if (log.address == CONTRACT && log.topics[0] === TOPIC0) {
+            if (log.address == CONTRACT && log.topics?.[0] === TOPIC0) {
                 assert(log.data)
                 let event = {
                     topics: log.topics.map(t => '0x' + t),

@@ -1,6 +1,5 @@
-import {BlockData, HttpApi, HttpDataSource} from '@subsquid/tron-data'
+import {BlockData, HttpApi, HttpDataSource, TronHttpClient} from '@subsquid/tron-data'
 import {def} from '@subsquid/util-internal'
-import {HttpClient} from '@subsquid/http-client'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
 
@@ -29,7 +28,7 @@ export class TronDumper extends Dumper<BlockData, Options> {
 
     @def
     httpApi(): HttpApi {
-        let client = new HttpClient({
+        let client = new TronHttpClient({
             baseUrl: this.options().endpoint,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })

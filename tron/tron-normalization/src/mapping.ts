@@ -10,9 +10,9 @@ function mapBlockHeader(src: raw.Block): BlockHeader {
         parentHash: src.block_header.raw_data.parentHash,
         timestamp: src.block_header.raw_data.timestamp || 0,
         txTrieRoot: src.block_header.raw_data.txTrieRoot,
-        version: src.block_header.raw_data.version,
+        version: src.block_header.raw_data.version ?? undefined,
         witnessAddress: src.block_header.raw_data.witness_address,
-        witnessSignature: src.block_header.witness_signature
+        witnessSignature: src.block_header.witness_signature ?? undefined
     }
 }
 
@@ -21,25 +21,28 @@ function mapTransaction(src: raw.Transaction, transactionIndex: number, info?: r
     assert(src.raw_data.contract.length == 1)
     if (info) assert(info.contractResult.length == 1)
     let contract = src.raw_data.contract[0]
+    let ret = src.ret?.map(ret => ({contractRet: ret.contractRet ?? undefined}))
     let tx: Transaction = {
         hash: src.txID,
         transactionIndex,
-        ret: src.ret,
-        signature: src.signature,
+        ret,
+        signature: src.signature ?? undefined,
         type: contract.type,
         parameter: contract.parameter,
-        permissionId: contract.Permission_id,
-        refBlockBytes: src.raw_data.ref_block_bytes,
-        refBlockHash: src.raw_data.ref_block_hash,
-        expiration: src.raw_data.expiration,
-        timestamp: src.raw_data.timestamp,
+        permissionId: contract.Permission_id ?? undefined,
+        refBlockBytes: src.raw_data.ref_block_bytes ?? undefined,
+        refBlockHash: src.raw_data.ref_block_hash ?? undefined,
+        expiration: src.raw_data.expiration ?? undefined,
         rawDataHex: src.raw_data_hex,
         contractResult: info?.contractResult?.[0],
-        contractAddress: info?.contract_address,
-        resMessage: info?.resMessage,
-        result: info?.receipt.result,
+        contractAddress: info?.contract_address ?? undefined,
+        resMessage: info?.resMessage ?? undefined,
+        result: info?.receipt.result ?? undefined,
     }
 
+    if (src.raw_data.timestamp) {
+        tx.timestamp = BigInt(src.raw_data.timestamp)
+    }
     if (src.raw_data.fee_limit) {
         tx.feeLimit = BigInt(src.raw_data.fee_limit)
     }
@@ -92,8 +95,8 @@ function mapLog(src: raw.Log, transactionIndex: number, logIndex: number): Log {
         transactionIndex,
         logIndex,
         address: src.address,
-        data: src.data,
-        topics: src.topics,
+        data: src.data ?? undefined,
+        topics: src.topics ?? undefined,
     }
 }
 
@@ -119,11 +122,11 @@ function mapInternalTransaction(
         internalTransactionIndex,
         hash: src.hash,
         callerAddress: src.caller_address,
-        transferToAddress: src.transferTo_address,
+        transferToAddress: src.transferTo_address ?? undefined,
         callValueInfo,
         note: src.note,
-        extra: src.extra,
-        rejected: src.rejected,
+        extra: src.extra ?? undefined,
+        rejected: src.rejected ?? undefined,
     }
 }
 

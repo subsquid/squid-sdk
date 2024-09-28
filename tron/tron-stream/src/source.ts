@@ -14,6 +14,7 @@ import {
 } from '@subsquid/util-internal-range'
 import {
     HttpApi,
+    TronHttpClient,
     Block as RawBlock,
     HttpDataSource as RawHttpDataSource
 } from '@subsquid/tron-data'
@@ -390,7 +391,7 @@ class TronDataSource implements DataSource<PartialBlock> {
     }
 
     private createHttpDataSource(settings: HttpApiSettings): HttpDataSource {
-        let client = new HttpClient({
+        let client = new TronHttpClient({
             baseUrl: settings.url,
             retryAttempts: Number.MAX_SAFE_INTEGER
         })

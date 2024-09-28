@@ -2,7 +2,7 @@ import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest, SplitRequest} from '@subsquid/util-internal-range'
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import {BlockData, TransactionInfo} from './interfaces'
+import {BlockData, TransactionInfo} from './data'
 import {HttpApi} from './http'
 
 
