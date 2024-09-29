@@ -72,16 +72,15 @@ export class HttpDataSource {
 
     async *getHotBlocks(
         requests: RangeRequest<DataRequest>[],
-        stopOnHead?: boolean
     ): AsyncIterable<HotUpdate<BlockData>> {
         if (requests.length == 0) return
 
         let self = this
 
-        let from = requests[0].range.from
+        let from = requests[0].range.from - 1
         let block = await this.getBlockHeader(from)
 
-        let queue = new AsyncQueue<HotUpdate<BlockData>>(1)
+        let queue: HotUpdate<BlockData>[] = [] 
 
         let proc = new HotProcessor<BlockData>(
             {
@@ -90,11 +89,11 @@ export class HttpDataSource {
                 top: [],
             },
             {
-                process: async (update) => { await queue.put(update)},
+                process: async (update) => { queue.push(update) },
                 getBlock: async (ref) => {
                     let req = getRequestAt(requests, ref.height) || {}
                     let block = await this.getBlock(ref.height, !!req.transactionsInfo)
-                    if (block.hash !== ref.hash) {
+                    if (block.block.blockID !== ref.hash) {
                         throw new BlockConsistencyError({hash: ref.hash})
                     }
                     await this.addRequestedData([block], req)
@@ -126,8 +125,8 @@ export class HttpDataSource {
                 },
                 getHeader(block) {
                     return {
-                        hash: block.hash,
                         height: block.height,
+                        hash: block.block.blockID,
                         parentHash: block.block.block_header.raw_data.parentHash,
                     }
                 },
@@ -151,8 +150,9 @@ export class HttpDataSource {
                         }
                     })
 
-                    for await (let update of queue.iterate()) {
+                    for await (let update of queue) {
                         yield update
+                        queue.shift()
                     }
 
                     break
@@ -172,7 +172,7 @@ export class HttpDataSource {
         return {
             block,
             height: block.block_header.raw_data.number || 0,
-            hash: getBlockHash(block.blockID)
+            hash: getBlockHash(block.blockID),
         }
     }
 
@@ -221,7 +221,7 @@ export class HttpDataSource {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             if (block == null) break
-            if (i > 0 && chain[i - 1].hash !== block.block.block_header.raw_data.parentHash) break
+            if (i > 0 && chain[i - 1].block.blockID !== block.block.block_header.raw_data.parentHash) break
             chain.push(block)
         }
 

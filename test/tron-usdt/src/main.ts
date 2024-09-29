@@ -13,7 +13,8 @@ const TOPIC0 = 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 
 const dataSource = new DataSourceBuilder()
     .setGateway('https://v2.archive.subsquid.io/network/tron-mainnet')
-    .setBlockRange({from: 11322942, to: 11323358})
+    .setHttpApi({url: 'https://rpc.ankr.com/http/tron'})
+    .setBlockRange({from: 65659767})
     .addLog({
         where: {
             address: [CONTRACT],
