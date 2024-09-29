@@ -101,7 +101,10 @@ export const TransactionInfo = object({
     unfreeze_amount: option(ANY_NAT),
     internal_transactions: option(array(InternalTransaction)),
     withdraw_expire_amount: option(ANY_NAT),
-    cancel_unfreezeV2_amount: option(record(STRING, ANY_NAT)),
+    cancel_unfreezeV2_amount: option(array(object({
+        key: STRING,
+        value: ANY_NAT
+    }))),
 })
 
 
