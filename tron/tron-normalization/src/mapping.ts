@@ -3,7 +3,7 @@ import assert from 'assert'
 import {Block, BlockHeader, CallValueInfo, InternalTransaction, Log, Transaction} from './data'
 
 
-function mapBlockHeader(src: raw.Block): BlockHeader {
+export function mapBlockHeader(src: raw.Block): BlockHeader {
     return {
         hash: src.blockID,
         height: src.block_header.raw_data.number || 0,

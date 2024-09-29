@@ -7,7 +7,7 @@ import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {DataRequest} from '../data/data-request'
 import {getDataSchema} from './data-schema'
-import {PartialBlock} from '../data/data-partial'
+import {BlocksData, PartialBlock} from '../data/data-partial'
 
 
 export class TronGateway {
@@ -56,7 +56,7 @@ export class TronGateway {
     async *getBlockStream(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
-    ): AsyncIterable<PartialBlock[]> {
+    ): AsyncIterable<BlocksData<PartialBlock>> {
         let archiveRequests = mapRangeRequestList(requests, req => {
             let {fields, includeAllBlocks, ...items} = req
             let archiveItems: any = {}
@@ -79,6 +79,10 @@ export class TronGateway {
         })) {
             let req = getRequestAt(requests, batch.blocks[0].header.number)
 
+            // FIXME: needs to be done during batch ingestion
+            let finalizedHeight = await this.getFinalizedHeight()
+            let finalizedHead = await this.getBlockHeader(finalizedHeight)
+
             let blocks = cast(
                 array(getDataSchema(assertNotNull(req?.fields))),
                 batch.blocks
@@ -90,7 +94,7 @@ export class TronGateway {
                 }
             })
 
-            yield blocks as any
+            yield {finalizedHead, blocks: blocks as PartialBlock[]}
         }
     }
 }

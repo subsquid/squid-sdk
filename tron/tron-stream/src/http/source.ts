@@ -1,13 +1,13 @@
 import {mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {
-    Block,
     DataRequest as RawDataRequest,
     HttpDataSource as RawHttpDataSource
 } from '@subsquid/tron-data'
-import {mapBlock} from '@subsquid/tron-normalization'
+import {BlockHeader, mapBlock, mapBlockHeader} from '@subsquid/tron-normalization'
 import {DataRequest} from '../data/data-request'
-import {PartialBlock} from '../data/data-partial'
+import {BlocksData, PartialBlock} from '../data/data-partial'
 import {filterBlockBatch} from './filter'
+import assert from 'assert'
 
 
 export class HttpDataSource {
@@ -18,25 +18,41 @@ export class HttpDataSource {
     }
 
     async getBlockHash(height: number): Promise<string | undefined> {
+        let header = await this.getBlockHeader(height)
+        return header?.hash
+    }
+
+    async getBlockHeader(height: number): Promise<BlockHeader | undefined> {
         let header = await this.baseDataSource.getBlockHeader(height)
-        return header.blockID
+        return header ? mapBlockHeader(header) : undefined
     }
 
-    getBlockHeader(height: number): Promise<Block | undefined> {
-        return this.baseDataSource.getBlockHeader(height)
-    }
-
-    async *getBlockStream(
+    async *getBlockStream(opts: {
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
-    ): AsyncIterable<PartialBlock[]> {
+        supportHotBlocks?: boolean
+    }): AsyncIterable<BlocksData<PartialBlock>> {
         for await (let batch of this.baseDataSource.getFinalizedBlocks(
-            mapRangeRequestList(requests, toRawDataRequest),
-            stopOnHead
+            mapRangeRequestList(opts.requests, toRawDataRequest),
+            !opts.supportHotBlocks || opts.stopOnHead
         )) {
+            // FIXME: needs to be done during batch ingestion
+            let finalizedHeight = await this.getFinalizedHeight()
+            let finalizedHead = await this.getBlockHeader(finalizedHeight)
+            assert(finalizedHead != null)
+
             let blocks = batch.blocks.map(mapBlock)
-            filterBlockBatch(requests, blocks)
-            yield blocks
+            filterBlockBatch(opts.requests, blocks)
+            yield {finalizedHead, blocks: blocks as PartialBlock[]}
+        }
+
+        for await (let data of this.baseDataSource.getHotBlocks(
+            mapRangeRequestList(opts.requests, toRawDataRequest),
+            opts.stopOnHead
+        )) {
+            let blocks = data.blocks.map(mapBlock)
+            filterBlockBatch(opts.requests, blocks)
+            yield {finalizedHead: data.finalizedHead, blocks: blocks as PartialBlock[]}
         }
     }
 }

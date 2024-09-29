@@ -23,7 +23,7 @@ import {HttpDataSource} from './http/source'
 import {TronGateway} from './gateway/source'
 import {Block, FieldSelection} from './data/model'
 import {getFields} from './data/fields'
-import {PartialBlock} from './data/data-partial'
+import {BlocksData, PartialBlock} from './data/data-partial'
 import {
     DataRequest,
     LogRequest,
@@ -33,6 +33,7 @@ import {
     TriggerSmartContractTransactionRequest,
     InternalTransactionRequest
 } from './data/data-request'
+import {HashAndHeight} from '@subsquid/util-internal-ingest-tools'
 
 
 export interface HttpApiSettings {
@@ -254,11 +255,17 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 }
 
 
+export interface BlockStreamOptions { 
+    supportHotBlocks?: boolean
+    range?: Range
+}
+
+
 export interface DataSource<Block> {
     getFinalizedHeight(): Promise<number>
     getBlockHash(height: number): Promise<string | undefined>
     getBlocksCountInRange(range: FiniteRange): number
-    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block[]>
+    getBlockStream(opts?: BlockStreamOptions): AsyncIterable<BlocksData<Block>>
 }
 
 
@@ -323,26 +330,27 @@ class TronDataSource implements DataSource<PartialBlock> {
 
     private async performConsistencyCheck(): Promise<{
         gatewayBlock: BlockHeader
-        httpApiBlock: RawBlock | null
+        httpApiBlock: BlockHeader | null
     } | undefined> {
         let gateway = this.createGateway()
         let height = await gateway.getFinalizedHeight()
         let gatewayBlock = await gateway.getBlockHeader(height)
         let httpApiBlock = await this.httpApi!.getBlockHeader(gatewayBlock.height)
-        if (httpApiBlock?.blockID === gatewayBlock.hash && httpApiBlock.block_header.raw_data.number === gatewayBlock.height) return
+        if (httpApiBlock?.hash === gatewayBlock.hash && httpApiBlock.height === gatewayBlock.height) return
         return {gatewayBlock, httpApiBlock: httpApiBlock || null}
     }
+
 
     getBlocksCountInRange(range: FiniteRange): number {
         return getSize(this.ranges, range)
     }
 
-    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<PartialBlock[]> {
+    async *getBlockStream(opts: BlockStreamOptions = {}): AsyncIterable<BlocksData<PartialBlock>> {
         await this.assertConsistency()
 
-        let requests = fromBlockHeight == null
+        let requests = opts.range == null
             ? this.requests
-            : applyRangeBound(this.requests, {from: fromBlockHeight})
+            : applyRangeBound(this.requests, opts.range)
 
         if (requests.length == 0) return
 
@@ -353,9 +361,9 @@ class TronDataSource implements DataSource<PartialBlock> {
                 let height = await gateway.getFinalizedHeight()
                 let from = requests[0].range.from
                 if (height > from || !this.httpApi) {
-                    for await (let batch of gateway.getBlockStream(requests, !!this.httpApi)) {
-                        yield batch
-                        from = last(batch).header.height + 1
+                    for await (let data of gateway.getBlockStream(requests, !!this.httpApi)) {
+                        yield data
+                        from = last(data.blocks).header.height + 1
                     }
                     requests = applyRangeBound(requests, {from})
                 }
@@ -368,7 +376,7 @@ class TronDataSource implements DataSource<PartialBlock> {
 
         assert(this.httpApi)
 
-        yield* this.httpApi.getBlockStream(requests)
+        yield* this.httpApi.getBlockStream({requests, supportHotBlocks: opts.supportHotBlocks})
     }
 
     private createGateway(agent?: HttpAgent): TronGateway {

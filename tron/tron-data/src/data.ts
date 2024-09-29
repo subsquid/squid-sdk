@@ -165,4 +165,6 @@ export interface BlockData {
     hash: string
     block: Block
     transactionsInfo?: TransactionInfo[]
+    _isInvalid?: boolean
+    _errorMessage?: string
 }

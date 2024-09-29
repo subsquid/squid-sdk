@@ -1,5 +1,6 @@
 import type * as data from '@subsquid/tron-normalization'
 import type {MakePartial} from './util'
+import {HashAndHeight} from '@subsquid/util-internal-ingest-tools'
 
 
 export type BlockRequiredFields = 'height' | 'hash'
@@ -19,4 +20,10 @@ export interface PartialBlock {
     transactions?: PartialTransaction[]
     logs?: PartialLog[]
     internalTransactions?: PartialInternalTransaction[]
+}
+
+
+export interface BlocksData<B> {
+    finalizedHead: HashAndHeight
+    blocks: B[]
 }
