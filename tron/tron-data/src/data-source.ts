@@ -1,5 +1,5 @@
 import {Batch, BlockConsistencyError, BlockRef, coldIngest, HotProcessor, HotUpdate, isDataConsistencyError, trimInvalid} from '@subsquid/util-internal-ingest-tools'
-import {getRequestAt, mapRangeRequestList, rangeEnd, RangeRequest, splitRange, splitRangeByRequest, SplitRequest} from '@subsquid/util-internal-range'
+import {getRequestAt, mapRangeRequestList, rangeEnd, RangeRequest, rangeToArray, splitRange, splitRangeByRequest, SplitRequest} from '@subsquid/util-internal-range'
 import {assertNotNull, AsyncQueue, last, maybeLast, Throttler, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BlockData, TransactionInfo} from './data'
@@ -40,8 +40,9 @@ export class HttpDataSource {
         this.finalityConfirmation = 20
     }
 
-    getBlockHeader(height: number) {
-        return this.httpApi.getBlock(height, false)
+    async getBlockHeader(height: number) {
+        let block = await this.httpApi.getBlock(height, false)
+        return assertNotNull(block)
     }
 
     async getFinalizedHeight(): Promise<number> {
@@ -92,10 +93,8 @@ export class HttpDataSource {
                 process: async (update) => { queue.push(update) },
                 getBlock: async (ref) => {
                     let req = getRequestAt(requests, ref.height) || {}
-                    let block = await this.getBlock(ref.height, !!req.transactionsInfo)
-                    if (block.block.blockID !== ref.hash) {
-                        throw new BlockConsistencyError({hash: ref.hash})
-                    }
+                    let block = await this.getBlock(ref.hash, !!req.transactionsInfo)
+                    if (block == null) throw new BlockConsistencyError(ref)
                     await this.addRequestedData([block], req)
                     if (block._isInvalid) {
                         throw new BlockConsistencyError(block, block._errorMessage)
@@ -168,23 +167,46 @@ export class HttpDataSource {
         }
     }
 
-    private async getBlock(num: number, detail: boolean): Promise<BlockData> {
-        let block = await this.httpApi.getBlock(num, detail)
-        assert(block)
-        return {
+    private async getBlock(numOrHash: number | string, detail: boolean): Promise<BlockData | undefined> {
+        let block = await this.httpApi.getBlock(numOrHash, detail)
+        return block ? {
             block,
             height: block.block_header.raw_data.number || 0,
             hash: getBlockHash(block.blockID),
-        }
+        } : undefined
     }
 
-    private async getBlocks(from: number, to: number, detail: boolean): Promise<BlockData[]> {
-        let promises = []
-        for (let num = from; num <= to; num++) {
-            let promise = this.getBlock(num, detail)
-            promises.push(promise)
-        }
+    private async getBlocks(numbers: number[], detail: boolean): Promise<(BlockData | undefined)[]> {
+        let promises = numbers.map(n => this.getBlock(n, detail))
         return Promise.all(promises)
+    }
+
+    private async getColdBlocks(numbers: number[], withTransactions: boolean, depth: number = 0): Promise<BlockData[]> {
+        let result = await this.getBlocks(numbers, withTransactions)
+        let missing: number[] = []
+        for (let i = 0; i < result.length; i++) {
+            if (result[i] == null) {
+                missing.push(i)
+            }
+        }
+
+        if (missing.length == 0) return result as BlockData[]
+
+        if (depth > 9) throw new BlockConsistencyError({
+            height: numbers[missing[0]]
+        }, `failed to get finalized block after ${depth} attempts`)
+
+        let missed = await this.getColdBlocks(
+            missing.map(i => numbers[i]),
+            withTransactions,
+            depth + 1
+        )
+
+        for (let i = 0; i < missing.length; i++) {
+            result[missing[i]] = missed[i]
+        }
+
+        return result as BlockData[]
     }
 
     private async addTransactionsInfo(blocks: BlockData[]) {
@@ -210,13 +232,15 @@ export class HttpDataSource {
     }
 
     private async getColdSplit(req: SplitRequest<DataRequest>): Promise<BlockData[]> {
-        let blocks = await this.getBlocks(req.range.from, req.range.to, !!req.request.transactions)
+        let blocks = await this.getColdBlocks(rangeToArray(req.range), !!req.request.transactions)
+
+        await this.addRequestedData(blocks, req.request)
 
         return blocks
     }
 
     private async getHotSplit(req: SplitRequest<DataRequest> & {finalizedHeight: number}): Promise<BlockData[]> {
-        let blocks = await this.getBlocks(req.range.from, req.range.to, !!req.request.transactions)
+        let blocks = await this.getBlocks(rangeToArray(req.range), !!req.request.transactions)
 
         let chain: BlockData[] = []
 
