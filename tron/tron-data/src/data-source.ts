@@ -150,9 +150,10 @@ export class HttpDataSource {
                         }
                     })
 
-                    for await (let update of queue) {
+                    let update = queue.shift()
+                    while (update) {
                         yield update
-                        queue.shift()
+                        update = queue.shift()
                     }
 
                     break
