@@ -162,21 +162,14 @@ export class Processor<B extends BlockBase, S> {
     }
 
     private async processBatch(prevState: HotDatabaseState, finalizedHead: HashAndHeight, blocks: B[]): Promise<HotDatabaseState> {
-        if (prevState.height > finalizedHead.height) {
-            throw new FinalizedHeadBelowStateError(finalizedHead, prevState)
-        }
-
-        if (prevState.height === finalizedHead.height && prevState.hash !== finalizedHead.hash) {
-            throw new Error()
-        }
-
-        if (prevState.height > blocks[0].header.height) {
-            throw new Error()
-        }
-
-        if (prevState.height === blocks[0].header.height && prevState.hash !== blocks[0].header.hash) {
-            throw new Error()
-        }
+        assert(
+            prevState.height < finalizedHead.height ||
+                (prevState.height === finalizedHead.height && prevState.hash === finalizedHead.hash)
+        )
+        assert(
+            prevState.height < blocks[0].header.height ||
+                (prevState.height === blocks[0].header.height && prevState.hash === blocks[0].header.hash)
+        )
 
         let lastBlock = last(blocks).header
         let nextState: HotDatabaseState =
