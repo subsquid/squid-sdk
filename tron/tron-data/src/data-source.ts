@@ -170,6 +170,7 @@ export class HttpDataSource {
 
     private async getBlock(num: number, detail: boolean): Promise<BlockData> {
         let block = await this.httpApi.getBlock(num, detail)
+        assert(block)
         return {
             block,
             height: block.block_header.raw_data.number || 0,

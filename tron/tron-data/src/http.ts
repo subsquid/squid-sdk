@@ -15,19 +15,31 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
 }
 
 
+function isEmpty(value: unknown): boolean {
+    return value != null && typeof value == 'object' && Object.keys(value).length == 0
+}
+
+
 export class HttpApi {
     constructor(
         private readonly http: HttpClient,
         private readonly options: RequestOptions = {}
     ) {}
 
-    async getBlock(num: number, detail: boolean): Promise<Block> {
-        return this.post('wallet/getblock', {
+    async getBlock(hashOrHeight: number | string, detail: boolean): Promise<Block | undefined> {
+        let block = await this.post('wallet/getblock', {
             json: {
-                id_or_num: String(num),
+                id_or_num: String(hashOrHeight),
                 detail
             }
-        }, getResultValidator(Block))
+        })
+
+        if (isEmpty(block)) {
+            return undefined
+        }
+
+        let validateResult = getResultValidator(Block)
+        return validateResult(block)
     }
 
     async getTransactionInfo(num: number): Promise<TransactionInfo[]> {
