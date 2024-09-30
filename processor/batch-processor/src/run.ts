@@ -93,16 +93,6 @@ export class Processor<B extends BlockBase, S> {
 
         // remove all hot block to start from the finalized head
         state = {...state, top: []}
-        if (this.db.supportsHotBlocks) {
-            await this.db.transactHot(
-                {
-                    finalizedHead: state,
-                    baseHead: state,
-                    newBlocks: [],
-                },
-                async () => {}
-            )
-        }
 
         if (state.height >= 0) {
             log.info(`last processed final block was ${state.height}`)
