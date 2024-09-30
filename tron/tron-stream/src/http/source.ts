@@ -19,7 +19,7 @@ export class HttpDataSource {
 
     async getBlockHash(height: number): Promise<string | undefined> {
         let header = await this.baseDataSource.getBlockHeader(height)
-        return header.blockID
+        return header?.blockID
     }
 
     getBlockHeader(height: number): Promise<Block | undefined> {

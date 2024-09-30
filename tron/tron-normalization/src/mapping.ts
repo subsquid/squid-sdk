@@ -81,7 +81,7 @@ function mapTransaction(src: raw.Transaction, transactionIndex: number, info?: r
     }
     if (info?.cancel_unfreezeV2_amount) {
         tx.cancelUnfreezeV2Amount = {}
-        for (let obj of info?.cancel_unfreezeV2_amount) {
+        for (let obj of info.cancel_unfreezeV2_amount) {
             tx.cancelUnfreezeV2Amount[obj.key] = BigInt(obj.value)
         }
     }
