@@ -151,7 +151,7 @@ export class Multicall extends ContractBase {
   }
 }
 
-export function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg: number, end: number]> {
+function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg: number, end: number]> {
   maxSize = Math.max(1, maxSize)
   end = end ?? Number.MAX_SAFE_INTEGER
   while (beg < end) {
@@ -163,7 +163,7 @@ export function* splitSlice(maxSize: number, beg: number, end?: number): Iterabl
   }
 }
 
-export function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
+function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
   if (arr.length <= maxSize) {
       arr
   } else {
