@@ -1,6 +1,5 @@
 import * as p from '@subsquid/evm-codec'
 import {fun, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
-import {splitArray} from '@subsquid/util-internal'
 
 const aggregate = fun('0x252dba42', "aggregate((address,bytes)[])", {
   calls: p.array(p.struct({
@@ -152,3 +151,24 @@ export class Multicall extends ContractBase {
   }
 }
 
+export function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg: number, end: number]> {
+  maxSize = Math.max(1, maxSize)
+  end = end ?? Number.MAX_SAFE_INTEGER
+  while (beg < end) {
+      let left = end - beg
+      let splits = Math.ceil(left / maxSize)
+      let step = Math.round(left / splits)
+      yield [beg, beg + step]
+      beg += step
+  }
+}
+
+export function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
+  if (arr.length <= maxSize) {
+      arr
+  } else {
+      for (let [beg, end] of splitSlice(maxSize, 0, arr.length)) {
+          yield arr.slice(beg, end)
+      }
+  }
+}
