@@ -46,7 +46,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             refBlockHash: option(STRING),
             feeLimit: option(BIG_NAT),
             expiration: option(NAT),
-            timestamp: option(NAT),
+            timestamp: option(BIG_NAT),
             rawDataHex: STRING,
             fee: option(BIG_NAT),
             contractResult: option(STRING),

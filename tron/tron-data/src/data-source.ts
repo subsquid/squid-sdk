@@ -6,7 +6,7 @@ import {BlockData, TransactionInfo} from './data'
 import {HttpApi} from './http'
 
 
-function getBlockHash(blockId: string) {
+export function getBlockHash(blockId: string) {
     return '0x' + blockId.slice(16)
 }
 

@@ -1,4 +1,4 @@
-import {BlockData, HttpApi, HttpDataSource, TronHttpClient} from '@subsquid/tron-data'
+import {BlockData, HttpApi, HttpDataSource, TronHttpClient, getBlockHash} from '@subsquid/tron-data'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
@@ -23,7 +23,7 @@ export class TronDumper extends Dumper<BlockData, Options> {
     }
 
     protected getPrevBlockHash(block: BlockData): string {
-        return block.block.block_header.raw_data.parentHash
+        return getBlockHash(block.block.block_header.raw_data.parentHash)
     }
 
     @def
