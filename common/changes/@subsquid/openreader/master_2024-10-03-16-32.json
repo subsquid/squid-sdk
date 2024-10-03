@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add `ID` scalar to `thegraph` dialect",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

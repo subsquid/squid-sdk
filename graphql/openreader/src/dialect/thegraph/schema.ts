@@ -4,6 +4,7 @@ import assert from 'assert'
 import {
     GraphQLBoolean,
     GraphQLEnumType,
+    GraphQLError,
     GraphQLFieldConfig,
     GraphQLFloat,
     GraphQLInputObjectType,
@@ -19,6 +20,7 @@ import {
     GraphQLSchema,
     GraphQLString,
     GraphQLUnionType,
+    Kind,
 } from 'graphql'
 import {
     GraphQLEnumValueConfigMap,
@@ -40,6 +42,20 @@ import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {GqlFieldMap, SchemaOptions} from '../common'
 import {toPlural} from './locale'
 
+const GraphQLID = new GraphQLScalarType({
+    name: 'ID',
+    serialize: GraphQLString.serialize,
+    parseValue: GraphQLString.parseValue,
+    parseLiteral: function parseLiteral(valueNode) {
+        if (valueNode.kind !== Kind.STRING) {
+            throw new GraphQLError('ID cannot represent a non-string value: ' + valueNode, valueNode)
+        }
+
+        return valueNode.value
+    },
+})
+
+
 export class SchemaBuilder {
     private model: Model
     private types = new Map<string, GraphQLOutputType>()
@@ -55,6 +71,7 @@ export class SchemaBuilder {
     private get(name: string, kind?: Type<any>): GraphQLOutputType {
         switch (name) {
             case 'ID':
+                return GraphQLID
             case 'String':
                 return GraphQLString
             case 'Int':
