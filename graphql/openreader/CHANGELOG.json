@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "5.2.0",
+      "tag": "@subsquid/openreader_v5.2.0",
+      "date": "Thu, 03 Oct 2024 16:36:15 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `ID` scalar to `thegraph` dialect"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.1.1",
       "tag": "@subsquid/openreader_v5.1.1",
       "date": "Fri, 06 Sep 2024 16:29:32 GMT",

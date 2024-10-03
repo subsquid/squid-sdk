@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Fri, 06 Sep 2024 16:29:32 GMT and should not be manually modified.
+This log was last generated on Thu, 03 Oct 2024 16:36:15 GMT and should not be manually modified.
+
+## 5.2.0
+Thu, 03 Oct 2024 16:36:15 GMT
+
+### Minor changes
+
+- add `ID` scalar to `thegraph` dialect
 
 ## 5.1.1
 Fri, 06 Sep 2024 16:29:32 GMT
