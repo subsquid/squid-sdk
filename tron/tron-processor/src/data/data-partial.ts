@@ -2,7 +2,7 @@ import type * as data from '@subsquid/tron-normalization'
 import type {MakePartial} from './util'
 
 
-export type BlockRequiredFields = 'height' | 'hash'
+export type BlockRequiredFields = 'height' | 'hash' | 'parentHash'
 export type TransactionRequiredFields = 'transactionIndex'
 export type LogRequiredFields = 'transactionIndex' | 'logIndex'
 export type InternalTransactionRequiredFields = 'transactionIndex' | 'internalTransactionIndex'

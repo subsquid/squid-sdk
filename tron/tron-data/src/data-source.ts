@@ -1,6 +1,24 @@
-import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
-import {RangeRequest, SplitRequest} from '@subsquid/util-internal-range'
-import {assertNotNull} from '@subsquid/util-internal'
+import {
+    Batch,
+    coldIngest,
+    BlockConsistencyError,
+    HotState,
+    HotUpdate,
+    HotProcessor,
+    BlockRef,
+    isDataConsistencyError
+} from '@subsquid/util-internal-ingest-tools'
+import {
+    RangeRequest,
+    SplitRequest,
+    RangeRequestList,
+    getRequestAt,
+    splitRangeByRequest,
+    splitRange,
+    rangeToArray,
+    rangeEnd
+} from '@subsquid/util-internal-range'
+import {assertNotNull, last, Throttler, wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BlockData, TransactionInfo} from './data'
 import {HttpApi} from './http'
@@ -44,10 +62,16 @@ export class HttpDataSource {
         return this.httpApi.getBlock(height, false)
     }
 
+    async getHeight(): Promise<number> {
+        let block = await this.httpApi.getNowBlock()
+        let number = assertNotNull(block.block_header.raw_data.number)
+        return number
+    }
+
     async getFinalizedHeight(): Promise<number> {
         let block = await this.httpApi.getNowBlock()
         let number = assertNotNull(block.block_header.raw_data.number)
-        return number - this.finalityConfirmation
+        return Math.max(0, number - this.finalityConfirmation)
     }
 
     getFinalizedBlocks(
@@ -65,9 +89,63 @@ export class HttpDataSource {
         })
     }
 
+    async processHotBlocks(
+        requests: RangeRequestList<DataRequest>,
+        state: HotState,
+        cb: (upd: HotUpdate<BlockData>) => Promise<void>
+    ): Promise<void> {
+        let self = this
+
+        let proc = new HotProcessor<BlockData>(state, {
+            process: cb,
+            getBlock: async ref => {
+                let req = getRequestAt(requests, ref.height) || {}
+                let block = await self.getBlock(ref.height, !!req.transactions)
+                if (block.hash != ref.hash) throw new BlockConsistencyError(ref)
+                if (req.transactionsInfo) {
+                    await self.addTransactionsInfo([block])
+                }
+                return block
+            },
+            async *getBlockRange(from: number, to: BlockRef): AsyncIterable<BlockData[]> {
+                assert(to.height != null)
+                if (from > to.height) {
+                    from = to.height
+                }
+                for (let split of splitRangeByRequest(requests, {from, to: to.height})) {
+                    let req = split.request || {}
+                    for (let range of splitRange(5, split.range)) {
+                        let blocks = await self.getSplit({range, request: req})
+                        yield blocks
+                    }
+                }
+            },
+            getHeader(block) {
+                return {
+                    hash: block.block.blockID,
+                    parentHash: block.block.block_header.raw_data.parentHash,
+                    height: block.height,
+                }
+            }
+        })
+
+        let isEnd = () => proc.getFinalizedHeight() >= rangeEnd(last(requests).range)
+
+        let navigate = (head: {height: number, hash?: string}): Promise<void> => {
+            return proc.goto({
+                best: head,
+                finalized: {
+                    height: Math.max(head.height - this.finalityConfirmation, 0)
+                }
+            })
+        }
+
+        return this.polling(navigate, isEnd)
+    }
+
     private async getBlock(num: number, detail: boolean): Promise<BlockData> {
         let block = await this.httpApi.getBlock(num, detail)
-        assert(block)
+        if (block == null) throw new BlockConsistencyError({height: num})
         return {
             block,
             height: block.block_header.raw_data.number || 0,
@@ -75,12 +153,8 @@ export class HttpDataSource {
         }
     }
 
-    private async getBlocks(from: number, to: number, detail: boolean): Promise<BlockData[]> {
-        let promises = []
-        for (let num = from; num <= to; num++) {
-            let promise = this.getBlock(num, detail)
-            promises.push(promise)
-        }
+    private async getBlocks(numbers: number[], detail: boolean): Promise<BlockData[]> {
+        let promises = numbers.map(n => this.getBlock(n, detail))
         return Promise.all(promises)
     }
 
@@ -97,7 +171,9 @@ export class HttpDataSource {
                         infoById[info.id] = info
                     }
                     for (let tx of block.block.transactions || []) {
-                        assert(infoById[tx.txID])
+                        if (infoById[tx.txID] == null) {
+                            throw new BlockConsistencyError(block)
+                        }
                     }
                     block.transactionsInfo = transactionsInfo
                 })
@@ -107,10 +183,42 @@ export class HttpDataSource {
     }
 
     private async getSplit(req: SplitRequest<DataRequest>): Promise<BlockData[]> {
-        let blocks = await this.getBlocks(req.range.from, req.range.to, !!req.request.transactions)
+        let blocks = await this.getBlocks(rangeToArray(req.range), !!req.request.transactions)
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i];
+            let prevBlock = blocks[i - 1]
+            if (i > 0 && prevBlock.block.blockID !== block.block.block_header.raw_data.parentHash) {
+                throw new BlockConsistencyError(block)
+            }
+        }
+
         if (req.request.transactionsInfo) {
             this.addTransactionsInfo(blocks)
         }
+
         return blocks
+    }
+
+    private async polling(cb: (head: {height: number}) => Promise<void>, isEnd: () => boolean): Promise<void> {
+        let prev = -1
+        let height = new Throttler(() => this.getHeight(), this.headPollInterval)
+        while (!isEnd()) {
+            let next = await height.call()
+            if (next <= prev) continue
+            prev = next
+            for (let i = 0; i < 100; i++) {
+                try {
+                    await cb({height: next})
+                    break
+                } catch(err: any) {
+                    if (isDataConsistencyError(err)) {
+                        await wait(100)
+                    } else {
+                        throw err
+                    }
+                }
+            }
+        }
     }
 }

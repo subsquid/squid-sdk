@@ -227,15 +227,9 @@ dependencies:
   '@rush-temp/tron-normalization':
     specifier: file:./projects/tron-normalization.tgz
     version: file:projects/tron-normalization.tgz
-  '@rush-temp/tron-objects':
-    specifier: file:./projects/tron-objects.tgz
-    version: file:projects/tron-objects.tgz
-  '@rush-temp/tron-stream':
-    specifier: file:./projects/tron-stream.tgz
-    version: file:projects/tron-stream.tgz
-  '@rush-temp/tron-usdt':
-    specifier: file:./projects/tron-usdt.tgz
-    version: file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2)
+  '@rush-temp/tron-processor':
+    specifier: file:./projects/tron-processor.tgz
+    version: file:projects/tron-processor.tgz
   '@rush-temp/typeorm-codegen':
     specifier: file:./projects/typeorm-codegen.tgz
     version: file:projects/typeorm-codegen.tgz
@@ -6937,7 +6931,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-+iVKcZNNQZfLCaeXxFJqOJf4RzvQlDDSwKHH93We4C8O1z2Q6ajONfVzdr4Ve4k/qsC0qUqKWW8sVwUhYDg0WQ==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-Q75rSiKVt7+lB1VI9A8yTp/WlfwNQlpuGXC9l3nrBUH2omWuWAywApV8WXcngz8uJFWaipyMag4cCZHOrB3bgA==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -6971,7 +6965,7 @@ packages:
     dev: false
 
   file:projects/balances.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-zgsHOZt3obnaBFuvFZZ5rEHl+olUe7xSiReisuj4U5ojLGioJDmShKgmTkOsMkiDW4dgaDrRBH1abceq243FEw==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-oNrNDSdTh02TrJwlhnlonVqbLPYi0Js7OXm4U/f0qoJL6Ok9254rZkPiuYtt6LLs0ihYS36S0Q1tucd9AVQi4A==, tarball: file:projects/balances.tgz}
     id: file:projects/balances.tgz
     name: '@rush-temp/balances'
     version: 0.0.0
@@ -7075,7 +7069,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-IE+wvllT9sQ+q430GoeIAAXHGcIrduBD8zfpd0d2RUsns4hwK8KH33W5hORxiwnnB3RvTAFC2yv8fkxMU56ONA==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-c4UEe5BPf277mZ3uKmegHW0f5fhUWtrlMSkA726p3iZZ81Tw3l10IM3C3QvdRNIXHK4Mfq/SY7nuZETTZ6XI5g==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7503,7 +7497,7 @@ packages:
     dev: false
 
   file:projects/shibuya-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-DhoHVmNNDpnOo0RMLgon5wtIQ1y7qPWgrBy16DW8I+5qjhGeDNKx1NRzP109qlfhB7BR044dNrR+EZ5nrE22Og==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-Oow1Jpfp4BPl7DVGf8e+6GEWXXyHuVADS1DcozmjfiUPyIzXSBjBE6Jrq2+2ZYQ5iMKsO4vwxmA0gpXNNufGQg==, tarball: file:projects/shibuya-erc20.tgz}
     id: file:projects/shibuya-erc20.tgz
     name: '@rush-temp/shibuya-erc20'
     version: 0.0.0
@@ -7534,7 +7528,7 @@ packages:
     dev: false
 
   file:projects/shibuya-psp22.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-ROemFTP0QtduQmb1vOWCJn6I96UHMRldV+crlfaPauOedQrbWaqsPf2c8Rj8mZ51PrDajF/f80dd+l3mAR0paw==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-O3HBBx34t3V0fdGLE8nYUPtEBuuLWiW7FsVyD0Nk+Po5C8O6uAcHtVUECBx6BUpiH3/UelRYQPccGpJkuSXJ/A==, tarball: file:projects/shibuya-psp22.tgz}
     id: file:projects/shibuya-psp22.tgz
     name: '@rush-temp/shibuya-psp22'
     version: 0.0.0
@@ -7574,7 +7568,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-yAGML2kNcG3yjiCVm8xx2EtAigThMeXJeREnEZ70jiDixo8fMEuwwjFIni/r9wgLbPHSL8uNtfblqVYn+TeuRw==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-5e3bzLFu0mGF9zRw94zbfDcx8RMmkykHXJHxGUsdHD5+Bxyh6P5G1Ngw7s+MkE493okuEtQUe7XR+plQzrlkwQ==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -7797,7 +7791,7 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-V5yOaLKn77Q/n90NLUKLw49I0zCc/1QlD0LZJE3MS3kkWPhjkc5U4qrbd8583quywSXhA+q4bkFo3pUFcHPhPA==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-P/LIVx/tQFLV6inpsRWuGnoRu3cYo9pNhRinxiHvEFAzChlUfYSmQ/kJs2mk5CFbm8Fl7Qiu3CvQM98qtVy+9Q==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
@@ -7862,7 +7856,7 @@ packages:
     dev: false
 
   file:projects/tron-data.tgz:
-    resolution: {integrity: sha512-Z8iuiKDURTAzkfnX3sgW1Pu3nrRvYwM3mwKIcN8eeosI0Uce4BHz+uRKXJvrH5RfkHGB8tP/eS15D8guQlE/cg==, tarball: file:projects/tron-data.tgz}
+    resolution: {integrity: sha512-HMx3SddWKdElANUnnEgcrfRHaoeS1u7X7ekzG6b6VX03N28oRU6KQTFnXj4n+PzE0hYj/dG6n5VebZRCRkp7eQ==, tarball: file:projects/tron-data.tgz}
     name: '@rush-temp/tron-data'
     version: 0.0.0
     dependencies:
@@ -7871,7 +7865,7 @@ packages:
     dev: false
 
   file:projects/tron-dump.tgz:
-    resolution: {integrity: sha512-lVYffYEE0k8BKibvnqGk9Y/Qx9oox3a96MsPedvJWolHKfpy5ZohwJudSV9SDE3sc6UUZJ0txqUSLJKZX9X1rQ==, tarball: file:projects/tron-dump.tgz}
+    resolution: {integrity: sha512-MqD4hakno9RqWLXX5cmIy4T/d6jnTFIXmMIwc50fv92sLexFTrnNhQ52JTtXOEld6vKfQ+/BBOXaNUKJHpa7zA==, tarball: file:projects/tron-dump.tgz}
     name: '@rush-temp/tron-dump'
     version: 0.0.0
     dependencies:
@@ -7901,7 +7895,7 @@ packages:
     dev: false
 
   file:projects/tron-normalization.tgz:
-    resolution: {integrity: sha512-uatGL7/EBevj7963po3OX3zkdIogooXcoU8fh3vQRybc5a4BzQWYCHMAJQWY3eFuINspNBkjr4e2h/AymADISA==, tarball: file:projects/tron-normalization.tgz}
+    resolution: {integrity: sha512-dRiolKFox+o+o5dPAt6fgxDR5Y6GeHqg72yArGuWE8FK9d9Lm76LO9Av2WrfiWDQTg6Y3T3tSFcZx2Nk42BBgw==, tarball: file:projects/tron-normalization.tgz}
     name: '@rush-temp/tron-normalization'
     version: 0.0.0
     dependencies:
@@ -7909,56 +7903,13 @@ packages:
       typescript: 5.3.2
     dev: false
 
-  file:projects/tron-objects.tgz:
-    resolution: {integrity: sha512-6rqyj1YmfMIli3yV9cUb7q3RZ+2HlJE3qNFCqeFDCONYFeEL1ZbnENgpVuw4PIkiw3WXSP/ZKQ5O3BNYBapCmQ==, tarball: file:projects/tron-objects.tgz}
-    name: '@rush-temp/tron-objects'
+  file:projects/tron-processor.tgz:
+    resolution: {integrity: sha512-PyIzWAl7HpAt0x+fj23ayqbL60xpt0KMp1BDlN0mkTS9ztv25nh2Xc+8cC9RRhJP9zNg7BKz93WnVa8kLoMTog==, tarball: file:projects/tron-processor.tgz}
+    name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
-      typescript: 5.3.2
-    dev: false
-
-  file:projects/tron-stream.tgz:
-    resolution: {integrity: sha512-aOQDmcSsbMo84b3AUzjqjumVq7WLmfuP/+ouWThViyOxZo3jnMn25kLwhgts7I1iUjE85aQsCpwLe/NRggAIxg==, tarball: file:projects/tron-stream.tgz}
-    name: '@rush-temp/tron-stream'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 18.19.0
-      typescript: 5.3.2
-    dev: false
-
-  file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-Dz6cLv5n8AvqP9CXDgC02fncVXbi/A74Gp2wap+ORNqntP0pHSBMtlkfxKDsOSXEcoIS4GlFRe+AF/BaHoWlVw==, tarball: file:projects/tron-usdt.tgz}
-    id: file:projects/tron-usdt.tgz
-    name: '@rush-temp/tron-usdt'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 18.19.0
-      dotenv: 16.3.1
-      ethers: 6.9.0
-      pg: 8.11.3
-      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-      typescript: 5.3.2
-    transitivePeerDependencies:
-      - '@google-cloud/spanner'
-      - '@sap/hana-client'
-      - better-sqlite3
-      - bufferutil
-      - hdb-pool
-      - ioredis
-      - mongodb
-      - mssql
-      - mysql2
-      - oracledb
-      - pg-native
-      - pg-query-stream
-      - redis
-      - sql.js
-      - sqlite3
-      - supports-color
-      - ts-node
-      - typeorm-aurora-data-api-driver
-      - utf-8-validate
+      typescript: 5.2.2
     dev: false
 
   file:projects/typeorm-codegen.tgz:

@@ -1,16 +1,17 @@
-import {BlockHeader} from '@subsquid/tron-normalization'
 import {assertNotNull} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
+import {DataSource, Batch} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {DataRequest} from '../data/data-request'
 import {getDataSchema} from './data-schema'
-import {PartialBlock} from '../data/data-partial'
+import {Block} from '../mapping/entities'
+import {setUpRelations} from '../mapping/relations'
 
 
-export class TronGateway {
+export class TronGateway implements DataSource<Block, DataRequest> {
     constructor(private client: ArchiveClient) {}
 
     getFinalizedHeight(): Promise<number> {
@@ -28,35 +29,10 @@ export class TronGateway {
         return blocks[0].header.hash
     }
 
-    async getBlockHeader(height: number): Promise<BlockHeader> {
-        let blocks = await this.client.query({
-            type: 'tron',
-            fromBlock: height,
-            toBlock: height,
-            includeAllBlocks: true,
-            fields: {
-                block: {
-                    parentHash: true,
-                    txTrieRoot: true,
-                    version: true,
-                    timestamp: true,
-                    witnessAddress: true,
-                    witnessSignature: true
-                }
-            }
-        })
-        assert(blocks.length == 1)
-        let {number, ...rest} = blocks[0].header
-        return {
-            height: number,
-            ...rest
-        } as BlockHeader
-    }
-
-    async *getBlockStream(
+    async *getFinalizedBlocks(
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean
-    ): AsyncIterable<PartialBlock[]> {
+    ): AsyncIterable<Batch<Block>> {
         let archiveRequests = mapRangeRequestList(requests, req => {
             let {fields, includeAllBlocks, ...items} = req
             let archiveItems: any = {}
@@ -84,13 +60,17 @@ export class TronGateway {
                 batch.blocks
             ).map(b => {
                 let {header: {number, ...hdr}, ...items} = b
-                return {
+                let block = Block.fromPartial({
                     header: {height: number, ...hdr},
                     ...items
-                }
+                })
+
+                setUpRelations(block)
+
+                return block
             })
 
-            yield blocks as any
+            yield {blocks, isHead: batch.isHead}
         }
     }
 }

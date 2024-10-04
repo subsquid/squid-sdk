@@ -1,11 +1,11 @@
+import * as tools from '@subsquid/util-internal-processor-tools'
 import {
     PartialBlock,
     PartialBlockHeader,
     PartialLog,
     PartialTransaction,
     PartialInternalTransaction
-} from '@subsquid/tron-stream/lib/data/data-partial'
-import {formatId} from './util'
+} from '../data/data-partial'
 
 
 export class Block {
@@ -41,11 +41,13 @@ export class BlockHeader implements PartialBlockHeader {
     id: string
     height: number
     hash: string
+    parentHash: string
 
     constructor(header: PartialBlockHeader) {
         this.id = formatId(header)
         this.height = header.height
         this.hash = header.hash
+        this.parentHash = header.parentHash
         Object.assign(this, header)
     }
 }
@@ -176,4 +178,12 @@ export class InternalTransaction implements PartialInternalTransaction {
             return this.#transaction
         }
     }
+}
+
+
+function formatId(block: tools.HashAndHeight, ...address: number[]): string {
+    // skip first 8 bytes containing block number
+    let hash = block.hash.slice(16)
+    let height = block.height
+    return tools.formatId({height, hash}, ...address)
 }

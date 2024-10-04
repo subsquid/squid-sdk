@@ -24,6 +24,7 @@ export interface FieldSelection {
 
 export const DEFAULT_FIELDS = {
     block: {
+        parentHash: true,
         timestamp: true
     },
     transaction: {

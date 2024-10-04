@@ -19,8 +19,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     let BlockHeader = object({
         number: NAT,
         hash: STRING,
+        parentHash: STRING,
         ...project(fields.block, {
-            parentHash: STRING,
             txTrieRoot: STRING,
             version: option(INT),
             timestamp: NAT,

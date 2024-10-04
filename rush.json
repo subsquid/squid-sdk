@@ -646,14 +646,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/tron-objects",
-      "projectFolder": "tron/tron-objects",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/tron-stream",
-      "projectFolder": "tron/tron-stream",
+      "packageName": "@subsquid/tron-processor",
+      "projectFolder": "tron/tron-processor",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -973,11 +967,11 @@
       "projectFolder": "test/astar-erc20",
       "shouldPublish": false
     },
-    {
-      "packageName": "tron-usdt",
-      "projectFolder": "test/tron-usdt",
-      "shouldPublish": false
-    },
+    // {
+    //   "packageName": "tron-usdt",
+    //   "projectFolder": "test/tron-usdt",
+    //   "shouldPublish": false
+    // },
     {
       "packageName": "@subsquid/starknet-data",
       "projectFolder": "starknet/starknet-data",

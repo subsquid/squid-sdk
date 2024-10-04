@@ -1,5 +1,5 @@
 import {maybeLast} from '@subsquid/util-internal'
-import {Block, Transaction} from './items'
+import {Block, Transaction} from './entities'
 
 
 export function setUpRelations(block: Block): void {
