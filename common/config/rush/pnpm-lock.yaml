@@ -7794,13 +7794,13 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-P/LIVx/tQFLV6inpsRWuGnoRu3cYo9pNhRinxiHvEFAzChlUfYSmQ/kJs2mk5CFbm8Fl7Qiu3CvQM98qtVy+9Q==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-IW4wI8vBRdS/PP5b7CuA3qwNa5FnG5GwxrHSHlWCxgrZitgGinjqOazsXHtzLhJ0e1mH83uXHH3tZWsdxT3Cyg==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
       commander: 11.1.0
-      typescript: 5.2.2
+      typescript: 5.3.2
     dev: false
 
   file:projects/substrate-metadata-explorer.tgz:
