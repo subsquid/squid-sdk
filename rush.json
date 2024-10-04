@@ -967,11 +967,11 @@
       "projectFolder": "test/astar-erc20",
       "shouldPublish": false
     },
-    // {
-    //   "packageName": "tron-usdt",
-    //   "projectFolder": "test/tron-usdt",
-    //   "shouldPublish": false
-    // },
+    {
+      "packageName": "tron-usdt",
+      "projectFolder": "test/tron-usdt",
+      "shouldPublish": false
+    },
     {
       "packageName": "@subsquid/starknet-data",
       "projectFolder": "starknet/starknet-data",

@@ -67,7 +67,12 @@ export type Transaction<F extends FieldSelection = {}> = Item<
     TransactionRequiredFields,
     F,
     'transaction'
->
+> & {
+    id: string
+    block: BlockHeader<F>,
+    logs?: Log<F>[]
+    internalTransactions: InternalTransaction<F>[]
+}
 
 
 export type Log<F extends FieldSelection = {}> = Item<
@@ -75,7 +80,12 @@ export type Log<F extends FieldSelection = {}> = Item<
     LogRequiredFields,
     F,
     'log'
->
+> & {
+    id: string
+    block: BlockHeader<F>,
+    transaction?: Transaction<F>
+    getTransaction(): Transaction<F>
+}
 
 
 export type InternalTransaction<F extends FieldSelection = {}> = Item<
@@ -83,7 +93,12 @@ export type InternalTransaction<F extends FieldSelection = {}> = Item<
     InternalTransactionRequiredFields,
     F,
     'internalTransaction'
->
+> & {
+    id: string
+    block: BlockHeader<F>,
+    transaction?: Transaction<F>
+    getTransaction(): Transaction<F>
+}
 
 
 export interface Block<F extends FieldSelection = {}> {

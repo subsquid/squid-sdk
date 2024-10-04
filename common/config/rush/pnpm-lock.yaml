@@ -230,6 +230,9 @@ dependencies:
   '@rush-temp/tron-processor':
     specifier: file:./projects/tron-processor.tgz
     version: file:projects/tron-processor.tgz
+  '@rush-temp/tron-usdt':
+    specifier: file:./projects/tron-usdt.tgz
+    version: file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/typeorm-codegen':
     specifier: file:./projects/typeorm-codegen.tgz
     version: file:projects/typeorm-codegen.tgz
@@ -7910,6 +7913,37 @@ packages:
     dependencies:
       '@types/node': 18.19.0
       typescript: 5.2.2
+    dev: false
+
+  file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
+    resolution: {integrity: sha512-vuc59ozGphyR40iT8nJJaoW1drbdrxBn4ELlbGsPSz96CNBMAvb6tmltkPWT0oyV2jj7ytKMr3KfHre+ZSr25w==, tarball: file:projects/tron-usdt.tgz}
+    id: file:projects/tron-usdt.tgz
+    name: '@rush-temp/tron-usdt'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      dotenv: 16.3.1
+      pg: 8.11.3
+      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typescript: 5.3.2
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
     dev: false
 
   file:projects/typeorm-codegen.tgz:

@@ -15,6 +15,7 @@ import assert from 'assert'
 import {HttpDataSource} from './http/source'
 import {TronGateway} from './gateway/source'
 import {Block, FieldSelection} from './data/model'
+import {getFields} from './data/fields'
 import {
     TransactionRequest,
     TriggerSmartContractTransactionRequest,
@@ -299,17 +300,17 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
             }
         })
 
-        if (this.fields) {
-            requests = requests.map(({range, request}) => {
-                return {
-                    range,
-                    request: {
-                        fields: this.fields,
-                        ...request
-                    }
+        let fields = getFields(this.fields)
+
+        requests = requests.map(({range, request}) => {
+            return {
+                range,
+                request: {
+                    fields,
+                    ...request
                 }
-            })
-        }
+            }
+        })
 
         return applyRangeBound(requests, this.blockRange)
     }

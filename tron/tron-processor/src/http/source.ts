@@ -5,6 +5,7 @@ import {Batch, HotDatabaseState, HotDataSource, HotUpdate} from '@subsquid/util-
 import {DataRequest} from '../data/data-request'
 import {filterBlockBatch} from './filter'
 import {Block} from '../mapping/entities'
+import {setUpRelations} from '../mapping/relations'
 
 
 export class HttpDataSource implements HotDataSource<Block, DataRequest> {
@@ -31,7 +32,11 @@ export class HttpDataSource implements HotDataSource<Block, DataRequest> {
             filterBlockBatch(requests, blocks)
             yield {
                 ...batch,
-                blocks: blocks.map(b => Block.fromPartial(b))
+                blocks: blocks.map(b => {
+                    let block = Block.fromPartial(b)
+                    setUpRelations(block)
+                    return block
+                })
             }
         }
     }
@@ -47,7 +52,11 @@ export class HttpDataSource implements HotDataSource<Block, DataRequest> {
             upd => {
                 let blocks = upd.blocks.map(b => mapBlock(b))
                 filterBlockBatch(requests, blocks)
-                return cb({...upd, blocks: blocks.map(b => Block.fromPartial(b))})
+                return cb({...upd, blocks: blocks.map(b => {
+                    let block = Block.fromPartial(b)
+                    setUpRelations(block)
+                    return block
+                })})
             }
         )
     }
