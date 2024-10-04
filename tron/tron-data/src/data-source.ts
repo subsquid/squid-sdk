@@ -24,11 +24,6 @@ import {BlockData, TransactionInfo} from './data'
 import {HttpApi} from './http'
 
 
-export function getBlockHash(blockId: string) {
-    return '0x' + blockId.slice(16)
-}
-
-
 export interface DataRequest {
     transactions?: boolean
     transactionsInfo?: boolean
@@ -149,7 +144,7 @@ export class HttpDataSource {
         return {
             block,
             height: block.block_header.raw_data.number || 0,
-            hash: getBlockHash(block.blockID)
+            hash: block.blockID
         }
     }
 

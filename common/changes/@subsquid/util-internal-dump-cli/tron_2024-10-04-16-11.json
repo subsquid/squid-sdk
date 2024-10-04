@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "change data chunk naming pattern",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}
