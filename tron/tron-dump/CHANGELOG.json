@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/tron-dump",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/tron-dump_v0.0.1",
+      "date": "Mon, 07 Oct 2024 08:48:33 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.4.0` to `1.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-archive-layout_v1.0.0",
+      "date": "Mon, 07 Oct 2024 08:48:33 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "make getShortHash use last bytes"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.1",
       "tag": "@subsquid/util-internal-archive-layout_v0.4.1",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-dump-cli",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/util-internal-dump-cli_v1.0.0",
+      "date": "Mon, 07 Oct 2024 08:48:33 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "change data chunk naming pattern"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^0.4.1` to `1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/util-internal-dump-cli_v0.4.0",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/tron-ingest",
+  "entries": [
+    {
+      "version": "0.0.0",
+      "tag": "@subsquid/tron-ingest_v0.0.0",
+      "date": "Mon, 07 Oct 2024 08:48:33 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.1.0` to `0.1.1`"
+          }
+        ]
+      }
+    }
+  ]
+}
