@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/rpc-client": "^4.9.0",
-    "@subsquid/substrate-data": "^4.2.0",
+    "@subsquid/substrate-data": "^4.2.1",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/substrate-runtime": "^2.0.0",
     "@subsquid/util-internal": "^3.2.0",
