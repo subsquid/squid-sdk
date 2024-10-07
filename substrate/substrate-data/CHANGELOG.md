@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Oct 2024 15:13:33 GMT and should not be manually modified.
+
+## 4.2.1
+Mon, 07 Oct 2024 15:13:33 GMT
+
+### Patches
+
+- handle events from `MultiBlockMigrations` pallet
 
 ## 4.2.0
 Thu, 25 Jul 2024 11:48:18 GMT
