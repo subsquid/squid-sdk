@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "make getShortHash use last bytes",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}

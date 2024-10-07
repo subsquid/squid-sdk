@@ -24,7 +24,9 @@
     "@subsquid/solana-ingest",
     "@subsquid/substrate-dump",
     "@subsquid/substrate-ingest",
-    "@subsquid/substrate-metadata-service"
+    "@subsquid/substrate-metadata-service",
+    "@subsquid/tron-dump",
+    "@subsquid/tron-ingest"
   ],
 
   /**
