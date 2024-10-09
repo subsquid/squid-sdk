@@ -264,14 +264,17 @@ export class Rpc {
 
         let logsByBlock = groupBy(logs, log => log.blockHash)
 
+        const isCheckDisabled = this.validationFlags?.disableLogsBloomCheck ?? false
+
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
-            if (!this.validationFlags?.disableLogsBloomCheck && logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
-                block._isInvalid = true
-                block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
-            } else {
-                block.logs = logs
-            }
+            block.logs = logs
+            if (!isCheckDisabled) {
+                if (logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
+                    block._isInvalid = true
+                    block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
+                }
+            } 
         }
     }
 
@@ -366,24 +369,36 @@ export class Rpc {
             validateResult: getResultValidator(nullable(array(TransactionReceipt)))
         })
 
+        const isCheckDisabled = this.validationFlags?.disableTxReceiptsNumberCheck ?? false;
+    
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
             if (receipts == null) {
                 block._isInvalid = true
                 block._errorMessage = `${method} returned null`
-            } else if (block.block.transactions.length === receipts.length) {
-                for (let receipt of receipts) {
-                    if (receipt.blockHash !== block.hash) {
-                        block._isInvalid = true
-                        block._errorMessage = `${method} returned receipts for a different block`
-                    }
+                continue
+            } 
+
+            block.receipts = receipts
+            
+            //block hash check
+            for (let receipt of receipts) {
+                if (receipt.blockHash !== block.hash) {
+                    // for the hash mismatch, fail anyway
+                    block._isInvalid = true
+                    block._errorMessage = `${method} returned receipts for a different block`
                 }
-                block.receipts = receipts
-            } else if (!this.validationFlags?.disableTxReceiptsNumberCheck) {
-                block._isInvalid = true
-                block._errorMessage = `got invalid number of receipts from ${method}`
             }
+
+            // count match check
+            if (block.block.transactions.length !== receipts.length) {
+                if (!isCheckDisabled) {
+                    block._isInvalid = true
+                    block._errorMessage = `got invalid number of receipts from ${method}`
+                }
+            } 
+                     
         }
     }
 
@@ -407,13 +422,16 @@ export class Rpc {
             r => r.blockHash
         )
 
+        const isCheckDisabled = this.validationFlags?.disableTxReceiptsNumberCheck ?? false
         for (let block of blocks) {
             let rs = receiptsByBlock.get(block.hash) || []
-            if (rs.length === block.block.transactions.length) {
-                block.receipts = rs
-            } else if (!this.validationFlags?.disableTxReceiptsNumberCheck) {
-                block._isInvalid = true
-                block._errorMessage = 'failed to get receipts for all transactions'
+            block.receipts = rs
+
+            if (rs.length !== block.block.transactions.length) {
+                if (!isCheckDisabled) {
+                    block._isInvalid = true
+                    block._errorMessage = 'failed to get receipts for all transactions'
+                }
             }
         }
     }
@@ -482,22 +500,29 @@ export class Rpc {
             validateResult: getResultValidator(array(TraceFrame))
         })
 
+        const isCheckDisabled = this.validationFlags?.disableMissingTracesCheck ?? false
+
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
+            
             if (frames.length == 0) {
-                if (!this.validationFlags?.disableMissingTracesCheck && block.block.transactions.length > 0) {
-                    block._isInvalid = true
-                    block._errorMessage = 'missing traces for some transactions'
+                if (block.block.transactions.length > 0) {
+                    if (!isCheckDisabled) {
+                        block._isInvalid = true
+                        block._errorMessage = 'missing traces for some transactions'
+                    }
                 }
-            } else {
-                for (let frame of frames) {
-                    if (frame.blockHash !== block.hash) {
+                continue
+            }  
+            
+            for (let frame of frames) {
+                if (frame.blockHash !== block.hash) {
                         block._isInvalid = true
                         block._errorMessage = 'trace_block returned a trace of a different block'
                         break
-                    }
                 }
+                
                 if (!block._isInvalid) {
                     block.traceReplays = []
                     let byTx = groupBy(frames, f => f.transactionHash)
