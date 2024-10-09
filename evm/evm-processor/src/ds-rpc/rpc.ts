@@ -242,7 +242,7 @@ export class Rpc {
 
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
-            if (logs.length == 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
+            if (!process.env.DISABLE_LOGBLOOM_VALIDATION && logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
                 block._isInvalid = true
                 block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
             } else {
@@ -356,7 +356,7 @@ export class Rpc {
                     }
                 }
                 block.receipts = receipts
-            } else {
+            } else if (!process.env.DISABLE_RECEIPTS_NUMBER_CHECK) {
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from ${method}`
             }
@@ -387,7 +387,7 @@ export class Rpc {
             let rs = receiptsByBlock.get(block.hash) || []
             if (rs.length === block.block.transactions.length) {
                 block.receipts = rs
-            } else {
+            } else if (!process.env.DISABLE_RECEIPTS_NUMBER_CHECK) {
                 block._isInvalid = true
                 block._errorMessage = 'failed to get receipts for all transactions'
             }
@@ -462,7 +462,7 @@ export class Rpc {
             let block = blocks[i]
             let frames = results[i]
             if (frames.length == 0) {
-                if (block.block.transactions.length > 0) {
+                if (!process.env.DISABLE_MISSING_TRACES_CHECK && block.block.transactions.length > 0) {
                     block._isInvalid = true
                     block._errorMessage = 'missing traces for some transactions'
                 }
