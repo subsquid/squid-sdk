@@ -52,6 +52,10 @@ export interface ValidationFlags {
      * Checks if the are no traces for a non-empty block
      */
     disableMissingTracesCheck?:boolean
+    /**
+     * Checks the block hash matches the trace blockHash field
+     */
+    disableTraceBlockHashCheck?:boolean
 }
 
 export class Rpc {
@@ -380,7 +384,8 @@ export class Rpc {
             
             //block hash check
             for (let receipt of receipts) {
-                if (receipt.blockHash !== block.hash) {
+                const disableTraceBlockHashCheck = this.validationFlags?.disableTraceBlockHashCheck ?? false       
+                if (!disableTraceBlockHashCheck && (receipt.blockHash !== block.hash)) {
                     // for the hash mismatch, fail anyway
                     block._isInvalid = true
                     block._errorMessage = `${method} returned receipts for a different block`
@@ -388,8 +393,8 @@ export class Rpc {
             }
 
             // count match check
-            const isCheckDisabled = this.validationFlags?.disableTxReceiptsNumberCheck ?? false;
-            if (!isCheckDisabled && (block.block.transactions.length !== receipts.length)) {
+            const disableTxReceiptsNumberCheck = this.validationFlags?.disableTxReceiptsNumberCheck ?? false
+            if (!disableTxReceiptsNumberCheck && (block.block.transactions.length !== receipts.length)) {
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from ${method}`
             } 

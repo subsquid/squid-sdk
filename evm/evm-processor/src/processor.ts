@@ -100,6 +100,10 @@ export interface RpcValidationFlags {
      * Checks if the are no traces for a non-empty block
      */
     disableMissingTracesCheck?:boolean
+    /**
+     * Checks the block hash matches the trace blockHash field
+     */
+    disableTraceBlockHashCheck?:boolean
 }
 
 export interface GatewaySettings {
