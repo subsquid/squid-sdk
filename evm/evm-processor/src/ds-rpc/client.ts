@@ -29,7 +29,7 @@ import {DataRequest} from '../interfaces/data-request'
 import {Block} from '../mapping/entities'
 import {mapBlock} from './mapping'
 import {MappingRequest, toMappingRequest} from './request'
-import {Rpc} from './rpc'
+import {Rpc, ValidationFlags} from './rpc'
 
 
 const NO_REQUEST = toMappingRequest()
@@ -44,8 +44,8 @@ export interface EvmRpcDataSourceOptions {
     useDebugApiForStateDiffs?: boolean
     debugTraceTimeout?: string
     log?: Logger
+    validationFlags?: ValidationFlags
 }
-
 
 export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private rpc: Rpc
@@ -56,10 +56,10 @@ export class EvmRpcDataSource implements HotDataSource<Block, DataRequest> {
     private useDebugApiForStateDiffs?: boolean
     private debugTraceTimeout?: string
     private log?: Logger
-
+    
     constructor(options: EvmRpcDataSourceOptions) {
         this.log = options.log
-        this.rpc = new Rpc(options.rpc, this.log)
+        this.rpc = new Rpc(options.rpc, this.log, options.validationFlags)
         this.finalityConfirmation = options.finalityConfirmation
         this.headPollInterval = options.headPollInterval || 5_000
         this.newHeadTimeout = options.newHeadTimeout || 0

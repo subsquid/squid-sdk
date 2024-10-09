@@ -27,12 +27,6 @@ import {getTxHash, qty2Int, toQty} from './util'
 
 const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
 
-const vConfig = {
-    DISABLE_LOGBLOOM_CHECK: process.env.DISABLE_LOGBLOOM_CHECK === 'true',
-    DISABLE_RECEIPTS_NUMBER_CHECK: process.env.DISABLE_RECEIPTS_NUMBER_CHECK === 'true',
-    DISABLE_MISSING_TRACES_CHECK: process.env.DISABLE_MISSING_TRACES_CHECK === 'true',
-};
-
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
@@ -45,22 +39,46 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
     }
 }
 
+export interface ValidationFlags {
+    /**
+     * Checks the logs list is non-empty if logsBloom is non-zero
+     */
+    disableLogsBloomCheck?: boolean 
+    /**
+     * Checks the tx count matches the number tx receipts
+     */
+    disableTxReceiptsNumberCheck?:boolean,
+    /**
+     * Checks if the are no traces for a non-empty block
+     */
+    disableMissingTracesCheck?:boolean
+}
 
 export class Rpc {
     private props: RpcProps
-
+    
     constructor(
         public readonly client: RpcClient,
         private log?: Logger,
+        private validationFlags: ValidationFlags = {},
         private genesisHeight: number = 0,
         private priority: number = 0,
-        props?: RpcProps
+        props?: RpcProps,
     ) {
         this.props = props || new RpcProps(this.client, this.genesisHeight)
+        if (this.validationFlags.disableLogsBloomCheck) {
+            log?.warn(`Log bloom check is disabled`)
+        }
+        if (this.validationFlags.disableMissingTracesCheck) {
+            log?.warn(`Missing traces check is disabled`)
+        }
+        if (this.validationFlags.disableTxReceiptsNumberCheck) {
+            log?.warn(`Tx recipt number check is disabled`)
+        }
     }
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, this.log, this.genesisHeight, priority, this.props)
+        return new Rpc(this.client, this.log, this.validationFlags, this.genesisHeight, priority, this.props)
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -248,7 +266,7 @@ export class Rpc {
 
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
-            if (!vConfig.DISABLE_LOGBLOOM_CHECK && logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
+            if (!this.validationFlags?.disableLogsBloomCheck && logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
                 block._isInvalid = true
                 block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
             } else {
@@ -362,7 +380,7 @@ export class Rpc {
                     }
                 }
                 block.receipts = receipts
-            } else if (!vConfig.DISABLE_RECEIPTS_NUMBER_CHECK) {
+            } else if (!this.validationFlags?.disableTxReceiptsNumberCheck) {
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from ${method}`
             }
@@ -393,7 +411,7 @@ export class Rpc {
             let rs = receiptsByBlock.get(block.hash) || []
             if (rs.length === block.block.transactions.length) {
                 block.receipts = rs
-            } else if (!vConfig.DISABLE_RECEIPTS_NUMBER_CHECK) {
+            } else if (!this.validationFlags?.disableTxReceiptsNumberCheck) {
                 block._isInvalid = true
                 block._errorMessage = 'failed to get receipts for all transactions'
             }
@@ -468,7 +486,7 @@ export class Rpc {
             let block = blocks[i]
             let frames = results[i]
             if (frames.length == 0) {
-                if (!vConfig.DISABLE_MISSING_TRACES_CHECK && block.block.transactions.length > 0) {
+                if (!this.validationFlags?.disableMissingTracesCheck && block.block.transactions.length > 0) {
                     block._isInvalid = true
                     block._errorMessage = 'missing traces for some transactions'
                 }
