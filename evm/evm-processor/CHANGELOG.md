@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 20 Sep 2024 15:57:10 GMT and should not be manually modified.
+This log was last generated on Wed, 09 Oct 2024 18:06:03 GMT and should not be manually modified.
+
+## 1.22.0
+Wed, 09 Oct 2024 18:06:03 GMT
+
+### Minor changes
+
+- Introduce flags to make the RPC data validation checks optional
 
 ## 1.21.2
 Fri, 20 Sep 2024 15:57:10 GMT
