@@ -80,8 +80,31 @@ export interface RpcDataIngestionSettings {
      * Disable RPC data ingestion entirely
      */
     disabled?: boolean
+
+    /**
+     * Flags to switch off the data consistency checks
+     */
+    validationFlags?: RpcValidationFlags 
 }
 
+export interface RpcValidationFlags {
+    /**
+     * Checks the logs list is non-empty if logsBloom is non-zero
+     */
+    disableLogsBloomCheck?: boolean 
+    /**
+     * Checks the tx count matches the number tx receipts
+     */
+    disableTxReceiptsNumberCheck?:boolean,
+    /**
+     * Checks if the are no traces for a non-empty block
+     */
+    disableMissingTracesCheck?:boolean
+    /**
+     * Checks the block hash matches the trace blockHash field
+     */
+    disableTraceBlockHashCheck?:boolean
+}
 
 export interface GatewaySettings {
     /**
@@ -466,6 +489,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             debugTraceTimeout: this.rpcIngestSettings?.debugTraceTimeout,
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
+            validationFlags: this.rpcIngestSettings?.validationFlags,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }
