@@ -28,9 +28,9 @@ import {getTxHash, qty2Int, toQty} from './util'
 const NO_LOGS_BLOOM = '0x'+Buffer.alloc(256).toString('hex')
 
 const vConfig = {
-    DISABLE_LOGBLOOM_CHECK: process.env.DISABLE_LOGBLOOM_CHECK === true,
-    DISABLE_RECEIPTS_NUMBER_CHECK: process.env.DISABLE_RECEIPTS_NUMBER_CHECK === true,
-    DISABLE_MISSING_TRACES_CHECK: process.env.DISABLE_MISSING_TRACES_CHECK === true,
+    DISABLE_LOGBLOOM_CHECK: process.env.DISABLE_LOGBLOOM_CHECK === 'true',
+    DISABLE_RECEIPTS_NUMBER_CHECK: process.env.DISABLE_RECEIPTS_NUMBER_CHECK === 'true',
+    DISABLE_MISSING_TRACES_CHECK: process.env.DISABLE_MISSING_TRACES_CHECK === 'true',
 };
 
 
