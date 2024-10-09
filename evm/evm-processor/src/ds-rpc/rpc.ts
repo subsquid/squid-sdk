@@ -39,7 +39,8 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
     }
 }
 
-export interface ValidationFlags {
+
+export interface RpcValidationFlags {
     /**
      * Checks the logs list is non-empty if logsBloom is non-zero
      */
@@ -47,16 +48,21 @@ export interface ValidationFlags {
     /**
      * Checks the tx count matches the number tx receipts
      */
-    disableTxReceiptsNumberCheck?:boolean,
+    disableTxReceiptsNumberCheck?: boolean,
     /**
      * Checks if the are no traces for a non-empty block
      */
-    disableMissingTracesCheck?:boolean
+    disableMissingTracesCheck?: boolean
     /**
      * Checks the block hash matches the trace blockHash field
      */
-    disableTraceBlockHashCheck?:boolean
+    disableTraceBlockHashCheck?: boolean
+    /**
+     * Checks the block hash matches the tx receipt blockHash field
+     */
+    disableTxReceiptBlockHashCheck?: boolean
 }
+
 
 export class Rpc {
     private props: RpcProps
@@ -64,25 +70,25 @@ export class Rpc {
     constructor(
         public readonly client: RpcClient,
         private log?: Logger,
-        private validationFlags: ValidationFlags = {},
+        private validation: RpcValidationFlags = {},
         private genesisHeight: number = 0,
         private priority: number = 0,
         props?: RpcProps,
     ) {
         this.props = props || new RpcProps(this.client, this.genesisHeight)
-        if (this.validationFlags.disableLogsBloomCheck) {
+        if (this.validation.disableLogsBloomCheck) {
             log?.warn(`Log bloom check is disabled`)
         }
-        if (this.validationFlags.disableMissingTracesCheck) {
+        if (this.validation.disableMissingTracesCheck) {
             log?.warn(`Missing traces check is disabled`)
         }
-        if (this.validationFlags.disableTxReceiptsNumberCheck) {
-            log?.warn(`Tx recipt number check is disabled`)
+        if (this.validation.disableTxReceiptsNumberCheck) {
+            log?.warn(`Tx receipt number check is disabled`)
         }
     }
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, this.log, this.validationFlags, this.genesisHeight, priority, this.props)
+        return new Rpc(this.client, this.log, this.validation, this.genesisHeight, priority, this.props)
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -272,8 +278,7 @@ export class Rpc {
             let logs = logsByBlock.get(block.hash) || []
             block.logs = logs
 
-            const isCheckDisabled = this.validationFlags?.disableLogsBloomCheck ?? false
-            if (!isCheckDisabled && (logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM)) {
+            if (!this.validation.disableLogsBloomCheck && (logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM)) {
                 block._isInvalid = true
                 block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
             } 
@@ -382,19 +387,19 @@ export class Rpc {
 
             block.receipts = receipts
             
-            //block hash check
-            for (let receipt of receipts) {
-                const disableTraceBlockHashCheck = this.validationFlags?.disableTraceBlockHashCheck ?? false       
-                if (!disableTraceBlockHashCheck && (receipt.blockHash !== block.hash)) {
-                    // for the hash mismatch, fail anyway
-                    block._isInvalid = true
-                    block._errorMessage = `${method} returned receipts for a different block`
+            // block hash check
+            if (!this.validation.disableTxReceiptBlockHashCheck) {
+                for (let receipt of receipts) {
+                    if (receipt.blockHash !== block.hash) {
+                        // for the hash mismatch, fail anyway
+                        block._isInvalid = true
+                        block._errorMessage = `${method} returned receipts for a different block`
+                    }
                 }
             }
 
             // count match check
-            const disableTxReceiptsNumberCheck = this.validationFlags?.disableTxReceiptsNumberCheck ?? false
-            if (!disableTxReceiptsNumberCheck && (block.block.transactions.length !== receipts.length)) {
+            if (!this.validation.disableTxReceiptsNumberCheck && (block.block.transactions.length !== receipts.length)) {
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from ${method}`
             } 
@@ -426,8 +431,7 @@ export class Rpc {
             let rs = receiptsByBlock.get(block.hash) || []
             block.receipts = rs
 
-            const isCheckDisabled = this.validationFlags?.disableTxReceiptsNumberCheck ?? false       
-            if (!isCheckDisabled && (rs.length !== block.block.transactions.length)) {
+            if (!this.validation.disableTxReceiptsNumberCheck && (rs.length !== block.block.transactions.length)) {
                 block._isInvalid = true
                 block._errorMessage = 'failed to get receipts for all transactions'
             }
@@ -504,9 +508,7 @@ export class Rpc {
             let frames = results[i]
             
             if (frames.length == 0) {
-                const isCheckDisabled = this.validationFlags?.disableMissingTracesCheck ?? false
-
-                if (!isCheckDisabled && (block.block.transactions.length > 0)) {
+                if (!this.validation.disableMissingTracesCheck && (block.block.transactions.length > 0)) {
                     block._isInvalid = true
                     block._errorMessage = 'missing traces for some transactions'
                 }
@@ -514,10 +516,10 @@ export class Rpc {
             }  
             
             for (let frame of frames) {
-                if (frame.blockHash !== block.hash) {
-                        block._isInvalid = true
-                        block._errorMessage = 'trace_block returned a trace of a different block'
-                        break
+                if (!this.validation.disableTraceBlockHashCheck && frame.blockHash !== block.hash) {
+                    block._isInvalid = true
+                    block._errorMessage = 'trace_block returned a trace of a different block'
+                    break
                 }
 
                 if (!block._isInvalid) {

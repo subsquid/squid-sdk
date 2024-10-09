@@ -13,6 +13,7 @@ import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
 import {getFieldSelectionValidator} from './mapping/selection'
+import {RpcValidationFlags} from './ds-rpc/rpc'
 
 
 export interface RpcEndpointSettings {
@@ -87,24 +88,6 @@ export interface RpcDataIngestionSettings {
     validationFlags?: RpcValidationFlags 
 }
 
-export interface RpcValidationFlags {
-    /**
-     * Checks the logs list is non-empty if logsBloom is non-zero
-     */
-    disableLogsBloomCheck?: boolean 
-    /**
-     * Checks the tx count matches the number tx receipts
-     */
-    disableTxReceiptsNumberCheck?:boolean,
-    /**
-     * Checks if the are no traces for a non-empty block
-     */
-    disableMissingTracesCheck?:boolean
-    /**
-     * Checks the block hash matches the trace blockHash field
-     */
-    disableTraceBlockHashCheck?:boolean
-}
 
 export interface GatewaySettings {
     /**
