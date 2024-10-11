@@ -9,12 +9,22 @@ import {Store} from './store'
 
 export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
 
+export type BlockHooks = {
+    onRollback(ctx: RollbackContext): Promise<void>
+    onHeadChange(block: HashAndHeight): Promise<void>
+}
+
+export type RollbackContext = {
+    oldChain: HashAndHeight[],
+    newChain: HashAndHeight[]
+}
 
 export interface TypeormDatabaseOptions {
     supportHotBlocks?: boolean
     isolationLevel?: IsolationLevel
     stateSchema?: string
     projectDir?: string
+    hooks?: BlockHooks
 }
 
 
@@ -23,7 +33,7 @@ export class TypeormDatabase {
     private isolationLevel: IsolationLevel
     private con?: DataSource
     private projectDir: string
-
+    private hooks?: BlockHooks
     public readonly supportsHotBlocks: boolean
 
     constructor(options?: TypeormDatabaseOptions) {
@@ -31,6 +41,7 @@ export class TypeormDatabase {
         this.isolationLevel = options?.isolationLevel || 'SERIALIZABLE'
         this.supportsHotBlocks = options?.supportHotBlocks !== false
         this.projectDir = options?.projectDir || process.cwd()
+        this.hooks = options?.hooks || undefined
     }
 
     async connect(): Promise<DatabaseState> {
@@ -131,6 +142,7 @@ export class TypeormDatabase {
                 let block = state.top[i]
                 await rollbackBlock(this.statusSchema, em, block.height)
             }
+            await this.hooks?.onRollback({oldChain: [prev], newChain: [next]})
 
             await this.performUpdates(cb, em)
 
@@ -165,6 +177,7 @@ export class TypeormDatabase {
             for (let i = chain.length - 1; i >= rollbackPos; i--) {
                 await rollbackBlock(this.statusSchema, em, chain[i].height)
             }
+            await this.hooks?.onRollback({oldChain: chain, newChain: info.newBlocks})
 
             if (info.newBlocks.length) {
                 let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
@@ -182,6 +195,7 @@ export class TypeormDatabase {
                         new ChangeTracker(em, this.statusSchema, b.height)
                     )
                 }
+                await this.hooks?.onHeadChange(info.newBlocks[info.newBlocks.length - 1])
             }
 
             chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
