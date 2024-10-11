@@ -10,8 +10,8 @@ import {Store} from './store'
 export type IsolationLevel = 'SERIALIZABLE' | 'READ COMMITTED' | 'REPEATABLE READ'
 
 export type BlockHooks = {
-    onRollback(ctx: RollbackContext): Promise<void>
-    onHeadChange(block: HashAndHeight): Promise<void>
+    onRollback?(ctx: RollbackContext): Promise<void>
+    onHeadChange?(block: HashAndHeight): Promise<void>
 }
 
 export type RollbackContext = {
@@ -34,7 +34,7 @@ export class TypeormDatabase {
     private con?: DataSource
     private projectDir: string
     private hooks?: BlockHooks
-    
+
     public readonly supportsHotBlocks: boolean
 
     constructor(options?: TypeormDatabaseOptions) {
