@@ -139,12 +139,17 @@ export class TypeormDatabase {
             assert(prev.height < next.height)
             assert(prev.hash != next.hash)
 
+            let rollbackedBlocks = []
+
             for (let i = state.top.length - 1; i >= 0; i--) {
                 let block = state.top[i]
                 await rollbackBlock(this.statusSchema, em, block.height)
+                rollbackedBlocks.push(block)
             }
-            await this.hooks?.onRollback({oldChain: [prev], newChain: [next]})
 
+            if (this.hooks?.onRollback && rollbackedBlocks.length > 0) {
+                this.hooks?.onRollback({ oldChain: rollbackedBlocks, newChain: [next] })
+            }
             await this.performUpdates(cb, em)
 
             await this.updateStatus(em, state.nonce, next)
@@ -175,8 +180,15 @@ export class TypeormDatabase {
 
             let rollbackPos = info.baseHead.height + 1 - chain[0].height
 
+            let rollbackedBlocks = []
+
             for (let i = chain.length - 1; i >= rollbackPos; i--) {
                 await rollbackBlock(this.statusSchema, em, chain[i].height)
+                rollbackedBlocks.push(chain[i])
+            }
+
+            if (this.hooks?.onRollback && rollbackedBlocks.length > 0) {
+                this.hooks?.onRollback({ oldChain: rollbackedBlocks, newChain: info.newBlocks })
             }
             await this.hooks?.onRollback({oldChain: chain, newChain: info.newBlocks})
 
@@ -196,7 +208,9 @@ export class TypeormDatabase {
                         new ChangeTracker(em, this.statusSchema, b.height)
                     )
                 }
-                await this.hooks?.onHeadChange(info.newBlocks[info.newBlocks.length - 1])
+                if (this.hooks?.onHeadChange) {
+                    this.hooks?.onHeadChange(info.newBlocks[info.newBlocks.length - 1])
+                }
             }
 
             chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
