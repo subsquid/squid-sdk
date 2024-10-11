@@ -34,6 +34,7 @@ export class TypeormDatabase {
     private con?: DataSource
     private projectDir: string
     private hooks?: BlockHooks
+    
     public readonly supportsHotBlocks: boolean
 
     constructor(options?: TypeormDatabaseOptions) {
