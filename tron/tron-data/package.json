@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-data",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Data fetcher for tron based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
