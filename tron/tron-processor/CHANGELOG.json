@@ -2,6 +2,26 @@
   "name": "@subsquid/tron-processor",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/tron-processor_v0.0.1",
+      "date": "Tue, 15 Oct 2024 07:22:30 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle transactions with no logs"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/tron-normalization\" from `^0.0.0` to `0.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/tron-processor_v0.0.0",
       "date": "Mon, 07 Oct 2024 08:48:33 GMT",
