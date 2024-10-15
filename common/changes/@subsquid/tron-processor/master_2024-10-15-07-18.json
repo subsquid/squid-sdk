@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-processor",
+      "comment": "handle transactions with no logs",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/tron-processor"
+}

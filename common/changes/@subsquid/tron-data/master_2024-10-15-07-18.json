@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-data",
+      "comment": "fix missing transactions info",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/tron-data"
+}

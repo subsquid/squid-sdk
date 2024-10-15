@@ -121,7 +121,7 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
     let include = new IncludeSet()
 
     let transactions = new Map(block.transactions.map(tx => [tx.transactionIndex, tx]))
-    let internalTxByTx = groupBy(block.internalTransactions, input => input.transactionIndex)
+    let internalTxByTx = groupBy(block.internalTransactions, internalTx => internalTx.transactionIndex)
     let logsByTx = groupBy(block.logs, log => log.transactionIndex)
 
     if (items.logs.present()) {
@@ -142,13 +142,13 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             if (rel == null) continue
             include.addTransaction(tx)
             if (rel.logs) {
-                let logs = assertNotNull(logsByTx.get(tx.transactionIndex))
+                let logs = logsByTx.get(tx.transactionIndex) ?? []
                 for (let log of logs) {
                     include.addLog(log)
                 }
             }
             if (rel.internalTransactions) {
-                let internalTxs = assertNotNull(internalTxByTx.get(tx.transactionIndex))
+                let internalTxs = internalTxByTx.get(tx.transactionIndex) ?? []
                 for (let internalTx of internalTxs) {
                     include.addInternalTransaction(internalTx)
                 }

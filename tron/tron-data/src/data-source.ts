@@ -189,7 +189,7 @@ export class HttpDataSource {
         }
 
         if (req.request.transactionsInfo) {
-            this.addTransactionsInfo(blocks)
+            await this.addTransactionsInfo(blocks)
         }
 
         return blocks
