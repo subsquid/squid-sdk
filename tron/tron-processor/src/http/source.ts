@@ -64,18 +64,49 @@ export class HttpDataSource implements HotDataSource<Block, DataRequest> {
 
 
 function toRawDataRequest(req: DataRequest): base.DataRequest {
+    let transactions = !!req.transactions?.length ||
+        !!req.logs?.length ||
+        !!req.internalTransactions?.length ||
+        !!req.transferTransactions?.length ||
+        !!req.transferAssetTransactions?.length ||
+        !!req.triggerSmartContractTransactions?.length
     return {
-        transactions: !!req.transactions?.length ||
+        transactions,
+        transactionsInfo: (transactions && isRequested(TX_INFO_FIELDS, req.fields?.transaction)) ||
             !!req.logs?.length ||
-            !!req.internalTransactions?.length ||
-            !!req.transferTransactions?.length ||
-            !!req.transferAssetTransactions?.length ||
-            !!req.triggerSmartContractTransactions?.length,
-        transactionsInfo: !!req.logs?.length ||
             !!req.internalTransactions?.length ||
             !!req.transactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
             !!req.transferTransactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
             !!req.transferAssetTransactions?.some(req => req.include?.internalTransactions || req.include?.logs) ||
             !!req.triggerSmartContractTransactions?.some(req => req.include?.internalTransactions || req.include?.logs)
     }
+}
+
+
+const TX_INFO_FIELDS = {
+    contractResult: true,
+    contractAddress: true,
+    resMessage: true,
+    result: true,
+    fee: true,
+    withdrawAmount: true,
+    unfreezeAmount: true,
+    withdrawExpireAmount: true,
+    energyFee: true,
+    energyUsage: true,
+    energyUsageTotal: true,
+    netUsage: true,
+    netFee: true,
+    originEnergyUsage: true,
+    energyPenaltyTotal: true,
+    cancelUnfreezeV2Amount: true
+}
+
+
+function isRequested(set: Record<string, boolean>, selection?: Record<string, boolean>): boolean {
+    if (selection == null) return false
+    for (let key in selection) {
+        if (set[key] && selection[key]) return true
+    }
+    return false
 }

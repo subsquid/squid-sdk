@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-processor",
+      "comment": "fix missing transaction fields",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/tron-processor"
+}
