@@ -2,6 +2,18 @@
   "name": "@subsquid/tron-processor",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/tron-processor_v0.0.2",
+      "date": "Fri, 18 Oct 2024 11:14:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix missing transaction fields"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/tron-processor_v0.0.1",
       "date": "Tue, 15 Oct 2024 07:22:30 GMT",
