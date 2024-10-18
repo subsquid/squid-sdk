@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-processor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Data fetcher and mappings executor for tron chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
