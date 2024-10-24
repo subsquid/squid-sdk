@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.22.1",
+      "tag": "@subsquid/evm-processor_v1.22.1",
+      "date": "Thu, 24 Oct 2024 16:06:57 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow empty init in create trace"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.22.0",
       "tag": "@subsquid/evm-processor_v1.22.0",
       "date": "Wed, 09 Oct 2024 18:06:03 GMT",

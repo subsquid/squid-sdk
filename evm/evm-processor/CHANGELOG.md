@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 09 Oct 2024 18:06:03 GMT and should not be manually modified.
+This log was last generated on Thu, 24 Oct 2024 16:06:57 GMT and should not be manually modified.
+
+## 1.22.1
+Thu, 24 Oct 2024 16:06:57 GMT
+
+### Patches
+
+- allow empty init in create trace
 
 ## 1.22.0
 Wed, 09 Oct 2024 18:06:03 GMT
