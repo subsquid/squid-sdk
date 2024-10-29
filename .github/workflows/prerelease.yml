@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: beta
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
         
       - name: Configure git user
@@ -26,6 +26,6 @@ jobs:
       - name: Publish npm packages
         run: |
           commit_hash=$(git rev-parse HEAD)
-          node common/scripts/install-run-rush.js publish --apply --version-policy npm --partial-prerelease --publish --tag beta --prerelease-name beta.${commit_hash::6}
+          node common/scripts/install-run-rush.js publish --apply --version-policy npm --partial-prerelease --publish --tag ${{ github.ref_name }} --prerelease-name ${{ github.ref_name }}.${commit_hash::6}
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
