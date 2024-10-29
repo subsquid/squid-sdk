@@ -138,6 +138,7 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
 
 class InstructionParser {
     private pos = 0
+    private innerPos = -1
     private messages: Message[]
     private messagePos = 0
     private messagesTruncated = false
@@ -396,7 +397,14 @@ class InstructionParser {
             address[stackHeight - 1] = 0
         }
 
+        if (stackHeight === 1) {
+            this.innerPos = -1
+        } else {
+            this.innerPos++
+        }
+
         let i: Instruction = {
+            innerInstructionIndex: this.innerPos,
             transactionIndex: this.tx.transactionIndex,
             instructionAddress: address,
             programId: this.getAccount(src.programIdIndex),
