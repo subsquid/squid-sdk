@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-abi
 
-This log was last generated on Thu, 20 Jun 2024 11:25:19 GMT and should not be manually modified.
+This log was last generated on Wed, 04 Sep 2024 13:19:03 GMT and should not be manually modified.
+
+## 0.3.1
+Wed, 04 Sep 2024 13:19:03 GMT
+
+### Patches
+
+- fix topics count mismatch error message
 
 ## 0.3.0
 Thu, 20 Jun 2024 11:25:19 GMT

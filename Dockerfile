@@ -56,6 +56,24 @@ COPY --from=substrate-metadata-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/substrate/substrate-metadata-service/bin/run.js"]
 
 
+FROM builder AS tron-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/tron-dump
+
+
+FROM node AS tron-dump
+COPY --from=tron-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/tron/tron-dump/bin/run.js"]
+
+
+FROM builder AS tron-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/tron-ingest
+
+
+FROM node AS tron-ingest
+COPY --from=tron-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/tron/tron-ingest/bin/run.js"]
+
+
 FROM builder AS fuel-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump
 

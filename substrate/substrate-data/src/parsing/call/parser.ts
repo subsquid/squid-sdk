@@ -327,7 +327,7 @@ export class CallParser {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
                 if (event.extrinsicIndex !== this.extrinsic.index) {
-                    if (event.name.startsWith('Migrations.')) {
+                    if (event.name.includes('Migrations.')) {
                         let index = assertNotNull(event.extrinsicIndex)
                         // Besides `Migrations.*` events there can be more parachain-defined events,
                         // so we skip all events related to the "phantom" extrinsic.

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Mon, 23 Sep 2024 17:53:43 GMT and should not be manually modified.
+
+## 0.3.0
+Mon, 23 Sep 2024 17:53:43 GMT
+
+### Minor changes
+
+- add alias types support
 
 ## 0.2.1
 Thu, 25 Jul 2024 11:48:18 GMT

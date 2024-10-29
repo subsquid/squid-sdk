@@ -1,6 +1,27 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Thu, 03 Oct 2024 16:36:15 GMT and should not be manually modified.
+
+## 5.2.0
+Thu, 03 Oct 2024 16:36:15 GMT
+
+### Minor changes
+
+- add `ID` scalar to `thegraph` dialect
+
+## 5.1.1
+Fri, 06 Sep 2024 16:29:32 GMT
+
+### Patches
+
+- extend `thegraph` dialect fk filter with more conditions
+
+## 5.1.0
+Fri, 06 Sep 2024 16:04:52 GMT
+
+### Minor changes
+
+- extend thegraph fk filter with `_in` condition
 
 ## 5.0.0
 Thu, 25 Jul 2024 11:48:18 GMT

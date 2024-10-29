@@ -1,6 +1,20 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Sep 2024 15:57:10 GMT and should not be manually modified.
+
+## 4.9.0
+Fri, 20 Sep 2024 15:57:10 GMT
+
+### Minor changes
+
+- use unfinalized height in processor status resolver
+
+## 4.8.0
+Tue, 17 Sep 2024 15:46:44 GMT
+
+### Minor changes
+
+- add request object to check plugin context
 
 ## 4.7.0
 Thu, 25 Jul 2024 11:48:18 GMT

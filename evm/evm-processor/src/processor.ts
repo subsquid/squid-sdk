@@ -13,6 +13,7 @@ import {Chain} from './interfaces/chain'
 import {BlockData, DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './interfaces/data-request'
 import {getFieldSelectionValidator} from './mapping/selection'
+import {RpcValidationFlags} from './ds-rpc/rpc'
 
 
 export interface RpcEndpointSettings {
@@ -80,6 +81,11 @@ export interface RpcDataIngestionSettings {
      * Disable RPC data ingestion entirely
      */
     disabled?: boolean
+
+    /**
+     * Flags to switch off the data consistency checks
+     */
+    validationFlags?: RpcValidationFlags 
 }
 
 
@@ -466,6 +472,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             debugTraceTimeout: this.rpcIngestSettings?.debugTraceTimeout,
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
+            validationFlags: this.rpcIngestSettings?.validationFlags,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }

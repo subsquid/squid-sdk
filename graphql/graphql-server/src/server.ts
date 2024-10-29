@@ -15,7 +15,7 @@ import {isTsNode} from '@subsquid/util-internal-ts-node'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
-import {GraphQLInt, GraphQLObjectType, GraphQLSchema} from 'graphql'
+import {GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
 import Keyv from 'keyv'
 import * as path from 'path'
 import {Pool} from 'pg'
@@ -128,13 +128,29 @@ export class Server {
     @def
     private squidStatusSchema(): GraphQLSchema {
         let statusQuery = {
-            sql: `SELECT height FROM squid_processor.status WHERE id = 0`,
+            sql: `
+                SELECT
+                    f.height AS "finalizedHeight",
+                    f.hash AS "finalizedHash",
+                    COALESCE(h.height, f.height) AS "height",
+                    COALESCE(h.hash, f.hash) AS "hash"
+                FROM squid_processor.status AS f
+                FULL JOIN (
+                    SELECT hash, height FROM squid_processor.hot_block
+                    ORDER BY height DESC
+                    LIMIT 1)
+                AS h ON TRUE
+                WHERE f.id = 0`,
             params: [],
-            map(rows: any[][]): {height: number} {
+            map(rows: any[][]): {finalizedHeight: number; finalizedHash: string; height: number; hash: string} {
                 assert(rows.length == 1)
-                let height = parseInt(rows[0][0], 10)
-                return {height}
-            }
+                return {
+                    finalizedHeight: parseInt(rows[0][0], 10),
+                    finalizedHash: rows[0][1],
+                    height: parseInt(rows[0][2], 10),
+                    hash: rows[0][3],
+                }
+            },
         }
 
         return new GraphQLSchema({
@@ -147,8 +163,20 @@ export class Server {
                             fields: {
                                 height: {
                                     type: GraphQLInt,
-                                    description: 'The height of the processed part of the chain'
-                                }
+                                    description: 'The height of the last processed block',
+                                },
+                                hash: {
+                                    type: GraphQLString,
+                                    description: 'The hash of the last processed block',
+                                },
+                                finalizedHeight: {
+                                    type: GraphQLInt,
+                                    description: 'The height of the last processed finalized block',
+                                },
+                                finalizedHash: {
+                                    type: GraphQLString,
+                                    description: 'The hash of the last processed finalized block',
+                                },
                             }
                         }),
                         resolve(source, args, context: Context) {

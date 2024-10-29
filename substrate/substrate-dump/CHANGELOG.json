@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.5.1",
+      "tag": "@subsquid/substrate-dump_v0.5.1",
+      "date": "Mon, 07 Oct 2024 08:48:33 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^0.4.0` to `1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.0",
       "tag": "@subsquid/substrate-dump_v0.5.0",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

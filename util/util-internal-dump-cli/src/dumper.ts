@@ -165,10 +165,13 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                 if (blocks[0].height === from && prevHash) {
                     let parentHash = getShortHash(this.getPrevBlockHash(blocks[0]))
                     if (parentHash !== prevHash) {
-                        throw new ErrorMessage(
-                            `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
-                            `is not a child of already archived block ${parentHash}`
-                        )
+                        let fallbackHash = getShortHashFallback(this.getPrevBlockHash(blocks[0]))
+                        if (fallbackHash !== prevHash) {
+                            throw new ErrorMessage(
+                                `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
+                                `is not a child of already archived block ${parentHash}`
+                            )
+                        }
                     }
                 }
             }
@@ -231,5 +234,14 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
 export class ErrorMessage extends Error {
     constructor(msg: string) {
         super(msg)
+    }
+}
+
+
+function getShortHashFallback(hash: string) {
+    if (hash.startsWith('0x')) {
+        return hash.slice(2, 8)
+    } else {
+        return hash.slice(0, 5)
     }
 }

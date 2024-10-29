@@ -85,6 +85,13 @@ export class Transaction {
     type?: number
     status?: number
     sighash?: Bytes
+    l1Fee?: bigint
+    l1FeeScalar?: number
+    l1GasPrice?: bigint
+    l1GasUsed?: bigint
+    l1BlobBaseFee?: bigint
+    l1BlobBaseFeeScalar?: number
+    l1BaseFeeScalar?: number
     #block: BlockHeader
     #logs?: Log[]
     #traces?: Trace[]

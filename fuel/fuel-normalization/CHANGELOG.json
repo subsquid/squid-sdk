@@ -2,6 +2,21 @@
   "name": "@subsquid/fuel-normalization",
   "entries": [
     {
+      "version": "1.2.1",
+      "tag": "@subsquid/fuel-normalization_v1.2.1",
+      "date": "Wed, 21 Aug 2024 09:10:53 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/fuel-data\" from `^1.1.0` to `1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.5.0` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.0",
       "tag": "@subsquid/fuel-normalization_v1.2.0",
       "date": "Fri, 16 Aug 2024 12:58:34 GMT",

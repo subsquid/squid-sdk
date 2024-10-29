@@ -1,6 +1,41 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 09 Aug 2024 13:17:49 GMT and should not be manually modified.
+This log was last generated on Thu, 24 Oct 2024 16:06:57 GMT and should not be manually modified.
+
+## 1.22.1
+Thu, 24 Oct 2024 16:06:57 GMT
+
+### Patches
+
+- allow empty init in create trace
+
+## 1.22.0
+Wed, 09 Oct 2024 18:06:03 GMT
+
+### Minor changes
+
+- Introduce flags to make the RPC data validation checks optional
+
+## 1.21.2
+Fri, 20 Sep 2024 15:57:10 GMT
+
+### Patches
+
+- change type of `debugState.nonce` to `NAT`
+
+## 1.21.1
+Thu, 22 Aug 2024 09:03:21 GMT
+
+### Patches
+
+- traces: allow suicide calls to zero address
+
+## 1.21.0
+Wed, 21 Aug 2024 09:10:53 GMT
+
+### Minor changes
+
+- extend transaction with 'l1'-prefixed fields
 
 ## 1.20.0
 Fri, 09 Aug 2024 13:17:49 GMT

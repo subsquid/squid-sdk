@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-normalization",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Solana data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,9 +16,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/solana-rpc-data": "^0.0.1",
+    "@subsquid/solana-rpc-data": "^0.0.2",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-validation": "^0.5.0"
+    "@subsquid/util-internal-validation": "^0.6.0"
 
   },
   "devDependencies": {

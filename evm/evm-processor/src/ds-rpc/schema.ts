@@ -125,7 +125,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
 
     let Call = object({
         ...base,
-        to: BYTES,
+        to: withDefault('0x0000000000000000000000000000000000000000', BYTES),
         input: BYTES,
         ...project({
             from: fields?.callFrom,
@@ -144,7 +144,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
 
     let Suicide = object({
         ...base,
-        to: BYTES,
+        to: withDefault('0x0000000000000000000000000000000000000000', BYTES),
         ...project({
             from: fields?.suicideAddress,
             value: fields?.suicideBalance

@@ -118,7 +118,12 @@ export type IdlTypeDefTyEnum = {
     variants: IdlEnumVariant[]
 }
 
-type IdlTypeDefTy = IdlTypeDefTyEnum | IdlTypeDefTyStruct
+export type IdlTypeDefTyAlias = {
+    kind: 'alias'
+    value: IdlType
+}
+
+type IdlTypeDefTy = IdlTypeDefTyEnum | IdlTypeDefTyStruct | IdlTypeDefTyAlias
 
 type IdlTypeDefStruct = Array<IdlField>
 
@@ -417,6 +422,11 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                           primitive: 'unit',
                       },
             }
+        case 'alias':
+            return {
+                name: typeDef.name,
+                type: fromType(typeDef.type.value),
+            };
         default:
             throw unexpectedCase(JSON.stringify(typeDef))
     }

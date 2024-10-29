@@ -1,3 +1,4 @@
+import {LogLevel, createLogger} from '@subsquid/logger'
 import {HttpClient} from '@subsquid/http-client'
 import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {RangeRequest, SplitRequest} from '@subsquid/util-internal-range'
@@ -6,6 +7,9 @@ import {wait} from '@subsquid/util-internal'
 import assert from 'assert'
 import {BlockData, Blocks, LatestBlockHeight, GetBlockHash, DataRequest, GetBlockHeader, BlockHeader} from './raw-data'
 import {getLatestBlockQuery, getBlockHashQuery, getBlockHeaderQuery, getBlocksQuery} from './query'
+
+
+const log = createLogger('sqd:fuel-data')
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
@@ -113,13 +117,18 @@ export class HttpDataSource {
 
     private async retry<T>(request: () => Promise<T>): Promise<T> {
         let retries = 0
-        let pause = 200
+        let retrySchedule = [200, 500, 1000, 2000, 3000]
         while (true) {
             try {
                 return await request()
             } catch(err: any) {
-                if (err instanceof BlocksConsistencyError && retries < 3) {
+                if (err instanceof BlocksConsistencyError) {
+                    let pause = retrySchedule[retries] || retrySchedule[retrySchedule.length - 1]
                     retries += 1
+                    log.write(
+                        retries >= 5 ? LogLevel.WARN : LogLevel.DEBUG,
+                        `Block consistency error occured. Trying again in ${pause} ms`
+                    )
                     await wait(pause)
                 } else {
                     throw err

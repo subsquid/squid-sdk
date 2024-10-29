@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-archive-layout
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 07 Oct 2024 08:48:33 GMT
+
+### Breaking changes
+
+- make getShortHash use last bytes
 
 ## 0.4.1
 Thu, 25 Jul 2024 11:48:18 GMT

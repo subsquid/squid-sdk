@@ -1,6 +1,11 @@
 # Change Log - @subsquid/fuel-stream
 
-This log was last generated on Fri, 31 May 2024 11:43:17 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Aug 2024 09:10:53 GMT and should not be manually modified.
+
+## 1.0.2
+Wed, 21 Aug 2024 09:10:53 GMT
+
+_Version update only_
 
 ## 1.0.1
 Fri, 31 May 2024 11:43:17 GMT

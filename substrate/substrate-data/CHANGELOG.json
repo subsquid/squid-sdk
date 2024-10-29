@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.2.1",
+      "tag": "@subsquid/substrate-data_v4.2.1",
+      "date": "Mon, 07 Oct 2024 15:13:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle events from `MultiBlockMigrations` pallet"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.0",
       "tag": "@subsquid/substrate-data_v4.2.0",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

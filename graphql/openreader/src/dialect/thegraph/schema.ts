@@ -4,6 +4,7 @@ import assert from 'assert'
 import {
     GraphQLBoolean,
     GraphQLEnumType,
+    GraphQLError,
     GraphQLFieldConfig,
     GraphQLFloat,
     GraphQLInputObjectType,
@@ -19,6 +20,7 @@ import {
     GraphQLSchema,
     GraphQLString,
     GraphQLUnionType,
+    Kind,
 } from 'graphql'
 import {
     GraphQLEnumValueConfigMap,
@@ -40,6 +42,20 @@ import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {GqlFieldMap, SchemaOptions} from '../common'
 import {toPlural} from './locale'
 
+const GraphQLID = new GraphQLScalarType({
+    name: 'ID',
+    serialize: GraphQLString.serialize,
+    parseValue: GraphQLString.parseValue,
+    parseLiteral: function parseLiteral(valueNode) {
+        if (valueNode.kind !== Kind.STRING) {
+            throw new GraphQLError('ID cannot represent a non-string value: ' + valueNode, valueNode)
+        }
+
+        return valueNode.value
+    },
+})
+
+
 export class SchemaBuilder {
     private model: Model
     private types = new Map<string, GraphQLOutputType>()
@@ -55,6 +71,7 @@ export class SchemaBuilder {
     private get(name: string, kind?: Type<any>): GraphQLOutputType {
         switch (name) {
             case 'ID':
+                return GraphQLID
             case 'String':
                 return GraphQLString
             case 'Int':
@@ -299,17 +316,44 @@ export class SchemaBuilder {
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
             case 'fk':
-            case 'lookup':
+                // TODO: needs to be changed in case if we support non-string ids
+                let type = GraphQLString
+                let listType = new GraphQLList(new GraphQLNonNull(type))
+
+                fields[`${key}`] = {type}
+                fields[`${key}_not`] = {type}
+                fields[`${key}_gt`] = {type}
+                fields[`${key}_gte`] = {type}
+                fields[`${key}_lt`] = {type}
+                fields[`${key}_lte`] = {type}
+                fields[`${key}_in`] = {type: listType}
+                fields[`${key}_not_in`] = {type: listType}
+                fields[`${key}_contains`] = {type}
+                fields[`${key}_not_contains`] = {type}
+                fields[`${key}_contains_nocase`] = {type}
+                fields[`${key}_not_contains_nocase`] = {type}
+                fields[`${key}_starts_with`] = {type}
+                fields[`${key}_starts_with_nocase`] = {type}
+                fields[`${key}_not_starts_with`] = {type}
+                fields[`${key}_not_starts_with_nocase`] = {type}
+                fields[`${key}_ends_with`] = {type}
+                fields[`${key}_ends_with_nocase`] = {type}
+                fields[`${key}_not_ends_with`] = {type}
+                fields[`${key}_not_ends_with_nocase`] = {type}
                 fields[`${key}_is_null`] = {type: GraphQLBoolean}
                 fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
                 break
-            case 'list-lookup': {
+            case 'lookup': {
+                fields[`${key}_is_null`] = {type: GraphQLBoolean}
+                fields[`${key}_`] = {type: this.getWhere(prop.type.entity)}
+                break
+            }
+            case 'list-lookup':
                 let where = this.getWhere(prop.type.entity)
                 fields[`${key}_every`] = {type: where}
                 fields[`${key}_some`] = {type: where}
                 fields[`${key}_none`] = {type: where}
                 break
-            }
         }
     }
 

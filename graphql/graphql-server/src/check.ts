@@ -1,6 +1,6 @@
 import {Model} from '@subsquid/openreader/lib/model'
 import {assertNotNull} from '@subsquid/util-internal'
-import {PluginDefinition} from 'apollo-server-core'
+import {PluginDefinition, GraphQLRequest} from 'apollo-server-core'
 import {GraphQLSchema, OperationDefinitionNode} from 'graphql'
 
 
@@ -21,6 +21,7 @@ export interface HttpRequest {
 
 export interface RequestCheckContext {
     http: HttpRequest
+    request: GraphQLRequest
     operation: OperationDefinitionNode
     operationName: string | null
     schema: GraphQLSchema
@@ -41,6 +42,7 @@ export function createCheckPlugin(requestCheck: RequestCheckFunction, model: Mod
                 async responseForOperation(ctx) {
                     let ok = await requestCheck({
                         http: assertNotNull(ctx.request.http),
+                        request: ctx.request,
                         operation: ctx.operation,
                         operationName: ctx.operationName,
                         schema: ctx.schema,

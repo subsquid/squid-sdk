@@ -56,6 +56,13 @@ export function getTxSelectionValidator() {
         contractAddress: FIELD,
         type: FIELD,
         status: FIELD,
+        l1Fee: FIELD,
+        l1FeeScalar: FIELD,
+        l1GasPrice: FIELD,
+        l1GasUsed: FIELD,
+        l1BaseFeeScalar: FIELD,
+        l1BlobBaseFee: FIELD,
+        l1BlobBaseFeeScalar: FIELD,
     }
     return object(fields)
 }
