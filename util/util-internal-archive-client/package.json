@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-archive-layout": "^0.4.1",
-    "@subsquid/util-internal-range": "^0.3.0"
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-archive-layout": "^1.0.0"
   },
   "peerDependencies": {
     "@subsquid/http-client": "^1.6.0",

@@ -4,8 +4,6 @@ import { concurrentWriter, wait, withErrorContext } from '@subsquid/util-interna
 import { splitLines } from '@subsquid/util-internal-archive-layout'
 import assert from 'assert'
 import { pipeline } from 'node:stream/promises'
-import zlib from 'node:zlib'
-import { Transform, TransformCallback } from 'stream'
 
 export interface ArchiveQuery {
     fromBlock: number
