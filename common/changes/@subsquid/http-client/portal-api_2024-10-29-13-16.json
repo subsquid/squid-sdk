@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "add streaming support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
