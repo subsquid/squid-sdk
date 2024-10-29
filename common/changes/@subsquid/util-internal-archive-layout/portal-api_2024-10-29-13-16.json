@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "add streaming support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}
