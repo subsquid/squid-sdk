@@ -65,28 +65,24 @@ export class ArchiveClient {
 
     query<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<B[]> {
         return this.retry(async () => {
-            let worker: string = await this.http.get(this.getRouterUrl(`${query.fromBlock}/worker`), {
-                retryAttempts: 0,
-                httpTimeout: 10_000
-            })
-            return this.http.post(worker, {
+            return this.http.request<Buffer>('POST', this.getRouterUrl(`stream`), {
                 json: query,
                 retryAttempts: 0,
                 httpTimeout: this.queryTimeout
+                
             }).catch(withErrorContext({
                 archiveQuery: query
-            })).then(body => {
+            })).then(res => {
                 // TODO: move the conversion to the server
-                let blocks = (body as string).trimEnd().split('\n').map(line => JSON.parse(line))
+                let blocks = res.body.toString('utf8').trimEnd().split('\n').map(line => JSON.parse(line))
                 return blocks
             })
-
         })
     }
 
     stream<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<AsyncIterable<B[]>> {
         return this.retry(async () => {
-            return this.http.request('POST', this.getRouterUrl(`stream`), {
+            return this.http.request<NodeJS.ReadableStream>('POST', this.getRouterUrl(`stream`), {
                 json: query,
                 retryAttempts: 0,
                 httpTimeout: this.queryTimeout,
@@ -95,12 +91,11 @@ export class ArchiveClient {
                 archiveQuery: query
             })).then(res => {
                 // Stream of JSON lines. For some reason it's already ungziped
-                let stream = res.body as NodeJS.ReadableStream
                 return concurrentWriter(1, async write => {
                     let blocks: B[] = []
                     let buffer_size = 0
                     await pipeline(
-                        stream,
+                        res.body,
                         async function* (chunks) {
                             for await (let chunk of chunks) {
                                 yield chunk as Buffer
