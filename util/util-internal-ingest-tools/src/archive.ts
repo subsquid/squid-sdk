@@ -10,6 +10,7 @@ export interface ArchiveIngestOptions {
     requests: RangeRequestList<any>
     stopOnHead?: boolean
     pollInterval?: number
+    concurrency?: number
 }
 
 
@@ -18,7 +19,7 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
         client,
         requests,
         stopOnHead = false,
-        pollInterval = 20_000
+        pollInterval = 20_000,
     } = args
 
     let height = new Throttler(() => client.getHeight(), pollInterval)
@@ -36,11 +37,13 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
                     if (stopOnHead) return
                     top = await height.call()
                 }
-                let stream = await client.stream<B>({
+                
+                let stream = client.stream<B>({
                     fromBlock: beg,
                     toBlock: req.range.to,
                     ...req.request
                 })
+
                 for await (let blocks of stream) {
                     assert(blocks.length > 0, 'boundary blocks are expected to be included')
                     let lastBlock = last(blocks).header.number
