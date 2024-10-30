@@ -60,7 +60,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         transactionIndex: NAT,
         instructionAddress: array(NAT),
         ...project(fields.instruction, {
-            instructionIndex: NAT,
+            innerInstructionIndex: NAT,
             programId: B58,
             accounts: array(B58),
             data: B58,
