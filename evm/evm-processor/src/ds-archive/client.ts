@@ -1,6 +1,5 @@
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
+import {archiveIngest, ArchiveClient} from '@subsquid/util-internal-ingest-tools'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'

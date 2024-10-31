@@ -122,6 +122,9 @@ dependencies:
   '@rush-temp/ops-xcm-typegen':
     specifier: file:./projects/ops-xcm-typegen.tgz
     version: file:projects/ops-xcm-typegen.tgz
+  '@rush-temp/portal-client':
+    specifier: file:./projects/portal-client.tgz
+    version: file:projects/portal-client.tgz
   '@rush-temp/raw-archive-validator':
     specifier: file:./projects/raw-archive-validator.tgz
     version: file:projects/raw-archive-validator.tgz
@@ -338,9 +341,6 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
-  '@subsquid/util-internal-archive-layout':
-    specifier: ^0.4.1
-    version: 0.4.1
   '@substrate/calc':
     specifier: ^0.2.8
     version: 0.2.8
@@ -7187,7 +7187,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-Hyo1wb+qeIRur2UnBTZ9hqG981zbSVx8b3GDPyltIh9p4K+BQY/zaH2ULk4RYdm7YZcDYecXmWQH1DQZNRAJQg==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-HTpOMDJLlzHdgviIW3flC0ohZh6P1NKbplvqwR3ytOAouX5/oTVlllSrUXDwO+F9eKNrVg9ZUPrGpxfSdWZjBQ==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -7474,6 +7474,15 @@ packages:
   file:projects/ops-xcm-typegen.tgz:
     resolution: {integrity: sha512-tCyVJaT1kqbObCqljKrQ23BNRlSQQjbF3TV4Yl97HIsQ0hgis9zi/MnwzOr2jvTaOTofYiA9E4KBCcoQvsbwgA==, tarball: file:projects/ops-xcm-typegen.tgz}
     name: '@rush-temp/ops-xcm-typegen'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.3.2
+    dev: false
+
+  file:projects/portal-client.tgz:
+    resolution: {integrity: sha512-HzarUEqnAhaVLhdgjchZ9OcO/oyDqZPYDGC9jORcnJz28o8ZI8Y6TKQT63Rsu6ztu+6eJHh3uGIgaXQYCxefDQ==, tarball: file:projects/portal-client.tgz}
+    name: '@rush-temp/portal-client'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
@@ -8082,15 +8091,13 @@ packages:
     dev: false
 
   file:projects/util-internal-archive-client.tgz:
-    resolution: {integrity: sha512-+1KzaSciLBt9SozWqVxDCkDWCIBW7sBH8oeddZqP9ejRl+Ts5dsPcUIeSPzLwRWPi2locm2e+ekKI45rYDeokQ==, tarball: file:projects/util-internal-archive-client.tgz}
+    resolution: {integrity: sha512-dYgujjlZ/VoF/9wlsJh6SZmx7TueaPDe8j6k0nVxCD2ei4g+t9xN4XO4lACgdQ1AUdZN/BZmrOOGlBcfd6tPhQ==, tarball: file:projects/util-internal-archive-client.tgz}
     name: '@rush-temp/util-internal-archive-client'
     version: 0.0.0
     dependencies:
       '@subsquid/util-internal-archive-layout': 0.4.1
       '@types/node': 18.19.0
       typescript: 5.3.2
-    transitivePeerDependencies:
-      - '@subsquid/util-internal-fs'
     dev: false
 
   file:projects/util-internal-archive-layout.tgz:
@@ -8203,7 +8210,7 @@ packages:
     dev: false
 
   file:projects/util-internal-ingest-tools.tgz:
-    resolution: {integrity: sha512-AZGXfkwbu0TZGVN7mew3HK3V7+B42SeFelYL9QxE1mgwqPytMGSKmLfXNMEY/GD1REfRUrz4DAWeWplDJIBqxQ==, tarball: file:projects/util-internal-ingest-tools.tgz}
+    resolution: {integrity: sha512-DsJS6MoXjZw82JrAG98gtypszHA7Jh2JjSCi+6laDWG4PoYx23XfHx+gBRtY+UliZWXo+eU9YdMLgkWnWA2DjQ==, tarball: file:projects/util-internal-ingest-tools.tgz}
     name: '@rush-temp/util-internal-ingest-tools'
     version: 0.0.0
     dependencies:
