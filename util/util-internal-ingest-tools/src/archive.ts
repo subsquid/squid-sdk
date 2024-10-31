@@ -49,33 +49,32 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
             let beg = req.range.from
             let end = req.range.to ?? Infinity
             if (client.stream) {
-                let stream = client.stream?.<B>({
+                if (top < beg) {
+                    top = await height.get()
+                }
+                if (top < beg && stopOnHead) return
+
+                for await (let blocks of client.stream<B>({
                     fromBlock: req.range.from,
                     toBlock: req.range.to,
                     ...req.request
-                })
-    
-                top = await height.get()
-
-                for await (let blocks of stream) {
-                    if (blocks.length == 0) continue
-    
+                })) {
+                    assert(blocks.length > 0, 'boundary blocks are expected to be included')
                     let lastBlock = last(blocks).header.number
-                    assert(beg <= lastBlock && lastBlock <= end, 'blocks are out of range')
+                    assert(lastBlock >= beg)
                     beg = lastBlock + 1
-    
-                    // FIXME: is it needed here at all? Used only for `isHead`
-                    top = await height.get()
+
+                    if (beg > top) {
+                        top = await height.get()
+                    }
 
                     yield {
                         blocks,
-                        isHead: lastBlock >= top
+                        isHead: beg > top
                     }
+
+                    if (top < beg && stopOnHead) return
                 }
-    
-                if (beg < end && stopOnHead) break
-                
-                assert(beg === end + 1, 'boundary blocks are expected to be included')
             } else {
                 while (beg <= end) {
                     if (top < beg) {
