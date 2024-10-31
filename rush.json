@@ -903,6 +903,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/portal-client",
+      "projectFolder": "util/portal-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "balances",
       "projectFolder": "test/balances",
       "shouldPublish": false
