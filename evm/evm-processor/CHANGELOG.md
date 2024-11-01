@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 24 Oct 2024 16:06:57 GMT and should not be manually modified.
+This log was last generated on Fri, 01 Nov 2024 17:26:43 GMT and should not be manually modified.
+
+## 1.23.0
+Fri, 01 Nov 2024 17:26:43 GMT
+
+### Minor changes
+
+- allow to configure number of rpc connection errors retry attempts
 
 ## 1.22.1
 Thu, 24 Oct 2024 16:06:57 GMT
