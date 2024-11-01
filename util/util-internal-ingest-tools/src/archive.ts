@@ -49,9 +49,6 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
             let beg = req.range.from
             let end = req.range.to ?? Infinity
             if (client.stream) {
-                if (top < beg) {
-                    top = await height.get()
-                }
                 if (top < beg && stopOnHead) return
 
                 for await (let blocks of client.stream<B>({
@@ -63,16 +60,14 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
                     let lastBlock = last(blocks).header.number
                     assert(lastBlock >= beg)
                     beg = lastBlock + 1
-
-                    if (top < beg) {
-                        top = await height.get()
-                    }
-
+    
                     yield {
                         blocks,
                         isHead: beg > top
                     }
 
+                    top = await height.get()
+                    
                     if (top < beg && stopOnHead) return
                 }
             } else {

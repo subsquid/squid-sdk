@@ -9,10 +9,10 @@ const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()
 
 const processor = new EvmBatchProcessor()
     .setPortal({
-        url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
+        url: 'http://localhost:8000/datasets/ethereum-mainnet',
         bufferThreshold: 100 * 1024 * 1024
     })
-    // .setRpcEndpoint(process.env.ARB_NODE_WS)
+    .setRpcEndpoint('https://rpc.ankr.com/eth')
     .setFinalityConfirmation(500)
     .setBlockRange({from: 0})
     .setFields({
@@ -28,7 +28,6 @@ const processor = new EvmBatchProcessor()
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
 
-    
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
             if (log.address == CONTRACT &&  erc20.events.Transfer.is(log)) {
