@@ -93,16 +93,18 @@ export class PortalClient {
             let toBlock = query.toBlock ?? Infinity
 
             while (fromBlock <= toBlock) {
+                let archiveQuery = {...query, fromBlock}
+
                 let res = await this.http
                     .request<NodeJS.ReadableStream>('POST', this.getRouterUrl(`stream`), {
-                        json: {...query, fromBlock},
+                        json: archiveQuery,
                         retryAttempts: 3,
                         httpTimeout: this.queryTimeout,
                         stream: true,
                     })
                     .catch(
                         withErrorContext({
-                            archiveQuery: query,
+                            archiveQuery,
                         })
                     )
 

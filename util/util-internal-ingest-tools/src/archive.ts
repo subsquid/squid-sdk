@@ -64,7 +64,7 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
                     assert(lastBlock >= beg)
                     beg = lastBlock + 1
 
-                    if (beg > top) {
+                    if (top < beg) {
                         top = await height.get()
                     }
 
