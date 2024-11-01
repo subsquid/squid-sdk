@@ -34,7 +34,9 @@ export interface RpcEndpointSettings {
      */
     requestTimeout?: number
     /**
-     * Maximum number of retries. When set, every call (by default) will be retried specified number of times after connection error
+     * Maximum number of retry attempts.
+     * 
+     * By default, retries all "retryable" errors indefinitely. 
      */
     retryAttempts?: number
     /**
