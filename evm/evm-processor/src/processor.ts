@@ -34,6 +34,12 @@ export interface RpcEndpointSettings {
      */
     requestTimeout?: number
     /**
+     * Maximum number of retry attempts.
+     * 
+     * By default, retries all "retryable" errors indefinitely. 
+     */
+    retryAttempts?: number
+    /**
      * Maximum number of requests in a single batch call
      */
     maxBatchCallSize?: number
@@ -442,7 +448,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
             rateLimit: this.rpcEndpoint.rateLimit,
-            retryAttempts: Number.MAX_SAFE_INTEGER,
+            retryAttempts: this.rpcEndpoint.retryAttempts ?? Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
