@@ -1,28 +1,8 @@
 import {concurrentMap, last, Throttler} from '@subsquid/util-internal'
+import type {ArchiveClient, Block} from '@subsquid/util-internal-archive-client'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Batch} from './interfaces'
-
-
-export interface Block {
-    header: {
-        number: number
-        hash: string
-    }
-}
-
-
-export interface ArchiveQuery {
-    fromBlock: number
-    toBlock?: number
-}
-
-
-export interface ArchiveClient {
-    getHeight(): Promise<number>
-    query<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): Promise<B[]>
-    stream?<B extends Block = Block, Q extends ArchiveQuery = ArchiveQuery>(query: Q): AsyncIterable<B[]>
-}
 
 
 export interface ArchiveIngestOptions {
@@ -38,7 +18,7 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
         client,
         requests,
         stopOnHead = false,
-        pollInterval = 20_000,
+        pollInterval = 20_000
     } = args
 
     let height = new Throttler(() => client.getHeight(), pollInterval)
@@ -48,56 +28,31 @@ export function archiveIngest<B extends Block>(args: ArchiveIngestOptions): Asyn
         for (let req of requests) {
             let beg = req.range.from
             let end = req.range.to ?? Infinity
-            if (client.stream) {
-                if (top < beg && stopOnHead) return
-
-                for await (let blocks of client.stream<B>({
-                    fromBlock: req.range.from,
+            while (beg <= end) {
+                if (top < beg) {
+                    top = await height.get()
+                }
+                while (top < beg) {
+                    if (stopOnHead) return
+                    top = await height.call()
+                }
+                let blocks = await client.query<B>({
+                    fromBlock: beg,
                     toBlock: req.range.to,
                     ...req.request
-                })) {
-                    assert(blocks.length > 0, 'boundary blocks are expected to be included')
-                    let lastBlock = last(blocks).header.number
-                    assert(lastBlock >= beg)
-                    beg = lastBlock + 1
-    
-                    yield {
-                        blocks,
-                        isHead: beg > top
-                    }
-
+                })
+                assert(blocks.length > 0, 'boundary blocks are expected to be included')
+                let lastBlock = last(blocks).header.number
+                assert(lastBlock >= beg)
+                beg = lastBlock + 1
+                if (beg > top) {
                     top = await height.get()
-                    
-                    if (top < beg && stopOnHead) return
                 }
-            } else {
-                while (beg <= end) {
-                    if (top < beg) {
-                        top = await height.get()
-                    }
-                    while (top < beg) {
-                        if (stopOnHead) return
-                        top = await height.call()
-                    }
-                    let blocks = await client.query<B>({
-                        fromBlock: beg,
-                        toBlock: req.range.to,
-                        ...req.request
-                    })
-                    assert(blocks.length > 0, 'boundary blocks are expected to be included')
-                    let lastBlock = last(blocks).header.number
-                    assert(lastBlock >= beg)
-                    beg = lastBlock + 1
-                    if (beg > top) {
-                        top = await height.get()
-                    }
-                    yield {
-                        blocks,
-                        isHead: beg > top
-                    }
+                yield {
+                    blocks,
+                    isHead: beg > top
                 }
             }
-            
         }
     }
 
