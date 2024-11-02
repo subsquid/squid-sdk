@@ -8,6 +8,7 @@ import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsqui
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {EvmPortal} from './ds-archive/portal'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
@@ -513,7 +514,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): EvmArchive {
+    private getArchiveDataSource(): EvmArchive | EvmPortal {
         let archive = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
@@ -528,22 +529,24 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             log
         })
 
-        return new EvmArchive(
-            archive.type === 'gateway'
-                ? new ArchiveClient({
+        return archive.type === 'gateway'
+            ? new EvmArchive(
+                  new ArchiveClient({
                       http,
                       url: archive.url,
                       queryTimeout: archive.requestTimeout,
                       log,
                   })
-                : new PortalClient({
+              )
+            : new EvmPortal(
+                  new PortalClient({
                       http,
                       url: archive.url,
                       queryTimeout: archive.requestTimeout,
                       bufferThreshold: archive.bufferThreshold,
                       log,
                   })
-        )
+              )
     }
 
     @def
