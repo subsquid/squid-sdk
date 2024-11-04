@@ -1,31 +1,12 @@
-import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
-import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
-import {FieldSelection} from '../interfaces/data'
 import {DataRequest} from '../interfaces/data-request'
-import {
-    Block,
-    BlockHeader,
-    Log,
-    StateDiff,
-    StateDiffAdd,
-    StateDiffChange,
-    StateDiffDelete,
-    StateDiffNoChange,
-    Trace,
-    TraceCall,
-    TraceCreate,
-    TraceReward,
-    TraceSuicide,
-    Transaction
-} from '../mapping/entities'
-import {setUpRelations} from '../mapping/relations'
-import {getBlockValidator} from './schema'
+import {Block} from '../mapping/entities'
 import {mapBlock} from './mapping'
 
 
