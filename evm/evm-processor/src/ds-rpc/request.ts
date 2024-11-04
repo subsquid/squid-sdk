@@ -87,6 +87,11 @@ function stateDiffsRequested(req?: DataRequest): boolean {
             if (tx.stateDiffs) return true
         }
     }
+    if (req.logs) {
+        for (let log of req.logs) {
+            if (log.transactionStateDiffs) return true
+        }
+    }
     return false
 }
 

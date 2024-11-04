@@ -7,6 +7,7 @@ import {DataRequest} from '../interfaces/data-request'
 function buildLogFilter(dataRequest: DataRequest): EntityFilter<Log, {
     transaction?: boolean,
     transactionLogs?: boolean,
+    transactionStateDiffs?: boolean,
     transactionTraces?: boolean
 }> {
     let items = new EntityFilter()
@@ -139,6 +140,7 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
 
     let logsByTransaction = groupBy(block.logs, log => log.transactionIndex)
     let tracesByTransaction = groupBy(block.traces, trace => trace.transactionIndex)
+    let stateDiffsByTransaction = groupBy(block.stateDiffs, diff => diff.transactionIndex)
 
     let include = new IncludeSet()
     
@@ -160,6 +162,12 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
                 let traces = tracesByTransaction.get(log.transactionIndex) ?? []
                 for (let trace of traces) {
                     include.addTrace(trace)
+                }
+            }
+            if (rel.transactionStateDiffs) {
+                let stateDiffs = stateDiffsByTransaction.get(log.transactionIndex) ?? []
+                for (let diff of stateDiffs) {
+                    include.addStateDiff(diff)
                 }
             }
         }

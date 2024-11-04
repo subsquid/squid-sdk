@@ -22,6 +22,7 @@ export interface LogRequest {
     transaction?: boolean
     transactionTraces?: boolean
     transactionLogs?: boolean
+    transactionStateDiffs?: boolean
 }
 
 
