@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/portal-client",
-      "comment": "",
-      "type": "none"
+      "comment": "init",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/portal-client"
