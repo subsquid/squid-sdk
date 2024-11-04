@@ -19,6 +19,11 @@ export interface Block {
 }
 
 
+export interface Metadata {
+    isRealTime: boolean
+}
+
+
 export interface PortalClientOptions {
     url: string
     http?: HttpClient
@@ -41,7 +46,7 @@ export class PortalClient {
         this.bufferThreshold = options.bufferThreshold ?? 10 * 1024 * 1024
     }
 
-    private getRouterUrl(path: string): string {
+    private getDatasetUrl(path: string): string {
         let u = new URL(this.url)
         if (this.url.pathname.endsWith('/')) {
             u.pathname += path
@@ -52,7 +57,7 @@ export class PortalClient {
     }
 
     async getHeight(): Promise<number> {
-        let res: string = await this.http.get(this.getRouterUrl('height'), {
+        let res: string = await this.http.get(this.getDatasetUrl('height'), {
             retryAttempts: 3,
             httpTimeout: 10_000,
         })
@@ -61,9 +66,19 @@ export class PortalClient {
         return height
     }
 
+    async getMetadata(): Promise<Metadata> {
+        let res: {real_time: boolean} = await this.http.get(this.getDatasetUrl('metadata'), {
+            retryAttempts: 3,
+            httpTimeout: 10_000,
+        })
+        return {
+            isRealTime: !!res.real_time
+        }
+    }
+
     query<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): Promise<B[]> {
         return this.http
-            .request<Buffer>('POST', this.getRouterUrl(`stream`), {
+            .request<Buffer>('POST', this.getDatasetUrl(`stream`), {
                 json: query,
                 retryAttempts: 3,
                 httpTimeout: this.queryTimeout,
@@ -96,7 +111,7 @@ export class PortalClient {
                 let archiveQuery = {...query, fromBlock}
 
                 let res = await this.http
-                    .request<NodeJS.ReadableStream>('POST', this.getRouterUrl(`stream`), {
+                    .request<NodeJS.ReadableStream>('POST', this.getDatasetUrl(`stream`), {
                         json: archiveQuery,
                         retryAttempts: 3,
                         httpTimeout: this.queryTimeout,
@@ -155,9 +170,4 @@ export class PortalClient {
             yield valueOrError
         }
     }
-}
-
-export function portal(url: string | PortalClientOptions) {
-    let options = typeof url == 'string' ? {url} : url
-    return new PortalClient(options)
 }
