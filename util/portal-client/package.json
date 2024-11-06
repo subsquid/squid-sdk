@@ -18,7 +18,8 @@
   "dependencies": {
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-archive-layout": "^1.0.0"
+    "@subsquid/util-internal-archive-layout": "^1.0.0",
+    "@subsquid/util-timeout": "^2.3.2"
   },
   "peerDependencies": {
     "@subsquid/http-client": "^1.5.0",

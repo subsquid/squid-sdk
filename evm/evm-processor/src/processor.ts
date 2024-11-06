@@ -114,6 +114,8 @@ export interface PortalSettings {
     requestTimeout?: number
     
     bufferThreshold?: number
+
+    newBlockTimeout?: number
 }
 
 
@@ -538,6 +540,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
                       url: archive.url,
                       queryTimeout: archive.requestTimeout,
                       bufferThreshold: archive.bufferThreshold,
+                      newBlockTimeout: archive.newBlockTimeout,
                       log,
                   })
               )

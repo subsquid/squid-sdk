@@ -2,14 +2,14 @@ import {HttpClient} from '@subsquid/http-client'
 import type {Logger} from '@subsquid/logger'
 import {AsyncQueue, ensureError, last, wait, withErrorContext} from '@subsquid/util-internal'
 import {splitLines} from '@subsquid/util-internal-archive-layout'
+import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
 import assert from 'assert'
-
+import {Readable} from 'stream'
 
 export interface PortalQuery {
     fromBlock: number
     toBlock?: number
 }
-
 
 export interface Block {
     header: {
@@ -18,32 +18,34 @@ export interface Block {
     }
 }
 
-
 export interface Metadata {
     isRealTime: boolean
 }
 
-
 export interface PortalClientOptions {
     url: string
-    http?: HttpClient
+    http: HttpClient
     log?: Logger
     queryTimeout?: number
     bufferThreshold?: number
+    newBlockTimeout?: number
 }
-
 
 export class PortalClient {
     private url: URL
     private http: HttpClient
     private queryTimeout: number
     private bufferThreshold: number
+    private newBlockTimeout: number
+    private log?: Logger
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
-        this.http = options.http || new HttpClient({log: options.log})
+        this.log = options.log
+        this.http = options.http
         this.queryTimeout = options.queryTimeout ?? 180_000
         this.bufferThreshold = options.bufferThreshold ?? 10 * 1024 * 1024
+        this.newBlockTimeout = options.newBlockTimeout ?? 120_000
     }
 
     private getDatasetUrl(path: string): string {
@@ -72,7 +74,7 @@ export class PortalClient {
             httpTimeout: 10_000,
         })
         return {
-            isRealTime: !!res.real_time
+            isRealTime: !!res.real_time,
         }
     }
 
@@ -99,7 +101,10 @@ export class PortalClient {
             })
     }
 
-    async *stream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): AsyncIterable<B[]> {
+    async *stream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
+        query: Q,
+        stopOnHead = false
+    ): AsyncIterable<B[]> {
         let queue = new AsyncQueue<B[] | Error>(1)
 
         const ingest = async () => {
@@ -111,7 +116,7 @@ export class PortalClient {
                 let archiveQuery = {...query, fromBlock}
 
                 let res = await this.http
-                    .request<NodeJS.ReadableStream>('POST', this.getDatasetUrl(`stream`), {
+                    .request<Readable>('POST', this.getDatasetUrl(`stream`), {
                         json: archiveQuery,
                         retryAttempts: 3,
                         httpTimeout: this.queryTimeout,
@@ -123,35 +128,52 @@ export class PortalClient {
                         })
                     )
 
-                for await (let lines of splitLines(res.body as AsyncIterable<Buffer>)) {
-                    let batch = queue.peek()
-                    if (batch instanceof Error) return
-
-                    if (!batch) {
-                        bufferSize = 0
-                    }
-
-                    let blocks = lines.map((line) => {
-                        bufferSize += line.length
-                        return JSON.parse(line) as B
-                    })
-
-                    if (batch) {
-                        // FIXME: won't it overflow stack?
-                        batch.push(...blocks)
-                        if (bufferSize > this.bufferThreshold) {
-                            await queue.wait()
-                        }
-                    } else {
-                        await queue.put(blocks)
-                    }
-
-                    fromBlock = last(blocks).header.number + 1
-                }
-
                 // no blocks left
                 if (res.status == 204) {
+                    if (stopOnHead) return
                     await wait(1000)
+                } else {
+                    try {
+                        let stream = splitLines(res.body)
+
+                        while (true) {
+                            let lines = await addTimeout(stream.next(), this.newBlockTimeout)
+                            if (lines.done) break
+
+                            let batch = queue.peek()
+                            if (batch instanceof Error) return
+
+                            if (!batch) {
+                                bufferSize = 0
+                            }
+
+                            let blocks = lines.value.map((line) => {
+                                bufferSize += line.length
+                                return JSON.parse(line) as B
+                            })
+
+                            if (batch) {
+                                // FIXME: won't it overflow stack?
+                                batch.push(...blocks)
+                                if (bufferSize > this.bufferThreshold) {
+                                    await queue.wait()
+                                }
+                            } else {
+                                await queue.put(blocks)
+                            }
+
+                            fromBlock = last(blocks).header.number + 1
+                        }
+                    } catch (err) {
+                        if (err instanceof TimeoutError) {
+                            this.log?.warn(
+                                `resetting stream, because we haven't seen a new blocks for ${this.newBlockTimeout} ms`
+                            )
+                            res.body.destroy()
+                        } else {
+                            throw err
+                        }
+                    }
                 }
             }
         }
