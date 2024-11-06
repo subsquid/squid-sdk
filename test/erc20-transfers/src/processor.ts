@@ -9,12 +9,13 @@ const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()
 
 const processor = new EvmBatchProcessor()
     .setPortal({
-        url: 'http://localhost:8000/datasets/ethereum-mainnet',
-        bufferThreshold: 100 * 1024 * 1024
+        url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
+        bufferThreshold: 100 * 1024 * 1024,
+        newBlockTimeout: 5000,
     })
     .setRpcEndpoint('https://rpc.ankr.com/eth')
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 0})
+    .setBlockRange({from: 20801368})
     .setFields({
         block: {size: true},
         log: {transactionHash: true},
@@ -45,6 +46,6 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
         }
     }
 
-    // ctx.log.info(`found ${transfers.length} transfers`)
+    ctx.log.info(`found ${transfers.length} transfers`)
     // await ctx.store.insert(transfers)
 })

@@ -43,7 +43,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
                 fromBlock: req.range.from,
                 toBlock: req.range.to,
                 ...req.request
-            })) {
+            }, stopOnHead)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 let lastBlock = last(batch).header.number
                 assert(lastBlock >= beg)
@@ -66,8 +66,6 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
                 }
 
                 top = await height.get()
-
-                if (top < beg && stopOnHead) return
             }
         }
     }
