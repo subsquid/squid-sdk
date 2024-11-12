@@ -59,7 +59,7 @@ export class PortalClient {
     }
 
     async getHeight(): Promise<number> {
-        let res: string = await this.http.get(this.getDatasetUrl('height'), {
+        let res: string = await this.http.get(this.getDatasetUrl('finalized-stream/height'), {
             retryAttempts: 3,
             httpTimeout: 10_000,
         })
@@ -80,7 +80,7 @@ export class PortalClient {
 
     query<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): Promise<B[]> {
         return this.http
-            .request<Buffer>('POST', this.getDatasetUrl(`stream`), {
+            .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
                 json: query,
                 retryAttempts: 3,
                 httpTimeout: this.queryTimeout,
@@ -116,7 +116,7 @@ export class PortalClient {
                 let archiveQuery = {...query, fromBlock}
 
                 let res = await this.http
-                    .request<Readable>('POST', this.getDatasetUrl(`stream`), {
+                    .request<Readable>('POST', this.getDatasetUrl(`finalized-stream`), {
                         json: archiveQuery,
                         retryAttempts: 3,
                         httpTimeout: this.queryTimeout,
