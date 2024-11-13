@@ -1,6 +1,17 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 01 Nov 2024 17:26:43 GMT and should not be manually modified.
+This log was last generated on Wed, 13 Nov 2024 11:28:41 GMT and should not be manually modified.
+
+## 1.24.0
+Wed, 13 Nov 2024 11:28:41 GMT
+
+### Minor changes
+
+- add transactionStateDiffs to LogRequest
+
+### Patches
+
+- properly pass timeout to debug trace config
 
 ## 1.23.0
 Fri, 01 Nov 2024 17:26:43 GMT
