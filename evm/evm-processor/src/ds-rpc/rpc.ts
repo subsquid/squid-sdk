@@ -544,8 +544,8 @@ export class Rpc {
             tracerConfig: {
                 onlyTopCall: false,
                 withLog: false, // will study log <-> frame matching problem later
-                timeout: req.debugTraceTimeout
-            }
+            },
+            timeout: req.debugTraceTimeout,
         }
 
         let call = blocks.map(block => ({
@@ -594,8 +594,8 @@ export class Rpc {
             tracerConfig: {
                 onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
                 diffMode: true,
-                timeout: req.debugTraceTimeout
-            }
+            },
+            timeout: req.debugTraceTimeout
         }
 
         let call = blocks.map(block => ({
