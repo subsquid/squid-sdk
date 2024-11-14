@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.25.0",
+      "tag": "@subsquid/evm-processor_v1.25.0",
+      "date": "Thu, 14 Nov 2024 12:06:12 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to filter transactions by type"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.24.0",
       "tag": "@subsquid/evm-processor_v1.24.0",
       "date": "Wed, 13 Nov 2024 11:28:41 GMT",
