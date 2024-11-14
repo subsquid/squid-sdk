@@ -593,7 +593,9 @@ function mapRequest<T extends BlockRange>(options: T): Omit<T, 'range'> {
     for (let key in req) {
         let val = (req as any)[key]
         if (Array.isArray(val)) {
-            (req as any)[key] = val.map(s => s.toLowerCase())
+            (req as any)[key] = val.map(s => {
+                return typeof s == 'string' ? s.toLowerCase() : s
+            })
         }
     }
     return req

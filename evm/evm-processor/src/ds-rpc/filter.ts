@@ -32,11 +32,12 @@ function buildTransactionFilter(dataRequest: DataRequest): EntityFilter<Transact
 }> {
     let items = new EntityFilter()
     for (let req of dataRequest.transactions || []) {
-        let {to, from, sighash, ...relations} = req
+        let {to, from, sighash, type, ...relations} = req
         let filter = new FilterBuilder<Transaction>()
         filter.propIn('to', to)
         filter.propIn('from', from)
         filter.propIn('sighash', sighash)
+        filter.propIn('type', type)
         items.add(filter, relations)
     }
     return items
