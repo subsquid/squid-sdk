@@ -86,6 +86,11 @@ export interface RpcDataIngestionSettings {
      * Flags to switch off the data consistency checks
      */
     validationFlags?: RpcValidationFlags 
+
+    /**
+     * The number of blocks to process at a time.
+     */
+    maxBlocksPerIteration?: number
 }
 
 
@@ -473,6 +478,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             validationFlags: this.rpcIngestSettings?.validationFlags,
+            maxBlocksPerIteration: this.rpcIngestSettings?.maxBlocksPerIteration,
             log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
         })
     }
