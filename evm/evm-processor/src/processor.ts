@@ -88,7 +88,7 @@ export interface RpcDataIngestionSettings {
     validationFlags?: RpcValidationFlags 
 
     /**
-     * The number of blocks to process at a time.
+     * The maximum number of blocks to process at a time
      */
     maxBlocksPerIteration?: number
 }
