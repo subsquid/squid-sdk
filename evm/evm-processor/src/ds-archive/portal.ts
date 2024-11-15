@@ -1,15 +1,50 @@
 import {addErrorContext, last, Throttler} from '@subsquid/util-internal'
 import {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
-import {getRequestAt, RangeRequest} from '@subsquid/util-internal-range'
+import {RangeRequest} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Bytes32} from '../interfaces/base'
 import {DataRequest} from '../interfaces/data-request'
 import {Block} from '../mapping/entities'
 import {mapBlock} from './mapping'
 import {PortalClient} from '@subsquid/portal-client'
+import {FieldSelection} from '../interfaces/data'
 
 
-const NO_FIELDS = {}
+const ALWAYS_SELECTED_FIELDS = {
+    block: {
+        number: true,
+        hash: true,
+        parentHash: true,
+    },
+    transaction: {
+        transactionIndex: true,
+    },
+    log: {
+        logIndex: true,
+        transactionIndex: true,
+    },
+    trace: {
+        transactionIndex: true,
+        traceAddress: true,
+        type: true,
+    },
+    stateDiff: {
+        transactionIndex: true,
+        address: true,
+        key: true,
+    },
+} as const
+
+
+function addAlwaysSelectedFields(fields?: FieldSelection): FieldSelection {
+    return {
+        block: {...fields?.block, ...ALWAYS_SELECTED_FIELDS.block},
+        transaction: {...fields?.transaction, ...ALWAYS_SELECTED_FIELDS.transaction},
+        log: {...fields?.log, ...ALWAYS_SELECTED_FIELDS.log},
+        trace: {...fields?.trace, ...ALWAYS_SELECTED_FIELDS.trace},
+        stateDiff: {...fields?.stateDiff, ...ALWAYS_SELECTED_FIELDS.stateDiff, kind: true}
+    }
+}
 
 
 export class EvmPortal implements DataSource<Block, DataRequest> {
@@ -34,20 +69,23 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
     
         let top = await height.get()
         for (let req of requests) {
-            let beg = req.range.from
-            let fields = getRequestAt(requests, beg)?.fields || NO_FIELDS
+            let fromBlock = req.range.from
+            let toBlock = req.range.from
+            let fields = addAlwaysSelectedFields(req.request.fields)
 
-            if (top < beg && stopOnHead) return
+            if (top < fromBlock && stopOnHead) return
 
             for await (let batch of this.client.stream({
-                fromBlock: req.range.from,
-                toBlock: req.range.to,
-                ...req.request
+                ...req.request,
+                type: 'evm',
+                fromBlock,
+                toBlock,
+                fields,
             }, stopOnHead)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 let lastBlock = last(batch).header.number
-                assert(lastBlock >= beg)
-                beg = lastBlock + 1
+                assert(lastBlock >= fromBlock)
+                fromBlock = lastBlock + 1
 
                 let blocks = batch.map(b => {
                     try {
@@ -62,7 +100,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
 
                 yield {
                     blocks,
-                    isHead: beg > top
+                    isHead: fromBlock > top
                 }
 
                 top = await height.get()
