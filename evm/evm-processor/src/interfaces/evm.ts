@@ -35,7 +35,7 @@ export interface EvmTransaction extends _EvmTx, _EvmTxReceipt {
 }
 
 
-export interface Authorization {
+export interface EIP7702Authorization {
     chainId: number
     nonce: number
     address: Bytes20
@@ -61,7 +61,7 @@ export interface _EvmTx {
     s: Bytes32
     yParity?: number
     chainId?: number
-    authorizationList?: Authorization[]
+    authorizationList?: EIP7702Authorization[]
 }
 
 
