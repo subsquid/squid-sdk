@@ -2,6 +2,7 @@ import {formatId} from '@subsquid/util-internal-processor-tools'
 import assert from 'assert'
 import {Bytes, Bytes20, Bytes32, Bytes8} from '../interfaces/base'
 import {
+    Authorization,
     EvmTraceCallAction,
     EvmTraceCallResult,
     EvmTraceCreateAction,
@@ -85,6 +86,7 @@ export class Transaction {
     type?: number
     status?: number
     sighash?: Bytes
+    authorizationList?: Authorization[]
     l1Fee?: bigint
     l1FeeScalar?: number
     l1GasPrice?: bigint
