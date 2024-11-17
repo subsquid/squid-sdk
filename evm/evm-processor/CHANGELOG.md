@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 14 Nov 2024 12:06:12 GMT and should not be manually modified.
+This log was last generated on Sun, 17 Nov 2024 06:01:50 GMT and should not be manually modified.
+
+## 1.26.0
+Sun, 17 Nov 2024 06:01:50 GMT
+
+### Minor changes
+
+- add `tx.authorizationList` field
 
 ## 1.25.0
 Thu, 14 Nov 2024 12:06:12 GMT
