@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "make `request timed out` error retryable",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}
