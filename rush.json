@@ -490,29 +490,35 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/solana-dump",
-      "projectFolder": "solana/solana-dump",
+      "packageName": "@subsquid/solana-data-service",
+      "projectFolder": "solana/solana-data-service",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-ingest",
-      "projectFolder": "solana/solana-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/solana-dump",
+//      "projectFolder": "solana/solana-dump",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
+//    {
+//      "packageName": "@subsquid/solana-ingest",
+//      "projectFolder": "solana/solana-ingest",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/solana-normalization",
       "projectFolder": "solana/solana-normalization",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-objects",
-      "projectFolder": "solana/solana-objects",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/solana-objects",
+//      "projectFolder": "solana/solana-objects",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
@@ -525,18 +531,18 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-stream",
-      "projectFolder": "solana/solana-stream",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/solana-typegen",
-      "projectFolder": "solana/solana-typegen",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/solana-stream",
+//      "projectFolder": "solana/solana-stream",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
+//    {
+//      "packageName": "@subsquid/solana-typegen",
+//      "projectFolder": "solana/solana-typegen",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",

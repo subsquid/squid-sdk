@@ -1,19 +1,19 @@
 import type * as rpc from '@subsquid/solana-rpc-data'
 import type {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {addErrorContext, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './data'
 import {InvokeMessage, InvokeResultMessage, LogTruncatedMessage, Message, parseLogMessage} from './log-parser'
 
 
-export function mapRpcBlock(src: rpc.Block): Block {
+export function mapRpcBlock(slot: number, src: rpc.GetBlock): Block {
     let header: BlockHeader = {
-        hash: src.hash,
-        height: src.height,
-        slot: src.slot,
-        parentSlot: src.block.parentSlot,
-        parentHash: src.block.previousBlockhash,
-        timestamp: src.block.blockTime ?? 0
+        hash: src.blockhash,
+        height: assertNotNull(src.blockHeight, '.blockHeight is not available'),
+        slot,
+        parentSlot: src.parentSlot,
+        parentHash: src.previousBlockhash,
+        timestamp: src.blockTime ?? 0
     }
 
     let instructions: Instruction[] = []
@@ -21,7 +21,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
     let balances: Balance[] = []
     let tokenBalances: TokenBalance[] = []
 
-    let transactions = src.block.transactions
+    let transactions = src.transactions
         ?.map((tx, i) => {
             try {
                 return mapRpcTransaction(i, tx, instructions, logs, balances, tokenBalances)
@@ -32,7 +32,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
             }
         }) ?? []
 
-    let rewards = src.block.rewards?.map(s => {
+    let rewards = src.rewards?.map(s => {
         let reward: Reward = {
             pubkey: s.pubkey,
             lamports: BigInt(s.lamports),
