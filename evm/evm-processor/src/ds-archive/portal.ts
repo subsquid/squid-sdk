@@ -70,7 +70,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
         let top = await height.get()
         for (let req of requests) {
             let fromBlock = req.range.from
-            let toBlock = req.range.from
+            let toBlock = req.range.to
             let fields = addAlwaysSelectedFields(req.request.fields)
 
             if (top < fromBlock && stopOnHead) return
