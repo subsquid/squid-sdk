@@ -7783,11 +7783,12 @@ packages:
     dev: false
 
   file:projects/solana-data-service.tgz:
-    resolution: {integrity: sha512-+Q06bRhu7qXsR03H/aGndZATK/8IRS13QwgitnpYifM/QWDUf93tv7xM+kyDAFGH6TuQcZR4ohNqQyqo9Rn0qQ==, tarball: file:projects/solana-data-service.tgz}
+    resolution: {integrity: sha512-SuKLBX2y3/D8lOAL91dCvqsCxUZ+1AcvI5rlxrsT+Xr2TKNwpKE7L4DiJq4aZ/LiymqnS3SHdBB8hdgPiZXTlg==, tarball: file:projects/solana-data-service.tgz}
     name: '@rush-temp/solana-data-service'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
+      commander: 11.1.0
       typescript: 5.3.2
     dev: false
 

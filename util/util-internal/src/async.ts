@@ -154,7 +154,7 @@ export class AsyncQueue<T> {
 
 export async function* concurrentMap<T, R>(
     concurrency: number,
-    stream: AsyncIterable<T>,
+    stream: AsyncIterable<T> | Iterable<T>,
     f: (val: T) => Promise<R>
 ): AsyncIterable<R> {
     let queue = new AsyncQueue<{promise: Promise<R>}>(concurrency)

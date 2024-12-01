@@ -15,13 +15,16 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "commander": "^11.1.0",
     "@subsquid/logger": "^1.3.3",
     "@subsquid/rpc-client": "^4.10.0",
     "@subsquid/solana-normalization": "^0.0.2",
     "@subsquid/solana-rpc": "^0.0.2",
     "@subsquid/solana-rpc-data": "^0.0.2",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-binary-heap": "^1.0.0",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-http-server": "^2.0.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-validation": "^0.6.0"
   },

@@ -1,8 +1,13 @@
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {bisect, last} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Block} from './types'
+import {Block, BlockRef} from './types'
 import {isChain} from './util'
+
+
+export class InvalidBaseBlock {
+    constructor(public readonly prev: BlockRef[]) {}
+}
 
 
 export class Chain {
@@ -29,60 +34,128 @@ export class Chain {
     }
 
     push(newBlock: Block): void {
-        if (this.lastBlock().slot < newBlock.slot) {
+        if (this.lastBlock().number < newBlock.number) {
             assert(isChain(this.lastBlock(), newBlock))
-            this.blocks.push(newBlock)
+            this._push(newBlock)
             return
         }
 
         // ignore blocks, that lie below finalized head
-        if (this.lastFinalizedBlock().slot >= newBlock.slot) {
+        if (this.lastFinalizedBlock().number >= newBlock.number) {
             return
         }
 
-        let pos = this.bisect(newBlock.slot)
+        let pos = this.bisect(newBlock.number)
         assert(0 < pos && pos < this.blocks.length)
 
         // same block was inserted
-        if (this.blocks[pos].hash === newBlock.hash) return
+        if (this.blocks[pos].hash === newBlock.hash) {
+            if (newBlock.isFinal) {
+                this.finalizedHead = pos
+            }
+            return
+        }
 
         // rollback
         let prev = this.blocks[pos - 1]
         assert(isChain(prev, newBlock))
         this.blocks = this.blocks.slice(0, pos)
-        this.blocks.push(newBlock)
+        this._push(newBlock)
     }
 
-    finalize(slot: number, hash: Base58Bytes): boolean {
-        throw new Error('not implemented')
+    private _push(block: Block): void {
+        this.blocks.push(block)
+        if (block.isFinal) {
+            this.finalizedHead = this.blocks.length - 1
+        }
     }
 
-    getFirstBelow(slot: number): Block | undefined {
-        if (slot <= this.blocks[0].slot) return
-        if (this.lastBlock().slot < slot) return this.lastBlock()
-        let pos = this.bisect(slot)
+    finalize(number: number, hash: Base58Bytes): boolean {
+        if (number <= this.lastFinalizedBlock().number) return false
+        let pos = this.bisect(number)
+        if (pos >= this.blocks.length) return false
+        if (this.blocks[pos].number === number && this.blocks[pos].hash === hash) {
+            this.finalizedHead = pos
+            return true
+        } else {
+            return false
+        }
+    }
+
+    getFirstBelow(number: number): Block | undefined {
+        if (number <= this.blocks[0].number) return
+        if (this.lastBlock().number < number) return this.lastBlock()
+        let pos = this.bisect(number)
         assert(0 < pos && pos < this.blocks.length)
         return this.blocks[pos - 1]
     }
 
-    query(limit: number, fromSlot: number): Block[] {
-        let pos = this.bisect(fromSlot)
-        return this.blocks.slice(pos, pos + limit)
+    query(limit: number, from: number): Block[]
+    query(limit: number, from: number, baseBlockHash?: string): Block[] | InvalidBaseBlock
+    query(limit: number, from: number, baseBlockHash?: string): Block[] | InvalidBaseBlock {
+        let pos = this.bisect(from)
+        if (pos < this.blocks.length) {
+            if (baseBlockHash != null && this.blocks[pos].parentHash !== baseBlockHash) {
+                let prev: BlockRef[] = []
+
+                for (let i = pos; i >= Math.max(0, pos - 9); i--) {
+                    let b = this.blocks[i]
+                    prev.push({
+                        number: b.parentNumber,
+                        hash: b.parentHash
+                    })
+                }
+
+                return new InvalidBaseBlock(prev)
+            } else {
+                return this.blocks.slice(pos, pos + limit)
+            }
+        } else if (
+            baseBlockHash != null &&
+            from == this.lastSlot() + 1 &&
+            baseBlockHash !== this.lastBlock().hash
+        ) {
+            let prev = this.blocks.slice(Math.max(0, this.blocks.length - 10)).map(b => {
+                return {
+                    number: b.number,
+                    hash: b.hash
+                }
+            })
+            return new InvalidBaseBlock(prev.reverse())
+        } else {
+            return []
+        }
     }
 
     private bisect(slot: number): number {
-        return bisect(this.blocks, slot, (b, slot) => b.slot - slot)
+        return bisect(this.blocks, slot, (b, slot) => b.number - slot)
     }
 
     firstSlot(): number {
-        return this.blocks[0].slot
+        return this.blocks[0].number
     }
 
     lastSlot(): number {
-        return last(this.blocks).slot
+        return last(this.blocks).number
     }
 
-    lastFinalizedBlock(): Block {
+    getFinalizedHead(): BlockRef {
+        let block = this.lastFinalizedBlock()
+        return {
+            number: block.number,
+            hash: block.hash
+        }
+    }
+
+    getHead(): BlockRef {
+        let block = this.lastBlock()
+        return {
+            number: block.number,
+            hash: block.hash
+        }
+    }
+
+    private lastFinalizedBlock(): Block {
         return this.blocks[this.finalizedHead]
     }
 
@@ -93,7 +166,7 @@ export class Chain {
     getUnfinalizedSlots(): number[] {
         let slots = []
         for (let i = this.finalizedHead; i < this.blocks.length; i++) {
-            slots.push(this.blocks[i].slot)
+            slots.push(this.blocks[i].number)
         }
         return slots
     }

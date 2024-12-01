@@ -2,5 +2,5 @@ import {BlockHeader} from './types'
 
 
 export function isChain(a: BlockHeader, b: BlockHeader): boolean {
-    return a.slot == b.parentSlot && a.hash == b.parentHash
+    return a.number == b.parentNumber && a.hash == b.parentHash
 }
