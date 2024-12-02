@@ -2,6 +2,7 @@ import {
     array,
     GetSrcType,
     INT,
+    ANY_INT,
     object,
     STRING,
     BOOLEAN,
@@ -41,7 +42,7 @@ export const TransactionRawData = object({
     ref_block_hash: option(STRING),
     expiration: option(INT),
     fee_limit: option(ANY_NAT),
-    timestamp: option(ANY_NAT)
+    timestamp: option(ANY_INT)
 })
 
 

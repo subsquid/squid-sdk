@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-data",
+      "comment": "handle negative tx.timestamp values",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/tron-data"
+}
