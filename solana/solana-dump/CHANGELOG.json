@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.0.7",
+      "tag": "@subsquid/solana-dump_v0.0.7",
+      "date": "Tue, 03 Dec 2024 11:47:42 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/solana-dump_v0.0.6",
       "date": "Mon, 07 Oct 2024 08:48:33 GMT",
