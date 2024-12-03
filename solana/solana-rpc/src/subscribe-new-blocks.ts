@@ -1,16 +1,16 @@
 import {RpcClient, SubscriptionHandle} from '@subsquid/rpc-client'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {addErrorContext, ensureError} from '@subsquid/util-internal'
-import {ANY_OBJECT, assertValidity, NAT, nullable, object} from '@subsquid/util-internal-validation'
+import {ANY, assertValidity, NAT, nullable, object} from '@subsquid/util-internal-validation'
 import {Commitment} from './rpc'
-import {DataRequest, Block} from './types'
+import {Block, DataRequest} from './types'
 
 
 const BlockNotification = object({
     value: object({
         slot: NAT,
         block: nullable(GetBlock),
-        err: nullable(ANY_OBJECT)
+        err: nullable(ANY)
     })
 })
 
@@ -56,8 +56,9 @@ function checkBlockNotification(req: DataRequest, msg: unknown): Block | undefin
     assertValidity(BlockNotification, msg)
     let {slot, err, block} = msg.value
 
-    if (err) {
-        throw addErrorContext(new Error(`Got a block notification error at slot ${slot}`), {
+    if (err != null) {
+        throw addErrorContext(new Error(`block notification error`), {
+            blockSlot: slot,
             blockNotificationError: err
         })
     }
@@ -76,4 +77,15 @@ function checkBlockNotification(req: DataRequest, msg: unknown): Block | undefin
         slot,
         block
     }
+}
+
+
+export type BlockNotificationError = Error & {
+    blockSlot: number
+    blockNotificationError: any
+}
+
+
+export function isBlockNotificationError(err: unknown): err is BlockNotificationError {
+    return err instanceof Error && 'blockNotificationError' in err
 }

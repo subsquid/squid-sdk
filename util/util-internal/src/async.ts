@@ -138,6 +138,13 @@ export class AsyncQueue<T> {
         }
     }
 
+    removeCloseListener(cb: () => void): void {
+        if (this.closeListeners == null) return
+        let index = this.closeListeners.indexOf(cb)
+        if (index < 0) return
+        this.closeListeners.splice(index, 1)
+    }
+
     async *iterate(): AsyncIterable<T> {
         try {
             while (true) {

@@ -1,6 +1,6 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, removeArrayItem, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
@@ -209,7 +209,7 @@ export class RpcClient {
     }
 
     removeNotificationListener(cb: (msg: RpcNotification) => void): void {
-        removeItem(this.notificationListeners, cb)
+        removeArrayItem(this.notificationListeners, cb)
     }
 
     addResetListener(cb: (reason: Error) => void): void {
@@ -217,7 +217,7 @@ export class RpcClient {
     }
 
     removeResetListener(cb: (reason: Error) => void): void {
-        removeItem(this.resetListeners, cb)
+        removeArrayItem(this.resetListeners, cb)
     }
 
     subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
@@ -573,11 +573,4 @@ function isRateLimitError(err: unknown): boolean {
 
 function isExecutionTimeoutError(err: unknown): boolean {
     return err instanceof RpcError && /execution timeout/i.test(err.message)
-}
-
-
-function removeItem<T>(arr: T[], item: T): void {
-    let index = arr.indexOf(item)
-    if (index < 0) return
-    arr.splice(index, 1)
 }

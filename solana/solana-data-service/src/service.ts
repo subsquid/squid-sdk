@@ -1,8 +1,8 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, SubscriptionHandle} from '@subsquid/rpc-client'
 import {mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
-import {DataRequest, getBlocks, ingest} from '@subsquid/solana-rpc'
+import {DataRequest, getBlocks, ingest, isBlockNotificationError, subscribeNewBlocks} from '@subsquid/solana-rpc'
 import {
     addErrorContext,
     assertNotNull,
@@ -11,7 +11,7 @@ import {
     concurrentMap,
     createFuture,
     Future,
-    last,
+    last, removeArrayItem,
     splitArray
 } from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -19,7 +19,7 @@ import {FiniteRange, splitRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Chain, InvalidBaseBlock} from './chain'
 import {Block, BlockRef} from './types'
-import {isChain} from './util'
+import {isChain, Timeout} from './util'
 
 
 export interface Response {
@@ -41,6 +41,7 @@ export interface SolanaServiceOptions {
     websocketRpc?: RpcClient
     bufferSize?: number
     log?: Logger
+    newBlockTimeout?: number
 }
 
 
@@ -56,6 +57,7 @@ export class SolanaService {
     private websocket?: RpcClient
     private votes: boolean
     private bufferSize: number
+    private newBlockTimeout: number
     private log: Logger
     private finalityChecks = new AsyncQueue<null>(1)
     private newBlocks = new AsyncQueue<Block[]>(1)
@@ -65,6 +67,7 @@ export class SolanaService {
         this.rpc = new rpc.Rpc(options.httpRpc)
         this.websocket = options.websocketRpc
         this.bufferSize = options.bufferSize ?? 1000
+        this.newBlockTimeout = options.newBlockTimeout ?? 10000
         this.votes = options.votes ?? false
         this.log = options.log ?? createLogger('sqd:solana-data-service')
     }
@@ -204,14 +207,14 @@ export class SolanaService {
         this.listeners.push(listener)
 
         let timer = setTimeout(() => {
-            removeItem(this.listeners, listener)
+            removeArrayItem(this.listeners, listener)
             future.resolve()
         }, 10000)
 
         return future.promise().finally(() => clearTimeout(timer))
     }
 
-    private async ingestLoop(): Promise<void> {
+    private async httpIngestLoop(): Promise<void> {
         let stream = ingest({
             rpc: this.rpc.withPriority(5),
             commitment: 'confirmed',
@@ -225,6 +228,69 @@ export class SolanaService {
         }
     }
 
+    private websocketIngestLoop(): Promise<void> {
+        assert(this.websocket, 'websocket RPC is not defined')
+        let websocket = this.websocket
+
+        let handle: SubscriptionHandle | undefined
+
+        let newBlockTimeout = new Timeout(10000, () => {
+            this.log.warn('have not received new block for more than 10 secs')
+            handle?.reset()
+        })
+
+        return new Promise<void>((resolve, reject) => {
+            handle = subscribeNewBlocks(
+                websocket,
+                'confirmed',
+                ALL_DATA,
+                msg => {
+                    if (isBlockNotificationError(msg)) {
+                        this.log.error(msg)
+                        return
+                    }
+
+                    if (msg instanceof Error) {
+                        this.newBlocks.removeCloseListener(resolve)
+                        reject(msg)
+                        return
+                    }
+
+                    let block: Block
+                    try {
+                        block = this.mapRpcBlock(msg)
+                    } catch(err: any) {
+                        this.log.error(err)
+                        return
+                    }
+                    newBlockTimeout.reset()
+                    this.enqueue(block)
+                }
+            )
+
+            newBlockTimeout.start()
+            this.newBlocks.addCloseListener(resolve)
+
+        }).finally(() => {
+            handle?.close()
+            newBlockTimeout.stop()
+        })
+    }
+
+    private enqueue(block: Block): void {
+        if (this.newBlocks.isClosed()) return
+        let queue = this.newBlocks.peek()
+        if (queue) {
+            if (queue.length < 20) {
+                queue.push(block)
+            } else {
+                queue[queue.length - 1] = block
+            }
+        } else {
+            this.newBlocks.forcePut([block])
+        }
+    }
+
     private async receiveLoop(): Promise<void> {
         for await (let batch of this.newBlocks.iterate()) {
             for await (let block of batch) {
@@ -233,10 +299,8 @@ export class SolanaService {
             if (!this.chain.compact()) {
                 this.log.error('block finalization lags behind and prevents buffer compaction')
             }
-            if (this.newBlocks.peek() == null) {
-                this.finalityChecks.forcePut(null)
-                this.notifyListeners()
-            }
+            this.finalityChecks.forcePut(null)
+            this.notifyListeners()
         }
     }
 
@@ -414,7 +478,7 @@ export class SolanaService {
 
     async run(): Promise<void> {
         await Promise.race([
-            this.ingestLoop(),
+            this.websocket ? this.websocketIngestLoop() : this.httpIngestLoop(),
             this.receiveLoop(),
             this.finalityChecksLoop()
         ]).finally(() => {
@@ -422,11 +486,4 @@ export class SolanaService {
             this.newBlocks.close()
         })
     }
-}
-
-
-function removeItem<T>(arr: T[], item: T): void {
-    let index = arr.indexOf(item)
-    if (index < 0) return
-    arr.splice(index, 1)
 }
