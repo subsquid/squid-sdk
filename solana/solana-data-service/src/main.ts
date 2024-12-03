@@ -19,6 +19,7 @@ runProgram(async () => {
     program.option('--http-rpc-capacity <number>', 'Maximum number of pending HTTP RPC requests allowed', positiveInt, 100)
     program.option('--ws-rpc <url>', 'Websocket RPC url', Url(['ws:', 'wss:']))
     program.option('--geyser-rpc <url>', 'Yellowstone gRPC url')
+    program.option('--buffer-size <number>', 'Max number of blocks to buffer', positiveInt, 500)
     program.option('-p, --port <number>', 'port to listen on', positiveInt, 3000)
     program.parse()
 
@@ -27,6 +28,7 @@ runProgram(async () => {
         httpRpcCapacity: number
         wsRpc?: string
         geyserRpc?: string
+        bufferSize: number
         port: number
     }
 
@@ -44,7 +46,8 @@ runProgram(async () => {
     let service = new SolanaService({
         httpRpc,
         websocketRpc,
-        votes: false
+        votes: false,
+        bufferSize: args.bufferSize
     })
 
     await service.init()

@@ -9,18 +9,17 @@ runProgram(async () => {
     let prev = 0
 
     let client = new RpcClient({
-        url: assertNotNull(process.env.SOLANA_BLOCKJOY)
+        url: assertNotNull(process.env.SOLANA_BLOCKJOY_WS)
     })
 
     // let rpc = new Rpc(client)
     //
     // let {context: {slot: start}} = await rpc.getLatestBlockhash('confirmed')
-
     //
     // let stream = new PollStream({
     //     rpc,
     //     commitment: 'confirmed',
-    //     req: {transactions: false, rewards: false},
+    //     req: {transactions: true, rewards: true},
     //     from: start
     // })
     //
@@ -35,7 +34,7 @@ runProgram(async () => {
     // }
 
     return new Promise((resolve, reject) => {
-        subscribeNewBlocks(client, 'confirmed', {transactions: false, rewards: false}, msg => {
+        subscribeNewBlocks(client, 'confirmed', {transactions: true, rewards: true}, msg => {
             if (msg instanceof Error) {
                 reject(msg)
             } else {

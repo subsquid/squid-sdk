@@ -7,6 +7,7 @@ export interface BlockRef {
 export interface BlockHeader extends BlockRef {
     parentNumber: number
     parentHash: string
+    timestamp?: number
     isFinal?: boolean
 }
 

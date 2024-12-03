@@ -16,7 +16,7 @@ export class Chain {
 
     constructor(
         base: Block,
-        private maxSize: number = 500
+        private maxSize: number
     ) {
         assert(this.maxSize > 0)
         this.blocks = [base]
@@ -165,7 +165,7 @@ export class Chain {
 
     getUnfinalizedSlots(): number[] {
         let slots = []
-        for (let i = this.finalizedHead; i < this.blocks.length; i++) {
+        for (let i = this.finalizedHead + 1; i < this.blocks.length; i++) {
             slots.push(this.blocks[i].number)
         }
         return slots

@@ -11,7 +11,8 @@ import {
     concurrentMap,
     createFuture,
     Future,
-    last, removeArrayItem,
+    last,
+    removeArrayItem,
     splitArray
 } from '@subsquid/util-internal'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -66,7 +67,7 @@ export class SolanaService {
     constructor(options: SolanaServiceOptions) {
         this.rpc = new rpc.Rpc(options.httpRpc)
         this.websocket = options.websocketRpc
-        this.bufferSize = options.bufferSize ?? 1000
+        this.bufferSize = options.bufferSize ?? 100
         this.newBlockTimeout = options.newBlockTimeout ?? 10000
         this.votes = options.votes ?? false
         this.log = options.log ?? createLogger('sqd:solana-data-service')
@@ -353,6 +354,8 @@ export class SolanaService {
 
         if (isChain(this.chain.lastBlock(), block)) {
             this.push(block)
+        } else if (this.chain.lastSlot() < block.parentNumber) {
+            this.logBlockInfo(block, 'dropping early block')
         } else {
             this.logBlockInfo(block, 'dropping forked block')
         }
@@ -366,7 +369,8 @@ export class SolanaService {
     private logBlockInfo(block: Block, msg: string): void {
         this.log.info({
             blockSlot: block.number,
-            blockHash: block.hash
+            blockHash: block.hash,
+            blockAge: block.timestamp && Date.now() - block.timestamp,
         }, msg)
     }
 
@@ -396,14 +400,21 @@ export class SolanaService {
         for await (let _ of this.finalityChecks.iterate()) {
             let slots: number[]
             while ((slots = this.chain.getUnfinalizedSlots()).length > 0) {
-                // probe up to 5 last slots
-                slots = slots.slice(Math.max(0, slots.length - 5))
+                // probe up to 5 first slots
+                slots = slots.slice(0, 5)
 
                 let infos = await rpc.getBlockBatch(slots, {
                     commitment: 'finalized',
                     rewards: false,
                     transactionDetails: 'none'
                 })
+
+                if (this.log.isDebug()) {
+                    this.log.debug(
+                        infos.map((m, i) => ({slot: slots[i], final: !!m})),
+                        'probe result'
+                    )
+                }
 
                 for (let i = infos.length - 1; i >= 0; i--) {
                     let info = infos[i]
@@ -460,6 +471,7 @@ export class SolanaService {
                 hash: block.header.hash,
                 parentNumber: block.header.parentSlot,
                 parentHash: block.header.parentHash,
+                timestamp: block.header.timestamp * 1000,
                 isFinal: src.isFinal,
                 jsonLine,
                 jsonLineByteLength: Buffer.byteLength(jsonLine)
