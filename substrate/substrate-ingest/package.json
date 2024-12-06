@@ -22,7 +22,7 @@
     "@subsquid/rpc-client": "^4.11.0",
     "@subsquid/substrate-data": "^4.2.1",
     "@subsquid/substrate-data-raw": "^1.2.0",
-    "@subsquid/substrate-runtime": "^2.0.0",
+    "@subsquid/substrate-runtime": "^2.0.1",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-cli": "^0.1.1",
     "@subsquid/util-internal-json": "^1.2.3"

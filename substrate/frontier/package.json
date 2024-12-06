@@ -22,11 +22,11 @@
     "@subsquid/util-internal": "^3.2.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.0",
+    "@subsquid/substrate-runtime": "^2.0.1",
     "ethers": "^6.9.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.0",
+    "@subsquid/substrate-runtime": "^2.0.1",
     "@types/node": "^18.18.14",
     "@types/mocha": "^10.0.7",
     "@types/expect": "^24.3.0",
