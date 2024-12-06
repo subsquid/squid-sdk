@@ -32,6 +32,8 @@ import {
     GearUserMessageSentRequest
 } from './interfaces/data-request'
 import {getFieldSelectionValidator} from './selection'
+import {SubstratePortal} from './ds-portal'
+import {PortalClient} from '@subsquid/portal-client'
 
 
 export interface RpcEndpointSettings {
@@ -91,6 +93,22 @@ export interface GatewaySettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+}
+
+
+export interface PortalSettings {
+    /**
+     * Subsquid Network Gateway url
+     */
+    url: string
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+    
+    bufferThreshold?: number
+
+    newBlockTimeout?: number
 }
 
 
@@ -160,7 +178,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private finalityConfirmation?: number
-    private archive?: GatewaySettings
+    private archive?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'}
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -184,11 +202,23 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      * processor.setGateway('https://v2.archive.subsquid.io/network/kusama')
      */
     setGateway(url: string | GatewaySettings): this {
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with setPortal()')
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.archive = {type: 'gateway', url}
         } else {
-            this.archive = url
+            this.archive = {type: 'gateway', ...url}
+        }
+        return this
+    }
+
+    setPortal(url: string | PortalSettings): this {
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with setGateway()')
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {type: 'portal', url}
+        } else {
+            this.archive = {type: 'portal', ...url}
         }
         return this
     }
@@ -475,7 +505,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): SubstrateArchive {
+    private getArchiveDataSource(): SubstrateArchive | SubstratePortal {
         let options = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
@@ -490,16 +520,29 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             log
         })
 
-        return new SubstrateArchive({
-            client: new ArchiveClient({
-                http,
-                url: options.url,
-                queryTimeout: options.requestTimeout,
-                log
-            }),
-            rpc: this.getChainRpcClient(),
-            typesBundle: this.typesBundle
-        })
+        return options.type === 'gateway'
+            ? new SubstrateArchive({
+                client: new ArchiveClient({
+                    http,
+                    url: options.url,
+                    queryTimeout: options.requestTimeout,
+                    log
+                }),
+                rpc: this.getChainRpcClient(),
+                typesBundle: this.typesBundle
+            })
+            : new SubstratePortal({
+                client: new PortalClient({
+                    http,
+                    url: options.url,
+                    queryTimeout: options.requestTimeout,
+                    bufferThreshold: options.bufferThreshold,
+                    newBlockTimeout: options.newBlockTimeout,
+                    log,
+                }),
+                rpc: this.getChainRpcClient(),
+                typesBundle: this.typesBundle
+            })
     }
 
     @def

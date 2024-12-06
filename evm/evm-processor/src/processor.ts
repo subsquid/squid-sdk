@@ -229,7 +229,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * processor.setGateway('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
     setGateway(url: string | GatewaySettings): this {
-        assert(this.archive?.type !== 'gateway', 'setGateway() can not be used together with setPortal()')
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with setPortal()')
         this.assertNotRunning()
         if (typeof url == 'string') {
             this.archive = {type: 'gateway', url}
@@ -239,9 +239,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
-
     setPortal(url: string | PortalSettings): this {
-        assert(this.archive?.type !== 'gateway', 'setPortal() can not be used together with setGateway()')
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with setGateway()')
         this.assertNotRunning()
         if (typeof url == 'string') {
             this.archive = {type: 'portal', url}
@@ -250,7 +249,6 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         }
         return this
     }
-
 
     /**
      * Set chain RPC endpoint

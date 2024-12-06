@@ -8,14 +8,17 @@ import {events} from './types'
 
 
 const processor = new SubstrateBatchProcessor()
-    .setGateway('https://v2.archive.subsquid.io/network/kusama')
+    .setPortal('https://portal.sqd.dev/datasets/kusama')
     .setRpcEndpoint(process.env.KUSAMA_NODE_WS || 'wss://kusama-rpc.polkadot.io')
+    .setRpcDataIngestionSettings({
+        // disabled: true,
+    })
     .setFields({
         block: {
             timestamp: true
         }
     })
-    .setBlockRange({from: 19_666_100})
+    .setBlockRange({from: 0})
     .addEvent({
         name: [events.balances.transfer.name]
     })
