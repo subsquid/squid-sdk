@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "support bare v5 extrinsics",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
