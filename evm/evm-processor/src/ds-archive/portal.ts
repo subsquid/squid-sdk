@@ -79,21 +79,15 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
     ): AsyncIterable<Batch<Block>> {
         let height = new Throttler(() => this.client.getHeight(), 20_000)
 
-        let top = await height.get()
+        let top = await height.call()
         for (let req of requests) {
-            let from = req.range.from
-            let to = req.range.to
-            if (top < from && stopOnHead) return
+            let lastBlock = req.range.from - 1
+            let endBlock = req.range.to || Infinity
+            let query = makeQuery(req)
 
-            let query = makeQuery({
-                ...req,
-                range: {from, to},
-            })
             for await (let batch of this.client.stream(query, stopOnHead)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
-                let lastBlock = last(batch).header.number
-                assert(lastBlock >= from)
-                from = lastBlock + 1
+                lastBlock = last(batch).header.number
 
                 let blocks = batch.map((b) => {
                     try {
@@ -108,10 +102,18 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
 
                 yield {
                     blocks,
-                    isHead: from > top,
+                    isHead: lastBlock > top,
                 }
 
                 top = await height.get()
+            }
+
+            // stream ended before requested range,
+            // which means we reached the last available block
+            // should not happen if stopOnHead is set to false
+            if (lastBlock < endBlock) {
+                assert(stopOnHead, 'unexpected end of stream')
+                break
             }
         }
     }
