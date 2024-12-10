@@ -8,7 +8,10 @@ import {events} from './types'
 
 
 const processor = new SubstrateBatchProcessor()
-    .setPortal('https://portal.sqd.dev/datasets/kusama')
+    .setPortal({
+        url: 'https://portal.sqd.dev/datasets/kusama',
+        bufferThreshold: 50 * 1024 * 1024,
+    })
     .setRpcEndpoint(process.env.KUSAMA_NODE_WS || 'wss://kusama-rpc.polkadot.io')
     .setRpcDataIngestionSettings({
         // disabled: true,
@@ -20,11 +23,12 @@ const processor = new SubstrateBatchProcessor()
     })
     .setBlockRange({from: 0})
     .addEvent({
-        name: [events.balances.transfer.name]
+        name: [events.balances.transfer.name],
     })
 
 
 processor.run(new TypeormDatabase(), async ctx => {
+
     let transfers: Transfer[] = []
 
     for (let block of ctx.blocks) {

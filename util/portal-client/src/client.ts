@@ -58,16 +58,6 @@ export class PortalClient {
         return u.toString()
     }
 
-    async getHeight(): Promise<number> {
-        let res: string = await this.http.get(this.getDatasetUrl('finalized-stream/height'), {
-            retryAttempts: 3,
-            httpTimeout: 10_000,
-        })
-        let height = parseInt(res)
-        assert(Number.isSafeInteger(height))
-        return height
-    }
-
     async getMetadata(): Promise<Metadata> {
         let res: {real_time: boolean} = await this.http.get(this.getDatasetUrl('metadata'), {
             retryAttempts: 3,
@@ -78,7 +68,18 @@ export class PortalClient {
         }
     }
 
-    query<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): Promise<B[]> {
+    async getFinalizedHeight(): Promise<number> {
+        let res: string = await this.http.get(this.getDatasetUrl('finalized-stream/height'), {
+            retryAttempts: 3,
+            httpTimeout: 10_000,
+        })
+        let height = parseInt(res)
+        assert(Number.isSafeInteger(height))
+        return height
+    }
+
+    finalizedQuery<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): Promise<B[]> {
+        // FIXME: is it needed or it is better to always use stream?
         return this.http
             .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
                 json: query,
@@ -91,7 +92,6 @@ export class PortalClient {
                 })
             )
             .then((res) => {
-                // TODO: move the conversion to the server
                 let blocks = res.body
                     .toString('utf8')
                     .trimEnd()
@@ -101,14 +101,50 @@ export class PortalClient {
             })
     }
 
-    async *stream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
+    async *finalizedStream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
         query: Q,
         stopOnHead = false
     ): AsyncIterable<B[]> {
         let queue = new AsyncQueue<B[] | Error>(1)
+        let bufferSize = 0
+        let isReady = false
+        let cache: B[] = []
+
+        const getBuffer = () => {
+            if (queue.isClosed()) return
+            let peeked = queue.peek()
+            // FIXME: is it a valid case?
+            if (peeked instanceof Error) return
+
+            // buffer has been consumed, we need to reset
+            if (isReady && !peeked) {
+                reset()
+            }
+
+            return peeked ?? cache
+        }
+
+        const reset = () => {
+            bufferSize = 0
+            isReady = false
+            cache.length = 0
+        }
+
+        const setReady = () => {
+            if (queue.isClosed()) return
+            if (isReady) return
+            queue.forcePut(cache)
+            isReady = true
+            cache = []
+        }
+
+        const waitForReset = async () => {
+            if (queue.isClosed()) return
+            await queue.wait()
+            reset()
+        }
 
         const ingest = async () => {
-            let bufferSize = 0
             let fromBlock = query.fromBlock
             let toBlock = query.toBlock ?? Infinity
 
@@ -131,49 +167,51 @@ export class PortalClient {
                 // no blocks left
                 if (res.status == 204) {
                     if (stopOnHead) return
+
                     await wait(1000)
-                } else {
-                    try {
-                        let stream = splitLines(res.body)
+                    continue
+                }
 
-                        while (true) {
-                            let lines = await addTimeout(stream.next(), this.newBlockTimeout)
-                            if (lines.done) break
+                try {
+                    let stream = splitLines(res.body)
 
-                            let batch = queue.peek()
-                            if (batch instanceof Error) return
+                    while (true) {
+                        let lines = await addTimeout(stream.next(), this.newBlockTimeout)
+                        if (lines.done) break
 
-                            if (!batch) {
-                                bufferSize = 0
-                            }
+                        let buffer = getBuffer()
+                        if (buffer == null) break
 
-                            let blocks = lines.value.map((line) => {
-                                bufferSize += line.length
-                                return JSON.parse(line) as B
-                            })
+                        let blocks = lines.value.map((line) => {
+                            bufferSize += line.length
+                            return JSON.parse(line) as B
+                        })
 
-                            if (batch) {
-                                // FIXME: won't it overflow stack?
-                                batch.push(...blocks)
-                                if (bufferSize > this.bufferThreshold) {
-                                    await queue.wait()
-                                }
-                            } else {
-                                await queue.put(blocks)
-                            }
+                        // FIXME: won't it overflow stack?
+                        buffer.push(...blocks)
 
-                            fromBlock = last(blocks).header.number + 1
-                        }
-                    } catch (err) {
-                        if (err instanceof TimeoutError) {
-                            this.log?.warn(
-                                `resetting stream, because we haven't seen a new blocks for ${this.newBlockTimeout} ms`
-                            )
-                            res.body.destroy()
-                        } else {
-                            throw err
+                        fromBlock = last(blocks).header.number + 1
+
+                        if (bufferSize > this.bufferThreshold) {
+                            setReady()
+                            await waitForReset()
                         }
                     }
+
+                    if (bufferSize > 0) {
+                        setReady()
+                    }
+                } catch (err) {
+                    if (err instanceof TimeoutError) {
+                        this.log?.warn(
+                            `resetting stream, because we haven't seen a new blocks for ${this.newBlockTimeout} ms`
+                        )
+                    } else {
+                        throw err
+                    }
+                } finally {
+                    // FIXME: is it needed?
+                    res.body.destroy()
                 }
             }
         }
@@ -181,9 +219,9 @@ export class PortalClient {
         ingest().then(
             () => queue.close(),
             (err) => {
-                if (!queue.isClosed()) {
-                    queue.forcePut(ensureError(err))
-                }
+                if (queue.isClosed()) return
+                queue.forcePut(ensureError(err))
+                queue.close()
             }
         )
 

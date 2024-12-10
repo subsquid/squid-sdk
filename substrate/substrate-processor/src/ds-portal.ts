@@ -70,7 +70,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
     }
 
     getFinalizedHeight(): Promise<number> {
-        return this.client.getHeight()
+        return this.client.getFinalizedHeight()
     }
 
     async getBlockHash(height: number): Promise<string | null> {
@@ -78,7 +78,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
             range: {from: height, to: height},
             request: {includeAllBlocks: true},
         })
-        let blocks = await this.client.query(query)
+        let blocks = await this.client.finalizedQuery(query)
         return blocks[0]?.header?.hash || null
     }
 
@@ -86,7 +86,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
         requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean | undefined
     ): AsyncIterable<Batch<Block>> {
-        let height = new Throttler(() => this.client.getHeight(), 20_000)
+        let height = new Throttler(() => this.client.getFinalizedHeight(), 20_000)
 
         let runtimeTracker = new RuntimeTracker<ArchiveBlockHeader & WithRuntime>(
             this.rpc,
@@ -101,7 +101,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let batch of this.client.stream<ArchiveBlock>(query, stopOnHead)) {
+            for await (let batch of this.client.finalizedStream<ArchiveBlock>(query, stopOnHead)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 lastBlock = last(batch).header.number
 
