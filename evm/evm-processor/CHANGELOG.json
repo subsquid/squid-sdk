@@ -2,6 +2,76 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.26.1",
+      "tag": "@subsquid/evm-processor_v1.26.1",
+      "date": "Tue, 03 Dec 2024 11:47:42 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.6.0` to `0.7.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.26.0",
+      "tag": "@subsquid/evm-processor_v1.26.0",
+      "date": "Sun, 17 Nov 2024 06:01:50 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `tx.authorizationList` field"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.25.0",
+      "tag": "@subsquid/evm-processor_v1.25.0",
+      "date": "Thu, 14 Nov 2024 12:06:12 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to filter transactions by type"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.24.0",
+      "tag": "@subsquid/evm-processor_v1.24.0",
+      "date": "Wed, 13 Nov 2024 11:28:41 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "properly pass timeout to debug trace config"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add transactionStateDiffs to LogRequest"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.23.0",
+      "tag": "@subsquid/evm-processor_v1.23.0",
+      "date": "Fri, 01 Nov 2024 17:26:43 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to configure number of rpc connection errors retry attempts"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.9.0` to `4.10.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.22.1",
       "tag": "@subsquid/evm-processor_v1.22.1",
       "date": "Thu, 24 Oct 2024 16:06:57 GMT",

@@ -63,6 +63,7 @@ export function getTxSelectionValidator() {
         l1BaseFeeScalar: FIELD,
         l1BlobBaseFee: FIELD,
         l1BlobBaseFeeScalar: FIELD,
+        authorizationList: FIELD,
     }
     return object(fields)
 }

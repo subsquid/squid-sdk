@@ -46,6 +46,16 @@ export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive:
 
 export function getTxProps(fields: FieldSelection['transaction'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
+
+    let Authorization = object({
+        chainId: natural,
+        nonce: natural,
+        address: BYTES,
+        yParity: natural,
+        r: BYTES,
+        s: BYTES,
+    })
+
     return {
         transactionIndex: natural,
         ...project(fields, {
@@ -64,6 +74,7 @@ export function getTxProps(fields: FieldSelection['transaction'], forArchive: bo
             s: withSentinel('Transaction.s', '0x', BYTES),
             yParity: option(natural),
             chainId: option(natural),
+            authorizationList: option(array(Authorization)),
         })
     }
 }

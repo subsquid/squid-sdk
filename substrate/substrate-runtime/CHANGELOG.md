@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Fri, 06 Dec 2024 12:39:20 GMT and should not be manually modified.
+
+## 2.0.1
+Fri, 06 Dec 2024 12:39:20 GMT
+
+### Patches
+
+- support bare v5 extrinsics
 
 ## 2.0.0
 Tue, 09 Apr 2024 17:45:37 GMT

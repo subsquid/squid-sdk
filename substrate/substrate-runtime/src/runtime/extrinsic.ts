@@ -1,7 +1,14 @@
 import {ByteSink, Codec, Sink, Src} from '@subsquid/scale-codec'
+import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import type {RuntimeDescription} from '../metadata'
 import {Extrinsic} from './interfaces'
+
+
+enum Preamble {
+    Bare = 0,
+    Signed = 128,
+}
 
 
 export function decodeExtrinsic(
@@ -15,24 +22,25 @@ export function decodeExtrinsic(
     src.compact()
 
     let meta = src.u8()
-    let signed = meta & 0b10000000
     let version = meta & 0b01111111
+    assert([4, 5].includes(version), 'unsupported extrinsic version')
 
-    assert(version == 4, 'unsupported extrinsic version')
-
-    if (signed) {
-        let signature = codec.decode(runtimeDescription.signature, src)
-        let call = codec.decode(runtimeDescription.call, src)
-        return {
-            version: 4,
-            signature,
-            call
-        }
-    } else {
-        return {
-            version: 4,
-            call: codec.decode(runtimeDescription.call, src)
-        }
+    let preamble = meta & 0b11000000
+    switch (preamble) {
+        case Preamble.Bare:
+            return {
+                version,
+                call: codec.decode(runtimeDescription.call, src)
+            }
+        case Preamble.Signed:
+            assert(version == 4, 'signed extrinsics only supported for v4');
+            return {
+                version,
+                signature: codec.decode(runtimeDescription.signature, src),
+                call: codec.decode(runtimeDescription.call, src)
+            }
+        default:
+            throw unexpectedCase(preamble)
     }
 }
 

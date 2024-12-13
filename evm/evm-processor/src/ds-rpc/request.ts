@@ -87,6 +87,11 @@ function stateDiffsRequested(req?: DataRequest): boolean {
             if (tx.stateDiffs) return true
         }
     }
+    if (req.logs) {
+        for (let log of req.logs) {
+            if (log.transactionStateDiffs) return true
+        }
+    }
     return false
 }
 
@@ -105,7 +110,8 @@ const TX_FIELDS: {[K in Exclude<keyof _EvmTx, 'hash'>]: true} = {
     r: true,
     s: true,
     yParity: true,
-    chainId: true
+    chainId: true,
+    authorizationList: true,
 }
 
 

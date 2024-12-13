@@ -1,6 +1,20 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+This log was last generated on Tue, 26 Nov 2024 06:42:52 GMT and should not be manually modified.
+
+## 4.11.0
+Tue, 26 Nov 2024 06:42:52 GMT
+
+### Minor changes
+
+- make `request timed out` error retryable
+
+## 4.10.0
+Fri, 01 Nov 2024 17:26:43 GMT
+
+### Minor changes
+
+- make `exectution timeout` error retryable
 
 ## 4.9.0
 Wed, 17 Apr 2024 12:46:35 GMT

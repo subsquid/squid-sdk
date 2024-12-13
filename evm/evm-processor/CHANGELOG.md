@@ -1,6 +1,43 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Thu, 24 Oct 2024 16:06:57 GMT and should not be manually modified.
+This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+
+## 1.26.1
+Tue, 03 Dec 2024 11:47:42 GMT
+
+_Version update only_
+
+## 1.26.0
+Sun, 17 Nov 2024 06:01:50 GMT
+
+### Minor changes
+
+- add `tx.authorizationList` field
+
+## 1.25.0
+Thu, 14 Nov 2024 12:06:12 GMT
+
+### Minor changes
+
+- allow to filter transactions by type
+
+## 1.24.0
+Wed, 13 Nov 2024 11:28:41 GMT
+
+### Minor changes
+
+- add transactionStateDiffs to LogRequest
+
+### Patches
+
+- properly pass timeout to debug trace config
+
+## 1.23.0
+Fri, 01 Nov 2024 17:26:43 GMT
+
+### Minor changes
+
+- allow to configure number of rpc connection errors retry attempts
 
 ## 1.22.1
 Thu, 24 Oct 2024 16:06:57 GMT

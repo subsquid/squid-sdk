@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-runtime",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/substrate-runtime_v2.0.1",
+      "date": "Fri, 06 Dec 2024 12:39:20 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support bare v5 extrinsics"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/substrate-runtime_v2.0.0",
       "date": "Tue, 09 Apr 2024 17:45:37 GMT",

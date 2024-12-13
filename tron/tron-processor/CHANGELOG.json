@@ -2,6 +2,24 @@
   "name": "@subsquid/tron-processor",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/tron-processor_v0.0.3",
+      "date": "Tue, 03 Dec 2024 11:47:42 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/tron-normalization\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.6.0` to `0.7.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/tron-processor_v0.0.2",
       "date": "Fri, 18 Oct 2024 11:14:29 GMT",

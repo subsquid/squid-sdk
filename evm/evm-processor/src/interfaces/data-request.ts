@@ -22,6 +22,7 @@ export interface LogRequest {
     transaction?: boolean
     transactionTraces?: boolean
     transactionLogs?: boolean
+    transactionStateDiffs?: boolean
 }
 
 
@@ -29,6 +30,7 @@ export interface TransactionRequest {
     to?: Bytes20[]
     from?: Bytes20[]
     sighash?: Bytes[]
+    type?: number[]
     logs?: boolean
     traces?: boolean
     stateDiffs?: boolean

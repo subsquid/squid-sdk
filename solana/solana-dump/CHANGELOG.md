@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+
+## 0.0.7
+Tue, 03 Dec 2024 11:47:42 GMT
+
+_Version update only_
 
 ## 0.0.6
 Mon, 07 Oct 2024 08:48:33 GMT
