@@ -26,7 +26,8 @@ export interface PortalClientOptions {
     url: string
     http: HttpClient
     log?: Logger
-    queryTimeout?: number
+    requestTimeout?: number
+    retryAttempts?: number
     bufferThreshold?: number
     newBlockTimeout?: number
 }
@@ -34,18 +35,20 @@ export interface PortalClientOptions {
 export class PortalClient {
     private url: URL
     private http: HttpClient
-    private queryTimeout: number
+    private requestTimeout: number
     private bufferThreshold: number
     private newBlockTimeout: number
+    private retryAttempts: number
     private log?: Logger
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
         this.log = options.log
         this.http = options.http
-        this.queryTimeout = options.queryTimeout ?? 180_000
+        this.requestTimeout = options.requestTimeout ?? 180_000
         this.bufferThreshold = options.bufferThreshold ?? 10 * 1024 * 1024
         this.newBlockTimeout = options.newBlockTimeout ?? 120_000
+        this.retryAttempts = options.retryAttempts ?? Infinity
     }
 
     private getDatasetUrl(path: string): string {
@@ -60,8 +63,8 @@ export class PortalClient {
 
     async getMetadata(): Promise<Metadata> {
         let res: {real_time: boolean} = await this.http.get(this.getDatasetUrl('metadata'), {
-            retryAttempts: 3,
-            httpTimeout: 10_000,
+            retryAttempts: this.retryAttempts,
+            httpTimeout: this.requestTimeout,
         })
         return {
             isRealTime: !!res.real_time,
@@ -70,8 +73,8 @@ export class PortalClient {
 
     async getFinalizedHeight(): Promise<number> {
         let res: string = await this.http.get(this.getDatasetUrl('finalized-stream/height'), {
-            retryAttempts: 3,
-            httpTimeout: 10_000,
+            retryAttempts: this.retryAttempts,
+            httpTimeout: this.requestTimeout,
         })
         let height = parseInt(res)
         assert(Number.isSafeInteger(height))
@@ -83,8 +86,8 @@ export class PortalClient {
         return this.http
             .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
                 json: query,
-                retryAttempts: 3,
-                httpTimeout: this.queryTimeout,
+                retryAttempts: this.retryAttempts,
+                httpTimeout: this.requestTimeout,
             })
             .catch(
                 withErrorContext({
@@ -154,8 +157,8 @@ export class PortalClient {
                 let res = await this.http
                     .request<Readable>('POST', this.getDatasetUrl(`finalized-stream`), {
                         json: archiveQuery,
-                        retryAttempts: 3,
-                        httpTimeout: this.queryTimeout,
+                        retryAttempts: this.retryAttempts,
+                        httpTimeout: this.requestTimeout,
                         stream: true,
                     })
                     .catch(

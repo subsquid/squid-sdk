@@ -105,6 +105,8 @@ export interface PortalSettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+
+    retryAttempts?: number
     
     bufferThreshold?: number
 
@@ -535,7 +537,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 client: new PortalClient({
                     http,
                     url: options.url,
-                    queryTimeout: options.requestTimeout,
+                    requestTimeout: options.requestTimeout,
+                    retryAttempts: options.retryAttempts,
                     bufferThreshold: options.bufferThreshold,
                     newBlockTimeout: options.newBlockTimeout,
                     log,

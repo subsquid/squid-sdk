@@ -118,6 +118,8 @@ export interface PortalSettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+
+    retryAttempts?: number
     
     bufferThreshold?: number
 
@@ -542,7 +544,8 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
                   new PortalClient({
                       http,
                       url: archive.url,
-                      queryTimeout: archive.requestTimeout,
+                      requestTimeout: archive.requestTimeout,
+                      retryAttempts: archive.retryAttempts,
                       bufferThreshold: archive.bufferThreshold,
                       newBlockTimeout: archive.newBlockTimeout,
                       log,
