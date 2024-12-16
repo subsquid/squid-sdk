@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "add `retry-after` header support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
