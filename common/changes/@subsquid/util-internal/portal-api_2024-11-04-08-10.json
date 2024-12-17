@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add `.wait() to `AsyncQueue``",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

@@ -4,14 +4,18 @@ import * as erc20 from './abi/erc20'
 import {Transfer} from './model'
 
 
-const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
+const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()
 
 
 const processor = new EvmBatchProcessor()
-    .setGateway('https://v2.archive.subsquid.io/network/arbitrum-one')
-    .setRpcEndpoint(process.env.ARB_NODE_WS)
+    .setPortal({
+        url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
+        bufferThreshold: 100 * 1024 * 1024,
+        newBlockTimeout: 5000,
+    })
+    .setRpcEndpoint('https://rpc.ankr.com/eth')
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 190000000})
+    .setBlockRange({from: 20801368})
     .setFields({
         block: {size: true},
         log: {transactionHash: true},
@@ -25,23 +29,23 @@ const processor = new EvmBatchProcessor()
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
 
-    
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
             if (log.address == CONTRACT &&  erc20.events.Transfer.is(log)) {
-                let {from, to, value} = erc20.events.Transfer.decode(log)
+                // let {from, to, value} = erc20.events.Transfer.decode(log)
                 transfers.push(new Transfer({
-                    id: log.id,
-                    blockNumber: block.header.height,
-                    timestamp: new Date(block.header.timestamp),
-                    tx: log.transactionHash,
-                    from,
-                    to,
-                    amount: value
+                    // id: log.id,
+                    // blockNumber: block.header.height,
+                    // timestamp: new Date(block.header.timestamp),
+                    // tx: log.transactionHash,
+                    // from,
+                    // to,
+                    // amount: value
                 }))
             }
         }
     }
 
-    await ctx.store.insert(transfers)
+    ctx.log.info(`found ${transfers.length} transfers`)
+    // await ctx.store.insert(transfers)
 })

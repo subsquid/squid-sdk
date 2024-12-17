@@ -3,10 +3,12 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {PortalClient} from '@subsquid/portal-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {EvmPortal} from './ds-archive/portal'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
@@ -107,6 +109,24 @@ export interface GatewaySettings {
 }
 
 
+export interface PortalSettings {
+    /**
+     * Subsquid Network Gateway url
+     */
+    url: string
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+
+    retryAttempts?: number
+    
+    bufferThreshold?: number
+
+    newBlockTimeout?: number
+}
+
+
 /**
  * @deprecated
  */
@@ -189,7 +209,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private archive?: GatewaySettings
+    private archive?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'}
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
@@ -211,11 +231,23 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * processor.setGateway('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
     setGateway(url: string | GatewaySettings): this {
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with setPortal()')
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.archive = {type: 'gateway', url}
         } else {
-            this.archive = url
+            this.archive = {type: 'gateway', ...url}
+        }
+        return this
+    }
+
+    setPortal(url: string | PortalSettings): this {
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with setGateway()')
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {type: 'portal', url}
+        } else {
+            this.archive = {type: 'portal', ...url}
         }
         return this
     }
@@ -484,7 +516,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): EvmArchive {
+    private getArchiveDataSource(): EvmArchive | EvmPortal {
         let archive = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
@@ -499,14 +531,26 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             log
         })
 
-        return new EvmArchive(
-            new ArchiveClient({
-                http,
-                url: archive.url,
-                queryTimeout: archive.requestTimeout,
-                log
-            })
-        )
+        return archive.type === 'gateway'
+            ? new EvmArchive(
+                  new ArchiveClient({
+                      http,
+                      url: archive.url,
+                      queryTimeout: archive.requestTimeout,
+                      log,
+                  })
+              )
+            : new EvmPortal(
+                  new PortalClient({
+                      http,
+                      url: archive.url,
+                      requestTimeout: archive.requestTimeout,
+                      retryAttempts: archive.retryAttempts,
+                      bufferThreshold: archive.bufferThreshold,
+                      newBlockTimeout: archive.newBlockTimeout,
+                      log,
+                  })
+              )
     }
 
     @def

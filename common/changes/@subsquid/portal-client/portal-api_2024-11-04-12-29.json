@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "init",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
