@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.6.0",
+      "tag": "@subsquid/http-client_v1.6.0",
+      "date": "Fri, 20 Dec 2024 16:52:59 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for `retry-after` header"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.0",
       "tag": "@subsquid/http-client_v1.5.0",
       "date": "Wed, 07 Aug 2024 15:52:38 GMT",
