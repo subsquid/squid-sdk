@@ -20,7 +20,7 @@
     "@subsquid/util-internal-range": "^0.3.0"
   },
   "peerDependencies": {
-    "@subsquid/http-client": "^1.5.0",
+    "@subsquid/http-client": "^1.6.0",
     "@subsquid/logger": "^1.3.3"
   },
   "peerDependenciesMeta": {
@@ -29,7 +29,7 @@
     }
   },
   "devDependencies": {
-    "@subsquid/http-client": "^1.5.0",
+    "@subsquid/http-client": "^1.6.0",
     "@subsquid/logger": "^1.3.3",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
