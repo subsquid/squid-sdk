@@ -27,6 +27,6 @@
   "devDependencies": {
     "@types/node": "^18.18.14",
     "@types/websocket": "^1.0.10",
-    "typescript": "~5.3.2"
+    "typescript": "~5.5.4"
   }
 }

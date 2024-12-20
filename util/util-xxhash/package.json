@@ -22,6 +22,6 @@
   "devDependencies": {
     "@types/node": "^18.18.14",
     "@types/xxhashjs": "^0.2.4",
-    "typescript": "~5.3.2"
+    "typescript": "~5.5.4"
   }
 }

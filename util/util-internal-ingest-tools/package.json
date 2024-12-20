@@ -31,6 +31,6 @@
   "devDependencies": {
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@types/node": "^18.18.14",
-    "typescript": "~5.3.2"
+    "typescript": "~5.5.4"
   }
 }
