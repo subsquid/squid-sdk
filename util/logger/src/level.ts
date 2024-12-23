@@ -55,6 +55,7 @@ function noMatch(ns: string): Specificity {
 export class Levels {
     private cache: Record<string, LogLevel> = {}
     private levels: NamespaceMatcher[] = [noMatch, noMatch, noMatch, noMatch, noMatch, noMatch]
+    private namespaceLevel?: (ns: string) => LogLevel | undefined
 
     get(ns: string): LogLevel {
         let level = this.cache[ns]
@@ -65,9 +66,15 @@ export class Levels {
         }
     }
 
+    setLevelCallback(cb?: (ns: string) => LogLevel | undefined): void {
+        this.namespaceLevel = cb
+    }
+
     private determineLevel(ns: string): LogLevel {
+        let level = this.namespaceLevel?.(ns)
+        if (level != null) return level
+        level = LogLevel.INFO
         let specificity = 0
-        let level = LogLevel.INFO
         for (let i = 0; i < this.levels.length; i++) {
             let s = this.levels[i](ns)
             if (s > specificity) {

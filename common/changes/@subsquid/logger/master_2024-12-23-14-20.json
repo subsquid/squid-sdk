@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "allow to use custom log sink and level determination logic",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
