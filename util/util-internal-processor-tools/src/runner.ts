@@ -18,6 +18,7 @@ export interface RunnerConfig<R, S> {
     database: Database<S>
     log: Logger
     prometheus: PrometheusServer
+    watchMempool?: boolean
 }
 
 
@@ -25,6 +26,8 @@ export class Runner<R, S> {
     private metrics: RunnerMetrics
     private statusReportTimer?: any
     private hasStatusNews = false
+    private startedWatchingMempool = false
+    private cancelMempoolWatch?: () => Promise<void>
 
     constructor(private config: RunnerConfig<R, S>) {
         this.metrics = new RunnerMetrics(this.config.requests)
@@ -38,6 +41,8 @@ export class Runner<R, S> {
         let state = await this.getDatabaseState()
         if (state.height >= 0) {
             log.info(`last processed final block was ${state.height}`)
+            log.debug(`clearing mempool state`)
+            await this.config.database.clearMempool()
         }
 
         if (this.getLeftRequests(state).length == 0) {
@@ -83,6 +88,8 @@ export class Runner<R, S> {
                 this.chainHeightUpdateLoop(hot)
             )
             if (this.getLeftRequests(state).length == 0) return
+        } else {
+            await this.processMempool(state)
         }
 
         if (chainFinalizedHeight > state.height + state.top.length) {
@@ -110,9 +117,9 @@ export class Runner<R, S> {
             state = nextState
         }
 
-        return this.processHotBlocks(state).finally(
+        return this.processHotBlocks(state).finally(async () => {
             this.chainHeightUpdateLoop(hot)
-        )
+        })
     }
 
     private async assertWeAreOnTheSameChain(src: DataSource<unknown, unknown>, state: HashAndHeight): Promise<void> {
@@ -149,7 +156,8 @@ export class Runner<R, S> {
             if (prevBatch) {
                 batch = {
                     blocks: prevBatch.blocks.concat(batch.blocks),
-                    isHead: batch.isHead
+                    isHead: batch.isHead,
+                    mempoolTransactions: [],
                 }
             }
             if (last(batch.blocks).header.height < minimumCommitHeight) {
@@ -168,6 +176,7 @@ export class Runner<R, S> {
     }
 
     private async handleFinalizedBlocks(state: HotDatabaseState, batch: Batch<Block>): Promise<HotDatabaseState> {
+        await this.cancelMempoolWatch?.()
         let lastBlock = last(batch.blocks)
 
         assert(state.height < lastBlock.header.height)
@@ -188,6 +197,11 @@ export class Runner<R, S> {
             })
         })
 
+        const isHead = nextState.height === this.metrics.getChainHeight()
+        if (isHead && !this.startedWatchingMempool && this.config.watchMempool) {
+            await this.processMempool(state)
+        }
+
         return nextState
     }
 
@@ -200,6 +214,8 @@ export class Runner<R, S> {
             this.getLeftRequests(state),
             state,
             async upd => {
+                await this.cancelMempoolWatch?.()
+
                 let newHead = maybeLast(upd.blocks)?.header || upd.baseHead
 
                 if (upd.baseHead.hash !== lastHead.hash) {
@@ -219,7 +235,8 @@ export class Runner<R, S> {
                         return db.transactHot2(info, (store, blockSliceStart, blockSliceEnd) => {
                             return this.config.process(store, {
                                 blocks: upd.blocks.slice(blockSliceStart, blockSliceEnd),
-                                isHead: blockSliceEnd === upd.blocks.length
+                                isHead: blockSliceEnd === upd.blocks.length,
+                                mempoolTransactions: []
                             })
                         })
                     } else {
@@ -232,15 +249,53 @@ export class Runner<R, S> {
 
                             return this.config.process(store, {
                                 blocks: [block],
-                                isHead: newHead.height === ref.height
+                                isHead: newHead.height === ref.height,
+                                mempoolTransactions: []
                             })
                         })
                     }
                 })
 
                 lastHead = newHead
+                const isHead = newHead.height === this.metrics.getChainHeight()
+                if (isHead && !this.startedWatchingMempool && this.config.watchMempool) {
+                    await this.processMempool(state)
+                }
             }
         )
+    }
+
+    private async processMempool(state: HotDatabaseState): Promise<void> {
+        assert(this.startedWatchingMempool === false)
+        this.startedWatchingMempool = true
+
+        assert(this.config.database.supportsHotBlocks)
+        assert(this.config.watchMempool)
+        let db = this.config.database
+        let ds = assertNotNull(this.config.hotDataSource)
+
+        this.log.debug("started watching mempool")
+        const cancel = await ds.processMempool?.(
+            this.getLeftRequests(state),
+            state,
+            async upd => {
+                return db.transactMempool((store) => {
+                    return this.config.process(store, {
+                        blocks: [],
+                        isHead: true,
+                        mempoolTransactions: upd.mempoolTransactions,
+                    })
+                })
+            }
+        )
+
+        this.cancelMempoolWatch = async () => {
+            this.log.debug(`stopped watching mempool`)
+            this.startedWatchingMempool = false
+            this.cancelMempoolWatch = undefined
+            await cancel?.()
+            await this.config.database.clearMempool()
+        }
     }
 
     private chainHeightUpdateLoop(src: DataSource<unknown, unknown>): () => void {

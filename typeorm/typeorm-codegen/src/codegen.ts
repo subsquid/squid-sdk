@@ -32,7 +32,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     dir.add('marshal.ts', path.resolve(__dirname, '../src/marshal.ts'))
 
     function generateEntity(name: string, entity: Entity): void {
-        index.line(`export * from "./${toCamelCase(name)}.model"`)
+        index.line(`export * from "./${toCamelCase(name)}.model.js"`)
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry(name)
         imports.useTypeormStore('Entity', 'Column', 'PrimaryColumn')
@@ -80,7 +80,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
-                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@OneToOne_('${prop.type.entity}', {nullable: true})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
@@ -90,20 +90,20 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             }
                             // Make foreign entity references always nullable
                             out.line(
-                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@ManyToOne_('${prop.type.entity}', {nullable: true})`
                             )
                         }
                         break
                     case 'lookup':
                         imports.useTypeormStore('OneToOne')
                         out.line(
-                            `@OneToOne_(() => ${prop.type.entity}, e => e.${prop.type.field})`
+                            `@OneToOne_('${prop.type.entity}', '${prop.type.field}')`
                         )
                         break
                     case 'list-lookup':
                         imports.useTypeormStore('OneToMany')
                         out.line(
-                            `@OneToMany_(() => ${prop.type.entity}, e => e.${prop.type.field})`
+                            `@OneToMany_('${prop.type.entity}', '${prop.type.field}')`
                         )
                         break
                     case 'object':
@@ -196,7 +196,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateObject(name: string, object: JsonObject): void {
-        index.line(`export * from "./_${toCamelCase(name)}"`)
+        index.line(`export * from "./_${toCamelCase(name)}.js"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
         const imports = new ImportRegistry(name)
         imports.useMarshal()
@@ -352,7 +352,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateUnion(name: string, union: Union): void {
-        index.line(`export * from "./_${toCamelCase(name)}"`)
+        index.line(`export * from "./_${toCamelCase(name)}.js"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
         const imports = new ImportRegistry(name)
         out.lazy(() => imports.render(model, out))
@@ -374,7 +374,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
     }
 
     function generateEnum(name: string, e: Enum): void {
-        index.line(`export * from "./_${toCamelCase(name)}"`)
+        index.line(`export * from "./_${toCamelCase(name)}.js"`)
         const out = dir.file(`_${toCamelCase(name)}.ts`)
         out.block(`export enum ${name}`, () => {
             for (const val in e.values) {
@@ -552,13 +552,13 @@ class ImportRegistry {
             out.line(`import {${importList.join(', ')}} from "@subsquid/typeorm-store"`)
         }
         if (this.marshal) {
-            out.line(`import * as marshal from "./marshal"`)
+            out.line(`import * as marshal from "./marshal.js"`)
         }
         for (const name of this.model) {
             switch(model[name].kind) {
                 case 'entity':
                     out.line(
-                        `import {${name}} from "./${toCamelCase(name)}.model"`
+                        `import {type ${name}} from "./${toCamelCase(name)}.model.js"`
                     )
                     break
                 default: {
@@ -567,7 +567,7 @@ class ImportRegistry {
                         names.push('fromJson' + name)
                     }
                     out.line(
-                        `import {${names.join(', ')}} from "./_${toCamelCase(name)}"`
+                        `import {type ${names.join(', ')}} from "./_${toCamelCase(name)}.js"`
                     )
                 }
             }

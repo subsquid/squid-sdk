@@ -2,6 +2,7 @@ import {assertNotNull} from '@subsquid/util-internal'
 import type {EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import {Entity, EntityClass} from './store'
+import { mempoolHeight } from './database'
 
 
 export interface RowRef {
@@ -133,15 +134,21 @@ export class ChangeTracker {
         return entities
     }
 
-    private writeChangeRows(changes: ChangeRecord[]): Promise<void> {
+    private async writeChangeRows(changes: ChangeRecord[]): Promise<void> {
         let height = new Array(changes.length)
+        let currentMempoolIndex = 0;
+        if (this.blockHeight <= mempoolHeight) {
+            const result: {max:number}[] = await this.em.query(`SELECT MAX(index) from ${this.statusSchema}.hot_change_log WHERE block_height <= $1`, [mempoolHeight])
+            currentMempoolIndex = result[0]?.max ?? 0;
+        }
         let index = new Array(changes.length)
         let change = new Array(changes.length)
 
         height.fill(this.blockHeight)
 
         for (let i = 0; i < changes.length; i++) {
-            index[i] = this.index++
+            this.index++
+            index[i] = height[i] <= mempoolHeight ? this.index + currentMempoolIndex : this.index
             change[i] = JSON.stringify(changes[i])
         }
 

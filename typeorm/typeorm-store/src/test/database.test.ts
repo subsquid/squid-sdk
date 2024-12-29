@@ -87,6 +87,97 @@ describe('TypeormDatabase', function() {
         })
     })
 
+    it('.transact() with transactMempool() flow', async function() {
+        await db.connect()
+
+        let em = await getEntityManager()
+
+        await db.transact({
+            prevHead: {height: -1, hash: '0x'},
+            nextHead: {height: 10, hash: '0x10'}
+        }, async store => {
+            await store.insert(new Data({
+                id: '1',
+                text: 'hello',
+                integer: 10
+            }))
+        })
+
+        await db.transactMempool(async (store) => {
+            await store.insert(new Data({
+                id: '2',
+                text: 'world',
+                integer: 20
+            }))
+
+            await store.insert(new Data({
+                id: '3',
+                text: 'foobar',
+                integer: 30
+            }))
+        })
+
+        {
+            let records = await em.find(Data, {
+                order: {id: 'asc'}
+            })
+
+            expect(records).toMatchObject([
+                {
+                    id: '1',
+                    text: 'hello',
+                    integer: 10
+                },
+                {
+                    id: '2',
+                    text: 'world',
+                    integer: 20
+                },
+                {
+                    id: '3',
+                    text: 'foobar',
+                    integer: 30
+                }
+            ])
+        }
+
+        await db.transact({
+            prevHead: {height: 10, hash: '0x10'},
+            nextHead: {height: 20, hash: '0x20'}
+        }, async store => {
+            await store.insert(new Data({
+                id: '2',
+                text: 'world',
+                integer: 20
+            }))
+        })
+
+        let records = await em.find(Data, {
+            order: {id: 'asc'}
+        })
+
+        expect(records).toMatchObject([
+            {
+                id: '1',
+                text: 'hello',
+                integer: 10
+            },
+            {
+                id: '2',
+                text: 'world',
+                integer: 20
+            }
+        ])
+
+        await db.disconnect()
+
+        expect(await db.connect()).toMatchObject({
+            height: 20,
+            hash: '0x20',
+            top: []
+        })
+    })
+
     it('.transactHot() flow', async function() {
         let em = await getEntityManager()
 
@@ -232,5 +323,92 @@ describe('TypeormDatabase', function() {
                 {height: 2, hash: 'd-2'}
             ]
         })
+    })
+
+    it('.transactHot() with transactMempool() flow', async function() {
+        let em = await getEntityManager()
+
+        await db.connect()
+
+        await db.transactHot({
+            baseHead: {height: -1, hash: '0x'},
+            newBlocks: [
+                {height: 0, hash: '0'},
+            ],
+            finalizedHead: {height: 0, hash: '0'}
+        }, async () => {})
+
+        let a1 = new Data({
+            id: '1',
+            text: 'a1',
+            textArray: ['a1', 'A1'],
+            integer: 1,
+            integerArray: [1, 10],
+            bigInteger: 1000000000000000000000000000000000000000000000000000000000n,
+            dateTime: new Date(1000000000000),
+            bytes: Buffer.from([100, 100, 100]),
+            json: [1, {foo: 'bar'}]
+        })
+
+        let a2 = new Data({
+            id: '2',
+            text: 'a2',
+            textArray: ['a2', 'A2'],
+            integer: 2,
+            integerArray: [2, 20],
+            bigInteger: 2000000000000000000000000000000000000000000000000000000000n,
+            dateTime: new Date(2000000000000),
+            bytes: Buffer.from([200, 200, 200]),
+            json: [2, {foo: 'baz'}]
+        })
+
+        let a3 = new Data({
+            id: '3',
+            text: 'a3',
+            textArray: ['a3', 'A30'],
+            integer: 30,
+            integerArray: [30, 300],
+            bigInteger: 3000000000000000000000000000000000000000000000000000000000n,
+            dateTime: new Date(3000000000000),
+            bytes: Buffer.from([3, 3, 3]),
+            json: [3, {foo: 'qux'}]
+        })
+
+        await db.transactHot({
+            baseHead: {height: 0, hash: '0'},
+            finalizedHead: {height: 0, hash: '0'},
+            newBlocks: [
+                {height: 1, hash: 'a-1'},
+            ]
+        }, async (store) => {
+            await store.insert(a1)
+        })
+
+        expect(await em.find(Data, {order: {id: 'asc'}})).toEqual([
+            a1
+        ])
+
+        await db.transactMempool(async (store) => {
+            await store.insert(a2)
+            await store.insert(a3)
+        })
+
+        expect(await em.find(Data, {order: {id: 'asc'}})).toEqual([
+            a1, a2, a3
+        ])
+
+        await db.transactHot({
+            finalizedHead: {height: 0, hash: '0'},
+            baseHead: {height: 1, hash: 'a-1'},
+            newBlocks: [
+                {height: 2, hash: 'a-2'}
+            ]
+        }, async (store, block) => {
+            await store.insert(a2)
+        })
+
+        expect(await em.find(Data, {order: {id: 'asc'}})).toEqual([
+            a1, a2
+        ])
     })
 })

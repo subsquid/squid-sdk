@@ -14,6 +14,9 @@ dependencies:
   '@aws-sdk/client-s3':
     specifier: ^3.462.0
     version: 3.462.0
+  '@bitauth/libauth':
+    specifier: ^3.0.0
+    version: 3.0.0
   '@coral-xyz/anchor':
     specifier: ^0.29.0
     version: 0.29.0
@@ -44,6 +47,9 @@ dependencies:
   '@rush-temp/batch-processor':
     specifier: file:./projects/batch-processor.tgz
     version: file:projects/batch-processor.tgz
+  '@rush-temp/bch-processor':
+    specifier: file:./projects/bch-processor.tgz
+    version: file:projects/bch-processor.tgz
   '@rush-temp/big-decimal':
     specifier: file:./projects/big-decimal.tgz
     version: file:projects/big-decimal.tgz
@@ -398,6 +404,9 @@ dependencies:
   big.js:
     specifier: ~6.2.1
     version: 6.2.1
+  bitcoin-minimal:
+    specifier: ^1.1.7
+    version: 1.1.7
   blake2b:
     specifier: ^2.1.4
     version: 2.1.4
@@ -455,12 +464,18 @@ dependencies:
   latest-version:
     specifier: ^5.1.0
     version: 5.1.0
+  lru-cache:
+    specifier: ^11.0.2
+    version: 11.0.2
   mocha:
     specifier: ^10.7.0
     version: 10.7.3
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
+  p2p-cash:
+    specifier: ^1.1.12
+    version: 1.1.12
   pg:
     specifier: ^8.11.3
     version: 8.11.3
@@ -1276,6 +1291,11 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
+    dev: false
+
+  /@bitauth/libauth@3.0.0:
+    resolution: {integrity: sha512-3yoL31XpnhAnf5nDVMFk4xPqebxDwXrgYAwpa31ARJnV5A/eXWlpNYvCd6FTZPFM4VvKfjCBi+jRCrw1hOZ0Jg==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
 
   /@coral-xyz/anchor-errors@0.30.1:
@@ -2657,6 +2677,15 @@ packages:
       '@subsquid/util-internal-binary-heap': 1.0.0
     dev: false
 
+  /@subsquid/util-internal-validation@0.6.0:
+    resolution: {integrity: sha512-OjrtBS9oJQApNa/ar9IMB0l2+IIydxLKIlxpJsyHgI0buK+aWofDq1aPaPh3XtCKrHzLDkrM9KAqkt8fQirifQ==}
+    peerDependencies:
+      '@subsquid/logger': ^1.3.3
+    peerDependenciesMeta:
+      '@subsquid/logger':
+        optional: true
+    dev: false
+
   /@subsquid/util-internal@2.5.2:
     resolution: {integrity: sha512-N7lfZdWEkM35jG5wdGYx25TJKGGLMOx9VInSeRhW9T/3BEmHAuSWI2mIIYnZ8w5L041V8HGo61ijWF6qsXvZjg==}
     dev: false
@@ -3288,6 +3317,14 @@ packages:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}
     dev: false
 
+  /async-mutex@0.4.1:
+    resolution: {integrity: sha512-WfoBo4E/TbCX1G95XTjbWTE3X2XLG0m1Xbv2cwOtuPdyH9CZvnaA5nCt1ucjaKEgW2A5IF71hxrRhr83Je5xjA==}
+    requiresBuild: true
+    dependencies:
+      tslib: 2.6.2
+    dev: false
+    optional: true
+
   /async-retry@1.3.3:
     resolution: {integrity: sha512-wfr/jstw9xNi/0teMHrRW7dsz3Lt5ARhYNZ2ewpadnhaIp5mbALhOAP+EAdsC7t4Z6wqsDVv9+W6gm1Dk9mEyw==}
     dependencies:
@@ -3360,6 +3397,11 @@ packages:
 
   /bintrees@1.0.2:
     resolution: {integrity: sha512-VOMgTMwjAaUG580SXn3LacVgjurrbMme7ZZNYGSSV7mmtY6QQRh0Eg3pwIcntQ77DErK1L0NxkbetjcoXzVwKw==}
+    dev: false
+
+  /bitcoin-minimal@1.1.7:
+    resolution: {integrity: sha512-Rs3MOO0rApYhWWl+M2QT+jCEAsz47h2+iRrUibToM/xFQrlhgfC1k/ufxzvXwlcBMTO2krOcn0+4pmiFCGeGFQ==}
+    engines: {node: '>=12.0.0'}
     dev: false
 
   /blake2b-wasm@2.4.0:
@@ -4825,6 +4867,16 @@ packages:
       ws: 7.5.10
     dev: false
 
+  /isomorphic-ws@5.0.0(ws@8.17.1):
+    resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
+    requiresBuild: true
+    peerDependencies:
+      ws: '*'
+    dependencies:
+      ws: 8.17.1(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+    dev: false
+    optional: true
+
   /isows@1.0.4(ws@8.17.1):
     resolution: {integrity: sha512-hEzjY+x9u9hPmBom9IIAqdJCwNLax+xrPb51vEPpERoFlIxgmZcHzsT5jKG06nvInKOBGvReAVz80Umed5CczQ==}
     peerDependencies:
@@ -5074,6 +5126,11 @@ packages:
   /lru-cache@10.0.1:
     resolution: {integrity: sha512-IJ4uwUTi2qCccrioU6g9g/5rvvVl13bsdczUUcqbciD9iLr095yj8DQKdObriEvuNSx325N1rV1O0sJFszx75g==}
     engines: {node: 14 || >=16.14}
+    dev: false
+
+  /lru-cache@11.0.2:
+    resolution: {integrity: sha512-123qHRfJBmo2jXDbo/a5YOQrJoHF/GNQTLzQ5+IdK5pWpceK17yRc6ozlWd25FxvGKQbIUs91fDFkXmDHTKcyA==}
+    engines: {node: 20 || >=22}
     dev: false
 
   /lru-cache@6.0.0:
@@ -5405,6 +5462,19 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       p-limit: 3.1.0
+    dev: false
+
+  /p2p-cash@1.1.12:
+    resolution: {integrity: sha512-26Fngsyp+SEtd7zU/Zv40Om2jvOr3qQI9xmmlv94y7DMYsKggOjBiDsV8fWqAgmC5piarsObr+kC1/mKNiZZwg==}
+    dependencies:
+      bitcoin-minimal: 1.1.7
+    optionalDependencies:
+      async-mutex: 0.4.1
+      isomorphic-ws: 5.0.0(ws@8.17.1)
+      ws: 8.17.1(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: false
 
   /package-json@6.5.0:
@@ -6943,6 +7013,23 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/bch-processor.tgz:
+    resolution: {integrity: sha512-onnymQyesO8Zu/ABtv7R0GrkvhhIPwGsa2OLwX8LNfAIMfZJUQRU60HZC7lI/2kWRjJiWSq4TZYgfotcAzQ0DQ==, tarball: file:projects/bch-processor.tgz}
+    name: '@rush-temp/bch-processor'
+    version: 0.0.0
+    dependencies:
+      '@bitauth/libauth': 3.0.0
+      '@subsquid/util-internal-validation': 0.6.0
+      '@types/node': 18.19.0
+      bitcoin-minimal: 1.1.7
+      lru-cache: 11.0.2
+      p2p-cash: 1.1.12
+      typescript: 5.5.4
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
   file:projects/big-decimal.tgz:
     resolution: {integrity: sha512-/Er4O4+BTjIgMcLL/oy3KUDz5o/97kqUHu1HGrIvixflTucO3M2Dm/GnwE1d81EtsEaCR57yWvZ7u07HLEU3og==, tarball: file:projects/big-decimal.tgz}
     name: '@rush-temp/big-decimal'
@@ -6991,7 +7078,7 @@ packages:
     dev: false
 
   file:projects/data-test.tgz:
-    resolution: {integrity: sha512-vfocRZTAM/R/+T+dR+5OwAzOim5k+JWu+uWq5NqTINBuin6gQ4H6ufbTXjXeAvD3OvAyaUqS2TPYENntSFAHdA==, tarball: file:projects/data-test.tgz}
+    resolution: {integrity: sha512-s+hwonZVmCEShGErXBavkrZKxMnQxPGBIsraWM+8LK74aGUAD1nYqshUh9jh05RlwavSWEilNTo+BbI81fFriw==, tarball: file:projects/data-test.tgz}
     name: '@rush-temp/data-test'
     version: 0.0.0
     dependencies:
@@ -7100,7 +7187,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-JEYc/4KCDHotB8lMj+SjVPzNPOPpzsWXWwreQy+hAjZQes/fWnMg4FGQ71NFQOYwZ/zL0k+imKUpvvcTQ69ALw==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-1s05mLWlR1INC4Qe5exVe+klgXztqZlwPGs/a4V0tUYjdiaxz3IENfOhuyWHWGRYf0CIGFf0KQ0FigGLumYY+A==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -7109,7 +7196,7 @@ packages:
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-zze/6ha5YyYINCNglygQHh63jV8/nsVqPbKpZeeznnnEldNG2n6/WMajR0vdAnGDRTMR+nmP9/TveOPbDTX+mg==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-3DiW6rLdLmAUqUB+P1iYHfRHi9123lAVabeIrJB0klQj16q70mvel+mrY9hCk1nUvxiEVEnPCueay3Ldf2ZQTg==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
@@ -7140,7 +7227,7 @@ packages:
     dev: false
 
   file:projects/fuel-data.tgz:
-    resolution: {integrity: sha512-6XW1Dvmzit570V/bEwNjiD5jJ9ZHbvJ3gyNoS6HE2qoR+C2/NPqPjMcev6xhOd/XS2/raaw6y8c6ywT3lTWTUw==, tarball: file:projects/fuel-data.tgz}
+    resolution: {integrity: sha512-LZwxHIPqKJw/590kj/j7tba2SzlHejChA/x2JTnSD9HW1ijOrrmit8TYH9zPf4mcW4gZTM9hcZFFtjIOfPLsCw==, tarball: file:projects/fuel-data.tgz}
     name: '@rush-temp/fuel-data'
     version: 0.0.0
     dependencies:
@@ -7149,7 +7236,7 @@ packages:
     dev: false
 
   file:projects/fuel-dump.tgz:
-    resolution: {integrity: sha512-P93UXjAjSIwTD/ZyemYajxts+j65qTByNGxAApyDXZOWywHdt0K3EPnDyLDz4/gm8LG6OtalcJfOhyPU/iKk2A==, tarball: file:projects/fuel-dump.tgz}
+    resolution: {integrity: sha512-ImKKGnItSKiCytmEqLaz148rhsH0b2kxYWkAMAR+JN3s89/rVDLKcFrqOh6CJHinIeZ1/zcT4ZoFzVXyYIS9mQ==, tarball: file:projects/fuel-dump.tgz}
     name: '@rush-temp/fuel-dump'
     version: 0.0.0
     dependencies:
@@ -7216,7 +7303,7 @@ packages:
     dev: false
 
   file:projects/fuel-stream.tgz:
-    resolution: {integrity: sha512-iEuYdfArMof7F87gKvpnuGx4j/PzsgkMrruS29W2UTx+7FhwkUnujQxqLQx2E2++SuKSb18Ga+eI+GP0lsl07g==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-6J2VBe48XWIqSZ3M8lZtBrsHZr+p8zRTofEkolzhhT4kighSSCG/HVPp3tp1ZXc5rPGpQGT/JZeCArOsGo3EhQ==, tarball: file:projects/fuel-stream.tgz}
     name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:
@@ -7225,7 +7312,7 @@ packages:
     dev: false
 
   file:projects/gql-test-client.tgz(graphql@15.8.0):
-    resolution: {integrity: sha512-JGE+gV8EgQ8u90IfJW06yab+oC1gw+HsJdwvSj6LdzY6dbtlIDXNRFeJMV988eLN8IxLSdDhd98h4YYt6n3suw==, tarball: file:projects/gql-test-client.tgz}
+    resolution: {integrity: sha512-bivyHNQZ2H4YrNdCo4dwEc53cIe+iXpU2UF6vMjBwbgHqiIbrhGpMbtzgKoZLdNAkbqchh0E543pkDQy318iow==, tarball: file:projects/gql-test-client.tgz}
     id: file:projects/gql-test-client.tgz
     name: '@rush-temp/gql-test-client'
     version: 0.0.0
@@ -7404,7 +7491,7 @@ packages:
     dev: false
 
   file:projects/rpc-client.tgz:
-    resolution: {integrity: sha512-B54boDboO5+HelVasKnnBZs/VahkkLvB9ETLN4nlILcTBwv2SZP0UbC4VYNaSRm5n1PtYb52954pqKlNkEecmA==, tarball: file:projects/rpc-client.tgz}
+    resolution: {integrity: sha512-T49gc/C/cmRUB956khwoKu41Izdk4BPYLlFBZAWkPn0xDje0kbmmjb76WyueHTu7mrjvSdjVNqrIkg/RYxGV8Q==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
     version: 0.0.0
     dependencies:
@@ -7580,7 +7667,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-xt4F3+TWZqYkHFwWyxO9FFeCi1ZwfDjgt3AkM9qPwhnxBfyawaGdEeTUwfJtPJsNrxaroMLXmLRFmKp65iXO8w==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-krZzJP5QBey2MWE6BMGBn4fRnV4P1weoVts3iAyfNNYs+ukKIZLn76qFrzJ8yIpYlZUF4tq49CK0v0jnZ+XHEA==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -7590,7 +7677,7 @@ packages:
     dev: false
 
   file:projects/solana-typegen.tgz:
-    resolution: {integrity: sha512-Qva321wiPxpOzXBUf6Qj5vlQ2eZILvwFdBCfchCmxQY7EqzLILY+FjMfNcj/VzaA3tTnfp8adYgO1YfoKHdCMw==, tarball: file:projects/solana-typegen.tgz}
+    resolution: {integrity: sha512-P2R//97dE6hHXv65zV5e3SuD+ArfjY1jxt9Ct2j5ckibvec646B47UHZsBRTlu6u9tVJSJIFth4OvWa7CogkYw==, tarball: file:projects/solana-typegen.tgz}
     name: '@rush-temp/solana-typegen'
     version: 0.0.0
     dependencies:
@@ -7687,7 +7774,7 @@ packages:
     dev: false
 
   file:projects/starknet-stream.tgz:
-    resolution: {integrity: sha512-WSp/9Dd2y5+GeN0F01Az1HS5BtnOAjlDQ6o1qwlUptfoYMB6DBf4udXGAA7i2Sj3AijE+t3pAxoRXkX82Y3GmA==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-xOStr+km+Cj7Q9yY8YNp0ledJQhcYDzparQYEVgg55Na1fPHHJls2qvHiGb5mqofRjVfQlYsmWkD1QeyXpojUg==, tarball: file:projects/starknet-stream.tgz}
     name: '@rush-temp/starknet-stream'
     version: 0.0.0
     dependencies:
@@ -7760,7 +7847,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-bv9yCssIgRcDJfSIiJqw97p9t03FHIBMk5Qvfs3cQuN9MOOCB4retTUPhzT+yhgtD1czIriXIcAgmGBgcEeOHw==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-nvjuzvcpbwWO7Bg5mfDrBT+r5HlkldIxjHBStsgPT3OZXKAMN+hSCkGhdwF5urVNLNcuokPT5QexZq0grc3lDw==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
@@ -7782,7 +7869,7 @@ packages:
     dev: false
 
   file:projects/substrate-typegen.tgz:
-    resolution: {integrity: sha512-HDrlRIPga2gKlNtr8I+7jJPb4UMygW8+7BEIBJsIOVjpk/jPBQX5EjWOg6bmuiL6PtODQTN4gDutgrmptMOLZg==, tarball: file:projects/substrate-typegen.tgz}
+    resolution: {integrity: sha512-hYFLl7+BgkKy15M2J31XXmpXDo67jmhmh1/j/C0uJbDPwiTKkLleFaDM9bPBgynB+WF3AmGv9XUkvCGvLawzbQ==, tarball: file:projects/substrate-typegen.tgz}
     name: '@rush-temp/substrate-typegen'
     version: 0.0.0
     dependencies:
@@ -7792,7 +7879,7 @@ packages:
     dev: false
 
   file:projects/tron-data.tgz:
-    resolution: {integrity: sha512-TSoknC0M1/aV4Jg070uz8i/V4YBRBcXkZzrSZwc1SaTQUOYVtQh8UpBdQyJLcRlVTi+K6SZtUM99wsE/VJgB3Q==, tarball: file:projects/tron-data.tgz}
+    resolution: {integrity: sha512-AnZ2mjIhDmxqQ6je661F2AzDRvUJHoZTkdqa0lWo5QScjjvvdEOGv42VAGXqPuYe4n4gY4Dj+K/eFzfeDCAQ+Q==, tarball: file:projects/tron-data.tgz}
     name: '@rush-temp/tron-data'
     version: 0.0.0
     dependencies:
@@ -7840,7 +7927,7 @@ packages:
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-jxOST5hrGQAEkbehlZuOZPDQ47SX+nQ1u0vp0UAmaj5XcgxoRm3u9oX807X2YOWxAfgrjX7fBWeIassnFewLVg==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-hyWAMCO/NbpJPmnw4Jo+CpML5m6wcS1j3gXe+IL7nZYUAjZzvNEa4NCtsaKaVRSNR1qr8kNz1++56Kt2VvQQ1A==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:
@@ -7995,7 +8082,7 @@ packages:
     dev: false
 
   file:projects/util-internal-archive-client.tgz:
-    resolution: {integrity: sha512-cq/2eIibQ3DuQCV1bCylf0IPexvdRTf27x7BhOjR4lkGMS6DeqlF0qgVfct9WY4TCHljIey09EMnRwTJzn+7uQ==, tarball: file:projects/util-internal-archive-client.tgz}
+    resolution: {integrity: sha512-aTWT++wNI2gux8EwA+nSZgiaU6tM7Rh+DVnumLCpJF3z44ujTs0ipFTbnktt0pVOtkbN7G7oyTrZUXUMQgjthA==, tarball: file:projects/util-internal-archive-client.tgz}
     name: '@rush-temp/util-internal-archive-client'
     version: 0.0.0
     dependencies:

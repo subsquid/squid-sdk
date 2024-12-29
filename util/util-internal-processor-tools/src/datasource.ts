@@ -17,6 +17,7 @@ export interface Block {
 export interface Batch<B> {
     blocks: B[]
     isHead: boolean
+    mempoolTransactions?: any[]
 }
 
 
@@ -24,6 +25,7 @@ export interface HotUpdate<B> {
     blocks: B[]
     baseHead: HashAndHeight
     finalizedHead: HashAndHeight
+    mempoolTransactions?: any[]
 }
 
 
@@ -40,4 +42,10 @@ export interface HotDataSource<B, R> extends DataSource<B, R> {
         state: HotDatabaseState,
         cb: (upd: HotUpdate<B>) => Promise<void>
     ): Promise<void>
+
+    processMempool?(
+        requests: RangeRequestList<R>,
+        state: HotDatabaseState,
+        cb: (upd: HotUpdate<B>) => Promise<void>
+    ): Promise<() => Promise<void>>
 }

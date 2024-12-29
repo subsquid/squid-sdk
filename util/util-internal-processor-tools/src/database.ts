@@ -16,6 +16,8 @@ export interface FinalDatabase<S> {
     supportsHotBlocks?: false
     connect(): Promise<HashAndHeight>
     transact(info: FinalTxInfo, cb: (store: S) => Promise<void>): Promise<void>
+    transactMempool(cb: (store: S) => Promise<void>): Promise<void>
+    clearMempool(): Promise<void>
 }
 
 
@@ -39,6 +41,9 @@ export interface HotDatabase<S> {
         info: HotTxInfo,
         cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<void>
     ): Promise<void>
+
+    transactMempool(cb: (store: S) => Promise<void>): Promise<void>
+    clearMempool(): Promise<void>
 }
 
 

@@ -1,0 +1,41 @@
+{
+  "name": "@subsquid/bch-processor",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Data fetcher and mappings executor for BitcoinCash chain",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "dependencies": {
+    "@bitauth/libauth": "^3.0.0",
+    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/logger": "^1.3.3",
+    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-archive-client": "^0.1.2",
+    "@subsquid/util-internal-hex": "^1.2.2",
+    "@subsquid/util-internal-ingest-tools": "^1.1.4",
+    "@subsquid/util-internal-processor-tools": "^4.1.1",
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-validation": "^0.7.0",
+    "@subsquid/util-timeout": "^2.3.2",
+    "bitcoin-minimal": "^1.1.7",
+    "lru-cache": "^11.0.2",
+    "p2p-cash": "^1.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "~5.5.4"
+  },
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  }
+}
