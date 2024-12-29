@@ -420,6 +420,12 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/bch-processor",
+      "projectFolder": "bch/bch-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,

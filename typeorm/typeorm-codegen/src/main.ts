@@ -28,7 +28,7 @@ and db migrations (if any) at db/migrations.
     generateOrmModels(model, generatedOrm)
     if (!fs.existsSync(orm.path('index.ts'))) {
         let index = orm.file('index.ts')
-        index.line(`export * from "./generated"`)
+        index.line(`export * from "./generated/index.js"`)
         index.write()
     }
 

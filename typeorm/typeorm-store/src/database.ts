@@ -17,6 +17,7 @@ export interface TypeormDatabaseOptions {
     projectDir?: string
 }
 
+export const mempoolHeight = -2;
 
 export class TypeormDatabase {
     private statusSchema: string
@@ -95,7 +96,7 @@ export class TypeormDatabase {
         }
 
         let top: HashAndHeight[] = await em.query(
-            `SELECT height, hash FROM ${schema}.hot_block ORDER BY height`
+            `SELECT height, hash FROM ${schema}.hot_block where height >= -1 ORDER BY height`
         )
 
         return assertStateInvariants({...status[0], top})
@@ -111,7 +112,7 @@ export class TypeormDatabase {
         assert(status.length == 1)
 
         let top: HashAndHeight[] = await em.query(
-            `SELECT hash, height FROM ${schema}.hot_block ORDER BY height`
+            `SELECT hash, height FROM ${schema}.hot_block where height >= -1 ORDER BY height`
         )
 
         return assertStateInvariants({...status[0], top})
@@ -121,6 +122,12 @@ export class TypeormDatabase {
         return this.submit(async em => {
             let state = await this.getState(em)
             let {prevHead: prev, nextHead: next} = info
+
+            const topHeight = prev.height
+            const newTopHeight = next.height
+            if (newTopHeight !== topHeight) {
+                await this.clearMempool()
+            }
 
             assert(state.hash === info.prevHead.hash, RACE_MSG)
             assert(state.height === prev.height)
@@ -150,6 +157,12 @@ export class TypeormDatabase {
         return this.submit(async em => {
             let state = await this.getState(em)
             let chain = [state, ...state.top]
+
+            const topHeight = maybeLast(chain)?.height ?? -1
+            const newTopHeight = maybeLast(info.newBlocks)?.height ?? -1
+            if (newTopHeight !== topHeight) {
+                await this.clearMempool()
+            }
 
             assertChainContinuity(info.baseHead, info.newBlocks)
             assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
@@ -194,6 +207,25 @@ export class TypeormDatabase {
         })
     }
 
+    transactMempool(cb: (store: Store) => Promise<void>): Promise<void> {
+        return this.submit(async em => {
+            await this.insertHotBlock(em, {
+                height: mempoolHeight,
+                hash: '0x'
+            })
+
+            await this.performUpdates(
+                store => cb(store),
+                em,
+                new ChangeTracker(em, this.statusSchema, mempoolHeight)
+            )
+        })
+    }
+
+    clearMempool(): Promise<void> {
+        return this.submit(em => rollbackBlock(this.statusSchema, em, mempoolHeight))
+    }
+
     private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
         return em.query(
             `DELETE FROM ${this.escapedSchema()}.hot_block WHERE height <= $1`,
@@ -203,7 +235,7 @@ export class TypeormDatabase {
 
     private insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
         return em.query(
-            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
+            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2) ON CONFLICT (height) DO NOTHING;`,
             [block.height, block.hash]
         )
     }

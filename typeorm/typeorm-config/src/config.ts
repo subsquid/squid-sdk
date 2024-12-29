@@ -24,7 +24,7 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
     let migrationsDir = path.join(dir, MIGRATIONS_DIR)
     let locations = {
         entities: [model],
-        migrations: [migrationsDir + '/*.js']
+        migrations: [migrationsDir + '/*.?(?)js']
     }
     log.debug(locations, 'typeorm locations')
     return  {
