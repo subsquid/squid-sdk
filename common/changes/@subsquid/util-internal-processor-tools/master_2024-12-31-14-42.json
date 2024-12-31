@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "init prom server even if nothing to do",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}

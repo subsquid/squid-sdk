@@ -43,6 +43,7 @@ export class Runner<R, S> {
         if (this.getLeftRequests(state).length == 0) {
             this.printProcessingRange()
             log.info('nothing to do')
+            await this.initMetrics(state.height, state)
             return this.exit()
         }
 
@@ -64,7 +65,7 @@ export class Runner<R, S> {
                 }).finally(
                     this.chainHeightUpdateLoop(archive)
                 )
-                if (this.getLeftRequests(state).length == 0) return
+                if (this.getLeftRequests(state).length == 0) return this.exit()
             }
         }
 
