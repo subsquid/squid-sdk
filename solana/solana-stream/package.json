@@ -26,7 +26,7 @@
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-hex": "^1.2.2",
     "@subsquid/util-internal-ingest-tools": "^1.1.4",
-    "@subsquid/util-internal-processor-tools": "^4.1.1",
+    "@subsquid/util-internal-processor-tools": "^4.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-validation": "^0.7.0",
     "bs58": "^5.0.0"
