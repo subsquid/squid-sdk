@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Tue, 31 Dec 2024 14:19:32 GMT and should not be manually modified.
+This log was last generated on Tue, 31 Dec 2024 14:45:43 GMT and should not be manually modified.
+
+## 4.2.1
+Tue, 31 Dec 2024 14:45:43 GMT
+
+### Patches
+
+- init prom server even if nothing to do
 
 ## 4.2.0
 Tue, 31 Dec 2024 14:19:32 GMT
