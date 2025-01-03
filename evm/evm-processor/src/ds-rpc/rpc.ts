@@ -300,7 +300,7 @@ export class Rpc {
                 throw new RpcError(info)
             }
         }).catch(async err => {
-            if (isQueryReturnedMoreThanNResultsError(err)) {
+            if (isLogsResponseTooBigError(err)) {
                 let range = asTryAnotherRangeError(err)
                 if (range == null) {
                     range = {from, to: Math.floor(from + (to - from) / 2)}
@@ -746,14 +746,16 @@ class RpcProps {
     }
 }
 
-function isQueryReturnedMoreThanNResultsError(err: unknown) {
+function isLogsResponseTooBigError(err: unknown) {
     if (!(err instanceof RpcError)) return false
-    return /query returned more than/i.test(err.message)
+    if (/query returned more than/i.test(err.message)) return true
+    if (/response is too big/i.test(err.message)) return true
+    return false
 }
 
 function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
     if (!(err instanceof RpcError)) return
-    let m = /Try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
+    let m = /try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
     if (m == null) return
     let from = qty2Int(m[1])
     let to = qty2Int(m[2])
