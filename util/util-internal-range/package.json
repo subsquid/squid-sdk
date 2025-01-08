@@ -17,8 +17,8 @@
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-binary-heap": "^1.0.0"
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-binary-heap": "workspace:^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

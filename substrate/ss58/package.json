@@ -17,8 +17,8 @@
     "test": "node lib/test.js"
   },
   "dependencies": {
-    "@subsquid/ss58-codec": "^1.2.3",
-    "@subsquid/util-internal-hex": "^1.2.2"
+    "@subsquid/ss58-codec": "workspace:^1.2.3",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

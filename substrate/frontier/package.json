@@ -19,14 +19,14 @@
     "test": "mocha ./lib/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "workspace:^3.2.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",
     "ethers": "^6.9.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.1",
+    "@subsquid/substrate-runtime": "workspace:^2.0.1",
     "@types/node": "^18.18.14",
     "@types/mocha": "^10.0.7",
     "@types/expect": "^24.3.0",

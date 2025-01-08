@@ -36,6 +36,7 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
+    validationMaxErrors?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
     dialect?: Dialect
 }
@@ -97,6 +98,7 @@ export class Server {
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
             maxRootFields: this.options.maxRootFields,
+            validationMaxErrors: this.options.validationMaxErrors,
             cache: this.cache()
         })
     }

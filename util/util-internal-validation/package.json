@@ -15,7 +15,6 @@
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
-  "dependencies": {},
   "peerDependencies": {
     "@subsquid/logger": "^1.3.3"
   },
@@ -25,7 +24,7 @@
     }
   },
   "devDependencies": {
-    "@subsquid/logger": "^1.3.3",
+    "@subsquid/logger": "workspace:^1.3.3",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

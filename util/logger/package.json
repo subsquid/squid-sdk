@@ -17,8 +17,8 @@
     "test": "mocha lib/**/*.test.js"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2",
+    "@subsquid/util-internal-json": "workspace:^1.2.3",
     "supports-color": "^8.1.1"
   },
   "devDependencies": {

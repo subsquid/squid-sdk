@@ -19,21 +19,21 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/borsh": "^0.1.0",
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.3.3",
-    "@subsquid/rpc-client": "^4.11.0",
-    "@subsquid/util-internal-code-printer": "^1.2.2",
-    "@subsquid/util-internal-commander": "^1.4.0",
-    "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-naming": "^1.3.0",
+    "@subsquid/borsh": "workspace:^0.1.0",
+    "@subsquid/http-client": "workspace:^1.6.0",
+    "@subsquid/logger": "workspace:^1.3.3",
+    "@subsquid/rpc-client": "workspace:^4.11.0",
+    "@subsquid/util-internal-code-printer": "workspace:^1.2.2",
+    "@subsquid/util-internal-commander": "workspace:^1.4.0",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-naming": "workspace:^1.3.0",
     "@solana/addresses": "^2.0.0-preview.3",
     "commander": "^11.1.0",
     "@solanafm/explorer-kit-idls": "^1.1.3"
   },
   "devDependencies": {
-    "@subsquid/solana-stream": "^0.1.2",
+    "@subsquid/solana-stream": "workspace:^0.1.2",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

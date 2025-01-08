@@ -1,0 +1,37 @@
+diff --git a/dist/requestPipeline.js b/dist/requestPipeline.js
+index e269006dd46a232f09d265d2d5db84485c66843f..5b8309215a33239fcb06e23e82ad2795fb1695f6 100644
+--- a/dist/requestPipeline.js
++++ b/dist/requestPipeline.js
+@@ -185,7 +185,7 @@ async function processGraphQLRequest(config, requestContext) {
+         if (config.validationRules) {
+             rules = rules.concat(config.validationRules);
+         }
+-        return (0, graphql_1.validate)(config.schema, document, rules);
++        return (0, graphql_1.validate)(config.schema, document, rules, undefined, { maxErrors: config.validationMaxErrors });
+     }
+     async function execute(requestContext) {
+         const { request, document } = requestContext;
+diff --git a/dist/runHttpQuery.js b/dist/runHttpQuery.js
+index a1c346ffb6b4e0919bfc9b79ea0fae4d3b31685e..61c55ac10a8a6227fd9a7784bff18a21f3f66e6d 100644
+--- a/dist/runHttpQuery.js
++++ b/dist/runHttpQuery.js
+@@ -123,6 +123,7 @@ async function runHttpQuery(handlerArguments, request, csrfPreventionRequestHead
+         cache: options.cache,
+         dataSources: options.dataSources,
+         dangerouslyDisableValidation: options.dangerouslyDisableValidation,
++        validationMaxErrors: options.validationMaxErrors,
+         documentStore: options.documentStore,
+         persistedQueries: options.persistedQueries,
+         formatError: options.formatError,
+diff --git a/dist/types.d.ts b/dist/types.d.ts
+index 14f3556b24066856ec9af991b4154bd7e1fc5a4e..2f02bd271ce3d407cb06fee7025e5e8b83992905 100644
+--- a/dist/types.d.ts
++++ b/dist/types.d.ts
+@@ -49,6 +49,7 @@ export interface Config<ContextFunctionParams = any> extends BaseConfig {
+     apollo?: ApolloConfigInput;
+     nodeEnv?: string;
+     dangerouslyDisableValidation?: boolean;
++    validationMaxErrors?: number;
+     documentStore?: DocumentStore | null;
+     csrfPrevention?: CSRFPreventionOptions | boolean;
+     cache?: KeyValueCache | 'bounded';

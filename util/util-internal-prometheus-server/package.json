@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal-http-server": "^2.0.0"
+    "@subsquid/util-internal-http-server": "workspace:^2.0.0"
   },
   "peerDependencies": {
     "prom-client": "^14.2.0"

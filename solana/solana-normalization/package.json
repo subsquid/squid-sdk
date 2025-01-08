@@ -16,9 +16,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/solana-rpc-data": "^0.0.3",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/solana-rpc-data": "workspace:^0.0.3",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-validation": "workspace:^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

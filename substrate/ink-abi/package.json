@@ -17,16 +17,16 @@
     "test": "mocha lib/test/*.test.js"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^4.0.1",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-hex": "^1.2.2",
+    "@subsquid/scale-codec": "workspace:^4.0.1",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2",
     "ajv": "^8.12.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.1",
+    "@subsquid/substrate-runtime": "workspace:^2.0.1",
     "@types/mocha": "^10.0.7",
     "@types/node": "^18.18.14",
     "expect": "^29.7.0",

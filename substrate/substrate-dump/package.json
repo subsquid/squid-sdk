@@ -18,10 +18,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/substrate-data-raw": "^1.2.0",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.0.0",
-    "@subsquid/util-internal-hex": "^1.2.2"
+    "@subsquid/substrate-data-raw": "workspace:^1.2.0",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-dump-cli": "workspace:^1.0.0",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

@@ -16,13 +16,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/scale-codec": "^4.0.1",
-    "@subsquid/substrate-data-raw": "^1.2.0",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-hex": "^1.2.2",
-    "@subsquid/util-internal-ingest-tools": "^1.1.4",
-    "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-xxhash": "^1.2.2",
+    "@subsquid/scale-codec": "workspace:^4.0.1",
+    "@subsquid/substrate-data-raw": "workspace:^1.2.0",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-hex": "workspace:^1.2.2",
+    "@subsquid/util-internal-ingest-tools": "workspace:^1.1.4",
+    "@subsquid/util-internal-range": "workspace:^0.3.0",
+    "@subsquid/util-xxhash": "workspace:^1.2.2",
     "@substrate/calc": "^0.2.8",
     "blake2b": "^2.1.4"
   },
@@ -31,8 +31,8 @@
     "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
-    "@subsquid/substrate-runtime": "^2.0.1",
+    "@subsquid/rpc-client": "workspace:^4.11.0",
+    "@subsquid/substrate-runtime": "workspace:^2.0.1",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

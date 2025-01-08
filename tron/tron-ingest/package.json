@@ -19,11 +19,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/tron-data": "^0.0.2",
-    "@subsquid/tron-normalization": "^0.0.2",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-json": "^1.2.3",
-    "@subsquid/util-internal-ingest-cli": "^0.1.1"
+    "@subsquid/tron-data": "workspace:^0.0.2",
+    "@subsquid/tron-normalization": "workspace:^0.0.2",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-json": "workspace:^1.2.3",
+    "@subsquid/util-internal-ingest-cli": "workspace:^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

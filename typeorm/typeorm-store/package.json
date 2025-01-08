@@ -18,8 +18,8 @@
     "test": "make up && sleep 1 && make test && make down || (make down && exit 1)"
   },
   "dependencies": {
-    "@subsquid/typeorm-config": "^4.1.1",
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/typeorm-config": "workspace:^4.1.1",
+    "@subsquid/util-internal": "workspace:^3.2.0"
   },
   "peerDependencies": {
     "typeorm": "^0.3.17",

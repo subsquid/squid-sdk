@@ -19,13 +19,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.3.3",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-code-printer": "^1.2.2",
-    "@subsquid/util-internal-commander": "^1.4.0",
-    "@subsquid/evm-codec": "^0.3.0",
-    "@subsquid/evm-abi": "^0.3.1",
+    "@subsquid/http-client": "workspace:^1.6.0",
+    "@subsquid/logger": "workspace:^1.3.3",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-code-printer": "workspace:^1.2.2",
+    "@subsquid/util-internal-commander": "workspace:^1.4.0",
+    "@subsquid/evm-codec": "workspace:^0.3.0",
+    "@subsquid/evm-abi": "workspace:^0.3.1",
     "commander": "^11.1.0"
   },
   "devDependencies": {

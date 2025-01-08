@@ -18,8 +18,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.3.3",
-    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/logger": "workspace:^1.3.3",
+    "@subsquid/util-internal": "workspace:^3.2.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

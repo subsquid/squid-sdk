@@ -17,7 +17,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/evm-codec": "^0.3.0",
+    "@subsquid/evm-codec": "workspace:^0.3.0",
     "keccak256": "^1.0.6"
   },
   "devDependencies": {

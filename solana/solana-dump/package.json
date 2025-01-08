@@ -19,10 +19,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
-    "@subsquid/solana-rpc": "^0.0.3",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.0.0"
+    "@subsquid/rpc-client": "workspace:^4.11.0",
+    "@subsquid/solana-rpc": "workspace:^0.0.3",
+    "@subsquid/util-internal": "workspace:^3.2.0",
+    "@subsquid/util-internal-dump-cli": "workspace:^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
