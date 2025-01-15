@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/solana-rpc_v0.0.4",
+      "date": "Wed, 15 Jan 2025 18:59:13 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fixed the polling logic error that led to processor crashes at chain head"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/solana-rpc_v0.0.3",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

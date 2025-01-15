@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Jan 2025 18:59:13 GMT and should not be manually modified.
+
+## 0.0.4
+Wed, 15 Jan 2025 18:59:13 GMT
+
+### Patches
+
+- fixed the polling logic error that led to processor crashes at chain head
 
 ## 0.0.3
 Tue, 03 Dec 2024 11:47:42 GMT
