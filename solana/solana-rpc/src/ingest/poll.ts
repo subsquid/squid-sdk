@@ -116,7 +116,7 @@ export class PollStream {
                 if (i < missing.length) {
                     this.blocks[missing[i]] = [slots[i], true]
                 }
-            } else if (missing.length >= i) {
+            } else if (missing.length <= i) {
                 this.blocks.push([slots[i], false])
             }
         }
