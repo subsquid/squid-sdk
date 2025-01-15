@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "Fixing the polling logic error that led to processor crashes at chain head",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}
