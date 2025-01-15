@@ -238,6 +238,8 @@ export type IdlType =
     | IdlTypeCOption
     | IdlTypeVec
     | IdlTypeArray
+    | IdlTypeHashMap
+    | IdlTypeHashSet
     | IdlTypeDefined
     | IdlTypeGeneric
 
@@ -256,6 +258,14 @@ export type IdlTypeVec = {
 
 export type IdlTypeArray = {
     array: [idlType: IdlType, size: IdlArrayLen]
+}
+
+export type IdlTypeHashMap = {
+    hashMap: [idlType: IdlType, idlType: IdlType]
+}
+
+export type IdlTypeHashSet = {
+    hashSet: IdlType
 }
 
 export type IdlTypeDefined = {
@@ -394,6 +404,17 @@ function fromType(type: IdlType): Type {
         return {
             kind: TypeKind.Array,
             type: fromType(type.vec),
+        }
+    } else if ('hashMap' in type) {
+        return {
+            kind: TypeKind.HashMap,
+            key: fromType(type.hashMap[0]),
+            value: fromType(type.hashMap[1]),
+        }
+    } else if ('hashSet' in type) {
+        return {
+            kind: TypeKind.HashSet,
+            type: fromType(type.hashSet),
         }
     } else if ('defined' in type) {
         return {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "add HashMap and HashSet types support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}

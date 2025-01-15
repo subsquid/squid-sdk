@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/borsh",
+      "comment": "implement HashMap and HashSet codecs",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/borsh"
+}
