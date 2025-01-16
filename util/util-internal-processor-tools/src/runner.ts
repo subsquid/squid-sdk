@@ -43,7 +43,8 @@ export class Runner<R, S> {
         if (this.getLeftRequests(state).length == 0) {
             this.printProcessingRange()
             log.info('nothing to do')
-            return
+            await this.initMetrics(state.height, state)
+            return this.exit()
         }
 
         this.printProcessingMessage(state)
@@ -64,7 +65,7 @@ export class Runner<R, S> {
                 }).finally(
                     this.chainHeightUpdateLoop(archive)
                 )
-                if (this.getLeftRequests(state).length == 0) return
+                if (this.getLeftRequests(state).length == 0) return this.exit()
             }
         }
 
@@ -110,9 +111,11 @@ export class Runner<R, S> {
             state = nextState
         }
 
-        return this.processHotBlocks(state).finally(
+        await this.processHotBlocks(state).finally(
             this.chainHeightUpdateLoop(hot)
         )
+
+        return this.exit()
     }
 
     private async assertWeAreOnTheSameChain(src: DataSource<unknown, unknown>, state: HashAndHeight): Promise<void> {
@@ -306,7 +309,8 @@ export class Runner<R, S> {
 
     private async initMetrics(chainHeight: number, state: HotDatabaseState): Promise<void> {
         let initialized = this.metrics.getChainHeight() >= 0
-        this.metrics.setChainHeight(chainHeight)
+        let boundedChainHeight = Math.min(chainHeight, rangeEnd(last(this.config.requests).range))
+        this.metrics.setChainHeight(boundedChainHeight)
         if (initialized) return
         this.metrics.setLastProcessedBlock(state.height + state.top.length)
         this.metrics.updateProgress()
@@ -343,6 +347,14 @@ export class Runner<R, S> {
         this.log.info(msg)
     }
 
+    private async exit(): Promise<void> {
+        if (isProcessorExitDisabled()) {
+            while (true) {
+                await wait(5000)
+            }
+        }
+    }
+
     @def
     private async startPrometheusServer(): Promise<void> {
         let prometheusServer = await this.config.prometheus.serve()
@@ -352,4 +364,8 @@ export class Runner<R, S> {
     private get log(): Logger {
         return this.config.log
     }
+}
+
+function isProcessorExitDisabled() {
+    return process.env.SQUID_PROCESSOR_EXIT_DISABLED === 'true'
 }

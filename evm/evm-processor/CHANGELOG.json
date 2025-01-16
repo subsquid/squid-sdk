@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.27.0",
+      "tag": "@subsquid/evm-processor_v1.27.0",
+      "date": "Fri, 03 Jan 2025 11:41:05 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "handle logs response is too big error"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.26.1",
       "tag": "@subsquid/evm-processor_v1.26.1",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",
