@@ -68,7 +68,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
             range: {from: height, to: height},
             request: {includeAllBlocks: true},
         })
-        let blocks = await this.client.finalizedQuery(query)
+        let blocks = await this.client.getFinalizedQuery(query)
         assert(blocks.length == 1)
         return blocks[0].header.hash
     }
@@ -77,15 +77,12 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
         requests: RangeRequest<DataRequest>[],
         stopOnHead?: boolean | undefined
     ): AsyncIterable<Batch<Block>> {
-        let height = new Throttler(() => this.client.getFinalizedHeight(), 20_000)
-
-        let top = await height.call()
         for (let req of requests) {
             let lastBlock = req.range.from - 1
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let batch of this.client.finalizedStream(query, stopOnHead)) {
+            for await (let {finalizedHead, blocks: batch} of this.client.getFinalizedStream(query, {stopOnHead})) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 lastBlock = last(batch).header.number
 
@@ -102,10 +99,8 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
 
                 yield {
                     blocks,
-                    isHead: lastBlock > top,
+                    isHead: lastBlock >= finalizedHead.height,
                 }
-
-                top = await height.get()
             }
 
             // stream ended before requested range,

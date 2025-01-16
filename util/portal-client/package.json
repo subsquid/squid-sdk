@@ -10,7 +10,9 @@
   "main": "lib/client.js",
   "files": [
     "lib",
-    "src"
+    "src",
+    "!src/*.test.*",
+    "!lib/*.test.*"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc"

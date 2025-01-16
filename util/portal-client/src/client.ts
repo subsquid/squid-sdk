@@ -1,9 +1,5 @@
 import {HttpClient} from '@subsquid/http-client'
-import type {Logger} from '@subsquid/logger'
-import {AsyncQueue, last, wait, withErrorContext} from '@subsquid/util-internal'
-import {splitLines} from '@subsquid/util-internal-archive-layout'
-import {addTimeout, TimeoutError} from '@subsquid/util-timeout'
-import assert from 'assert'
+import {createFuture, Future, unexpectedCase, wait, withErrorContext} from '@subsquid/util-internal'
 import {Readable} from 'stream'
 
 export interface PortalQuery {
@@ -18,46 +14,67 @@ export interface Block {
     }
 }
 
-export interface Metadata {
-    isRealTime: boolean
-}
-
 export interface PortalClientOptions {
     url: string
-    http: HttpClient
-    log?: Logger
-    requestTimeout?: number
-    retryAttempts?: number
-    bufferThreshold?: number
-    newBlockThreshold?: number
-    durationThreshold?: number
-    newBlockTimeout?: number
+    http?: HttpClient
+
+    minBytes?: number
+    maxBytes?: number
+    maxIdleTime?: number
+    maxWaitTime?: number
+
     headPollInterval?: number
+}
+
+export interface PortalRequestOptions {
+    headers?: HeadersInit
+    retryAttempts?: number
+    retrySchedule?: number[]
+    httpTimeout?: number
+    bodyTimeout?: number
+    abort?: AbortSignal
+}
+
+export interface PortalStreamOptions {
+    request?: Omit<PortalRequestOptions, 'abort'>
+
+    minBytes?: number
+    maxBytes?: number
+    maxIdleTime?: number
+    maxWaitTime?: number
+
+    headPollInterval?: number
+
+    stopOnHead?: boolean
+}
+
+export interface HashAndHeight {
+    hash: string
+    height: number
+}
+
+export interface PortalStreamData<B extends Block> {
+    finalizedHead: HashAndHeight
+    blocks: B[]
 }
 
 export class PortalClient {
     private url: URL
-    private http: HttpClient
-    private requestTimeout: number
+    private client: HttpClient
     private headPollInterval: number
-    private bufferThreshold: number
-    private newBlockThreshold: number
-    private durationThreshold: number
-    private newBlockTimeout: number
-    private retryAttempts: number
-    private log?: Logger
+    private minBytes: number
+    private maxBytes: number
+    private maxIdleTime: number
+    private maxWaitTime: number
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
-        this.log = options.log
-        this.http = options.http
-        this.requestTimeout = options.requestTimeout ?? 180_000
+        this.client = options.http || new HttpClient()
         this.headPollInterval = options.headPollInterval ?? 5_000
-        this.bufferThreshold = options.bufferThreshold ?? 10 * 1024 * 1024
-        this.newBlockThreshold = options.newBlockThreshold ?? 500
-        this.durationThreshold = options.durationThreshold ?? 5_000
-        this.newBlockTimeout = options.newBlockTimeout ?? 120_000
-        this.retryAttempts = options.retryAttempts ?? Infinity
+        this.minBytes = options.minBytes ?? 10 * 1024 * 1024
+        this.maxBytes = options.maxBytes ?? this.minBytes
+        this.maxIdleTime = options.maxIdleTime ?? 300
+        this.maxWaitTime = options.maxWaitTime ?? 5_000
     }
 
     private getDatasetUrl(path: string): string {
@@ -70,33 +87,21 @@ export class PortalClient {
         return u.toString()
     }
 
-    async getMetadata(): Promise<Metadata> {
-        let res: {real_time: boolean} = await this.http.get(this.getDatasetUrl('metadata'), {
-            retryAttempts: this.retryAttempts,
-            httpTimeout: this.requestTimeout,
-        })
-        return {
-            isRealTime: !!res.real_time,
-        }
-    }
-
-    async getFinalizedHeight(): Promise<number> {
-        let res: string = await this.http.get(this.getDatasetUrl('finalized-stream/height'), {
-            retryAttempts: this.retryAttempts,
-            httpTimeout: this.requestTimeout,
-        })
+    async getFinalizedHeight(options?: PortalRequestOptions): Promise<number> {
+        let res: string = await this.client.get(this.getDatasetUrl('finalized-stream/height'), options)
         let height = parseInt(res)
-        assert(Number.isSafeInteger(height))
         return height
     }
 
-    finalizedQuery<B extends Block = Block, Q extends PortalQuery = PortalQuery>(query: Q): Promise<B[]> {
+    getFinalizedQuery<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
+        query: Q,
+        options?: PortalRequestOptions
+    ): Promise<B[]> {
         // FIXME: is it needed or it is better to always use stream?
-        return this.http
+        return this.client
             .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
+                ...options,
                 json: query,
-                retryAttempts: this.retryAttempts,
-                httpTimeout: this.requestTimeout,
             })
             .catch(
                 withErrorContext({
@@ -113,209 +118,310 @@ export class PortalClient {
             })
     }
 
-    finalizedStream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
+    getFinalizedStream<B extends Block = Block, Q extends PortalQuery = PortalQuery>(
         query: Q,
-        stopOnHead = false
-    ): ReadableStream<B[]> {
-        let headPollInterval = this.headPollInterval
-        let newBlockThreshold = this.newBlockThreshold
-        let durationThreshold = this.durationThreshold
-        let bufferThreshold = this.bufferThreshold
-        let newBlockTimeout = this.newBlockTimeout
+        options?: PortalStreamOptions
+    ): ReadableStream<PortalStreamData<B>> {
+        let {
+            headPollInterval = this.headPollInterval,
+            minBytes = this.minBytes,
+            maxBytes = this.maxBytes,
+            maxIdleTime = this.maxIdleTime,
+            maxWaitTime = this.maxWaitTime,
+            request = {},
+            stopOnHead = false,
+        } = options ?? {}
 
-        let buffer = new BlocksBuffer<B>(bufferThreshold)
-        let abortStream = new AbortController()
+        return createReadablePortalStream<B>(
+            query,
+            {
+                headPollInterval,
+                minBytes,
+                maxBytes,
+                maxIdleTime,
+                maxWaitTime,
+                request,
+                stopOnHead,
+            },
+            async (query, options) => {
+                // NOTE: we emulate the same behaviour as will be implemented for hot blocks stream,
+                // but unfortunately we don't have any information about finalized block hash at the moment
+                let finalizedHead = {
+                    height: await this.getFinalizedHeight(options),
+                    hash: '',
+                }
 
-        const ingest = async () => {
-            let startBlock = query.fromBlock
-            let endBlock = query.toBlock ?? Infinity
-
-            let heartbeat: HeartBeat | undefined
-            let timeout: ReturnType<typeof setTimeout> | undefined
-            let reader: ReadableStreamDefaultReader<string[]> | undefined
-
-            function abort() {
-                return reader?.cancel()
-            }
-
-            while (startBlock <= endBlock && !abortStream.signal.aborted) {
-                try {
-                    let archiveQuery = {...query, fromBlock: startBlock}
-                    let res = await this.http
-                        .request<Readable>('POST', this.getDatasetUrl('finalized-stream'), {
-                            json: archiveQuery,
-                            httpTimeout: this.requestTimeout,
-                            retryAttempts: this.retryAttempts,
-                            stream: true,
-                            abort: abortStream.signal,
+                let res = await this.client
+                    .request<Readable>('POST', this.getDatasetUrl('finalized-stream'), {
+                        ...options,
+                        json: query,
+                        stream: true,
+                    })
+                    .catch(
+                        withErrorContext({
+                            query,
                         })
-                        .catch(
-                            withErrorContext({
-                                query: archiveQuery,
-                            })
-                        )
+                    )
 
-                    if (res.status == 204) {
-                        if (stopOnHead) break
-                        await wait(headPollInterval, abortStream.signal)
-                        continue
-                    }
+                switch (res.status) {
+                    case 200:
+                        let stream = Readable.toWeb(res.body) as ReadableStream<Uint8Array>
 
-                    abortStream.signal.addEventListener('abort', abort, {once: true})
-
-                    let heartbeatInterval = Math.ceil(newBlockThreshold / 4)
-                    heartbeat = new HeartBeat((diff) => {
-                        if (diff > newBlockThreshold) {
-                            buffer.ready()
+                        return {
+                            finalizedHead,
+                            stream: stream
+                                .pipeThrough(new TextDecoderStream('utf8'))
+                                .pipeThrough(new LineSplitStream('\n')),
                         }
-                    }, heartbeatInterval)
-
-                    timeout = setTimeout(() => buffer.ready(), durationThreshold)
-
-                    let stream = addStreamTimeout(Readable.toWeb(res.body) as ReadableStream<Buffer>, newBlockTimeout)
-                    let reader = splitLines(stream)
-                    while (true) {
-                        let lines = await reader.next()
-                        if (lines.done) break
-
-                        heartbeat.pulse()
-
-                        let size = 0
-                        let blocks = lines.value.map((line) => {
-                            let block = JSON.parse(line) as B
-                            size += line.length
-                            return block
-                        })
-
-                        await buffer.put(blocks, size)
-
-                        let lastBlock = last(blocks).header.number
-                        startBlock = lastBlock + 1
-                    }
-                } catch (err) {
-                    if (abortStream.signal.aborted) {
-                        // FIXME: should we do anything here?
-                    } else if (err instanceof TimeoutError) {
-                        this.log?.warn(`resetting stream due to inactivity for ${this.newBlockTimeout} ms`)
-                    } else {
-                        throw err
-                    }
-                } finally {
-                    await reader?.cancel().catch(() => {})
-                    heartbeat?.stop()
-                    buffer.ready()
-                    clearTimeout(timeout)
-                    abortStream.signal.removeEventListener('abort', abort)
+                    case 204:
+                        return undefined
+                    default:
+                        throw unexpectedCase(res.status)
                 }
             }
+        )
+    }
+}
+
+function createReadablePortalStream<B extends Block>(
+    query: PortalQuery,
+    options: Required<PortalStreamOptions>,
+    requestStream: (
+        query: PortalQuery,
+        options?: PortalRequestOptions
+    ) => Promise<{finalizedHead: HashAndHeight; stream: ReadableStream<string[]>} | undefined>
+): ReadableStream<PortalStreamData<B>> {
+    let {headPollInterval, stopOnHead, maxBytes, minBytes, request, maxIdleTime, maxWaitTime} = options
+    maxBytes = Math.max(maxBytes, minBytes)
+
+    let abortStream = new AbortController()
+
+    let buffer: {data: PortalStreamData<B>; bytes: number} | undefined
+    let state: 'open' | 'failed' | 'closed' = 'open'
+    let error: unknown
+
+    let readyFuture: Future<void> = createFuture()
+    let takeFuture: Future<void> = createFuture()
+    let putFuture: Future<void> = createFuture()
+
+    async function take() {
+        let waitTimeout = setTimeout(() => {
+            readyFuture.resolve()
+        }, maxWaitTime)
+        readyFuture.promise().finally(() => clearTimeout(waitTimeout))
+
+        await Promise.all([readyFuture.promise(), putFuture.promise()])
+
+        if (state === 'failed') {
+            throw error
         }
 
-        return new ReadableStream({
-            start: async (controller) => {
-                ingest()
-                    .then(() => {
-                        buffer.close()
-                    })
-                    .catch((error) => {
-                        if (buffer.isClosed()) return
-                        controller.error(error)
-                        buffer.close()
-                    })
-            },
-            pull: async (controller) => {
-                let value = await buffer.take()
-                if (value) {
-                    controller.enqueue(value)
-                } else {
+        let value = buffer?.data
+        buffer = undefined
+
+        takeFuture.resolve()
+
+        if (state === 'closed') {
+            return {value, done: value == null}
+        } else {
+            if (value == null) {
+                throw new Error('buffer is empty')
+            }
+
+            takeFuture = createFuture()
+            putFuture = createFuture()
+            readyFuture = createFuture()
+
+            return {value, done: false}
+        }
+    }
+
+    function close() {
+        if (state !== 'open') return
+        state = 'closed'
+        readyFuture.resolve()
+        putFuture.resolve()
+        takeFuture.resolve()
+    }
+
+    function fail(err: unknown) {
+        if (state !== 'open') return
+        state = 'failed'
+        error = err
+        readyFuture.resolve()
+        putFuture.resolve()
+        takeFuture.resolve()
+    }
+
+    async function ingest() {
+        let abortSignal = abortStream.signal
+        let {fromBlock = 0, toBlock = Infinity} = query
+
+        try {
+            while (true) {
+                if (abortSignal.aborted) break
+                if (fromBlock > toBlock) break
+
+                let reader: ReadableStreamDefaultReader<string[]> | undefined
+
+                let lastChunkTimestamp = Date.now()
+                let idleInterval: ReturnType<typeof setInterval> | undefined
+
+                try {
+                    let res = await requestStream(
+                        {
+                            ...query,
+                            fromBlock,
+                        },
+                        {
+                            ...request,
+                            abort: abortSignal,
+                        }
+                    )
+
+                    if (res == null) {
+                        if (stopOnHead) break
+                        await wait(headPollInterval, abortSignal)
+                    } else {
+                        let {finalizedHead, stream} = res
+                        reader = stream.getReader()
+
+                        while (true) {
+                            let data = await withAbort(reader.read(), abortSignal)
+                            if (data.done) break
+                            if (data.value.length == 0) continue
+
+                            lastChunkTimestamp = Date.now()
+                            if (idleInterval == null) {
+                                idleInterval = setInterval(() => {
+                                    if (Date.now() - lastChunkTimestamp >= maxIdleTime) {
+                                        readyFuture.resolve()
+                                    }
+                                }, Math.ceil(maxIdleTime / 3))
+                                readyFuture.promise().finally(() => clearInterval(idleInterval))
+                                takeFuture.promise().finally(() => (idleInterval = undefined))
+                            }
+
+                            if (buffer == null) {
+                                buffer = {
+                                    data: {finalizedHead, blocks: []},
+                                    bytes: 0,
+                                }
+                            } else {
+                                buffer.data.finalizedHead = finalizedHead
+                            }
+
+                            for (let line of data.value) {
+                                let block = JSON.parse(line) as B
+
+                                buffer.bytes += line.length
+                                buffer.data.blocks.push(block)
+
+                                fromBlock = block.header.number + 1
+                            }
+
+                            if (buffer.bytes >= minBytes) {
+                                readyFuture.resolve()
+                            }
+
+                            putFuture.resolve()
+
+                            if (buffer.bytes >= maxBytes) {
+                                await withAbort(takeFuture.promise(), abortSignal)
+                            }
+                        }
+                    }
+
+                    if (buffer != null) {
+                        readyFuture.resolve()
+                    }
+                } finally {
+                    reader?.cancel().catch(() => {})
+                    clearInterval(idleInterval)
+                }
+            }
+        } catch (err) {
+            if (abortSignal.aborted) {
+                // ignore
+            } else {
+                throw err
+            }
+        }
+    }
+
+    return new ReadableStream({
+        start() {
+            ingest().then(close, fail)
+        },
+        async pull(controller) {
+            try {
+                let result = await take()
+                if (result.done) {
                     controller.close()
+                } else {
+                    controller.enqueue(result.value)
+                }
+            } catch (err) {
+                controller.error(err)
+            }
+        },
+        cancel(reason) {
+            abortStream.abort(reason)
+        },
+    })
+}
+
+function withAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        if (signal.aborted) {
+            reject(signal.reason || new Error('Aborted'))
+        }
+
+        const abort = () => {
+            reject(signal.reason || new Error('Aborted'))
+        }
+
+        signal.addEventListener('abort', abort)
+
+        promise.then(resolve, reject).finally(() => {
+            signal.removeEventListener('abort', abort)
+        })
+    })
+}
+
+class LineSplitStream implements ReadableWritablePair<string[], string> {
+    private line = ''
+    private transform: TransformStream<string, string[]>
+
+    get readable() {
+        return this.transform.readable
+    }
+    get writable() {
+        return this.transform.writable
+    }
+
+    constructor(separator: string) {
+        this.transform = new TransformStream({
+            transform: (chunk, controller) => {
+                let lines = chunk.split(separator)
+                if (lines.length === 1) {
+                    this.line += lines[0]
+                } else {
+                    let result: string[] = []
+                    lines[0] = this.line + lines[0]
+                    this.line = lines.pop() || ''
+                    result.push(...lines)
+                    controller.enqueue(result)
                 }
             },
-            cancel: () => {
-                abortStream.abort()
+            flush: (controller) => {
+                if (this.line) {
+                    controller.enqueue([this.line])
+                    this.line = ''
+                }
+                // NOTE: not needed according to the spec, but done the same way in nodejs sources
+                controller.terminate()
             },
         })
     }
-}
-
-class BlocksBuffer<B extends Block> {
-    private blocks: B[] = []
-    private queue = new AsyncQueue<B[]>(1)
-    private size = 0
-
-    constructor(private bufferSizeThreshold: number) {}
-
-    async put(blocks: B[], size: number) {
-        this.blocks.push(...blocks)
-        this.size += size
-
-        if (this.size > this.bufferSizeThreshold) {
-            this.ready()
-            await this.queue.wait()
-        }
-    }
-
-    async take() {
-        let value = await this.queue.take()
-        this.blocks = []
-        this.size = 0
-        return value
-    }
-
-    ready() {
-        if (this.blocks.length == 0) return
-        this.queue.forcePut(this.blocks)
-    }
-
-    close() {
-        return this.queue.close()
-    }
-
-    isClosed() {
-        return this.queue.isClosed()
-    }
-}
-
-class HeartBeat {
-    private interval: ReturnType<typeof setInterval> | undefined
-    private timestamp: number
-
-    constructor(fn: (diff: number) => void, ms?: number) {
-        this.timestamp = Date.now()
-        this.interval = setInterval(() => fn(Date.now() - this.timestamp), ms)
-    }
-
-    pulse() {
-        this.timestamp = Date.now()
-    }
-
-    stop() {
-        clearInterval(this.interval)
-    }
-}
-
-function addStreamTimeout<T>(
-    stream: ReadableStream<T>,
-    ms: number,
-    onTimeout?: () => Error | undefined | void
-): ReadableStream<T> {
-    const reader = stream.getReader()
-
-    return new ReadableStream({
-        pull: async (c) => {
-            try {
-                let data = await addTimeout(reader.read(), ms, onTimeout)
-                if (data.done) {
-                    c.close()
-                } else {
-                    c.enqueue(data.value)
-                }
-            } catch (e) {
-                c.error(e)
-                await reader.cancel()
-            }
-        },
-        cancel: async (reason) => {
-            await reader.cancel(reason)
-        },
-    })
 }

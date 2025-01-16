@@ -7008,7 +7008,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-GOt278RgxoFh646RsnTL1PT/kFQczrhbyS5vtmrYKElg3j3TyGfOIP5++geT1e/A5Ljz7Itsr4HXuvVjZEZtJw==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-ZSKMyhF+k3pMrZgDu+0DEkE66mkTgPrLtTFHyZvQ2yaNsiqO1hrdwjb+1uswHnmtxGx0bSfH53E6uqYvKnk7yA==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7103,7 +7103,7 @@ packages:
     dev: false
 
   file:projects/evm-processor.tgz:
-    resolution: {integrity: sha512-ZgPmppneDuwcDlXNnE+VhlGQxlqHoG/WtfYidVuwqgUKbX4jEKYKXJE3hzkBlNegrmIOvOnF3FStRgcuWucnvQ==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-zYF+cqKeMR2TvE9fGPqeBk8DY472i2E1T9E9K6pykZvjkIfQ32PNjWQmgepXrvBUhl++irxT8N6WdAtfG6H7og==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
     version: 0.0.0
     dependencies:
@@ -7219,7 +7219,7 @@ packages:
     dev: false
 
   file:projects/fuel-stream.tgz:
-    resolution: {integrity: sha512-6J2VBe48XWIqSZ3M8lZtBrsHZr+p8zRTofEkolzhhT4kighSSCG/HVPp3tp1ZXc5rPGpQGT/JZeCArOsGo3EhQ==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-gRPG6HSckRtOn9h4NPBDtm4xhL+W32baVgGfM6hukNmo50r2PDxQhdHx0FmTKxOZGKkfrXYmWPO3NBt4OOaxCg==, tarball: file:projects/fuel-stream.tgz}
     name: '@rush-temp/fuel-stream'
     version: 0.0.0
     dependencies:
@@ -7592,7 +7592,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-krZzJP5QBey2MWE6BMGBn4fRnV4P1weoVts3iAyfNNYs+ukKIZLn76qFrzJ8yIpYlZUF4tq49CK0v0jnZ+XHEA==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-UI7pVIzMYd8g6XbWvX2EAlW8YT+48gmg9tjpSUXS5am+cA4vu6Q0DyTGE3HZDzLlh7OH9GXr70dXQ5zjUbRCHw==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -7699,7 +7699,7 @@ packages:
     dev: false
 
   file:projects/starknet-stream.tgz:
-    resolution: {integrity: sha512-xOStr+km+Cj7Q9yY8YNp0ledJQhcYDzparQYEVgg55Na1fPHHJls2qvHiGb5mqofRjVfQlYsmWkD1QeyXpojUg==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-W2v33L3W80yYBb2uz1CfEeHkcGqQ+v45wcgWkZn3O9AM98r/RwK0USfiYL7o2AcdxIlA0AsHdx1zXHMBgPmKJQ==, tarball: file:projects/starknet-stream.tgz}
     name: '@rush-temp/starknet-stream'
     version: 0.0.0
     dependencies:
@@ -7772,7 +7772,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-i4cnuhfZZGKSH8as/BE4usnpoRdUwlB+LS6PONw4c8zpX5pl1yATKfDZiBOwUudAuZyFv514fXc0ejOx5y3/zw==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-gqRVhJbgy2GrWeIU8EQxNczch+Fku7wB4GNWC4tToWW8UvWKqUDbdg4nDOj6d2uTph/+hKuoMZV16UjGy7OcDw==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
@@ -7852,7 +7852,7 @@ packages:
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-hyWAMCO/NbpJPmnw4Jo+CpML5m6wcS1j3gXe+IL7nZYUAjZzvNEa4NCtsaKaVRSNR1qr8kNz1++56Kt2VvQQ1A==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-rygthUa7x0qu++SnbpQBBbtaVdS11kOu9m+MBu1TqJWFK9xHftEksztAPhDglW1+P+RPu7QyvyqIoSA1ZxzWUQ==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:

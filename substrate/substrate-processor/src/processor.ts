@@ -512,20 +512,21 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
 
         let log = this.getLogger().child('archive')
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent: new HttpAgent({
-                keepAlive: true
-            }),
-            log
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
+        let agent = new HttpAgent({
+            keepAlive: true,
         })
 
         return options.type === 'gateway'
             ? new SubstrateArchive({
                 client: new ArchiveClient({
-                    http,
+                    http: new HttpClient({
+                        headers,
+                        agent,
+                        log,
+                    }),
                     url: options.url,
                     queryTimeout: options.requestTimeout,
                     log
@@ -535,13 +536,16 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             })
             : new SubstratePortal({
                 client: new PortalClient({
-                    http,
+                    http: new HttpClient({
+                        headers,
+                        agent,
+                        log,
+                        httpTimeout: options.requestTimeout,
+                        retryAttempts: options.retryAttempts,
+                    }),
                     url: options.url,
-                    requestTimeout: options.requestTimeout,
-                    retryAttempts: options.retryAttempts,
-                    bufferThreshold: options.bufferThreshold,
-                    newBlockTimeout: options.newBlockTimeout,
-                    log,
+                    minBytes: options.bufferThreshold,
+                    maxIdleTime: options.newBlockTimeout,
                 }),
                 rpc: this.getChainRpcClient(),
                 typesBundle: this.typesBundle

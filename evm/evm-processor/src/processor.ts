@@ -37,8 +37,8 @@ export interface RpcEndpointSettings {
     requestTimeout?: number
     /**
      * Maximum number of retry attempts.
-     * 
-     * By default, retries all "retryable" errors indefinitely. 
+     *
+     * By default, retries all "retryable" errors indefinitely.
      */
     retryAttempts?: number
     /**
@@ -50,7 +50,6 @@ export interface RpcEndpointSettings {
      */
     headers?: Record<string, string>
 }
-
 
 export interface RpcDataIngestionSettings {
     /**
@@ -93,7 +92,7 @@ export interface RpcDataIngestionSettings {
     /**
      * Flags to switch off the data consistency checks
      */
-    validationFlags?: RpcValidationFlags 
+    validationFlags?: RpcValidationFlags
 }
 
 
@@ -120,7 +119,7 @@ export interface PortalSettings {
     requestTimeout?: number
 
     retryAttempts?: number
-    
+
     bufferThreshold?: number
 
     newBlockTimeout?: number
@@ -209,7 +208,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private archive?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'}
+    private archive?: (GatewaySettings & {type: 'gateway'}) | (PortalSettings & {type: 'portal'})
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
@@ -372,7 +371,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private add(request: DataRequest, range?: Range): void {
         this.requests.push({
             range: range || {from: 0},
-            request
+            request,
         })
     }
 
@@ -477,11 +476,11 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             url: this.rpcEndpoint.url,
             headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
-            requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
+            requestTimeout: this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
             rateLimit: this.rpcEndpoint.rateLimit,
             retryAttempts: this.rpcEndpoint.retryAttempts ?? Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url}),
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
@@ -493,7 +492,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return {
             get client() {
                 return self.getChainRpcClient()
-            }
+            },
         }
     }
 
@@ -511,7 +510,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             validationFlags: this.rpcIngestSettings?.validationFlags,
-            log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url}),
         })
     }
 
@@ -521,20 +520,21 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
         let log = this.getLogger().child('archive')
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent: new HttpAgent({
-                keepAlive: true
-            }),
-            log
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
+        let agent = new HttpAgent({
+            keepAlive: true,
         })
 
         return archive.type === 'gateway'
             ? new EvmArchive(
                   new ArchiveClient({
-                      http,
+                      http: new HttpClient({
+                          headers,
+                          agent,
+                          log,
+                      }),
                       url: archive.url,
                       queryTimeout: archive.requestTimeout,
                       log,
@@ -542,13 +542,16 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
               )
             : new EvmPortal(
                   new PortalClient({
-                      http,
+                      http: new HttpClient({
+                          headers,
+                          agent,
+                          log,
+                          httpTimeout: archive.requestTimeout,
+                          retryAttempts: archive.retryAttempts,
+                      }),
                       url: archive.url,
-                      requestTimeout: archive.requestTimeout,
-                      retryAttempts: archive.retryAttempts,
-                      bufferThreshold: archive.bufferThreshold,
-                      newBlockTimeout: archive.newBlockTimeout,
-                      log,
+                      minBytes: archive.bufferThreshold,
+                      maxIdleTime: archive.newBlockTimeout,
                   })
               )
     }
@@ -593,40 +596,40 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         let log = this.getLogger()
 
         runProgram(async () => {
-            let chain = this.getChain()
-            let mappingLog = log.child('mapping')
+                let chain = this.getChain()
+                let mappingLog = log.child('mapping')
 
-            if (this.archive == null && this.rpcEndpoint == null) {
-                throw new Error(
-                    'No data source where specified. ' +
-                    'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
-                )
-            }
+                if (this.archive == null && this.rpcEndpoint == null) {
+                    throw new Error(
+                        'No data source where specified. ' +
+                            'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
+                    )
+                }
 
-            if (this.archive == null && this.rpcIngestSettings?.disabled) {
-                throw new Error('Subsquid Archive is required when RPC data ingestion is disabled')
-            }
+                if (this.archive == null && this.rpcIngestSettings?.disabled) {
+                    throw new Error('Subsquid Archive is required when RPC data ingestion is disabled')
+                }
 
-            return new Runner({
-                database,
-                requests: this.getBatchRequests(),
-                archive: this.archive ? this.getArchiveDataSource() : undefined,
+                return new Runner({
+                    database,
+                    requests: this.getBatchRequests(),
+                    archive: this.archive ? this.getArchiveDataSource() : undefined,
                 hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
                     ? this.getHotDataSource()
                     : undefined,
-                allBlocksAreFinal: this.finalityConfirmation === 0,
-                prometheus: this.getPrometheusServer(),
-                log,
-                process(store, batch) {
-                    return handler({
-                        _chain: chain,
-                        log: mappingLog,
-                        store,
-                        blocks: batch.blocks as any,
+                    allBlocksAreFinal: this.finalityConfirmation === 0,
+                    prometheus: this.getPrometheusServer(),
+                    log,
+                    process(store, batch) {
+                        return handler({
+                            _chain: chain,
+                            log: mappingLog,
+                            store,
+                            blocks: batch.blocks as any,
                         isHead: batch.isHead
-                    })
+                        })
                 }
-            }).run()
+                }).run()
         }, err => log.fatal(err))
     }
 }
