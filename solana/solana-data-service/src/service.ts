@@ -465,7 +465,19 @@ export class SolanaService {
             if (!this.votes) {
                 removeVotes(block)
             }
-            let jsonLine = JSON.stringify(toJSON(block)) + '\n'
+
+            let {header, ...items} = block
+            let {slot, parentSlot, ...props} = header
+
+            let jsonLine = JSON.stringify(toJSON({
+                header: {
+                    number: slot,
+                    parentNumber: parentSlot,
+                    ...props
+                },
+                ...items
+            })) + '\n'
+
             return {
                 number: block.header.slot,
                 hash: block.header.hash,

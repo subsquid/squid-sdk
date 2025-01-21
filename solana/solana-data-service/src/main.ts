@@ -75,7 +75,7 @@ function createHttpApp(service: SolanaService): HttpApp {
 
     let StreamRequest = object({
         fromBlock: NAT,
-        prevBlockHash: option(STRING)
+        parentBlockHash: option(STRING)
     })
 
     app.add('/stream', {
@@ -86,7 +86,7 @@ function createHttpApp(service: SolanaService): HttpApp {
                 return
             }
 
-            let res = await service.query(req.fromBlock, req.prevBlockHash)
+            let res = await service.query(req.fromBlock, req.parentBlockHash)
             if (res instanceof InvalidBaseBlock) {
                 ctx.send(409, res.prev)
                 return
