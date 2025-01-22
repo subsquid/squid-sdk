@@ -210,7 +210,7 @@ export class SolanaService {
         let timer = setTimeout(() => {
             removeArrayItem(this.listeners, listener)
             future.resolve()
-        }, 10000)
+        }, 5000)
 
         return future.promise().finally(() => clearTimeout(timer))
     }

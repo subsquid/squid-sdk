@@ -100,23 +100,16 @@ function createHttpApp(service: SolanaService): HttpApp {
                 ctx.response.setHeader('content-length', len)
             }
 
-            let lines = 0
             for (let block of res.blocks) {
-                lines += 1
-                if (lines % 5 == 0) {
-                    await waitDrain(ctx.response)
-                }
+                await waitDrain(ctx.response)
                 ctx.response.write(block.jsonLine)
             }
 
             if (res.blockStream) {
                 try {
                     for await (let batch of res.blockStream) {
-                        for (let block of res.blocks) {
-                            lines += 1
-                            if (lines % 5 == 0) {
-                                await waitDrain(ctx.response)
-                            }
+                        for (let block of batch) {
+                            await waitDrain(ctx.response)
                             ctx.response.write(block.jsonLine)
                         }
                     }
