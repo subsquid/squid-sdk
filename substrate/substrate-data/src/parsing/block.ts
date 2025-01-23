@@ -4,6 +4,7 @@ import assert from 'assert'
 import {setEmittedContractAddress} from '../extension/contracts'
 import {setEthereumTransact, setEvmLog} from '../extension/evm'
 import {setGearProgramId} from '../extension/gear'
+import {setReviveContractEmitted} from '../extension/revive'
 import {Block, BlockHeader, Call, DataRequest, Event, Extrinsic} from '../interfaces/data'
 import {RawBlock} from '../interfaces/data-raw'
 import {parseCalls} from './call'
@@ -47,6 +48,7 @@ export function parseBlock(src: RawBlock, options: DataRequest): Block {
             setEvmLog(block.runtime, e)
             setEmittedContractAddress(block.runtime, e)
             setGearProgramId(block.runtime, e)
+            setReviveContractEmitted(block.runtime, e)
         }
     }
 

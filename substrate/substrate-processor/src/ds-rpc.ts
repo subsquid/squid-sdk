@@ -152,6 +152,8 @@ export class RpcDataSource implements HotDataSource<Block, DataRequest> {
                 event._evmLogTopics = s._evmLogTopics
                 event._contractAddress = s._contractAddress
                 event._gearProgramId = s._gearProgramId
+                event._reviveContract = s._reviveContract
+                event._reviveTopics = s._reviveTopics
                 block.events.push(event)
             }
         }
@@ -168,6 +170,7 @@ function toBaseDataRequest(req: DataRequest): base.DataRequest {
         || !!req.contractsEvents?.length
         || !!req.gearMessagesQueued?.length
         || !!req.gearUserMessagesSent?.length
+        || !!req.reviveContractEmitted?.length
         || req.calls?.some(c => c.events)
         || req.ethereumTransactions?.some(c => c.events)
         || false
