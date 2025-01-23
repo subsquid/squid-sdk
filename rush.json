@@ -973,6 +973,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "polkavm-erc20",
+      "projectFolder": "test/polkavm-erc20",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/starknet-data",
       "projectFolder": "starknet/starknet-data",
       "shouldPublish": true,
