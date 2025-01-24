@@ -4,14 +4,18 @@ import * as erc20 from './abi/erc20'
 import {Transfer} from './model'
 
 
-const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
+const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()
 
 
 const processor = new EvmBatchProcessor()
-    .setGateway('https://v2.archive.subsquid.io/network/arbitrum-one')
-    .setRpcEndpoint(process.env.ARB_NODE_WS)
+    .setPortal({
+        url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
+        bufferThreshold: 10 * 1024 * 1024,
+        newBlockTimeout: 5000,
+    })
+    .setRpcEndpoint('https://rpc.ankr.com/eth')
     .setFinalityConfirmation(500)
-    .setBlockRange({from: 190000000})
+    .setBlockRange({from: 0})
     .setFields({
         block: {size: true},
         log: {transactionHash: true},
@@ -25,7 +29,6 @@ const processor = new EvmBatchProcessor()
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
     let transfers: Transfer[] = []
 
-    
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
             if (log.address == CONTRACT &&  erc20.events.Transfer.is(log)) {
@@ -43,5 +46,6 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async ctx => {
         }
     }
 
+    ctx.log.info(`found ${transfers.length} transfers`)
     await ctx.store.insert(transfers)
 })

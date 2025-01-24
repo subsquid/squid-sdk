@@ -11,18 +11,27 @@ import {Exchange} from './model'
 // that defines where to get the data and what data should we get.
 const dataSource = new DataSourceBuilder()
     // Provide Subsquid Network Gateway URL.
-    .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
+    .setPortal({
+        url: 'https://portal.sqd.dev/datasets/solana-mainnet',
+        // newBlockTimeout: 5000
+        bufferThreshold: 1000 * 1024 * 1024,
+        retryAttempts: Infinity,
+    })
     // Subsquid Network is always about 1000 blocks behind the head.
     // We must use regular RPC endpoint to get through the last mile
     // and stay on top of the chain.
     // This is a limitation, and we promise to lift it in the future!
-    .setRpc(process.env.SOLANA_NODE == null ? undefined : {
-        client: new SolanaRpcClient({
-            url: process.env.SOLANA_NODE,
-            // rateLimit: 100 // requests per sec
-        }),
-        strideConcurrency: 10
-    })
+    .setRpc(
+        process.env.SOLANA_NODE == null
+            ? undefined
+            : {
+                  client: new SolanaRpcClient({
+                      url: process.env.SOLANA_NODE,
+                      // rateLimit: 100 // requests per sec
+                  }),
+                  strideConcurrency: 10,
+              }
+    )
     // Currently only blocks from 240_000_000 and above are stored in Subsquid Network.
     // When we specify it, we must also limit the range of requested blocks.
     //
@@ -55,23 +64,27 @@ const dataSource = new DataSourceBuilder()
     //
     // It is possible to override default selection by setting undesired fields to `false`.
     .setFields({
-        block: { // block header fields
-            timestamp: true
+        block: {
+            // block header fields
+            timestamp: true,
         },
-        transaction: { // transaction fields
-            signatures: true
+        transaction: {
+            // transaction fields
+            signatures: true,
         },
-        instruction: { // instruction fields
+        instruction: {
+            // instruction fields
             programId: true,
             accounts: true,
-            data: true
+            data: true,
         },
-        tokenBalance: { // token balance record fields
+        tokenBalance: {
+            // token balance record fields
             preAmount: true,
             postAmount: true,
             preOwner: true,
-            postOwner: true
-        }
+            postOwner: true,
+        },
     })
     // By default, block can be skipped if it doesn't contain explicitly requested items.
     //
@@ -85,7 +98,7 @@ const dataSource = new DataSourceBuilder()
         where: {
             programId: [whirlpool.programId], // where executed by Whirlpool program
             d8: [whirlpool.instructions.swap.d8], // have first 8 bytes of .data equal to swap descriptor
-            isCommitted: true // where successfully committed
+            isCommitted: true, // where successfully committed
         },
         // for each instruction selected above
         // make sure to also include:
@@ -93,9 +106,9 @@ const dataSource = new DataSourceBuilder()
             innerInstructions: true, // inner instructions
             transaction: true, // transaction, that executed the given instruction
             transactionTokenBalances: true, // all token balance records of executed transaction
-        }
-    }).build()
-
+        },
+    })
+    .build()
 
 // Once we've prepared a data source we can start fetching the data right away:
 //
@@ -138,9 +151,8 @@ const dataSource = new DataSourceBuilder()
 // https://github.com/subsquid/squid-sdk/blob/278195bd5a5ed0a9e24bfb99ee7bbb86ff94ccb3/typeorm/typeorm-config/src/config.ts#L21
 const database = new TypeormDatabase()
 
-
 // Now we are ready to start data processing
-run(dataSource, database, async ctx => {
+run(dataSource, database, async (ctx) => {
     // Block items that we get from `ctx.blocks` are flat JS objects.
     //
     // We can use `augmentBlock()` function from `@subsquid/solana-objects`
@@ -157,18 +169,26 @@ run(dataSource, database, async ctx => {
                     id: ins.id,
                     slot: block.header.slot,
                     tx: ins.getTransaction().signatures[0],
-                    timestamp: new Date(block.header.timestamp * 1000)
+                    timestamp: new Date(block.header.timestamp * 1000),
                 })
 
                 assert(ins.inner.length == 2)
                 let srcTransfer = tokenProgram.transfer.decode(ins.inner[0])
                 let destTransfer = tokenProgram.transfer.decode(ins.inner[1])
 
-                let srcBalance = ins.getTransaction().tokenBalances.find(tb => tb.account == srcTransfer.accounts.source)
-                let destBalance = ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.destination)
+                let srcBalance = ins
+                    .getTransaction()
+                    .tokenBalances.find((tb) => tb.account == srcTransfer.accounts.source)
+                let destBalance = ins
+                    .getTransaction()
+                    .tokenBalances.find((tb) => tb.account === destTransfer.accounts.destination)
 
-                let srcMint = ins.getTransaction().tokenBalances.find(tb => tb.account === srcTransfer.accounts.destination)?.preMint
-                let destMint = ins.getTransaction().tokenBalances.find(tb => tb.account === destTransfer.accounts.source)?.preMint
+                let srcMint = ins
+                    .getTransaction()
+                    .tokenBalances.find((tb) => tb.account === srcTransfer.accounts.destination)?.preMint
+                let destMint = ins
+                    .getTransaction()
+                    .tokenBalances.find((tb) => tb.account === destTransfer.accounts.source)?.preMint
 
                 assert(srcMint)
                 assert(destMint)

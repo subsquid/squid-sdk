@@ -29,6 +29,8 @@ import {
 } from './data/request'
 import {SolanaRpcClient} from './rpc/client'
 import {RpcDataSource} from './rpc/source'
+import {SolanaPortal} from './archive/portal'
+import {PortalClient} from '@subsquid/portal-client'
 
 
 export interface GatewaySettings {
@@ -40,6 +42,24 @@ export interface GatewaySettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+}
+
+
+export interface PortalSettings {
+    /**
+     * Subsquid Network Gateway url
+     */
+    url: string
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+
+    retryAttempts?: number
+    
+    bufferThreshold?: number
+
+    newBlockTimeout?: number
 }
 
 
@@ -86,7 +106,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: GatewaySettings
+    private archive?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'}
     private rpc?: RpcSettings
 
     /**
@@ -99,13 +119,26 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
      * source.setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
      */
     setGateway(url: string | GatewaySettings): this {
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with .setPortal()')
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.archive = {url, type: 'gateway'}
         } else {
-            this.archive = url
+            this.archive = {...url, type: 'gateway'}
         }
         return this
     }
+
+
+    setPortal(url: string | PortalSettings): this {
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with .setGateway()')
+        if (typeof url == 'string') {
+            this.archive = {url, type: 'portal', }
+        } else {
+            this.archive = {...url, type: 'portal'}
+        }
+        return this
+    }
+
 
     /**
      * Set up RPC data ingestion
@@ -267,7 +300,7 @@ class SolanaDataSource implements DataSource<PartialBlock> {
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
-        private archiveSettings?: GatewaySettings,
+        private archiveSettings?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'},
         rpcSettings?: RpcSettings
     ) {
         assert(this.archiveSettings || rpcSettings, 'either archive or RPC should be provided')
@@ -292,9 +325,11 @@ class SolanaDataSource implements DataSource<PartialBlock> {
             return this.rpc.getBlockHash(height)
         } else {
             let archive = this.createArchive()
-            let head = await archive.getFinalizedHeight()
-            if (head >= height) return archive.getBlockHash(height)
-            if (this.rpc) return this.rpc.getBlockHash(height)
+            let hash = await archive.getBlockHash(height)
+            if (hash == null && this.rpc) {
+                hash = await this.rpc.getBlockHash(height)
+            }
+            return hash
         }
     }
 
@@ -366,23 +401,39 @@ class SolanaDataSource implements DataSource<PartialBlock> {
         yield* this.rpc.getBlockStream(requests)
     }
 
-    private createArchive(agent?: HttpAgent): SolanaArchive {
+    private createArchive(agent?: HttpAgent): SolanaArchive | SolanaPortal {
         assert(this.archiveSettings)
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent
-        })
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
 
-        return new SolanaArchive(
-            new ArchiveClient({
-                http,
-                url: this.archiveSettings.url,
-                queryTimeout: this.archiveSettings.requestTimeout,
-            })
-        )
+        return this.archiveSettings.type === 'gateway'
+            ? new SolanaArchive(
+                  new ArchiveClient({
+                        http: new HttpClient({
+                            headers: {
+                                'x-squid-id': this.getSquidId(),
+                            },
+                            agent,
+                        }),
+                        url: this.archiveSettings.url,
+                        queryTimeout: this.archiveSettings.requestTimeout,
+                  })
+              )
+            : new SolanaPortal(
+                  new PortalClient({
+                        http: new HttpClient({
+                            headers,
+                            agent,
+                            httpTimeout: this.archiveSettings.requestTimeout,
+                            retryAttempts: this.archiveSettings.retryAttempts,
+                        }),
+                        url: this.archiveSettings.url,
+                        minBytes: this.archiveSettings.bufferThreshold,
+                        maxIdleTime: this.archiveSettings.newBlockTimeout,
+                  })
+              )
     }
 
     @def
