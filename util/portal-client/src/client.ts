@@ -144,7 +144,7 @@ export class PortalClient {
                 stopOnHead,
             },
             async (q, o) => {
-                // NOTE: we emulate the same behaviour as will be implemented for hot blocks stream,
+                // NOTE: we emulate the same behavior as will be implemented for hot blocks stream,
                 // but unfortunately we don't have any information about finalized block hash at the moment
                 let finalizedHead = {
                     height: await this.getFinalizedHeight(o),

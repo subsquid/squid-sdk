@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "add SQD Portal support",
+      "comment": "added support for SQD Portal API",
       "type": "minor"
     }
   ],
