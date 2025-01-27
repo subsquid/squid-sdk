@@ -23,6 +23,11 @@ export class SolanaArchive {
             type: 'solana',
             fromBlock: height,
             toBlock: height,
+            fields: {
+                block: {
+                    hash: true,
+                }
+            },
             includeAllBlocks: true
         })
         assert(blocks.length == 1)
@@ -37,6 +42,8 @@ export class SolanaArchive {
             includeAllBlocks: true,
             fields: {
                 block: {
+                    hash: true,
+                    number: true,
                     slot: true,
                     parentSlot: true,
                     parentHash: true,

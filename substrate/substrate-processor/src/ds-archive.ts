@@ -10,6 +10,7 @@ import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
 import {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
+import {mergeFields} from './selection'
 
 
 interface ArchiveQuery extends DataRequest {
@@ -44,7 +45,6 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
     }
 
     async *getFinalizedBlocks(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean): AsyncIterable<Batch<Block>> {
-
         let runtimeTracker = new RuntimeTracker<ArchiveBlockHeader & WithRuntime>(
             this.rpc,
             hdr => ({height: hdr.number, hash: hdr.hash, parentHash: hdr.parentHash}),
@@ -80,108 +80,8 @@ export class SubstrateArchive implements DataSource<Block, DataRequest> {
 
     @annotateSyncError((src: ArchiveBlock) => ({blockHeight: src.header.number, blockHash: src.header.hash}))
     private mapBlock(src: ArchiveBlock): Block {
-        let block = new Block(new BlockHeader(
-            assertNotNull(src.header.runtime),
-            assertNotNull(src.header.runtimeOfPrevBlock),
-            {
-                height: src.header.number,
-                ...src.header
-            }
-        ))
-
-        if (src.extrinsics) {
-            for (let s of src.extrinsics) {
-                let extrinsic = new Extrinsic(block.header, s.index)
-                if (s.version != null) {
-                    extrinsic.version = s.version
-                }
-                if (s.signature != null) {
-                    extrinsic.signature = s.signature
-                }
-                if (s.fee != null) {
-                    extrinsic.fee = BigInt(s.fee)
-                }
-                if (s.tip != null) {
-                    extrinsic.tip = BigInt(s.tip)
-                }
-                if (s.error != null) {
-                    extrinsic.error = s.error
-                }
-                if (s.success != null) {
-                    extrinsic.success = s.success
-                }
-                if (s.hash != null) {
-                    extrinsic.hash = s.hash
-                }
-                block.extrinsics.push(extrinsic)
-            }
-        }
-
-        if (src.calls) {
-            for (let s of src.calls) {
-                let call = new Call(block.header, s.extrinsicIndex, s.address)
-                if (s.name) {
-                    call.name = s.name
-                }
-                if (s.args != null) {
-                    call.args = s.args
-                }
-                if (s.origin != null) {
-                    call.origin = s.origin
-                }
-                if (s.error != null) {
-                    call.error = s.error
-                }
-                if (s.success != null) {
-                    call.success = s.success
-                }
-                block.calls.push(call)
-            }
-        }
-
-        if (src.events) {
-            for (let s of src.events) {
-                let event = new Event(block.header, s.index)
-                if (s.name != null) {
-                    event.name = s.name
-                }
-                if (s.args != null) {
-                    event.args = s.args
-                }
-                if (s.phase != null) {
-                    event.phase = s.phase
-                }
-                if (s.extrinsicIndex != null) {
-                    event.extrinsicIndex = s.extrinsicIndex
-                }
-                if (s.callAddress != null) {
-                    event.callAddress = s.callAddress
-                }
-                if (s.topics != null) {
-                    event.topics = s.topics
-                }
-                block.events.push(event)
-            }
-        }
-
-        setUpItems(block)
-        return block
+        return mapBlock(src)
     }
-}
-
-
-type Selector<Keys extends string> = {
-    [K in Keys]?: boolean
-}
-
-
-function mergeFields<Keys extends string>(def: Selector<Keys>, requested?: Selector<Keys>, required?: Selector<Keys>): Selector<Keys> {
-    let fields: Selector<Keys> = {...def}
-    for (let key in requested) {
-        fields[key] = requested[key]
-    }
-    Object.assign(fields, required)
-    return fields
 }
 
 
@@ -197,4 +97,94 @@ function getFields(fields: FieldSelection | undefined): FieldSelection {
         call: mergeFields(DEFAULT_FIELDS.call, fields?.call),
         extrinsic: mergeFields(DEFAULT_FIELDS.extrinsic, fields?.extrinsic)
     }
+}
+
+
+export function mapBlock(src: ArchiveBlock): Block {
+    let block = new Block(new BlockHeader(
+        assertNotNull(src.header.runtime),
+        assertNotNull(src.header.runtimeOfPrevBlock),
+        {
+            height: src.header.number,
+            ...src.header
+        }
+    ))
+
+    if (src.extrinsics) {
+        for (let s of src.extrinsics) {
+            let extrinsic = new Extrinsic(block.header, s.index)
+            if (s.version != null) {
+                extrinsic.version = s.version
+            }
+            if (s.signature != null) {
+                extrinsic.signature = s.signature
+            }
+            if (s.fee != null) {
+                extrinsic.fee = BigInt(s.fee)
+            }
+            if (s.tip != null) {
+                extrinsic.tip = BigInt(s.tip)
+            }
+            if (s.error != null) {
+                extrinsic.error = s.error
+            }
+            if (s.success != null) {
+                extrinsic.success = s.success
+            }
+            if (s.hash != null) {
+                extrinsic.hash = s.hash
+            }
+            block.extrinsics.push(extrinsic)
+        }
+    }
+
+    if (src.calls) {
+        for (let s of src.calls) {
+            let call = new Call(block.header, s.extrinsicIndex, s.address)
+            if (s.name) {
+                call.name = s.name
+            }
+            if (s.args != null) {
+                call.args = s.args
+            }
+            if (s.origin != null) {
+                call.origin = s.origin
+            }
+            if (s.error != null) {
+                call.error = s.error
+            }
+            if (s.success != null) {
+                call.success = s.success
+            }
+            block.calls.push(call)
+        }
+    }
+
+    if (src.events) {
+        for (let s of src.events) {
+            let event = new Event(block.header, s.index)
+            if (s.name != null) {
+                event.name = s.name
+            }
+            if (s.args != null) {
+                event.args = s.args
+            }
+            if (s.phase != null) {
+                event.phase = s.phase
+            }
+            if (s.extrinsicIndex != null) {
+                event.extrinsicIndex = s.extrinsicIndex
+            }
+            if (s.callAddress != null) {
+                event.callAddress = s.callAddress
+            }
+            if (s.topics != null) {
+                event.topics = s.topics
+            }
+            block.events.push(event)
+        }
+    }
+
+    setUpItems(block)
+    return block
 }
