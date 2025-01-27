@@ -10,8 +10,6 @@ const CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'.toLowerCase()
 const processor = new EvmBatchProcessor()
     .setPortal({
         url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
-        bufferThreshold: 10 * 1024 * 1024,
-        newBlockTimeout: 5000,
     })
     .setRpcEndpoint('https://rpc.ankr.com/eth')
     .setFinalityConfirmation(500)

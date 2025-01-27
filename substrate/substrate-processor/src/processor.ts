@@ -33,7 +33,7 @@ import {
 } from './interfaces/data-request'
 import {getFieldSelectionValidator} from './selection'
 import {SubstratePortal} from './ds-portal'
-import {PortalClient} from '@subsquid/portal-client'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 
 
 export interface RpcEndpointSettings {
@@ -96,21 +96,13 @@ export interface GatewaySettings {
 }
 
 
-export interface PortalSettings {
-    /**
-     * Subsquid Network Gateway url
-     */
-    url: string
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
     /**
      * Request timeout in ms
      */
     requestTimeout?: number
 
     retryAttempts?: number
-    
-    bufferThreshold?: number
-
-    newBlockTimeout?: number
 }
 
 
@@ -541,11 +533,14 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                         agent,
                         log,
                         httpTimeout: options.requestTimeout,
-                        retryAttempts: options.retryAttempts,
+                        retryAttempts: options.retryAttempts ?? Infinity,
                     }),
                     url: options.url,
-                    minBytes: options.bufferThreshold,
-                    maxIdleTime: options.newBlockTimeout,
+                    minBytes: options.minBytes,
+                    maxIdleTime: options.maxIdleTime,
+                    maxBytes: options.maxBytes,
+                    maxWaitTime: options.maxWaitTime,
+                    headPollInterval: options.headPollInterval,
                 }),
                 rpc: this.getChainRpcClient(),
                 typesBundle: this.typesBundle

@@ -10,7 +10,6 @@ import {events} from './types'
 const processor = new SubstrateBatchProcessor()
     .setPortal({
         url: 'https://portal.sqd.dev/datasets/kusama',
-        bufferThreshold: 50 * 1024 * 1024,
     })
     .setRpcEndpoint(process.env.KUSAMA_NODE_WS || 'wss://kusama-rpc.polkadot.io')
     .setRpcDataIngestionSettings({

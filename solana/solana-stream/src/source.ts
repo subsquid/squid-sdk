@@ -30,7 +30,7 @@ import {
 import {SolanaRpcClient} from './rpc/client'
 import {RpcDataSource} from './rpc/source'
 import {SolanaPortal} from './archive/portal'
-import {PortalClient} from '@subsquid/portal-client'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 
 
 export interface GatewaySettings {
@@ -45,21 +45,13 @@ export interface GatewaySettings {
 }
 
 
-export interface PortalSettings {
-    /**
-     * Subsquid Network Gateway url
-     */
-    url: string
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
     /**
      * Request timeout in ms
      */
     requestTimeout?: number
 
     retryAttempts?: number
-    
-    bufferThreshold?: number
-
-    newBlockTimeout?: number
 }
 
 
@@ -427,11 +419,14 @@ class SolanaDataSource implements DataSource<PartialBlock> {
                             headers,
                             agent,
                             httpTimeout: this.archiveSettings.requestTimeout,
-                            retryAttempts: this.archiveSettings.retryAttempts,
+                            retryAttempts: this.archiveSettings.retryAttempts ?? Infinity,
                         }),
                         url: this.archiveSettings.url,
-                        minBytes: this.archiveSettings.bufferThreshold,
-                        maxIdleTime: this.archiveSettings.newBlockTimeout,
+                        minBytes: this.archiveSettings.minBytes,
+                        maxIdleTime: this.archiveSettings.maxIdleTime,
+                        maxBytes: this.archiveSettings.maxBytes,
+                        maxWaitTime: this.archiveSettings.maxWaitTime,
+                        headPollInterval: this.archiveSettings.headPollInterval,
                   })
               )
     }

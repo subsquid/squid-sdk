@@ -3,7 +3,7 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {PortalClient} from '@subsquid/portal-client'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'
@@ -108,21 +108,13 @@ export interface GatewaySettings {
 }
 
 
-export interface PortalSettings {
-    /**
-     * Subsquid Network Gateway url
-     */
-    url: string
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
     /**
      * Request timeout in ms
      */
     requestTimeout?: number
 
     retryAttempts?: number
-
-    bufferThreshold?: number
-
-    newBlockTimeout?: number
 }
 
 
@@ -547,11 +539,14 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
                           agent,
                           log,
                           httpTimeout: archive.requestTimeout,
-                          retryAttempts: archive.retryAttempts,
+                          retryAttempts: archive.retryAttempts ?? Infinity,
                       }),
                       url: archive.url,
-                      minBytes: archive.bufferThreshold,
-                      maxIdleTime: archive.newBlockTimeout,
+                      minBytes: archive.minBytes,
+                      maxIdleTime: archive.maxIdleTime,
+                      maxBytes: archive.maxBytes,
+                      maxWaitTime: archive.maxWaitTime,
+                      headPollInterval: archive.headPollInterval,
                   })
               )
     }

@@ -15,14 +15,39 @@ export interface Block {
 }
 
 export interface PortalClientOptions {
+    /**
+     * The URL of the portal dataset.
+     */
     url: string
+
+    /**
+     * Optional custom HTTP client to use.
+     */
     http?: HttpClient
 
+    /**
+     * Minimum number of bytes to return.
+     */
     minBytes?: number
+
+    /**
+     * Maximum number of bytes to return.
+     */
     maxBytes?: number
+
+    /**
+     * Maximum time between stream data in milliseconds for return.
+     */
     maxIdleTime?: number
+
+    /**
+     * Maximum wait time in milliseconds for return.
+     */
     maxWaitTime?: number
 
+    /**
+     * Interval for polling the head in milliseconds.
+     */
     headPollInterval?: number
 }
 
@@ -373,11 +398,11 @@ class PortalStreamBuffer<B extends Block> {
         this.buffer.bytes += bytes
         this.buffer.blocks.push(...blocks)
 
+        this.putFuture.resolve()
+
         if (this.buffer.bytes >= this.minBytes) {
             this.readyFuture.resolve()
         }
-
-        this.putFuture.resolve()
 
         if (this.buffer.bytes >= this.maxBytes) {
             await this.takeFuture.promise()

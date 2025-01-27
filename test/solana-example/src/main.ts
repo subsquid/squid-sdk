@@ -13,9 +13,7 @@ const dataSource = new DataSourceBuilder()
     // Provide Subsquid Network Gateway URL.
     .setPortal({
         url: 'https://portal.sqd.dev/datasets/solana-mainnet',
-        // newBlockTimeout: 5000
-        bufferThreshold: 1000 * 1024 * 1024,
-        retryAttempts: Infinity,
+        minBytes: 100 * 1024 * 1024,
     })
     // Subsquid Network is always about 1000 blocks behind the head.
     // We must use regular RPC endpoint to get through the last mile
