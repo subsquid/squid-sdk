@@ -54,7 +54,7 @@ export interface HashAndHeight {
 }
 
 export interface PortalStreamData<B extends Block> {
-    finalizedHead: HashAndHeight
+    finalizedHead?: HashAndHeight
     blocks: B[]
 }
 
@@ -143,23 +143,23 @@ export class PortalClient {
                 request,
                 stopOnHead,
             },
-            async (query, options) => {
+            async (q, o) => {
                 // NOTE: we emulate the same behaviour as will be implemented for hot blocks stream,
                 // but unfortunately we don't have any information about finalized block hash at the moment
                 let finalizedHead = {
-                    height: await this.getFinalizedHeight(options),
+                    height: await this.getFinalizedHeight(o),
                     hash: '',
                 }
 
                 let res = await this.client
                     .request<Readable>('POST', this.getDatasetUrl('finalized-stream'), {
-                        ...options,
-                        json: query,
+                        ...o,
+                        json: q,
                         stream: true,
                     })
                     .catch(
                         withErrorContext({
-                            query,
+                            query: q,
                         })
                     )
 
@@ -183,7 +183,7 @@ export class PortalClient {
     }
 }
 
-function createReadablePortalStream<B extends Block>(
+export function createReadablePortalStream<B extends Block>(
     query: PortalQuery,
     options: Required<PortalStreamOptions>,
     requestStream: (
@@ -191,67 +191,12 @@ function createReadablePortalStream<B extends Block>(
         options?: PortalRequestOptions
     ) => Promise<{finalizedHead: HashAndHeight; stream: ReadableStream<string[]>} | undefined>
 ): ReadableStream<PortalStreamData<B>> {
-    let {headPollInterval, stopOnHead, maxBytes, minBytes, request, maxIdleTime, maxWaitTime} = options
-    maxBytes = Math.max(maxBytes, minBytes)
+    let {headPollInterval, stopOnHead, request, ...bufferOptions} = options
 
     let abortStream = new AbortController()
 
-    let buffer: {data: PortalStreamData<B>; bytes: number} | undefined
-    let state: 'open' | 'failed' | 'closed' = 'open'
-    let error: unknown
-
-    let readyFuture: Future<void> = createFuture()
-    let takeFuture: Future<void> = createFuture()
-    let putFuture: Future<void> = createFuture()
-
-    async function take() {
-        let waitTimeout = setTimeout(() => {
-            readyFuture.resolve()
-        }, maxWaitTime)
-        readyFuture.promise().finally(() => clearTimeout(waitTimeout))
-
-        await Promise.all([readyFuture.promise(), putFuture.promise()])
-
-        if (state === 'failed') {
-            throw error
-        }
-
-        let value = buffer?.data
-        buffer = undefined
-
-        takeFuture.resolve()
-
-        if (state === 'closed') {
-            return {value, done: value == null}
-        } else {
-            if (value == null) {
-                throw new Error('buffer is empty')
-            }
-
-            takeFuture = createFuture()
-            putFuture = createFuture()
-            readyFuture = createFuture()
-
-            return {value, done: false}
-        }
-    }
-
-    function close() {
-        if (state !== 'open') return
-        state = 'closed'
-        readyFuture.resolve()
-        putFuture.resolve()
-        takeFuture.resolve()
-    }
-
-    function fail(err: unknown) {
-        if (state !== 'open') return
-        state = 'failed'
-        error = err
-        readyFuture.resolve()
-        putFuture.resolve()
-        takeFuture.resolve()
-    }
+    let finalizedHead: HashAndHeight | undefined
+    let buffer = new PortalStreamBuffer<B>(bufferOptions)
 
     async function ingest() {
         let abortSignal = abortStream.signal
@@ -263,9 +208,6 @@ function createReadablePortalStream<B extends Block>(
                 if (fromBlock > toBlock) break
 
                 let reader: ReadableStreamDefaultReader<string[]> | undefined
-
-                let lastChunkTimestamp = Date.now()
-                let idleInterval: ReturnType<typeof setInterval> | undefined
 
                 try {
                     let res = await requestStream(
@@ -283,61 +225,33 @@ function createReadablePortalStream<B extends Block>(
                         if (stopOnHead) break
                         await wait(headPollInterval, abortSignal)
                     } else {
-                        let {finalizedHead, stream} = res
-                        reader = stream.getReader()
+                        finalizedHead = res.finalizedHead
+                        reader = res.stream.getReader()
 
                         while (true) {
                             let data = await withAbort(reader.read(), abortSignal)
                             if (data.done) break
                             if (data.value.length == 0) continue
 
-                            lastChunkTimestamp = Date.now()
-                            if (idleInterval == null) {
-                                idleInterval = setInterval(() => {
-                                    if (Date.now() - lastChunkTimestamp >= maxIdleTime) {
-                                        readyFuture.resolve()
-                                    }
-                                }, Math.ceil(maxIdleTime / 3))
-                                readyFuture.promise().finally(() => clearInterval(idleInterval))
-                                takeFuture.promise().finally(() => (idleInterval = undefined))
-                            }
-
-                            if (buffer == null) {
-                                buffer = {
-                                    data: {finalizedHead, blocks: []},
-                                    bytes: 0,
-                                }
-                            } else {
-                                buffer.data.finalizedHead = finalizedHead
-                            }
+                            let blocks: B[] = []
+                            let bytes = 0
 
                             for (let line of data.value) {
                                 let block = JSON.parse(line) as B
 
-                                buffer.bytes += line.length
-                                buffer.data.blocks.push(block)
+                                blocks.push(block)
+                                bytes += line.length
 
                                 fromBlock = block.header.number + 1
                             }
 
-                            if (buffer.bytes >= minBytes) {
-                                readyFuture.resolve()
-                            }
-
-                            putFuture.resolve()
-
-                            if (buffer.bytes >= maxBytes) {
-                                await withAbort(takeFuture.promise(), abortSignal)
-                            }
+                            await withAbort(buffer.put(blocks, bytes), abortSignal)
                         }
                     }
 
-                    if (buffer != null) {
-                        readyFuture.resolve()
-                    }
+                    buffer.ready()
                 } finally {
                     reader?.cancel().catch(() => {})
-                    clearInterval(idleInterval)
                 }
             }
         } catch (err) {
@@ -351,15 +265,21 @@ function createReadablePortalStream<B extends Block>(
 
     return new ReadableStream({
         start() {
-            ingest().then(close, fail)
+            ingest().then(
+                () => buffer.close(),
+                (err) => buffer.fail(err)
+            )
         },
         async pull(controller) {
             try {
-                let result = await take()
+                let result = await buffer.take()
                 if (result.done) {
                     controller.close()
                 } else {
-                    controller.enqueue(result.value)
+                    controller.enqueue({
+                        finalizedHead,
+                        blocks: result.value || [],
+                    })
                 }
             } catch (err) {
                 controller.error(err)
@@ -369,6 +289,118 @@ function createReadablePortalStream<B extends Block>(
             abortStream.abort(reason)
         },
     })
+}
+
+class PortalStreamBuffer<B extends Block> {
+    private buffer: {blocks: B[]; bytes: number} | undefined
+    private state: 'open' | 'failed' | 'closed' = 'open'
+    private error: unknown
+
+    private readyFuture: Future<void> = createFuture()
+    private takeFuture: Future<void> = createFuture()
+    private putFuture: Future<void> = createFuture()
+
+    private lastChunkTimestamp = Date.now()
+    private idleInterval: ReturnType<typeof setInterval> | undefined
+
+    private minBytes: number
+    private maxBytes: number
+    private maxIdleTime: number
+    private maxWaitTime: number
+
+    constructor(options: {maxWaitTime: number; maxBytes: number; maxIdleTime: number; minBytes: number}) {
+        this.maxWaitTime = options.maxWaitTime
+        this.minBytes = options.minBytes
+        this.maxBytes = Math.max(options.maxBytes, options.minBytes)
+        this.maxIdleTime = options.maxIdleTime
+    }
+
+    async take() {
+        let waitTimeout = setTimeout(() => {
+            this.readyFuture.resolve()
+        }, this.maxWaitTime)
+        this.readyFuture.promise().finally(() => clearTimeout(waitTimeout))
+
+        await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
+
+        if (this.state === 'failed') {
+            throw this.error
+        }
+
+        let value = this.buffer?.blocks
+        this.buffer = undefined
+
+        this.takeFuture.resolve()
+
+        if (this.state === 'closed') {
+            return {value, done: value == null}
+        } else {
+            if (value == null) {
+                throw new Error('buffer is empty')
+            }
+
+            this.takeFuture = createFuture()
+            this.putFuture = createFuture()
+            this.readyFuture = createFuture()
+
+            return {value, done: false}
+        }
+    }
+
+    async put(blocks: B[], bytes: number) {
+        this.lastChunkTimestamp = Date.now()
+        if (this.idleInterval == null) {
+            this.idleInterval = setInterval(() => {
+                if (Date.now() - this.lastChunkTimestamp >= this.maxIdleTime) {
+                    this.readyFuture.resolve()
+                }
+            }, Math.ceil(this.maxIdleTime / 3))
+            this.readyFuture.promise().finally(() => clearInterval(this.idleInterval))
+            this.takeFuture.promise().finally(() => (this.idleInterval = undefined))
+        }
+
+        if (this.buffer == null) {
+            this.buffer = {
+                blocks: [],
+                bytes: 0,
+            }
+        }
+
+        this.buffer.bytes += bytes
+        this.buffer.blocks.push(...blocks)
+
+        if (this.buffer.bytes >= this.minBytes) {
+            this.readyFuture.resolve()
+        }
+
+        this.putFuture.resolve()
+
+        if (this.buffer.bytes >= this.maxBytes) {
+            await this.takeFuture.promise()
+        }
+    }
+
+    ready() {
+        if (this.buffer == null) return
+        this.readyFuture.resolve()
+    }
+
+    close() {
+        if (this.state !== 'open') return
+        this.state = 'closed'
+        this.readyFuture.resolve()
+        this.putFuture.resolve()
+        this.takeFuture.resolve()
+    }
+
+    fail(err: unknown) {
+        if (this.state !== 'open') return
+        this.state = 'failed'
+        this.error = err
+        this.readyFuture.resolve()
+        this.putFuture.resolve()
+        this.takeFuture.resolve()
+    }
 }
 
 function withAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {

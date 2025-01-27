@@ -7,7 +7,7 @@ async function main() {
         http: new HttpClient({
             retryAttempts: Infinity,
         }),
-        minBytes: 50 * 1024 * 1024
+        minBytes: 50 * 1024 * 1024,
     })
 
     let from = await portal.getFinalizedHeight().then((h) => h - 1_000_000)
@@ -43,15 +43,14 @@ async function main() {
             {
                 address: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'],
                 topic0: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'],
-            }
-        ]
+            },
+        ],
     }
-
 
     for await (let {blocks, finalizedHead} of portal.getFinalizedStream(query, {stopOnHead: true})) {
         console.log(
             `[${new Date().toISOString()}] progress: ${blocks[blocks.length - 1].header.number} / ${
-                finalizedHead.height
+                finalizedHead?.height ?? -1
             }` + `, blocks: ${blocks.length}`
         )
     }

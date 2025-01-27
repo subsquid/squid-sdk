@@ -99,7 +99,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
 
                 yield {
                     blocks,
-                    isHead: lastBlock >= finalizedHead.height,
+                    isHead: lastBlock >= (finalizedHead?.height ?? -1),
                 }
             }
 
