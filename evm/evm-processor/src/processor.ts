@@ -596,40 +596,40 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         let log = this.getLogger()
 
         runProgram(async () => {
-                let chain = this.getChain()
-                let mappingLog = log.child('mapping')
+            let chain = this.getChain()
+            let mappingLog = log.child('mapping')
 
-                if (this.archive == null && this.rpcEndpoint == null) {
-                    throw new Error(
-                        'No data source where specified. ' +
-                            'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
-                    )
-                }
+            if (this.archive == null && this.rpcEndpoint == null) {
+                throw new Error(
+                    'No data source where specified. ' +
+                        'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
+                )
+            }
 
-                if (this.archive == null && this.rpcIngestSettings?.disabled) {
-                    throw new Error('Subsquid Archive is required when RPC data ingestion is disabled')
-                }
+            if (this.archive == null && this.rpcIngestSettings?.disabled) {
+                throw new Error('Subsquid Archive is required when RPC data ingestion is disabled')
+            }
 
-                return new Runner({
-                    database,
-                    requests: this.getBatchRequests(),
-                    archive: this.archive ? this.getArchiveDataSource() : undefined,
-                hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
-                    ? this.getHotDataSource()
-                    : undefined,
-                    allBlocksAreFinal: this.finalityConfirmation === 0,
-                    prometheus: this.getPrometheusServer(),
-                    log,
-                    process(store, batch) {
-                        return handler({
-                            _chain: chain,
-                            log: mappingLog,
-                            store,
-                            blocks: batch.blocks as any,
-                        isHead: batch.isHead
-                        })
-                }
-                }).run()
+            return new Runner({
+                database,
+                requests: this.getBatchRequests(),
+                archive: this.archive ? this.getArchiveDataSource() : undefined,
+            hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
+                ? this.getHotDataSource()
+                : undefined,
+                allBlocksAreFinal: this.finalityConfirmation === 0,
+                prometheus: this.getPrometheusServer(),
+                log,
+                process(store, batch) {
+                    return handler({
+                        _chain: chain,
+                        log: mappingLog,
+                        store,
+                        blocks: batch.blocks as any,
+                    isHead: batch.isHead
+                    })
+            }
+            }).run()
         }, err => log.fatal(err))
     }
 }

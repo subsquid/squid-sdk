@@ -348,6 +348,10 @@ class PortalStreamBuffer<B extends Block> {
     }
 
     async put(blocks: B[], bytes: number) {
+        if (this.state !== 'open') {
+            throw new Error('buffer is closed')
+        }
+
         this.lastChunkTimestamp = Date.now()
         if (this.idleInterval == null) {
             this.idleInterval = setInterval(() => {
