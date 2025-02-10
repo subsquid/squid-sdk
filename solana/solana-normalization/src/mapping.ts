@@ -350,6 +350,9 @@ class InstructionParser {
         return this.logLessTraversal(parentStackHeight, instructions, pos, (ins, pos) => {
             ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || messagesDropped
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
+            } else if (this.tx.err &&
+                'InstructionError' in this.tx.err &&
+                (this.tx.err.InstructionError as [number, string])[1] === 'CallDepth') {
             } else {
                 throw this.error(false, pos, 'invoke message is missing')
             }
