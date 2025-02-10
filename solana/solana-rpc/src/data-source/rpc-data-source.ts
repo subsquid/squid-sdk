@@ -3,6 +3,7 @@ import {BlockRef, BlockStream, ForkException, StreamRequest} from '@subsquid/uti
 import {Range} from '@subsquid/util-internal-range'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
+import {finalize} from './finalizer'
 import {ingest, IngestBatch} from './ingest'
 
 
@@ -39,11 +40,13 @@ export class SolanaRpcDataSource {
     }
 
     async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
-        for await (let {blocks, finalized} of this.ensureContinuity(
+        let stream = this.ensureContinuity(
             this.ingest('finalized', req),
             req.from,
             req.parentHash
-        )) {
+        )
+
+        for await (let {blocks, finalized} of stream) {
             yield {
                 blocks,
                 finalizedHead: finalized
@@ -51,8 +54,13 @@ export class SolanaRpcDataSource {
         }
     }
 
-    async *getStream(req: StreamRequest): BlockStream<Block> {
-
+    getStream(req: StreamRequest): BlockStream<Block> {
+        let stream = this.ensureContinuity(
+            this.ingest('confirmed', req),
+            req.from,
+            req.parentHash
+        )
+        return finalize(this.rpc, stream)
     }
 
     async *ensureContinuity(
