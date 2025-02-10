@@ -49,6 +49,7 @@ export class PollStream {
 
     reset(slot: number): void {
         this.slots = [{slot}]
+        this.isOnHead = false
     }
 
     async next(): Promise<Block[]> {

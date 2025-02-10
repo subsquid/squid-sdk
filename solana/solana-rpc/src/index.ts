@@ -1,6 +1,4 @@
-export * from './ingest/get-blocks'
-export * from './ingest/ingest'
-export * from './ingest/poll-stream'
+export * from './data-source'
 export * from './rpc'
 export * from './subscribe-new-blocks'
 export * from './types'

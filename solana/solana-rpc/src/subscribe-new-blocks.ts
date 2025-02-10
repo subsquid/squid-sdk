@@ -37,14 +37,14 @@ export function subscribeNewBlocks(
         unsubscribe: 'blockUnsubscribe',
         notification: 'blockNotification',
         onMessage: (msg: unknown) => {
+            let block: Block | undefined
             try {
-                let block = checkBlockNotification(req, msg)
-                if (block) {
-                    cb(block)
-                }
+                block = checkBlockNotification(req, msg)
             } catch(err: any) {
                 cb(ensureError(err))
+                return
             }
+            if (block) cb(block)
         },
         onError: err => cb(ensureError(err)),
         resubscribeOnConnectionLoss: true

@@ -1,6 +1,6 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, runProgram} from '@subsquid/util-internal'
-import {PollStream} from './ingest/poll-stream'
+import {PollStream} from './data-source/poll-stream'
 import {Rpc} from './rpc'
 import {subscribeNewBlocks} from './subscribe-new-blocks'
 

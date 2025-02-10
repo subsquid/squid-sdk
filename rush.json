@@ -495,6 +495,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
+    {
+      "packageName": "@subsquid/solana-data-service-2",
+      "projectFolder": "solana/solana-data-service-2",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
 //    {
 //      "packageName": "@subsquid/solana-dump",
 //      "projectFolder": "solana/solana-dump",
@@ -797,6 +803,12 @@
     {
       "packageName": "@subsquid/util-internal-counters",
       "projectFolder": "util/util-internal-counters",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "projectFolder": "util/util-internal-data-source",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

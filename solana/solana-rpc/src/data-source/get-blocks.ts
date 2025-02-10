@@ -1,6 +1,7 @@
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {wait} from '@subsquid/util-internal'
 import {FiniteRange} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 
@@ -25,17 +26,14 @@ export async function getBlocks(
     rpc: Rpc,
     commitment: Commitment,
     req: DataRequest,
-    slots: FiniteRange | number[],
+    range: FiniteRange,
     maxConfirmationAttempts: number = 10,
     confirmationPauseMs: number = 100
 ): Promise<Block[]>
 {
-    if (!Array.isArray(slots)) {
-        let range = slots
-        slots = []
-        for (let i = range.from; i <= range.to ; i++) {
-            slots.push(i)
-        }
+    let slots: number[] = []
+    for (let i = range.from; i <= range.to ; i++) {
+        slots.push(i)
     }
 
     let batch = await getSlots(
@@ -52,8 +50,10 @@ export async function getBlocks(
     for (let i = 0; i < batch.length; i++) {
         let block = batch[i]
         if (block) {
+            let slot = slots[i]
+            assert(block.parentSlot < slot || slot == 0)
             result.push({
-                slot: slots[i],
+                slot,
                 block
             })
         }
