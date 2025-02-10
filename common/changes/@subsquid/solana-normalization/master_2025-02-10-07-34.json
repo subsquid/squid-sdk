@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "fix: handle missing invoke message for CallDepth error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
