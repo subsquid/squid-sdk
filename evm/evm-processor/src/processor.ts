@@ -3,10 +3,12 @@ import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {EvmPortal} from './ds-archive/portal'
 import {EvmArchive} from './ds-archive/client'
 import {EvmRpcDataSource} from './ds-rpc/client'
 import {Chain} from './interfaces/chain'
@@ -35,8 +37,8 @@ export interface RpcEndpointSettings {
     requestTimeout?: number
     /**
      * Maximum number of retry attempts.
-     * 
-     * By default, retries all "retryable" errors indefinitely. 
+     *
+     * By default, retries all "retryable" errors indefinitely.
      */
     retryAttempts?: number
     /**
@@ -48,7 +50,6 @@ export interface RpcEndpointSettings {
      */
     headers?: Record<string, string>
 }
-
 
 export interface RpcDataIngestionSettings {
     /**
@@ -91,7 +92,7 @@ export interface RpcDataIngestionSettings {
     /**
      * Flags to switch off the data consistency checks
      */
-    validationFlags?: RpcValidationFlags 
+    validationFlags?: RpcValidationFlags
 }
 
 
@@ -104,6 +105,16 @@ export interface GatewaySettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+}
+
+
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+
+    retryAttempts?: number
 }
 
 
@@ -189,7 +200,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private fields?: FieldSelection
     private finalityConfirmation?: number
-    private archive?: GatewaySettings
+    private archive?: (GatewaySettings & {type: 'gateway'}) | (PortalSettings & {type: 'portal'})
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
@@ -211,11 +222,23 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * processor.setGateway('https://v2.archive.subsquid.io/network/ethereum-mainnet')
      */
     setGateway(url: string | GatewaySettings): this {
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with setPortal()')
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.archive = {type: 'gateway', url}
         } else {
-            this.archive = url
+            this.archive = {type: 'gateway', ...url}
+        }
+        return this
+    }
+
+    setPortal(url: string | PortalSettings): this {
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with setGateway()')
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {type: 'portal', url}
+        } else {
+            this.archive = {type: 'portal', ...url}
         }
         return this
     }
@@ -340,7 +363,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private add(request: DataRequest, range?: Range): void {
         this.requests.push({
             range: range || {from: 0},
-            request
+            request,
         })
     }
 
@@ -445,11 +468,11 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             url: this.rpcEndpoint.url,
             headers: this.rpcEndpoint.headers,
             maxBatchCallSize: this.rpcEndpoint.maxBatchCallSize ?? 100,
-            requestTimeout:  this.rpcEndpoint.requestTimeout ?? 30_000,
+            requestTimeout: this.rpcEndpoint.requestTimeout ?? 30_000,
             capacity: this.rpcEndpoint.capacity ?? 10,
             rateLimit: this.rpcEndpoint.rateLimit,
             retryAttempts: this.rpcEndpoint.retryAttempts ?? Number.MAX_SAFE_INTEGER,
-            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url}),
         })
         this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
@@ -461,7 +484,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return {
             get client() {
                 return self.getChainRpcClient()
-            }
+            },
         }
     }
 
@@ -479,34 +502,53 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             headPollInterval: this.rpcIngestSettings?.headPollInterval,
             newHeadTimeout: this.rpcIngestSettings?.newHeadTimeout,
             validationFlags: this.rpcIngestSettings?.validationFlags,
-            log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url})
+            log: this.getLogger().child('rpc', {rpcUrl: this.getChainRpcClient().url}),
         })
     }
 
     @def
-    private getArchiveDataSource(): EvmArchive {
+    private getArchiveDataSource(): EvmArchive | EvmPortal {
         let archive = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent: new HttpAgent({
-                keepAlive: true
-            }),
-            log
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
+        let agent = new HttpAgent({
+            keepAlive: true,
         })
 
-        return new EvmArchive(
-            new ArchiveClient({
-                http,
-                url: archive.url,
-                queryTimeout: archive.requestTimeout,
-                log
-            })
-        )
+        return archive.type === 'gateway'
+            ? new EvmArchive(
+                  new ArchiveClient({
+                      http: new HttpClient({
+                          headers,
+                          agent,
+                          log,
+                      }),
+                      url: archive.url,
+                      queryTimeout: archive.requestTimeout,
+                      log,
+                  })
+              )
+            : new EvmPortal(
+                  new PortalClient({
+                      http: new HttpClient({
+                          headers,
+                          agent,
+                          log,
+                          httpTimeout: archive.requestTimeout,
+                          retryAttempts: archive.retryAttempts ?? Infinity,
+                      }),
+                      url: archive.url,
+                      minBytes: archive.minBytes,
+                      maxIdleTime: archive.maxIdleTime,
+                      maxBytes: archive.maxBytes,
+                      maxWaitTime: archive.maxWaitTime,
+                      headPollInterval: archive.headPollInterval,
+                  })
+              )
     }
 
     @def
@@ -555,7 +597,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             if (this.archive == null && this.rpcEndpoint == null) {
                 throw new Error(
                     'No data source where specified. ' +
-                    'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
+                        'Use .setArchive() to specify Subsquid Archive and/or .setRpcEndpoint() to specify RPC endpoint.'
                 )
             }
 
@@ -567,9 +609,9 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
                 database,
                 requests: this.getBatchRequests(),
                 archive: this.archive ? this.getArchiveDataSource() : undefined,
-                hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
-                    ? this.getHotDataSource()
-                    : undefined,
+            hotDataSource: this.rpcEndpoint && !this.rpcIngestSettings?.disabled
+                ? this.getHotDataSource()
+                : undefined,
                 allBlocksAreFinal: this.finalityConfirmation === 0,
                 prometheus: this.getPrometheusServer(),
                 log,
@@ -579,9 +621,9 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
                         log: mappingLog,
                         store,
                         blocks: batch.blocks as any,
-                        isHead: batch.isHead
+                    isHead: batch.isHead
                     })
-                }
+            }
             }).run()
         }, err => log.fatal(err))
     }
