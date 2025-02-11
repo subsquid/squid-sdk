@@ -12,10 +12,17 @@ export interface BlockHeader extends BlockRef {
 
 
 export interface Block extends BlockHeader {
-    jsonLine: string | Uint8Array
+    jsonLineGzip: Uint8Array
 }
 
 
 export class InvalidBaseBlock {
     constructor(public readonly prev: BlockRef[]) {}
+}
+
+
+export interface DataResponse {
+    finalizedHead: BlockRef
+    head?: AsyncIterable<Block>
+    tail?: Block[]
 }

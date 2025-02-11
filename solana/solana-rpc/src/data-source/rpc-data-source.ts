@@ -1,5 +1,5 @@
 import {last} from '@subsquid/util-internal'
-import {BlockRef, BlockStream, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
+import {BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {Range} from '@subsquid/util-internal-range'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
@@ -16,7 +16,7 @@ export interface SolanaRpcDataSourceOptions {
 }
 
 
-export class SolanaRpcDataSource {
+export class SolanaRpcDataSource implements DataSource<Block> {
     private rpc: Rpc
     private req: DataRequest
     private strideSize: number
