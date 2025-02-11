@@ -12,6 +12,7 @@ export interface DataRequest {
     contractsEvents?: ContractsContractEmittedRequest[]
     gearMessagesQueued?: GearMessageQueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
+    reviveContractEmitted?: ReviveContractEmittedRequest[]
 }
 
 
@@ -66,4 +67,13 @@ export interface GearMessageQueuedRequest extends EventRelations {
 
 export interface GearUserMessageSentRequest extends EventRelations {
     programId?: Bytes[]
+}
+
+
+export interface ReviveContractEmittedRequest extends EventRelations {
+    contract?: Bytes[]
+    topic0?: Bytes[]
+    topic1?: Bytes[]
+    topic2?: Bytes[]
+    topic3?: Bytes[]
 }

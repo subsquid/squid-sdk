@@ -109,6 +109,8 @@ export interface Event {
     _evmLogTopics?: Bytes[]
     _contractAddress?: Bytes
     _gearProgramId?: Bytes
+    _reviveContract?: Bytes
+    _reviveTopics?: Bytes[]
 }
 
 
