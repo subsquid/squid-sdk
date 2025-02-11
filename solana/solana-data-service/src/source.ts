@@ -3,7 +3,7 @@ import * as rpc from '@subsquid/solana-rpc'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
-import * as zlib from 'node:zlib'
+import * as zlib from 'zlib'
 
 
 export class Source implements DataSource<Block> {
@@ -43,7 +43,20 @@ export class Source implements DataSource<Block> {
 
 
 async function transformRpcBlock(block: rpc.Block): Promise<Block> {
-    let data = mapRpcBlock(block.slot, block.block)
+    let {
+        header: {slot, parentSlot, ...hdr},
+        ...items
+    } = mapRpcBlock(block.slot, block.block)
+
+    let data = {
+        header: {
+            number: slot,
+            parentNumber: parentSlot,
+            ...hdr
+        },
+        ...items
+    }
+
     let jsonLine = JSON.stringify(toJSON(data)) + '\n'
 
     let jsonLineGzip: Uint8Array = await new Promise((resolve, reject) => {
