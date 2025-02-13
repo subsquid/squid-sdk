@@ -42,7 +42,7 @@ export class Chain {
     }
 
     finalize(head: BlockRef): boolean {
-        if (head.number < this.lastBlockNumber()) return false
+        if (head.number < this.firstBlockNumber()) return false
 
         let current = this.finalizedHead
 
