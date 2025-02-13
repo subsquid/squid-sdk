@@ -35,9 +35,6 @@ dependencies:
   '@keyv/redis':
     specifier: ~2.5.8
     version: 2.5.8(supports-color@8.1.1)
-  '@mongodb-js/zstd':
-    specifier: ^2.0.0
-    version: 2.0.0
   '@rush-temp/astar-erc20':
     specifier: file:./projects/astar-erc20.tgz
     version: file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2)
@@ -265,7 +262,7 @@ dependencies:
     version: file:projects/util-internal-counters.tgz
   '@rush-temp/util-internal-data-service':
     specifier: file:./projects/util-internal-data-service.tgz
-    version: file:projects/util-internal-data-service.tgz
+    version: file:projects/util-internal-data-service.tgz(@subsquid/logger@1.4.0)
   '@rush-temp/util-internal-data-source':
     specifier: file:./projects/util-internal-data-source.tgz
     version: file:projects/util-internal-data-source.tgz
@@ -314,6 +311,9 @@ dependencies:
   '@rush-temp/util-internal-validation':
     specifier: file:./projects/util-internal-validation.tgz
     version: file:projects/util-internal-validation.tgz
+  '@rush-temp/util-internal-worker-thread':
+    specifier: file:./projects/util-internal-worker-thread.tgz
+    version: file:projects/util-internal-worker-thread.tgz
   '@rush-temp/util-naming':
     specifier: file:./projects/util-naming.tgz
     version: file:projects/util-naming.tgz
@@ -329,6 +329,9 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
+  '@subsquid/logger':
+    specifier: ^1.4.0
+    version: 1.4.0
   '@subsquid/solana-objects':
     specifier: ^0.0.2
     version: 0.0.2(@subsquid/solana-stream@0.1.1)
@@ -340,7 +343,7 @@ dependencies:
     version: 0.3.0(typescript@5.3.2)
   '@subsquid/util-internal-validation':
     specifier: ^0.7.0
-    version: 0.7.0
+    version: 0.7.0(@subsquid/logger@1.4.0)
   '@substrate/calc':
     specifier: ^0.2.8
     version: 0.2.8
@@ -2621,13 +2624,13 @@ packages:
   /@subsquid/http-client@1.5.0:
     resolution: {integrity: sha512-C7lb67mu/Xhno3x4EOzIPZ9fqixq797rT7DxvKVRXJBE7dYFEPyrOBiKO1W45YwX3lFfuHGKpMu2YBOeS/L7lQ==}
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/util-internal': 3.2.0
       node-fetch: 3.3.2
     dev: false
 
-  /@subsquid/logger@1.3.3:
-    resolution: {integrity: sha512-BdoRVIOrIRzKdMZPoJxzJzPLulf5Q09GeLtJn0whP+rhDV5nQ4ANDAzjPg9jmgH9WkMYAr2XH4lny/4PjhQUNA==}
+  /@subsquid/logger@1.4.0:
+    resolution: {integrity: sha512-Yep4hzpLfmm4pJMXuTnd3n7Hlo18Dce8vwKZduGE9n/p56cHq4BTbAuaXLK50vYKWx7Lyt2obVbJ4otVMWkyYg==}
     dependencies:
       '@subsquid/util-internal-hex': 1.2.2
       '@subsquid/util-internal-json': 1.2.3
@@ -2638,7 +2641,7 @@ packages:
     resolution: {integrity: sha512-igSqxU9ctnUVdrmtMwKCR+MEzKjjkkAaMU2c8hlwCfiCezZLvct7D6/S29KLPMn8bjvB7sImMYYslb8ECnk4Cw==}
     dependencies:
       '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/util-internal': 3.2.0
       '@subsquid/util-internal-binary-heap': 1.0.0
       '@subsquid/util-internal-counters': 1.3.2
@@ -2646,12 +2649,12 @@ packages:
       websocket: 1.0.34
     dev: false
 
-  /@subsquid/solana-normalization@0.0.2(@subsquid/logger@1.3.3):
+  /@subsquid/solana-normalization@0.0.2(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-4UPUmMLC3LVuh8GaesC44JTr/nVFupVA0X7dPjHombsiuwSHMb/yCr+wWDyGb0HEciXXtF+4cFj8qSg0EtLWaA==}
     dependencies:
       '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
       '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
     transitivePeerDependencies:
       - '@subsquid/logger'
     dev: false
@@ -2670,7 +2673,7 @@ packages:
     peerDependencies:
       '@subsquid/util-internal-validation': ^0.6.0
     dependencies:
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
     dev: false
 
   /@subsquid/solana-rpc@0.0.2(@subsquid/rpc-client@4.10.0):
@@ -2678,30 +2681,30 @@ packages:
     peerDependencies:
       '@subsquid/rpc-client': ^4.9.0
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/rpc-client': 4.10.0
       '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
       '@subsquid/util-internal': 3.2.0
       '@subsquid/util-internal-range': 0.3.0
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
     dev: false
 
   /@subsquid/solana-stream@0.1.1:
     resolution: {integrity: sha512-6hA8Uis7zfDUkL0bmWX8zfOI9RpskSYEXm9I98dnYXFmkFp9QYFAaBNBmXwi5EaDPn42LWWOwO/0lYvqkh0oeg==}
     dependencies:
       '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/rpc-client': 4.10.0
-      '@subsquid/solana-normalization': 0.0.2(@subsquid/logger@1.3.3)
+      '@subsquid/solana-normalization': 0.0.2(@subsquid/logger@1.4.0)
       '@subsquid/solana-rpc': 0.0.2(@subsquid/rpc-client@4.10.0)
       '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
       '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-archive-client': 0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-archive-client': 0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.4.0)
       '@subsquid/util-internal-hex': 1.2.2
       '@subsquid/util-internal-ingest-tools': 1.1.4(@subsquid/util-internal-archive-client@0.1.2)
       '@subsquid/util-internal-processor-tools': 4.1.1
       '@subsquid/util-internal-range': 0.3.0
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
       bs58: 5.0.0
     dev: false
 
@@ -2713,7 +2716,7 @@ packages:
       '@solanafm/explorer-kit-idls': 1.1.3
       '@subsquid/borsh': 0.1.0
       '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/rpc-client': 4.10.0
       '@subsquid/util-internal': 3.2.0
       '@subsquid/util-internal-code-printer': 1.2.2
@@ -2730,7 +2733,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@subsquid/util-internal-archive-client@0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.3.3):
+  /@subsquid/util-internal-archive-client@0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-XATZWOIHUqIuqzb9hxaFIsz/BItb5qLoYjk6uhFcR9ART2AExXLU5l26SvSrq3hUnqfznIkQMZVQ1SKqnGzx4g==}
     peerDependencies:
       '@subsquid/http-client': ^1.4.0
@@ -2740,7 +2743,7 @@ packages:
         optional: true
     dependencies:
       '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/util-internal': 3.2.0
       '@subsquid/util-internal-range': 0.3.0
     dev: false
@@ -2798,7 +2801,7 @@ packages:
   /@subsquid/util-internal-http-server@2.0.0:
     resolution: {integrity: sha512-MUAJGMuDjbA3B+KQFZmMkm9FuWVx067pINt+EWuq3fSZqYPr1kRkTCTSJK7uT6Q8omqJtJFRWveyOWlXmixvfg==}
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       stoppable: 1.1.0
     dev: false
 
@@ -2810,9 +2813,9 @@ packages:
       '@subsquid/util-internal-archive-client':
         optional: true
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-archive-client': 0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.3.3)
+      '@subsquid/util-internal-archive-client': 0.1.2(@subsquid/http-client@1.5.0)(@subsquid/logger@1.4.0)
       '@subsquid/util-internal-range': 0.3.0
     dev: false
 
@@ -2829,7 +2832,7 @@ packages:
   /@subsquid/util-internal-processor-tools@4.1.1:
     resolution: {integrity: sha512-zzisejusRteAvwjqFDLlFapH9b86E8GdfNswuNWSjASE+VWadJ/PLfrlXFnsbAo4SxPKtqXWEewoK8cjzVjaZA==}
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
       '@subsquid/util-internal': 3.2.0
       '@subsquid/util-internal-counters': 1.3.2
       '@subsquid/util-internal-prometheus-server': 1.3.0(prom-client@14.2.0)
@@ -2872,7 +2875,7 @@ packages:
     resolution: {integrity: sha512-LyVZIGUbC87r+3VFBRiNOEycxvpkOEEjt5enY02iGl6MneLwq3m17D44xAkwfFj/U+t7GA76eeHIoI2ZkiQKog==}
     dev: false
 
-  /@subsquid/util-internal-validation@0.6.0(@subsquid/logger@1.3.3):
+  /@subsquid/util-internal-validation@0.6.0(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-OjrtBS9oJQApNa/ar9IMB0l2+IIydxLKIlxpJsyHgI0buK+aWofDq1aPaPh3XtCKrHzLDkrM9KAqkt8fQirifQ==}
     peerDependencies:
       '@subsquid/logger': ^1.3.3
@@ -2880,16 +2883,18 @@ packages:
       '@subsquid/logger':
         optional: true
     dependencies:
-      '@subsquid/logger': 1.3.3
+      '@subsquid/logger': 1.4.0
     dev: false
 
-  /@subsquid/util-internal-validation@0.7.0:
+  /@subsquid/util-internal-validation@0.7.0(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-Y8o7am+btlHxJuPtS/0+qNe+QkyAOuxSSXhccRwj2mRUlYG81MnxWFgYs4ac+pWeayLfU/3SBvQJH5g7L82fTQ==}
     peerDependencies:
       '@subsquid/logger': ^1.3.3
     peerDependenciesMeta:
       '@subsquid/logger':
         optional: true
+    dependencies:
+      '@subsquid/logger': 1.4.0
     dev: false
 
   /@subsquid/util-internal@2.5.2:
@@ -7938,7 +7943,7 @@ packages:
     dev: false
 
   file:projects/solana-data-service.tgz:
-    resolution: {integrity: sha512-rjDI6XvFz4VtIdP0Ssx9rYsD/mBEPm0fsVwcx6RC/CKGpZ8sLZEu1vvZU2J7epnhpq4cJ/Sln1aAOhBaASNy5w==, tarball: file:projects/solana-data-service.tgz}
+    resolution: {integrity: sha512-BTItlJBTd4Sh2Zg5pC4iUh2DWPFrFrnfW+VEPG2yjhxGGGooo3TKw2mDEsApZPYm6raR02JsR4rDXLz/+hUjUA==, tarball: file:projects/solana-data-service.tgz}
     name: '@rush-temp/solana-data-service'
     version: 0.0.0
     dependencies:
@@ -8464,13 +8469,13 @@ packages:
       typescript: 5.3.2
     dev: false
 
-  file:projects/util-internal-data-service.tgz:
+  file:projects/util-internal-data-service.tgz(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-y5BZQwwKcwLEozyWvR9txNG/QFToFk3RIgrGb6mw4jXBNTyKZp67eQA4Hf6TqgBubCc5r1DdWuB0v+ZecH9piA==, tarball: file:projects/util-internal-data-service.tgz}
+    id: file:projects/util-internal-data-service.tgz
     name: '@rush-temp/util-internal-data-service'
     version: 0.0.0
     dependencies:
-      '@mongodb-js/zstd': 2.0.0
-      '@subsquid/util-internal-validation': 0.7.0
+      '@subsquid/util-internal-validation': 0.7.0(@subsquid/logger@1.4.0)
       '@types/node': 18.19.0
       typescript: 5.3.2
     transitivePeerDependencies:
@@ -8630,6 +8635,16 @@ packages:
     name: '@rush-temp/util-internal-validation'
     version: 0.0.0
     dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.3.2
+    dev: false
+
+  file:projects/util-internal-worker-thread.tgz:
+    resolution: {integrity: sha512-sCcq8qP/rXMSeFDFZs2HiQ+CLmhxhuoyN5hctB7RRlMf5dhpeqiyJpQ+tmxQPgJKQ8FU+rKK4WoBKA3xl8FjGQ==, tarball: file:projects/util-internal-worker-thread.tgz}
+    name: '@rush-temp/util-internal-worker-thread'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/logger': 1.4.0
       '@types/node': 18.19.0
       typescript: 5.3.2
     dev: false

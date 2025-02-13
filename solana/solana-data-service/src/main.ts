@@ -20,7 +20,8 @@ runProgram(async () => {
     program.option('--ws-rpc <url>', 'Websocket RPC url', Url(['ws:', 'wss:']))
     program.option('--geyser-rpc <url>', 'Yellowstone gRPC url')
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
-    program.option('-p, --port <number>', 'port to listen on', positiveInt, 3000)
+    program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
+    program.option('--votes', "Include vote transactions (by default all votes are excluded)")
     program.parse()
 
     let args = program.opts() as {
@@ -30,6 +31,7 @@ runProgram(async () => {
         geyserRpc?: string
         blockCacheSize: number
         port: number
+        votes?: boolean
     }
 
     let httpRpc = new RpcClient({

@@ -903,6 +903,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-worker-thread",
+      "projectFolder": "util/util-internal-worker-thread",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
