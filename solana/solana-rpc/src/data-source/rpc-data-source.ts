@@ -18,7 +18,7 @@ export interface SolanaRpcDataSourceOptions {
 
 export class SolanaRpcDataSource implements DataSource<Block> {
     private rpc: Rpc
-    private req: DataRequest
+    public readonly req: DataRequest
     private strideSize: number
     private strideConcurrency: number
     private maxConfirmationAttempts: number

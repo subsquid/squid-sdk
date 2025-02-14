@@ -10,7 +10,7 @@ import * as zlib from 'node:zlib'
 const gzip = promisify(zlib.gzip)
 
 
-export class Source implements DataSource<Block> {
+export class Mapping implements DataSource<Block> {
     constructor(
         private inner: DataSource<rpc.Block>,
         private votes = false

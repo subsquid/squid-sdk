@@ -28,7 +28,8 @@ export class Server {
         this.started = true
 
         this.port.on('message', (msg: ClientMessage) => {
-            switch(msg?.type) {
+            // this.log.debug({message: msg}, 'receive')
+            switch(msg.type) {
                 case 'call':
                     this.onCall(msg)
                     break
@@ -39,7 +40,7 @@ export class Server {
                     this.onStreamReturn(msg)
                     break
                 default:
-                    this.log.error({msg}, 'got unexpected client message')
+                    this.log.error({message: msg}, 'got unexpected client message')
             }
         })
 
@@ -179,6 +180,7 @@ export class Server {
 
     private send(msg: ServerMessage | Transfer<ServerMessage>): void {
         if (this.closed) return
+        // this.log.debug({message: msg}, 'send')
         try {
             Transfer.send(this.port, msg)
         } catch(err: any) {

@@ -50,18 +50,18 @@ export class DataService {
         }
     }
 
-    private async belowQuery(from: number, baseBlockHash?: string): Promise<DataResponse | InvalidBaseBlock> {
+    private async belowQuery(from: number, parentHash?: string): Promise<DataResponse | InvalidBaseBlock> {
         let log = this.log
+        let responseLimit = this.responseLimit
         let missing = this.chain.firstBlock().parentNumber - from + 1
-        let existing = Math.max(0, this.responseLimit - missing)
+        let existing = Math.max(0, responseLimit - missing)
         let tail = this.chain.first(existing)
-
         assert(missing > 0, 'no blocks are missing')
 
         let stream = this.source.getFinalizedStream({
             from,
-            to: from + Math.min(missing, this.responseLimit),
-            parentHash: baseBlockHash
+            to: from + missing - 1,
+            parentHash: parentHash
         })
 
         let it = stream[Symbol.asyncIterator]()
@@ -81,22 +81,25 @@ export class DataService {
         }
 
         async function* head(): AsyncIterable<Block> {
+            let blocksServed = 0
             let prev: Block | undefined
 
             for (let block of firstBatch.blocks) {
-                assertChainContinuity(baseBlockHash, prev, block)
+                assertChainContinuity(parentHash, prev, block)
                 yield block
                 prev = block
+                blocksServed += 1
             }
 
             try {
-                while (true) {
+                while (blocksServed < responseLimit) {
                     let item = await it.next()
                     if (item.done) break
                     for (let block of item.value.blocks) {
-                        assertChainContinuity(baseBlockHash, prev, block)
+                        assertChainContinuity(parentHash, prev, block)
                         yield block
                         prev = block
+                        blocksServed += 1
                     }
                 }
             } finally {
@@ -105,7 +108,7 @@ export class DataService {
 
             assert(prev, 'at least one block was expected')
             if (tail.length > 0) {
-                assertChainContinuity(baseBlockHash, prev, tail[0])
+                assertChainContinuity(parentHash, prev, tail[0])
             }
         }
 
@@ -179,7 +182,7 @@ export class DataService {
             }
 
             if (!this.chain.compact()) {
-                this.log.error('block finalization lags behind and prevents buffer compaction')
+                this.log.error('block finalization lags behind and prevents cache purging')
             }
 
             this.notifyListeners()

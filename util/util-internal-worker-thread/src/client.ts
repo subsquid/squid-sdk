@@ -45,7 +45,7 @@ export class Client {
                     this.getStream(msg)?.onError(msg)
                     break
                 default:
-                    this.log.error({msg}, 'unknown server message')
+                    this.log.error({message: msg}, 'unknown server message')
             }
         })
 
@@ -89,9 +89,20 @@ export class Client {
     }
 
     private onCallStream(msg: CallStream): void {
-        this.takeCallFuture(msg)?.resolve(
-            new Stream(msg.stream, this.worker, this.streams, this.log)
-        )
+        if (this.streams.has(msg.stream)) {
+            this.takeCallFuture(msg)?.resolve(
+                new Error(`server sent duplicate stream id - ${msg.stream}, can't proceed with streaming`)
+            )
+        } else {
+            let stream = new Stream(msg.stream, this.worker, this.streams, this.log)
+            this.streams.set(msg.stream, stream)
+            let fut = this.takeCallFuture(msg)
+            if (fut) {
+                fut.resolve(stream)
+            } else {
+                stream.return().catch(err => this.log.error(err))
+            }
+        }
     }
 
     private onCallError(msg: CallError): void {
@@ -101,7 +112,7 @@ export class Client {
     private takeCallFuture(msg: CallError | CallValue | CallStream): Future<any> | undefined {
         let future = this.calls.get(msg.call)
         if (future == null) {
-            this.log.error({msg}, 'got a message for unknown call')
+            this.log.error({message: msg}, 'got a message for unknown call')
             return
         }
         this.calls.delete(msg.call)
@@ -111,7 +122,7 @@ export class Client {
     private getStream(msg: StreamItem | StreamError | StreamEnd): Stream | undefined {
         let stream = this.streams.get(msg.stream)
         if (stream == null) {
-            this.log.error({msg}, 'got a message for unknown stream')
+            this.log.error({message: msg}, 'got a message for unknown stream')
         }
         return stream
     }
@@ -287,7 +298,7 @@ class Stream implements AsyncIterableIterator<any> {
 
     private logInappropriateMessage(msg: StreamItem | StreamError | StreamEnd): void {
         this.log.error(
-            {msg, state: this.state.type},
+            {message: msg, state: this.state.type},
             `got '${msg.type}' message from the server, that is inappropriate for the current stream state`
         )
     }

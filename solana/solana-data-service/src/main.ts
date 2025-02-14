@@ -1,12 +1,11 @@
 import {createLogger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
-import {Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {runProgram} from '@subsquid/util-internal'
 import {positiveInt, Url} from '@subsquid/util-internal-commander'
-import {runDataService} from '@subsquid/util-internal-data-service'
+import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {Source} from './source'
+import {DataSourceOptions} from './data-source/setup'
+import {WorkerClient} from './data-source/worker-client'
 
 
 const log = createLogger('sqd:solana-data-service')
@@ -16,17 +15,15 @@ runProgram(async () => {
     let program = new Command()
     program.description('Hot block data service for Solana')
     program.requiredOption('--http-rpc <url>', 'HTTP RPC url', Url(['http:', 'https:']))
-    program.option('--http-rpc-capacity <number>', 'Maximum number of pending HTTP RPC requests allowed', positiveInt, 100)
     program.option('--ws-rpc <url>', 'Websocket RPC url', Url(['ws:', 'wss:']))
     program.option('--geyser-rpc <url>', 'Yellowstone gRPC url')
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
-    program.option('--votes', "Include vote transactions (by default all votes are excluded)")
+    program.option('--votes', 'Include vote transactions (by default all votes are excluded)')
     program.parse()
 
     let args = program.opts() as {
         httpRpc: string
-        httpRpcCapacity: number
         wsRpc?: string
         geyserRpc?: string
         blockCacheSize: number
@@ -34,29 +31,32 @@ runProgram(async () => {
         votes?: boolean
     }
 
-    let httpRpc = new RpcClient({
-        url: args.httpRpc,
-        capacity: args.httpRpcCapacity,
-        fixUnsafeIntegers: true
-    })
+    let dataSourceOptions: DataSourceOptions = {
+        httpRpc: args.httpRpc,
+        votes: args.votes
+    }
 
-    let rpcSource = new SolanaRpcDataSource({
-        rpc: new Rpc(httpRpc),
-        req: {
-            transactions: true,
-            rewards: true
+    let mainWorker = new WorkerClient(dataSourceOptions)
+
+    let dataSource: DataSource<Block> = {
+        getFinalizedHead() {
+            return mainWorker.getFinalizedHead()
+        },
+        async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+            let worker = new WorkerClient(dataSourceOptions)
+            try {
+                yield* worker.getFinalizedStream(req)
+            } finally {
+                worker.close()
+            }
+        },
+        getStream(req: StreamRequest): BlockStream<Block> {
+            return mainWorker.getStream(req)
         }
-    })
-
-    // let websocketRpc = args.wsRpc == null ? undefined : new RpcClient({
-    //     url: args.wsRpc,
-    //     fixUnsafeIntegers: true
-    // })
-
-    let source = new Source(rpcSource)
+    }
 
     let service = await runDataService({
-        source,
+        source: dataSource, // createDataSource(dataSourceOptions),
         blockCacheSize: args.blockCacheSize,
         port: args.port
     })
