@@ -6,10 +6,10 @@ Subsquid SDK is a TypeScript ETL toolkit for blockchain data, that currently sup
 * [Substrate](https://substrate.io)-based chains
 * Solana.
 
-Subsquid SDK stands apart from the competition by
+Subsquid SDK stands apart from the competition is
 
 * Being a toolkit (rather than an indexing app like TheGraph or Ponder)
-* Fast binary data codecs and type-safe access to decoded data
+* Fast binary data codecs with type-safe access to decoded data
 * Native support for sourcing the data from Subsquid Network.
 
 The latter is a key point, as [Subsquid Network](https://docs.subsquid.io/subsquid-network/overview/) 
