@@ -27,7 +27,7 @@ export type RawBlock = GetSrcType<typeof RawBlock>
 
 export function mapRawBlock(raw: unknown, noVotes: boolean): Block {
     assertValidity(RawBlock, raw)
-    let block = mapRpcBlock(raw)
+    let block = mapRpcBlock(raw.slot, raw.block)
     if (noVotes) {
         removeVotes(block)
     }

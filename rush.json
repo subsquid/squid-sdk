@@ -495,18 +495,18 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-dump",
-//      "projectFolder": "solana/solana-dump",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
-//    {
-//      "packageName": "@subsquid/solana-ingest",
-//      "projectFolder": "solana/solana-ingest",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    {
+      "packageName": "@subsquid/solana-dump",
+      "projectFolder": "solana/solana-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "projectFolder": "solana/solana-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
     {
       "packageName": "@subsquid/solana-normalization",
       "projectFolder": "solana/solana-normalization",

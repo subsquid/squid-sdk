@@ -35,9 +35,6 @@ dependencies:
   '@keyv/redis':
     specifier: ~2.5.8
     version: 2.5.8(supports-color@8.1.1)
-  '@mongodb-js/zstd':
-    specifier: ^2.0.0
-    version: 2.0.0
   '@rush-temp/astar-erc20':
     specifier: file:./projects/astar-erc20.tgz
     version: file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2)
@@ -146,9 +143,15 @@ dependencies:
   '@rush-temp/solana-data-service':
     specifier: file:./projects/solana-data-service.tgz
     version: file:projects/solana-data-service.tgz
+  '@rush-temp/solana-dump':
+    specifier: file:./projects/solana-dump.tgz
+    version: file:projects/solana-dump.tgz
   '@rush-temp/solana-example':
     specifier: file:./projects/solana-example.tgz
     version: file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2)
+  '@rush-temp/solana-ingest':
+    specifier: file:./projects/solana-ingest.tgz
+    version: file:projects/solana-ingest.tgz
   '@rush-temp/solana-normalization':
     specifier: file:./projects/solana-normalization.tgz
     version: file:projects/solana-normalization.tgz
@@ -7938,13 +7941,22 @@ packages:
     dev: false
 
   file:projects/solana-data-service.tgz:
-    resolution: {integrity: sha512-rjDI6XvFz4VtIdP0Ssx9rYsD/mBEPm0fsVwcx6RC/CKGpZ8sLZEu1vvZU2J7epnhpq4cJ/Sln1aAOhBaASNy5w==, tarball: file:projects/solana-data-service.tgz}
+    resolution: {integrity: sha512-BTItlJBTd4Sh2Zg5pC4iUh2DWPFrFrnfW+VEPG2yjhxGGGooo3TKw2mDEsApZPYm6raR02JsR4rDXLz/+hUjUA==, tarball: file:projects/solana-data-service.tgz}
     name: '@rush-temp/solana-data-service'
     version: 0.0.0
     dependencies:
       '@mongodb-js/zstd': 2.0.0
       '@types/node': 18.19.0
       commander: 11.1.0
+      typescript: 5.3.2
+    dev: false
+
+  file:projects/solana-dump.tgz:
+    resolution: {integrity: sha512-Xkbae21mxpr7Uo64uz51err20c4qU8dcTWZHrl/5hUdR3PKkYUSK33f7mdWG7k54grsU5tVDl5WCNwY8KkF71w==, tarball: file:projects/solana-dump.tgz}
+    name: '@rush-temp/solana-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
       typescript: 5.3.2
     dev: false
 
@@ -7985,6 +7997,15 @@ packages:
       - ts-node
       - typeorm-aurora-data-api-driver
       - utf-8-validate
+    dev: false
+
+  file:projects/solana-ingest.tgz:
+    resolution: {integrity: sha512-E2cIBLmPlXcPAhnbVfgAaeYJoZj9EOPzxgHAQsOoaJc0jsM2hXdH62ZgcLdKuOkSjM+1gVb4A123sNJXq1MyPg==, tarball: file:projects/solana-ingest.tgz}
+    name: '@rush-temp/solana-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.3.2
     dev: false
 
   file:projects/solana-normalization.tgz:

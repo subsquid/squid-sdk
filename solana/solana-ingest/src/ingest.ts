@@ -33,7 +33,18 @@ export class SolanaIngest extends Ingest<Options> {
         for await (let blocks of this.archive().getRawBlocks<RawBlock>(range)) {
             yield blocks.map(raw => {
                 try {
-                    let block = mapRawBlock(raw, !votes)
+                    let {
+                        header: {slot, parentSlot, ...hdr},
+                        ...items
+                    } = mapRawBlock(raw, !votes)
+                    let block = {
+                        header: {
+                            number: slot,
+                            parentNumber: parentSlot,
+                            ...hdr,
+                        },
+                        ...items
+                    }
                     return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {
