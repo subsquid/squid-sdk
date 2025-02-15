@@ -10,6 +10,7 @@ export interface DataSourceOptions {
     httpRpc: string
     geyserRpc?: string
     geyserRpcToken?: string
+    geyserBlockQueueSize?: number
     votes?: boolean
 }
 
@@ -37,7 +38,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         })
         source = new GeyserDataSource(
             rpcSource,
-            client
+            client,
+            options.geyserBlockQueueSize
         )
     } else {
         source = rpcSource
