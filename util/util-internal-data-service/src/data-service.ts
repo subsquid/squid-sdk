@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {createFuture, Future, last, removeArrayItem} from '@subsquid/util-internal'
+import {createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
@@ -133,16 +133,20 @@ export class DataService {
 
     async run(): Promise<void> {
         let base: BlockRef = this.chain.getHead()
-        while (true) {
-            let rollback = await this.ingestSession(base).catch(err => {
+        while (!this.stopped) {
+            let rollback = await this.ingestSession(base).catch(async err => {
                 if (isForkException(err)) {
                     return err
                 } else {
-                    throw err
+                    this.log.error(err, 'data ingestion terminated, will resume in 1 minutes')
+                    await wait(60 * 1000)
                 }
             })
-            if (rollback == null) return
-            base = this.chain.getForkBase(rollback.prev)
+            if (rollback) {
+                base = this.chain.getForkBase(rollback.prev)
+            } else {
+                base = this.chain.getHead()
+            }
         }
     }
 
