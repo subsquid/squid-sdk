@@ -22,7 +22,7 @@ export class InvalidBaseBlock {
 
 
 export interface DataResponse {
-    finalizedHead: BlockRef
+    finalizedHead?: BlockRef
     head?: AsyncIterable<Block>
     tail?: Block[]
 }

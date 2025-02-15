@@ -70,7 +70,7 @@ export class GeyserDataSource implements DataSource<Block> {
         let stream = await this.geyser.subscribe()
 
         if (queue.isClosed()) {
-            stream.end()
+            stream.destroy()
             return
         }
 
@@ -186,7 +186,7 @@ export class GeyserDataSource implements DataSource<Block> {
             queue.addCloseListener(queueCloseListener)
         }).finally(() => {
             queue.removeCloseListener(queueCloseListener)
-            stream.end()
+            stream.destroy()
         })
     }
 }
@@ -244,7 +244,7 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
         },
         meta: {
             computeUnitsConsumed: meta.computeUnitsConsumed,
-            // TODO: https://github.com/rpcpool/yellowstone-grpc/blob/b9f96ae944bb803b7e5c5a5acbdafe525b255566/yellowstone-grpc-proto/src/lib.rs#L193
+            // FIXME: https://github.com/rpcpool/yellowstone-grpc/blob/b9f96ae944bb803b7e5c5a5acbdafe525b255566/yellowstone-grpc-proto/src/lib.rs#L193
             err: meta.err ? {_geyserEncoded: meta.err.err} : null,
             fee: meta.fee,
             preBalances: meta.preBalances,

@@ -70,7 +70,7 @@ export class Chain {
     query(limit: number, from: number): DataResponse
     query(limit: number, from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock
     query(limit: number, from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock {
-        assert(from > this.firstBlock().parentNumber)
+        if (from <= this.firstBlock().parentNumber) return {}
 
         let pos = this.bisect(from)
 

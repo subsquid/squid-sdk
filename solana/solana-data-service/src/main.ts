@@ -63,10 +63,11 @@ runProgram(async () => {
     }
 
     let service = await runDataService({
-        source: dataSource, // createDataSource(dataSourceOptions),
+        source: dataSource,
         blockCacheSize: args.blockCacheSize,
         port: args.port
     })
 
+    log.info(`listening on port ${service.port}`)
     return waitForInterruption(service)
 }, err => log.fatal(err))

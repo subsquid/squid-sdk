@@ -52,12 +52,21 @@ export class DataService {
 
     private async belowQuery(from: number, parentHash?: string): Promise<DataResponse | InvalidBaseBlock> {
         let log = this.log
-        let responseLimit = this.responseLimit
         let missing = this.chain.firstBlock().parentNumber - from + 1
-        let existing = Math.max(0, responseLimit - missing)
-        let tail = this.chain.first(existing)
         assert(missing > 0, 'no blocks are missing')
 
+        log.info({
+            from,
+            missing
+        }, 'got query below the cache')
+
+        // read all necessary `this.chain` properties know for consistency
+        let responseLimit = this.responseLimit
+        let existing = Math.max(0, responseLimit - missing)
+        let tail = this.chain.first(existing)
+        let finalizedHead = this.chain.getFinalizedHead()
+
+        // Now setup streaming of missing blocks
         let stream = this.source.getFinalizedStream({
             from,
             to: from + missing - 1,
@@ -113,7 +122,7 @@ export class DataService {
         }
 
         return {
-            finalizedHead: this.chain.getFinalizedHead(),
+            finalizedHead,
             head: head(),
             tail
         }
@@ -128,24 +137,36 @@ export class DataService {
         })) {
             assert(batch.blocks.length === 1)
             this.#chain = new Chain(batch.blocks[0], this.bufferSize)
+            this.notifyListeners()
         }
     }
 
     async run(): Promise<void> {
         let base: BlockRef = this.chain.getHead()
+        let stacked = 0
         while (!this.stopped) {
-            let rollback = await this.ingestSession(base).catch(async err => {
-                if (isForkException(err)) {
-                    return err
-                } else {
-                    this.log.error(err, 'data ingestion terminated, will resume in 1 minutes')
-                    await wait(60 * 1000)
+            try {
+                if (stacked > 1) {
+                    await this.init()
+                    base = this.chain.getHead()
+                    this.log.info(`restarted data ingestion at ${base.number}#${base.hash}`)
                 }
-            })
-            if (rollback) {
-                base = this.chain.getForkBase(rollback.prev)
-            } else {
-                base = this.chain.getHead()
+                return await this.ingestSession(base)
+            } catch(err: any) {
+                if (isForkException(err)) {
+                    stacked = 0
+                    base = this.chain.getForkBase(err.prev)
+                } else {
+                    this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
+                    await wait(60 * 1000)
+                    let head = this.chain.getHead()
+                    if (head.number === base.number) {
+                        stacked += 1
+                    } else {
+                        stacked = 0
+                    }
+                    base = head
+                }
             }
         }
     }

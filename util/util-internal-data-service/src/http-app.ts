@@ -31,8 +31,10 @@ export function createHttpApp(service: DataService): HttpApp {
                 return ctx.send(409, res.prev)
             }
 
-            ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number)
-            ctx.response.setHeader('x-sqd-finalized-head-hash', res.finalizedHead.hash)
+            if (res.finalizedHead) {
+                ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number)
+                ctx.response.setHeader('x-sqd-finalized-head-hash', res.finalizedHead.hash)
+            }
 
             if (res.head == null && res.tail == null) {
                 return ctx.send(204)
