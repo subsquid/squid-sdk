@@ -45,10 +45,12 @@ export class GeyserDataSource implements DataSource<Block> {
             this.log.error(err, 'error occurred, that is not supposed to happen')
         })
 
-        return this.rpc.ensureContinuity(
-            queue.iterate(),
-            req.from,
-            req.parentHash
+        return this.rpc.finalize(
+            this.rpc.ensureContinuity(
+                queue.iterate(),
+                req.from,
+                req.parentHash
+            )
         )
     }
 

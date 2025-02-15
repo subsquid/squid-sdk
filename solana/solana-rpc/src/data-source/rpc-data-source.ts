@@ -60,6 +60,10 @@ export class SolanaRpcDataSource implements DataSource<Block> {
             req.from,
             req.parentHash
         )
+        return this.finalize(stream)
+    }
+
+    finalize(stream: AsyncIterable<IngestBatch>): BlockStream<Block> {
         return finalize(this.rpc, stream)
     }
 
