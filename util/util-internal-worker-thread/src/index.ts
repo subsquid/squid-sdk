@@ -41,7 +41,11 @@ export function createWorker(options: WorkerOptions): Client {
     let worker = new wrk.Worker(options.script, {
         workerData: options.args,
         transferList: options.transferList,
-        name: options.name
+        name: options.name,
+        env: {
+            ...process.env,
+            FORCE_PRETTY_LOGGER: process.env.FORCE_PRETTY_LOGGER ?? (process.stdout.isTTY ? '1' : undefined)
+        }
     })
     return new Client(worker)
 }

@@ -1,6 +1,7 @@
+import {createLogger} from '@subsquid/logger'
 import {Block, SolanaRpcDataSource} from '@subsquid/solana-rpc'
-import {Base58Bytes, GetBlock, Transaction} from '@subsquid/solana-rpc-data'
-import {assertNotNull, AsyncQueue} from '@subsquid/util-internal'
+import {Base58Bytes, GetBlock, Reward, Transaction} from '@subsquid/solana-rpc-data'
+import {addErrorContext, assertNotNull, AsyncQueue, last, wait} from '@subsquid/util-internal'
 import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import Client, {
     CommitmentLevel,
@@ -9,7 +10,7 @@ import Client, {
     SubscribeUpdateBlock,
     SubscribeUpdateTransactionInfo
 } from '@triton-one/yellowstone-grpc'
-import {RewardType} from '@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage'
+import type * as grpcType from '@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage'
 import * as base58 from 'bs58'
 import assert from 'node:assert'
 
@@ -22,8 +23,12 @@ interface IngestBatch {
 export class GeyserDataSource implements DataSource<Block> {
     constructor(
         private rpc: SolanaRpcDataSource,
-        private geyser: Client
-    ) {}
+        private geyser: Client,
+        private blockBufferSize = 10,
+        private log = createLogger('sqd:solana-data-service:geyser')
+    ) {
+        assert(this.blockBufferSize > 0)
+    }
 
     getFinalizedHead(): Promise<BlockRef> {
         return this.rpc.getFinalizedHead()
@@ -34,11 +39,38 @@ export class GeyserDataSource implements DataSource<Block> {
     }
 
     getStream(req: StreamRequest): BlockStream<Block> {
-        throw new Error()
+        let queue = new AsyncQueue<IngestBatch>(1)
+
+        this.ingestLoop(req, queue).catch(err => {
+            this.log.error(err, 'error occurred, that is not supposed to happen')
+        })
+
+        return this.rpc.ensureContinuity(
+            queue.iterate(),
+            req.from,
+            req.parentHash
+        )
     }
 
-    private async subscribe(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
+    private async ingestLoop(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
+        while (!queue.isClosed()) {
+            try {
+                await this.runSubscription(req, queue)
+                queue.close()
+            } catch(err: any) {
+                this.log.error(err, 'geyser subscription failed')
+                await wait(1000)
+            }
+        }
+    }
+
+    private async runSubscription(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
         let stream = await this.geyser.subscribe()
+
+        if (queue.isClosed()) {
+            stream.end()
+            return
+        }
 
         let request: SubscribeRequest = {
             accounts: {},
@@ -60,12 +92,99 @@ export class GeyserDataSource implements DataSource<Block> {
 
         stream.write(request)
 
-        stream.on('data', data => {
-            if (!data) return
-            let update = data as SubscribeUpdate
-            let geyserBlock = update.block
-            if (!geyserBlock) return
-            let block = mapBlock(geyserBlock)
+        let queueCloseListener: (() => void)
+
+        return new Promise<void>((resolve, reject) => {
+            let lastBlock = -1
+
+            stream.on('data', data => {
+                if (!data || queue.isClosed()) return
+                let update = data as SubscribeUpdate
+                let geyserBlock = update.block
+                if (!geyserBlock) return
+
+                let block
+                try {
+                    block = mapBlock(geyserBlock)
+                } catch(err: any) {
+                    reject(addErrorContext(err, {
+                        geyserBlockSlot: geyserBlock.slot,
+                        geyserBlockHash: geyserBlock.blockhash
+                    }))
+                    return
+                }
+
+                if (this.log.isDebug()) {
+                    this.log.debug({
+                        blockSlot: block.slot,
+                        blockHash: block.block.blockhash,
+                        blockAge: block.block.blockTime == null
+                            ? undefined
+                            : Date.now() - block.block.blockTime * 1000
+                    }, 'received')
+                }
+
+                if (block.slot <= lastBlock) {
+                    // Such situation (if possible) is likely not going to be about forks.
+                    // We'll ensure monotonicity of this stream
+                    // to reduce number of edge cases and also
+                    // because it is likely the best thing to do.
+                    this.log.info(
+                        getBlockDescription(block),
+                        `ignoring new block, because it is not above the last seen slot`
+                    )
+                    return
+                }
+                lastBlock = block.slot
+
+                if (req.from > block.slot) {
+                    return
+                }
+
+                if (req.to != null && req.to < block.slot) {
+                    resolve()
+                    return
+                }
+
+                let batch = queue.peek()
+                if (batch == null) {
+                    queue.forcePut({blocks: [block]})
+                } else {
+                    let blocks = batch.blocks
+                    while (blocks.length > 0) {
+                        let head = last(blocks)
+                        if (head.slot < block.block.parentSlot) {
+                            break
+                        }
+                        if (
+                            head.slot === block.block.parentSlot &&
+                            head.block.blockhash === block.block.previousBlockhash
+                        ) {
+                            break
+                        }
+                        blocks.pop()
+                        this.log.info({
+                            dropped: getBlockDescription(head),
+                            received: getBlockDescription(block)
+                        }, `dropping current head block, because it is not a parent of newly received one`)
+                    }
+                    blocks.push(block)
+                    if (blocks.length > this.blockBufferSize) {
+                        let dropped = blocks.shift()!
+                        this.log.info({
+                            ...getBlockDescription(dropped),
+                            maxQueueSize: this.blockBufferSize
+                        }, `dropping bottom block, because internal queue has reached its max size`)
+                    }
+                }
+            })
+
+            stream.on('error', reject)
+            queueCloseListener = resolve
+            queue.addCloseListener(queueCloseListener)
+        }).finally(() => {
+            queue.removeCloseListener(queueCloseListener)
+            stream.end()
         })
     }
 }
@@ -78,7 +197,11 @@ function mapBlock(g: SubscribeUpdateBlock): Block {
         previousBlockhash: g.parentBlockhash,
         blockHeight: g.blockHeight == null ? null : nat(g.blockHeight.blockHeight, 'blockHeight'),
         blockTime: g.blockTime == null ? null : nat(g.blockTime.timestamp, 'blockTime'),
-        transactions: g.transactions.map(mapTransaction)
+        transactions: g.transactions
+            // transactions come unordered
+            .sort((a, b) => nat(a.index, '.index in geyser transaction') - nat(b.index, '.index in geyser transaction'))
+            .map(mapTransaction),
+        rewards: g.rewards?.rewards.map(mapReward)
     }
     return {
         slot: nat(g.slot, 'slot'),
@@ -152,15 +275,7 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
                 writable: meta.loadedWritableAddresses.map(base58encode)
             },
             logMessages: meta.logMessages,
-            rewards: meta.rewards.map(reward => {
-                return {
-                    pubkey: reward.pubkey,
-                    lamports: nat(reward.lamports, '.reward.lamports'),
-                    postBalance: reward.postBalance,
-                    rewardType: mapRewardType(reward.rewardType),
-                    commission: reward.commission == null ? undefined : nat(reward.commission, '.reward.commission')
-                }
-            }),
+            rewards: meta.rewards.map(mapReward),
             returnData: meta.returnData && {
                 programId: base58encode(meta.returnData.programId),
                 data: [base64encode(meta.returnData.data), 'base64']
@@ -170,13 +285,24 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
 }
 
 
+function mapReward(reward: grpcType.Reward): Reward {
+    return {
+        pubkey: reward.pubkey,
+        lamports: nat(reward.lamports, '.reward.lamports'),
+        postBalance: reward.postBalance,
+        rewardType: mapRewardType(reward.rewardType),
+        commission: reward.commission ? nat(reward.commission, '.reward.commission') : null
+    }
+}
+
+
 // FIXME: validate with RPC
-function mapRewardType(type: RewardType): string | undefined {
+function mapRewardType(type: grpcType.RewardType): string | undefined {
     switch(type) {
-        case RewardType.Rent: return 'rent'
-        case RewardType.Staking: return 'staking'
-        case RewardType.Voting: return 'voting'
-        case RewardType.Fee: return 'fee'
+        case 1: return 'fee'
+        case 2: return 'rent'
+        case 3: return 'staking'
+        case 4: return 'voting'
         default: return undefined
     }
 }
@@ -197,4 +323,15 @@ function base58encode(val: Uint8Array): Base58Bytes {
 
 function base64encode(val: Uint8Array): string {
     return Buffer.from(val.buffer, val.byteOffset, val.byteLength).toString('base64')
+}
+
+
+function getBlockDescription(block: Block): {blockSlot: number, blockHash: string, blockAge?: number} {
+    return {
+        blockSlot: block.slot,
+        blockHash: block.block.blockhash,
+        blockAge: block.block.blockTime == null
+            ? undefined
+            : Date.now() - block.block.blockTime * 1000
+    }
 }
