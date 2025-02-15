@@ -19,7 +19,9 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     let httpRpc = new RpcClient({
         url: options.httpRpc,
         capacity: 50,
-        fixUnsafeIntegers: true
+        fixUnsafeIntegers: true,
+        requestTimeout: 16000,
+        retryAttempts: 5
     })
 
     let rpcSource = new SolanaRpcDataSource({
