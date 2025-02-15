@@ -187,6 +187,7 @@ export class GeyserDataSource implements DataSource<Block> {
         }).finally(() => {
             queue.removeCloseListener(queueCloseListener)
             stream.destroy()
+            this.log.debug('subscription destroyed')
         })
     }
 }
