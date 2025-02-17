@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/solana-normalization_v0.0.4",
+      "date": "Mon, 10 Feb 2025 07:46:03 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix: handle missing invoke message for CallDepth error"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/solana-normalization_v0.0.3",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",
