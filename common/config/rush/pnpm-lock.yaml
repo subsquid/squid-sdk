@@ -7924,10 +7924,11 @@ packages:
     dev: false
 
   file:projects/solana-normalization.tgz:
-    resolution: {integrity: sha512-B/RXmfNAfDD+1dV6cajSjhIMZTltg3j0MYMDYl07CemEgguSrtAY7KGZv4SJnJRsT3KiVfDv6fcZe4LQyE4OHQ==, tarball: file:projects/solana-normalization.tgz}
+    resolution: {integrity: sha512-fV5dgtNqC12f/W0OvfIfBTh9Rjt6EcZwPeP15UNjRX1u32HGaBsjk6Zsg7hJU7zjGA59te2mHBQLCdtuQVQwww==, tarball: file:projects/solana-normalization.tgz}
     name: '@rush-temp/solana-normalization'
     version: 0.0.0
     dependencies:
+      '@subsquid/logger': 1.4.0
       '@types/node': 18.19.0
       typescript: 5.3.2
     dev: false
