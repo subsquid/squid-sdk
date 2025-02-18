@@ -44,7 +44,7 @@ export function createWorker(options: WorkerOptions): Client {
         name: options.name,
         env: {
             ...process.env,
-            FORCE_PRETTY_LOGGER: process.env.FORCE_PRETTY_LOGGER ?? (process.stdout.isTTY ? '1' : undefined)
+            FORCE_PRETTY_LOGGER: process.env.FORCE_PRETTY_LOGGER ?? (process.stdout.isTTY ? '1' : '0')
         }
     })
     return new Client(worker)
