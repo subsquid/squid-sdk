@@ -19,9 +19,10 @@
     "@subsquid/solana-rpc-data": "^0.0.2",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-validation": "^0.6.0"
-
   },
   "devDependencies": {
+    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-json-fix-unsafe-integers": "^0.0.0",
     "@types/node": "^18.18.14",
     "typescript": "~5.3.2"
   }

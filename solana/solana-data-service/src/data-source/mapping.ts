@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
 import {withErrorContext} from '@subsquid/util-internal'
@@ -11,6 +12,8 @@ const gzip = promisify(zlib.gzip)
 
 
 export class Mapping implements DataSource<Block> {
+    private dataNormalizationLogger = createLogger('sqd:solana-normalization')
+
     constructor(
         private inner: DataSource<rpc.Block>,
         private votes = false
@@ -48,7 +51,15 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: rpc.Block): Promise<Block> {
-        let normalized = mapRpcBlock(block.slot, block.block)
+        let normalized = mapRpcBlock(
+            block.slot,
+            block.block,
+            this.dataNormalizationLogger.child({
+                blockSlot: block.slot,
+                blockHash: block.block.blockhash
+            })
+        )
+
         if (!this.votes) {
             removeVotes(normalized)
         }

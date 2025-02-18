@@ -1,9 +1,9 @@
 import * as rpc from '@subsquid/solana-rpc-data'
-import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Instruction, LogMessage} from './data'
 import {Message, parseLogMessage} from './log-parser'
+import {TransactionContext} from './transaction-context'
 
 
 const PROGRAMS_MISSING_INVOKE_LOG = new Set([
@@ -14,21 +14,23 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'Ed25519SigVerify111111111111111111111111111',
     'KeccakSecp256k11111111111111111111111111111',
     'NativeLoader1111111111111111111111111111111',
-    'ZkTokenProof1111111111111111111111111111111',
+    'ZkTokenProof1111111111111111111111111111111'
 ])
 
 
-class ParsingError {
-    logIndex?: number
+export class ParsingError {
+    instructionIndex?: number
     innerInstructionIndex?: number
+    logMessageIndex?: number
 
     constructor(
-        public message: string
-    ) {}
+        public msg: string
+    ) {
+    }
 }
 
 
-class MessageStream {
+export class MessageStream {
     private messages: Message[]
     private pos = 0
 
@@ -65,78 +67,7 @@ class MessageStream {
 }
 
 
-export interface Journal {
-    warn(props: any, msg: string): void
-    error(props: any, msg: string): void
-}
-
-
-class TransactionContext {
-    public readonly erroredInstruction: number
-    public readonly exceededCallDepth: boolean
-
-    private accounts: Base58Bytes[]
-
-    constructor(
-        public readonly transactionIndex: number,
-        private tx: rpc.Transaction,
-        private journal: Journal
-    ) {
-        if (tx.version == 'legacy') {
-            this.accounts = tx.transaction.message.accountKeys
-        } else {
-            this.accounts = tx.transaction.message.accountKeys.concat(
-                tx.meta.loadedAddresses?.writable ?? [],
-                tx.meta.loadedAddresses?.readonly ?? []
-            )
-        }
-
-        let err = this.tx.meta.err
-        if (err && 'InstructionError' in err) {
-            let pos = err.InstructionError?.[0]
-            let type = err.InstructionError?.[1]
-            if (Number.isSafeInteger(pos)) {
-                this.erroredInstruction = pos
-            } else {
-                this.erroredInstruction = tx.transaction.message.instructions.length
-                this.journal.warn({
-                    transaction: tx.transaction.signatures[0],
-                    transactionError: err
-                }, 'got InstructionError of unrecognized shape')
-            }
-            this.exceededCallDepth = type === 'CallDepth'
-        } else {
-            this.erroredInstruction = tx.transaction.message.instructions.length
-            this.exceededCallDepth = false
-        }
-    }
-
-    get isCommitted(): boolean {
-        return this.tx.meta.err == null
-    }
-
-    getAccount(index: number): Base58Bytes {
-        assert(index < this.accounts.length)
-        return this.accounts[index]
-    }
-
-    warn(props: any, msg: string): void {
-        this.journal.warn({
-            transaction: this.tx.transaction.signatures[0],
-            ...props
-        }, msg)
-    }
-
-    error(props: any, msg: string): void {
-        this.journal.error({
-            transaction: this.tx.transaction.signatures[0],
-            ...props
-        }, msg)
-    }
-}
-
-
-class InstructionTreeTraversal {
+export class InstructionTreeTraversal {
     private lastAddress: number[]
     private instructions: rpc.Instruction[]
     private pos = 0
@@ -152,9 +83,19 @@ class InstructionTreeTraversal {
     ) {
         this.lastAddress = [instructionIndex - 1]
         this.instructions = [instruction, ...inner]
+        if (this.tx.erroredInstruction >= this.instructionIndex) {
+            this.call(1)
+            this.finishLogLess()
+        } else {
+            this.assert(
+                this.instructions.length === 1,
+                'failed instructions should not have inner calls'
+            )
+            this.push(1)
+        }
     }
 
-    private visit(stackHeight: number): void {
+    private call(stackHeight: number): void {
         let ins = this.current
 
         this.assert(
@@ -186,8 +127,16 @@ class InstructionTreeTraversal {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
-
+            this.push(stackHeight).hasDroppedLogMessages = true
+            this.dropNonInvokeMessages()
+            return
         }
+
+        if (this.messages.ended) {
+            throw this.error('unexpected end of message log', this.pos)
+        }
+
+        throw this.error('missing invoke message', this.pos, this.messages.position)
     }
 
     private invoke(stackHeight: number): void {
@@ -212,19 +161,31 @@ class InstructionTreeTraversal {
             'invoke result message and instruction program ids don\'t match'
         )
         ins.error = result.error
+        this.messages.advance()
 
         // consume invoke-less subcalls,
         // that might have left unvisited due to missing 'invoke' messages
-        this.eatInvokeLessSubCalls(stackHeight)
+        this.eatInvokeLessSubCalls(ins)
     }
 
-    private eatInvokeLessSubCalls(parentStackHeight: number) {
+    private eatInvokeLessSubCalls(parent: Instruction) {
         while (this.unfinished) {
-            let stackHeight = this.current.stackHeight ?? 2
-            if (stackHeight >= parentStackHeight) return
+            let stackHeight: number
+            if (this.current.stackHeight == null) {
+                if (parent.error) {
+                    // all remaining calls must belong to the given parent
+                    stackHeight = parent.instructionAddress.length + 1
+                } else {
+                    stackHeight = 2
+                }
+            } else {
+                stackHeight = this.current.stackHeight
+            }
+
+            if (stackHeight <= parent.instructionAddress.length) return
 
             let pos = this.pos
-            let ins = this.push()
+            let ins = this.push(stackHeight)
 
             // even if we have some messages emitted,
             // we already assigned them to parent call
@@ -235,14 +196,14 @@ class InstructionTreeTraversal {
             } else if (
                 this.tx.exceededCallDepth &&
                 this.tx.erroredInstruction == this.instructionIndex &&
-                (this.ended || this.current.stackHeight == null || this.current.stackHeight < stackHeight)
+                this.ended
             ) {
                 // we've reached the max stack depth,
                 // there will be no invoke message either
             } else {
-                this.tx.warn({
+                this.tx.error({
                     instruction: this.instructionIndex,
-                    innerInstruction: pos - 1,
+                    innerInstruction: pos - 1
                 }, 'missing invoke message for inner instruction')
             }
         }
@@ -278,7 +239,7 @@ class InstructionTreeTraversal {
                     }
                     break
                 case 'invoke':
-                    this.visit(ins.instructionAddress.length + 1)
+                    this.call(ins.instructionAddress.length + 1)
                     break
                 case 'invoke-result':
                 case 'truncate':
@@ -289,27 +250,29 @@ class InstructionTreeTraversal {
         }
     }
 
-    private dropNonInvokeMessages(): boolean {
-        let dropped = false
+    private dropNonInvokeMessages(): void {
         while (this.messages.unfinished) {
-            switch(this.messages.current.kind) {
+            let msg = this.messages.current
+            switch(msg.kind) {
                 case 'log':
                 case 'data':
                 case 'cu':
                 case 'other':
-                    dropped = true
                     this.messages.advance()
                     break
+                case 'invoke':
+                case 'invoke-result':
+                case 'truncate':
+                    return
                 default:
-                    return dropped
+                    throw unexpectedCase()
             }
         }
-        return dropped
     }
 
     private finishLogLess(): void {
         while (this.unfinished) {
-            this.push().hasDroppedLogMessages = true
+            this.push(this.current.stackHeight ?? 2).hasDroppedLogMessages = true
         }
     }
 
@@ -332,21 +295,20 @@ class InstructionTreeTraversal {
 
     private error(msg: string, pos?: number, messagePos?: number): ParsingError {
         let err = new ParsingError(msg)
+        err.instructionIndex = this.instructionIndex
         if (pos) {
             err.innerInstructionIndex = pos - 1
         }
         if (messagePos != null) {
-            err.logIndex = messagePos
+            err.logMessageIndex = messagePos
         }
         return err
     }
 
-    private push(stackHeight?: number): Instruction {
-        let ins = this.current
-
-        stackHeight = stackHeight ?? ins.stackHeight ?? 2
-
+    private push(stackHeight: number): Instruction {
         assert(stackHeight > 0)
+
+        let ins = this.current
         if (ins.stackHeight != null) {
             assert(stackHeight === ins.stackHeight)
         }
