@@ -122,9 +122,6 @@ dependencies:
   '@rush-temp/ops-xcm-typegen':
     specifier: file:./projects/ops-xcm-typegen.tgz
     version: file:projects/ops-xcm-typegen.tgz
-  '@rush-temp/raw-archive-validator':
-    specifier: file:./projects/raw-archive-validator.tgz
-    version: file:projects/raw-archive-validator.tgz
   '@rush-temp/rpc-client':
     specifier: file:./projects/rpc-client.tgz
     version: file:projects/rpc-client.tgz
@@ -143,9 +140,15 @@ dependencies:
   '@rush-temp/solana-data-service':
     specifier: file:./projects/solana-data-service.tgz
     version: file:projects/solana-data-service.tgz(@subsquid/logger@1.4.0)
+  '@rush-temp/solana-dump':
+    specifier: file:./projects/solana-dump.tgz
+    version: file:projects/solana-dump.tgz
   '@rush-temp/solana-example':
     specifier: file:./projects/solana-example.tgz
     version: file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2)
+  '@rush-temp/solana-ingest':
+    specifier: file:./projects/solana-ingest.tgz
+    version: file:projects/solana-ingest.tgz
   '@rush-temp/solana-normalization':
     specifier: file:./projects/solana-normalization.tgz
     version: file:projects/solana-normalization.tgz
@@ -155,6 +158,9 @@ dependencies:
   '@rush-temp/solana-rpc-data':
     specifier: file:./projects/solana-rpc-data.tgz
     version: file:projects/solana-rpc-data.tgz
+  '@rush-temp/solana-typegen':
+    specifier: file:./projects/solana-typegen.tgz
+    version: file:projects/solana-typegen.tgz
   '@rush-temp/ss58':
     specifier: file:./projects/ss58.tgz
     version: file:projects/ss58.tgz
@@ -326,6 +332,12 @@ dependencies:
   '@rush-temp/workspace':
     specifier: file:./projects/workspace.tgz
     version: file:projects/workspace.tgz
+  '@solana/addresses':
+    specifier: ^2.0.0-preview.3
+    version: 2.0.0-rc.1(typescript@5.3.2)
+  '@solanafm/explorer-kit-idls':
+    specifier: ^1.1.3
+    version: 1.1.3
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
@@ -338,9 +350,6 @@ dependencies:
   '@subsquid/solana-stream':
     specifier: ^0.1.1
     version: 0.1.1
-  '@subsquid/solana-typegen':
-    specifier: ^0.3.0
-    version: 0.3.0(typescript@5.3.2)
   '@subsquid/util-internal-validation':
     specifier: ^0.7.0
     version: 0.7.0(@subsquid/logger@1.4.0)
@@ -7767,16 +7776,6 @@ packages:
       typescript: 5.3.2
     dev: false
 
-  file:projects/raw-archive-validator.tgz:
-    resolution: {integrity: sha512-B4IF1OGg2tUDyTeQJFNdvQDnxmmdl8i71GmBnOGSRA0xF4MVE4XySh0YtzgACJVLT+yu16GczDmOF2LNpa4LQw==, tarball: file:projects/raw-archive-validator.tgz}
-    name: '@rush-temp/raw-archive-validator'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 18.19.0
-      commander: 11.1.0
-      typescript: 5.3.2
-    dev: false
-
   file:projects/rpc-client.tgz:
     resolution: {integrity: sha512-WygOkwBS3dwxo9LZbje6wvJB0ij34Z4j6oMO88haaR5P3fiUIk4oa3mnY4NXPjeigUuTtBylJDFfEqqchvnNcg==, tarball: file:projects/rpc-client.tgz}
     name: '@rush-temp/rpc-client'
@@ -7884,8 +7883,17 @@ packages:
       - '@subsquid/logger'
     dev: false
 
+  file:projects/solana-dump.tgz:
+    resolution: {integrity: sha512-Xkbae21mxpr7Uo64uz51err20c4qU8dcTWZHrl/5hUdR3PKkYUSK33f7mdWG7k54grsU5tVDl5WCNwY8KkF71w==, tarball: file:projects/solana-dump.tgz}
+    name: '@rush-temp/solana-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.3.2
+    dev: false
+
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-84RakQIMfSohVmbUKyU+9Mi6eLXjLmaxcbBf8L4IebFW3CJmYQ0UplyVjJaK/DstzG8FgN/RLLq2ZlwPqRzOEg==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-acmNuMvBnp5026SM22pZ/DIzqUuKTz+TItXPGkvGzt0jp+J53TNGRfp7VB13huUef46nK5owLDJ2zXJXx1Bt5Q==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -7902,10 +7910,6 @@ packages:
       - '@google-cloud/spanner'
       - '@sap/hana-client'
       - better-sqlite3
-      - bufferutil
-      - debug
-      - encoding
-      - fastestsmallesttextencoderdecoder
       - hdb-pool
       - ioredis
       - mongodb
@@ -7920,11 +7924,20 @@ packages:
       - supports-color
       - ts-node
       - typeorm-aurora-data-api-driver
-      - utf-8-validate
+    dev: false
+
+  file:projects/solana-ingest.tgz:
+    resolution: {integrity: sha512-HRe7WXc9+xq2doK+tZHeFeWQdeqc0wOR23NKnxbLOEJQonRdiBibDlKMWpVDxQoQKbYVCwVZ2tNK9+CW49U3/Q==, tarball: file:projects/solana-ingest.tgz}
+    name: '@rush-temp/solana-ingest'
+    version: 0.0.0
+    dependencies:
+      '@subsquid/logger': 1.4.0
+      '@types/node': 18.19.0
+      typescript: 5.3.2
     dev: false
 
   file:projects/solana-normalization.tgz:
-    resolution: {integrity: sha512-90Ey53pr00mZS+fh0JWEqPpwOMqRtZv6QNWpnp3CXyk0TA487nQ4Q+uWw4OaIViUtAYT1A8Ncv+2B+oCYgfcZw==, tarball: file:projects/solana-normalization.tgz}
+    resolution: {integrity: sha512-WbGytO3HuXMxvnzG9LL+n0YPpxL1O3r94q5G/xFBwHMfiQRier+TiUzx0lgjeOm3g/uI65zrKG0+zxpcolLIRw==, tarball: file:projects/solana-normalization.tgz}
     name: '@rush-temp/solana-normalization'
     version: 0.0.0
     dependencies:
@@ -7950,6 +7963,25 @@ packages:
     dependencies:
       '@types/node': 18.19.0
       typescript: 5.3.2
+    dev: false
+
+  file:projects/solana-typegen.tgz:
+    resolution: {integrity: sha512-WHvhoP2QmAQAxjZL2TSaNGbRrYlBrxZroPSyqC4WZ67OM84m7KbwxM52Gd0mCyzlg471E3MbBeUnPr66E1LiTA==, tarball: file:projects/solana-typegen.tgz}
+    name: '@rush-temp/solana-typegen'
+    version: 0.0.0
+    dependencies:
+      '@solana/addresses': 2.0.0-rc.1(typescript@5.3.2)
+      '@solanafm/explorer-kit-idls': 1.1.3
+      '@subsquid/solana-stream': 0.1.1
+      '@types/node': 18.19.0
+      commander: 11.1.0
+      typescript: 5.3.2
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - utf-8-validate
     dev: false
 
   file:projects/ss58-codec.tgz:

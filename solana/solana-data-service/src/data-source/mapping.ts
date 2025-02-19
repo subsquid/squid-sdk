@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
+import {mapRpcBlock, removeVotes, toArchiveBlock} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
@@ -64,20 +64,7 @@ export class Mapping implements DataSource<Block> {
             removeVotes(normalized)
         }
 
-        let {
-            header: {slot, parentSlot, ...hdr},
-            ...items
-        } = normalized
-
-        let json = {
-            header: {
-                number: slot,
-                parentNumber: parentSlot,
-                ...hdr
-            },
-            ...items
-        }
-
+        let json = toArchiveBlock(normalized)
         let jsonLine = JSON.stringify(toJSON(json)) + '\n'
         let jsonLineGzip = await gzip(jsonLine)
 

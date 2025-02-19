@@ -22,7 +22,7 @@ export class TronDumper extends Dumper<BlockData, Options> {
         return 'sqd:tron-dump'
     }
 
-    protected getPrevBlockHash(block: BlockData): string {
+    protected getParentBlockHash(block: BlockData): string {
         return block.block.block_header.raw_data.parentHash
     }
 
@@ -58,7 +58,7 @@ export class TronDumper extends Dumper<BlockData, Options> {
         }
     }
 
-    protected getFinalizedHeight(): Promise<number> {
+    protected getLastFinalizedBlockNumber(): Promise<number> {
         return this.getDataSource().getFinalizedHeight()
     }
 }

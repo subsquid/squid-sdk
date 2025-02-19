@@ -143,12 +143,31 @@ export interface Reward {
 }
 
 
-export interface Block {
+export interface Block extends BlockItems {
     header: BlockHeader
+}
+
+
+interface BlockItems {
     transactions: Transaction[]
     instructions: Instruction[]
     logs: LogMessage[]
     balances: Balance[]
     tokenBalances: TokenBalance[]
     rewards: Reward[]
+}
+
+
+export interface ArchiveBlockHeader {
+    number: number
+    hash: string
+    parentNumber: number
+    parentHash: string
+    height?: number
+    timestamp?: number
+}
+
+
+export interface ArchiveBlock extends BlockItems {
+    header: ArchiveBlockHeader
 }

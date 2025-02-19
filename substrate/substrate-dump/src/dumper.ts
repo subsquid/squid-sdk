@@ -33,7 +33,7 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
         })
     }
 
-    protected getFinalizedHeight(): Promise<number> {
+    protected getLastFinalizedBlockNumber(): Promise<number> {
         return this.getDataSource().getFinalizedHeight()
     }
 
@@ -110,7 +110,7 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
         }
     }
 
-    protected getPrevBlockHash(block: BlockData): string {
+    protected getParentBlockHash(block: BlockData): string {
         return block.block.block.header.parentHash
     }
 }

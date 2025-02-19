@@ -495,18 +495,18 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-dump",
-//      "projectFolder": "solana/solana-dump",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
-//    {
-//      "packageName": "@subsquid/solana-ingest",
-//      "projectFolder": "solana/solana-ingest",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    {
+      "packageName": "@subsquid/solana-dump",
+      "projectFolder": "solana/solana-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "projectFolder": "solana/solana-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
     {
       "packageName": "@subsquid/solana-normalization",
       "projectFolder": "solana/solana-normalization",
@@ -537,12 +537,12 @@
 //      "shouldPublish": true,
 //      "versionPolicyName": "npm"
 //    },
-//    {
-//      "packageName": "@subsquid/solana-typegen",
-//      "projectFolder": "solana/solana-typegen",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "projectFolder": "solana/solana-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
     {
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",
@@ -740,11 +740,6 @@
       "projectFolder": "util/logger",
       "shouldPublish": true,
       "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "raw-archive-validator",
-      "projectFolder": "util/raw-archive-validator",
-      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/rpc-client",
