@@ -22,7 +22,7 @@ Thu, 28 Sep 2023 20:58:19 GMT
 ### Breaking changes
 
 - change `tuple()` signature from `tuple(...types: Type[])` to `tuple(types: Type[])`
-- update bit sequence presentaion
+- update bit sequence presentation
 
 ### Minor changes
 
