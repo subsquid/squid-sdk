@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc-data",
+      "comment": "remove `Block` type",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc-data"
+}

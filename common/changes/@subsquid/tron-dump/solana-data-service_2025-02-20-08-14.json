@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-dump",
+      "comment": "base on a new `util-internal-dump-cli` package",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/tron-dump"
+}

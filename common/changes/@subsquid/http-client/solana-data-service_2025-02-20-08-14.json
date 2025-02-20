@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "handle ECONNRESET as retryable error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

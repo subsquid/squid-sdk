@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "implement new raw archive data conventions",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}
