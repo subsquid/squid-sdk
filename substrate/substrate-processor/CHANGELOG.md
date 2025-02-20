@@ -256,7 +256,7 @@ Wed, 30 Nov 2022 19:36:06 GMT
 
 ### Minor changes
 
-- new `ctx._chain` functions for quering storage
+- new `ctx._chain` functions for querying storage
 
 ### Patches
 
