@@ -1,17 +1,7 @@
 import type * as rpc from '@subsquid/solana-rpc-data'
 import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import {
-    ArchiveBlock,
-    Balance,
-    Block,
-    BlockHeader,
-    Instruction,
-    LogMessage,
-    Reward,
-    TokenBalance,
-    Transaction
-} from './data'
+import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './data'
 import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'
 import {LogTruncatedMessage} from './log-parser'
 import {Journal, TransactionContext} from './transaction-context'
@@ -259,20 +249,4 @@ function mapTokenBalances(ctx: TransactionContext): TokenBalance[] {
     })
 
     return balances
-}
-
-
-export function toArchiveBlock(block: Block): ArchiveBlock {
-    let {
-        header: {slot, parentSlot, ...hdr},
-        ...items
-    } = block
-    return {
-        header: {
-            number: slot,
-            parentNumber: parentSlot,
-            ...hdr
-        },
-        ...items
-    }
 }

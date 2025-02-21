@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {Journal, mapRpcBlock, removeVotes, toArchiveBlock} from '@subsquid/solana-normalization'
+import {archive, Journal, mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
@@ -68,7 +68,7 @@ export class SolanaIngest extends Ingest<Options> {
             if (!votes) {
                 removeVotes(normalized)
             }
-            return toArchiveBlock(normalized)
+            return archive.toArchiveBlock(normalized)
         }
     }
 
