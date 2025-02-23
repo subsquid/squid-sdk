@@ -8,7 +8,7 @@ import {D8_SYM, DATA_SYM} from '../instruction'
 export function projectFields(block: Block, fields: FieldSelection): PartialBlock {
     return {
         header: {
-            height: block.header.height,
+            number: block.header.number,
             hash: block.header.hash,
             parentHash: block.header.parentHash,
             ...project(fields.block, block.header)

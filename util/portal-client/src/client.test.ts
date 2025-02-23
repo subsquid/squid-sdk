@@ -50,7 +50,7 @@ async function main() {
     for await (let {blocks, finalizedHead} of portal.getFinalizedStream(query, {stopOnHead: true})) {
         console.log(
             `[${new Date().toISOString()}] progress: ${blocks[blocks.length - 1].header.number} / ${
-                finalizedHead?.height ?? -1
+                finalizedHead?.number ?? -1
             }` + `, blocks: ${blocks.length}`
         )
     }

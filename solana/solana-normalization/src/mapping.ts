@@ -10,7 +10,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
     let header: BlockHeader = {
         hash: src.hash,
         height: src.height,
-        slot: src.slot,
+        number: src.slot,
         parentSlot: src.block.parentSlot,
         parentHash: src.block.previousBlockhash,
         timestamp: src.block.blockTime ?? 0

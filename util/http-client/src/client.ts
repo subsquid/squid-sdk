@@ -5,6 +5,7 @@ import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
 import {HttpBody} from './body'
 import {nodeFetch} from './request'
+import {Readable} from 'stream'
 
 
 export {HttpBody}
@@ -281,10 +282,9 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            if (req.signal && res?.stream) {
-                // FIXME: is `close` always emitted?
-                (res.body as NodeJS.ReadableStream).on('close', () => {
-                    req.signal!.removeEventListener('abort', abort)
+            if (req.signal && res?.stream && res.body.readable) {
+                (res.body as NodeJS.ReadableStream).on('end', () => {
+                    req.signal?.removeEventListener('abort', abort)
                 })
             } else {
                 req.signal?.removeEventListener('abort', abort)

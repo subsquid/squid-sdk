@@ -98,7 +98,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let {finalizedHead, blocks: batch} of this.client.getFinalizedStream<ArchiveBlock>(query, {
+            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream<any, ArchiveBlock>(query, {
                 stopOnHead,
             })) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
@@ -121,7 +121,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
 
                 yield {
                     blocks,
-                    isHead: lastBlock >= (finalizedHead?.height ?? -1),
+                    isHead: lastBlock >= (finalizedHead?.number ?? -1),
                 }
             }
 

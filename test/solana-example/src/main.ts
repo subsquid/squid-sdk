@@ -14,22 +14,23 @@ const dataSource = new DataSourceBuilder()
     .setPortal({
         url: 'https://portal.sqd.dev/datasets/solana-mainnet',
         minBytes: 100 * 1024 * 1024,
+        headPollInterval: 0
     })
     // Subsquid Network is always about 1000 blocks behind the head.
     // We must use regular RPC endpoint to get through the last mile
     // and stay on top of the chain.
     // This is a limitation, and we promise to lift it in the future!
-    .setRpc(
-        process.env.SOLANA_NODE == null
-            ? undefined
-            : {
-                  client: new SolanaRpcClient({
-                      url: process.env.SOLANA_NODE,
-                      // rateLimit: 100 // requests per sec
-                  }),
-                  strideConcurrency: 10,
-              }
-    )
+    // .setRpc(
+    //     process.env.SOLANA_NODE == null
+    //         ? undefined
+    //         : {
+    //               client: new SolanaRpcClient({
+    //                   url: process.env.SOLANA_NODE,
+    //                   // rateLimit: 100 // requests per sec
+    //               }),
+    //               strideConcurrency: 10,
+    //           }
+    // )
     // Currently only blocks from 240_000_000 and above are stored in Subsquid Network.
     // When we specify it, we must also limit the range of requested blocks.
     //
@@ -37,7 +38,7 @@ const dataSource = new DataSourceBuilder()
     //
     // NOTE, that block ranges are specified in heights, not in slots !!!
     //
-    .setBlockRange({from: 240_000_000})
+    .setBlockRange({from: 300914600})
     //
     // Block data returned by the data source has the following structure:
     //
@@ -106,6 +107,7 @@ const dataSource = new DataSourceBuilder()
             transactionTokenBalances: true, // all token balance records of executed transaction
         },
     })
+    .includeAllBlocks()
     .build()
 
 // Once we've prepared a data source we can start fetching the data right away:
@@ -165,7 +167,7 @@ run(dataSource, database, async (ctx) => {
             if (ins.programId === whirlpool.programId && ins.d8 === whirlpool.instructions.swap.d8) {
                 let exchange = new Exchange({
                     id: ins.id,
-                    slot: block.header.slot,
+                    slot: block.header.number,
                     tx: ins.getTransaction().signatures[0],
                     timestamp: new Date(block.header.timestamp * 1000),
                 })
