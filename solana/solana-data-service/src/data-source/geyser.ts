@@ -5,12 +5,13 @@ import {addErrorContext, assertNotNull, AsyncQueue, last, wait} from '@subsquid/
 import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import Client, {
     CommitmentLevel,
+    Reward as GeyserReward,
+    RewardType,
     SubscribeRequest,
     SubscribeUpdate,
     SubscribeUpdateBlock,
     SubscribeUpdateTransactionInfo
-} from '@triton-one/yellowstone-grpc'
-import type * as grpcType from '@triton-one/yellowstone-grpc/dist/types/grpc/solana-storage'
+} from '@subsquid/util-internal-geyser-client'
 import * as base58 from 'bs58'
 import assert from 'node:assert'
 
@@ -288,7 +289,7 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
 }
 
 
-function mapReward(reward: grpcType.Reward): Reward {
+function mapReward(reward: GeyserReward): Reward {
     return {
         pubkey: reward.pubkey,
         lamports: nat(reward.lamports, '.reward.lamports'),
@@ -300,12 +301,12 @@ function mapReward(reward: grpcType.Reward): Reward {
 
 
 // FIXME: validate with RPC
-function mapRewardType(type: grpcType.RewardType): string | undefined {
+function mapRewardType(type: RewardType): string | undefined {
     switch(type) {
-        case 1: return 'fee'
-        case 2: return 'rent'
-        case 3: return 'staking'
-        case 4: return 'voting'
+        case RewardType.Fee: return 'fee'
+        case RewardType.Rent: return 'rent'
+        case RewardType.Staking: return 'staking'
+        case RewardType.Voting: return 'voting'
         default: return undefined
     }
 }
