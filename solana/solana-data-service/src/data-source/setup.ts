@@ -1,7 +1,7 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
-import GeyserClient from '@triton-one/yellowstone-grpc'
+import GeyserClient from '@subsquid/util-internal-geyser-client'
 import {GeyserDataSource} from './geyser'
 import {Mapping} from './mapping'
 
