@@ -28,7 +28,7 @@ export function createHttpApp(service: DataService): HttpApp {
 
             let res = await service.query(req.fromBlock, req.parentBlockHash)
             if (res instanceof InvalidBaseBlock) {
-                return ctx.send(409, {lastBlocks: res.prev})
+                return ctx.send(409, {previousBlocks: res.prev})
             }
 
             if (res.finalizedHead) {
