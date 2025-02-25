@@ -203,9 +203,9 @@ function mapBlock(g: SubscribeUpdateBlock): Block {
         blockHeight: g.blockHeight == null ? null : nat(g.blockHeight.blockHeight, 'blockHeight'),
         blockTime: g.blockTime == null ? null : nat(g.blockTime.timestamp, 'blockTime'),
         transactions: g.transactions
+            .map(mapTransaction)
             // transactions come unordered
-            .sort((a, b) => nat(a.index, '.index in geyser transaction') - nat(b.index, '.index in geyser transaction'))
-            .map(mapTransaction),
+            .sort((a, b) => a[kIndex] - b[kIndex]),
         rewards: g.rewards?.rewards.map(mapReward)
     }
     return {
@@ -215,7 +215,10 @@ function mapBlock(g: SubscribeUpdateBlock): Block {
 }
 
 
-function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
+const kIndex = Symbol('index')
+
+
+function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction & {[kIndex]: number} {
     let tx = assertNotNull(gtx.transaction, 'no .transaction field in geyser transaction')
     let message = assertNotNull(tx.message, 'no .transaction.message field in geyser transaction')
     let header = assertNotNull(message.header, 'no .transaction.message.header field in geyser transaction')
@@ -284,7 +287,8 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
                 programId: base58encode(meta.returnData.programId),
                 data: [base64encode(meta.returnData.data), 'base64']
             }
-        }
+        },
+        [kIndex]: nat(gtx.index, '.index in geyser transaction')
     }
 }
 
