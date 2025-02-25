@@ -14,6 +14,7 @@ import Client, {
 } from '@subsquid/util-internal-geyser-client'
 import * as base58 from 'bs58'
 import assert from 'node:assert'
+import * as borsh from '@subsquid/borsh'
 
 
 interface IngestBatch {
@@ -289,6 +290,20 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
 }
 
 
+function mapTransactionError(data: Uint8Array): any {
+    let error = TransactionErrorCodec.decode(new borsh.Src(data))
+
+    switch (error.kind) {
+        case 'InstructionError':
+            return {
+                [error.kind]: [error.value[0], normalizeEnum(error.value[1])],
+            }
+        default:
+            return normalizeEnum(error)
+    }
+}
+
+
 function mapReward(reward: GeyserReward): Reward {
     return {
         pubkey: reward.pubkey,
@@ -300,7 +315,6 @@ function mapReward(reward: GeyserReward): Reward {
 }
 
 
-// FIXME: validate with RPC
 function mapRewardType(type: RewardType): string | undefined {
     switch(type) {
         case RewardType.Fee: return 'fee'
@@ -310,7 +324,6 @@ function mapRewardType(type: RewardType): string | undefined {
         default: return undefined
     }
 }
-
 
 function nat(s: string, loc: string): number {
     let val = parseInt(s)
@@ -337,5 +350,126 @@ function getBlockDescription(block: Block): {blockSlot: number, blockHash: strin
         blockAge: block.block.blockTime == null
             ? undefined
             : Date.now() - block.block.blockTime * 1000
+    }
+}
+
+
+// ref: https://github.com/anza-xyz/agave/blob/164f6a14a72817810db8443ed4263a526bac1482/sdk/instruction/src/error.rs#L64
+let InstructionErrorCodec = borsh.sum(4, {
+    GenericError: {discriminator: 0, value: borsh.unit},
+    InvalidArgument: {discriminator: 1, value: borsh.unit},
+    InvalidInstructionData: {discriminator: 2, value: borsh.unit},
+    InvalidAccountData: {discriminator: 3, value: borsh.unit},
+    AccountDataTooSmall: {discriminator: 4, value: borsh.unit},
+    InsufficientFunds: {discriminator: 5, value: borsh.unit},
+    IncorrectProgramId: {discriminator: 6, value: borsh.unit},
+    MissingRequiredSignature: {discriminator: 7, value: borsh.unit},
+    AccountAlreadyInitialized: {discriminator: 8, value: borsh.unit},
+    UninitializedAccount: {discriminator: 9, value: borsh.unit},
+    UnbalancedInstruction: {discriminator: 10, value: borsh.unit},
+    ModifiedProgramId: {discriminator: 11, value: borsh.unit},
+    ExternalAccountLamportSpend: {discriminator: 12, value: borsh.unit},
+    ExternalAccountDataModified: {discriminator: 13, value: borsh.unit},
+    ReadonlyLamportChange: {discriminator: 14, value: borsh.unit},
+    ReadonlyDataModified: {discriminator: 15, value: borsh.unit},
+    DuplicateAccountIndex: {discriminator: 16, value: borsh.unit},
+    ExecutableModified: {discriminator: 17, value: borsh.unit},
+    RentEpochModified: {discriminator: 18, value: borsh.unit},
+    NotEnoughAccountKeys: {discriminator: 19, value: borsh.unit},
+    AccountDataSizeChanged: {discriminator: 20, value: borsh.unit},
+    AccountNotExecutable: {discriminator: 21, value: borsh.unit},
+    AccountBorrowFailed: {discriminator: 22, value: borsh.unit},
+    AccountBorrowOutstanding: {discriminator: 23, value: borsh.unit},
+    DuplicateAccountOutOfSync: {discriminator: 24, value: borsh.unit},
+    Custom: {discriminator: 25, value: borsh.u32},
+    InvalidError: {discriminator: 26, value: borsh.u32},
+    ExecutableDataModified: {discriminator: 27, value: borsh.unit},
+    ExecutableLamportChange: {discriminator: 28, value: borsh.unit},
+    ExecutableAccountNotRentExempt: {discriminator: 29, value: borsh.unit},
+    UnsupportedProgramId: {discriminator: 30, value: borsh.unit},
+    CallDepth: {discriminator: 31, value: borsh.unit},
+    MissingAccount: {discriminator: 32, value: borsh.unit},
+    ReentrancyNotAllowed: {discriminator: 33, value: borsh.unit},
+    MaxSeedLengthExceeded: {discriminator: 34, value: borsh.unit},
+    InvalidSeeds: {discriminator: 35, value: borsh.unit},
+    InvalidRealloc: {discriminator: 36, value: borsh.unit},
+    ComputationalBudgetExceeded: {discriminator: 37, value: borsh.unit},
+    PrivilegeEscalation: {discriminator: 38, value: borsh.unit},
+    ProgramEnvironmentSetupFailure: {discriminator: 39, value: borsh.unit},
+    ProgramFailedToComplete: {discriminator: 40, value: borsh.unit},
+    ProgramFailedToCompile: {discriminator: 41, value: borsh.unit},
+    Immutable: {discriminator: 42, value: borsh.unit},
+    IncorrectAuthority: {discriminator: 43, value: borsh.unit},
+    BorshIoError: {discriminator: 44, value: borsh.string},
+    AccountNotRentExempt: {discriminator: 45, value: borsh.unit},
+    InvalidAccountOwner: {discriminator: 46, value: borsh.unit},
+    ArithmeticOverflow: {discriminator: 47, value: borsh.unit},
+    UnsupportedSysvar: {discriminator: 48, value: borsh.unit},
+    IllegalOwner: {discriminator: 49, value: borsh.unit},
+    MaxAccountsDataAllocationsExceeded: {discriminator: 50, value: borsh.unit},
+    MaxAccountsExceeded: {discriminator: 51, value: borsh.unit},
+    MaxInstructionTraceLengthExceeded: {discriminator: 52, value: borsh.unit},
+    BuiltinProgramsMustConsumeComputeUnits: {discriminator: 53, value: borsh.unit},
+})
+
+
+// ref: https://github.com/anza-xyz/agave/blob/164f6a14a72817810db8443ed4263a526bac1482/sdk/transaction-error/src/lib.rs#L15
+const TransactionErrorCodec = borsh.sum(4, {
+    AccountInUse: {discriminator: 0, value: borsh.unit},
+    AccountLoadedTwice: {discriminator: 1, value: borsh.unit},
+    AccountNotFound: {discriminator: 2, value: borsh.unit},
+    ProgramAccountNotFound: {discriminator: 3, value: borsh.unit},
+    InsufficientFundsForFee: {discriminator: 4, value: borsh.unit},
+    InvalidAccountForFee: {discriminator: 5, value: borsh.unit},
+    AlreadyProcessed: {discriminator: 6, value: borsh.unit},
+    BlockhashNotFound: {discriminator: 7, value: borsh.unit},
+    InstructionError: {discriminator: 8, value: borsh.tuple([borsh.u8, InstructionErrorCodec])},
+    CallChainTooDeep: {discriminator: 9, value: borsh.unit},
+    MissingSignatureForFee: {discriminator: 10, value: borsh.unit},
+    InvalidAccountIndex: {discriminator: 11, value: borsh.unit},
+    SignatureFailure: {discriminator: 12, value: borsh.unit},
+    InvalidProgramForExecution: {discriminator: 13, value: borsh.unit},
+    SanitizeFailure: {discriminator: 14, value: borsh.unit},
+    ClusterMaintenance: {discriminator: 15, value: borsh.unit},
+    AccountBorrowOutstanding: {discriminator: 16, value: borsh.unit},
+    WouldExceedMaxBlockCostLimit: {discriminator: 17, value: borsh.unit},
+    UnsupportedVersion: {discriminator: 18, value: borsh.unit},
+    InvalidWritableAccount: {discriminator: 19, value: borsh.unit},
+    WouldExceedMaxAccountCostLimit: {discriminator: 20, value: borsh.unit},
+    WouldExceedAccountDataBlockLimit: {discriminator: 21, value: borsh.unit},
+    TooManyAccountLocks: {discriminator: 22, value: borsh.unit},
+    AddressLookupTableNotFound: {discriminator: 23, value: borsh.unit},
+    InvalidAddressLookupTableOwner: {discriminator: 24, value: borsh.unit},
+    InvalidAddressLookupTableData: {discriminator: 25, value: borsh.unit},
+    InvalidAddressLookupTableIndex: {discriminator: 26, value: borsh.unit},
+    InvalidRentPayingAccount: {discriminator: 27, value: borsh.unit},
+    WouldExceedMaxVoteCostLimit: {discriminator: 28, value: borsh.unit},
+    WouldExceedAccountDataTotalLimit: {discriminator: 29, value: borsh.unit},
+    DuplicateInstruction: {discriminator: 30, value: borsh.u8},
+    InsufficientFundsForRent: {
+        discriminator: 31,
+        value: borsh.struct({
+            account_index: borsh.u8,
+        }),
+    },
+    MaxLoadedAccountsDataSizeExceeded: {discriminator: 32, value: borsh.unit},
+    InvalidLoadedAccountsDataSizeLimit: {discriminator: 33, value: borsh.unit},
+    ResanitizationNeeded: {discriminator: 34, value: borsh.unit},
+    ProgramExecutionTemporarilyRestricted: {
+        discriminator: 35,
+        value: borsh.struct({
+            account_index: borsh.u8,
+        }),
+    },
+    UnbalancedTransaction: {discriminator: 36, value: borsh.unit},
+    ProgramCacheHitMaxLimit: {discriminator: 37, value: borsh.unit},
+})
+
+
+function normalizeEnum(value: {kind: string, value?: any}) {
+    if (value.value == null) {
+        return value.kind
+    } else {
+        return {[value.kind]: value.value}
     }
 }

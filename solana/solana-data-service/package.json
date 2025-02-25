@@ -29,7 +29,8 @@
     "@subsquid/util-internal-http-server": "^2.0.0",
     "@subsquid/util-internal-json": "^1.2.3",
     "@subsquid/util-internal-validation": "^0.7.0",
-    "@subsquid/util-internal-worker-thread": "^0.0.0"
+    "@subsquid/util-internal-worker-thread": "^0.0.0",
+    "@subsquid/borsh": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
