@@ -354,7 +354,7 @@ function getBlockDescription(block: Block): {blockSlot: number, blockHash: strin
 
 
 // ref: https://github.com/anza-xyz/agave/blob/164f6a14a72817810db8443ed4263a526bac1482/sdk/instruction/src/error.rs#L64
-let InstructionErrorCodec = borsh.sum(4, {
+const InstructionErrorCodec = borsh.sum(4, {
     GenericError: {discriminator: 0, value: borsh.unit},
     InvalidArgument: {discriminator: 1, value: borsh.unit},
     InvalidInstructionData: {discriminator: 2, value: borsh.unit},
@@ -412,6 +412,8 @@ let InstructionErrorCodec = borsh.sum(4, {
 })
 
 
+// FIXME: note, that Geyser encodes error in bincode format,
+// thankfully the encoding for the current error structure matches borsh.
 // ref: https://github.com/anza-xyz/agave/blob/164f6a14a72817810db8443ed4263a526bac1482/sdk/transaction-error/src/lib.rs#L15
 const TransactionErrorCodec = borsh.sum(4, {
     AccountInUse: {discriminator: 0, value: borsh.unit},
