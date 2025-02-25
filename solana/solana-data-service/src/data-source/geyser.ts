@@ -247,8 +247,7 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction {
         },
         meta: {
             computeUnitsConsumed: meta.computeUnitsConsumed,
-            // FIXME: https://github.com/rpcpool/yellowstone-grpc/blob/b9f96ae944bb803b7e5c5a5acbdafe525b255566/yellowstone-grpc-proto/src/lib.rs#L193
-            err: meta.err ? {_geyserEncoded: meta.err.err} : null,
+            err: meta.err ? mapTransactionError(meta.err.err) : null,
             fee: meta.fee,
             preBalances: meta.preBalances,
             postBalances: meta.postBalances,
