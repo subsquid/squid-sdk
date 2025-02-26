@@ -39,6 +39,14 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         }
     }
 
+    async getHead(): Promise<BlockRef> {
+        let res = await this.rpc.getLatestBlockhash('confirmed')
+        return {
+            number: res.context.slot,
+            hash: res.value.blockhash
+        }
+    }
+
     async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
         let stream = this.ensureContinuity(
             this.ingest('finalized', req),
