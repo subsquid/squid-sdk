@@ -1,7 +1,8 @@
+import * as borsh from '@subsquid/borsh'
 import {createLogger} from '@subsquid/logger'
 import {Block, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Base58Bytes, GetBlock, Reward, Transaction} from '@subsquid/solana-rpc-data'
-import {addErrorContext, assertNotNull, AsyncQueue, last, wait} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, AsyncQueue, last, Throttler, wait} from '@subsquid/util-internal'
 import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import Client, {
     CommitmentLevel,
@@ -14,7 +15,6 @@ import Client, {
 } from '@subsquid/util-internal-geyser-client'
 import * as base58 from 'bs58'
 import assert from 'node:assert'
-import * as borsh from '@subsquid/borsh'
 
 
 interface IngestBatch {
@@ -41,22 +41,44 @@ export class GeyserDataSource implements DataSource<Block> {
     }
 
     getStream(req: StreamRequest): BlockStream<Block> {
-        let queue = new AsyncQueue<IngestBatch>(1)
-
-        this.ingestLoop(req, queue).catch(err => {
-            this.log.error(err, 'error occurred, that is not supposed to happen')
-        })
-
         return this.rpc.finalize(
             this.rpc.ensureContinuity(
-                queue.iterate(),
+                this.ingest(req),
                 req.from,
                 req.parentHash
             )
         )
     }
 
-    private async ingestLoop(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
+    private async *ingest(req: StreamRequest): BlockStream<Block> {
+        let headTracker = new Throttler(() => this.rpc.getHead(), 2000).enablePrefetch()
+        try {
+            LOOP: while (true) {
+                let queue = new AsyncQueue<IngestBatch>(1)
+
+                this.ingestSession(req, queue).catch(err => {
+                    this.log.error(err, 'error occurred, that is not supposed to happen')
+                })
+
+                for await (let batch of queue.iterate()) {
+                    yield batch
+                    if (batch.blocks.length > 0) {
+                        let head = await headTracker.get()
+                        let end = last(batch.blocks)
+                        if (head.number > end.slot + 50) {
+                            this.log.warn('geyser subscription felt too far behind the head, will create a new one')
+                            continue LOOP
+                        }
+                    }
+                }
+                return
+            }
+        } finally {
+            headTracker.disablePrefetch()
+        }
+    }
+
+    private async ingestSession(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
         while (!queue.isClosed()) {
             try {
                 await this.runSubscription(req, queue)
