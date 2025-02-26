@@ -1,5 +1,6 @@
 ARG node=node:22-alpine
 FROM ${node} AS node
+FROM oven/bun:debian AS bun
 
 
 FROM node AS builder
@@ -15,9 +16,9 @@ FROM builder AS solana-data-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
 
 
-FROM node AS solana-data-service
+FROM bun AS solana-data-service
 COPY --from=solana-data-service-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
+ENTRYPOINT ["bun", "run", "/squid/solana/solana-data-service/lib/main.js"]
 
 
 FROM builder AS solana-dump-builder
