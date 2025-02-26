@@ -107,7 +107,7 @@ export class Chain {
             return new InvalidBaseBlock(prev)
         } else {
             return {
-                finalizedHead: this.getFinalizedHead()
+                finalizedHead: this.getFinalizedHeader()
             }
         }
     }
@@ -136,7 +136,15 @@ export class Chain {
         return this.lastBlock().number
     }
 
-    getFinalizedHead(): BlockHeader {
+    getFinalizedHead(): BlockRef {
+        let block = this.blocks[this.finalizedHead]
+        return {
+            number: block.number,
+            hash: block.hash
+        }
+    }
+
+    getFinalizedHeader(): BlockHeader {
         let block = this.blocks[this.finalizedHead]
         return {
             number: block.number,
@@ -147,7 +155,15 @@ export class Chain {
         }
     }
 
-    getHead(): BlockHeader {
+    getHead(): BlockRef {
+        let block = last(this.blocks)
+        return {
+            number: block.number,
+            hash: block.hash
+        }
+    }
+
+    getHeader(): BlockHeader {
         let block = last(this.blocks)
         return {
             number: block.number,

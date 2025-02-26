@@ -21,7 +21,7 @@ export class DataService {
     constructor(
         private source: DataSource<Block>,
         private bufferSize: number,
-        private log = createLogger('sqd:data-service'),
+        readonly log = createLogger('sqd:data-service'),
         private responseLimit = 100
     ) {}
 
@@ -54,11 +54,6 @@ export class DataService {
         let log = this.log
         let missing = this.chain.firstBlock().parentNumber - from + 1
         assert(missing > 0, 'no blocks are missing')
-
-        log.info({
-            from,
-            missing
-        }, 'got query below the cache')
 
         // read all necessary `this.chain` properties know for consistency
         let responseLimit = this.responseLimit
@@ -142,13 +137,13 @@ export class DataService {
     }
 
     async run(): Promise<void> {
-        let base: BlockRef = this.chain.getHead()
+        let base: BlockRef = this.chain.getHeader()
         let stacked = 0
         while (!this.stopped) {
             try {
                 if (stacked > 1) {
                     await this.init()
-                    base = this.chain.getHead()
+                    base = this.chain.getHeader()
                     this.log.info(`restarted data ingestion at ${base.number}#${base.hash}`)
                 }
                 return await this.ingestSession(base)
@@ -159,7 +154,7 @@ export class DataService {
                 } else {
                     this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
                     await wait(60 * 1000)
-                    let head = this.chain.getHead()
+                    let head = this.chain.getHeader()
                     if (head.number === base.number) {
                         stacked += 1
                     } else {
@@ -190,7 +185,7 @@ export class DataService {
 
             if (batch.blocks.length > 0) {
                 this.logBlockInfo(
-                    this.chain.getHead(),
+                    this.chain.getHeader(),
                     'new head'
                 )
             }
@@ -201,7 +196,7 @@ export class DataService {
 
             if (finalizedHead && this.chain.finalize(finalizedHead)) {
                 this.logBlockInfo(
-                    this.chain.getFinalizedHead(),
+                    this.chain.getFinalizedHeader(),
                     'new finalized head'
                 )
             }

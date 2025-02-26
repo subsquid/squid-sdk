@@ -6,6 +6,8 @@ import {InvalidBaseBlock} from './types'
 
 
 export function createHttpApp(service: DataService): HttpApp {
+    let log = service.log.child('query')
+    let queryCounter = 0
     let app = new HttpApp()
 
     app.add('/', {
@@ -26,8 +28,14 @@ export function createHttpApp(service: DataService): HttpApp {
                 return ctx.send(400, req.toString())
             }
 
+            let queryLog = log.child({
+                id: queryCounter += 1,
+                req
+            })
+
             let res = await service.query(req.fromBlock, req.parentBlockHash)
             if (res instanceof InvalidBaseBlock) {
+                queryLog.info({status: 409, previousBlocks: res.prev})
                 return ctx.send(409, {previousBlocks: res.prev})
             }
 
@@ -37,6 +45,10 @@ export function createHttpApp(service: DataService): HttpApp {
             }
 
             if (res.head == null && res.tail == null) {
+                queryLog.info({
+                    status: 204,
+                    finalizedHead: res.finalizedHead
+                })
                 return ctx.send(204)
             }
 
@@ -51,13 +63,21 @@ export function createHttpApp(service: DataService): HttpApp {
                 ctx.response.setHeader('content-length', len)
             }
 
+            let sendStart = Date.now()
+            let endOfHead = sendStart
+            let lastBlock: number | undefined
+            let missing = 0
+
             if (res.head) {
                 for await (let block of res.head) {
                     if (ctx.response.writableNeedDrain || !ctx.response.writable) {
                         await waitDrain(ctx.response)
                     }
                     ctx.response.write(block.jsonLineGzip)
+                    missing = block.number - req.fromBlock
+                    lastBlock = block.number
                 }
+                endOfHead = Date.now()
             }
 
             if (res.tail) {
@@ -66,10 +86,20 @@ export function createHttpApp(service: DataService): HttpApp {
                         await waitDrain(ctx.response)
                     }
                     ctx.response.write(block.jsonLineGzip)
+                    lastBlock = block.number
                 }
             }
 
             ctx.response.end()
+
+            queryLog.info({
+                status: 200,
+                finalizedHead: res.finalizedHead,
+                lastBlock,
+                missing,
+                missingTime: endOfHead - sendStart,
+                totalTime: Date.now() - sendStart
+            })
         }
     })
 
