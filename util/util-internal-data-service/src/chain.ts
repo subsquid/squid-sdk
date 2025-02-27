@@ -107,7 +107,7 @@ export class Chain {
             return new InvalidBaseBlock(prev)
         } else {
             return {
-                finalizedHead: this.getFinalizedHeader()
+                finalizedHead: this.getFinalizedHead()
             }
         }
     }

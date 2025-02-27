@@ -55,6 +55,11 @@ export class DataService {
         let missing = this.chain.firstBlock().parentNumber - from + 1
         assert(missing > 0, 'no blocks are missing')
 
+        log.info({
+            fromBlock: from,
+            missing
+        }, 'below query')
+
         // read all necessary `this.chain` properties know for consistency
         let responseLimit = this.responseLimit
         let existing = Math.max(0, responseLimit - missing)
