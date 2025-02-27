@@ -32,7 +32,7 @@ export function createHttpApp(service: DataService): HttpApp {
             }
 
             if (res.finalizedHead) {
-                ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number)
+                ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number+'')
                 ctx.response.setHeader('x-sqd-finalized-head-hash', res.finalizedHead.hash)
             }
 
