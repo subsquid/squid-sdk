@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-stream",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/fuel-stream"
+}

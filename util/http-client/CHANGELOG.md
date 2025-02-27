@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Wed, 07 Aug 2024 15:52:38 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Dec 2024 16:52:59 GMT and should not be manually modified.
+
+## 1.6.0
+Fri, 20 Dec 2024 16:52:59 GMT
+
+### Minor changes
+
+- add support for `retry-after` header
 
 ## 1.5.0
 Wed, 07 Aug 2024 15:52:38 GMT

@@ -2,6 +2,21 @@
   "name": "@subsquid/starknet-normalization",
   "entries": [
     {
+      "version": "0.0.1",
+      "tag": "@subsquid/starknet-normalization_v0.0.1",
+      "date": "Tue, 03 Dec 2024 11:47:42 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.6.0` to `0.7.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/starknet-normalization_v0.0.0",
       "date": "Wed, 04 Sep 2024 13:19:03 GMT",

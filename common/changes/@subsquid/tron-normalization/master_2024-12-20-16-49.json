@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-normalization",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/tron-normalization"
+}

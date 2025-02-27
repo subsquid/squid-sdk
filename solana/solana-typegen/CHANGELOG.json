@@ -2,6 +2,26 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/solana-typegen_v0.4.0",
+      "date": "Wed, 15 Jan 2025 18:59:13 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add HashMap and HashSet types support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/borsh\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.1.2` to `0.1.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/solana-typegen_v0.3.0",
       "date": "Mon, 23 Sep 2024 17:53:43 GMT",

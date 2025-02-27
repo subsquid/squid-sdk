@@ -1,6 +1,13 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Thu, 29 Feb 2024 15:27:11 GMT and should not be manually modified.
+This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+
+## 1.4.0
+Mon, 10 Feb 2025 07:46:03 GMT
+
+### Minor changes
+
+- allow to use custom log sink and level determination logic
 
 ## 1.3.3
 Thu, 29 Feb 2024 15:27:11 GMT

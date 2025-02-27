@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-ingest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/fuel-ingest"
+}

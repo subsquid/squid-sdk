@@ -222,6 +222,19 @@ export class TypeModuleOutput extends FileOutput {
                 })
                 this.line(`])` + end)
                 break
+            case TypeKind.HashMap:
+                this.borsh.add('hashMap')
+                this.line(start + `hashMap(`)
+                this.indentation(() => {
+                    this.printDsl(``, {type: type.key}, ',')
+                    this.printDsl(``, {type: type.value}, '')
+                })
+                this.line(`)` + end)
+                break
+            case TypeKind.HashSet:
+                this.borsh.add('hashSet')
+                this.printDsl(start + `hashSet(`, {type: type.type}, `)` + end)
+                break
             case TypeKind.Defined:
                 const typeName = toTypeName(type.name)
                 this.types.add(typeName)
@@ -286,6 +299,17 @@ export class TypeModuleOutput extends FileOutput {
                     }
                 })
                 this.line(`]` + end)
+                break
+            case TypeKind.HashMap:
+                this.line(start + `Map<`)
+                this.indentation(() => {
+                    this.printType(``, {type: type.key}, `,`)
+                    this.printType(``, {type: type.value}, ``)
+                })
+                this.line(`>` + end)
+                break
+            case TypeKind.HashSet:
+                this.printType(start + `Set<`, {type: type.type}, `>` + end)
                 break
             case TypeKind.Defined:
                 this.types.add(toTypeName(type.name))

@@ -1,6 +1,11 @@
 # Change Log - @subsquid/fuel-data
 
-This log was last generated on Wed, 04 Sep 2024 13:19:03 GMT and should not be manually modified.
+This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+
+## 1.1.3
+Tue, 03 Dec 2024 11:47:42 GMT
+
+_Version update only_
 
 ## 1.1.2
 Wed, 04 Sep 2024 13:19:03 GMT
