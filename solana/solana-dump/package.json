@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-dump",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Data archiving tool for Solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,13 +19,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^4.10.0",
-    "@subsquid/solana-rpc": "^0.0.2",
+    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/solana-rpc": "^0.0.4",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-dump-cli": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "~5.3.2"
+    "typescript": "5.5.4"
   }
 }

@@ -23,14 +23,14 @@
     "ajv": "^8.12.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.0"
+    "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^2.0.0",
-    "@types/mocha": "^10.0.6",
+    "@subsquid/substrate-runtime": "^2.0.1",
+    "@types/mocha": "^10.0.7",
     "@types/node": "^18.18.14",
     "expect": "^29.7.0",
-    "mocha": "^10.2.0",
-    "typescript": "~5.3.2"
+    "mocha": "^10.7.0",
+    "typescript": "5.5.4"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-data",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Data fetcher for tron based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,15 +16,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.5.0",
+    "@subsquid/http-client": "^1.6.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-tools": "^1.1.4",
-    "@subsquid/util-internal-validation": "^0.6.0",
+    "@subsquid/util-internal-validation": "^0.7.0",
     "@subsquid/util-internal-json-fix-unsafe-integers": "^0.0.0",
     "@subsquid/util-internal-range": "^0.3.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "~5.3.2"
+    "typescript": "5.5.4"
   }
 }

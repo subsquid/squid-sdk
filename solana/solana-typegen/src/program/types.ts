@@ -29,6 +29,8 @@ export enum TypeKind {
     Struct,
     Defined,
     Generic,
+    HashMap,
+    HashSet
 }
 
 export interface PrimitiveType {
@@ -50,6 +52,17 @@ export interface FixedArrayType {
 export interface TupleType {
     kind: TypeKind.Tuple
     tuple: Type[]
+}
+
+export interface HashMapType {
+    kind: TypeKind.HashMap
+    key: Type
+    value: Type
+}
+
+export interface HashSetType {
+    kind: TypeKind.HashSet
+    type: Type
 }
 
 export interface StructType {
@@ -114,6 +127,8 @@ export type Type =
     | ArrayType
     | FixedArrayType
     | TupleType
+    | HashMapType
+    | HashSetType
     | StructType
     | EnumType
     | OptionType

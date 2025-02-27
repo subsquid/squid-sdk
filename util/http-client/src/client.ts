@@ -104,9 +104,12 @@ export class HttpClient {
             let res: HttpResponse | Error = await this.performRequestWithTimeout(req).catch(ensureError)
             if (res instanceof Error || !res.ok) {
                 if (retryAttempts > retries && this.isRetryableError(res, req)) {
-                    let pause = retrySchedule.length
+                    let pause = asRetryAfterPause(res)
+                    if (pause == null) {
+                        pause = retrySchedule.length
                         ? retrySchedule[Math.min(retries, retrySchedule.length - 1)]
                         : 1000
+                    }
                     retries += 1
                     this.beforeRetryPause(req, res, pause)
                     await wait(pause, req.signal)
@@ -334,7 +337,7 @@ export class HttpClient {
                 case 524:
                     return true
                 default:
-                    return false
+                    return error.headers.has('retry-after')
             }
         }
         return false
@@ -482,3 +485,20 @@ export function isHttpConnectionError(err: unknown): boolean {
             err.code == 'ECONNRESET'
         )
 }
+
+
+export function asRetryAfterPause(res: HttpResponse | Error): number | undefined {
+    if (res instanceof HttpError) {
+        res = res.response
+    }
+    if (res instanceof HttpResponse) {
+        let retryAfter = res.headers.get('retry-after')
+        if (retryAfter == null) return undefined
+        if (/^\d+$/.test(retryAfter)) return parseInt(retryAfter, 10) * 1000
+        if (HTTP_DATE_REGEX.test(retryAfter)) return Math.max(0, new Date(retryAfter).getTime() - Date.now())
+    }
+
+    return undefined
+}
+
+const HTTP_DATE_REGEX = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$/;
